@@ -406,6 +406,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        dispatchIntent(intent);
     }
 
     @Override
