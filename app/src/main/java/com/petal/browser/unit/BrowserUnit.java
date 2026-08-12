@@ -304,17 +304,11 @@ public class BrowserUnit {
     public static void intentURL(Context context, Uri uri) {
         if (context == null || uri == null) return;
         try {
-            Intent fallbackIntent = new Intent(context, BrowserActivity.class);
-            fallbackIntent.setAction(Intent.ACTION_VIEW);
-            fallbackIntent.setData(uri);
-            fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(fallbackIntent);
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
         } catch (Exception e) {
-            try {
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(browserIntent);
-            } catch (Exception ignored) {}
+            e.printStackTrace();
         }
     }
 
