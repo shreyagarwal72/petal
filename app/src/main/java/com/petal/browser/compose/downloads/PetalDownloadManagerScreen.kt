@@ -1,9 +1,9 @@
 /*
  * PetalDownloadManager.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Native Inbuilt Download Manager UI for Petal Browser featuring real-time
- * network velocity (speed), ETA calculation, file opening, pause/resume,
- * and Material 3 Expressive UI components.
+ * Native Inbuilt Download Manager UI for Petal Browser featuring Chrome-style
+ * grouped downloads, sticky date headers, file type avatars, 2-line title/subtitle
+ * columns, overflow dropdown menus, and Material 3 Expressive UI components.
  */
 
 package com.petal.browser.compose.downloads
@@ -12,13 +12,15 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -27,10 +29,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,6 +41,8 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -53,7 +56,8 @@ data class DownloadItem(
     val totalSize: Long,
     val speedBytesPerSec: Long = 0L,
     val etaSeconds: Long = 0L,
-    val localUri: String?
+    val localUri: String?,
+    val timestampMs: Long = System.currentTimeMillis()
 )
 
 object PetalDownloadBridge {
@@ -96,22 +100,58 @@ fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"
     val units = arrayOf("B", "KB", "MB", "GB")
     val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt().coerceIn(0, 3)
-    return String.format("%.1f %s", bytes / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
+    return String.format(Locale.US, "%.1f %s", bytes / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
 }
 
-fun formatSpeed(bytesPerSec: Long): String {
-    if (bytesPerSec <= 0) return "0 KB/s"
-    return "${formatBytes(bytesPerSec)}/s"
+fun extractDomain(url: String): String {
+    if (url.isEmpty()) return ""
+    return try {
+        val uri = Uri.parse(url)
+        val host = uri.host
+        if (!host.isNullOrEmpty()) {
+            if (host.startsWith("www.")) host.substring(4) else host
+        } else url
+    } catch (e: Exception) {
+        url
+    }
 }
 
-fun formatEta(seconds: Long): String {
-    if (seconds <= 0) return "--"
-    val mins = seconds / 60
-    val secs = seconds % 60
-    return if (mins > 0) "${mins}m ${secs}s" else "${secs}s"
+fun formatDateHeader(timestampMs: Long): String {
+    if (timestampMs <= 0) return "Downloads"
+    val calItem = Calendar.getInstance().apply { timeInMillis = timestampMs }
+    val calToday = Calendar.getInstance()
+    val calYesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+
+    val dateFormatFull = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
+    val formattedDate = dateFormatFull.format(calItem.time)
+
+    return when {
+        isSameDay(calItem, calToday) -> "Today - $formattedDate"
+        isSameDay(calItem, calYesterday) -> "Yesterday"
+        else -> formattedDate
+    }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+private fun isSameDay(c1: Calendar, c2: Calendar): Boolean {
+    return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) &&
+           c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR)
+}
+
+fun getFileTypeIcon(fileName: String): ImageVector {
+    val ext = fileName.substringAfterLast('.', "").lowercase()
+    return when (ext) {
+        "jpg", "jpeg", "png", "webp", "gif", "svg", "bmp" -> Icons.Rounded.Image
+        "mp4", "mkv", "webm", "avi", "mov", "flv" -> Icons.Rounded.Movie
+        "mp3", "wav", "aac", "flac", "ogg", "m4a" -> Icons.Rounded.MusicNote
+        "apk" -> Icons.Rounded.Android
+        "pdf" -> Icons.Rounded.PictureAsPdf
+        "doc", "docx", "txt", "rtf", "odt" -> Icons.Rounded.Description
+        "zip", "tar", "gz", "rar", "7z" -> Icons.Rounded.FolderZip
+        else -> Icons.Rounded.InsertDriveFile
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     val context = LocalContext.current
@@ -129,6 +169,10 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
             lastCheckTime = currentTime
             downloadList = newItems
         }
+    }
+
+    val groupedDownloads = remember(downloadList) {
+        downloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
     }
 
     Scaffold(
@@ -165,14 +209,32 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                items(downloadList, key = { it.id }) { item ->
-                    DownloadCardItem(item = item, onOpenFile = {
-                        openDownloadedFile(context, item)
-                    })
+                groupedDownloads.forEach { (dateHeader, items) ->
+                    stickyHeader(key = dateHeader) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.background,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = dateHeader,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp)
+                            )
+                        }
+                    }
+
+                    items(items, key = { it.id }) { item ->
+                        DownloadRowItem(
+                            item = item,
+                            onOpenFile = { openDownloadedFile(context, item) }
+                        )
+                    }
                 }
             }
         }
@@ -224,10 +286,6 @@ private fun DownloadsEmptyState(modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * Builds an organic, rounded "blob" shape (irregular squircle/hexagon)
- * used as the background behind the empty-state icon.
- */
 private fun createBlobPath(size: Float): Path {
     val points = 7
     val radiusVariance = floatArrayOf(1f, 0.86f, 1.04f, 0.9f, 1f, 0.88f, 0.96f)
@@ -262,69 +320,123 @@ private fun createBlobPath(size: Float): Path {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun PlayStoreDownloadProgress(progress: Float?) {
-    if (progress != null && progress in 0f..1f) {
-        val animatedProgress by animateFloatAsState(
-            targetValue = progress,
-            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
-            label = "PlayStoreProgress"
-        )
-        CircularWavyProgressIndicator(
-            progress = { animatedProgress },
-            modifier = Modifier.size(36.dp),
-            stroke = Stroke(width = with(LocalDensity.current) { 3.dp.toPx() })
-        )
-    } else {
-        CircularWavyProgressIndicator(
-            modifier = Modifier.size(36.dp),
-            stroke = Stroke(width = with(LocalDensity.current) { 3.dp.toPx() })
+private fun DownloadRowItem(item: DownloadItem, onOpenFile: () -> Unit) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var renameInput by remember { mutableStateOf(item.fileName) }
+    val context = LocalContext.current
+
+    if (showRenameDialog) {
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text("Rename File") },
+            text = {
+                OutlinedTextField(
+                    value = renameInput,
+                    onValueChange = { renameInput = it },
+                    label = { Text("File Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRenameDialog = false
+                    if (renameInput.isNotBlank() && renameInput != item.fileName) {
+                        renameDownloadedFile(context, item, renameInput.trim())
+                    }
+                }) {
+                    Text("Rename")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
-}
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
-@Composable
-private fun DownloadCardItem(item: DownloadItem, onOpenFile: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = MaterialTheme.colorScheme.background,
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
-                    Modifier.clickable(onClick = onOpenFile)
-                } else Modifier
+            .clickable(
+                enabled = item.status == DownloadManager.STATUS_SUCCESSFUL,
+                onClick = onOpenFile
             )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = when (item.status) {
-                        DownloadManager.STATUS_SUCCESSFUL -> Icons.Rounded.FilePresent
-                        DownloadManager.STATUS_FAILED -> Icons.Rounded.ErrorOutline
-                        else -> Icons.Rounded.Downloading
-                    },
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp)
-                )
+                // Leading circular avatar/icon container using surfaceContainerHighest color
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = getFileTypeIcon(item.fileName),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
 
-                Column(modifier = Modifier.weight(1f)) {
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Two-line text column: Title & Subtitle
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text(
                         text = item.fileName,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    val domain = remember(item.fileUrl) { extractDomain(item.fileUrl) }
+                    val formattedSize = remember(item.totalSize, item.bytesDownloaded) {
+                        if (item.totalSize > 0) formatBytes(item.totalSize) else formatBytes(item.bytesDownloaded)
+                    }
+
+                    val subtitleText = when {
+                        item.status == DownloadManager.STATUS_RUNNING -> {
+                            val percentStr = if (item.progress != null) "${(item.progress * 100).toInt()}%" else ""
+                            if (domain.isNotEmpty()) {
+                                "${formatBytes(item.bytesDownloaded)} of $formattedSize • $percentStr • $domain"
+                            } else {
+                                "${formatBytes(item.bytesDownloaded)} of $formattedSize • $percentStr"
+                            }
+                        }
+                        item.status == DownloadManager.STATUS_FAILED -> {
+                            if (domain.isNotEmpty()) "Failed • $formattedSize • $domain" else "Failed • $formattedSize"
+                        }
+                        item.status == DownloadManager.STATUS_PAUSED -> {
+                            if (domain.isNotEmpty()) "Paused • $formattedSize • $domain" else "Paused • $formattedSize"
+                        }
+                        else -> {
+                            if (domain.isNotEmpty()) "$formattedSize • $domain" else formattedSize
+                        }
+                    }
+
                     Text(
-                        text = item.fileUrl,
+                        text = subtitleText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -332,116 +444,65 @@ private fun DownloadCardItem(item: DownloadItem, onOpenFile: () -> Unit) {
                     )
                 }
 
-                var menuExpanded by remember { mutableStateOf(false) }
-                var showRenameDialog by remember { mutableStateOf(false) }
-                var renameInput by remember { mutableStateOf(item.fileName) }
-                val context = LocalContext.current
-
-                if (showRenameDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showRenameDialog = false },
-                        title = { Text("Rename File") },
-                        text = {
-                            OutlinedTextField(
-                                value = renameInput,
-                                onValueChange = { renameInput = it },
-                                label = { Text("File Name") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                showRenameDialog = false
-                                if (renameInput.isNotBlank() && renameInput != item.fileName) {
-                                    renameDownloadedFile(context, item, renameInput.trim())
-                                }
-                            }) {
-                                Text("Rename")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showRenameDialog = false }) {
-                                Text("Cancel")
-                            }
-                        }
-                    )
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
-                        Button(
-                            onClick = onOpenFile,
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.OpenInNew,
-                                contentDescription = "Open file",
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text("Open", style = MaterialTheme.typography.labelMedium)
-                        }
-                    } else if (item.status == DownloadManager.STATUS_RUNNING || item.status == DownloadManager.STATUS_PENDING) {
-                        PlayStoreDownloadProgress(progress = item.progress)
+                // Far right vertical 3-dot overflow menu button
+                Box {
+                    IconButton(
+                        onClick = { menuExpanded = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = "More options",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                Icons.Rounded.MoreVert,
-                                contentDescription = "More options",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
+                            DropdownMenuItem(
+                                text = { Text("Open") },
+                                leadingIcon = { Icon(Icons.Rounded.OpenInNew, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onOpenFile()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Share") },
+                                leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    shareDownloadedFile(context, item)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Rename") },
+                                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    showRenameDialog = true
+                                }
                             )
                         }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }
-                        ) {
-                            if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
-                                DropdownMenuItem(
-                                    text = { Text("Open File") },
-                                    leadingIcon = { Icon(Icons.Rounded.OpenInNew, contentDescription = null) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        onOpenFile()
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Rename") },
-                                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        showRenameDialog = true
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Share") },
-                                    leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        shareDownloadedFile(context, item)
-                                    }
-                                )
+                        DropdownMenuItem(
+                            text = { Text("Copy Link") },
+                            leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                copyDownloadLink(context, item.fileUrl)
                             }
-                            DropdownMenuItem(
-                                text = { Text("Copy Link") },
-                                leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    copyDownloadLink(context, item.fileUrl)
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
-                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    menuExpanded = false
-                                    deleteDownloadedFile(context, item)
-                                }
-                            )
-                        }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                            leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                menuExpanded = false
+                                deleteDownloadedFile(context, item)
+                            }
+                        )
                     }
                 }
             }
@@ -452,29 +513,11 @@ private fun DownloadCardItem(item: DownloadItem, onOpenFile: () -> Unit) {
                     animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
                     label = "Progress"
                 )
-                Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    LinearWavyProgressIndicator(
-                        progress = { animatedProgress },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "${formatBytes(item.bytesDownloaded)} / ${formatBytes(item.totalSize)} • ${(animatedProgress * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "${formatSpeed(item.speedBytesPerSec)} • ETA ${formatEta(item.etaSeconds)}",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+                Spacer(modifier = Modifier.height(6.dp))
+                LinearWavyProgressIndicator(
+                    progress = { animatedProgress },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
@@ -498,6 +541,7 @@ private fun getDownloadItems(
             val soFarCol = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
             val totalCol = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
             val localUriCol = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
+            val timestampCol = cursor.getColumnIndex(DownloadManager.COLUMN_LAST_MODIFIED_TIMESTAMP)
 
             do {
                 val id = if (idCol >= 0) cursor.getLong(idCol) else 0L
@@ -507,6 +551,7 @@ private fun getDownloadItems(
                 val soFar = if (soFarCol >= 0) cursor.getLong(soFarCol) else 0L
                 val total = if (totalCol >= 0) cursor.getLong(totalCol) else 0L
                 val localUri = if (localUriCol >= 0) cursor.getString(localUriCol) else null
+                val timestamp = if (timestampCol >= 0) cursor.getLong(timestampCol) else System.currentTimeMillis()
 
                 val progress = if (total > 0) (soFar.toFloat() / total.toFloat()) else null
                 val prevSoFar = prevBytesMap[id] ?: soFar
@@ -515,14 +560,14 @@ private fun getDownloadItems(
                 val remainingBytes = (total - soFar).coerceAtLeast(0L)
                 val eta = if (speed > 0) remainingBytes / speed else 0L
 
-                list.add(DownloadItem(id, title, uri, progress, status, soFar, total, speed, eta, localUri))
+                list.add(DownloadItem(id, title, uri, progress, status, soFar, total, speed, eta, localUri, timestamp))
             } while (cursor.moveToNext())
             cursor.close()
         }
     } catch (e: Exception) {
         e.printStackTrace()
     }
-    return list.reversed()
+    return list.sortedByDescending { it.timestampMs }
 }
 
 private fun openDownloadedFile(context: Context, item: DownloadItem) {
