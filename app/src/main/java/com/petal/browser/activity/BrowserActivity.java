@@ -2646,6 +2646,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             filePathCallback = null;
             getIntent().setAction("");
         } else if (Intent.ACTION_VIEW.equals(action) && dataUri != null) {
+            String scheme = dataUri.getScheme();
+            if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme) || "about".equalsIgnoreCase(scheme)) {
+                sp.edit().putBoolean("show_overview", false).apply();
+                getIntent().setAction("");
+                addAlbum(null, dataUri.toString(), true);
+                return;
+            }
             String fileName = null;
             // 1. Echten Dateinamen aus der URI ermitteln
             if ("content".equals(dataUri.getScheme())) {

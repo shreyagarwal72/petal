@@ -963,7 +963,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     OutlinedButton(
                                         onClick = {
                                             try {
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com")))
+                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com"))
                                             } catch (e: Exception) { e.printStackTrace() }
                                         },
                                         shape = RoundedCornerShape(12.dp),
@@ -977,7 +977,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     OutlinedButton(
                                         onClick = {
                                             try {
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/issues")))
+                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/issues"))
                                             } catch (e: Exception) { e.printStackTrace() }
                                         },
                                         shape = RoundedCornerShape(12.dp),

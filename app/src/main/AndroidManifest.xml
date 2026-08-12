@@ -53,6 +53,14 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
                 <!-- Fängt jede Form von Text- und Code-Struktur ab (inkl. .txt, .html etc.) -->
                 <data android:mimeType="text/*" />
                 <!-- Sicherheitsnetz für Dateimanager, die JSON/XML als App-Typ statt Text deklarieren -->

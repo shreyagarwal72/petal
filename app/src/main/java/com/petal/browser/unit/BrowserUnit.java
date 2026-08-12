@@ -308,7 +308,15 @@ public class BrowserUnit {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } catch (Exception e) {
-            e.printStackTrace();
+            try {
+                Intent fallbackIntent = new Intent(context, BrowserActivity.class);
+                fallbackIntent.setAction(Intent.ACTION_VIEW);
+                fallbackIntent.setData(uri);
+                fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(fallbackIntent);
+            } catch (Exception ignored) {
+                e.printStackTrace();
+            }
         }
     }
 
