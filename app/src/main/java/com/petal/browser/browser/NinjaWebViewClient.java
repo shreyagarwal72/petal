@@ -425,6 +425,7 @@ public class NinjaWebViewClient extends WebViewClient {
             if (!ninjaWebView.isCamera())
                 //noinspection ConcatenationWithEmptyString
                 view.evaluateJavascript("" + "Object.defineProperty(navigator, 'mediaDevices',{value:null});", null);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
