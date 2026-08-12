@@ -465,6 +465,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         View av = (View) controller;
         if (currentAlbumController != null) currentAlbumController.deactivate();
         currentAlbumController = controller;
+        if (currentAlbumController instanceof NinjaWebView) {
+            ninjaWebView = (NinjaWebView) currentAlbumController;
+        }
         currentAlbumController.activate();
         contentFrame.removeAllViews();
 
