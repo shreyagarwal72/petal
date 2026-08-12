@@ -1,15 +1,18 @@
 /*
  * PetalOverflowMenuSheet.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Material 3 Expressive Options Menu Sheet with 28dp rounded container corners,
- * dark surface container background, spring-animated top icon row, dividers,
- * expandable More Tools section, and zero-jank high performance.
+ * Material 3 Expressive Options Menu Sheet positioned at the bottom right,
+ * expanding outwards from the 3-dots bottom navigation icon with spring scale
+ * animation, 25% background dimming, and zero blur on the menu container itself.
  */
 
 package com.petal.browser.ui.components
 
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
@@ -27,6 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -85,13 +90,17 @@ object PetalOverflowBridge {
                     bottomSheet.background = null
                 }
             }
+            dialog.window?.let { window ->
+                window.setDimAmount(0.25f) // 25% background backdrop dimming/blur
+                window.setBackgroundDrawableResource(android.R.color.transparent)
+            }
+
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                    val useBlur = sp.getBoolean("sp_use_blur", true)
                     val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                     val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
@@ -119,7 +128,6 @@ object PetalOverflowBridge {
                             canGoBack = canGoBack,
                             canGoForward = canGoForward,
                             isDesktopSite = isDesktopSite,
-                            useBlur = useBlur,
                             onGoBack = {
                                 dialog.dismiss()
                                 handler.onGoBack()
@@ -220,7 +228,6 @@ fun PetalOverflowMenuSheet(
     canGoBack: Boolean,
     canGoForward: Boolean,
     isDesktopSite: Boolean,
-    useBlur: Boolean = true,
     onGoBack: () -> Unit,
     onGoForward: () -> Unit,
     onToggleBookmark: () -> Unit,
@@ -243,11 +250,23 @@ fun PetalOverflowMenuSheet(
     onOpenSettings: () -> Unit
 ) {
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
-    val surfaceColor = if (useBlur) {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f)
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
-    }
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { isVisible = true }
+
+    val scale by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0.2f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "MenuExpandScale"
+    )
+
+    val alpha by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "MenuExpandAlpha"
+    )
 
     Box(
         modifier = Modifier
@@ -257,12 +276,18 @@ fun PetalOverflowMenuSheet(
     ) {
         Surface(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 28.dp, bottomEnd = 8.dp),
-            color = surfaceColor,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 8.dp,
             shadowElevation = 12.dp,
             modifier = Modifier
                 .widthIn(max = 350.dp)
                 .padding(end = 12.dp, bottom = 12.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    this.alpha = alpha
+                    transformOrigin = TransformOrigin(1f, 1f)
+                }
         ) {
             Column(
                 modifier = Modifier
@@ -271,213 +296,213 @@ fun PetalOverflowMenuSheet(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-            // Drag Handle Indicator
-            Box(
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                    .align(Alignment.CenterHorizontally)
-            )
+                // Drag Handle Indicator
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                        .align(Alignment.CenterHorizontally)
+                )
 
-            // Header Page Info Card
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                // Header Page Info Card
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(36.dp)
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                if (pageUrl.startsWith("https://")) Icons.Rounded.Lock else Icons.Rounded.Public,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(18.dp)
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    if (pageUrl.startsWith("https://")) Icons.Rounded.Lock else Icons.Rounded.Public,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (pageTitle.isBlank()) "New Tab" else pageTitle,
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = if (pageUrl.isBlank()) "about:blank" else pageUrl,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (pageTitle.isBlank()) "New Tab" else pageTitle,
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = if (pageUrl.isBlank()) "about:blank" else pageUrl,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
                 }
-            }
 
-            // Top Icon Row: Back → Star/Bookmark → Download Site (offline/local) → Refresh
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularIconButton(
-                    icon = Icons.Rounded.ArrowBack,
-                    contentDescription = "Back",
-                    enabled = canGoBack,
-                    onClick = onGoBack
-                )
-                CircularIconButton(
-                    icon = if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                    contentDescription = "Toggle Bookmark",
-                    tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    onClick = onToggleBookmark
-                )
-                CircularIconButton(
-                    icon = Icons.Rounded.DownloadForOffline,
-                    contentDescription = "Download Site (offline/local)",
-                    onClick = onSavePage
-                )
-                CircularIconButton(
-                    icon = Icons.Rounded.Refresh,
-                    contentDescription = "Reload",
-                    onClick = onReload
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Section 1: New Tab, New Private Tab, Desktop Site, Install as App
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                MenuRowItem(
-                    icon = Icons.Rounded.Add,
-                    title = "New tab",
-                    onClick = onNewTab
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.VisibilityOff,
-                    title = "New Private / Incognito tab",
-                    subtitle = "Browse without saving search history",
-                    onClick = onNewIncognitoTab
-                )
-                MenuRowSwitchItem(
-                    icon = Icons.Rounded.DesktopWindows,
-                    title = "Desktop site",
-                    subtitle = "Request desktop version of websites",
-                    checked = isDesktopSite,
-                    onCheckedChange = onToggleDesktopSite
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.AppShortcut,
-                    title = "Install as app",
-                    subtitle = "Add Web App shortcut to Home screen",
-                    onClick = onInstallPwa
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Section 2: History & Delete browsing data
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                MenuRowItem(
-                    icon = Icons.Rounded.History,
-                    title = "History",
-                    onClick = onOpenHistory
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.DeleteSweep,
-                    title = "Delete browsing data",
-                    onClick = onDeleteBrowsingData
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Section 3: Downloads, Bookmarks
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                MenuRowItem(
-                    icon = Icons.Rounded.Download,
-                    title = "Downloads",
-                    onClick = onOpenDownloads
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.Bookmark,
-                    title = "Bookmarks",
-                    onClick = onOpenBookmarks
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            // Section 4: Expandable More tools, View source, Settings
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                MenuRowItem(
-                    icon = Icons.Rounded.Build,
-                    title = "More tools",
-                    trailingIcon = if (isMoreToolsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                    onClick = { isMoreToolsExpanded = !isMoreToolsExpanded }
-                )
-
-                AnimatedVisibility(
-                    visible = isMoreToolsExpanded,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
+                // Top Icon Row: Back → Star/Bookmark → Download Site → Refresh
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(start = 16.dp)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        MenuRowItem(
-                            icon = Icons.Rounded.Search,
-                            title = "Search on site",
-                            onClick = onSearchOnSite
-                        )
-                        MenuRowItem(
-                            icon = Icons.Rounded.Print,
-                            title = "Print page to PDF",
-                            onClick = onPrintPdf
-                        )
-                        MenuRowItem(
-                            icon = Icons.Rounded.SaveAlt,
-                            title = "Save page",
-                            onClick = onSavePage
-                        )
-                        MenuRowItem(
-                            icon = Icons.Rounded.Share,
-                            title = "Share link",
-                            onClick = onShareLink
-                        )
-                    }
+                    CircularIconButton(
+                        icon = Icons.Rounded.ArrowBack,
+                        contentDescription = "Back",
+                        enabled = canGoBack,
+                        onClick = onGoBack
+                    )
+                    CircularIconButton(
+                        icon = if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        contentDescription = "Toggle Bookmark",
+                        tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        onClick = onToggleBookmark
+                    )
+                    CircularIconButton(
+                        icon = Icons.Rounded.DownloadForOffline,
+                        contentDescription = "Download Site",
+                        onClick = onSavePage
+                    )
+                    CircularIconButton(
+                        icon = Icons.Rounded.Refresh,
+                        contentDescription = "Reload",
+                        onClick = onReload
+                    )
                 }
 
-                MenuRowItem(
-                    icon = Icons.Rounded.Code,
-                    title = "View source",
-                    onClick = onViewSource
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.Settings,
-                    title = "Settings",
-                    onClick = onOpenSettings
-                )
-            }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            Spacer(Modifier.height(16.dp))
+                // Section 1: New Tab, New Private Tab, Desktop Site, Install as App
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    MenuRowItem(
+                        icon = Icons.Rounded.Add,
+                        title = "New tab",
+                        onClick = onNewTab
+                    )
+                    MenuRowItem(
+                        icon = Icons.Rounded.VisibilityOff,
+                        title = "New Private / Incognito tab",
+                        subtitle = "Browse without saving search history",
+                        onClick = onNewIncognitoTab
+                    )
+                    MenuRowSwitchItem(
+                        icon = Icons.Rounded.DesktopWindows,
+                        title = "Desktop site",
+                        subtitle = "Request desktop version of websites",
+                        checked = isDesktopSite,
+                        onCheckedChange = onToggleDesktopSite
+                    )
+                    MenuRowItem(
+                        icon = Icons.Rounded.AppShortcut,
+                        title = "Install as app",
+                        subtitle = "Add Web App shortcut to Home screen",
+                        onClick = onInstallPwa
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                // Section 2: History & Delete browsing data
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    MenuRowItem(
+                        icon = Icons.Rounded.History,
+                        title = "History",
+                        onClick = onOpenHistory
+                    )
+                    MenuRowItem(
+                        icon = Icons.Rounded.DeleteSweep,
+                        title = "Delete browsing data",
+                        onClick = onDeleteBrowsingData
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                // Section 3: Downloads, Bookmarks
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    MenuRowItem(
+                        icon = Icons.Rounded.Download,
+                        title = "Downloads",
+                        onClick = onOpenDownloads
+                    )
+                    MenuRowItem(
+                        icon = Icons.Rounded.Bookmark,
+                        title = "Bookmarks",
+                        onClick = onOpenBookmarks
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                // Section 4: Expandable More tools, View source, Settings
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    MenuRowItem(
+                        icon = Icons.Rounded.Build,
+                        title = "More tools",
+                        trailingIcon = if (isMoreToolsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        onClick = { isMoreToolsExpanded = !isMoreToolsExpanded }
+                    )
+
+                    AnimatedVisibility(
+                        visible = isMoreToolsExpanded,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(start = 16.dp)
+                                .fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            MenuRowItem(
+                                icon = Icons.Rounded.Search,
+                                title = "Search on site",
+                                onClick = onSearchOnSite
+                            )
+                            MenuRowItem(
+                                icon = Icons.Rounded.Print,
+                                title = "Print page to PDF",
+                                onClick = onPrintPdf
+                            )
+                            MenuRowItem(
+                                icon = Icons.Rounded.SaveAlt,
+                                title = "Save page",
+                                onClick = onSavePage
+                            )
+                            MenuRowItem(
+                                icon = Icons.Rounded.Share,
+                                title = "Share link",
+                                onClick = onShareLink
+                            )
+                        }
+                    }
+
+                    MenuRowItem(
+                        icon = Icons.Rounded.Code,
+                        title = "View source",
+                        onClick = onViewSource
+                    )
+                    MenuRowItem(
+                        icon = Icons.Rounded.Settings,
+                        title = "Settings",
+                        onClick = onOpenSettings
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+            }
         }
     }
-}
 }
 
 @Composable
@@ -618,4 +643,3 @@ private fun MenuRowSwitchItem(
         }
     }
 }
-

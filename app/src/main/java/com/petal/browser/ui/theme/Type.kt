@@ -29,37 +29,52 @@ private fun variableFont(resId: Int, weight: Int): FontFamily = FontFamily(
     )
 )
 
-private fun weightedTiers(resId: Int, top: Int = 900): Typography {
-    val display = variableFont(resId, top)
-    val headline = variableFont(resId, (top - 100).coerceAtLeast(100))
-    val title = variableFont(resId, (top - 200).coerceAtLeast(100))
-    val body = variableFont(resId, 450)
-    val label = variableFont(resId, 600)
-    return Typography(
-        displayLarge = TextStyle(fontFamily = display, fontWeight = FontWeight.Black, fontSize = 57.sp, lineHeight = 64.sp),
-        displayMedium = TextStyle(fontFamily = display, fontWeight = FontWeight.Black, fontSize = 45.sp, lineHeight = 52.sp),
-        displaySmall = TextStyle(fontFamily = display, fontWeight = FontWeight.Black, fontSize = 36.sp, lineHeight = 44.sp),
-        headlineLarge = TextStyle(fontFamily = headline, fontWeight = FontWeight.ExtraBold, fontSize = 32.sp, lineHeight = 40.sp),
-        headlineMedium = TextStyle(fontFamily = headline, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, lineHeight = 36.sp),
-        headlineSmall = TextStyle(fontFamily = headline, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, lineHeight = 32.sp),
-        titleLarge = TextStyle(fontFamily = title, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp),
-        titleMedium = TextStyle(fontFamily = title, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
-        titleSmall = TextStyle(fontFamily = title, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-        bodyLarge = TextStyle(fontFamily = body, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.3.sp),
-        bodyMedium = TextStyle(fontFamily = body, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.2.sp),
-        bodySmall = TextStyle(fontFamily = body, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
-        labelLarge = TextStyle(fontFamily = label, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-        labelMedium = TextStyle(fontFamily = label, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
-        labelSmall = TextStyle(fontFamily = label, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp)
-    )
-}
+private fun nunitoFont(weight: Int): FontFamily = variableFont(R.font.nunito_variable, weight)
+
+private data class Tiers(
+    val display: FontFamily,
+    val headline: FontFamily,
+    val title: FontFamily,
+    val body: FontFamily,
+    val label: FontFamily
+)
+
+private fun buildTypography(t: Tiers): Typography = Typography(
+    displayLarge = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Black, fontSize = 64.sp, lineHeight = 68.sp, letterSpacing = (-1).sp),
+    displayMedium = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Black, fontSize = 48.sp, lineHeight = 54.sp, letterSpacing = (-0.5).sp),
+    displaySmall = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Black, fontSize = 38.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
+    headlineLarge = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.ExtraBold, fontSize = 32.sp, lineHeight = 40.sp),
+    headlineMedium = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, lineHeight = 36.sp),
+    headlineSmall = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, lineHeight = 32.sp),
+    titleLarge = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp),
+    titleMedium = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
+    titleSmall = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    bodyLarge = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.3.sp),
+    bodyMedium = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.2.sp),
+    bodySmall = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
+    labelLarge = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    labelMedium = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
+    labelSmall = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp)
+)
+
+private fun weightedTiers(resId: Int, top: Int = 900): Tiers = Tiers(
+    display = variableFont(resId, top),
+    headline = variableFont(resId, (top - 100).coerceAtLeast(100)),
+    title = variableFont(resId, (top - 200).coerceAtLeast(100)),
+    body = variableFont(resId, 450),
+    label = variableFont(resId, 600)
+)
 
 fun petalTypography(appFont: AppFont): Typography = when (appFont) {
-    AppFont.SYSTEM -> Typography()
-    AppFont.NUNITO -> weightedTiers(R.font.nunito_variable, top = 900)
-    AppFont.INTER -> weightedTiers(R.font.inter_variable, top = 900)
-    AppFont.OUTFIT -> weightedTiers(R.font.outfit_variable, top = 900)
-    AppFont.LEXEND -> weightedTiers(R.font.lexend_variable, top = 900)
-    AppFont.MANROPE -> weightedTiers(R.font.manrope_variable, top = 800)
-    AppFont.GROTESK -> weightedTiers(R.font.spacegrotesk_variable, top = 700)
+    AppFont.SYSTEM -> buildTypography(
+        Tiers(FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default)
+    )
+    AppFont.NUNITO -> buildTypography(
+        Tiers(nunitoFont(1000), nunitoFont(850), nunitoFont(800), nunitoFont(600), nunitoFont(750))
+    )
+    AppFont.INTER -> buildTypography(weightedTiers(R.font.inter_variable))
+    AppFont.OUTFIT -> buildTypography(weightedTiers(R.font.outfit_variable))
+    AppFont.LEXEND -> buildTypography(weightedTiers(R.font.lexend_variable))
+    AppFont.MANROPE -> buildTypography(weightedTiers(R.font.manrope_variable, top = 800))
+    AppFont.GROTESK -> buildTypography(weightedTiers(R.font.spacegrotesk_variable, top = 700))
 }
