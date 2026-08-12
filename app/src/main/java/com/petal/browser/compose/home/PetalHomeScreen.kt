@@ -84,7 +84,7 @@ data class PetalShortcut(
 )
 
 val defaultPetalShortcuts = listOf(
-    PetalShortcut("YouTube", "https://youtube.com", "youtube", Color(0xFFFF0000)),
+    PetalShortcut("YouTube", "https://www.youtube.com", "youtube", Color(0xFFFF0000)),
     PetalShortcut("GitHub", "https://github.com", "github", Color(0xFF24292E)),
     PetalShortcut("Wikipedia", "https://wikipedia.org", "wikipedia", Color(0xFF43464E)),
     PetalShortcut("DuckDuckGo", "https://duckduckgo.com", "duckduckgo", Color(0xFFDE5833)),

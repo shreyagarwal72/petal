@@ -537,7 +537,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 @Override
                 public void onOpenUrl(String u) {
                     if (ninjaWebView != null) {
-                        String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, u);
+                        String targetUrl = u;
+                        if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+                            targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, u);
+                        }
                         ninjaWebView.loadUrl(targetUrl);
                         showAlbum(currentAlbumController, targetUrl);
                     }
@@ -1291,8 +1294,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             composeAddressBar.setVisibility(VISIBLE);
 
             ObjectAnimator anim1 = ObjectAnimator.ofFloat(composeAddressBar, "translationY", 0f);
-            anim1.setDuration(300);
-            anim1.setInterpolator(new android.view.animation.OvershootInterpolator(1.1f));
+            anim1.setDuration(280);
+            anim1.setInterpolator(new android.view.animation.DecelerateInterpolator(1.2f));
             anim1.start();
 
             if (fab_bubble != null) {
@@ -1300,7 +1303,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         .scaleX(0f)
                         .scaleY(0f)
                         .alpha(0f)
-                        .setDuration(200)
+                        .setDuration(260)
+                        .setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f))
                         .withEndAction(() -> fab_bubble.setVisibility(GONE))
                         .start();
             }

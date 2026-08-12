@@ -93,6 +93,7 @@ object PetalOverflowBridge {
             dialog.window?.let { window ->
                 window.setDimAmount(0.25f) // 25% background backdrop dimming/blur
                 window.setBackgroundDrawableResource(android.R.color.transparent)
+                window.setWindowAnimations(com.google.android.material.R.style.Animation_Design_BottomSheetDialog)
             }
 
             val composeView = ComposeView(activity).apply {
