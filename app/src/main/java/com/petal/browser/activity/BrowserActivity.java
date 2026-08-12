@@ -879,7 +879,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     });
                 } }
             else if (menuItem.getItemId() == R.id.page_3) {
-                fab_overview.setImageResource(R.drawable.icon_history);
+                if (fab_overview != null) fab_overview.setImageResource(R.drawable.icon_history);
                 overViewTab = getString(R.string.album_title_history);
                 intPage.set(R.id.page_3);
                 listView.setVisibility(VISIBLE);
@@ -1091,63 +1091,72 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         TextInputLayout search_textField  = dialogViewSearch.findViewById(R.id.search_textField);
-
-        search_textField.setStartIconOnClickListener(v -> {
-            if (Objects.requireNonNull(search_input.getText()).toString().isEmpty()) {
-                hideSearch();
-            } else {
-                search_input.setText("");
-            }
-        });
-        search_textField.setEndIconOnLongClickListener(v -> {
-            String query = Objects.requireNonNull(search_input.getText()).toString().trim();
-            if (!query.isEmpty() && !query.equals(ninjaWebView.getUrl())) {
-                showDialogCustomSearches(query);
-            } else {
-                NinjaToast.show(this, R.string.toast_input_empty);
-            }
-            return false;
-        });
-        search_textField.setEndIconOnClickListener(v -> {
-            String query = Objects.requireNonNull(search_input.getText()).toString().trim();
-            handleFinalSearch(query);
-        });
-        search_input.setOnEditorActionListener((v, actionId, event) -> {
-            String query = Objects.requireNonNull(search_input.getText()).toString().trim();
-            handleFinalSearch(query);
-            return true;
-        });
-
-        search_input.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String liveText = s.toString().trim();
-                boolean hasText = !liveText.isEmpty();
-                if (hasText) {
-                    TypedValue typedValue = new TypedValue();
-                    context.getTheme().resolveAttribute(R.attr.colorOnSurface, typedValue, true);
-                    int color = typedValue.data;
-                    search_textField.setStartIconTintList(ColorStateList.valueOf(color));
-                    search_textField.setEndIconTintList(ColorStateList.valueOf(color));
-                } else {
-                    search_textField.setStartIconTintList(ColorStateList.valueOf(Color.GRAY));
-                    search_textField.setEndIconTintList(ColorStateList.valueOf(Color.GRAY));
+        if (search_textField != null) {
+            search_textField.setStartIconOnClickListener(v -> {
+                if (search_input != null && Objects.requireNonNull(search_input.getText()).toString().isEmpty()) {
+                    hideSearch();
+                } else if (search_input != null) {
+                    search_input.setText("");
                 }
-                adapterSearch.getFilter().filter(s);
-                sp.edit().putString("searchInput", s.toString()).apply();// Hier kannst du den Live-String direkt verarbeiten (z.B. für Vorschläge)
-            }
+            });
+            search_textField.setEndIconOnLongClickListener(v -> {
+                String query = (search_input != null && search_input.getText() != null) ? search_input.getText().toString().trim() : "";
+                if (!query.isEmpty() && (ninjaWebView == null || !query.equals(ninjaWebView.getUrl()))) {
+                    showDialogCustomSearches(query);
+                } else {
+                    NinjaToast.show(this, R.string.toast_input_empty);
+                }
+                return false;
+            });
+            search_textField.setEndIconOnClickListener(v -> {
+                String query = (search_input != null && search_input.getText() != null) ? search_input.getText().toString().trim() : "";
+                handleFinalSearch(query);
+            });
+        }
+        if (search_input != null) {
+            search_input.setOnEditorActionListener((v, actionId, event) -> {
+                String query = (search_input.getText() != null) ? search_input.getText().toString().trim() : "";
+                handleFinalSearch(query);
+                return true;
+            });
 
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
-        fab_overview.setOnClickListener(v -> showOverview());
-        fab_overview.setOnLongClickListener(v -> {
-            performGesture("setting_gesture_overViewButton", ninjaWebView.getUrl());
-            return true;
-        });
+            search_input.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    String liveText = s.toString().trim();
+                    boolean hasText = !liveText.isEmpty();
+                    if (search_textField != null) {
+                        if (hasText) {
+                            TypedValue typedValue = new TypedValue();
+                            context.getTheme().resolveAttribute(R.attr.colorOnSurface, typedValue, true);
+                            int color = typedValue.data;
+                            search_textField.setStartIconTintList(ColorStateList.valueOf(color));
+                            search_textField.setEndIconTintList(ColorStateList.valueOf(color));
+                        } else {
+                            search_textField.setStartIconTintList(ColorStateList.valueOf(Color.GRAY));
+                            search_textField.setEndIconTintList(ColorStateList.valueOf(Color.GRAY));
+                        }
+                    }
+                    if (adapterSearch != null && adapterSearch.getFilter() != null) {
+                        adapterSearch.getFilter().filter(s);
+                    }
+                    sp.edit().putString("searchInput", s.toString()).apply();
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+        if (fab_overview != null) {
+            fab_overview.setOnClickListener(v -> showOverview());
+            fab_overview.setOnLongClickListener(v -> {
+                performGesture("setting_gesture_overViewButton", ninjaWebView != null ? ninjaWebView.getUrl() : "");
+                return true;
+            });
+        }
     }
 
     @SuppressLint({"ClickableViewAccessibility", "UnsafeOptInUsageError"})
