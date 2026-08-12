@@ -12,6 +12,7 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,18 +25,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import kotlinx.coroutines.delay
+import kotlin.math.cos
+import kotlin.math.sin
 
 data class DownloadItem(
     val id: Long,
@@ -134,33 +140,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         if (downloadList.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Rounded.DownloadDone,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        "No Downloads Found",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "Downloaded files will appear here",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            DownloadsEmptyState(modifier = Modifier.padding(innerPadding))
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -176,6 +156,87 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DownloadsEmptyState(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier.size(140.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            val blobColor = MaterialTheme.colorScheme.primary
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawPath(path = createBlobPath(size.width), color = blobColor)
+            }
+            Icon(
+                imageVector = Icons.Rounded.Download,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(60.dp)
+            )
+        }
+
+        Spacer(Modifier.height(28.dp))
+
+        Text(
+            text = "You'll find your downloads here",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        Text(
+            text = "You can save files to view offline or share in other apps",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+/**
+ * Builds an organic, rounded "blob" shape (irregular squircle/hexagon)
+ * used as the background behind the empty-state icon.
+ */
+private fun createBlobPath(size: Float): Path {
+    val points = 7
+    val radiusVariance = floatArrayOf(1f, 0.86f, 1.04f, 0.9f, 1f, 0.88f, 0.96f)
+    val baseRadius = size / 2.15f
+    val center = size / 2f
+
+    val vertices = (0 until points).map { i ->
+        val angle = (2 * Math.PI / points) * i - Math.PI / 2
+        val r = baseRadius * radiusVariance[i % radiusVariance.size]
+        Offset(
+            x = (center + r * cos(angle)).toFloat(),
+            y = (center + r * sin(angle)).toFloat()
+        )
+    }
+
+    val midPoints = (0 until points).map { i ->
+        val p1 = vertices[i]
+        val p2 = vertices[(i + 1) % points]
+        Offset((p1.x + p2.x) / 2f, (p1.y + p2.y) / 2f)
+    }
+
+    return Path().apply {
+        moveTo(midPoints[0].x, midPoints[0].y)
+        for (i in 0 until points) {
+            val vertex = vertices[(i + 1) % points]
+            val mid = midPoints[(i + 1) % points]
+            quadraticBezierTo(vertex.x, vertex.y, mid.x, mid.y)
+        }
+        close()
     }
 }
 
