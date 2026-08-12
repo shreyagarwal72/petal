@@ -13,9 +13,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Parcelable;
 import android.provider.Settings;
 import android.util.Log;
 import android.webkit.CookieManager;
@@ -35,6 +37,8 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+
+import java.util.ArrayList;
 
 import java.util.List;
 import java.util.Locale;
@@ -305,8 +309,36 @@ public class BrowserUnit {
         if (context == null || uri == null) return;
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
+            PackageManager pm = context.getPackageManager();
+            List<ResolveInfo> resolveInfos = pm.queryIntentActivities(intent, 0);
+            List<Intent> targetIntents = new ArrayList<>();
+
+            for (ResolveInfo info : resolveInfos) {
+                String packageName = info.activityInfo.packageName;
+                if (!packageName.equals(context.getPackageName())) {
+                    Intent targetIntent = new Intent(Intent.ACTION_VIEW, uri);
+                    targetIntent.setPackage(packageName);
+                    if (!(context instanceof Activity)) {
+                        targetIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    }
+                    targetIntents.add(targetIntent);
+                }
+            }
+
+            if (!targetIntents.isEmpty()) {
+                Intent chooserIntent = Intent.createChooser(targetIntents.remove(targetIntents.size() - 1), null);
+                if (!targetIntents.isEmpty()) {
+                    chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, targetIntents.toArray(new Parcelable[0]));
+                }
+                chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(chooserIntent);
+            } else {
+                Intent fallbackIntent = new Intent(context, BrowserActivity.class);
+                fallbackIntent.setAction(Intent.ACTION_VIEW);
+                fallbackIntent.setData(uri);
+                fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(fallbackIntent);
+            }
         } catch (Exception e) {
             Log.e("BrowserUnit", "Failed to launch ACTION_VIEW for " + uri, e);
             try {
