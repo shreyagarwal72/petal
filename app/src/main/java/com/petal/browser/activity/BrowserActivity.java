@@ -1461,8 +1461,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (btnIncognito != null) {
             btnIncognito.setOnClickListener(v -> {
                 popupWindow.dismiss();
-                addAlbum("Incognito Tab", sp.getString("favoriteURL", "about:blank"), true);
-                NinjaToast.show(BrowserActivity.this, "Opened Incognito Tab");
+                addAlbum("Incognito Tab", sp.getString("favoriteURL", "about:blank"), true, true);
+                NinjaToast.show(BrowserActivity.this, "Opened Chrome Incognito Tab");
             });
         }
         View btnHistory = customView.findViewById(R.id.menu_history);
@@ -2748,9 +2748,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return stringBuilder.toString();
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     private void setWebView(String title, final String url, final boolean foreground) {
+        setWebView(title, url, foreground, false);
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito) {
         ninjaWebView = new NinjaWebView(context);
+        if (isIncognito) {
+            ninjaWebView.setIncognito(true);
+        }
         ninjaWebView.setOnScrollChangeListener(new NinjaWebView.OnScrollChangeListener() {
             @Override
             public void onScrollDown() {
@@ -2866,7 +2873,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     private synchronized void addAlbum(String title, final String url, final boolean foreground) {
-        setWebView(title, url, foreground);
+        setWebView(title, url, foreground, false);
+    }
+
+    private synchronized void addAlbum(String title, final String url, final boolean foreground, final boolean isIncognito) {
+        setWebView(title, url, foreground, isIncognito);
     }
 
     private void triggerRebirth(Context context) {

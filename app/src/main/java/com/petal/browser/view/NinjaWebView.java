@@ -59,6 +59,7 @@ public class NinjaWebView extends WebView implements AlbumController {
     public boolean adBlock;
     public boolean saveData;
     public boolean camera;
+    private boolean isIncognito = false;
     private Context context;
     private boolean stopped;
     private AdapterTabs album;
@@ -467,5 +468,23 @@ public class NinjaWebView extends WebView implements AlbumController {
 
     public void setPredecessor(AlbumController predecessor) {
         this.predecessor = predecessor;
+    }
+
+    public boolean isIncognito() {
+        return isIncognito;
+    }
+
+    public void setIncognito(boolean incognito) {
+        this.isIncognito = incognito;
+        if (incognito) {
+            this.history = false;
+            WebSettings webSettings = getSettings();
+            webSettings.setSaveFormData(false);
+            webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+            try {
+                CookieManager.getInstance().setAcceptCookie(false);
+                CookieManager.getInstance().setAcceptThirdPartyCookies(this, false);
+            } catch (Exception ignored) {}
+        }
     }
 }
