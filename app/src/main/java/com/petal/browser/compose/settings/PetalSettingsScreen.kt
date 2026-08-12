@@ -523,12 +523,19 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
 
                         OutlinedButton(
                             onClick = {
-                                try {
-                                    context.startActivity(Intent(Settings.ACTION_PRIVATE_DNS_SETTINGS))
-                                } catch (e: Exception) {
+                                val intents = listOf(
+                                    Intent("android.settings.PRIVATE_DNS_SETTINGS"),
+                                    Intent(Settings.ACTION_WIRELESS_SETTINGS),
+                                    Intent(Settings.ACTION_SETTINGS)
+                                )
+                                for (intent in intents) {
                                     try {
-                                        context.startActivity(Intent(Settings.ACTION_SETTINGS))
-                                    } catch (ex: Exception) { ex.printStackTrace() }
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        context.startActivity(intent)
+                                        break
+                                    } catch (e: Exception) {
+                                        // continue to next fallback
+                                    }
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
