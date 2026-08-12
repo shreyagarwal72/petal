@@ -66,7 +66,27 @@ object PetalHistoryBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
-                    PetalExpressiveTheme {
+                    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+                val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
+                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
+                val dynamicColor = sp.getBoolean("useDynamicColor", false)
+                val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                val appFont = remember(fontName) {
+                    try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }
+                }
+                val colorStyle = remember(styleName) {
+                    try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                }
+
+                PetalExpressiveTheme(
+                    dynamicColor = dynamicColor,
+                    useAmoled = isAmoled,
+                    appFont = appFont,
+                    colorStyle = colorStyle,
+                    paletteId = paletteId
+                ) {
                         PetalHistoryScreen(
                             onOpenUrl = { url ->
                                 try { dialog.dismiss() } catch (ignored: Exception) {}

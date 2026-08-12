@@ -268,11 +268,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             v.setBackgroundColor(ContextCompat.getColor(context, R.color.md_theme_background));
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
             controller.setAppearanceLightStatusBars(false);
-            if (isKeyboardVisible) {
-                v.setPadding(0, 0, 0, keyboardHeight);
-            } else {
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            }
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, isKeyboardVisible ? keyboardHeight : systemBars.bottom);
             return insets;
         });
 
@@ -635,16 +631,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public synchronized void updateProgress(int progress) {
-        progressBar.setProgressCompat(progress, true);
-        if (progress < 100) {
-            progressBar.setVisibility(VISIBLE);
-        } else {
-            progressBar.setVisibility(GONE);
-            updateOmniBox();
-            saveOpenedTabs();
-            FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken);
-            final Handler handler = new Handler();
-            handler.postDelayed(() -> FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken), 500);
+        androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
+        if (progressBarCompose != null) {
+            com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(progressBarCompose, progress);
+        }
+        if (progressBar != null) {
+            progressBar.setProgressCompat(progress, true);
+            if (progress < 100) {
+                progressBar.setVisibility(VISIBLE);
+            } else {
+                progressBar.setVisibility(GONE);
+                updateOmniBox();
+                saveOpenedTabs();
+                FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken);
+                final Handler handler = new Handler();
+                handler.postDelayed(() -> FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken), 500);
+            }
         }
     }
 
@@ -965,6 +967,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         fab_overview = findViewById(R.id.fab_overview);
         list_search = dialogViewSearch.findViewById(R.id.list_search);
         progressBar = findViewById(R.id.main_progress_bar);
+        androidx.compose.ui.platform.ComposeView progressBarComposeView = findViewById(R.id.main_progress_bar_compose);
+        if (progressBarComposeView != null) {
+            androidx.compose.ui.platform.ComposeView fancyProgress = com.petal.browser.ui.components.PetalProgressBarBridge.createProgressView(this);
+            ViewGroup parent = (ViewGroup) progressBarComposeView.getParent();
+            if (parent != null) {
+                int index = parent.indexOfChild(progressBarComposeView);
+                parent.removeView(progressBarComposeView);
+                fancyProgress.setId(R.id.main_progress_bar_compose);
+                fancyProgress.setLayoutParams(progressBarComposeView.getLayoutParams());
+                parent.addView(fancyProgress, index);
+            }
+        }
         badgeDrawable = BadgeDrawable.create(context);
 
         TypedValue typedValue = new TypedValue();
@@ -1387,175 +1401,163 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void showOverflowMenu(View anchorView) {
-        View customView = LayoutInflater.from(this).inflate(R.layout.popup_overflow_menu, null);
-        View navView = findViewById(R.id.bottom_nav_compose);
-        int popupWidth = (navView != null && navView.getWidth() > 0) ? navView.getWidth() : (int) (280 * getResources().getDisplayMetrics().density);
-        PopupWindow popupWindow = new PopupWindow(customView, popupWidth, ViewGroup.LayoutParams.WRAP_CONTENT, true);
-        popupWindow.setElevation(16f);
-        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        boolean isBookmarked = false;
+        if (ninjaWebView != null && ninjaWebView.getUrl() != null) {
+            RecordAction action = new RecordAction(this);
+            action.open(false);
+            isBookmarked = action.checkBookmark(ninjaWebView.getUrl());
+            action.close();
+        }
+        boolean canGoForward = ninjaWebView != null && ninjaWebView.canGoForward();
+        String profile = NinjaWebView.getProfile();
+        boolean isDesktopSite = sp.getBoolean(profile + "_desktop", false);
 
-        WindowManager.LayoutParams lp = getWindow().getAttributes();
-        lp.alpha = 0.6f;
-        getWindow().setAttributes(lp);
-
-        popupWindow.setOnDismissListener(() -> {
-            WindowManager.LayoutParams p = getWindow().getAttributes();
-            p.alpha = 1.0f;
-            getWindow().setAttributes(p);
-        });
-
-        // Top Row Actions
-        View btnForward = customView.findViewById(R.id.menu_forward);
-        if (btnForward != null) {
-            btnForward.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                if (ninjaWebView != null && ninjaWebView.canGoForward()) {
-                    ninjaWebView.goForward();
-                }
-            });
-        }
-        View btnBookmark = customView.findViewById(R.id.menu_bookmark);
-        if (btnBookmark != null) {
-            btnBookmark.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                if (ninjaWebView != null) {
-                    saveBookmark(ninjaWebView.getTitle(), ninjaWebView.getUrl());
-                }
-            });
-        }
-        View btnDownloadShortcut = customView.findViewById(R.id.menu_downloads_shortcut);
-        if (btnDownloadShortcut != null) {
-            btnDownloadShortcut.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                showDownloads();
-            });
-        }
-        View btnPageInfo = customView.findViewById(R.id.menu_page_info);
-        if (btnPageInfo != null) {
-            btnPageInfo.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                if (ninjaWebView != null && fab_menu != null) {
-                    showDialogFastToggle(HelperUnit.domain(ninjaWebView.getUrl()), ninjaWebView.getUrl(), fab_menu);
-                }
-            });
-        }
-        View btnReload = customView.findViewById(R.id.menu_reload);
-        if (btnReload != null) {
-            btnReload.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                if (ninjaWebView != null) {
-                    ninjaWebView.reload();
-                }
-            });
-        }
-
-        // List Actions
-        View btnNewTab = customView.findViewById(R.id.menu_new_tab);
-        if (btnNewTab != null) {
-            btnNewTab.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
-            });
-        }
-        View btnIncognito = customView.findViewById(R.id.menu_incognito_tab);
-        if (btnIncognito != null) {
-            btnIncognito.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                addAlbum("Incognito Tab", sp.getString("favoriteURL", "about:blank"), true, true);
-                NinjaToast.show(BrowserActivity.this, "Opened Chrome Incognito Tab");
-            });
-        }
-        View btnHistory = customView.findViewById(R.id.menu_history);
-        if (btnHistory != null) {
-            btnHistory.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                com.petal.browser.compose.history.PetalHistoryBridge.showHistory(
-                    BrowserActivity.this,
-                    url -> {
-                        if (ninjaWebView != null) {
-                            ninjaWebView.loadUrl(url);
-                        }
-                    },
-                    () -> startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class))
-                );
-            });
-        }
-        View btnDeleteData = customView.findViewById(R.id.menu_delete_data);
-        if (btnDeleteData != null) {
-            btnDeleteData.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class));
-            });
-        }
-        View btnDownloads = customView.findViewById(R.id.menu_downloads);
-        if (btnDownloads != null) {
-            btnDownloads.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                showDownloads();
-            });
-        }
-        View btnBookmarks = customView.findViewById(R.id.menu_bookmarks);
-        if (btnBookmarks != null) {
-            btnBookmarks.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                showOverview();
-            });
-        }
-        View btnBookmarkAll = customView.findViewById(R.id.menu_bookmark_all);
-        if (btnBookmarkAll != null) {
-            btnBookmarkAll.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                for (com.petal.browser.browser.AlbumController album : com.petal.browser.browser.BrowserContainer.list()) {
-                    if (album instanceof NinjaWebView) {
-                        NinjaWebView webView = (NinjaWebView) album;
-                        if (webView.getUrl() != null && !webView.getUrl().isEmpty()) {
-                            saveBookmark(webView.getTitle(), webView.getUrl());
-                        }
+        com.petal.browser.ui.components.PetalOverflowBridge.showOverflowMenu(
+            this,
+            ninjaWebView != null && ninjaWebView.getTitle() != null ? ninjaWebView.getTitle() : "",
+            ninjaWebView != null && ninjaWebView.getUrl() != null ? ninjaWebView.getUrl() : "",
+            isBookmarked,
+            canGoForward,
+            isDesktopSite,
+            new com.petal.browser.ui.components.PetalOverflowMenuActionHandler() {
+                @Override
+                public void onGoForward() {
+                    if (ninjaWebView != null && ninjaWebView.canGoForward()) {
+                        ninjaWebView.goForward();
                     }
                 }
-                NinjaToast.show(BrowserActivity.this, R.string.app_done);
-            });
-        }
-        View btnSearchSite = customView.findViewById(R.id.menu_search_site);
-        if (btnSearchSite != null) {
-            btnSearchSite.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                searchOnSite();
-            });
-        }
-        View btnShare = customView.findViewById(R.id.menu_share);
-        if (btnShare != null) {
-            btnShare.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                if (ninjaWebView != null) {
-                    shareLink(ninjaWebView.getTitle(), ninjaWebView.getUrl());
-                }
-            });
-        }
-        View btnSettings = customView.findViewById(R.id.menu_settings);
-        if (btnSettings != null) {
-            btnSettings.setOnClickListener(v -> {
-                popupWindow.dismiss();
-                try {
-                    contentFrame.removeAllViews();
-                    if (appBar != null) appBar.setVisibility(GONE);
-                    LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
-                    if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
-                    View settingsView = com.petal.browser.compose.settings.PetalSettingsBridge.createSettingsView(BrowserActivity.this, () -> {
-                        showAlbum(currentAlbumController);
-                        return kotlin.Unit.INSTANCE;
-                    });
-                    contentFrame.addView(settingsView);
-                } catch (Exception e) {
-                    startActivity(new Intent(BrowserActivity.this, Settings_Activity.class));
-                }
-            });
-        }
 
-        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
-        int marginX = (int) (12 * dm.density);
-        int marginY = (int) (80 * dm.density);
-        popupWindow.showAtLocation(getWindow().getDecorView(), android.view.Gravity.BOTTOM | android.view.Gravity.END, marginX, marginY);
+                @Override
+                public void onToggleBookmark() {
+                    if (ninjaWebView != null && ninjaWebView.getUrl() != null) {
+                        saveBookmark(ninjaWebView.getTitle(), ninjaWebView.getUrl());
+                    }
+                }
+
+                @Override
+                public void onOpenDownloadsShortcut() {
+                    showDownloads();
+                }
+
+                @Override
+                public void onOpenPageInfo() {
+                    if (ninjaWebView != null && fab_menu != null) {
+                        showDialogFastToggle(HelperUnit.domain(ninjaWebView.getUrl()), ninjaWebView.getUrl(), fab_menu);
+                    }
+                }
+
+                @Override
+                public void onReload() {
+                    if (ninjaWebView != null) {
+                        ninjaWebView.reload();
+                    }
+                }
+
+                @Override
+                public void onToggleDesktopSite(boolean enabled) {
+                    sp.edit().putBoolean(profile + "_desktop", enabled).apply();
+                    if (ninjaWebView != null) {
+                        ninjaWebView.initWebSettings();
+                        ninjaWebView.reload();
+                    }
+                    NinjaToast.show(BrowserActivity.this, enabled ? "Desktop site requested" : "Mobile site requested");
+                }
+
+                @Override
+                public void onNewTab() {
+                    addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
+                }
+
+                @Override
+                public void onNewIncognitoTab() {
+                    addAlbum("Incognito Tab", sp.getString("favoriteURL", "about:blank"), true, true);
+                    NinjaToast.show(BrowserActivity.this, "Opened Incognito Tab");
+                }
+
+                @Override
+                public void onOpenHistory() {
+                    com.petal.browser.compose.history.PetalHistoryBridge.showHistory(
+                        BrowserActivity.this,
+                        url -> {
+                            if (ninjaWebView != null) {
+                                ninjaWebView.loadUrl(url);
+                            }
+                        },
+                        () -> startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class))
+                    );
+                }
+
+                @Override
+                public void onDeleteBrowsingData() {
+                    startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class));
+                }
+
+                @Override
+                public void onOpenDownloads() {
+                    showDownloads();
+                }
+
+                @Override
+                public void onOpenBookmarks() {
+                    showOverview();
+                }
+
+                @Override
+                public void onBookmarkAllTabs() {
+                    for (com.petal.browser.browser.AlbumController album : com.petal.browser.browser.BrowserContainer.list()) {
+                        if (album instanceof NinjaWebView) {
+                            NinjaWebView webView = (NinjaWebView) album;
+                            if (webView.getUrl() != null && !webView.getUrl().isEmpty()) {
+                                saveBookmark(webView.getTitle(), webView.getUrl());
+                            }
+                        }
+                    }
+                    NinjaToast.show(BrowserActivity.this, R.string.app_done);
+                }
+
+                @Override
+                public void onSearchOnSite() {
+                    searchOnSite();
+                }
+
+                @Override
+                public void onPrintPdf() {
+                    try {
+                        createWebPrintJob(ninjaWebView);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onSavePage() {
+                    try {
+                        saveBookmark(ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onShareLink() {
+                    if (ninjaWebView != null) {
+                        shareLink(ninjaWebView.getTitle(), ninjaWebView.getUrl());
+                    }
+                }
+
+                @Override
+                public void onViewSource() {
+                    if (ninjaWebView != null && ninjaWebView.getUrl() != null) {
+                        ninjaWebView.loadUrl("view-source:" + ninjaWebView.getUrl());
+                    }
+                }
+
+                @Override
+                public void onOpenSettings() {
+                    openSettingsScreen();
+                }
+            }
+        );
     }
 
     public void showDownloads() {
@@ -2898,6 +2900,41 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public static View getView() {
-        return ninjaWebView.getRootView();
+        return ninjaWebView != null ? ninjaWebView.getRootView() : null;
+    }
+
+    private void openSettingsScreen() {
+        try {
+            contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View settingsView = com.petal.browser.compose.settings.PetalSettingsBridge.createSettingsView(BrowserActivity.this, () -> {
+                showAlbum(currentAlbumController);
+                return kotlin.Unit.INSTANCE;
+            });
+            contentFrame.addView(settingsView);
+        } catch (Exception e) {
+            startActivity(new Intent(BrowserActivity.this, Settings_Activity.class));
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        boolean backgroundPlay = sp.getBoolean("sp_background_play", false);
+        if (!backgroundPlay && ninjaWebView != null) {
+            ninjaWebView.onPause();
+            ninjaWebView.pauseTimers();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (ninjaWebView != null) {
+            ninjaWebView.onResume();
+            ninjaWebView.resumeTimers();
+        }
     }
 }

@@ -126,12 +126,20 @@
 
     </LinearLayout>
 
+    <!-- Fancy Rippling Wavy Top Loading Progress Line -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/main_progress_bar_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/appBar"/>
+
     <!-- Top Loading Progress Line -->
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/main_progress_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/appBar"
+        android:layout_below="@id/main_progress_bar_compose"
+        android:visibility="gone"
         app:indicatorColor="?attr/colorPrimary"
         app:trackColor="?attr/colorSurfaceVariant"
         app:trackThickness="4dp"/>
@@ -141,7 +149,7 @@
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/main_progress_bar"/>
+        android:layout_below="@id/main_progress_bar_compose"/>
 
     <!-- Floating Action Button for Showing Top Bar -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

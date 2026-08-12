@@ -45,6 +45,7 @@ interface PetalOverflowMenuActionHandler {
     fun onOpenDownloadsShortcut()
     fun onOpenPageInfo()
     fun onReload()
+    fun onToggleDesktopSite(enabled: Boolean)
     fun onNewTab()
     fun onNewIncognitoTab()
     fun onOpenHistory()
@@ -68,6 +69,7 @@ object PetalOverflowBridge {
         url: String,
         isBookmarked: Boolean,
         canGoForward: Boolean,
+        isDesktopSite: Boolean,
         handler: PetalOverflowMenuActionHandler
     ) {
         try {
@@ -83,6 +85,7 @@ object PetalOverflowBridge {
                             pageUrl = url,
                             isBookmarked = isBookmarked,
                             canGoForward = canGoForward,
+                            isDesktopSite = isDesktopSite,
                             onGoForward = {
                                 dialog.dismiss()
                                 handler.onGoForward()
@@ -102,6 +105,10 @@ object PetalOverflowBridge {
                             onReload = {
                                 dialog.dismiss()
                                 handler.onReload()
+                            },
+                            onToggleDesktopSite = { enabled ->
+                                dialog.dismiss()
+                                handler.onToggleDesktopSite(enabled)
                             },
                             onNewTab = {
                                 dialog.dismiss()
@@ -173,11 +180,13 @@ fun PetalOverflowMenuSheet(
     pageUrl: String,
     isBookmarked: Boolean,
     canGoForward: Boolean,
+    isDesktopSite: Boolean,
     onGoForward: () -> Unit,
     onToggleBookmark: () -> Unit,
     onOpenDownloadsShortcut: () -> Unit,
     onOpenPageInfo: () -> Unit,
     onReload: () -> Unit,
+    onToggleDesktopSite: (Boolean) -> Unit,
     onNewTab: () -> Unit,
     onNewIncognitoTab: () -> Unit,
     onOpenHistory: () -> Unit,
@@ -297,7 +306,7 @@ fun PetalOverflowMenuSheet(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            // Section 1: New Tab & New Private Tab
+            // Section 1: New Tab, New Private Tab, Desktop Site
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 MenuRowItem(
                     icon = Icons.Rounded.Add,
@@ -309,6 +318,13 @@ fun PetalOverflowMenuSheet(
                     title = "New Private / Incognito tab",
                     subtitle = "Browse without saving search history",
                     onClick = onNewIncognitoTab
+                )
+                MenuRowSwitchItem(
+                    icon = Icons.Rounded.DesktopWindows,
+                    title = "Desktop site",
+                    subtitle = "Request desktop version of websites",
+                    checked = isDesktopSite,
+                    onCheckedChange = onToggleDesktopSite
                 )
             }
 
@@ -493,3 +509,60 @@ private fun MenuRowItem(
         }
     }
 }
+
+@Composable
+private fun MenuRowSwitchItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (!subtitle.isNullOrBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            IconSwitch(
+                checked = checked,
+                icon = icon,
+                onCheckedChange = onCheckedChange
+            )
+        }
+    }
+}
+
