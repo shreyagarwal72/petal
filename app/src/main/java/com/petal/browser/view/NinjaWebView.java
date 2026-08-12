@@ -367,7 +367,6 @@ public class NinjaWebView extends WebView implements AlbumController {
         initPreferences(targetUrl);
         super.loadUrl(targetUrl, getRequestHeaders());
     }
-    }
 
     @Override
     public View getAlbumView() {
