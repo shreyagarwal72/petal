@@ -512,7 +512,7 @@ public class NinjaWebViewClient extends WebViewClient {
 
     @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-        if (ninjaWebView.isAdBlock() && adBlock.isAd(request.getUrl().toString()))
+        if (request != null && !request.isForMainFrame() && ninjaWebView.isAdBlock() && adBlock.isAd(request.getUrl().toString()))
             return new WebResourceResponse(
                     BrowserUnit.MIME_TYPE_TEXT_PLAIN,
                     BrowserUnit.URL_ENCODING,
@@ -540,7 +540,6 @@ public class NinjaWebViewClient extends WebViewClient {
     @Override
     public void onReceivedSslError(WebView view, final SslErrorHandler handler, SslError error) {
         String message;
-        view.stopLoading();
         switch (error.getPrimaryError()) {
             case SslError.SSL_UNTRUSTED:
                 message = "\"Certificate authority is not trusted.\"";
@@ -580,8 +579,6 @@ public class NinjaWebViewClient extends WebViewClient {
 
     @Override
     public void onReceivedHttpAuthRequest(WebView view, @NonNull final HttpAuthHandler handler, String host, String realm) {
-
-        view.stopLoading();
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
         View dialogView = View.inflate(context, R.layout.dialog_edit, null);
 
