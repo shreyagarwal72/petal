@@ -65,6 +65,8 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var isAdBlock by remember { mutableStateOf(sp.getBoolean("sp_ad_block", true)) }
     var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
     var isJavaScript by remember { mutableStateOf(sp.getBoolean("sp_javascript", true)) }
+    var isBlockPopups by remember { mutableStateOf(sp.getBoolean("sp_block_popups", true)) }
+    var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", true)) }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
     var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
@@ -191,12 +193,40 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     // Ad Block Toggle
                     ToggleRow(
                         title = "Ad & Tracker Shield",
-                        subtitle = "Block invasive ads and web trackers",
+                        subtitle = "Block invasive ads, popunders, and web trackers",
                         icon = Icons.Rounded.Shield,
                         checked = isAdBlock,
                         onCheckedChange = { newValue ->
                             isAdBlock = newValue
-                            sp.edit().putBoolean("sp_ad_block", newValue).apply()
+                            sp.edit().putBoolean("sp_ad_block", newValue).putBoolean("profileStandard_adBlock", newValue).apply()
+                        }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Block Popups Toggle
+                    ToggleRow(
+                        title = "Block Popup Windows",
+                        subtitle = "Prevent unwanted popups and redirect windows",
+                        icon = Icons.Rounded.OpenInNew,
+                        checked = isBlockPopups,
+                        onCheckedChange = { newValue ->
+                            isBlockPopups = newValue
+                            sp.edit().putBoolean("sp_block_popups", newValue).putBoolean("profileStandard_javascriptPopUp", !newValue).apply()
+                        }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Auto Open External Apps Toggle
+                    ToggleRow(
+                        title = "Auto Open External Apps",
+                        subtitle = "Open YouTube, Maps & Play Store links in native apps",
+                        icon = Icons.Rounded.Launch,
+                        checked = isAutoOpenApps,
+                        onCheckedChange = { newValue ->
+                            isAutoOpenApps = newValue
+                            sp.edit().putBoolean("sp_auto_open_apps", newValue).apply()
                         }
                     )
 
@@ -224,7 +254,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         checked = isJavaScript,
                         onCheckedChange = { newValue ->
                             isJavaScript = newValue
-                            sp.edit().putBoolean("sp_javascript", newValue).apply()
+                            sp.edit().putBoolean("sp_javascript", newValue).putBoolean("profileStandard_javascript", newValue).apply()
                         }
                     )
                 }

@@ -85,6 +85,10 @@ public class NinjaWebViewClient extends WebViewClient {
             action.close();
         }
 
+        if (ninjaWebView.isAdBlock()) {
+            view.evaluateJavascript(AdBlock.getAdHidingScript(), null);
+        }
+
         String profile = NinjaWebView.getProfile();
         if (sp.getBoolean(profile + "_deny_cookie_banners",false)){
             //click opt-out if possible
@@ -460,8 +464,41 @@ public class NinjaWebViewClient extends WebViewClient {
 
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+        if (request == null || request.getUrl() == null) return false;
         final Uri uri = request.getUrl();
         String url = uri.toString();
+
+        boolean isHttpsOnly = sp.getBoolean("sp_https_only", true);
+        if (isHttpsOnly && url.startsWith("http://")) {
+            String httpsUrl = "https://" + url.substring(7);
+            view.loadUrl(httpsUrl);
+            return true;
+        }
+
+        boolean autoOpenApps = sp.getBoolean("sp_auto_open_apps", true);
+        if (autoOpenApps) {
+            if (url.startsWith("intent://") || url.startsWith("market://") || url.startsWith("whatsapp://") ||
+                url.startsWith("tg://") || url.startsWith("tel:") || url.startsWith("mailto:") ||
+                url.contains("youtube.com/watch") || url.contains("youtu.be/") ||
+                url.contains("maps.google.com") || url.contains("play.google.com/store")) {
+                try {
+                    Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+                    if (intent != null) {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(intent);
+                        return true;
+                    }
+                } catch (Exception e) {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(intent);
+                        return true;
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+
         if (url.startsWith("http:") || url.startsWith("https:") || url.startsWith("file:") || url.startsWith("about:")) {
             return false;
         } else {

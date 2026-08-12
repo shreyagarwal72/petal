@@ -206,18 +206,28 @@ public class NinjaWebView extends WebView implements AlbumController {
             this.setInitialScale(0);
         }
 
-        webSettings.setDomStorageEnabled(sp.getBoolean(profile + "_dom", false));
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setDatabaseEnabled(true);
 
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         webSettings.setMediaPlaybackRequiresUserGesture(sp.getBoolean(profile + "_saveData", true));
         webSettings.setBlockNetworkImage(!sp.getBoolean(profile + "_images", true));
         webSettings.setGeolocationEnabled(sp.getBoolean(profile + "_location", false));
-        webSettings.setJavaScriptEnabled(sp.getBoolean(profile + "_javascript", true));
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(sp.getBoolean(profile + "_javascriptPopUp", false));
+
+        boolean enableJs = sp.getBoolean("sp_javascript", sp.getBoolean(profile + "_javascript", true));
+        webSettings.setJavaScriptEnabled(enableJs);
+
+        boolean blockPopups = sp.getBoolean("sp_block_popups", true);
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(!blockPopups);
+
+        float fontScale = sp.getFloat("sp_font_size_scale", 1.0f);
+        float zoomScale = sp.getFloat("sp_zoom_level_scale", 1.0f);
+        int totalTextZoom = (int) (fontScale * zoomScale * 100);
+        webSettings.setTextZoom(totalTextZoom);
 
         fingerPrintProtection = sp.getBoolean(profile + "_fingerPrintProtection", false);
-        history = sp.getBoolean(profile + "_saveHistory", true);
-        adBlock = sp.getBoolean(profile + "_adBlock", true);
+        history = sp.getBoolean("sp_history", sp.getBoolean(profile + "_saveHistory", true));
+        adBlock = sp.getBoolean("sp_ad_block", sp.getBoolean(profile + "_adBlock", true));
         saveData = sp.getBoolean(profile + "_saveData", true);
         camera = sp.getBoolean(profile + "_camera", true);
 

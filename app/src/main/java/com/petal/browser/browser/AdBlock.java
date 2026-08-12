@@ -185,13 +185,48 @@ public class AdBlock {
         }
     }
 
+    private static final String[] AD_HOST_PATTERNS = new String[] {
+        "doubleclick.net", "google-analytics.com", "googlesyndication.com",
+        "adservice.google.com", "adnxs.com", "popads.net", "popcash.net",
+        "adform.net", "taboola.com", "outbrain.com", "adroll.com", "criteo.com",
+        "rubiconproject.com", "pubmatic.com", "smartadserver.com", "zedo.com",
+        "amazon-adsystem.com", "adk2.com", "propellerads.com", "exoclick.com",
+        "scorecardresearch.com", "quantserve.com", "openx.net"
+    };
+
+    public static String getAdHidingScript() {
+        return "javascript:(function() {" +
+            "var selectors = ['.ad-container', '.ad-banner', '.ad-wrapper', '[id*=\"google_ads\"]', '[id*=\"taboola\"]', '[class*=\"sponsored\"]', 'iframe[src*=\"ads\"]', 'iframe[src*=\"doubleclick\"]', '.adunit', '.ad-box'];" +
+            "for (var s of selectors) {" +
+            "  var els = document.querySelectorAll(s);" +
+            "  for (var i = 0; i < els.length; i++) { els[i].style.display = 'none !important'; }" +
+            "}" +
+            "})()";
+    }
+
     boolean isAd(String url) {
+        if (url == null || url.isEmpty()) return false;
+        String lowerUrl = url.toLowerCase(locale);
+
+        for (String pattern : AD_HOST_PATTERNS) {
+            if (lowerUrl.contains(pattern)) return true;
+        }
+
         String domain;
         try {
             domain = getDomain(url);
         } catch (URISyntaxException u) {
             return false;
         }
-        return hosts.contains(domain.toLowerCase(locale));
+
+        if (hosts.contains(domain.toLowerCase(locale))) return true;
+
+        int dot = domain.indexOf('.');
+        if (dot != -1 && dot < domain.length() - 1) {
+            String parentDomain = domain.substring(dot + 1);
+            if (hosts.contains(parentDomain.toLowerCase(locale))) return true;
+        }
+
+        return false;
     }
 }
