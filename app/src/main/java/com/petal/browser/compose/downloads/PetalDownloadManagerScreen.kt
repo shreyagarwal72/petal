@@ -116,7 +116,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
             TopAppBar(
                 title = {
                     Text(
-                        "Inbuilt Download Manager",
+                        "Downloads",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
@@ -312,22 +312,117 @@ private fun DownloadCardItem(item: DownloadItem, onOpenFile: () -> Unit) {
                     )
                 }
 
-                if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
-                    Button(
-                        onClick = onOpenFile,
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Icon(
-                            Icons.Rounded.OpenInNew,
-                            contentDescription = "Open file",
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text("Open", style = MaterialTheme.typography.labelMedium)
+                var menuExpanded by remember { mutableStateOf(false) }
+                var showRenameDialog by remember { mutableStateOf(false) }
+                var renameInput by remember { mutableStateOf(item.fileName) }
+                val context = LocalContext.current
+
+                if (showRenameDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showRenameDialog = false },
+                        title = { Text("Rename File") },
+                        text = {
+                            OutlinedTextField(
+                                value = renameInput,
+                                onValueChange = { renameInput = it },
+                                label = { Text("File Name") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showRenameDialog = false
+                                if (renameInput.isNotBlank() && renameInput != item.fileName) {
+                                    renameDownloadedFile(context, item, renameInput.trim())
+                                }
+                            }) {
+                                Text("Rename")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showRenameDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
+                        Button(
+                            onClick = onOpenFile,
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.OpenInNew,
+                                contentDescription = "Open file",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Open", style = MaterialTheme.typography.labelMedium)
+                        }
+                    } else if (item.status == DownloadManager.STATUS_RUNNING || item.status == DownloadManager.STATUS_PENDING) {
+                        PlayStoreDownloadProgress(progress = item.progress)
                     }
-                } else if (item.status == DownloadManager.STATUS_RUNNING || item.status == DownloadManager.STATUS_PENDING) {
-                    PlayStoreDownloadProgress(progress = item.progress)
+
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                Icons.Rounded.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
+                                DropdownMenuItem(
+                                    text = { Text("Open File") },
+                                    leadingIcon = { Icon(Icons.Rounded.OpenInNew, contentDescription = null) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onOpenFile()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Rename") },
+                                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showRenameDialog = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Share") },
+                                    leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        shareDownloadedFile(context, item)
+                                    }
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text("Copy Link") },
+                                leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    copyDownloadLink(context, item.fileUrl)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                onClick = {
+                                    menuExpanded = false
+                                    deleteDownloadedFile(context, item)
+                                }
+                            )
+                        }
+                    }
                 }
             }
 
@@ -447,5 +542,72 @@ private fun openDownloadedFile(context: Context, item: DownloadItem) {
             val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             dm.openDownloadedFile(item.id)
         } catch (ignored: Exception) {}
+    }
+}
+
+private fun deleteDownloadedFile(context: Context, item: DownloadItem) {
+    try {
+        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        dm.remove(item.id)
+        if (item.localUri != null) {
+            val uri = Uri.parse(item.localUri)
+            val file = java.io.File(uri.path ?: "")
+            if (file.exists()) {
+                file.delete()
+            }
+        }
+        android.widget.Toast.makeText(context, "Deleted ${item.fileName}", android.widget.Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+private fun renameDownloadedFile(context: Context, item: DownloadItem, newName: String) {
+    try {
+        if (item.localUri != null) {
+            val uri = Uri.parse(item.localUri)
+            val oldFile = java.io.File(uri.path ?: "")
+            if (oldFile.exists()) {
+                val newFile = java.io.File(oldFile.parent, newName)
+                if (oldFile.renameTo(newFile)) {
+                    android.media.MediaScannerConnection.scanFile(context, arrayOf(newFile.absolutePath), null, null)
+                    android.widget.Toast.makeText(context, "Renamed to $newName", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+private fun copyDownloadLink(context: Context, url: String) {
+    try {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val clip = android.content.ClipData.newPlainText("Download Link", url)
+        clipboard.setPrimaryClip(clip)
+        android.widget.Toast.makeText(context, "Link copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+private fun shareDownloadedFile(context: Context, item: DownloadItem) {
+    try {
+        val uri = if (item.localUri != null) Uri.parse(item.localUri) else null
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            if (uri != null) {
+                putExtra(Intent.EXTRA_STREAM, uri)
+                type = context.contentResolver.getType(uri) ?: "*/*"
+            } else {
+                putExtra(Intent.EXTRA_TEXT, item.fileUrl)
+                type = "text/plain"
+            }
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val chooser = Intent.createChooser(intent, "Share file")
+        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooser)
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }

@@ -1538,6 +1538,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 popupWindow.dismiss();
                 try {
                     contentFrame.removeAllViews();
+                    if (appBar != null) appBar.setVisibility(GONE);
+                    LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+                    if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
                     View settingsView = com.petal.browser.compose.settings.PetalSettingsBridge.createSettingsView(BrowserActivity.this, () -> {
                         showAlbum(currentAlbumController);
                         return kotlin.Unit.INSTANCE;
@@ -1550,14 +1553,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
-        int marginX = (dm.widthPixels - popupWidth) / 2;
-        if (marginX < 0) marginX = (int) (12 * dm.density);
-        popupWindow.showAtLocation(getWindow().getDecorView(), android.view.Gravity.BOTTOM | android.view.Gravity.START, marginX, (int) (75 * dm.density));
+        int marginX = (int) (12 * dm.density);
+        int marginY = (int) (80 * dm.density);
+        popupWindow.showAtLocation(getWindow().getDecorView(), android.view.Gravity.BOTTOM | android.view.Gravity.END, marginX, marginY);
     }
 
     public void showDownloads() {
         try {
             contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
             View downloadView = PetalDownloadBridge.createDownloadView(BrowserActivity.this, () -> {
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;

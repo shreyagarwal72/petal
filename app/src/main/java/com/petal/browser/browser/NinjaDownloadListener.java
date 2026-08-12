@@ -3,6 +3,7 @@ package com.petal.browser.browser;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaScannerConnection;
 import android.os.Environment;
 import android.util.Base64;
 import android.webkit.DownloadListener;
@@ -118,11 +119,19 @@ public class NinjaDownloadListener implements DownloadListener {
                                     finalFileName2 = finalFileName2 + "." + realExtension;
                                 }
                                 File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                                if (!downloadDir.exists()) downloadDir.mkdirs();
                                 File file = new File(downloadDir, finalFileName2);
                                 try (BufferedOutputStream bos = new BufferedOutputStream(Files.newOutputStream(file.toPath()))) {
                                     bos.write(decodedBytes);
                                     bos.flush();
                                 }
+                                MediaScannerConnection.scanFile(context, new String[]{file.getAbsolutePath()}, null, null);
+                                try {
+                                    DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                                    if (dm != null) {
+                                        dm.addCompletedDownload(file.getName(), file.getName(), true, mimeType != null ? mimeType : "*/*", file.getAbsolutePath(), file.length(), true);
+                                    }
+                                } catch (Exception ignored) {}
                                 webView.post(() -> {
                                     String text = webView.getContext().getString(R.string.app_done) + ". " + webView.getContext().getString(R.string.menu_download) + "?";
                                     Snackbar snackbar = Snackbar.make(webView, text, Snackbar.LENGTH_SHORT);

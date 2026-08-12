@@ -72,7 +72,7 @@ fun ColorScheme.applyAmoled(): ColorScheme = copy(
 fun PetalExpressiveTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
-    useAmoled: Boolean = false,
+    useAmoled: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
