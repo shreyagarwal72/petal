@@ -427,6 +427,15 @@ public class NinjaWebView extends WebView implements AlbumController {
         clearHistory();
         setVisibility(GONE);
         removeAllViews();
+        if (isIncognito) {
+            try {
+                clearCache(true);
+                clearFormData();
+                clearSslPreferences();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         super.destroy();
     }
 
@@ -483,21 +492,6 @@ public class NinjaWebView extends WebView implements AlbumController {
 
     public void setPredecessor(AlbumController predecessor) {
         this.predecessor = predecessor;
-    }
-
-    @Override
-    public synchronized void destroy() {
-        if (isIncognito) {
-            try {
-                clearHistory();
-                clearCache(true);
-                clearFormData();
-                clearSslPreferences();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        super.destroy();
     }
 
     public boolean isIncognito() {
