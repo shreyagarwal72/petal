@@ -305,8 +305,10 @@ public class BrowserUnit {
         if (context == null || uri == null) return;
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
+            if (!(context instanceof Activity)) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            }
+            context.startActivity(Intent.createChooser(intent, null));
         } catch (Exception e) {
             try {
                 Intent fallbackIntent = new Intent(context, BrowserActivity.class);
