@@ -6,4 +6,6 @@ public interface AlbumController {
     View getAlbumView();
     void activate();
     void deactivate();
+    String getTitle();
+    String getUrl();
 }

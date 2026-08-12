@@ -72,10 +72,9 @@ object PetalTabSwitcherBridge {
                         val tabsList = remember {
                             mutableStateListOf<TabModel>().apply {
                                 addAll(
-                                    BrowserContainer.list().map { album ->
-                                        val webView = album as? NinjaWebView
-                                        val rawTitle = webView?.title
-                                        val rawUrl = webView?.url
+                                    BrowserContainer.list().map { album: AlbumController ->
+                                        val rawTitle = try { album.title } catch (_: Exception) { null }
+                                        val rawUrl = try { album.url } catch (_: Exception) { null }
                                         val displayTitle = when {
                                             !rawTitle.isNullOrBlank() -> rawTitle
                                             !rawUrl.isNullOrBlank() && rawUrl != "about:blank" && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
