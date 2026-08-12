@@ -12,6 +12,7 @@ import com.petal.browser.R
 
 enum class AppFont(val label: String) {
     SYSTEM("System Default"),
+    GS_FLEX("Google Sans Flex"),
     NUNITO("Nunito"),
     INTER("Inter"),
     OUTFIT("Outfit"),
@@ -69,6 +70,7 @@ fun petalTypography(appFont: AppFont): Typography = when (appFont) {
     AppFont.SYSTEM -> buildTypography(
         Tiers(FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default)
     )
+    AppFont.GS_FLEX -> buildTypography(weightedTiers(R.font.google_sans_flex, top = 900))
     AppFont.NUNITO -> buildTypography(
         Tiers(nunitoFont(1000), nunitoFont(850), nunitoFont(800), nunitoFont(600), nunitoFont(750))
     )
