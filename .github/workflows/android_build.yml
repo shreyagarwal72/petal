@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: foss-browser-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*arm64-v8a*.apk
           retention-days: 30
 
       - name: Build Release APK
@@ -111,8 +111,8 @@ jobs:
       - name: Prepare Release APK Files
         run: |
           mkdir -p dist
-          cp apks/debug/*.apk dist/foss-browser-debug.apk 2>/dev/null || true
-          cp apks/release/*.apk dist/foss-browser-release.apk 2>/dev/null || true
+          cp apks/debug/*arm64-v8a*.apk dist/foss-browser-debug-arm64.apk 2>/dev/null || cp apks/debug/*.apk dist/foss-browser-debug-arm64.apk 2>/dev/null || true
+          cp apks/release/*universal*.apk dist/foss-browser-release.apk 2>/dev/null || cp apks/release/*.apk dist/foss-browser-release.apk 2>/dev/null || true
 
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
@@ -125,10 +125,10 @@ jobs:
 
             ### Included APK Downloads:
             - **`foss-browser-release.apk`**: Release APK (Signed & Installable)
-            - **`foss-browser-debug.apk`**: Debug APK (Signed)
+            - **`foss-browser-debug-arm64.apk`**: Single ARM64 Debug APK (ARM64-v8a Architecture)
           files: |
             dist/foss-browser-release.apk
-            dist/foss-browser-debug.apk
+            dist/foss-browser-debug-arm64.apk
           make_latest: true
           draft: false
           prerelease: false
