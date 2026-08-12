@@ -2904,11 +2904,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return false;
         });
 
-        ninjaWebView.setBrowserController(this);
-        ninjaWebView.setAlbumTitle(title, url);
-
-        if (url.isEmpty()) ninjaWebView.loadUrl("about:blank");
-        else ninjaWebView.loadUrl(url);
+        if (title == null) title = getString(R.string.app_name);
+        if (url == null) {
+            ninjaWebView.setAlbumTitle(title, "about:blank");
+            ninjaWebView.loadUrl("about:blank");
+        } else {
+            ninjaWebView.setAlbumTitle(title, url);
+            if (url.trim().isEmpty()) ninjaWebView.loadUrl("about:blank");
+            else ninjaWebView.loadUrl(url);
+        }
 
         if (currentAlbumController != null) {
             ninjaWebView.setPredecessor(currentAlbumController);

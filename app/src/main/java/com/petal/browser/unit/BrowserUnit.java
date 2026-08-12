@@ -310,7 +310,7 @@ public class BrowserUnit {
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             PackageManager pm = context.getPackageManager();
-            List<ResolveInfo> resolveInfos = pm.queryIntentActivities(intent, 0);
+            List<ResolveInfo> resolveInfos = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
             List<Intent> targetIntents = new ArrayList<>();
 
             for (ResolveInfo info : resolveInfos) {
@@ -333,21 +333,12 @@ public class BrowserUnit {
                 chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(chooserIntent);
             } else {
-                Intent fallbackIntent = new Intent(context, BrowserActivity.class);
-                fallbackIntent.setAction(Intent.ACTION_VIEW);
-                fallbackIntent.setData(uri);
-                fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(fallbackIntent);
+                Intent chooserIntent = Intent.createChooser(intent, null);
+                chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(chooserIntent);
             }
         } catch (Exception e) {
             Log.e("BrowserUnit", "Failed to launch ACTION_VIEW for " + uri, e);
-            try {
-                Intent fallbackIntent = new Intent(context, BrowserActivity.class);
-                fallbackIntent.setAction(Intent.ACTION_VIEW);
-                fallbackIntent.setData(uri);
-                fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(fallbackIntent);
-            } catch (Exception ignored) {}
         }
     }
 
