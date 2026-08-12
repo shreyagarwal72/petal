@@ -587,7 +587,7 @@ private fun getDownloadItems(
 private fun openDownloadedFile(context: Context, item: DownloadItem) {
     try {
         var contentUri: Uri? = null
-        var mimeType: String? = item.mimeType
+        var mimeType: String? = null
 
         val localUriString = item.localUri
         if (!localUriString.isNullOrEmpty()) {
