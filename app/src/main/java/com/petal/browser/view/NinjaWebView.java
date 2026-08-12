@@ -214,28 +214,6 @@ public class NinjaWebView extends WebView implements AlbumController {
         webSettings.setMediaPlaybackRequiresUserGesture(backgroundPlay ? false : sp.getBoolean(profile + "_saveData", true));
         webSettings.setBlockNetworkImage(!sp.getBoolean(profile + "_images", true));
         webSettings.setGeolocationEnabled(sp.getBoolean(profile + "_location", false));
-    }
-
-    public void setDesktopMode(boolean enabled) {
-        String desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
-        String mobileUserAgent = sp.getString("sp_userAgent", "");
-        if (mobileUserAgent.isEmpty()) {
-            mobileUserAgent = WebSettings.getDefaultUserAgent(context);
-        }
-
-        if (enabled) {
-            getSettings().setUserAgentString(desktopUserAgent);
-            getSettings().setUseWideViewPort(true);
-            getSettings().setLoadWithOverviewMode(true);
-            setInitialScale(100);
-        } else {
-            getSettings().setUserAgentString(mobileUserAgent);
-            getSettings().setUseWideViewPort(false);
-            getSettings().setLoadWithOverviewMode(false);
-            setInitialScale(0);
-        }
-        reload();
-    }
 
         boolean enableJs = sp.getBoolean("sp_javascript", sp.getBoolean(profile + "_javascript", true));
         webSettings.setJavaScriptEnabled(enableJs);
@@ -270,6 +248,27 @@ public class NinjaWebView extends WebView implements AlbumController {
         this.addJavascriptInterface(new WebAppInterface(context), "AndroidInterface");
 
         profile = profileOriginal;
+    }
+
+    public void setDesktopMode(boolean enabled) {
+        String desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
+        String mobileUserAgent = sp.getString("sp_userAgent", "");
+        if (mobileUserAgent.isEmpty()) {
+            mobileUserAgent = WebSettings.getDefaultUserAgent(context);
+        }
+
+        if (enabled) {
+            getSettings().setUserAgentString(desktopUserAgent);
+            getSettings().setUseWideViewPort(true);
+            getSettings().setLoadWithOverviewMode(true);
+            setInitialScale(100);
+        } else {
+            getSettings().setUserAgentString(mobileUserAgent);
+            getSettings().setUseWideViewPort(false);
+            getSettings().setLoadWithOverviewMode(false);
+            setInitialScale(0);
+        }
+        reload();
     }
 
     public void setProfileDefaultValues() {
