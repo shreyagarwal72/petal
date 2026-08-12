@@ -335,7 +335,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         //if still no open Tab open default page
         if (BrowserContainer.size() < 1) {
-            addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "file:///android_asset/home.html"), true);
+            addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
         }
 
         // Show Professional Material 3 Welcome Dialog on first launch
@@ -435,9 +435,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     ninjaWebView.goBack();
                 } else {
                     String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-                    String homeUrl = sp.getString("favoriteURL", "file:///android_asset/home.html");
-                    if (currentUrl != null && !currentUrl.startsWith("file:///android_asset/home.html") && !currentUrl.equals(homeUrl)) {
+                    String homeUrl = sp.getString("favoriteURL", "about:blank");
+                    if (currentUrl != null && !isHomePage(currentUrl) && !currentUrl.equals(homeUrl)) {
                         ninjaWebView.loadUrl(homeUrl);
+                        showAlbum(currentAlbumController, homeUrl);
                     } else {
                         removeAlbum(currentAlbumController);
                     }
@@ -447,22 +448,37 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return false;
     }
 
+    public void onTabUrlStarted(NinjaWebView webView, String url) {
+        runOnUiThread(() -> {
+            if (webView == ninjaWebView) {
+                showAlbum(currentAlbumController, url);
+            }
+        });
+    }
+
     @Override
     public synchronized void showAlbum(AlbumController controller) {
+        showAlbum(controller, null);
+    }
+
+    public synchronized void showAlbum(AlbumController controller, String overrideUrl) {
         View av = (View) controller;
         if (currentAlbumController != null) currentAlbumController.deactivate();
         currentAlbumController = controller;
         currentAlbumController.activate();
         contentFrame.removeAllViews();
 
-        String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-        if (url == null || url.isEmpty() || url.startsWith("file:///android_asset/home.html") || url.equals("about:blank")) {
+        String url = overrideUrl != null ? overrideUrl : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
+        if (isHomePage(url)) {
             View composeView = PetalComposeBridge.createComposeHomeView(this, BrowserContainer.size(), new PetalHomeActionHandler() {
                 @Override
                 public void onSearch(String query) {
                     if (query != null && !query.trim().isEmpty()) {
-                        ninjaWebView.loadUrl(BrowserUnit.queryWrapper(BrowserActivity.this, query));
-                        showAlbum(currentAlbumController);
+                        String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, query.trim());
+                        if (ninjaWebView != null) {
+                            ninjaWebView.loadUrl(targetUrl);
+                            showAlbum(currentAlbumController, targetUrl);
+                        }
                     } else {
                         try {
                             initSearch();
@@ -474,18 +490,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 @Override
                 public void onOpenUrl(String u) {
-                    ninjaWebView.loadUrl(u);
-                    showAlbum(currentAlbumController);
+                    if (ninjaWebView != null) {
+                        String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, u);
+                        ninjaWebView.loadUrl(targetUrl);
+                        showAlbum(currentAlbumController, targetUrl);
+                    }
                 }
 
                 @Override
                 public void onAddShortcut() {
-                    ninjaWebView.loadUrl("file:///android_asset/home.html");
+                    if (ninjaWebView != null) {
+                        ninjaWebView.loadUrl("about:blank");
+                        showAlbum(currentAlbumController, "about:blank");
+                    }
                 }
 
                 @Override
                 public void onNewTab() {
-                    addAlbum(getString(R.string.app_name), "file:///android_asset/home.html", true);
+                    addAlbum(getString(R.string.app_name), "about:blank", true);
                 }
 
                 @Override
@@ -521,8 +543,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             });
             contentFrame.addView(composeView);
+            if (appBar != null) appBar.setVisibility(GONE);
         } else {
             contentFrame.addView(av);
+            if (appBar != null) appBar.setVisibility(VISIBLE);
         }
         updateOmniBox();
         updatePersistentBottomNav();
@@ -533,7 +557,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             androidx.compose.ui.platform.ComposeView bottomNavCompose = findViewById(R.id.bottom_nav_compose);
             if (bottomNavCompose != null) {
                 String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-                boolean isHome = currentUrl == null || currentUrl.isEmpty() || currentUrl.startsWith("file:///android_asset/home.html") || currentUrl.equals("about:blank");
+                boolean isHome = isHomePage(currentUrl);
                 com.petal.browser.ui.components.PetalNavTab activeTab = isHome ? com.petal.browser.ui.components.PetalNavTab.HOME : com.petal.browser.ui.components.PetalNavTab.TABS;
 
                 com.petal.browser.compose.home.PetalBottomNavBridge.bindBottomNav(
@@ -544,13 +568,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     new com.petal.browser.compose.home.PetalBottomNavHandler() {
                         @Override
                         public void onHomeClick() {
-                            if (ninjaWebView != null) ninjaWebView.loadUrl("file:///android_asset/home.html");
-                            showAlbum(currentAlbumController);
+                            if (ninjaWebView != null) {
+                                ninjaWebView.loadUrl("about:blank");
+                                showAlbum(currentAlbumController, "about:blank");
+                            }
                         }
 
                         @Override
                         public void onNewTabClick() {
-                            addAlbum(getString(R.string.app_name), "file:///android_asset/home.html", true);
+                            addAlbum(getString(R.string.app_name), "about:blank", true);
                         }
 
                         @Override
@@ -575,9 +601,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (BrowserContainer.size() <= 1) {
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-            String homeUrl = sp.getString("favoriteURL", "file:///android_asset/home.html");
-            if (currentUrl != null && !currentUrl.startsWith("file:///android_asset/home.html") && !currentUrl.equals(homeUrl)) {
+            String homeUrl = sp.getString("favoriteURL", "about:blank");
+            if (currentUrl != null && !isHomePage(currentUrl) && !currentUrl.equals(homeUrl)) {
                 ninjaWebView.loadUrl(homeUrl);
+                showAlbum(currentAlbumController, homeUrl);
             } else {
                 doubleTapsQuit();
             }
@@ -845,8 +872,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     } else if (item.getItemId() == R.id.menu_filter) {
                         showDialogFilter();
                     } else if (item.getItemId() == R.id.menu_help) {
-                        Uri webpage = Uri.parse("file:///android_asset/home.html");
-                        BrowserUnit.intentURL(this, webpage); }
+                        if (ninjaWebView != null) {
+                            ninjaWebView.loadUrl("about:blank");
+                            showAlbum(currentAlbumController, "about:blank");
+                        }
+                    }
                     return true;
                 });
                 popup.show();
@@ -1059,6 +1089,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, query.trim());
             if (ninjaWebView != null) {
                 ninjaWebView.loadUrl(targetUrl);
+                showAlbum(currentAlbumController, targetUrl);
             }
         } else {
             NinjaToast.show(this, R.string.toast_input_empty);
@@ -1066,7 +1097,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     private boolean isHomePage(String url) {
-        if (url == null || url.isEmpty() || url.equals("about:blank")) return true;
+        if (url == null || url.trim().isEmpty() || url.equals("about:blank")) return true;
         return url.startsWith("file:///android_asset/");
     }
 
@@ -1219,7 +1250,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else {
             if (appBar_title != null) appBar_title.setText(getString(R.string.app_name));
             TextView overflowURL = findViewById(R.id.appbar_URL);
-            if (overflowURL != null) overflowURL.setText("file:///android_asset/home.html");
+            if (overflowURL != null) overflowURL.setText("about:blank");
         }
     }
 
@@ -1285,11 +1316,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 () -> {
                     BrowserContainer.clear();
-                    addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "file:///android_asset/home.html"), true);
+                    addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
                     return kotlin.Unit.INSTANCE;
                 },
                 () -> {
-                    addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "file:///android_asset/home.html"), true);
+                    addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
                     return kotlin.Unit.INSTANCE;
                 }
             );
@@ -1420,14 +1451,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (btnNewTab != null) {
             btnNewTab.setOnClickListener(v -> {
                 popupWindow.dismiss();
-                addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "file:///android_asset/home.html"), true);
+                addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
             });
         }
         View btnIncognito = customView.findViewById(R.id.menu_incognito_tab);
         if (btnIncognito != null) {
             btnIncognito.setOnClickListener(v -> {
                 popupWindow.dismiss();
-                addAlbum("Incognito Tab", sp.getString("favoriteURL", "file:///android_asset/home.html"), true);
+                addAlbum("Incognito Tab", sp.getString("favoriteURL", "about:blank"), true);
                 NinjaToast.show(BrowserActivity.this, "Opened Incognito Tab");
             });
         }
@@ -2005,8 +2036,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             Button button_help = dialogViewFastToggle.findViewById(R.id.button_help);
             button_help.setOnClickListener(view -> {
                 dialogFastToggle.cancel();
-                Uri webpage = Uri.parse("file:///android_asset/home.html");
-                BrowserUnit.intentURL(this, webpage);
+                if (ninjaWebView != null) {
+                    ninjaWebView.loadUrl("about:blank");
+                    showAlbum(currentAlbumController, "about:blank");
+                }
             });
             dialogFastToggle.setOnDismissListener(dialogInterface -> setProfileIcon(floatingActionButton,url));
             dialogFastToggle.show();
@@ -2432,7 +2465,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showOverview();
                 break;
             case "09":
-                addAlbum(getString(R.string.app_name), Objects.requireNonNull(sp.getString("favoriteURL", "file:///android_asset/home.html")), true);
+                addAlbum(getString(R.string.app_name), Objects.requireNonNull(sp.getString("favoriteURL", "about:blank")), true);
                 break;
             case "10":
                 removeAlbum(currentAlbumController);
@@ -2455,7 +2488,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ninjaWebView.reload();
                 break;
             case "17":
-                ninjaWebView.loadUrl(Objects.requireNonNull(sp.getString("favoriteURL", "file:///android_asset/home.html")));
+                ninjaWebView.loadUrl(Objects.requireNonNull(sp.getString("favoriteURL", "about:blank")));
+                showAlbum(currentAlbumController, sp.getString("favoriteURL", "about:blank"));
                 break;
             case "18":
                 bottom_navigation.setSelectedItemId(R.id.page_2);
@@ -2497,7 +2531,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showOverview();
                 break;
             case "32":
-                ninjaWebView.loadUrl(sp.getString("favoriteURL", "file:///android_asset/home.html"));
+                ninjaWebView.loadUrl(sp.getString("favoriteURL", "about:blank"));
+                showAlbum(currentAlbumController, sp.getString("favoriteURL", "about:blank"));
                 break;
         }
     }

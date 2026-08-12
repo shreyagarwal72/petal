@@ -242,7 +242,7 @@ public class NinjaWebView extends WebView implements AlbumController {
 
         RecordAction action = new RecordAction(context);
         action.open(true);
-        action.addBookmark(new Record("Petal Start", "file:///android_asset/home.html", 0, 0));
+        action.addBookmark(new Record("Petal Start", "about:blank", 0, 0));
         action.addBookmark(new Record("DuckDuckGo", "https://duckduckgo.com", 0, 0));
         action.addBookmark(new Record("Google", "https://www.google.com", 0, 0));
         action.addBookmark(new Record("Wikipedia", "https://www.wikipedia.org", 0, 0));

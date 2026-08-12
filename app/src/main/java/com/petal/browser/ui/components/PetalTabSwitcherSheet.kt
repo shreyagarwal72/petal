@@ -78,10 +78,10 @@ object PetalTabSwitcherBridge {
                                         val rawUrl = webView?.url
                                         val displayTitle = when {
                                             !rawTitle.isNullOrBlank() -> rawTitle
-                                            !rawUrl.isNullOrBlank() && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
+                                            !rawUrl.isNullOrBlank() && rawUrl != "about:blank" && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
                                             else -> "New Tab"
                                         }
-                                        val displayUrl = rawUrl ?: "about:blank"
+                                        val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl == "about:blank" || rawUrl.startsWith("file:///android_asset/")) "about:blank" else rawUrl
                                         TabModel(
                                             album = album,
                                             title = displayTitle,

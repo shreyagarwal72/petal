@@ -101,6 +101,10 @@ public class NinjaWebViewClient extends WebViewClient {
 
         super.onPageStarted(view, url, favicon);
 
+        if (context instanceof com.petal.browser.activity.BrowserActivity) {
+            ((com.petal.browser.activity.BrowserActivity) context).onTabUrlStarted(ninjaWebView, url);
+        }
+
         String profile = NinjaWebView.getProfile();
         if (sp.getBoolean(profile + "_deny_cookie_banners",false)){
             //click opt-out if possible

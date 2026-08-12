@@ -6,7 +6,7 @@
     <PreferenceCategory android:title="@string/setting_title_ui">
 
         <EditTextPreference
-            android:defaultValue="file:///android_asset/home.html"
+            android:defaultValue="about:blank"
             android:key="favoriteURL"
             android:title="@string/setting_title_fav"
             android:icon="@drawable/icon_fav" />
