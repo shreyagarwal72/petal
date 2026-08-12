@@ -378,6 +378,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onResume() {
         super.onResume();
+        if (ninjaWebView != null) {
+            ninjaWebView.onResume();
+            ninjaWebView.resumeTimers();
+        }
         if (sp.getBoolean("sp_camera", false)) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
@@ -2972,6 +2976,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public static View getView() {
+        return ninjaWebView != null ? ninjaWebView.getRootView() : null;
+    }
+
+    public void createWebPrintJob(WebView webView) {
+        if (webView == null) return;
+        try {
+            PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+            if (printManager != null) {
+                String jobName = getString(R.string.app_name) + " Document";
+                PrintDocumentAdapter printAdapter = webView.createPrintDocumentAdapter(jobName);
+                printManager.print(jobName, printAdapter, new PrintAttributes.Builder().build());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -2979,15 +3001,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (!backgroundPlay && ninjaWebView != null) {
             ninjaWebView.onPause();
             ninjaWebView.pauseTimers();
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (ninjaWebView != null) {
-            ninjaWebView.onResume();
-            ninjaWebView.resumeTimers();
         }
     }
 }

@@ -344,6 +344,10 @@ public class NinjaWebView extends WebView implements AlbumController {
         super.goBack();
     }
 
+    public synchronized void initWebSettings() {
+        this.initPreferences(this.getUrl());
+    }
+
     @Override
     public synchronized void reload() {
         stopped = false;

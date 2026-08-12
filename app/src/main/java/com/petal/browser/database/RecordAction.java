@@ -194,6 +194,10 @@ public class RecordAction {
         return list;
     }
 
+    public boolean checkBookmark(String url) {
+        return checkUrl(url, RecordUnit.TABLE_BOOKMARK);
+    }
+
     public boolean checkUrl(String url, String table) {
         if (url == null || url.trim().isEmpty()) {
             return false;
