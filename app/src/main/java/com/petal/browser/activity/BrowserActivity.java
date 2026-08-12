@@ -977,19 +977,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return true;
         });
         setSelectedTab();
-     @SuppressLint({"ClickableViewAccessibility", "UnsafeOptInUsageError"})
-    private void initOmniBox() {
-        search_input = dialogViewSearch.findViewById(R.id.search_input);
-        contentView = findViewById(android.R.id.content);
-        composeAddressBar = findViewById(R.id.compose_address_bar);
-
-        View fab_bubble = findViewById(R.id.fab_bubble);
-        if (fab_bubble != null) {
-            fab_bubble.setOnClickListener(v -> animateAddressBarCollapse(false));
-        }
-
-        updateAddressBar();
-    }
+        initOmniBox();
 
         fab_menu = findViewById(R.id.fab_menu);
         if (fab_menu != null) {
@@ -1159,6 +1147,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             performGesture("setting_gesture_overViewButton", ninjaWebView.getUrl());
             return true;
         });
+    }
+
+    @SuppressLint({"ClickableViewAccessibility", "UnsafeOptInUsageError"})
+    private void initOmniBox() {
+        search_input = dialogViewSearch.findViewById(R.id.search_input);
+        contentView = findViewById(android.R.id.content);
+        composeAddressBar = findViewById(R.id.compose_address_bar);
+
+        View fab_bubble = findViewById(R.id.fab_bubble);
+        if (fab_bubble != null) {
+            fab_bubble.setOnClickListener(v -> animateAddressBarCollapse(false));
+        }
+
+        updateAddressBar();
     }
 
     private void handleFinalSearch(String query) {
