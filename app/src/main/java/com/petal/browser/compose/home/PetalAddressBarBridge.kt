@@ -4,50 +4,40 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.ui.components.PetalBottomNavBar
-import com.petal.browser.ui.components.PetalNavTab
-import com.petal.browser.ui.theme.PetalExpressiveTheme
-
 import androidx.preference.PreferenceManager
-import androidx.compose.runtime.remember
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.components.PetalAddressBar
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
+import com.petal.browser.ui.theme.PetalExpressiveTheme
 
-interface PetalBottomNavHandler {
-    fun onHomeClick()
-    fun onNewTabClick()
-    fun onTabsClick()
-    fun onMenuClick()
-}
-
-object PetalBottomNavBridge {
+object PetalAddressBarBridge {
     @JvmStatic
-    fun bindBottomNav(
+    @JvmOverloads
+    fun bindAddressBar(
         composeView: ComposeView,
         activity: ComponentActivity,
-        selectedTab: PetalNavTab,
-        tabCount: Int,
-        handler: PetalBottomNavHandler
+        url: String,
+        title: String,
+        isIncognito: Boolean = false,
+        onBackClick: () -> Unit,
+        onShareClick: () -> Unit,
+        onAddressClick: () -> Unit
     ) {
         composeView.apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
+                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
                 val dynamicColor = sp.getBoolean("useDynamicColor", false)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.SYSTEM }
-                }
-                val colorStyle = remember(styleName) {
-                    try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
-                }
+                val appFont = try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.SYSTEM }
+                val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
 
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
@@ -56,13 +46,13 @@ object PetalBottomNavBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    PetalBottomNavBar(
-                        selectedTab = selectedTab,
-                        tabCount = tabCount,
-                        onHomeClick = { handler.onHomeClick() },
-                        onNewTabClick = { handler.onNewTabClick() },
-                        onTabsClick = { handler.onTabsClick() },
-                        onMenuClick = { handler.onMenuClick() }
+                    PetalAddressBar(
+                        url = url,
+                        title = title,
+                        isIncognito = isIncognito,
+                        onBackClick = onBackClick,
+                        onShareClick = onShareClick,
+                        onAddressClick = onAddressClick
                     )
                 }
             }

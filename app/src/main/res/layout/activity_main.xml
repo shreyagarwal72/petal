@@ -7,159 +7,20 @@
     android:id="@+id/main"
     tools:ignore="ContentDescription">
 
-    <!-- Top Address Bar (Omnibox) -->
-    <com.google.android.material.card.MaterialCardView
-        style="@style/Widget.Material3.CardView.Elevated"
-        android:backgroundTint="?attr/colorSurfaceContainerHigh"
-        app:cardElevation="3dp"
-        app:strokeWidth="0dp"
-        android:id="@+id/appBar"
+    <!-- Top Address Bar (Material 3 Expressive Compose Address Bar) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/compose_address_bar"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:layout_alignParentTop="true"
-        app:cardCornerRadius="28dp">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/item_cardView"
-                style="@style/Widget.Material3.CardView.Filled"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_marginStart="16dp"
-                android:backgroundTint="@android:color/transparent"
-                android:layout_gravity="center_vertical"
-                app:cardCornerRadius="8dp">
-
-                <ImageView
-                    android:id="@+id/menu_icon"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:scaleType="fitCenter"
-                    tools:ignore="ContentDescription" />
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="168dp"
-                android:id="@+id/textGroup"
-                android:orientation="vertical"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp"
-                android:layout_marginTop="8dp">
-
-                <TextView
-                    android:id="@+id/appBar_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="2dp"
-                    android:ellipsize="end"
-                    android:includeFontPadding="false"
-                    android:maxLines="1"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textStyle="bold"/>
-
-                <TextView
-                    android:id="@+id/appbar_URL"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:includeFontPadding="false"
-                    android:maxLines="1"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOutline"/>
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <LinearLayout
-        android:id="@+id/appBar_buttons"
-        android:visibility="visible"
-        android:layout_width="wrap_content"
-        android:layout_height="64dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
-        android:orientation="horizontal"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="12dp"
-        tools:ignore="RelativeOverlap">
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_share"
-            style="@style/Widget.Material3.Button.IconButton.Outlined"
-            app:backgroundTint="?attr/colorSurfaceContainerHighest"
-            app:borderWidth="0.5dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:src="@drawable/icon_share"
-            app:maxImageSize="18dp"
-            app:fabCustomSize="36dp"
-            app:elevation="1dp" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_undo"
-            style="@style/Widget.Material3.Button.IconButton.Outlined"
-            app:backgroundTint="?attr/colorSurfaceContainerHighest"
-            app:borderWidth="0.5dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginStart="4dp"
-            android:src="@drawable/icon_undo"
-            app:maxImageSize="18dp"
-            app:fabCustomSize="36dp"
-            app:elevation="1dp" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_overview"
-            style="@style/Widget.Material3.Button.IconButton.Outlined"
-            app:backgroundTint="?attr/colorSurfaceContainerHighest"
-            app:borderWidth="0.5dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginStart="4dp"
-            android:src="@drawable/icon_tab"
-            app:maxImageSize="18dp"
-            app:fabCustomSize="36dp"
-            app:elevation="1dp" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_menu"
-            style="@style/Widget.Material3.Button.IconButton.Outlined"
-            app:backgroundTint="?attr/colorSurfaceContainerHighest"
-            app:borderWidth="0.5dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginStart="4dp"
-            android:src="@drawable/icon_profile_standard"
-            app:maxImageSize="18dp"
-            app:fabCustomSize="36dp"
-            app:elevation="1dp" />
-
-    </LinearLayout>
+        android:layout_alignParentTop="true" />
 
     <!-- Fancy Rippling Wavy Top Loading Progress Line -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/main_progress_bar_compose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/appBar"/>
+        android:layout_below="@id/compose_address_bar"/>
 
     <!-- Top Loading Progress Line -->
     <com.google.android.material.progressindicator.LinearProgressIndicator

@@ -977,61 +977,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return true;
         });
         setSelectedTab();
-    }
-
-    @SuppressLint({"ClickableViewAccessibility", "UnsafeOptInUsageError"})
+     @SuppressLint({"ClickableViewAccessibility", "UnsafeOptInUsageError"})
     private void initOmniBox() {
-
         search_input = dialogViewSearch.findViewById(R.id.search_input);
-        appBar = findViewById(R.id.appBar);
-        appBar_title = findViewById(R.id.appBar_title);
         contentView = findViewById(android.R.id.content);
-        LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
-
-        FloatingActionButton fab_showAppBar = findViewById(R.id.fab_showAppBar);
-        if (fab_showAppBar != null) {
-            fab_showAppBar.setOnClickListener(v1 -> {
-                appBar.setVisibility(VISIBLE);
-                ObjectAnimator animationBack = ObjectAnimator.ofFloat(appBar, "translationY", 0f);
-                animationBack.setDuration(250);
-                animationBack.start();
-                ObjectAnimator animationBack2 = ObjectAnimator.ofFloat(appBar_buttons, "translationY", 0f);
-                animationBack2.setDuration(250);
-                animationBack2.start();
-            });
-        }
-
-        View item_cardView = findViewById(R.id.item_cardView);
-        if (item_cardView != null) {
-            item_cardView.setOnClickListener(v -> {
-                showOverflowMenu(v);
-            });
-        }
+        composeAddressBar = findViewById(R.id.compose_address_bar);
 
         View fab_bubble = findViewById(R.id.fab_bubble);
         if (fab_bubble != null) {
             fab_bubble.setOnClickListener(v -> animateAddressBarCollapse(false));
         }
 
-        appBar.setOnClickListener(view -> {
-            initSearch();
-            sp.edit().putString("sp_search_customSearches", "").apply();
-            String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-            search_input.setText(currentUrl);
-            dialogSearch.show();
-            HelperUnit.showSoftKeyboard(search_input);
-        });
-        appBar.setOnLongClickListener(v -> {
-            ObjectAnimator animation = ObjectAnimator.ofFloat(appBar, "translationY", 275f);
-            animation.setDuration(250);
-            animation.start();
-            if (appBar_buttons != null) {
-                ObjectAnimator animation2 = ObjectAnimator.ofFloat(appBar_buttons, "translationY", 275f);
-                animation2.setDuration(250);
-                animation2.start();
-            }
-            return true;
-        });
+        updateAddressBar();
+    }
 
         fab_menu = findViewById(R.id.fab_menu);
         if (fab_menu != null) {
@@ -1221,39 +1179,86 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return url.startsWith("file:///android_asset/");
     }
 
+    private androidx.compose.ui.platform.ComposeView composeAddressBar;
+
+    public void updateAddressBar() {
+        if (composeAddressBar == null) {
+            composeAddressBar = findViewById(R.id.compose_address_bar);
+        }
+        if (composeAddressBar == null) return;
+
+        String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+        String currentTitle = ninjaWebView != null ? ninjaWebView.getTitle() : "";
+
+        if (isHomePage(currentUrl)) {
+            composeAddressBar.setVisibility(GONE);
+            return;
+        } else {
+            composeAddressBar.setVisibility(VISIBLE);
+        }
+
+        boolean isIncognito = ninjaWebView != null && ninjaWebView.isIncognito();
+
+        com.petal.browser.compose.home.PetalAddressBarBridge.bindAddressBar(
+                composeAddressBar,
+                this,
+                currentUrl != null ? currentUrl : "",
+                currentTitle != null ? currentTitle : "",
+                isIncognito,
+                () -> {
+                    if (ninjaWebView != null && ninjaWebView.canGoBack()) {
+                        ninjaWebView.goBack();
+                    } else if (ninjaWebView != null) {
+                        ninjaWebView.loadUrl("about:blank");
+                        showAlbum(currentAlbumController, "about:blank");
+                    }
+                },
+                () -> {
+                    String shareUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+                    if (shareUrl != null && !shareUrl.isEmpty() && !isHomePage(shareUrl)) {
+                        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                        shareIntent.setType("text/plain");
+                        shareIntent.putExtra(Intent.EXTRA_TEXT, shareUrl);
+                        startActivity(Intent.createChooser(shareIntent, "Share Link"));
+                    }
+                },
+                () -> {
+                    initSearch();
+                    String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+                    if (search_input != null) {
+                        search_input.setText(cUrl);
+                        search_input.selectAll();
+                    }
+                    if (dialogSearch != null) dialogSearch.show();
+                    HelperUnit.showSoftKeyboard(search_input);
+                }
+        );
+    }
+
     private boolean isAddressBarCollapsed = false;
 
     public void animateAddressBarCollapse(boolean collapse) {
         String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
         View fab_bubble = findViewById(R.id.fab_bubble);
+        if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
 
         if (isHomePage(currentUrl)) {
-            if (appBar != null) appBar.setVisibility(GONE);
-            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
-            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             isAddressBarCollapsed = false;
             return;
         }
 
-        if (appBar == null) return;
-        LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+        if (composeAddressBar == null) return;
 
         if (collapse && !isAddressBarCollapsed) {
             isAddressBarCollapsed = true;
-            float targetY = -(appBar.getHeight() + HelperUnit.convertDpToPixel(40f, context));
+            float targetY = -(composeAddressBar.getHeight() + HelperUnit.convertDpToPixel(40f, context));
 
-            ObjectAnimator anim1 = ObjectAnimator.ofFloat(appBar, "translationY", targetY);
+            ObjectAnimator anim1 = ObjectAnimator.ofFloat(composeAddressBar, "translationY", targetY);
             anim1.setDuration(280);
             anim1.setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f));
             anim1.start();
-
-            if (appBar_buttons != null) {
-                ObjectAnimator anim2 = ObjectAnimator.ofFloat(appBar_buttons, "translationY", targetY);
-                anim2.setDuration(280);
-                anim2.setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f));
-                anim2.start();
-            }
 
             if (fab_bubble != null) {
                 fab_bubble.setVisibility(VISIBLE);
@@ -1271,21 +1276,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         } else if (!collapse && isAddressBarCollapsed) {
             isAddressBarCollapsed = false;
+            composeAddressBar.setVisibility(VISIBLE);
 
-            appBar.setVisibility(VISIBLE);
-            if (appBar_buttons != null) appBar_buttons.setVisibility(VISIBLE);
-
-            ObjectAnimator anim1 = ObjectAnimator.ofFloat(appBar, "translationY", 0f);
+            ObjectAnimator anim1 = ObjectAnimator.ofFloat(composeAddressBar, "translationY", 0f);
             anim1.setDuration(300);
             anim1.setInterpolator(new android.view.animation.OvershootInterpolator(1.1f));
             anim1.start();
-
-            if (appBar_buttons != null) {
-                ObjectAnimator anim2 = ObjectAnimator.ofFloat(appBar_buttons, "translationY", 0f);
-                anim2.setDuration(300);
-                anim2.setInterpolator(new android.view.animation.OvershootInterpolator(1.1f));
-                anim2.start();
-            }
 
             if (fab_bubble != null) {
                 fab_bubble.animate()
@@ -1299,78 +1295,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    @SuppressLint({"UnsafeOptInUsageError"})
-    public void updateOmniBox() {
-        if (fab_overview != null) {
-            fab_overview.setImageResource(R.drawable.icon_tab);
+    private void updateOmniBox() {
+        if (ninjaWebView == null) return;
+        updateAddressBar();
+
+        String url = ninjaWebView.getUrl();
+        if (isHomePage(url)) {
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble = findViewById(R.id.fab_bubble);
+            if (fab_bubble != null) fab_bubble.setVisibility(GONE);
+            isAddressBarCollapsed = false;
+        } else {
+            if (composeAddressBar != null) {
+                composeAddressBar.setVisibility(VISIBLE);
+                composeAddressBar.setTranslationY(0f);
+            }
+            View fab_bubble = findViewById(R.id.fab_bubble);
+            if (fab_bubble != null) fab_bubble.setVisibility(GONE);
+            isAddressBarCollapsed = false;
         }
 
-        try {
-            if (badgeDrawable != null && fab_overview != null && findViewById(R.id.layout) != null) {
-                badgeDrawable.setVisible(BrowserContainer.size() > 1);
-                badgeDrawable.setNumber(BrowserContainer.size());
-                BadgeUtils.attachBadgeDrawable(badgeDrawable, fab_overview, findViewById(R.id.layout));
+        if (url != null) {
+            ninjaWebView.initPreferences(url);
+            if (ninjaWebView.isForeground()) {
+                progressBar.setVisibility(GONE);
+                if (fab_menu != null) setProfileIcon(fab_menu, url);
             }
-            if (bottom_navigation != null) {
-                bottom_navigation.getOrCreateBadge(R.id.page_0).setNumber(BrowserContainer.size());
-            }
-        } catch (Exception ignored) {}
-
-        if (currentAlbumController instanceof NinjaWebView) {
-            ninjaWebView = (NinjaWebView) currentAlbumController;
-            String url = ninjaWebView.getUrl();
-            
-            // Homepage Gating check
-            View fab_bubble = findViewById(R.id.fab_bubble);
-            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
-            if (isHomePage(url)) {
-                if (appBar != null) appBar.setVisibility(GONE);
-                if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
-                if (fab_bubble != null) fab_bubble.setVisibility(GONE);
-                isAddressBarCollapsed = false;
-            } else {
-                if (appBar != null) {
-                    appBar.setVisibility(VISIBLE);
-                    appBar.setTranslationY(0f);
-                }
-                if (appBar_buttons != null) {
-                    appBar_buttons.setVisibility(VISIBLE);
-                    appBar_buttons.setTranslationY(0f);
-                }
-                if (fab_bubble != null) fab_bubble.setVisibility(GONE);
-                isAddressBarCollapsed = false;
-            }
-
-            if (url != null) {
-                ninjaWebView.initPreferences(url);
-                if (ninjaWebView.isForeground()) {
-                    progressBar.setVisibility(GONE);
-                    if (fab_menu != null) setProfileIcon(fab_menu, url);
-                    if (appBar_title != null) {
-                        String title = ninjaWebView.getTitle();
-                        appBar_title.setText(title != null && !title.isEmpty() ? title : url);
-                    }
-                    ImageView menuIcon = findViewById(R.id.menu_icon);
-                    if (menuIcon != null) {
-                        if (url.startsWith("https://")) {
-                            menuIcon.setImageResource(R.drawable.icon_secure);
-                        } else if (url.startsWith("http://")) {
-                            menuIcon.setImageResource(R.drawable.icon_unsecure);
-                        } else {
-                            FaviconHelper.setFavicon(context, contentView, url, R.id.menu_icon, R.drawable.icon_secure);
-                        }
-                    }
-                    TextView overflowURL = findViewById(R.id.appbar_URL);
-                    if (overflowURL != null) {
-                        overflowURL.setText(url);
-                        HelperUnit.setHighLightedText(context, overflowURL, url, HelperUnit.domain(url));
-                    }
-                }
-            }
-        } else {
-            if (appBar_title != null) appBar_title.setText(getString(R.string.app_name));
-            TextView overflowURL = findViewById(R.id.appbar_URL);
-            if (overflowURL != null) overflowURL.setText("about:blank");
         }
     }
 

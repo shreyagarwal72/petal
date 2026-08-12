@@ -485,6 +485,21 @@ public class NinjaWebView extends WebView implements AlbumController {
         this.predecessor = predecessor;
     }
 
+    @Override
+    public synchronized void destroy() {
+        if (isIncognito) {
+            try {
+                clearHistory();
+                clearCache(true);
+                clearFormData();
+                clearSslPreferences();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        super.destroy();
+    }
+
     public boolean isIncognito() {
         return isIncognito;
     }
