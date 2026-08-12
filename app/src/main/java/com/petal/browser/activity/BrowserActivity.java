@@ -418,19 +418,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onDestroy();
     }
 
+    private long lastBackPressTime = 0;
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
             case KeyEvent.KEYCODE_MENU:
-                showOverflow(null, null, 0, ninjaWebView.getTitle(), ninjaWebView.getUrl(), null, null, 0);
+                showOverflow(null, null, 0, ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "", null, null, 0);
+                return true;
             case KeyEvent.KEYCODE_BACK:
                 if (fullscreenHolder != null || customView != null || videoView != null) {
                     Log.v(TAG, "Petal in fullscreen mode");
-                } else if (searchOnSiteLayout.getVisibility() == VISIBLE){
+                } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
                     searchOnSiteInput.setText("");
                     searchOnSiteLayout.setVisibility(GONE);
                     appBar.setVisibility(VISIBLE);
-                } else if (ninjaWebView.canGoBack()){
+                } else if (ninjaWebView != null && ninjaWebView.canGoBack()){
                     sp.edit().putBoolean("backPressed", true).apply();
                     ninjaWebView.goBack();
                 } else {
@@ -440,12 +443,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         ninjaWebView.loadUrl(homeUrl);
                         showAlbum(currentAlbumController, homeUrl);
                     } else {
-                        removeAlbum(currentAlbumController);
+                        long currentTime = System.currentTimeMillis();
+                        if (currentTime - lastBackPressTime < 2000) {
+                            finish();
+                        } else {
+                            lastBackPressTime = currentTime;
+                            NinjaToast.show(BrowserActivity.this, "Press back again to exit Petal");
+                        }
                     }
                 }
                 return true;
         }
-        return false;
+        return super.onKeyDown(keyCode, event);
     }
 
     public void onTabUrlStarted(NinjaWebView webView, String url) {

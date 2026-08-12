@@ -64,20 +64,31 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.ui.graphics.graphicsLayer
+
 // ── 1. Data model ───────────────────────────────────────────────────────
 
 data class PetalShortcut(
     val label: String,
     val url: String,
-    val letter: String = label.take(1).uppercase(),
+    val siteId: String,
+    val containerColor: Color,
+    val contentColor: Color = Color.White
 )
 
 val defaultPetalShortcuts = listOf(
-    PetalShortcut("Wiki", "https://wikipedia.org"),
-    PetalShortcut("GitHub", "https://github.com"),
-    PetalShortcut("DuckDuckGo", "https://duckduckgo.com"),
-    PetalShortcut("Reddit", "https://reddit.com"),
-    PetalShortcut("News", "https://news.ycombinator.com"),
+    PetalShortcut("YouTube", "https://youtube.com", "youtube", Color(0xFFFF0000)),
+    PetalShortcut("GitHub", "https://github.com", "github", Color(0xFF24292E)),
+    PetalShortcut("Wikipedia", "https://wikipedia.org", "wikipedia", Color(0xFF43464E)),
+    PetalShortcut("DuckDuckGo", "https://duckduckgo.com", "duckduckgo", Color(0xFFDE5833)),
+    PetalShortcut("Weather", "https://www.google.com/search?q=weather", "weather", Color(0xFF4285F4))
 )
 
 private val petalShapes: List<Shape> = listOf(
@@ -173,12 +184,8 @@ fun PetalHomeScreen(
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-    // Persistent state loaded directly from SharedPreferences
     var isAmoledEnabled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
     var isDynamicColorEnabled by remember { mutableStateOf(sp.getBoolean("useDynamicColor", true)) }
-    var isAdBlockEnabled by remember { mutableStateOf(sp.getBoolean("sp_ad_block", true)) }
-    var isHttpsOnlyEnabled by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
-    var selectedNavTab by remember { mutableStateOf(PetalNavTab.HOME) }
 
     PetalExpressiveTheme(
         dynamicColor = isDynamicColorEnabled,
@@ -333,22 +340,40 @@ private fun PetalBloom(
 
         shortcuts.take(6).forEachIndexed { index, shortcut ->
             val shape = petalShapes[index % petalShapes.size]
+            var isPressed by remember { mutableStateOf(false) }
+
+            val scale by animateFloatAsState(
+                targetValue = if (isPressed) 0.84f else 1.0f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                ),
+                finishedListener = {
+                    if (isPressed) {
+                        isPressed = false
+                        onOpenShortcut(shortcut)
+                    }
+                },
+                label = "petalIconAnim"
+            )
+
             Surface(
-                onClick = { onOpenShortcut(shortcut) },
+                onClick = { isPressed = true },
                 shape = shape,
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(petalSize),
+                color = shortcut.containerColor,
+                contentColor = shortcut.contentColor,
+                modifier = Modifier
+                    .size(petalSize)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    Text(
-                        shortcut.letter,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    )
+                    SiteBrandIcon(siteId = shortcut.siteId, label = shortcut.label)
                 }
             }
         }
@@ -357,11 +382,45 @@ private fun PetalBloom(
     val labels = shortcuts.take(6).joinToString("  ·  ") { it.label }
     Text(
         labels,
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.outline,
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+@Composable
+private fun SiteBrandIcon(siteId: String, label: String) {
+    when (siteId) {
+        "youtube" -> {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.PlayArrow, contentDescription = "YouTube", tint = Color.White, modifier = Modifier.size(28.dp))
+            }
+        }
+        "github" -> {
+            Icon(Icons.Rounded.Code, contentDescription = "GitHub", tint = Color.White, modifier = Modifier.size(26.dp))
+        }
+        "wikipedia" -> {
+            Text(
+                "W",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
+                color = Color.White
+            )
+        }
+        "duckduckgo" -> {
+            Icon(Icons.Rounded.Shield, contentDescription = "DuckDuckGo", tint = Color.White, modifier = Modifier.size(26.dp))
+        }
+        "weather" -> {
+            Icon(Icons.Rounded.WbSunny, contentDescription = "Google Weather", tint = Color(0xFFFFD54F), modifier = Modifier.size(26.dp))
+        }
+        else -> {
+            Text(
+                label.take(1).uppercase(),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color.White
+            )
+        }
+    }
 }
 
 @Composable
