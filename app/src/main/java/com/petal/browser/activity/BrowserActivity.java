@@ -461,7 +461,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 @Override
                 public void onSearch(String query) {
                     if (query != null && !query.trim().isEmpty()) {
-                        ninjaWebView.loadUrl(query);
+                        ninjaWebView.loadUrl(BrowserUnit.queryWrapper(BrowserActivity.this, query));
                         showAlbum(currentAlbumController);
                     } else {
                         try {
