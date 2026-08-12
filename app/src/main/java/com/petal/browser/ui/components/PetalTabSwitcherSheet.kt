@@ -41,7 +41,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
-import com.petal.browser.view.NinjaWebView
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 data class TabModel(
