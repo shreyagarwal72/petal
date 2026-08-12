@@ -17,10 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -34,10 +32,8 @@ private val ThumbSize = 30.dp
 private val ThumbInset = 8.dp
 
 /**
- * Petal Expressive slider: a chunky pill track with a filled
- * section and a 12-point scalloped cookie thumb that rides *inside* the pill.
- * The thumb physically rolls — its rotation is derived from the distance travelled,
- * so the scallops turn like a wheel as the value changes.
+ * Petal Expressive slider: a chunky pill track with a filled section
+ * and a smooth rolling thumb inside the pill track.
  */
 @Composable
 fun PetalSlider(
@@ -64,6 +60,7 @@ fun StrideSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    steps: Int = 0,
     enabled: Boolean = true,
     onValueChangeFinished: (() -> Unit)? = null,
 ) {
@@ -71,6 +68,7 @@ fun StrideSlider(
         value = value,
         onValueChange = onValueChange,
         valueRange = valueRange,
+        steps = steps,
         enabled = enabled,
         onValueChangeFinished = onValueChangeFinished,
         modifier = modifier.height(TrackHeight),
@@ -115,14 +113,14 @@ fun StrideSlider(
                             else MaterialTheme.colorScheme.outlineVariant,
                         ),
                 )
-                // Scalloped cookie thumb, rolling as it travels
+                // Rolling thumb inside the pill track
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .offset(x = thumbStart)
                         .size(ThumbSize)
                         .graphicsLayer { rotationZ = rollDegrees }
-                        .clip(MaterialShapes.Cookie12Sided.toShape())
+                        .clip(RoundedCornerShape(50))
                         .background(
                             if (enabled) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.surfaceContainer,
