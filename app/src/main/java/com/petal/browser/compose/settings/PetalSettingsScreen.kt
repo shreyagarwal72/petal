@@ -174,7 +174,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     ) {
         Scaffold(
             topBar = {
-                Column(modifier = Modifier.background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
+                Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
                     TopAppBar(
                         title = {
                             Text(
@@ -297,76 +297,13 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 1. Live Interactive Font & Accent Customization (Stride Fonts & Monet Colors)
-                if ((currentCategory == SettingsCategory.APPEARANCE || searchQuery.isNotBlank()) && matchesSearch("Appearance", "fonts accent theme palette live preview amoled")) {
+                if ((currentCategory == SettingsCategory.APPEARANCE || searchQuery.isNotBlank()) && matchesSearch("Appearance", "fonts accent theme palette amoled")) {
                     SettingsCategoryCard(title = "Stride Custom Fonts & Accent Themes", icon = Icons.Rounded.Palette) {
                         Text(
-                            "Customize app typography and accent style with live real-time preview",
+                            "Customize app typography and accent style",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
-                        // --- LIVE PREVIEW CONTAINER CARD ---
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            PetalExpressiveTheme(
-                                dynamicColor = isDynamicColor,
-                                useAmoled = isAmoled,
-                                appFont = selectedFont,
-                                colorStyle = selectedColorStyle,
-                                paletteId = selectedPaletteId
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            "LIVE PREVIEW",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Text(
-                                            "${selectedFont.label} • ${selectedColorStyle.label}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-
-                                    Text(
-                                        "Petal Web Browser",
-                                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-
-                                    Text(
-                                        "The quick brown fox jumps over the lazy dog. 1234567890",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Button(onClick = {}, shape = RoundedCornerShape(12.dp)) {
-                                            Text("Primary")
-                                        }
-                                        FilledTonalButton(onClick = {}, shape = RoundedCornerShape(12.dp)) {
-                                            Text("Tonal")
-                                        }
-                                        IconSwitch(checked = true, icon = Icons.Rounded.Check, onCheckedChange = {})
-                                    }
-                                }
-                            }
-                        }
 
                         // --- Font Choice Chips ---
                         Text(
@@ -959,33 +896,37 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     }
                                 }
 
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                                     OutlinedButton(
                                         onClick = {
                                             try {
-                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com"))
+                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser"))
                                             } catch (e: Exception) { e.printStackTrace() }
                                         },
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(14.dp),
                                         modifier = Modifier.weight(1f)
                                     ) {
-                                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(6.dp))
                                         Text("GitHub")
                                     }
 
-                                    OutlinedButton(
+                                    Button(
                                         onClick = {
                                             try {
-                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/issues"))
+                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser/issues"))
                                             } catch (e: Exception) { e.printStackTrace() }
                                         },
-                                        shape = RoundedCornerShape(12.dp),
-                                        modifier = Modifier.weight(1f)
+                                        shape = RoundedCornerShape(14.dp),
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
                                     ) {
-                                        Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Feedback")
+                                        Text("Feedback", fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }

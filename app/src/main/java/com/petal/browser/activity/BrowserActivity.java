@@ -1530,9 +1530,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 @Override
                 public void onToggleDesktopSite(boolean enabled) {
                     sp.edit().putBoolean(profile + "_desktop", enabled).apply();
+                    sp.edit().putBoolean("profileStandard_desktop", enabled).apply();
                     if (ninjaWebView != null) {
-                        ninjaWebView.initWebSettings();
-                        ninjaWebView.reload();
+                        ninjaWebView.setDesktopMode(enabled);
                     }
                     NinjaToast.show(BrowserActivity.this, enabled ? "Desktop site requested" : "Mobile site requested");
                 }

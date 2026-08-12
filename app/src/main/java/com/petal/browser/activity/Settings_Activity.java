@@ -7,6 +7,9 @@ import android.view.MenuItem;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.petal.browser.R;
 import com.petal.browser.compose.settings.PetalSettingsBridge;
@@ -20,6 +23,9 @@ public class Settings_Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         HelperUnit.initTheme(this);
         EdgeToEdge.enable(this);
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        controller.hide(WindowInsetsCompat.Type.systemBars());
+        controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         setContentView(PetalSettingsBridge.createSettingsView(this, () -> {
             finish();
             return kotlin.Unit.INSTANCE;

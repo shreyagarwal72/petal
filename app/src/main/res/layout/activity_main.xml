@@ -12,7 +12,6 @@
         android:id="@+id/compose_address_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
         android:layout_alignParentTop="true" />
 
     <!-- Fancy Rippling Wavy Top Loading Progress Line -->

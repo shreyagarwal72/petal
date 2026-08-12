@@ -63,20 +63,19 @@ fun PetalAddressBar(
     }
 
     val containerColor = if (isIncognito) {
-        MaterialTheme.colorScheme.surfaceVariant
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.90f)
     } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.90f)
     }
 
     Surface(
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(28.dp),
         color = containerColor,
-        tonalElevation = 3.dp,
-        shadowElevation = 4.dp,
+        tonalElevation = 6.dp,
+        shadowElevation = 6.dp,
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = 12.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Row(
             modifier = Modifier

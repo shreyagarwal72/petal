@@ -587,7 +587,7 @@ private fun getDownloadItems(
 private fun openDownloadedFile(context: Context, item: DownloadItem) {
     try {
         var contentUri: Uri? = null
-        var mimeType: String? = null
+        var mimeType: String? = item.mimeType
 
         val localUriString = item.localUri
         if (!localUriString.isNullOrEmpty()) {
@@ -596,11 +596,15 @@ private fun openDownloadedFile(context: Context, item: DownloadItem) {
                 val filePath = rawUri.path ?: localUriString.removePrefix("file://")
                 val file = java.io.File(filePath)
                 if (file.exists()) {
-                    contentUri = androidx.core.content.FileProvider.getUriForFile(
-                        context,
-                        context.packageName + ".fileprovider",
-                        file
-                    )
+                    try {
+                        contentUri = androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            context.packageName + ".fileprovider",
+                            file
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             } else {
                 contentUri = rawUri
@@ -608,23 +612,29 @@ private fun openDownloadedFile(context: Context, item: DownloadItem) {
         }
 
         if (contentUri == null) {
-            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            contentUri = dm.getUriForDownloadedFile(item.id)
+            try {
+                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                contentUri = dm.getUriForDownloadedFile(item.id)
+            } catch (e: Exception) { e.printStackTrace() }
         }
 
         if (contentUri != null) {
             val extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(item.fileName.ifEmpty { contentUri.toString() })
             if (!extension.isNullOrEmpty()) {
-                mimeType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
+                val detectedType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
+                if (!detectedType.isNullOrEmpty()) {
+                    mimeType = detectedType
+                }
             }
             if (mimeType.isNullOrEmpty()) mimeType = "*/*"
 
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(contentUri, mimeType)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            val chooser = Intent.createChooser(intent, "Open file with")
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val chooser = Intent.createChooser(intent, "Open file with").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
             context.startActivity(chooser)
         } else {
             val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
