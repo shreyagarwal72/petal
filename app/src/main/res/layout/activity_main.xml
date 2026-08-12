@@ -50,7 +50,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginStart="12dp"
-                android:layout_marginEnd="110dp"
+                android:layout_marginEnd="168dp"
                 android:id="@+id/textGroup"
                 android:orientation="vertical"
                 android:gravity="center_vertical"
@@ -93,9 +93,36 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
         android:orientation="horizontal"
-        android:layout_marginEnd="20dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginTop="12dp"
         tools:ignore="RelativeOverlap">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_share"
+            style="@style/Widget.Material3.Button.IconButton.Outlined"
+            app:backgroundTint="?attr/colorSurfaceContainerHighest"
+            app:borderWidth="0.5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/icon_share"
+            app:maxImageSize="18dp"
+            app:fabCustomSize="36dp"
+            app:elevation="1dp" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_undo"
+            style="@style/Widget.Material3.Button.IconButton.Outlined"
+            app:backgroundTint="?attr/colorSurfaceContainerHighest"
+            app:borderWidth="0.5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="4dp"
+            android:src="@drawable/icon_undo"
+            app:maxImageSize="18dp"
+            app:fabCustomSize="36dp"
+            app:elevation="1dp" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_overview"
@@ -105,9 +132,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:layout_marginStart="4dp"
             android:src="@drawable/icon_tab"
-            app:maxImageSize="20dp"
-            app:fabCustomSize="40dp"
+            app:maxImageSize="18dp"
+            app:fabCustomSize="36dp"
             app:elevation="1dp" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -118,10 +146,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
             android:src="@drawable/icon_profile_standard"
-            app:maxImageSize="20dp"
-            app:fabCustomSize="40dp"
+            app:maxImageSize="18dp"
+            app:fabCustomSize="36dp"
             app:elevation="1dp" />
 
     </LinearLayout>

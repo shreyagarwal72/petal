@@ -166,7 +166,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     ) {
         Scaffold(
             topBar = {
-                Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                Column(modifier = Modifier.background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
                     TopAppBar(
                         title = {
                             Text(
@@ -698,8 +698,23 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 7. Display & Scaling Sliders (using StrideSlider)
-                if (matchesSearch("Display", "text font scale page zoom text scaling stride slider")) {
+                if (matchesSearch("Display", "text font scale page zoom text scaling stride slider blur")) {
                     SettingsCategoryCard(title = "Display & Font Scaling", icon = Icons.Rounded.FormatSize) {
+                        var useBlur by remember { mutableStateOf(sp.getBoolean("sp_use_blur", true)) }
+
+                        ToggleRow(
+                            title = "UI Blur & Glassmorphism",
+                            subtitle = "Enable translucent blurred surfaces across sheets & menus",
+                            icon = Icons.Rounded.AutoAwesome,
+                            checked = useBlur,
+                            onCheckedChange = { newValue ->
+                                useBlur = newValue
+                                sp.edit().putBoolean("sp_use_blur", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -725,6 +740,28 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 valueRange = 0.7f..1.5f,
                                 modifier = Modifier.fillMaxWidth()
                             )
+                            Spacer(Modifier.height(12.dp))
+                            // LIVE TEXT SCALE PREVIEW BOX
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        "LIVE FONT PREVIEW (${(fontSize * 100).toInt()}%)",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "The quick brown fox jumps over the lazy dog.",
+                                        fontSize = (15 * fontSize).sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
                         }
 
                         Column(
@@ -752,6 +789,44 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 valueRange = 0.8f..2.0f,
                                 modifier = Modifier.fillMaxWidth()
                             )
+                            Spacer(Modifier.height(12.dp))
+                            // LIVE PAGE ZOOM PREVIEW BOX
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        "LIVE ZOOM PREVIEW (${(zoomLevel * 100).toInt()}%)",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.height(6.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = MaterialTheme.colorScheme.surface,
+                                        modifier = Modifier.fillMaxWidth().height((75 * zoomLevel).dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size((12 * zoomLevel).dp)) {}
+                                                Text(
+                                                    "Sample Web Page Article",
+                                                    fontSize = (12 * zoomLevel).sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                            Text(
+                                                "Rendering responsive web content at ${(zoomLevel * 100).toInt()}% zoom scale.",
+                                                fontSize = (10 * zoomLevel).sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

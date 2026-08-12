@@ -40,6 +40,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 interface PetalOverflowMenuActionHandler {
+    fun onGoBack()
     fun onGoForward()
     fun onToggleBookmark()
     fun onOpenDownloadsShortcut()
@@ -52,7 +53,7 @@ interface PetalOverflowMenuActionHandler {
     fun onDeleteBrowsingData()
     fun onOpenDownloads()
     fun onOpenBookmarks()
-    fun onBookmarkAllTabs()
+    fun onInstallPwa()
     fun onSearchOnSite()
     fun onPrintPdf()
     fun onSavePage()
@@ -68,6 +69,7 @@ object PetalOverflowBridge {
         title: String,
         url: String,
         isBookmarked: Boolean,
+        canGoBack: Boolean,
         canGoForward: Boolean,
         isDesktopSite: Boolean,
         handler: PetalOverflowMenuActionHandler
@@ -79,13 +81,40 @@ object PetalOverflowBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
-                    PetalExpressiveTheme {
+                    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+                    val useBlur = sp.getBoolean("sp_use_blur", true)
+                    val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
+                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                    val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
+                    val isAmoled = sp.getBoolean("sp_amoled", false)
+                    val dynamicColor = sp.getBoolean("useDynamicColor", false)
+
+                    val appFont = remember(fontName) {
+                        try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }
+                    }
+                    val colorStyle = remember(styleName) {
+                        try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                    }
+
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = appFont,
+                        colorStyle = colorStyle,
+                        paletteId = paletteId
+                    ) {
                         PetalOverflowMenuSheet(
                             pageTitle = title,
                             pageUrl = url,
                             isBookmarked = isBookmarked,
+                            canGoBack = canGoBack,
                             canGoForward = canGoForward,
                             isDesktopSite = isDesktopSite,
+                            useBlur = useBlur,
+                            onGoBack = {
+                                dialog.dismiss()
+                                handler.onGoBack()
+                            },
                             onGoForward = {
                                 dialog.dismiss()
                                 handler.onGoForward()
@@ -134,9 +163,9 @@ object PetalOverflowBridge {
                                 dialog.dismiss()
                                 handler.onOpenBookmarks()
                             },
-                            onBookmarkAllTabs = {
+                            onInstallPwa = {
                                 dialog.dismiss()
-                                handler.onBookmarkAllTabs()
+                                handler.onInstallPwa()
                             },
                             onSearchOnSite = {
                                 dialog.dismiss()
@@ -179,8 +208,11 @@ fun PetalOverflowMenuSheet(
     pageTitle: String,
     pageUrl: String,
     isBookmarked: Boolean,
+    canGoBack: Boolean,
     canGoForward: Boolean,
     isDesktopSite: Boolean,
+    useBlur: Boolean = true,
+    onGoBack: () -> Unit,
     onGoForward: () -> Unit,
     onToggleBookmark: () -> Unit,
     onOpenDownloadsShortcut: () -> Unit,
@@ -193,7 +225,7 @@ fun PetalOverflowMenuSheet(
     onDeleteBrowsingData: () -> Unit,
     onOpenDownloads: () -> Unit,
     onOpenBookmarks: () -> Unit,
-    onBookmarkAllTabs: () -> Unit,
+    onInstallPwa: () -> Unit,
     onSearchOnSite: () -> Unit,
     onPrintPdf: () -> Unit,
     onSavePage: () -> Unit,
@@ -202,10 +234,15 @@ fun PetalOverflowMenuSheet(
     onOpenSettings: () -> Unit
 ) {
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
+    val surfaceColor = if (useBlur) {
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    }
 
     Surface(
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = surfaceColor,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -269,17 +306,17 @@ fun PetalOverflowMenuSheet(
                 }
             }
 
-            // Top Icon Row (5 circular icon buttons) with spring press feedback
+            // Top Icon Row: Back → Star/Bookmark → Download Site (offline/local) → Refresh
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CircularIconButton(
-                    icon = Icons.Rounded.ArrowForward,
-                    contentDescription = "Forward",
-                    enabled = canGoForward,
-                    onClick = onGoForward
+                    icon = Icons.Rounded.ArrowBack,
+                    contentDescription = "Back",
+                    enabled = canGoBack,
+                    onClick = onGoBack
                 )
                 CircularIconButton(
                     icon = if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
@@ -288,14 +325,9 @@ fun PetalOverflowMenuSheet(
                     onClick = onToggleBookmark
                 )
                 CircularIconButton(
-                    icon = Icons.Rounded.Downloading,
-                    contentDescription = "Downloads",
-                    onClick = onOpenDownloadsShortcut
-                )
-                CircularIconButton(
-                    icon = Icons.Rounded.Shield,
-                    contentDescription = "Page Info",
-                    onClick = onOpenPageInfo
+                    icon = Icons.Rounded.DownloadForOffline,
+                    contentDescription = "Download Site (offline/local)",
+                    onClick = onSavePage
                 )
                 CircularIconButton(
                     icon = Icons.Rounded.Refresh,
@@ -306,7 +338,7 @@ fun PetalOverflowMenuSheet(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            // Section 1: New Tab, New Private Tab, Desktop Site
+            // Section 1: New Tab, New Private Tab, Desktop Site, Install as App
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 MenuRowItem(
                     icon = Icons.Rounded.Add,
@@ -325,6 +357,12 @@ fun PetalOverflowMenuSheet(
                     subtitle = "Request desktop version of websites",
                     checked = isDesktopSite,
                     onCheckedChange = onToggleDesktopSite
+                )
+                MenuRowItem(
+                    icon = Icons.Rounded.AppShortcut,
+                    title = "Install as app",
+                    subtitle = "Add Web App shortcut to Home screen",
+                    onClick = onInstallPwa
                 )
             }
 
@@ -346,7 +384,7 @@ fun PetalOverflowMenuSheet(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            // Section 3: Downloads, Bookmarks, Bookmark all tabs
+            // Section 3: Downloads, Bookmarks
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 MenuRowItem(
                     icon = Icons.Rounded.Download,
@@ -357,11 +395,6 @@ fun PetalOverflowMenuSheet(
                     icon = Icons.Rounded.Bookmark,
                     title = "Bookmarks",
                     onClick = onOpenBookmarks
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.BookmarkAdd,
-                    title = "Bookmark all tabs",
-                    onClick = onBookmarkAllTabs
                 )
             }
 

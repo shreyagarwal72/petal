@@ -964,6 +964,27 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return true;
             });
         }
+
+        FloatingActionButton fab_share = findViewById(R.id.fab_share);
+        if (fab_share != null) {
+            fab_share.setOnClickListener(v -> {
+                if (ninjaWebView != null && ninjaWebView.getUrl() != null) {
+                    shareLink(ninjaWebView.getTitle(), ninjaWebView.getUrl());
+                }
+            });
+        }
+
+        FloatingActionButton fab_undo = findViewById(R.id.fab_undo);
+        if (fab_undo != null) {
+            fab_undo.setOnClickListener(v -> {
+                if (ninjaWebView != null && ninjaWebView.canGoBack()) {
+                    ninjaWebView.goBack();
+                } else {
+                    NinjaToast.show(BrowserActivity.this, "Nothing to undo");
+                }
+            });
+        }
+
         fab_overview = findViewById(R.id.fab_overview);
         list_search = dialogViewSearch.findViewById(R.id.list_search);
         progressBar = findViewById(R.id.main_progress_bar);
@@ -1408,6 +1429,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             isBookmarked = action.checkBookmark(ninjaWebView.getUrl());
             action.close();
         }
+        boolean canGoBack = ninjaWebView != null && ninjaWebView.canGoBack();
         boolean canGoForward = ninjaWebView != null && ninjaWebView.canGoForward();
         String profile = NinjaWebView.getProfile();
         boolean isDesktopSite = sp.getBoolean(profile + "_desktop", false);
@@ -1417,9 +1439,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ninjaWebView != null && ninjaWebView.getTitle() != null ? ninjaWebView.getTitle() : "",
             ninjaWebView != null && ninjaWebView.getUrl() != null ? ninjaWebView.getUrl() : "",
             isBookmarked,
+            canGoBack,
             canGoForward,
             isDesktopSite,
             new com.petal.browser.ui.components.PetalOverflowMenuActionHandler() {
+                @Override
+                public void onGoBack() {
+                    if (ninjaWebView != null && ninjaWebView.canGoBack()) {
+                        ninjaWebView.goBack();
+                    }
+                }
+
                 @Override
                 public void onGoForward() {
                     if (ninjaWebView != null && ninjaWebView.canGoForward()) {
@@ -1503,16 +1533,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
 
                 @Override
-                public void onBookmarkAllTabs() {
-                    for (com.petal.browser.browser.AlbumController album : com.petal.browser.browser.BrowserContainer.list()) {
-                        if (album instanceof NinjaWebView) {
-                            NinjaWebView webView = (NinjaWebView) album;
-                            if (webView.getUrl() != null && !webView.getUrl().isEmpty()) {
-                                saveBookmark(webView.getTitle(), webView.getUrl());
-                            }
-                        }
-                    }
-                    NinjaToast.show(BrowserActivity.this, R.string.app_done);
+                public void onInstallPwa() {
+                    installPwaShortcut();
                 }
 
                 @Override
@@ -2899,8 +2921,36 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         snackbar.show();
     }
 
-    public static View getView() {
-        return ninjaWebView != null ? ninjaWebView.getRootView() : null;
+    public void installPwaShortcut() {
+        if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
+        String url = ninjaWebView.getUrl();
+        String title = ninjaWebView.getTitle() != null && !ninjaWebView.getTitle().isEmpty() ? ninjaWebView.getTitle() : HelperUnit.domain(url);
+
+        Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        shortcutIntent.setPackage(getPackageName());
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.content.pm.ShortcutManager shortcutManager = getSystemService(android.content.pm.ShortcutManager.class);
+            if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported()) {
+                android.content.pm.ShortcutInfo pinShortcutInfo = new android.content.pm.ShortcutInfo.Builder(this, "pwa_" + Math.abs(url.hashCode()))
+                        .setShortLabel(title)
+                        .setLongLabel(title)
+                        .setIcon(android.graphics.drawable.Icon.createWithResource(this, R.mipmap.ic_launcher))
+                        .setIntent(shortcutIntent)
+                        .build();
+
+                shortcutManager.requestPinShortcut(pinShortcutInfo, null);
+                NinjaToast.show(this, "Added to Home screen");
+                return;
+            }
+        }
+        Intent addIntent = new Intent();
+        addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+        addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
+        addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.mipmap.ic_launcher));
+        addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+        sendBroadcast(addIntent);
+        NinjaToast.show(this, "Added to Home screen");
     }
 
     private void openSettingsScreen() {
@@ -2913,6 +2963,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
             });
+            android.view.animation.AlphaAnimation fadeIn = new android.view.animation.AlphaAnimation(0.0f, 1.0f);
+            fadeIn.setDuration(240);
+            settingsView.startAnimation(fadeIn);
             contentFrame.addView(settingsView);
         } catch (Exception e) {
             startActivity(new Intent(BrowserActivity.this, Settings_Activity.class));
