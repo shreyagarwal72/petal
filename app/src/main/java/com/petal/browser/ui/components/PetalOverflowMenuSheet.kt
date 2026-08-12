@@ -76,6 +76,15 @@ object PetalOverflowBridge {
     ) {
         try {
             val dialog = BottomSheetDialog(activity)
+            dialog.setOnShowListener {
+                val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                if (bottomSheet != null) {
+                    val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet)
+                    behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                    behavior.skipCollapsed = true
+                    bottomSheet.background = null
+                }
+            }
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
@@ -235,23 +244,33 @@ fun PetalOverflowMenuSheet(
 ) {
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
     val surfaceColor = if (useBlur) {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f)
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f)
     } else {
         MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
-    Surface(
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        color = surfaceColor,
-        modifier = Modifier.fillMaxWidth()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
+        contentAlignment = Alignment.BottomEnd
     ) {
-        Column(
+        Surface(
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 28.dp, bottomEnd = 8.dp),
+            color = surfaceColor,
+            tonalElevation = 8.dp,
+            shadowElevation = 12.dp,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .widthIn(max = 350.dp)
+                .padding(end = 12.dp, bottom = 12.dp)
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
             // Drag Handle Indicator
             Box(
                 modifier = Modifier
@@ -458,6 +477,7 @@ fun PetalOverflowMenuSheet(
             Spacer(Modifier.height(16.dp))
         }
     }
+}
 }
 
 @Composable

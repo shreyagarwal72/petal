@@ -100,7 +100,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-    // Search query state for settings search bar
+    var currentCategory by remember { mutableStateOf(SettingsCategory.OVERVIEW) }
     var searchQuery by remember { mutableStateOf("") }
 
     // Saved Preference States
@@ -150,11 +150,10 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         }
     }
 
-    // Helper filter function for Settings search
-    fun matchesSearch(title: String, subtitle: String = ""): Boolean {
+    fun matchesSearch(sectionTitle: String, keywords: String): Boolean {
         if (searchQuery.isBlank()) return true
-        val q = searchQuery.lowercase()
-        return title.lowercase().contains(q) || subtitle.lowercase().contains(q)
+        val query = searchQuery.trim().lowercase()
+        return sectionTitle.lowercase().contains(query) || keywords.lowercase().contains(query)
     }
 
     PetalExpressiveTheme(
@@ -170,12 +169,18 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     TopAppBar(
                         title = {
                             Text(
-                                "Settings",
+                                currentCategory.title,
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                             )
                         },
                         navigationIcon = {
-                            IconButton(onClick = onBackPress) {
+                            IconButton(onClick = {
+                                if (currentCategory != SettingsCategory.OVERVIEW) {
+                                    currentCategory = SettingsCategory.OVERVIEW
+                                } else {
+                                    onBackPress()
+                                }
+                            }) {
                                 Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                             }
                         },
@@ -191,7 +196,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 6.dp),
-                        placeholder = { Text("Search settings (fonts, DNS, homepage, language...)") },
+                        placeholder = { Text("Search settings...") },
                         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
@@ -219,9 +224,71 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                if (currentCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
+                    Text(
+                        "Categories",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    val categories = listOf(
+                        SettingsCategory.APPEARANCE,
+                        SettingsCategory.PRIVACY,
+                        SettingsCategory.SEARCH_HOMEPAGE,
+                        SettingsCategory.DISPLAY_ZOOM,
+                        SettingsCategory.ABOUT
+                    )
+
+                    categories.forEach { cat ->
+                        Surface(
+                            onClick = { currentCategory = cat },
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            tonalElevation = 2.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        modifier = Modifier.size(48.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(cat.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                        }
+                                    }
+                                    Column {
+                                        Text(
+                                            cat.title,
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            cat.subtitle,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+                            }
+                        }
+                    }
+                }
 
                 // 1. Live Interactive Font & Accent Customization (Stride Fonts & Monet Colors)
-                if (matchesSearch("Appearance", "fonts accent theme palette live preview amoled")) {
+                if ((currentCategory == SettingsCategory.APPEARANCE || searchQuery.isNotBlank()) && matchesSearch("Appearance", "fonts accent theme palette live preview amoled")) {
                     SettingsCategoryCard(title = "Stride Custom Fonts & Accent Themes", icon = Icons.Rounded.Palette) {
                         Text(
                             "Customize app typography and accent style with live real-time preview",
@@ -413,7 +480,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 2. Custom Homepage & Background Play
-                if (matchesSearch("Homepage", "custom home start page background play video audio media")) {
+                if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Homepage", "custom home start page background play video audio media")) {
                     SettingsCategoryCard(title = "Homepage & Media Playback", icon = Icons.Rounded.Home) {
                         Text(
                             "Custom Homepage:",
@@ -471,7 +538,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 3. Private DNS Options
-                if (matchesSearch("Private DNS", "dns cleanbrowsing cloudflare 1.1.1.1 google opendns security filter")) {
+                if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Private DNS", "dns cleanbrowsing cloudflare 1.1.1.1 google opendns security filter")) {
                     SettingsCategoryCard(title = "Private DNS Protection", icon = Icons.Rounded.Dns) {
                         Text(
                             "Encrypt DNS queries to prevent tracking & block malicious content:",
@@ -549,7 +616,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 4. Popular Languages Selector
-                if (matchesSearch("Language", "languages popular english spanish hindi french german chinese arabic portuguese russian japanese")) {
+                if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english spanish hindi french german chinese arabic portuguese russian japanese")) {
                     SettingsCategoryCard(title = "App Language", icon = Icons.Rounded.Language) {
                         Text(
                             "Choose your preferred display language:",
@@ -597,7 +664,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 5. Default Search Engine Section
-                if (matchesSearch("Search Engine", "google duckduckgo bing brave startpage ecosia search provider")) {
+                if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Search Engine", "google duckduckgo bing brave startpage ecosia search provider")) {
                     SettingsCategoryCard(title = "Default Search Engine", icon = Icons.Rounded.Search) {
                         val currentEngineName = remember(searchEngineIndex) {
                             val idx = searchEngineIndex.toIntOrNull() ?: 0
@@ -637,7 +704,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 6. Privacy & Shield Section
-                if (matchesSearch("Privacy Shield", "adblock tracker popups https javascript external apps protection")) {
+                if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Privacy Shield", "adblock tracker popups https javascript external apps protection")) {
                     SettingsCategoryCard(title = "Privacy & Shield Protection", icon = Icons.Rounded.Shield) {
                         ToggleRow(
                             title = "Ad & Tracker Shield",
@@ -705,7 +772,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 7. Display & Scaling Sliders (using StrideSlider)
-                if (matchesSearch("Display", "text font scale page zoom text scaling stride slider blur")) {
+                if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Display", "text font scale page zoom text scaling stride slider blur")) {
                     SettingsCategoryCard(title = "Display & Font Scaling", icon = Icons.Rounded.FormatSize) {
                         var useBlur by remember { mutableStateOf(sp.getBoolean("sp_use_blur", true)) }
 
@@ -839,7 +906,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 8. About App & About Developer Sections
-                if (matchesSearch("About", "app developer version github licenses terms open source")) {
+                if ((currentCategory == SettingsCategory.ABOUT || searchQuery.isNotBlank()) && matchesSearch("About", "app developer version github licenses terms open source")) {
                     SettingsCategoryCard(title = "About App & Developer", icon = Icons.Rounded.Info) {
                         // About App Subcard
                         Surface(

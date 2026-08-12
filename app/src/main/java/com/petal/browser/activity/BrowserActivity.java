@@ -511,10 +511,42 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 @Override
                 public void onAddShortcut() {
-                    if (ninjaWebView != null) {
-                        ninjaWebView.loadUrl("about:blank");
-                        showAlbum(currentAlbumController, "about:blank");
-                    }
+                    runOnUiThread(() -> {
+                        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(BrowserActivity.this);
+                        builder.setTitle("Add Custom Shortcut");
+                        LinearLayout layout = new LinearLayout(BrowserActivity.this);
+                        layout.setOrientation(LinearLayout.VERTICAL);
+                        layout.setPadding(48, 24, 48, 24);
+
+                        final EditText inputTitle = new EditText(BrowserActivity.this);
+                        inputTitle.setHint("Shortcut Name (e.g. Google)");
+                        layout.addView(inputTitle);
+
+                        final EditText inputUrl = new EditText(BrowserActivity.this);
+                        inputUrl.setHint("Website URL (e.g. https://google.com)");
+                        if (ninjaWebView != null && ninjaWebView.getUrl() != null && !isHomePage(ninjaWebView.getUrl())) {
+                            inputUrl.setText(ninjaWebView.getUrl());
+                            if (ninjaWebView.getTitle() != null) {
+                                inputTitle.setText(ninjaWebView.getTitle());
+                            }
+                        }
+                        layout.addView(inputUrl);
+
+                        builder.setView(layout);
+                        builder.setPositiveButton("Add", (dialog, which) -> {
+                            String title = inputTitle.getText().toString().trim();
+                            String url = inputUrl.getText().toString().trim();
+                            if (!url.isEmpty()) {
+                                if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                                    url = "https://" + url;
+                                }
+                                if (title.isEmpty()) title = HelperUnit.domain(url);
+                                saveBookmark(title, url);
+                            }
+                        });
+                        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+                        builder.show();
+                    });
                 }
 
                 @Override
