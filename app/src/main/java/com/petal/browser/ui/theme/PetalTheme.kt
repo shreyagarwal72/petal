@@ -17,6 +17,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+@RequiresOptIn(message = "This API is experimental and subject to change.")
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
+annotation class ExperimentalMaterial3ExpressiveApi
+
 // --- Default Material 3 Petal Colors ---
 private val PetalLightColors = lightColorScheme(
     primary = Color(0xFF006960),

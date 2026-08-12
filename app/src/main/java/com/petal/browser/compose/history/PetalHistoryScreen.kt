@@ -40,6 +40,7 @@ import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.compose.composable.ContainedLoadingIndicator
 import com.petal.browser.ui.components.entrance
+import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import java.text.SimpleDateFormat
 import java.util.Date

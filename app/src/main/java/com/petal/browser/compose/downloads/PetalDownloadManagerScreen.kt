@@ -39,7 +39,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.components.LinearRipplingWavyProgressIndicator
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
@@ -101,6 +103,18 @@ fun formatBytes(bytes: Long): String {
     val units = arrayOf("B", "KB", "MB", "GB")
     val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt().coerceIn(0, 3)
     return String.format(Locale.US, "%.1f %s", bytes / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
+}
+
+fun formatSpeed(bytesPerSec: Long): String {
+    if (bytesPerSec <= 0) return "0 KB/s"
+    return "${formatBytes(bytesPerSec)}/s"
+}
+
+fun formatEta(seconds: Long): String {
+    if (seconds <= 0) return "--"
+    val mins = seconds / 60
+    val secs = seconds % 60
+    return if (mins > 0) "${mins}m ${secs}s" else "${secs}s"
 }
 
 fun extractDomain(url: String): String {
@@ -514,8 +528,8 @@ private fun DownloadRowItem(item: DownloadItem, onOpenFile: () -> Unit) {
                     label = "Progress"
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                LinearWavyProgressIndicator(
-                    progress = { animatedProgress },
+                LinearRipplingWavyProgressIndicator(
+                    progress = animatedProgress,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
