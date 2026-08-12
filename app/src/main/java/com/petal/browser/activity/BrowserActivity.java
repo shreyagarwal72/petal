@@ -231,11 +231,42 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
+    protected void attachBaseContext(Context newBase) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(newBase);
+        String lang = sp.getString("sp_app_language", "system");
+        if (lang != null && !lang.equals("system")) {
+            Locale locale = Locale.forLanguageTag(lang);
+            Locale.setDefault(locale);
+            android.content.res.Configuration config = new android.content.res.Configuration(newBase.getResources().getConfiguration());
+            config.setLocale(locale);
+            newBase = newBase.createConfigurationContext(config);
+        }
+        super.attachBaseContext(newBase);
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        context = this;
+        activity = this;
 
-        activity = BrowserActivity.this;
-        context = BrowserActivity.this;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                NotificationChannel channelDownloads = new NotificationChannel("download_channel", "Downloads", NotificationManager.IMPORTANCE_HIGH);
+                channelDownloads.setDescription("Live real-time alerts for active downloads");
+                nm.createNotificationChannel(channelDownloads);
+                NotificationChannel channelGeneral = new NotificationChannel("1", "General", NotificationManager.IMPORTANCE_DEFAULT);
+                nm.createNotificationChannel(channelGeneral);
+            }
+        }
+        
         sp = PreferenceManager.getDefaultSharedPreferences(context);
         try {
             new BannerBlock(context);
@@ -876,6 +907,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     showOverflow(dialogOverview, listView, 4, list.get(position).getTitle(), list.get(position).getURL(), adapter, list, position);
                     return true;
                 }); }
+            else if (menuItem.getItemId() == R.id.page_incognito) {
+                addAlbum("Incognito Tab", sp.getString("favoriteURL", "about:blank"), true, true);
+                hideOverview();
+            }
             else if (menuItem.getItemId() == R.id.page_4) {
                 PopupMenu popup = new PopupMenu(this, bottom_navigation.findViewById(R.id.page_2));
                 popup.setForceShowIcon(true);
@@ -2967,35 +3002,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void installPwaShortcut() {
-        if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
-        String url = ninjaWebView.getUrl();
-        String title = ninjaWebView.getTitle() != null && !ninjaWebView.getTitle().isEmpty() ? ninjaWebView.getTitle() : HelperUnit.domain(url);
+        try {
+            if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
+            String url = ninjaWebView.getUrl();
+            String title = ninjaWebView.getTitle() != null && !ninjaWebView.getTitle().isEmpty() ? ninjaWebView.getTitle() : HelperUnit.domain(url);
 
-        Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        shortcutIntent.setPackage(getPackageName());
+            Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            shortcutIntent.setComponent(new android.content.ComponentName(this, BrowserActivity.class));
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            android.content.pm.ShortcutManager shortcutManager = getSystemService(android.content.pm.ShortcutManager.class);
-            if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported()) {
-                android.content.pm.ShortcutInfo pinShortcutInfo = new android.content.pm.ShortcutInfo.Builder(this, "pwa_" + Math.abs(url.hashCode()))
-                        .setShortLabel(title)
-                        .setLongLabel(title)
-                        .setIcon(android.graphics.drawable.Icon.createWithResource(this, R.mipmap.ic_launcher))
-                        .setIntent(shortcutIntent)
-                        .build();
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                android.content.pm.ShortcutManager shortcutManager = getSystemService(android.content.pm.ShortcutManager.class);
+                if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported()) {
+                    android.content.pm.ShortcutInfo pinShortcutInfo = new android.content.pm.ShortcutInfo.Builder(this, "pwa_" + Math.abs(url.hashCode()))
+                            .setShortLabel(title)
+                            .setLongLabel(title)
+                            .setIcon(android.graphics.drawable.Icon.createWithResource(this, R.mipmap.ic_launcher))
+                            .setIntent(shortcutIntent)
+                            .build();
 
-                shortcutManager.requestPinShortcut(pinShortcutInfo, null);
-                NinjaToast.show(this, "Added to Home screen");
-                return;
+                    shortcutManager.requestPinShortcut(pinShortcutInfo, null);
+                    NinjaToast.show(this, "Added to Home screen");
+                    return;
+                }
             }
+            Intent addIntent = new Intent();
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.mipmap.ic_launcher));
+            addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+            sendBroadcast(addIntent);
+            NinjaToast.show(this, "Added to Home screen");
+        } catch (Exception e) {
+            e.printStackTrace();
+            NinjaToast.show(this, "Failed to create PWA shortcut");
         }
-        Intent addIntent = new Intent();
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.mipmap.ic_launcher));
-        addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-        sendBroadcast(addIntent);
-        NinjaToast.show(this, "Added to Home screen");
     }
 
     private void openSettingsScreen() {

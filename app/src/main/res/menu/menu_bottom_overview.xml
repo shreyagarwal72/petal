@@ -7,7 +7,13 @@
         android:id="@+id/page_0"
         android:enabled="true"
         android:icon="@drawable/icon_tab"
-        android:title="@string/album_title_tab" />
+        android:title="Tabs" />
+
+    <item
+        android:id="@+id/page_incognito"
+        android:enabled="true"
+        android:icon="@drawable/icon_preview"
+        android:title="Incognito" />
 
     <item
         android:id="@+id/page_2"
@@ -20,12 +26,5 @@
         android:enabled="true"
         android:icon="@drawable/icon_history"
         android:title="@string/album_title_history" />
-
-    <item
-        android:id="@+id/page_4"
-        android:enabled="true"
-        app:showAsAction="never"
-        android:icon="@drawable/icon_overflow"
-        android:title="..." />
 
 </menu>

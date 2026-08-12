@@ -99,15 +99,16 @@ public class NinjaWebViewClient extends WebViewClient {
 
     @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
+        if (view == null || ninjaWebView == null) return;
+        try {
+            ninjaWebView.setStopped(false);
+            ninjaWebView.resetFavicon();
 
-        ninjaWebView.setStopped(false);
-        ninjaWebView.resetFavicon();
+            super.onPageStarted(view, url, favicon);
 
-        super.onPageStarted(view, url, favicon);
-
-        if (context instanceof com.petal.browser.activity.BrowserActivity) {
-            ((com.petal.browser.activity.BrowserActivity) context).onTabUrlStarted(ninjaWebView, url);
-        }
+            if (context instanceof com.petal.browser.activity.BrowserActivity) {
+                ((com.petal.browser.activity.BrowserActivity) context).onTabUrlStarted(ninjaWebView, url);
+            }
 
         String profile = NinjaWebView.getProfile();
         if (sp.getBoolean(profile + "_deny_cookie_banners",false)){
@@ -424,6 +425,8 @@ public class NinjaWebViewClient extends WebViewClient {
             if (!ninjaWebView.isCamera())
                 //noinspection ConcatenationWithEmptyString
                 view.evaluateJavascript("" + "Object.defineProperty(navigator, 'mediaDevices',{value:null});", null);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

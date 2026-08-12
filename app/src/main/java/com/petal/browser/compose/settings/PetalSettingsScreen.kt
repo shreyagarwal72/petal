@@ -94,6 +94,15 @@ object PetalSettingsBridge {
     }
 }
 
+enum class SettingsCategory(val title: String, val subtitle: String, val icon: ImageVector) {
+    OVERVIEW("Settings", "Browse all settings categories", Icons.Rounded.Settings),
+    APPEARANCE("Appearance & Theme", "Fonts, color palettes, AMOLED & UI blur", Icons.Rounded.Palette),
+    PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
+    SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine, custom homepage", Icons.Rounded.Search),
+    DISPLAY_ZOOM("Display & Scaling", "Text font scaling and page zoom preview", Icons.Rounded.ZoomIn),
+    ABOUT("About & Developer", "App version, licenses, GitHub & developer", Icons.Rounded.Info)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {

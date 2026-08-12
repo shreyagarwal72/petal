@@ -180,7 +180,7 @@ public class NinjaWebView extends WebView implements AlbumController {
             WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, sp.getBoolean(profile + "_night", true));
         }
 
-        String desktopUserAgent = "Mozilla/5.0 (X11; Linux " + System.getProperty("os.arch") + ")";
+        String desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
         String mobileUserAgent = WebSettings.getDefaultUserAgent(context);
 
         //Override UserAgent if own UserAgent is defined
@@ -194,7 +194,7 @@ public class NinjaWebView extends WebView implements AlbumController {
         String ownUserAgent = sp.getString("sp_userAgent", "");
         if (!ownUserAgent.isEmpty() && (sp.getBoolean("userAgentSwitch", false))) mobileUserAgent = ownUserAgent;
 
-        if (sp.getBoolean(profile + "_desktop", false)) {
+        if (sp.getBoolean(profile + "_desktop", false) || sp.getBoolean("sp_desktop_site", false)) {
             webSettings.setUserAgentString(desktopUserAgent);
             getSettings().setUseWideViewPort(true);
             getSettings().setLoadWithOverviewMode(true);
