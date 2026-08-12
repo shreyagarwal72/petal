@@ -134,6 +134,10 @@
         <activity android:name="com.petal.browser.activity.Settings_Profile" android:label="@string/setting_title_profiles_standard" android:exported="false" />
         <activity android:name="com.petal.browser.activity.Settings_Menu" android:label="@string/setting_menu" android:exported="false" />
 
+        <receiver
+            android:name="com.petal.browser.compose.downloads.PetalDownloadCancelReceiver"
+            android:exported="false" />
+
     </application>
 
 </manifest>

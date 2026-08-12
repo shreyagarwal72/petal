@@ -190,7 +190,8 @@ public class BrowserUnit {
                 request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
                 DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
                 if (manager != null) {
-                    manager.enqueue(request);
+                    long downloadId = manager.enqueue(request);
+                    com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(context, downloadId, fileName);
                 } else {
                     throw new IllegalStateException("DownloadManager not available");
                 }
