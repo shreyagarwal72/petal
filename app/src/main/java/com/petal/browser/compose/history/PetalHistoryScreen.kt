@@ -38,6 +38,7 @@ import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.compose.composable.ContainedLoadingIndicator
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import java.text.SimpleDateFormat
@@ -297,14 +298,11 @@ fun PetalHistoryScreen(
 
             // History Records List
             if (rawHistory == null) {
-                Box(
+                ContainedLoadingIndicator(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularWavyProgressIndicator(modifier = Modifier.size(28.dp))
-                }
+                        .weight(1f)
+                )
             } else if (filteredHistory.isEmpty()) {
                 Box(
                     modifier = Modifier
