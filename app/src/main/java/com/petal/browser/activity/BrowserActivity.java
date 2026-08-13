@@ -8,6 +8,7 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 import android.Manifest;
 import android.animation.ObjectAnimator;
+import androidx.dynamicanimation.animation.SpringForce;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
@@ -1416,19 +1417,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             float targetY = isBottom ? (barHeight + HelperUnit.convertDpToPixel(40f, context)) : -(barHeight + HelperUnit.convertDpToPixel(40f, context));
             float contentTargetY = isBottom ? 0f : -barHeight;
 
-            ObjectAnimator anim1 = ObjectAnimator.ofFloat(composeAddressBar, "translationY", targetY);
-            anim1.setDuration(280);
-            anim1.setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f));
-            anim1.start();
+            springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
 
             if (contentFrame != null) {
-                contentFrame.animate().translationY(contentTargetY).setDuration(280).start();
+                springTranslateY(contentFrame, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
             }
             if (progressBarCompose != null) {
-                progressBarCompose.animate().translationY(contentTargetY).setDuration(280).start();
+                springTranslateY(progressBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
             }
             if (progressBar != null) {
-                progressBar.animate().translationY(contentTargetY).setDuration(280).start();
+                springTranslateY(progressBar, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
             }
 
             if (fab_bubble != null) {
@@ -1436,45 +1434,61 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 fab_bubble.setScaleX(0f);
                 fab_bubble.setScaleY(0f);
                 fab_bubble.setAlpha(0f);
-                fab_bubble.animate()
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .alpha(1f)
-                        .setDuration(260)
-                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
-                        .start();
+                springScale(fab_bubble, 1f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springAlpha(fab_bubble, 1f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
             }
 
         } else if (!collapse && isAddressBarCollapsed) {
             isAddressBarCollapsed = false;
             composeAddressBar.setVisibility(VISIBLE);
 
-            ObjectAnimator anim1 = ObjectAnimator.ofFloat(composeAddressBar, "translationY", 0f);
-            anim1.setDuration(280);
-            anim1.setInterpolator(new android.view.animation.DecelerateInterpolator(1.2f));
-            anim1.start();
+            springTranslateY(composeAddressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
 
             if (contentFrame != null) {
-                contentFrame.animate().translationY(0f).setDuration(280).start();
+                springTranslateY(contentFrame, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
             }
             if (progressBarCompose != null) {
-                progressBarCompose.animate().translationY(0f).setDuration(280).start();
+                springTranslateY(progressBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
             }
             if (progressBar != null) {
-                progressBar.animate().translationY(0f).setDuration(280).start();
+                springTranslateY(progressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
             }
 
             if (fab_bubble != null) {
-                fab_bubble.animate()
-                        .scaleX(0f)
-                        .scaleY(0f)
-                        .alpha(0f)
-                        .setDuration(260)
-                        .setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f))
-                        .withEndAction(() -> fab_bubble.setVisibility(GONE))
-                        .start();
+                springScale(fab_bubble, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springAlpha(fab_bubble, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                fab_bubble.postDelayed(() -> { if (!isAddressBarCollapsed) fab_bubble.setVisibility(GONE); }, 350);
             }
         }
+    }
+
+    private void springTranslateY(View view, float endValue, float stiffness, float dampingRatio) {
+        new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.TRANSLATION_Y)
+                .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
+                        .setStiffness(stiffness)
+                        .setDampingRatio(dampingRatio))
+                .start();
+    }
+
+    private void springScale(View view, float endValue, float stiffness, float dampingRatio) {
+        new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.SCALE_X)
+                .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
+                        .setStiffness(stiffness)
+                        .setDampingRatio(dampingRatio))
+                .start();
+        new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.SCALE_Y)
+                .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
+                        .setStiffness(stiffness)
+                        .setDampingRatio(dampingRatio))
+                .start();
+    }
+
+    private void springAlpha(View view, float endValue, float stiffness, float dampingRatio) {
+        new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.ALPHA)
+                .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
+                        .setStiffness(stiffness)
+                        .setDampingRatio(dampingRatio))
+                .start();
     }
 
     private void updateOmniBox() {

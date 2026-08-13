@@ -105,3 +105,75 @@ fun Modifier.pulse(from: Float = 1f, to: Float = 1.1f, durationMs: Int = 1500): 
         scaleY = scale
     }
 }
+
+/** Springy horizontal slide-in entrance from the side. */
+@Composable
+fun Modifier.slideInSpring(fromRight: Boolean = false, index: Int = 0): Modifier {
+    val alphaAnim = remember { Animatable(0f) }
+    val offsetAnim = remember { Animatable(if (fromRight) 60f else -60f) }
+    LaunchedEffect(Unit) {
+        delay(index * 38L)
+        launch { alphaAnim.animateTo(1f, tween(180, easing = LinearOutSlowInEasing)) }
+        launch {
+            offsetAnim.animateTo(
+                0f,
+                spring(dampingRatio = 0.68f, stiffness = Spring.StiffnessMedium),
+            )
+        }
+    }
+    return graphicsLayer {
+        alpha = alphaAnim.value
+        translationX = offsetAnim.value.dp.toPx()
+    }
+}
+
+/** Elastic pop-in for icons and badges — scale from 0 with spring overshoot. */
+@Composable
+fun Modifier.popIn(index: Int = 0): Modifier {
+    val scaleAnim = remember { Animatable(0f) }
+    val alphaAnim = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(index * 50L)
+        launch { alphaAnim.animateTo(1f, tween(160, easing = LinearOutSlowInEasing)) }
+        launch {
+            scaleAnim.animateTo(
+                1f,
+                spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium),
+            )
+        }
+    }
+    return graphicsLayer {
+        alpha = alphaAnim.value
+        scaleX = scaleAnim.value
+        scaleY = scaleAnim.value
+    }
+}
+
+/** Springy expand from zero height — for containers appearing. */
+@Composable
+fun Modifier.springReveal(index: Int = 0): Modifier {
+    val scaleYAnim = remember { Animatable(0.8f) }
+    val alphaAnim = remember { Animatable(0f) }
+    val offsetAnim = remember { Animatable(20f) }
+    LaunchedEffect(Unit) {
+        delay(index * 45L)
+        launch { alphaAnim.animateTo(1f, tween(200, easing = LinearOutSlowInEasing)) }
+        launch {
+            scaleYAnim.animateTo(
+                1f,
+                spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+            )
+        }
+        launch {
+            offsetAnim.animateTo(
+                0f,
+                spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMedium),
+            )
+        }
+    }
+    return graphicsLayer {
+        alpha = alphaAnim.value
+        scaleY = scaleYAnim.value
+        translationY = offsetAnim.value.dp.toPx()
+    }
+}

@@ -71,6 +71,7 @@ fun PetalBottomNavBar(
             )
             .clip(RoundedCornerShape(36.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .entrance()
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -177,8 +178,8 @@ private fun NavItemPill(
             .clip(CircleShape)
             .animateContentSize(
                 animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = 400f
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow
                 )
             ),
     ) {

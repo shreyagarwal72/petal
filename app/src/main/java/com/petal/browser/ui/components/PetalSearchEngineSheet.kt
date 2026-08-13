@@ -127,22 +127,15 @@ fun PetalSearchEngineSheetContent(
 
             // Header Title
             Row(
+                modifier = Modifier.entrance(index = 0),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Rounded.Search,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
+                PetalSearchLottie(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .popIn()
+                )
                 Column {
                     Text(
                         text = "Choose Default Search Engine",
@@ -160,7 +153,10 @@ fun PetalSearchEngineSheetContent(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
             // Search Engines Cards List
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.entrance(index = 1),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 availableSearchEngines.forEach { engine ->
                     val isSelected = engine.index == selectedIndex
                     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
@@ -177,9 +173,7 @@ fun PetalSearchEngineSheetContent(
                                 shape = RoundedCornerShape(18.dp)
                             )
                             .clip(RoundedCornerShape(18.dp))
-                            .clickable {
-                                selectedIndex = engine.index
-                            }
+                            .bouncyClickable(scaleDown = 0.97f, onClick = { selectedIndex = engine.index })
                     ) {
                         Row(
                             modifier = Modifier
@@ -224,6 +218,7 @@ fun PetalSearchEngineSheetContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
+                    .entrance(index = 2)
             ) {
                 Icon(Icons.Rounded.Check, contentDescription = null)
                 Spacer(Modifier.width(8.dp))

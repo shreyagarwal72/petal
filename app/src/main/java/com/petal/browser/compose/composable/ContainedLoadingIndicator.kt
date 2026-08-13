@@ -13,6 +13,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,9 +58,9 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         val description = "Loading..."
-        CircularProgressIndicator(
+        com.petal.browser.ui.components.PetalLoadingLottie(
             modifier = Modifier
-                .requiredSize(48.dp)
+                .requiredSize(64.dp)
                 .semantics { stateDescription = description }
         )
     }
@@ -159,8 +161,8 @@ fun RefreshBarLoadingIndicator(
 ) {
     AnimatedVisibility(
         visible = isRefreshing || pullProgress > 0.15f,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        enter = slideInVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium), initialOffsetY = { -it }) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
+        exit = slideOutVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium), targetOffsetY = { -it }) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
         modifier = modifier
     ) {
         Box(

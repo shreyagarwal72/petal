@@ -76,6 +76,7 @@ fun PetalAddressBar(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
+            .entrance()
     ) {
         Row(
             modifier = Modifier
@@ -118,6 +119,7 @@ fun PetalAddressBar(
                         modifier = Modifier
                             .padding(end = 6.dp)
                             .size(18.dp)
+                            .popIn()
                     )
 
                     Text(

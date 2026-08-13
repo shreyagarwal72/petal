@@ -79,22 +79,11 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
             Spacer(Modifier.height(16.dp))
 
             // Hero Icon Badge
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
+            PetalWelcomeLottie(
                 modifier = Modifier
-                    .size(88.dp)
+                    .size(120.dp)
                     .entrance(index = 0)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Rounded.Shield,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(44.dp)
-                    )
-                }
-            }
+            )
 
             Spacer(Modifier.height(24.dp))
 

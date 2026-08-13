@@ -209,7 +209,7 @@ fun PetalTabSwitcherContent(
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(40.dp).popIn()
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -367,7 +367,9 @@ fun PetalTabSwitcherContent(
                             verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             // Empty State Illustration: Two overlapping rounded-rectangle card shapes layered diagonally
-                            EmptyStateIllustration()
+                            PetalEmptyTabsLottie(
+                                modifier = Modifier.size(120.dp)
+                            )
 
                             Text(
                                 text = if (searchQuery.isNotBlank()) "No Tabs Found" else "No Open Tabs",
@@ -427,7 +429,7 @@ fun PetalTabSwitcherContent(
                     contentColor = MaterialTheme.colorScheme.inverseOnSurface,
                     tonalElevation = 6.dp,
                     shadowElevation = 8.dp,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().entrance()
                 ) {
                     Row(
                         modifier = Modifier
@@ -467,7 +469,7 @@ fun PetalTabSwitcherContent(
 @Composable
 private fun EmptyStateIllustration() {
     Box(
-        modifier = Modifier.size(96.dp),
+        modifier = Modifier.size(96.dp).entrance(index = 0),
         contentAlignment = Alignment.Center
     ) {
         // Back card (tilted diagonally behind)
@@ -531,6 +533,7 @@ fun TabCard(
             .height(130.dp)
             .border(borderWidth, borderColor, RoundedCornerShape(20.dp))
             .clickable { onSelect() }
+            .entrance(index = 0)
     ) {
         Column(
             modifier = Modifier
