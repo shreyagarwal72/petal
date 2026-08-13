@@ -68,6 +68,9 @@ object PetalSettingsBridge {
             setContent {
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
+                val fontWidthVal = sp.getFloat("sp_font_width", 100f)
+                val fontWeightVal = sp.getInt("sp_font_weight", 400)
+                val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
                 val dynamicColor = sp.getBoolean("useDynamicColor", false)
@@ -84,6 +87,9 @@ object PetalSettingsBridge {
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
                     appFont = appFont,
+                    fontWidth = fontWidthVal,
+                    fontWeight = fontWeightVal,
+                    fontRoundness = fontRoundnessVal,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -821,6 +827,94 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     )
                                 }
                             }
+                        }
+
+                        var fontWidth by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
+                        var fontWeight by remember { mutableFloatStateOf(sp.getInt("sp_font_weight", 400).toFloat()) }
+                        var fontRoundness by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
+
+                        // 1. Font Width Setting
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                                .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
+                                .padding(14.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Font Width", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                Text("${fontWidth.toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            StrideSlider(
+                                value = fontWidth,
+                                onValueChange = { newValue ->
+                                    fontWidth = newValue
+                                    sp.edit().putFloat("sp_font_width", newValue).apply()
+                                },
+                                valueRange = 75f..125f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        // 2. Font Weight Setting
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                                .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
+                                .padding(14.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Font Weight", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                Text("${fontWeight.toInt()}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            StrideSlider(
+                                value = fontWeight,
+                                onValueChange = { newValue ->
+                                    fontWeight = newValue
+                                    sp.edit().putInt("sp_font_weight", newValue.toInt()).apply()
+                                },
+                                valueRange = 100f..900f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        // 3. Font Roundness Setting
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                                .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
+                                .padding(14.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Font Roundness", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                Text("${fontRoundness.toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            StrideSlider(
+                                value = fontRoundness,
+                                onValueChange = { newValue ->
+                                    fontRoundness = newValue
+                                    sp.edit().putFloat("sp_font_roundness", newValue).apply()
+                                },
+                                valueRange = 0f..100f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
 
                         Column(

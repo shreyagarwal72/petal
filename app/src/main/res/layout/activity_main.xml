@@ -21,16 +21,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/compose_address_bar"/>
 
-    <!-- Top Loading Progress Line -->
-    <com.google.android.material.progressindicator.LinearProgressIndicator
-        android:id="@+id/main_progress_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/main_progress_bar_compose"
-        android:visibility="gone"
-        app:indicatorColor="?attr/colorPrimary"
-        app:trackColor="?attr/colorSurfaceVariant"
-        app:trackThickness="4dp"/>
+
 
     <!-- Main Web Content Container -->
     <FrameLayout

@@ -72,7 +72,7 @@ fun ColorScheme.applyAmoled(): ColorScheme = copy(
 )
 
 /**
- * Petal Material 3 Theme with Android 12+ Dynamic Color, Stride Palettes, Custom Fonts, Color Styles & AMOLED Black support.
+ * Petal Material 3 Theme with Android 12+ Dynamic Color, Stride Palettes, Custom Fonts (Width, Weight, Roundness), Color Styles & AMOLED Black support.
  */
 @Composable
 fun PetalExpressiveTheme(
@@ -80,6 +80,9 @@ fun PetalExpressiveTheme(
     dynamicColor: Boolean = false,
     useAmoled: Boolean = false,
     appFont: AppFont = AppFont.SYSTEM,
+    fontWidth: Float = 100f,
+    fontWeight: Int = 400,
+    fontRoundness: Float = 0f,
     colorStyle: ColorStyle = ColorStyle.TONAL_SPOT,
     paletteId: String = "tide",
     content: @Composable () -> Unit
@@ -117,7 +120,7 @@ fun PetalExpressiveTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = petalTypography(appFont),
+        typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness),
         content = content
     )
 }
