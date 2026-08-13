@@ -234,7 +234,7 @@ public class NinjaWebView extends WebView implements AlbumController {
 
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.33) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             @SuppressWarnings("deprecation")
             String cachePath = context.getApplicationContext().getCacheDir().getAbsolutePath();
             webSettings.setAppCachePath(cachePath);

@@ -152,7 +152,7 @@ public class LiveUpdateNotificationManager {
         builder.setExtras(extras);
 
         try {
-            Method setShortCriticalText = builder.javaClass.getMethod("setShortCriticalText", CharSequence::class.java);
+            Method setShortCriticalText = builder.getClass().getMethod("setShortCriticalText", CharSequence.class);
             setShortCriticalText.invoke(builder, chipText);
         } catch (Exception ignored) {}
 
@@ -197,7 +197,7 @@ public class LiveUpdateNotificationManager {
 
             // Set short critical live text / chip text if supported on ProgressStyle
             try {
-                Method setProgressTrackerText = progressStyleClass.getMethod("setProgressTrackerText", CharSequence::class.java);
+                Method setProgressTrackerText = progressStyleClass.getMethod("setProgressTrackerText", CharSequence.class);
                 setProgressTrackerText.invoke(progressStyle, chipText);
             } catch (NoSuchMethodException ignored) {}
 
