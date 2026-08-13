@@ -181,6 +181,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         dynamicColor = isDynamicColor,
         useAmoled = isAmoled,
         appFont = selectedFont,
+        fontWidth = fontWidth,
+        fontWeight = fontWeight.toInt(),
+        fontRoundness = fontRoundness,
         colorStyle = selectedColorStyle,
         paletteId = selectedPaletteId
     ) {
@@ -410,6 +413,44 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 valueRange = 0f..100f,
                                 modifier = Modifier.fillMaxWidth()
                             )
+
+                            Spacer(Modifier.height(10.dp))
+                            // LIVE TYPOGRAPHY PREVIEW BOX
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "LIVE FONT PREVIEW",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            "${selectedFont.label} (${fontWidth.toInt()}%, ${fontWeight.toInt()}, ${fontRoundness.toInt()}%)",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        "The quick brown fox jumps over the lazy dog.",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        "0123456789 • Stride Typography & Motion",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
 
                         // --- Accent Style Chips ---
@@ -899,93 +940,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             }
                         }
 
-                        var fontWidth by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
-                        var fontWeight by remember { mutableFloatStateOf(sp.getInt("sp_font_weight", 400).toFloat()) }
-                        var fontRoundness by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
 
-                        // 1. Font Width Setting
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
-                                .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
-                                .padding(14.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Font Width", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text("${fontWidth.toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            StrideSlider(
-                                value = fontWidth,
-                                onValueChange = { newValue ->
-                                    fontWidth = newValue
-                                    sp.edit().putFloat("sp_font_width", newValue).apply()
-                                },
-                                valueRange = 75f..125f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        // 2. Font Weight Setting
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
-                                .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
-                                .padding(14.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Font Weight", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text("${fontWeight.toInt()}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            StrideSlider(
-                                value = fontWeight,
-                                onValueChange = { newValue ->
-                                    fontWeight = newValue
-                                    sp.edit().putInt("sp_font_weight", newValue.toInt()).apply()
-                                },
-                                valueRange = 100f..900f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        // 3. Font Roundness Setting
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
-                                .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
-                                .padding(14.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Font Roundness", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text("${fontRoundness.toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            StrideSlider(
-                                value = fontRoundness,
-                                onValueChange = { newValue ->
-                                    fontRoundness = newValue
-                                    sp.edit().putFloat("sp_font_roundness", newValue).apply()
-                                },
-                                valueRange = 0f..100f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
 
                         Column(
                             modifier = Modifier

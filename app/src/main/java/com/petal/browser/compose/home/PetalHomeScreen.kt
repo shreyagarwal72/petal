@@ -53,6 +53,8 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.defaultPaletteId
+import com.petal.browser.ui.theme.isDynamicColorSupported
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.cos
@@ -199,10 +201,17 @@ object PetalComposeBridge {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 }
 
+                val fontWidthVal = sp.getFloat("sp_font_width", 100f)
+                val fontWeightVal = sp.getInt("sp_font_weight", 400)
+                val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
+
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
                     appFont = appFont,
+                    fontWidth = fontWidthVal,
+                    fontWeight = fontWeightVal,
+                    fontRoundness = fontRoundnessVal,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -249,9 +258,22 @@ fun PetalHomeScreen(
     var isAmoledEnabled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
     var isDynamicColorEnabled by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
 
+    val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
+    val fontWidthVal = sp.getFloat("sp_font_width", 100f)
+    val fontWeightVal = sp.getInt("sp_font_weight", 400)
+    val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
+
+    val appFont = remember(fontName) {
+        try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }
+    }
+
     PetalExpressiveTheme(
         dynamicColor = isDynamicColorEnabled,
-        useAmoled = isAmoledEnabled
+        useAmoled = isAmoledEnabled,
+        appFont = appFont,
+        fontWidth = fontWidthVal,
+        fontWeight = fontWeightVal,
+        fontRoundness = fontRoundnessVal
     ) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background

@@ -87,15 +87,35 @@ private fun weightedTiers(
     label = variableFont(resId, 600, width, roundness)
 )
 
+private fun systemTypography(fontWeight: Int): Typography {
+    val weight = FontWeight(fontWeight.coerceIn(100, 900))
+    val t = Tiers(FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default)
+    return Typography(
+        displayLarge = TextStyle(fontFamily = t.display, fontWeight = weight, fontSize = 64.sp, lineHeight = 68.sp, letterSpacing = (-1).sp),
+        displayMedium = TextStyle(fontFamily = t.display, fontWeight = weight, fontSize = 48.sp, lineHeight = 54.sp, letterSpacing = (-0.5).sp),
+        displaySmall = TextStyle(fontFamily = t.display, fontWeight = weight, fontSize = 38.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
+        headlineLarge = TextStyle(fontFamily = t.headline, fontWeight = weight, fontSize = 32.sp, lineHeight = 40.sp),
+        headlineMedium = TextStyle(fontFamily = t.headline, fontWeight = weight, fontSize = 28.sp, lineHeight = 36.sp),
+        headlineSmall = TextStyle(fontFamily = t.headline, fontWeight = weight, fontSize = 24.sp, lineHeight = 32.sp),
+        titleLarge = TextStyle(fontFamily = t.title, fontWeight = weight, fontSize = 22.sp, lineHeight = 28.sp),
+        titleMedium = TextStyle(fontFamily = t.title, fontWeight = weight, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
+        titleSmall = TextStyle(fontFamily = t.title, fontWeight = weight, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+        bodyLarge = TextStyle(fontFamily = t.body, fontWeight = weight, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.3.sp),
+        bodyMedium = TextStyle(fontFamily = t.body, fontWeight = weight, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.2.sp),
+        bodySmall = TextStyle(fontFamily = t.body, fontWeight = weight, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
+        labelLarge = TextStyle(fontFamily = t.label, fontWeight = weight, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+        labelMedium = TextStyle(fontFamily = t.label, fontWeight = weight, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
+        labelSmall = TextStyle(fontFamily = t.label, fontWeight = weight, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp)
+    )
+}
+
 fun petalTypography(
     appFont: AppFont,
     fontWidth: Float = 100f,
     fontWeight: Int = 400,
     fontRoundness: Float = 0f
 ): Typography = when (appFont) {
-    AppFont.SYSTEM -> buildTypography(
-        Tiers(FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default)
-    )
+    AppFont.SYSTEM -> systemTypography(fontWeight)
     AppFont.GS_FLEX -> buildTypography(weightedTiers(R.font.google_sans_flex, top = fontWeight, width = fontWidth, roundness = fontRoundness))
     AppFont.NUNITO -> buildTypography(
         Tiers(

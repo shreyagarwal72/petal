@@ -39,10 +39,17 @@ object PetalAddressBarBridge {
                 val appFont = try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.SYSTEM }
                 val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
 
+                val fontWidthVal = sp.getFloat("sp_font_width", 100f)
+                val fontWeightVal = sp.getInt("sp_font_weight", 400)
+                val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
+
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
                     appFont = appFont,
+                    fontWidth = fontWidthVal,
+                    fontWeight = fontWeightVal,
+                    fontRoundness = fontRoundnessVal,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
