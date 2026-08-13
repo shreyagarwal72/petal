@@ -49,6 +49,8 @@ import android.text.TextWatcher;
 import com.petal.browser.compose.downloads.PetalDownloadBridge;
 import com.petal.browser.compose.home.PetalComposeBridge;
 import com.petal.browser.compose.home.PetalHomeActionHandler;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.KeyEvent;
@@ -192,6 +194,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private List_standard listStandard;
     private long newIcon;
     private long filterBy;
+    private boolean filter;
+    private ValueCallback<Uri[]> filePathCallback = null;
+    private AlbumController currentAlbumController = null;
+    private ValueCallback<Uri[]> mFilePathCallback;
     private com.petal.browser.media.PetalMediaSessionService mediaService;
     private boolean isMediaBound = false;
     private final ServiceConnection mediaConnection = new ServiceConnection() {

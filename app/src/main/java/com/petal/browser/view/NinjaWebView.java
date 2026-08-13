@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -234,12 +235,6 @@ public class NinjaWebView extends WebView implements AlbumController {
 
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            @SuppressWarnings("deprecation")
-            String cachePath = context.getApplicationContext().getCacheDir().getAbsolutePath();
-            webSettings.setAppCachePath(cachePath);
-            webSettings.setAppCacheEnabled(true);
-        }
 
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         boolean backgroundPlay = sp.getBoolean("sp_background_play", false);
