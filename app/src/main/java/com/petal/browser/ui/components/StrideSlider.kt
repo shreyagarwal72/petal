@@ -1,6 +1,5 @@
 package com.petal.browser.ui.components
 
-import kotlin.OptIn
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -13,11 +12,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
-import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 
 private val TrackHeight = 46.dp
 private val ThumbSize = 30.dp
@@ -37,34 +36,13 @@ private val ThumbInset = 8.dp
  * physically rolls — its rotation is derived from the distance travelled, so
  * the scallops turn like a wheel as the value changes.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
-@Composable
-fun PetalSlider(
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    steps: Int = 0
-) {
-    StrideSlider(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier,
-        enabled = enabled,
-        valueRange = valueRange,
-        steps = steps
-    )
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StrideSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    steps: Int = 0,
     enabled: Boolean = true,
     onValueChangeFinished: (() -> Unit)? = null
 ) {
@@ -72,7 +50,6 @@ fun StrideSlider(
         value = value,
         onValueChange = onValueChange,
         valueRange = valueRange,
-        steps = steps,
         enabled = enabled,
         onValueChangeFinished = onValueChangeFinished,
         modifier = modifier.height(TrackHeight),
@@ -127,7 +104,7 @@ fun StrideSlider(
                         .offset(x = thumbStart)
                         .size(ThumbSize)
                         .graphicsLayer { rotationZ = rollDegrees }
-                        .clip(CircleShape)
+                        .clip(MaterialShapes.Cookie12Sided.toShape())
                         .background(
                             if (enabled) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.surfaceContainer
