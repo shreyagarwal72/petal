@@ -72,6 +72,10 @@ public class NinjaWebViewClient extends WebViewClient {
         else ninjaWebView.postInvalidate();
         CookieManager.getInstance().flush();
 
+        if (context instanceof com.petal.browser.activity.BrowserActivity) {
+            ((com.petal.browser.activity.BrowserActivity) context).resetRefreshState();
+        }
+
         sp.edit().putString("mCurrentUrl", url).apply();
 
         if (ninjaWebView.getMediaBridge() != null) {

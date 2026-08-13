@@ -1702,6 +1702,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (ninjaWebView != null) {
                 ninjaWebView.reload();
             } else {
+                resetRefreshState();
+            }
+        });
+    }
+
+    public void resetRefreshState() {
+        runOnUiThread(() -> {
+            if (refreshState != null) {
                 refreshState.setRefreshing(false);
                 refreshState.setPullProgress(0f);
             }
