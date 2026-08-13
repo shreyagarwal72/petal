@@ -160,6 +160,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var homepageType by remember { mutableStateOf(sp.getString("sp_home_type", "0") ?: "0") }
     var customHomeUrl by remember { mutableStateOf(sp.getString("sp_custom_homepage_url", "https://google.com") ?: "https://google.com") }
     var isBackgroundPlay by remember { mutableStateOf(sp.getBoolean("sp_background_play", false)) }
+    var isAutoPip by remember { mutableStateOf(sp.getBoolean("sp_auto_pip", true)) }
 
     // Protection & WebView States
     var isAdBlock by remember { mutableStateOf(sp.getBoolean("sp_ad_block", true)) }
@@ -618,6 +619,20 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             onCheckedChange = { newValue ->
                                 isBackgroundPlay = newValue
                                 sp.edit().putBoolean("sp_background_play", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        // Auto Picture-in-Picture Toggle
+                        ToggleRow(
+                            title = "Auto Picture-in-Picture (PiP)",
+                            subtitle = "Automatically enter floating PiP window when performing home gesture during full-screen video playback",
+                            icon = Icons.Rounded.PictureInPicture,
+                            checked = isAutoPip,
+                            onCheckedChange = { newValue ->
+                                isAutoPip = newValue
+                                sp.edit().putBoolean("sp_auto_pip", newValue).apply()
                             }
                         )
                     }

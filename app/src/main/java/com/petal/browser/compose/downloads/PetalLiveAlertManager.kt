@@ -174,39 +174,19 @@ object PetalLiveAlertManager {
         val liveAlertChip = "$speedText • $progressPercent%"
         val contentText = "$soFarText / $totalText • $etaText left"
 
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.icon_download)
-            .setContentTitle("Downloading $fileName")
-            .setContentText(contentText)
-            .setSubText(liveAlertChip)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(openAppPendingIntent)
-            .addAction(R.drawable.icon_close, "Cancel", cancelPendingIntent)
-            .addAction(R.drawable.icon_download, "Downloads", openAppPendingIntent)
+        val builderNotif = LiveUpdateNotificationManager.buildLiveNotification(
+            context = context,
+            id = downloadId,
+            title = "Downloading $fileName",
+            contentText = contentText,
+            progressPercent = progressPercent,
+            isIndeterminate = isIndeterminate,
+            chipText = liveAlertChip,
+            contentPendingIntent = openAppPendingIntent,
+            cancelPendingIntent = cancelPendingIntent
+        )
 
-        if (isIndeterminate) {
-            builder.setProgress(0, 0, true)
-        } else {
-            builder.setProgress(100, progressPercent, false)
-        }
-
-        // Android 16 Live Alerts Metadata & Reflection
-        val extras = Bundle().apply {
-            putString("android.liveAlertText", liveAlertChip)
-            putBoolean("android.isLiveAlert", true)
-            putLong("android.downloadSpeed", speedBytesPerSec)
-        }
-        builder.setExtras(extras)
-
-        try {
-            val setShortCriticalTextMethod = builder.javaClass.getMethod("setShortCriticalText", CharSequence::class.java)
-            setShortCriticalTextMethod.invoke(builder, liveAlertChip)
-        } catch (ignored: Exception) {}
-
-        nm.notify(downloadId.toInt(), builder.build())
+        nm.notify(downloadId.toInt(), builderNotif)
     }
 
     private fun showCompletionNotification(

@@ -128,6 +128,26 @@ public class NinjaWebView extends WebView implements AlbumController {
         initAlbum();
     }
 
+    private com.petal.browser.media.PetalMediaBridge mediaBridge;
+
+    public com.petal.browser.media.PetalMediaBridge getMediaBridge() {
+        return mediaBridge;
+    }
+
+    public void setMediaBridge(com.petal.browser.media.PetalMediaBridge mediaBridge) {
+        this.mediaBridge = mediaBridge;
+    }
+
+    private com.petal.browser.pwa.PetalPwaManager pwaManager;
+
+    public com.petal.browser.pwa.PetalPwaManager getPwaManager() {
+        return pwaManager;
+    }
+
+    public void setPwaManager(com.petal.browser.pwa.PetalPwaManager pwaManager) {
+        this.pwaManager = pwaManager;
+    }
+
     public boolean isForeground() {
         return foreground;
     }
@@ -214,6 +234,12 @@ public class NinjaWebView extends WebView implements AlbumController {
 
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.33) {
+            @SuppressWarnings("deprecation")
+            String cachePath = context.getApplicationContext().getCacheDir().getAbsolutePath();
+            webSettings.setAppCachePath(cachePath);
+            webSettings.setAppCacheEnabled(true);
+        }
 
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         boolean backgroundPlay = sp.getBoolean("sp_background_play", false);

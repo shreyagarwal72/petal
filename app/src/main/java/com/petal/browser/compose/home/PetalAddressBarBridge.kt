@@ -20,9 +20,12 @@ object PetalAddressBarBridge {
         url: String,
         title: String,
         isIncognito: Boolean = false,
+        isLoading: Boolean = false,
+        canGoBack: Boolean = true,
         onBackClick: Runnable,
         onShareClick: Runnable,
-        onAddressClick: Runnable
+        onAddressClick: Runnable,
+        onSiteControlsClick: Runnable? = null
     ) {
         composeView.apply {
             setViewTreeLifecycleOwner(activity)
@@ -57,9 +60,12 @@ object PetalAddressBarBridge {
                         url = url,
                         title = title,
                         isIncognito = isIncognito,
+                        isLoading = isLoading,
+                        canGoBack = canGoBack,
                         onBackClick = { onBackClick.run() },
                         onShareClick = { onShareClick.run() },
-                        onAddressClick = { onAddressClick.run() }
+                        onAddressClick = { onAddressClick.run() },
+                        onSiteControlsClick = { onSiteControlsClick?.run() }
                     )
                 }
             }

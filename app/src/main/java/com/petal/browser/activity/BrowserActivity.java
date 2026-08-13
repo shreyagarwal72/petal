@@ -192,10 +192,53 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private List_standard listStandard;
     private long newIcon;
     private long filterBy;
-    private boolean filter;
-    private ValueCallback<Uri[]> filePathCallback = null;
-    private AlbumController currentAlbumController = null;
-    private ValueCallback<Uri[]> mFilePathCallback;
+    private com.petal.browser.media.PetalMediaSessionService mediaService;
+    private boolean isMediaBound = false;
+    private final ServiceConnection mediaConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            com.petal.browser.media.PetalMediaSessionService.LocalBinder binder = (com.petal.browser.media.PetalMediaSessionService.LocalBinder) service;
+            mediaService = binder.getService();
+            isMediaBound = true;
+            if (mediaService != null) {
+                mediaService.setMediaControlListener(new com.petal.browser.media.PetalMediaSessionService.MediaControlListener() {
+                    @Override
+                    public void onPlay() {
+                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
+                            ninjaWebView.getMediaBridge().playMedia();
+                        }
+                    }
+
+                    @Override
+                    public void onPause() {
+                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
+                            ninjaWebView.getMediaBridge().pauseMedia();
+                        }
+                    }
+
+                    @Override
+                    public void onStop() {
+                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
+                            ninjaWebView.getMediaBridge().pauseMedia();
+                        }
+                    }
+
+                    @Override
+                    public void onSeekTo(long positionMs) {
+                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
+                            ninjaWebView.getMediaBridge().seekMediaTo(positionMs);
+                        }
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mediaService = null;
+            isMediaBound = false;
+        }
+    };
 
     public static Context getAppContext() {
         return context;
@@ -272,6 +315,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         
         sp = PreferenceManager.getDefaultSharedPreferences(context);
+
+        try {
+            Intent mediaServiceIntent = new Intent(this, com.petal.browser.media.PetalMediaSessionService.class);
+            bindService(mediaServiceIntent, mediaConnection, Context.BIND_AUTO_CREATE);
+        } catch (Exception e) {
+            Log.e(TAG, "Error binding PetalMediaSessionService", e);
+        }
+
         try {
             new BannerBlock(context);
         } catch (Exception ignored) {}
@@ -3174,6 +3225,41 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (isIncognito) {
             ninjaWebView.setIncognito(true);
         }
+
+        com.petal.browser.media.PetalMediaBridge bridge = new com.petal.browser.media.PetalMediaBridge(
+                context,
+                ninjaWebView,
+                new com.petal.browser.media.PetalMediaBridge.MediaStateListener() {
+                    @Override
+                    public void onMediaPlay(String title, long positionMs, long durationMs) {
+                        if (mediaService != null) {
+                            mediaService.updateMediaState(title, ninjaWebView.getTitle(), true, positionMs, durationMs);
+                        }
+                    }
+
+                    @Override
+                    public void onMediaPause(long positionMs, long durationMs) {
+                        if (mediaService != null) {
+                            mediaService.updateMediaState(ninjaWebView.getTitle(), ninjaWebView.getTitle(), false, positionMs, durationMs);
+                        }
+                    }
+
+                    @Override
+                    public void onMediaProgress(long positionMs, long durationMs) {
+                        // Progress update handler
+                    }
+                }
+        );
+        ninjaWebView.setMediaBridge(bridge);
+
+        com.petal.browser.pwa.PetalPwaManager pwaManager = new com.petal.browser.pwa.PetalPwaManager(
+                context,
+                ninjaWebView,
+                manifest -> runOnUiThread(() -> {
+                    // Show PWA installation banner/notification when detected
+                })
+        );
+        ninjaWebView.setPwaManager(pwaManager);
         ninjaWebView.setOnScrollChangeListener(new NinjaWebView.OnScrollChangeListener() {
             @Override
             public void onScrollDown() {
@@ -3318,6 +3404,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void installPwaShortcut() {
+        if (ninjaWebView != null && ninjaWebView.getPwaManager() != null) {
+            ninjaWebView.getPwaManager().installCurrentPwa(this);
+            return;
+        }
         try {
             if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
             String url = ninjaWebView.getUrl();
@@ -3398,6 +3488,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        if (customView != null || fullscreenHolder != null) {
+            com.petal.browser.media.PetalMediaBridge.enterPipIfSupported(this, customView);
+        }
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         boolean backgroundPlay = sp.getBoolean("sp_background_play", false);
@@ -3405,5 +3503,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ninjaWebView.onPause();
             ninjaWebView.pauseTimers();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (isMediaBound) {
+            try {
+                unbindService(mediaConnection);
+                isMediaBound = false;
+            } catch (Exception ignored) {}
+        }
+        super.onDestroy();
     }
 }

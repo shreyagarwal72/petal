@@ -34,6 +34,9 @@
         </intent>
     </queries>
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
     <application
         android:allowBackup="true"
         android:hardwareAccelerated="true"
@@ -44,19 +47,24 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
 
-        <!-- Zentraler Opt-Out für WebView-Metriken auf Anwendungsebene -->
+        <!-- Central Opt-Out for WebView Metrics -->
         <meta-data
             android:name="android.webkit.WebView.MetricsOptOut"
             android:value="true" />
 
-        <!--
-          Haupt-Browser-Activity
-          WICHTIG ab Android 12: windowSoftInputMode="adjustResize" ist der moderne Standard,
-          da "adjustPan" das Layout oft unkontrolliert verschiebt und Eingabefelder verdeckt.
-        -->
+        <service
+            android:name="com.petal.browser.media.PetalMediaSessionService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name="com.petal.browser.activity.BrowserActivity"
-            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout"
+            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
+            android:supportsPictureInPicture="true"
             android:windowSoftInputMode="adjustResize"
             android:fitsSystemWindows="false"
             android:exported="true"

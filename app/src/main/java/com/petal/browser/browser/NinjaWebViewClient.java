@@ -74,6 +74,14 @@ public class NinjaWebViewClient extends WebViewClient {
 
         sp.edit().putString("mCurrentUrl", url).apply();
 
+        if (ninjaWebView.getMediaBridge() != null) {
+            ninjaWebView.getMediaBridge().injectMediaHooks();
+        }
+
+        if (ninjaWebView.getPwaManager() != null) {
+            ninjaWebView.getPwaManager().detectPwaManifest();
+        }
+
         if (ninjaWebView.isSaveData())
             view.evaluateJavascript("var links=document.getElementsByTagName('video'); for(let i=0;i<links.length;i++){links[i].pause()};", null);
 

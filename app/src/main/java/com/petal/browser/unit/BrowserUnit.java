@@ -243,10 +243,9 @@ public class BrowserUnit {
         if (clearHistory) BrowserUnit.clearHistory(context);
         if (clearCache)  {
             try {
-                File dir = context.getCacheDir();
-                if (dir != null && dir.isDirectory()) deleteDir(dir);
+                CacheManager.clearAllCache(context, null);
             } catch (Exception exception) {
-                Log.w("browser", "Error clearing cache");
+                Log.w("browser", "Error clearing cache", exception);
             }
         }
         if (clearSettings) {
