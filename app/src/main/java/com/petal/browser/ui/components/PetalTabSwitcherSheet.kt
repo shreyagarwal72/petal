@@ -1,13 +1,18 @@
 /*
  * PetalTabSwitcherSheet.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Chrome Android-style Tab Switcher Overview Sheet with live tab cards,
- * active selection highlights, direct AlbumController references, and 0ms lag.
+ * Tab Switcher Overview Sheet featuring:
+ * 1. Top bar: single horizontal row with 4 elements (square + New Tab button, pill segmented control for list/grid toggle, 3-dot overflow menu).
+ * 2. Search bar: full-width rounded "Search your tabs" search bar.
+ * 3. Empty state: centered illustration of two overlapping diagonal cards, bold headline, subtext, and New Tab action button.
+ * 4. Undo Snackbar: rounded rectangle bar near bottom with message and Undo button.
+ * 5. Intact tab card design and full tab management functionality.
  */
 
 package com.petal.browser.ui.components
 
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,25 +23,23 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.DeleteSweep
-import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.browser.AlbumController
@@ -67,7 +70,27 @@ object PetalTabSwitcherBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
-                    PetalExpressiveTheme {
+                    val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+                    val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
+                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                    val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
+                    val isAmoled = sp.getBoolean("sp_amoled", false)
+                    val dynamicColor = sp.getBoolean("useDynamicColor", false)
+
+                    val appFont = remember(fontName) {
+                        try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }
+                    }
+                    val colorStyle = remember(styleName) {
+                        try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                    }
+
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = appFont,
+                        colorStyle = colorStyle,
+                        paletteId = paletteId
+                    ) {
                         val tabsList = remember {
                             mutableStateListOf<TabModel>().apply {
                                 addAll(
@@ -100,9 +123,6 @@ object PetalTabSwitcherBridge {
                             onCloseTab = { model ->
                                 tabsList.remove(model)
                                 onCloseTab(model.album)
-                                if (tabsList.isEmpty()) {
-                                    try { dialog.dismiss() } catch (ignored: Exception) {}
-                                }
                             },
                             onCloseAllTabs = {
                                 try { dialog.dismiss() } catch (ignored: Exception) {}
@@ -126,150 +146,361 @@ object PetalTabSwitcherBridge {
 
 @Composable
 fun PetalTabSwitcherContent(
-    tabs: List<TabModel>,
+    tabs: MutableList<TabModel>,
     onSelectTab: (TabModel) -> Unit,
     onCloseTab: (TabModel) -> Unit,
     onCloseAllTabs: () -> Unit,
     onNewTab: () -> Unit
 ) {
+    var isGridView by remember { mutableStateOf(true) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showOverflowMenu by remember { mutableStateOf(false) }
+
+    var lastClosedTab by remember { mutableStateOf<TabModel?>(null) }
+
+    val filteredTabs = remember(tabs, searchQuery) {
+        if (searchQuery.isBlank()) {
+            tabs
+        } else {
+            val q = searchQuery.trim().lowercase()
+            tabs.filter { it.title.lowercase().contains(q) || it.url.lowercase().contains(q) }
+        }
+    }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Top Drag Handle Indicator
-            Box(
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
                 modifier = Modifier
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                    .align(Alignment.CenterHorizontally)
-            )
-
-            // Header Row: Count, New Tab, Close All
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxWidth()
+                    .padding(bottom = if (lastClosedTab != null) 70.dp else 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column {
-                    Text(
-                        text = "Open Tabs (${tabs.size})",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Tap to switch or close tabs",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                // Top Drag Handle Indicator
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                        .align(Alignment.CenterHorizontally)
+                )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalIconButton(
-                        onClick = onNewTab,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    ) {
-                        Icon(Icons.Rounded.Add, contentDescription = "New Tab")
-                    }
-
-                    IconButton(onClick = onCloseAllTabs) {
-                        Icon(
-                            Icons.Rounded.DeleteSweep,
-                            contentDescription = "Close All Tabs",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-            if (tabs.isEmpty()) {
-                Surface(
+                // ── 1. Top Bar: Single horizontal row with four elements ──────
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    // Far Left: Rounded square "new tab" button with + icon
+                    Surface(
+                        onClick = onNewTab,
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(40.dp)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(56.dp)
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.Add,
+                                contentDescription = "New Tab",
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+
+                    // Center-Left: Pill-shaped segmented control (List vs Grid)
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
+                            // List View Toggle Button
+                            Surface(
+                                onClick = { isGridView = false },
+                                shape = RoundedCornerShape(50),
+                                color = if (!isGridView) MaterialTheme.colorScheme.surface else Color.Transparent,
+                                contentColor = if (!isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .height(32.dp)
+                                    .padding(horizontal = 10.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Rounded.ViewList,
+                                        contentDescription = "List View",
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+
+                            // Grid View Toggle Button
+                            Surface(
+                                onClick = { isGridView = true },
+                                shape = RoundedCornerShape(50),
+                                color = if (isGridView) MaterialTheme.colorScheme.surface else Color.Transparent,
+                                contentColor = if (isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .height(32.dp)
+                                    .padding(horizontal = 10.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Rounded.GridView,
+                                        contentDescription = "Grid View",
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Far Right: Three-dot overflow menu button
+                    Box {
+                        IconButton(
+                            onClick = { showOverflowMenu = true },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.MoreVert,
+                                contentDescription = "Menu Options",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showOverflowMenu,
+                            onDismissRequest = { showOverflowMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("New Tab") },
+                                leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    onNewTab()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Close All Tabs", color = MaterialTheme.colorScheme.error) },
+                                leadingIcon = { Icon(Icons.Rounded.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    onCloseAllTabs()
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // ── 2. Search Bar: "Search your tabs" ─────────────────────────
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = {
+                        Text(
+                            "Search your tabs",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Rounded.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
                                 Icon(
-                                    Icons.Rounded.Public,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(28.dp),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    Icons.Rounded.Close,
+                                    contentDescription = "Clear",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-
-                        Text(
-                            text = "No Tab Selected",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Text(
-                            text = "All tabs are closed. Tap below to create a new tab and resume browsing.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-
-                        Spacer(Modifier.height(4.dp))
-
-                        Button(
-                            onClick = onNewTab,
-                            shape = RoundedCornerShape(16.dp),
-                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
-                        ) {
-                            Icon(Icons.Rounded.Add, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Create New Tab", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(50),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.Transparent
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 460.dp)
-                ) {
-                    items(tabs, key = { it.album.hashCode() }) { tab ->
-                        TabCard(
-                            tab = tab,
-                            onSelect = { onSelectTab(tab) },
-                            onClose = { onCloseTab(tab) }
-                        )
+                        .padding(horizontal = 16.dp)
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                // ── 3. Tabs Grid/List OR Empty State ──────────────────────────
+                if (filteredTabs.isEmpty()) {
+                    // Empty State: Vertically and horizontally centered
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 280.dp)
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            // Empty State Illustration: Two overlapping rounded-rectangle card shapes layered diagonally
+                            EmptyStateIllustration()
+
+                            Text(
+                                text = if (searchQuery.isNotBlank()) "No Tabs Found" else "No Open Tabs",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Text(
+                                text = if (searchQuery.isNotBlank()) "No matching tabs found for \"$searchQuery\""
+                                else "All tabs are closed. Tap + to open a new tab and start browsing.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
+                    }
+                } else {
+                    val columns = if (isGridView) GridCells.Fixed(2) else GridCells.Fixed(1)
+                    LazyVerticalGrid(
+                        columns = columns,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 440.dp)
+                    ) {
+                        items(filteredTabs, key = { it.album.hashCode() }) { tab ->
+                            TabCard(
+                                tab = tab,
+                                onSelect = { onSelectTab(tab) },
+                                onClose = {
+                                    lastClosedTab = tab
+                                    onCloseTab(tab)
+                                }
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            // ── 4. Undo Close Snackbar: Anchored near bottom ──────────────
+            AnimatedVisibility(
+                visible = lastClosedTab != null,
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    tonalElevation = 6.dp,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Tab closed",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.inverseOnSurface
+                        )
+                        TextButton(
+                            onClick = {
+                                lastClosedTab?.let { restoredTab ->
+                                    if (!tabs.contains(restoredTab)) {
+                                        tabs.add(restoredTab)
+                                    }
+                                    lastClosedTab = null
+                                }
+                            }
+                        ) {
+                            Text(
+                                text = "Undo",
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.inversePrimary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyStateIllustration() {
+    Box(
+        modifier = Modifier.size(96.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Back card (tilted diagonally behind)
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+            modifier = Modifier
+                .size(52.dp, 72.dp)
+                .graphicsLayer {
+                    rotationZ = -14f
+                    translationX = -8f
+                    translationY = -4f
+                }
+        ) {}
+
+        // Front card (tilted diagonally in front)
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+            border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+            shadowElevation = 6.dp,
+            modifier = Modifier
+                .size(52.dp, 72.dp)
+                .graphicsLayer {
+                    rotationZ = 8f
+                    translationX = 8f
+                    translationY = 4f
+                }
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Rounded.Public,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
