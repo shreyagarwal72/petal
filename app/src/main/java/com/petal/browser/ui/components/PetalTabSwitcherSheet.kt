@@ -73,9 +73,9 @@ object PetalTabSwitcherBridge {
                     val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                     val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                    val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
+                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                     val isAmoled = sp.getBoolean("sp_amoled", false)
-                    val dynamicColor = sp.getBoolean("useDynamicColor", false)
+                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
 
                     val appFont = remember(fontName) {
                         try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }

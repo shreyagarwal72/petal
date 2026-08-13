@@ -312,7 +312,64 @@ private val ForestDark = darkColorScheme(
     outlineVariant = Color(0xFF424940)
 )
 
+private val PetalLight = lightColorScheme(
+    primary = Color(0xFFD81B60),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFFFD9E2),
+    onPrimaryContainer = Color(0xFF3E001D),
+    secondary = Color(0xFF74565F),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFFFD9E2),
+    onSecondaryContainer = Color(0xFF2B151C),
+    tertiary = Color(0xFF7C5635),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFFFDCC1),
+    onTertiaryContainer = Color(0xFF2E1500),
+    background = Color(0xFFFFF8F8),
+    onBackground = Color(0xFF201A1C),
+    surface = Color(0xFFFFF8F8),
+    onSurface = Color(0xFF201A1C),
+    surfaceVariant = Color(0xFFF2DDE1),
+    onSurfaceVariant = Color(0xFF514347),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFFF0F3),
+    surfaceContainer = Color(0xFFFCEAEF),
+    surfaceContainerHigh = Color(0xFFF6E4E9),
+    surfaceContainerHighest = Color(0xFFF0DEE3),
+    outline = Color(0xFF847377),
+    outlineVariant = Color(0xFFD6C2C5)
+)
+
+private val PetalDark = darkColorScheme(
+    primary = Color(0xFFFFB0C8),
+    onPrimary = Color(0xFF65002F),
+    primaryContainer = Color(0xFF8E0045),
+    onPrimaryContainer = Color(0xFFFFD9E2),
+    secondary = Color(0xFFE3BDC6),
+    onSecondary = Color(0xFF422931),
+    secondaryContainer = Color(0xFF5A3F47),
+    onSecondaryContainer = Color(0xFFFFD9E2),
+    tertiary = Color(0xFFEFBD94),
+    onTertiary = Color(0xFF48290B),
+    tertiaryContainer = Color(0xFF623F1F),
+    onTertiaryContainer = Color(0xFFFFDCC1),
+    background = Color(0xFF181113),
+    onBackground = Color(0xFFECDFE1),
+    surface = Color(0xFF181113),
+    onSurface = Color(0xFFECDFE1),
+    surfaceVariant = Color(0xFF514347),
+    onSurfaceVariant = Color(0xFFD6C2C5),
+    surfaceContainerLowest = Color(0xFF130C0E),
+    surfaceContainerLow = Color(0xFF20191B),
+    surfaceContainer = Color(0xFF251D20),
+    surfaceContainerHigh = Color(0xFF30282A),
+    surfaceContainerHighest = Color(0xFF3B3235),
+    outline = Color(0xFF9F8C90),
+    outlineVariant = Color(0xFF514347)
+)
+
 val PetalPalettes: List<PetalPalette> = listOf(
+    PetalPalette("petal", "Petal Pink", Color(0xFFD81B60), PetalLight, PetalDark),
     PetalPalette("tide", "Tide", Color(0xFF00A88E), TideLight, TideDark),
     PetalPalette("zen", "Zen", Color(0xFF445E91), ZenLight, ZenDark),
     PetalPalette("ember", "Ember", Color(0xFFB4552D), EmberLight, EmberDark),
@@ -320,3 +377,4 @@ val PetalPalettes: List<PetalPalette> = listOf(
 )
 
 fun paletteById(id: String): PetalPalette = PetalPalettes.firstOrNull { it.id == id } ?: PetalPalettes.first()
+

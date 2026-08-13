@@ -188,8 +188,8 @@ object PetalComposeBridge {
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
-                val dynamicColor = sp.getBoolean("useDynamicColor", false)
+                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
                 val appFont = remember(fontName) {
@@ -247,7 +247,7 @@ fun PetalHomeScreen(
     var editingSlotIndex by remember { mutableStateOf<Int?>(null) }
 
     var isAmoledEnabled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-    var isDynamicColorEnabled by remember { mutableStateOf(sp.getBoolean("useDynamicColor", true)) }
+    var isDynamicColorEnabled by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
 
     PetalExpressiveTheme(
         dynamicColor = isDynamicColorEnabled,

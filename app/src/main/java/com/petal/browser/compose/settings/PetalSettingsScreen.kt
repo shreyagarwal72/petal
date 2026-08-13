@@ -72,8 +72,8 @@ object PetalSettingsBridge {
                 val fontWeightVal = sp.getInt("sp_font_weight", 400)
                 val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
-                val dynamicColor = sp.getBoolean("useDynamicColor", false)
+                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
                 val appFont = remember(fontName) {
@@ -129,9 +129,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var selectedColorStyle by remember {
         mutableStateOf(try { ColorStyle.valueOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") } catch (e: Exception) { ColorStyle.TONAL_SPOT })
     }
-    var selectedPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", "tide") ?: "tide") }
+    var selectedPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-    var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", false)) }
+    var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
 
     // Private DNS & Language States
     var privateDnsMode by remember { mutableStateOf(sp.getString("sp_private_dns_mode", "OFF") ?: "OFF") }

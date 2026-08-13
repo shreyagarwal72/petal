@@ -9,6 +9,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +27,8 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.defaultPaletteId
+import com.petal.browser.ui.theme.isDynamicColorSupported
 
 /**
  * Composable to display an indeterminate loading indicator that fills all available screen
@@ -48,13 +52,16 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
     }
 }
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+
 /**
- * Pull to Refresh Bar using ContainedLoadingIndicator styling.
+ * Material 3 built-in PullToRefreshBox component.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun RefreshBarLoadingIndicator(
     isRefreshing: Boolean,
+    onRefresh: () -> Unit = {},
     pullProgress: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
@@ -67,39 +74,15 @@ fun RefreshBarLoadingIndicator(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
+                .padding(top = 12.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp,
-                shadowElevation = 8.dp,
-                modifier = Modifier
-                    .wrapContentSize()
-                    .scale(if (isRefreshing) 1.0f else pullProgress.coerceIn(0.6f, 1.0f))
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.wrapContentSize()
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.size(28.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            strokeWidth = 3.dp,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Text(
-                        text = if (isRefreshing) "Refreshing..." else if (pullProgress >= 0.85f) "Release to refresh" else "Pull to refresh",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                // Stock Material 3 built-in PullToRefreshBox indicator without color or shape overrides
             }
         }
     }
@@ -125,9 +108,9 @@ object PetalRefreshBarBridge {
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
+                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val isAmoled = sp.getBoolean("sp_amoled", false)
-                val dynamicColor = sp.getBoolean("useDynamicColor", false)
+                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
                 val appFont = remember(fontName) {
                     try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }

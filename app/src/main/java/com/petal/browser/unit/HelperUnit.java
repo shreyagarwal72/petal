@@ -306,7 +306,8 @@ public class HelperUnit {
         try {
             sp = PreferenceManager.getDefaultSharedPreferences(context);
             context.setTheme(R.style.AppTheme);
-            if (sp.getBoolean("useDynamicColor", true)) {
+            boolean isDynamicSupported = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S;
+            if (sp.getBoolean("useDynamicColor", isDynamicSupported) && isDynamicSupported) {
                 com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(context);
             }
         } catch (Exception e) {

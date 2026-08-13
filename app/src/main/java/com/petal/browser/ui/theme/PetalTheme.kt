@@ -22,42 +22,11 @@ import androidx.core.view.WindowCompat
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
 annotation class ExperimentalMaterial3ExpressiveApi
 
-// --- Default Material 3 Petal Colors ---
-private val PetalLightColors = lightColorScheme(
-    primary = Color(0xFF006960),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFF9EF2E4),
-    onPrimaryContainer = Color(0xFF00201C),
-    secondaryContainer = Color(0xFFCCE8E2),
-    onSecondaryContainer = Color(0xFF051F1C),
-    tertiaryContainer = Color(0xFFFFDCC6),
-    onTertiaryContainer = Color(0xFF321300),
-    background = Color(0xFFEBF3F0),
-    onBackground = Color(0xFF171D1B),
-    surfaceContainer = Color(0xFFFDFFFD),
-    surfaceContainerHigh = Color(0xFFF3F9F6),
-    surfaceContainerHighest = Color(0xFFE7EEEB),
-    outline = Color(0xFF6F7975),
-    outlineVariant = Color(0xFFBEC9C5),
-)
+val isDynamicColorSupported: Boolean
+    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
-private val PetalDarkColors = darkColorScheme(
-    primary = Color(0xFF82D5C8),
-    onPrimary = Color(0xFF003731),
-    primaryContainer = Color(0xFF005048),
-    onPrimaryContainer = Color(0xFF9EF2E4),
-    secondaryContainer = Color(0xFF334B47),
-    onSecondaryContainer = Color(0xFFCCE8E2),
-    tertiaryContainer = Color(0xFF743500),
-    onTertiaryContainer = Color(0xFFFFDCC6),
-    background = Color(0xFF0D1513),
-    onBackground = Color(0xFFDDE4E1),
-    surfaceContainer = Color(0xFF1A2422),
-    surfaceContainerHigh = Color(0xFF242F2C),
-    surfaceContainerHighest = Color(0xFF2F3A37),
-    outline = Color(0xFF89938F),
-    outlineVariant = Color(0xFF3F4946),
-)
+val defaultPaletteId: String
+    get() = if (isDynamicColorSupported) "tide" else "petal"
 
 /** Pure-black window with a near-black elevation ladder for AMOLED panels. */
 fun ColorScheme.applyAmoled(): ColorScheme = copy(
@@ -73,18 +42,19 @@ fun ColorScheme.applyAmoled(): ColorScheme = copy(
 
 /**
  * Petal Material 3 Theme with Android 12+ Dynamic Color, Stride Palettes, Custom Fonts (Width, Weight, Roundness), Color Styles & AMOLED Black support.
+ * For Android 12+ devices, defaults to system Material You colors; for devices below Android 12, defaults to Petal Pinkish theme.
  */
 @Composable
 fun PetalExpressiveTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
+    dynamicColor: Boolean = isDynamicColorSupported,
     useAmoled: Boolean = false,
     appFont: AppFont = AppFont.SYSTEM,
     fontWidth: Float = 100f,
     fontWeight: Int = 400,
     fontRoundness: Float = 0f,
     colorStyle: ColorStyle = ColorStyle.TONAL_SPOT,
-    paletteId: String = "tide",
+    paletteId: String = defaultPaletteId,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current

@@ -725,7 +725,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 if (isBottom) {
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                    addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_compose);
 
                     if (progComposeParams != null) {
                         progComposeParams.removeRule(RelativeLayout.BELOW);
@@ -733,6 +734,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
 
                     contentParams.removeRule(RelativeLayout.BELOW);
+                    contentParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                     contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
                     if (progressBarCompose != null) {
                         contentParams.addRule(RelativeLayout.ABOVE, R.id.main_progress_bar_compose);
@@ -744,12 +746,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
                         bubbleParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                         bubbleParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                        bubbleParams.bottomMargin = (int) HelperUnit.convertDpToPixel(85f, context);
+                        bubbleParams.bottomMargin = (int) HelperUnit.convertDpToPixel(140f, context);
                         bubbleParams.topMargin = 0;
                         fabBubble.setLayoutParams(bubbleParams);
                     }
                 } else {
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                    addrParams.removeRule(RelativeLayout.ABOVE);
                     addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
 
                     if (progComposeParams != null) {
@@ -758,6 +761,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
 
                     contentParams.removeRule(RelativeLayout.ABOVE);
+                    contentParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                     contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                     if (progressBarCompose != null) {
                         contentParams.addRule(RelativeLayout.BELOW, R.id.main_progress_bar_compose);

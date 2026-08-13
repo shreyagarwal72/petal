@@ -125,7 +125,8 @@ public class Fragment_settings extends BasePreferenceFragment implements SharedP
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         boolean customSE = sp.getBoolean("searchEngineSwitch", false);
 
-        boolean useDynamicColor = sp.getBoolean("useDynamicColor", false);
+        boolean defaultDynamic = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S;
+        boolean useDynamicColor = sp.getBoolean("useDynamicColor", defaultDynamic);
         ListPreference theme;
         theme = findPreference("sp_theme");
         assert theme != null;
