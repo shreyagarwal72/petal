@@ -175,15 +175,15 @@ object PetalLiveAlertManager {
         val contentText = "$soFarText / $totalText • $etaText left"
 
         val builderNotif = LiveUpdateNotificationManager.buildLiveNotification(
-            context = context,
-            id = downloadId,
-            title = "Downloading $fileName",
-            contentText = contentText,
-            progressPercent = progressPercent,
-            isIndeterminate = isIndeterminate,
-            chipText = liveAlertChip,
-            contentPendingIntent = openAppPendingIntent,
-            cancelPendingIntent = cancelPendingIntent
+            context,
+            downloadId,
+            "Downloading $fileName",
+            contentText,
+            progressPercent,
+            isIndeterminate,
+            liveAlertChip,
+            openAppPendingIntent,
+            cancelPendingIntent
         )
 
         nm.notify(downloadId.toInt(), builderNotif)

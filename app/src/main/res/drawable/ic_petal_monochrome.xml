@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Clean, minimalist 5-petal flower vector drawable centered in 108x108 viewport with single flat fill (#000000) for Android 13+ Material You monochrome tint masking -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,54 C51,32 57,20 54,20 C51,20 57,32 54,54 Z
+                  M54,54 C72,42 83,50 83,47 C83,44 72,50 54,54 Z
+                  M54,54 C65,74 72,83 70,85 C68,87 63,76 54,54 Z
+                  M54,54 C43,76 38,87 36,85 C34,83 41,74 54,54 Z
+                  M54,54 C36,50 25,44 25,47 C25,50 36,42 54,54 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,30 C58,30 61,37 54,54 C47,37 50,30 54,30 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M73,43 C75,47 70,54 54,54 C63,44 70,40 73,43 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M66,73 C63,76 56,66 54,54 C62,60 68,69 66,73 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M42,73 C40,69 46,60 54,54 C52,66 45,76 42,73 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M35,43 C38,40 45,44 54,54 C38,54 33,47 35,43 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,54m-8,0a8,8 0 1,0 16,0a8,8 0 1,0 -16,0" />
+</vector>
