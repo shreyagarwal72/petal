@@ -10,7 +10,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Objects;
 
 import com.petal.browser.activity.BrowserActivity;
 
@@ -22,22 +21,33 @@ public class CustomRedirectsHelper {
         ArrayList<CustomRedirect> redirects = new ArrayList<>();
         String redirectsPref = preferences.getString(CUSTOM_REDIRECTS_KEY, "[]");
 
-        if (Objects.requireNonNull(preferences.getString("saved_redirect_ok", "no")).equals("no")) {
-            redirects.add(new CustomRedirect("m.youtube.com", preferences.getString("sp_youTube_string_domain", "invidious.nerdvpn.de")));
-            redirects.add(new CustomRedirect("youtube.com", preferences.getString("sp_youTube_string_domain", "invidious.nerdvpn.de")));
-            redirects.add(new CustomRedirect("twitter.com", preferences.getString("sp_twitter_string_domain", "nitter.net")));
-            saveRedirects(redirects);
-            preferences.edit().putString("saved_redirect_ok", "yes").apply();
+        if (!preferences.getBoolean("youtube_redirect_cleaned", false)) {
+            preferences.edit().putBoolean("youtube_redirect_cleaned", true).apply();
+            try {
+                JSONArray oldArr = new JSONArray(redirectsPref);
+                JSONArray newArr = new JSONArray();
+                for (int i = 0; i < oldArr.length(); i++) {
+                    JSONObject obj = oldArr.getJSONObject(i);
+                    String src = obj.optString("source", "");
+                    if (!src.contains("youtube.com")) {
+                        newArr.put(obj);
+                    }
+                }
+                redirectsPref = newArr.toString();
+                preferences.edit().putString(CUSTOM_REDIRECTS_KEY, redirectsPref).apply();
+            } catch (Exception ignored) {}
         }
 
         JSONArray array = new JSONArray(redirectsPref);
         for (int i = 0; i < array.length(); i++) {
             JSONObject redirect = array.getJSONObject(i);
-            String source = redirect.getString("source");
-            String target = redirect.getString("target");
-            redirects.add(new CustomRedirect(source, target));
-            redirects.sort(Comparator.comparing(CustomRedirect::getSource));
+            String source = redirect.optString("source", "");
+            String target = redirect.optString("target", "");
+            if (!source.isEmpty() && !target.isEmpty() && !source.contains("youtube.com")) {
+                redirects.add(new CustomRedirect(source, target));
+            }
         }
+        redirects.sort(Comparator.comparing(CustomRedirect::getSource));
         return redirects;
     }
 
@@ -46,10 +56,12 @@ public class CustomRedirectsHelper {
         JSONArray array = new JSONArray();
         for (int i = 0; i < redirects.size(); i++) {
             CustomRedirect redirect = redirects.get(i);
-            JSONObject object = new JSONObject();
-            object.put("source", redirect.getSource());
-            object.put("target", redirect.getTarget());
-            array.put(object);
+            if (!redirect.getSource().contains("youtube.com")) {
+                JSONObject object = new JSONObject();
+                object.put("source", redirect.getSource());
+                object.put("target", redirect.getTarget());
+                array.put(object);
+            }
         }
         preferences.edit().putString(CUSTOM_REDIRECTS_KEY, array.toString()).apply();
     }

@@ -25,6 +25,13 @@
         android:icon="@drawable/icon_bookmark" />
 
     <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="history"
+        android:title="@string/setting_title_history"
+        android:summary="Backup and restore browsing history records"
+        android:icon="@drawable/icon_history" />
+
+    <CheckBoxPreference
         android:defaultValue="false"
         android:key="sp_backup_quit"
         android:title="@string/setting_backup_ext"

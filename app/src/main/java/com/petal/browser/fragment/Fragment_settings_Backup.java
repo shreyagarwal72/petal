@@ -90,6 +90,9 @@ public class Fragment_settings_Backup extends BasePreferenceFragment {
                     if (sp.getBoolean("bookmark_simple", false)) {
                         BackupUnit.restoreData(getActivity(), 5);
                     }
+                    if (sp.getBoolean("history", true)) {
+                        BackupUnit.restoreData(getActivity(), 4);
+                    }
                 }
             }));
             snackbarBottom.show();
@@ -104,7 +107,8 @@ public class Fragment_settings_Backup extends BasePreferenceFragment {
         File sourceDB = new File(data, database_app);
         File backupDB = new File(sd, database_backup);
 
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(activity);if (!BackupUnit.checkPermissionStorage(activity)) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(activity);
+        if (!BackupUnit.checkPermissionStorage(activity)) {
             BackupUnit.requestPermission(activity);
         } else {
             BackupUnit.makeBackupDir(activity);
@@ -119,6 +123,9 @@ public class Fragment_settings_Backup extends BasePreferenceFragment {
             }
             if (sp.getBoolean("bookmark_simple", false)) {
                 BackupUnit.backupData(activity, 5);
+            }
+            if (sp.getBoolean("history", true)) {
+                BackupUnit.backupData(activity, 4);
             }
         }
     }
@@ -172,14 +179,21 @@ public class Fragment_settings_Backup extends BasePreferenceFragment {
                     Element element = (Element) child;
                     String type = element.getNodeName();
                     String name = element.getAttribute("name");
-                    // In my app, all prefs seem to get serialized as either "string" or
-                    // "boolean" - this will need expanding if yours uses any other types!
                     if (type.equals("string")) {
                         String value = element.getTextContent();
                         editor.putString(name, value);
                     } else if (type.equals("boolean")) {
                         String value = element.getAttribute("value");
                         editor.putBoolean(name, value.equals("true"));
+                    } else if (type.equals("int")) {
+                        String value = element.getAttribute("value");
+                        try { editor.putInt(name, Integer.parseInt(value)); } catch (Exception ignored) {}
+                    } else if (type.equals("long")) {
+                        String value = element.getAttribute("value");
+                        try { editor.putLong(name, Long.parseLong(value)); } catch (Exception ignored) {}
+                    } else if (type.equals("float")) {
+                        String value = element.getAttribute("value");
+                        try { editor.putFloat(name, Float.parseFloat(value)); } catch (Exception ignored) {}
                     }
                 }
                 child = child.getNextSibling();

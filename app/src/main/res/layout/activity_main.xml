@@ -37,7 +37,8 @@
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/main_progress_bar_compose"/>
+        android:layout_below="@id/main_progress_bar_compose"
+        android:layout_alignParentBottom="true"/>
 
     <!-- Floating Action Button for Showing Top Bar -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

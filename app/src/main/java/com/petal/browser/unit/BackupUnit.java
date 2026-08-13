@@ -120,6 +120,8 @@ public class BackupUnit {
         executor.execute(() -> {
             if (i == 5) {
                 exportBookmarksSimple(context);
+            } else if (i == 4) {
+                exportHistory(context);
             } else {
                 exportList(context);
             }
@@ -136,6 +138,8 @@ public class BackupUnit {
         executor.execute(() -> {
             if (i == 5) {
                 importBookmarksSimple(context);
+            } else if (i == 4) {
+                importHistory(context);
             } else {
                 importList(context);
             }
@@ -263,5 +267,61 @@ public class BackupUnit {
             }
         }
         return link;
+    }
+
+    public static void exportHistory(Context context) {
+        RecordAction action = new RecordAction(context);
+        action.open(false);
+        List<Record> list = action.listHistory(context);
+        action.close();
+        File fileTxt = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup/history_backup.txt");
+        try {
+            File dir = fileTxt.getParentFile();
+            if (dir != null && !dir.exists()) dir.mkdirs();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(fileTxt, false));
+            for (Record record : list) {
+                String title = record.getTitle() != null ? record.getTitle().replace("|", " ") : "";
+                String url = record.getURL() != null ? record.getURL() : "";
+                long time = record.getTime();
+                if (!url.isEmpty()) {
+                    writer.write(url + "|" + title + "|" + time);
+                    writer.newLine();
+                }
+            }
+            writer.close();
+        } catch (Exception e) {
+            Log.e("Petal", "exportHistory error", e);
+        }
+    }
+
+    public static void importHistory(Context context) {
+        File fileTxt = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup/history_backup.txt");
+        if (!fileTxt.exists()) return;
+        try {
+            RecordAction action = new RecordAction(context);
+            action.open(true);
+            BufferedReader reader = new BufferedReader(new FileReader(fileTxt));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+                String[] parts = line.split("\\|", 3);
+                if (parts.length >= 2) {
+                    String url = parts[0];
+                    String title = parts[1];
+                    long time = System.currentTimeMillis();
+                    if (parts.length >= 3) {
+                        try { time = Long.parseLong(parts[2]); } catch (Exception ignored) {}
+                    }
+                    if (!action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
+                        action.addHistory(new Record(title, url, time));
+                    }
+                }
+            }
+            reader.close();
+            action.close();
+        } catch (Exception e) {
+            Log.e("Petal", "importHistory error", e);
+        }
     }
 }

@@ -347,6 +347,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         hideSearch();
         dispatchIntent(getIntent());
 
+        if (sp.getBoolean("sp_check_update_on_launch", true)) {
+            com.petal.browser.unit.UpdateUnit.checkForUpdates(this, true);
+        }
+
         //restore open Tabs from shared preferences if app got killed
         if (sp.getBoolean("sp_restoreTabs", false)
                 || sp.getBoolean("sp_reloadTabs", false)
@@ -579,6 +583,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 }
                                 if (title.isEmpty()) title = HelperUnit.domain(url);
                                 saveBookmark(title, url);
+
+                                try {
+                                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(BrowserActivity.this);
+                                    String jsonStr = sp.getString("sp_custom_home_shortcuts_json_v3", null);
+                                    org.json.JSONArray array = jsonStr != null ? new org.json.JSONArray(jsonStr) : new org.json.JSONArray();
+                                    org.json.JSONObject newObj = new org.json.JSONObject();
+                                    newObj.put("label", title);
+                                    newObj.put("url", url);
+                                    newObj.put("siteId", "globe");
+                                    newObj.put("color", "#4285F4");
+                                    if (array.length() >= 5) {
+                                        array.put(4, newObj);
+                                    } else {
+                                        array.put(newObj);
+                                    }
+                                    sp.edit().putString("sp_custom_home_shortcuts_json_v3", array.toString()).apply();
+                                    updateOmniBox();
+                                } catch (Exception ignored) {}
                             }
                         });
                         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
@@ -1256,10 +1278,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
         View fab_bubble = findViewById(R.id.fab_bubble);
         if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+        View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
+        View progressBar = findViewById(R.id.main_progress_bar);
 
         if (isHomePage(currentUrl)) {
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
+            if (contentFrame != null) contentFrame.setTranslationY(0f);
+            if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
+            if (progressBar != null) progressBar.setTranslationY(0f);
             isAddressBarCollapsed = false;
             return;
         }
@@ -1268,12 +1295,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (collapse && !isAddressBarCollapsed) {
             isAddressBarCollapsed = true;
-            float targetY = -(composeAddressBar.getHeight() + HelperUnit.convertDpToPixel(40f, context));
+            float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
+            float targetY = -(barHeight + HelperUnit.convertDpToPixel(40f, context));
+            float contentTargetY = -barHeight;
 
             ObjectAnimator anim1 = ObjectAnimator.ofFloat(composeAddressBar, "translationY", targetY);
             anim1.setDuration(280);
             anim1.setInterpolator(new android.view.animation.AccelerateInterpolator(1.2f));
             anim1.start();
+
+            if (contentFrame != null) {
+                contentFrame.animate().translationY(contentTargetY).setDuration(280).start();
+            }
+            if (progressBarCompose != null) {
+                progressBarCompose.animate().translationY(contentTargetY).setDuration(280).start();
+            }
+            if (progressBar != null) {
+                progressBar.animate().translationY(contentTargetY).setDuration(280).start();
+            }
 
             if (fab_bubble != null) {
                 fab_bubble.setVisibility(VISIBLE);
@@ -1298,6 +1337,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             anim1.setInterpolator(new android.view.animation.DecelerateInterpolator(1.2f));
             anim1.start();
 
+            if (contentFrame != null) {
+                contentFrame.animate().translationY(0f).setDuration(280).start();
+            }
+            if (progressBarCompose != null) {
+                progressBarCompose.animate().translationY(0f).setDuration(280).start();
+            }
+            if (progressBar != null) {
+                progressBar.animate().translationY(0f).setDuration(280).start();
+            }
+
             if (fab_bubble != null) {
                 fab_bubble.animate()
                         .scaleX(0f)
@@ -1316,16 +1365,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updateAddressBar();
 
         String url = ninjaWebView.getUrl();
+        View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
+        View progressBarView = findViewById(R.id.main_progress_bar);
         if (isHomePage(url)) {
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
+            if (contentFrame != null) contentFrame.setTranslationY(0f);
+            if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
+            if (progressBarView != null) progressBarView.setTranslationY(0f);
             isAddressBarCollapsed = false;
         } else {
             if (composeAddressBar != null) {
                 composeAddressBar.setVisibility(VISIBLE);
                 composeAddressBar.setTranslationY(0f);
             }
+            if (contentFrame != null) contentFrame.setTranslationY(0f);
+            if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
+            if (progressBarView != null) progressBarView.setTranslationY(0f);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             isAddressBarCollapsed = false;
@@ -1344,27 +1401,49 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         searchOnSiteLayout = findViewById(R.id.searchOnSiteLayout);
         searchOnSiteInput = findViewById(R.id.searchOnSite_input);
         Button searchOnSite_buttonClose = findViewById(R.id.searchOnSite_buttonClose);
-        TextInputLayout searchOnSite_textField  = findViewById(R.id.searchOnSite_textField);
-        assert searchOnSite_textField != null;
-        searchOnSite_buttonClose.setOnClickListener(v -> {
-            if (searchOnSiteInput.getText().length() > 0) searchOnSiteInput.setText("");
-            else {
-                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(searchOnSiteInput.getWindowToken(), 0);
-                searchOnSiteLayout.setVisibility(GONE);
-                appBar.setVisibility(VISIBLE);
-            }
-        });
-        searchOnSite_textField.setStartIconOnClickListener(v -> ((NinjaWebView) currentAlbumController).findNext(false));
-        searchOnSite_textField.setEndIconOnClickListener(v -> ((NinjaWebView) currentAlbumController).findNext(true));
-        searchOnSiteInput.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) { }
-            @Override
-            public void afterTextChanged(Editable s) { if (currentAlbumController != null) ((NinjaWebView) currentAlbumController).findAllAsync(s.toString()); }
-        });
+        TextInputLayout searchOnSite_textField = findViewById(R.id.searchOnSite_textField);
+        if (searchOnSite_buttonClose != null) {
+            searchOnSite_buttonClose.setOnClickListener(v -> {
+                if (searchOnSiteInput != null && searchOnSiteInput.getText().length() > 0) {
+                    searchOnSiteInput.setText("");
+                    if (ninjaWebView != null) ninjaWebView.clearMatches();
+                } else {
+                    if (searchOnSiteInput != null) {
+                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                        if (imm != null) imm.hideSoftInputFromWindow(searchOnSiteInput.getWindowToken(), 0);
+                    }
+                    if (searchOnSiteLayout != null) searchOnSiteLayout.setVisibility(GONE);
+                    if (appBar != null) appBar.setVisibility(VISIBLE);
+                }
+            });
+        }
+        if (searchOnSite_textField != null) {
+            searchOnSite_textField.setStartIconOnClickListener(v -> {
+                if (ninjaWebView != null) ninjaWebView.findNext(false);
+            });
+            searchOnSite_textField.setEndIconOnClickListener(v -> {
+                if (ninjaWebView != null) ninjaWebView.findNext(true);
+            });
+        }
+        if (searchOnSiteInput != null) {
+            searchOnSiteInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) { }
+                @Override
+                public void afterTextChanged(Editable s) {
+                    if (ninjaWebView != null) {
+                        String query = s.toString();
+                        if (query.isEmpty()) {
+                            ninjaWebView.clearMatches();
+                        } else {
+                            ninjaWebView.findAllAsync(query);
+                        }
+                    }
+                }
+            });
+        }
     }
     public void initSearch() {
         RecordAction action = new RecordAction(this);
@@ -2491,9 +2570,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
     private void searchOnSite() {
-        appBar.setVisibility(GONE);
-        searchOnSiteLayout.setVisibility(VISIBLE);
-        HelperUnit.showSoftKeyboard(searchOnSiteInput);
+        if (appBar != null) appBar.setVisibility(GONE);
+        if (searchOnSiteLayout != null) {
+            searchOnSiteLayout.setVisibility(VISIBLE);
+            if (searchOnSiteInput != null) {
+                searchOnSiteInput.requestFocus();
+                HelperUnit.showSoftKeyboard(searchOnSiteInput);
+            }
+        }
     }
     private void saveBookmark(String title, String url) {
         RecordAction action = new RecordAction(context);

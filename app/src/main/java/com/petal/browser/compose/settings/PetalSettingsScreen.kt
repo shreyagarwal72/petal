@@ -100,6 +100,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val icon: I
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine, custom homepage", Icons.Rounded.Search),
     DISPLAY_ZOOM("Display & Scaling", "Text font scaling and page zoom preview", Icons.Rounded.ZoomIn),
+    UPDATER("App Updates", "Check for updates and auto-check on launch", Icons.Rounded.SystemUpdate),
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", Icons.Rounded.Info)
 }
 
@@ -138,6 +139,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var isJavaScript by remember { mutableStateOf(sp.getBoolean("sp_javascript", true)) }
     var isBlockPopups by remember { mutableStateOf(sp.getBoolean("sp_block_popups", true)) }
     var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", true)) }
+    var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
     var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
@@ -245,6 +247,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         SettingsCategory.PRIVACY,
                         SettingsCategory.SEARCH_HOMEPAGE,
                         SettingsCategory.DISPLAY_ZOOM,
+                        SettingsCategory.UPDATER,
                         SettingsCategory.ABOUT
                     )
 
@@ -851,7 +854,62 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     }
                 }
 
-                // 8. About App & About Developer Sections
+                // 8. App Updates & Inbuilt Updater Section
+                if ((currentCategory == SettingsCategory.UPDATER || searchQuery.isNotBlank()) && matchesSearch("App Updates", "update updater version check launch github download upgrade")) {
+                    SettingsCategoryCard(title = "App Updates & Inbuilt Updater", icon = Icons.Rounded.SystemUpdate) {
+                        ToggleRow(
+                            title = "Check for Updates on Launch",
+                            subtitle = "Automatically check for new browser releases when app starts",
+                            icon = Icons.Rounded.SystemUpdate,
+                            checked = isCheckUpdateOnLaunch,
+                            onCheckedChange = { newValue ->
+                                isCheckUpdateOnLaunch = newValue
+                                sp.edit().putBoolean("sp_check_update_on_launch", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Check for Updates Now",
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Current Version: v1.5.0-expressive",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Button(
+                                    onClick = {
+                                        if (context is ComponentActivity) {
+                                            com.petal.browser.unit.UpdateUnit.checkForUpdates(context, false)
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(14.dp)
+                                ) {
+                                    Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Check Now")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 9. About App & About Developer Sections
                 if ((currentCategory == SettingsCategory.ABOUT || searchQuery.isNotBlank()) && matchesSearch("About", "app developer version github licenses terms open source")) {
                     SettingsCategoryCard(title = "About App & Developer", icon = Icons.Rounded.Info) {
                         // About App Subcard
