@@ -1893,6 +1893,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
             View bottomNav = findViewById(R.id.bottom_nav_compose);
             if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_downloads = findViewById(R.id.fab_bubble);
+            if (fab_bubble_downloads != null) fab_bubble_downloads.setVisibility(GONE);
             View downloadView = PetalDownloadBridge.createDownloadView(BrowserActivity.this, () -> {
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
@@ -3291,6 +3295,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
             View bottomNav = findViewById(R.id.bottom_nav_compose);
             if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_settings = findViewById(R.id.fab_bubble);
+            if (fab_bubble_settings != null) fab_bubble_settings.setVisibility(GONE);
             View settingsView = com.petal.browser.compose.settings.PetalSettingsBridge.createSettingsView(BrowserActivity.this, () -> {
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
