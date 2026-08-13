@@ -334,50 +334,7 @@ fun PetalOverflowMenuSheet(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
-                // Header URL / Page Info Card (Compact restyled)
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = if (pageUrl.startsWith("https://")) Icons.Rounded.Lock else Icons.Rounded.Public,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (pageTitle.isBlank()) "New Tab" else pageTitle,
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = if (pageUrl.isBlank()) "about:blank" else pageUrl,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
+
 
                 // Top Header Circular Icon Action Buttons Row (evenly spaced)
                 Row(
@@ -555,11 +512,6 @@ fun PetalOverflowMenuSheet(
                     }
                 }
 
-                MenuRowItem(
-                    icon = Icons.Rounded.Code,
-                    title = "View source",
-                    onClick = onViewSource
-                )
                 MenuRowItem(
                     icon = Icons.Rounded.Settings,
                     title = "Settings",
