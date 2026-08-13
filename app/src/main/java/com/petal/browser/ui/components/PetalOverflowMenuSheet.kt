@@ -402,27 +402,33 @@ fun PetalOverflowMenuSheet(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 )
 
-                // Section 2: Page actions (Desktop site & Install as app)
-                MenuRowSwitchItem(
-                    icon = Icons.Rounded.DesktopWindows,
-                    title = "Desktop site",
-                    subtitle = "Request desktop version of websites",
-                    checked = isDesktopSite,
-                    onCheckedChange = onToggleDesktopSite
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.AppShortcut,
-                    title = "Install as app",
-                    subtitle = "Add Web App shortcut to Home screen",
-                    onClick = onInstallPwa
-                )
+                val isHomePage = remember(pageUrl, pageTitle) {
+                    pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("petal://") || pageUrl == "file:///android_asset/petal_home.html" || pageTitle == "Petal"
+                }
 
-                // Thin 1px horizontal divider line
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
+                if (!isHomePage) {
+                    // Section 2: Page actions (Desktop site & Install as app)
+                    MenuRowSwitchItem(
+                        icon = Icons.Rounded.DesktopWindows,
+                        title = "Desktop site",
+                        subtitle = "Request desktop version of websites",
+                        checked = isDesktopSite,
+                        onCheckedChange = onToggleDesktopSite
+                    )
+                    MenuRowItem(
+                        icon = Icons.Rounded.AppShortcut,
+                        title = "Install as app",
+                        subtitle = "Add Web App shortcut to Home screen",
+                        onClick = onInstallPwa
+                    )
+
+                    // Thin 1px horizontal divider line
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                    )
+                }
 
                 // Section 3: History & Delete browsing data
                 MenuRowItem(

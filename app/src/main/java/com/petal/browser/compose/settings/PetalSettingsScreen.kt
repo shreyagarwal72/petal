@@ -140,6 +140,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var isBlockPopups by remember { mutableStateOf(sp.getBoolean("sp_block_popups", true)) }
     var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", true)) }
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
+    var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "BOTTOM") ?: "BOTTOM") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
     var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
@@ -721,8 +722,43 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 7. Display & Scaling Sliders (using StrideSlider)
-                if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Display", "text font scale page zoom text scaling stride slider blur")) {
-                    SettingsCategoryCard(title = "Display & Font Scaling", icon = Icons.Rounded.FormatSize) {
+                if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Display", "text font scale page zoom text scaling stride slider blur address bar top bottom")) {
+                    SettingsCategoryCard(title = "Display & Layout Options", icon = Icons.Rounded.FormatSize) {
+                        Text(
+                            "Address Bar Location:",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            FilterChip(
+                                selected = addressBarPosition == "BOTTOM",
+                                onClick = {
+                                    addressBarPosition = "BOTTOM"
+                                    sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
+                                },
+                                label = { Text("Bottom (Default)") },
+                                leadingIcon = if (addressBarPosition == "BOTTOM") {
+                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                } else null
+                            )
+                            FilterChip(
+                                selected = addressBarPosition == "TOP",
+                                onClick = {
+                                    addressBarPosition = "TOP"
+                                    sp.edit().putString("sp_address_bar_position", "TOP").apply()
+                                },
+                                label = { Text("Top") },
+                                leadingIcon = if (addressBarPosition == "TOP") {
+                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                } else null
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                         var useBlur by remember { mutableStateOf(sp.getBoolean("sp_use_blur", true)) }
 
                         ToggleRow(

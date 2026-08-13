@@ -416,6 +416,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onResume() {
         super.onResume();
+        applyAddressBarPosition();
         if (ninjaWebView != null) {
             ninjaWebView.onResume();
             ninjaWebView.resumeTimers();
@@ -659,6 +660,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             androidx.compose.ui.platform.ComposeView bottomNavCompose = findViewById(R.id.bottom_nav_compose);
             if (bottomNavCompose != null) {
+                bottomNavCompose.setVisibility(VISIBLE);
                 String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                 boolean isHome = isHomePage(currentUrl);
                 com.petal.browser.ui.components.PetalNavTab activeTab = isHome ? com.petal.browser.ui.components.PetalNavTab.HOME : com.petal.browser.ui.components.PetalNavTab.TABS;
@@ -697,6 +699,81 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 bottomNavCompose.bringToFront();
             }
         } catch (Exception ignored) {}
+        applyAddressBarPosition();
+    }
+
+    public void applyAddressBarPosition() {
+        try {
+            String pos = sp.getString("sp_address_bar_position", "BOTTOM");
+            boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
+
+            View addressBar = findViewById(R.id.compose_address_bar);
+            View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
+            View mainContent = findViewById(R.id.main_content);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+
+            if (addressBar != null && mainContent != null && addressBar.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams addrParams = (RelativeLayout.LayoutParams) addressBar.getLayoutParams();
+                RelativeLayout.LayoutParams contentParams = (RelativeLayout.LayoutParams) mainContent.getLayoutParams();
+                RelativeLayout.LayoutParams progComposeParams = progressBarCompose != null && progressBarCompose.getLayoutParams() instanceof RelativeLayout.LayoutParams ? (RelativeLayout.LayoutParams) progressBarCompose.getLayoutParams() : null;
+
+                if (isBottom) {
+                    addrParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                    addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+
+                    if (progComposeParams != null) {
+                        progComposeParams.removeRule(RelativeLayout.BELOW);
+                        progComposeParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
+                    }
+
+                    contentParams.removeRule(RelativeLayout.BELOW);
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    if (progressBarCompose != null) {
+                        contentParams.addRule(RelativeLayout.ABOVE, R.id.main_progress_bar_compose);
+                    } else {
+                        contentParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
+                    }
+
+                    if (bottomNav != null && bottomNav.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams navParams = (RelativeLayout.LayoutParams) bottomNav.getLayoutParams();
+                        navParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                        navParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
+                        navParams.bottomMargin = 8;
+                        bottomNav.setLayoutParams(navParams);
+                    }
+                } else {
+                    addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                    addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+
+                    if (progComposeParams != null) {
+                        progComposeParams.removeRule(RelativeLayout.ABOVE);
+                        progComposeParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                    }
+
+                    contentParams.removeRule(RelativeLayout.ABOVE);
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    if (progressBarCompose != null) {
+                        contentParams.addRule(RelativeLayout.BELOW, R.id.main_progress_bar_compose);
+                    } else {
+                        contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                    }
+
+                    if (bottomNav != null && bottomNav.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams navParams = (RelativeLayout.LayoutParams) bottomNav.getLayoutParams();
+                        navParams.removeRule(RelativeLayout.ABOVE);
+                        navParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                        navParams.bottomMargin = 16;
+                        bottomNav.setLayoutParams(navParams);
+                    }
+                }
+
+                addressBar.setLayoutParams(addrParams);
+                if (progressBarCompose != null) progressBarCompose.setLayoutParams(progComposeParams);
+                mainContent.setLayoutParams(contentParams);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error applying address bar position", e);
+        }
     }
 
     @Override
@@ -1468,6 +1545,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     private void showOverview() {
         try {
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
             com.petal.browser.ui.components.PetalTabSwitcherBridge.showTabSwitcherSheet(
                 this,
                 currentAlbumController,
@@ -1633,11 +1712,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 @Override
                 public void onOpenHistory() {
+                    View bottomNav = findViewById(R.id.bottom_nav_compose);
+                    if (bottomNav != null) bottomNav.setVisibility(GONE);
                     com.petal.browser.compose.history.PetalHistoryBridge.showHistory(
                         BrowserActivity.this,
                         url -> {
                             if (ninjaWebView != null) {
                                 ninjaWebView.loadUrl(url);
+                                showAlbum(currentAlbumController, url);
                             }
                         },
                         () -> startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class))
@@ -1715,6 +1797,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
             View downloadView = PetalDownloadBridge.createDownloadView(BrowserActivity.this, () -> {
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
@@ -3107,6 +3191,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
             View settingsView = com.petal.browser.compose.settings.PetalSettingsBridge.createSettingsView(BrowserActivity.this, () -> {
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
