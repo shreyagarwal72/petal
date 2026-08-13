@@ -1213,7 +1213,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             color = MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Icon(Icons.Rounded.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                                     Column {
@@ -1223,19 +1223,20 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 }
 
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                                         OutlinedButton(
                                             onClick = {
                                                 try {
                                                     com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/"))
                                                 } catch (e: Exception) { e.printStackTrace() }
                                             },
-                                            shape = RoundedCornerShape(14.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                                             modifier = Modifier.weight(1f)
                                         ) {
-                                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("GitHub", style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(15.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("GitHub", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                                         }
 
                                         OutlinedButton(
@@ -1244,28 +1245,30 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                                     com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser/"))
                                                 } catch (e: Exception) { e.printStackTrace() }
                                             },
-                                            shape = RoundedCornerShape(14.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                                             modifier = Modifier.weight(1f)
                                         ) {
-                                            Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Source Code", style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                                            Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(15.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("Source", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                                         }
                                     }
 
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                                         OutlinedButton(
                                             onClick = {
                                                 try {
                                                     com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://t.me/championworkspace"))
                                                 } catch (e: Exception) { e.printStackTrace() }
                                             },
-                                            shape = RoundedCornerShape(14.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                                             modifier = Modifier.weight(1f)
                                         ) {
-                                            Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Telegram", style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                                            Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(15.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("Telegram", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                                         }
 
                                         Button(
@@ -1274,16 +1277,17 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                                     com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser/issues"))
                                                 } catch (e: Exception) { e.printStackTrace() }
                                             },
-                                            shape = RoundedCornerShape(14.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                                             modifier = Modifier.weight(1f),
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
                                         ) {
-                                            Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Feedback", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                                            Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(15.dp))
+                                            Spacer(Modifier.width(3.dp))
+                                            Text("Feedback", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                                         }
                                     }
                                 }
