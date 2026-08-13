@@ -132,3 +132,5 @@ fun petalTypography(
     AppFont.MANROPE -> buildTypography(weightedTiers(R.font.manrope_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
     AppFont.GROTESK -> buildTypography(weightedTiers(R.font.spacegrotesk_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
 }
+
+val StrideTypography: Typography = Typography()
