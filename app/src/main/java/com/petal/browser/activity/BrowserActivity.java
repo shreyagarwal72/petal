@@ -502,6 +502,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onDestroy() {
+        if (isMediaBound) {
+            try {
+                unbindService(mediaConnection);
+                isMediaBound = false;
+            } catch (Exception ignored) {}
+        }
         NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(1);
         if (sp.getBoolean("sp_clear_quit", true)) {
@@ -3509,16 +3515,5 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ninjaWebView.onPause();
             ninjaWebView.pauseTimers();
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (isMediaBound) {
-            try {
-                unbindService(mediaConnection);
-                isMediaBound = false;
-            } catch (Exception ignored) {}
-        }
-        super.onDestroy();
     }
 }
