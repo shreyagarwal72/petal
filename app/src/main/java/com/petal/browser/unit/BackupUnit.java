@@ -314,7 +314,7 @@ public class BackupUnit {
                         try { time = Long.parseLong(parts[2]); } catch (Exception ignored) {}
                     }
                     if (!action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
-                        action.addHistory(new Record(title, url, time));
+                        action.addHistory(new Record(title, url, time, 0L));
                     }
                 }
             }

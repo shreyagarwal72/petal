@@ -53,10 +53,11 @@ public class UpdateUnit {
                     final String releaseNotes = json.optString("body", "Bug fixes and performance improvements.");
                     final String downloadUrl = json.optString("html_url", "https://github.com/shreyagarwal72/foss_browser/releases");
 
-                    String currentVersion = "v1.5.0";
+                    String ver = "v1.5.0";
                     try {
-                        currentVersion = "v" + activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0).versionName;
+                        ver = "v" + activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0).versionName;
                     } catch (Exception ignored) {}
+                    final String currentVersion = ver;
 
                     final boolean hasUpdate = !latestVersion.equalsIgnoreCase(currentVersion);
 
