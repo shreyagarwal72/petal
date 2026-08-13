@@ -1134,51 +1134,69 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     }
                                 }
 
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                    OutlinedButton(
-                                        onClick = {
-                                            try {
-                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser"))
-                                            } catch (e: Exception) { e.printStackTrace() }
-                                        },
-                                        shape = RoundedCornerShape(14.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("GitHub", style = MaterialTheme.typography.labelMedium)
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/"))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("GitHub", style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser/"))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Source Code", style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                                        }
                                     }
 
-                                    OutlinedButton(
-                                        onClick = {
-                                            try {
-                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://t.me/championworkspace"))
-                                            } catch (e: Exception) { e.printStackTrace() }
-                                        },
-                                        shape = RoundedCornerShape(14.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(16.dp))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("Telegram", style = MaterialTheme.typography.labelMedium)
-                                    }
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://t.me/championworkspace"))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Telegram", style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                                        }
 
-                                    Button(
-                                        onClick = {
-                                            try {
-                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser/issues"))
-                                            } catch (e: Exception) { e.printStackTrace() }
-                                        },
-                                        shape = RoundedCornerShape(14.dp),
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    ) {
-                                        Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
-                                        Spacer(Modifier.width(6.dp))
-                                        Text("Feedback", fontWeight = FontWeight.Bold)
+                                        Button(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser/issues"))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            modifier = Modifier.weight(1f),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        ) {
+                                            Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Feedback", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                                        }
                                     }
                                 }
                             }
