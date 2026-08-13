@@ -1418,6 +1418,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
         View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
         View progressBar = findViewById(R.id.main_progress_bar);
+        View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
 
         if (isHomePage(currentUrl)) {
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
@@ -1425,6 +1426,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
             if (progressBar != null) progressBar.setTranslationY(0f);
+            if (refreshBarCompose != null) refreshBarCompose.setTranslationY(0f);
             isAddressBarCollapsed = false;
             return;
         }
@@ -1450,6 +1452,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (progressBar != null) {
                 springTranslateY(progressBar, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
             }
+            if (refreshBarCompose != null) {
+                springTranslateY(refreshBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+            }
 
             if (fab_bubble != null) {
                 fab_bubble.setVisibility(VISIBLE);
@@ -1474,6 +1479,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             if (progressBar != null) {
                 springTranslateY(progressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+            }
+            if (refreshBarCompose != null) {
+                springTranslateY(refreshBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
             }
 
             if (fab_bubble != null) {
