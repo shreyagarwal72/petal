@@ -137,6 +137,11 @@ object PetalTabSwitcherBridge {
                 }
             }
             dialog.setContentView(composeView)
+            dialog.setOnDismissListener {
+                (activity as? com.petal.browser.activity.BrowserActivity)?.apply {
+                    runOnUiThread { updatePersistentBottomNav() }
+                }
+            }
             dialog.show()
         } catch (e: Exception) {
             e.printStackTrace()

@@ -661,7 +661,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updatePersistentBottomNav();
     }
 
-    private void updatePersistentBottomNav() {
+    public void updatePersistentBottomNav() {
         try {
             androidx.compose.ui.platform.ComposeView bottomNavCompose = findViewById(R.id.bottom_nav_compose);
             if (bottomNavCompose != null) {
@@ -709,13 +709,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void applyAddressBarPosition() {
         try {
-            String pos = sp.getString("sp_address_bar_position", "BOTTOM");
+            String pos = sp.getString("sp_address_bar_position", "TOP");
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
 
             View addressBar = findViewById(R.id.compose_address_bar);
             View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
             View mainContent = findViewById(R.id.main_content);
             View bottomNav = findViewById(R.id.bottom_nav_compose);
+            View fabBubble = findViewById(R.id.fab_bubble);
 
             if (addressBar != null && mainContent != null && addressBar.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                 RelativeLayout.LayoutParams addrParams = (RelativeLayout.LayoutParams) addressBar.getLayoutParams();
@@ -738,6 +739,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     } else {
                         contentParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
                     }
+
+                    if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
+                        bubbleParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                        bubbleParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                        bubbleParams.bottomMargin = (int) HelperUnit.convertDpToPixel(85f, context);
+                        bubbleParams.topMargin = 0;
+                        fabBubble.setLayoutParams(bubbleParams);
+                    }
                 } else {
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                     addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
@@ -753,6 +763,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         contentParams.addRule(RelativeLayout.BELOW, R.id.main_progress_bar_compose);
                     } else {
                         contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                    }
+
+                    if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
+                        bubbleParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                        bubbleParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                        bubbleParams.topMargin = (int) HelperUnit.convertDpToPixel(16f, context);
+                        bubbleParams.bottomMargin = 0;
+                        fabBubble.setLayoutParams(bubbleParams);
                     }
                 }
 
@@ -1378,9 +1397,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (collapse && !isAddressBarCollapsed) {
             isAddressBarCollapsed = true;
+            String pos = sp.getString("sp_address_bar_position", "TOP");
+            boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
             float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
-            float targetY = -(barHeight + HelperUnit.convertDpToPixel(40f, context));
-            float contentTargetY = -barHeight;
+            float targetY = isBottom ? (barHeight + HelperUnit.convertDpToPixel(40f, context)) : -(barHeight + HelperUnit.convertDpToPixel(40f, context));
+            float contentTargetY = isBottom ? 0f : -barHeight;
 
             ObjectAnimator anim1 = ObjectAnimator.ofFloat(composeAddressBar, "translationY", targetY);
             anim1.setDuration(280);

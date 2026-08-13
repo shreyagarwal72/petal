@@ -146,7 +146,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var isBlockPopups by remember { mutableStateOf(sp.getBoolean("sp_block_popups", true)) }
     var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", true)) }
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
-    var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "BOTTOM") ?: "BOTTOM") }
+    var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
     var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
@@ -736,28 +736,28 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            FilterChip(
-                                selected = addressBarPosition == "BOTTOM",
-                                onClick = {
-                                    addressBarPosition = "BOTTOM"
-                                    sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
-                                },
-                                label = { Text("Bottom (Default)") },
-                                leadingIcon = if (addressBarPosition == "BOTTOM") {
-                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null
-                            )
                             FilterChip(
                                 selected = addressBarPosition == "TOP",
                                 onClick = {
                                     addressBarPosition = "TOP"
                                     sp.edit().putString("sp_address_bar_position", "TOP").apply()
                                 },
-                                label = { Text("Top") },
+                                label = { Text("Top (Default)") },
                                 leadingIcon = if (addressBarPosition == "TOP") {
+                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                } else null
+                            )
+                            FilterChip(
+                                selected = addressBarPosition == "BOTTOM",
+                                onClick = {
+                                    addressBarPosition = "BOTTOM"
+                                    sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
+                                },
+                                label = { Text("Bottom") },
+                                leadingIcon = if (addressBarPosition == "BOTTOM") {
                                     { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                 } else null
                             )
