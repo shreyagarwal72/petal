@@ -30,7 +30,7 @@ object PetalProgressBarBridge {
             setViewTreeLifecycleOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setTag(com.petal.browser.R.id.main_progress_bar, Pair(progressState, visibleState))
+            setTag(com.petal.browser.R.id.main_progress_bar_compose, Pair(progressState, visibleState))
             setContent {
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
@@ -61,7 +61,7 @@ object PetalProgressBarBridge {
 
     @JvmStatic
     fun updateProgress(composeView: ComposeView, progress: Int) {
-        val tag = composeView.getTag(com.petal.browser.R.id.main_progress_bar) as? Pair<MutableState<Float>, MutableState<Boolean>>
+        val tag = composeView.getTag(com.petal.browser.R.id.main_progress_bar_compose) as? Pair<MutableState<Float>, MutableState<Boolean>>
         if (tag != null) {
             val (progressState, visibleState) = tag
             if (progress < 100) {

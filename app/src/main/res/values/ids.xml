@@ -5,4 +5,5 @@
     <item name="fab_undo" type="id" />
     <item name="fab_overview" type="id" />
     <item name="appBar_buttons" type="id" />
+    <item name="main_progress_bar" type="id" />
 </resources>
