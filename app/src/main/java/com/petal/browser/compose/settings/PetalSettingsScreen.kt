@@ -855,6 +855,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 onClick = {
                                     addressBarPosition = "TOP"
                                     sp.edit().putString("sp_address_bar_position", "TOP").apply()
+                                    if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
+                                        (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
+                                    }
                                 },
                                 label = { Text("Top (Default)") },
                                 leadingIcon = if (addressBarPosition == "TOP") {
@@ -866,6 +869,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 onClick = {
                                     addressBarPosition = "BOTTOM"
                                     sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
+                                    if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
+                                        (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
+                                    }
                                 },
                                 label = { Text("Bottom") },
                                 leadingIcon = if (addressBarPosition == "BOTTOM") {

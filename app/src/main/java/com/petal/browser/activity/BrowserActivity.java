@@ -726,7 +726,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (isBottom) {
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                    addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_compose);
+                    if (bottomNav != null) {
+                        addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_compose);
+                    } else {
+                        addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    }
+                    addrParams.topMargin = 0;
+                    addrParams.bottomMargin = (int) HelperUnit.convertDpToPixel(4f, context);
 
                     if (progComposeParams != null) {
                         progComposeParams.removeRule(RelativeLayout.BELOW);
@@ -754,6 +760,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                     addrParams.removeRule(RelativeLayout.ABOVE);
                     addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    addrParams.topMargin = 0;
+                    addrParams.bottomMargin = 0;
 
                     if (progComposeParams != null) {
                         progComposeParams.removeRule(RelativeLayout.ABOVE);
@@ -793,6 +801,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addressBar.setLayoutParams(addrParams);
                 if (progressBarCompose != null) progressBarCompose.setLayoutParams(progComposeParams);
                 mainContent.setLayoutParams(contentParams);
+
+                addressBar.bringToFront();
+                addressBar.requestLayout();
+                mainContent.requestLayout();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error applying address bar position", e);
