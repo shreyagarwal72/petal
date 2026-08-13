@@ -1474,7 +1474,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (url != null) {
             ninjaWebView.initPreferences(url);
             if (ninjaWebView.isForeground()) {
-                progressBar.setVisibility(GONE);
+                if (progressBar != null) progressBar.setVisibility(GONE);
                 if (fab_menu != null) setProfileIcon(fab_menu, url);
             }
         }
