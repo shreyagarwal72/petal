@@ -433,13 +433,29 @@ public class HelperUnit {
 
     public static void setupDialog(Context context, Dialog dialog) {
         try {
+            if (dialog == null) return;
             TypedValue typedValue = new TypedValue();
-            context.getTheme().resolveAttribute(R.attr.colorError, typedValue, true);
-            int color = typedValue.data;
+            context.getTheme().resolveAttribute(R.attr.colorPrimary, typedValue, true);
+            int primaryColor = typedValue.data;
+
+            TypedValue surfaceValue = new TypedValue();
+            context.getTheme().resolveAttribute(R.attr.colorSurfaceContainerHigh, surfaceValue, true);
+            if (surfaceValue.data == 0) {
+                context.getTheme().resolveAttribute(R.attr.colorSurface, surfaceValue, true);
+            }
+            int surfaceColor = surfaceValue.data;
+
             ImageView imageView = dialog.findViewById(android.R.id.icon);
-            if (imageView != null) imageView.setColorFilter(color, PorterDuff.Mode.SRC_IN);
-            if (dialog != null && dialog.getWindow() != null) {
-                dialog.getWindow().setGravity(Gravity.BOTTOM);
+            if (imageView != null && primaryColor != 0) {
+                imageView.setColorFilter(primaryColor, PorterDuff.Mode.SRC_IN);
+            }
+
+            if (dialog.getWindow() != null) {
+                android.graphics.drawable.GradientDrawable backgroundDrawable = new android.graphics.drawable.GradientDrawable();
+                backgroundDrawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+                backgroundDrawable.setColor(surfaceColor != 0 ? surfaceColor : android.graphics.Color.parseColor("#1C1B1F"));
+                backgroundDrawable.setCornerRadius(HelperUnit.convertDpToPixel(28f, context));
+                dialog.getWindow().setBackgroundDrawable(backgroundDrawable);
             }
         } catch (Exception ignored) {}
     }

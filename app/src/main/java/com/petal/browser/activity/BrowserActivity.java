@@ -1589,8 +1589,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // page (NinjaWebView), the home screen, or settings/downloads - all of
         // them get swapped into this same container, and PullToRefreshFrameLayout
         // intercepts the drag regardless of what's currently inside it.
-        contentFrame.setCanPull(() -> !refreshState.isRefreshing()
-                && (ninjaWebView == null || ninjaWebView.getScrollY() <= 0));
+        contentFrame.setPullDistanceDp(300f);
+        contentFrame.setCanPull(() -> {
+            View currentChild = contentFrame.getChildCount() > 0 ? contentFrame.getChildAt(0) : null;
+            boolean isWebPage = currentAlbumController != null && currentChild == currentAlbumController.getAlbumView();
+            String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : null;
+            boolean isHome = isHomePage(currentUrl);
+            return isWebPage && !isHome && !refreshState.isRefreshing() && ninjaWebView != null && ninjaWebView.getScrollY() <= 0;
+        });
 
         contentFrame.setOnPullListener(progress -> refreshState.setPullProgress(progress));
 
@@ -1601,15 +1607,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             refreshState.setRefreshing(true);
             refreshState.setPullProgress(1.0f);
-            String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : null;
-            if (isHomePage(currentUrl)) {
-                showAlbum(currentAlbumController, currentUrl);
-                refreshState.setRefreshing(false);
-                refreshState.setPullProgress(0f);
-            } else if (ninjaWebView != null) {
+            if (ninjaWebView != null) {
                 ninjaWebView.reload();
             } else {
-                // A non-web screen (settings/downloads) - nothing to reload.
                 refreshState.setRefreshing(false);
                 refreshState.setPullProgress(0f);
             }
