@@ -478,25 +478,6 @@ private fun PetalBloom(
                         SiteBrandIcon(siteId = shortcut.siteId, label = shortcut.label)
                     }
                 }
-
-                // Small edit badge icon on top right of each shortcut
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = 4.dp, y = (-4).dp)
-                        .size(20.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                        .clickable { onEditShortcutSlot(index) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Rounded.Edit,
-                        contentDescription = "Edit shortcut",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(12.dp)
-                    )
-                }
             }
         }
     }

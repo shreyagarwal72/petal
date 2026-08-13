@@ -238,7 +238,8 @@ public class HelperUnit {
                                 DownloadManager manager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
                                 assert manager != null;
                                 if (BackupUnit.checkPermissionStorage(activity)) {
-                                    manager.enqueue(request);
+                                    long downloadId = manager.enqueue(request);
+                                    com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(activity, downloadId, finalFileName);
                                 } else {
                                     BackupUnit.requestPermission(activity);
                                 }

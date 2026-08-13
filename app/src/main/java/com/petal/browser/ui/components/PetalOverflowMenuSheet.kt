@@ -243,7 +243,23 @@ fun PetalOverflowMenuSheet(
 ) {
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(false) }
+    var isDismissing by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) { isVisible = true }
+
+    val handleDismiss = {
+        if (!isDismissing) {
+            isDismissing = true
+            isVisible = false
+        }
+    }
+
+    LaunchedEffect(isDismissing) {
+        if (isDismissing) {
+            kotlinx.coroutines.delay(200)
+            onDismissRequest()
+        }
+    }
 
     val scale by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0.2f,
@@ -252,6 +268,15 @@ fun PetalOverflowMenuSheet(
             stiffness = Spring.StiffnessMediumLow
         ),
         label = "MenuExpandScale"
+    )
+
+    val translationY by animateFloatAsState(
+        targetValue = if (isVisible) 0f else 120f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "MenuSlideUp"
     )
 
     val alpha by animateFloatAsState(
@@ -267,12 +292,12 @@ fun PetalOverflowMenuSheet(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = onDismissRequest
+                onClick = handleDismiss
             )
-            .padding(top = 52.dp, end = 12.dp, start = 12.dp, bottom = 16.dp),
-        contentAlignment = Alignment.TopEnd
+            .padding(top = 52.dp, end = 12.dp, start = 12.dp, bottom = 72.dp),
+        contentAlignment = Alignment.BottomEnd
     ) {
-        // Compact floating panel anchored to top-right below toolbar
+        // Compact floating panel anchored to bottom-right expanding out of bottom nav bar
         Surface(
             shape = RoundedCornerShape(18.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -289,8 +314,9 @@ fun PetalOverflowMenuSheet(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
+                    this.translationY = translationY
                     this.alpha = alpha
-                    transformOrigin = TransformOrigin(1f, 0f)
+                    transformOrigin = TransformOrigin(1f, 1f)
                 }
         ) {
             Column(

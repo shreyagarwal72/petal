@@ -12,7 +12,8 @@
         android:id="@+id/compose_address_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true" />
+        android:layout_alignParentTop="true"
+        android:elevation="12dp" />
 
     <!-- Fancy Rippling Wavy Top Loading Progress Line -->
     <androidx.compose.ui.platform.ComposeView

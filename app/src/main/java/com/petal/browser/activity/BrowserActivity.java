@@ -738,14 +738,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     } else {
                         contentParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
                     }
-
-                    if (bottomNav != null && bottomNav.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                        RelativeLayout.LayoutParams navParams = (RelativeLayout.LayoutParams) bottomNav.getLayoutParams();
-                        navParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                        navParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
-                        navParams.bottomMargin = 8;
-                        bottomNav.setLayoutParams(navParams);
-                    }
                 } else {
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                     addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
@@ -762,14 +754,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     } else {
                         contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
                     }
+                }
 
-                    if (bottomNav != null && bottomNav.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                        RelativeLayout.LayoutParams navParams = (RelativeLayout.LayoutParams) bottomNav.getLayoutParams();
-                        navParams.removeRule(RelativeLayout.ABOVE);
-                        navParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                        navParams.bottomMargin = 16;
-                        bottomNav.setLayoutParams(navParams);
-                    }
+                // Bottom Nav Bar is ALWAYS anchored at the bottom of the screen above system navigation bar
+                if (bottomNav != null && bottomNav.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                    RelativeLayout.LayoutParams navParams = (RelativeLayout.LayoutParams) bottomNav.getLayoutParams();
+                    navParams.removeRule(RelativeLayout.ABOVE);
+                    navParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    navParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+                    navParams.bottomMargin = (int) HelperUnit.convertDpToPixel(16f, context);
+                    bottomNav.setLayoutParams(navParams);
+                    bottomNav.bringToFront();
                 }
 
                 addressBar.setLayoutParams(addrParams);
@@ -1314,6 +1309,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         } else {
             composeAddressBar.setVisibility(VISIBLE);
+            composeAddressBar.bringToFront();
+            composeAddressBar.setTranslationY(0f);
         }
 
         boolean isIncognito = ninjaWebView != null && ninjaWebView.isIncognito();

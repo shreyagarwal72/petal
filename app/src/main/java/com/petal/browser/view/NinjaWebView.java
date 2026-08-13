@@ -151,7 +151,13 @@ public class NinjaWebView extends WebView implements AlbumController {
     public synchronized void initPreferences(String url) {
 
         this.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, true);
+        this.setLayerType(View.LAYER_TYPE_NONE, null);
+        this.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+
         WebSettings webSettings = getSettings();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            webSettings.setOffscreenPreRaster(true);
+        }
         webSettings.setDefaultTextEncodingName("utf-8");
         webSettings.setSafeBrowsingEnabled(true);
         webSettings.setSupportZoom(true);
