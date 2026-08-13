@@ -154,8 +154,9 @@ public class PetalPwaManager {
 
         new Thread(() -> {
             try {
-                String title = !currentManifest.shortName.isEmpty() ? currentManifest.shortName : currentManifest.name;
-                if (title.isEmpty()) title = webView.getTitle();
+                String rawTitle = !currentManifest.shortName.isEmpty() ? currentManifest.shortName : currentManifest.name;
+                if (rawTitle.isEmpty()) rawTitle = webView.getTitle();
+                final String title = rawTitle;
 
                 String targetUrl = !currentManifest.startUrl.isEmpty() ? currentManifest.startUrl : webView.getUrl();
                 Bitmap iconBitmap = fetchBitmap(currentManifest.iconUrl);
