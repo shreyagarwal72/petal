@@ -125,6 +125,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val icon: I
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine, custom homepage", Icons.Rounded.Search),
     DISPLAY_ZOOM("Display & Scaling", "Text font scaling and page zoom preview", Icons.Rounded.ZoomIn),
+    DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", Icons.Rounded.Backup),
     UPDATER("App Updates", "Check for updates and auto-check on launch", Icons.Rounded.SystemUpdate),
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", Icons.Rounded.Info)
 }
@@ -281,6 +282,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         SettingsCategory.PRIVACY,
                         SettingsCategory.SEARCH_HOMEPAGE,
                         SettingsCategory.DISPLAY_ZOOM,
+                        SettingsCategory.DATA_STORAGE,
                         SettingsCategory.UPDATER,
                         SettingsCategory.ABOUT
                     )
