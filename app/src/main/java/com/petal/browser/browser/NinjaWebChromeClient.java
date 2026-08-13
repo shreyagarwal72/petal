@@ -109,6 +109,10 @@ public class NinjaWebChromeClient extends WebChromeClient {
     }
     @Override
     public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, android.os.Message resultMsg) {
+        if (!userGesture || (ninjaWebView != null && ninjaWebView.isAdBlock())) {
+            // Block popups and ad redirects automatically
+            return false;
+        }
         Context context = view.getContext();
         NinjaWebView newWebView = new NinjaWebView(context);
         view.addView(newWebView);
@@ -122,9 +126,6 @@ public class NinjaWebChromeClient extends WebChromeClient {
                     BrowserUnit.intentURL(context, request.getUrl());
                 } catch (Exception e) {
                     Log.i(TAG, "shouldOverrideUrlLoading Exception:" + e);
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setData(Uri.parse(request.getUrl().toString()));
-                    context.startActivity(Intent.createChooser(intent, request.getUrl().toString()));
                 }
                 return true;
             }

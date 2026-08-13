@@ -22,8 +22,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -35,6 +33,24 @@ public class AdBlock {
     @SuppressLint("ConstantLocale")
     private static final Locale locale = Locale.getDefault();
 
+    private static final String[] AD_HOST_PATTERNS = new String[] {
+        "doubleclick.net", "google-analytics.com", "googlesyndication.com",
+        "adservice.google.com", "adnxs.com", "popads.net", "popcash.net",
+        "adform.net", "taboola.com", "outbrain.com", "adroll.com", "criteo.com",
+        "rubiconproject.com", "pubmatic.com", "smartadserver.com", "zedo.com",
+        "amazon-adsystem.com", "adk2.com", "propellerads.com", "exoclick.com",
+        "scorecardresearch.com", "quantserve.com", "openx.net", "monetag.com",
+        "hilltopads.com", "adcash.com", "adsterra.com", "a-ads.com", "mgid.com",
+        "revcontent.com", "juicyads.com", "trafficjunky.com", "coinhive.com",
+        "statcounter.com", "hotjar.com", "mixpanel.com", "segment.io", "clarity.ms",
+        "pixel.facebook.com", "adservice", "popunder", "popups", "tracking"
+    };
+
+    private static final String[] AD_PATH_PATTERNS = new String[] {
+        "/pagead/", "/adserv", "/ads/", "/ad_banner", "/popunder", "/popup.js",
+        "adsterra", "popcash", "popads", "analytics.js", "gtag/js", "fbevents.js",
+        "adsbygoogle.js", "ad_status"
+    };
 
     public AdBlock(Context context) {
         if (hosts.isEmpty()) {
@@ -100,7 +116,6 @@ public class AdBlock {
 
     public static void downloadHosts(final Context context) {
         Thread thread = new Thread(() -> {
-
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
             String hostURL = sp.getString("ab_hosts", "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts");
 
@@ -133,7 +148,6 @@ public class AdBlock {
                 outStream.close();
                 inStream.close();
 
-                //now remove leading 0.0.0.0 from file
                 FileReader in = new FileReader(tempfile);
                 BufferedReader reader = new BufferedReader(in);
                 File outfile = new File(context.getDir("filesdir", Context.MODE_PRIVATE) + "/" + FILE);
@@ -151,7 +165,7 @@ public class AdBlock {
                 tempfile.delete();
 
                 hosts.clear();
-                loadHosts(context);  //reload hosts after update
+                loadHosts(context);
                 Log.w("browser", "AdBlock hosts updated");
 
             } catch (IOException i) {
@@ -164,7 +178,7 @@ public class AdBlock {
     private static String getDomain(String url) throws URISyntaxException {
         url = url.toLowerCase(locale);
 
-        int index = url.indexOf('/', 8); // -> http://(7) and https://(8)
+        int index = url.indexOf('/', 8);
         if (index != -1) {
             url = url.substring(0, index);
         }
@@ -185,31 +199,60 @@ public class AdBlock {
         }
     }
 
-    private static final String[] AD_HOST_PATTERNS = new String[] {
-        "doubleclick.net", "google-analytics.com", "googlesyndication.com",
-        "adservice.google.com", "adnxs.com", "popads.net", "popcash.net",
-        "adform.net", "taboola.com", "outbrain.com", "adroll.com", "criteo.com",
-        "rubiconproject.com", "pubmatic.com", "smartadserver.com", "zedo.com",
-        "amazon-adsystem.com", "adk2.com", "propellerads.com", "exoclick.com",
-        "scorecardresearch.com", "quantserve.com", "openx.net"
-    };
-
     public static String getAdHidingScript() {
         return "javascript:(function() {" +
-            "var selectors = ['.ad-container', '.ad-banner', '.ad-wrapper', '[id*=\"google_ads\"]', '[id*=\"taboola\"]', '[class*=\"sponsored\"]', 'iframe[src*=\"ads\"]', 'iframe[src*=\"doubleclick\"]', '.adunit', '.ad-box'];" +
-            "for (var s of selectors) {" +
-            "  var els = document.querySelectorAll(s);" +
-            "  for (var i = 0; i < els.length; i++) { els[i].style.display = 'none !important'; }" +
+            "if (window.__petal_adblock_injected__) return;" +
+            "window.__petal_adblock_injected__ = true;" +
+            "const selectors = ['.ad-container', '.ad-banner', '.ad-wrapper', '.ad-slot', '.ad-unit', '.ad-box', " +
+            "'[id*=\"google_ads\"]', '[id*=\"taboola\"]', '[id*=\"outbrain\"]', '[class*=\"sponsored\"]', " +
+            "'iframe[src*=\"ads\"]', 'iframe[src*=\"doubleclick\"]', 'iframe[src*=\"adnxs\"]', " +
+            "'.popunder', '.popup-overlay', '.adsterra_tag', '[class*=\"adsterra\"]', '[id*=\"adsterra\"]', " +
+            "'.top-ad', '.bottom-ad', '.sidebar-ad', '.header-ad', 'ins.adsbygoogle', '.native-ad'];" +
+            "function hideAds() {" +
+            "  try {" +
+            "    const elements = document.querySelectorAll(selectors.join(', '));" +
+            "    elements.forEach(el => {" +
+            "      el.style.setProperty('display', 'none', 'important');" +
+            "      el.style.setProperty('visibility', 'hidden', 'important');" +
+            "      el.style.setProperty('height', '0px', 'important');" +
+            "      el.style.setProperty('opacity', '0', 'important');" +
+            "      el.style.setProperty('pointer-events', 'none', 'important');" +
+            "    });" +
+            "  } catch (e) {}" +
             "}" +
+            "hideAds();" +
+            "if (document.body) {" +
+            "  const observer = new MutationObserver(() => hideAds());" +
+            "  observer.observe(document.body, { childList: true, subtree: true });" +
+            "} else {" +
+            "  document.addEventListener('DOMContentLoaded', () => {" +
+            "    hideAds();" +
+            "    if (document.body) {" +
+            "      const observer = new MutationObserver(() => hideAds());" +
+            "      observer.observe(document.body, { childList: true, subtree: true });" +
+            "    }" +
+            "  });" +
+            "}" +
+            "try {" +
+            "  const origOpen = window.open;" +
+            "  window.open = function(url, target, features) {" +
+            "    if (!url || url === 'about:blank' || /ad|pop|banner|track|redirect/i.test(url)) return null;" +
+            "    return origOpen.apply(this, arguments);" +
+            "  };" +
+            "} catch (e) {}" +
             "})()";
     }
 
-    boolean isAd(String url) {
+    public boolean isAd(String url) {
         if (url == null || url.isEmpty()) return false;
         String lowerUrl = url.toLowerCase(locale);
 
         for (String pattern : AD_HOST_PATTERNS) {
             if (lowerUrl.contains(pattern)) return true;
+        }
+
+        for (String pathPattern : AD_PATH_PATTERNS) {
+            if (lowerUrl.contains(pathPattern)) return true;
         }
 
         String domain;
