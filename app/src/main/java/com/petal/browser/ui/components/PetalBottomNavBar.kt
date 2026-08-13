@@ -64,11 +64,6 @@ fun PetalBottomNavBar(
         shape = RoundedCornerShape(36.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = modifier
-            .shadow(
-                elevation = 16.dp,
-                shape = RoundedCornerShape(36.dp),
-                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-            )
             .clip(RoundedCornerShape(36.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .entrance()
