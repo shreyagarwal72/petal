@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.unit.HelperUnit;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

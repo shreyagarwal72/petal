@@ -207,6 +207,7 @@ public class NinjaWebView extends WebView implements AlbumController {
             WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, sp.getBoolean(profile + "_night", true));
         }
 
+        String desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
         String rawDefaultUa = WebSettings.getDefaultUserAgent(context);
         // Replace custom webview tokens (e.g. wv or custom app signatures) with standard Mobile Chrome user agent for Google login compatibility
         String googleLoginMobileUa = rawDefaultUa != null ? rawDefaultUa.replaceAll("; wv\\)", ")").replaceAll(" Version/\\d+\\.\\d+", "") : "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
