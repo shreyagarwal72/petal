@@ -275,6 +275,35 @@ fun PetalHomeScreen(
         fontWeight = fontWeightVal,
         fontRoundness = fontRoundnessVal
     ) {
+        var pageLoaded by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            pageLoaded = true
+        }
+
+        val logoScale by animateFloatAsState(
+            targetValue = if (pageLoaded) 1.0f else 0.4f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
+            label = "logoZoomAnim"
+        )
+
+        val bloomScale by animateFloatAsState(
+            targetValue = if (pageLoaded) 1.0f else 0.2f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessVeryLow
+            ),
+            label = "bloomZoomAnim"
+        )
+
+        val bloomAlpha by animateFloatAsState(
+            targetValue = if (pageLoaded) 1.0f else 0.0f,
+            animationSpec = spring(stiffness = Spring.StiffnessLow),
+            label = "bloomAlphaAnim"
+        )
+
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
@@ -286,25 +315,48 @@ fun PetalHomeScreen(
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(24.dp))
 
-                Text(
-                    text = greeting(greetingName),
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = (-0.5).sp,
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Text(
-                    text = "Petal",
-                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                // Animated Logo & Greeting Container
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            scaleX = logoScale
+                            scaleY = logoScale
+                        }
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier
+                                .size(72.dp)
+                                .padding(4.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(54.dp))
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = greeting(greetingName),
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = (-0.5).sp,
+                            ),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            text = "Petal",
+                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
 
                 Spacer(Modifier.height(24.dp))
 
@@ -312,12 +364,23 @@ fun PetalHomeScreen(
 
                 Spacer(Modifier.height(32.dp))
 
-                PetalBloom(
-                    shortcuts = shortcuts,
-                    onOpenShortcut = onOpenShortcut,
-                    onAddShortcutClick = { editingSlotIndex = 0 },
-                    onEditShortcutSlot = { index -> editingSlotIndex = index }
-                )
+                // Animated 5-Petal Bloom Ring
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            scaleX = bloomScale
+                            scaleY = bloomScale
+                            alpha = bloomAlpha
+                        }
+                ) {
+                    PetalBloom(
+                        shortcuts = shortcuts,
+                        onOpenShortcut = onOpenShortcut,
+                        onAddShortcutClick = { editingSlotIndex = 0 },
+                        onEditShortcutSlot = { index -> editingSlotIndex = index }
+                    )
+                }
 
                 Spacer(Modifier.height(96.dp))
             }
