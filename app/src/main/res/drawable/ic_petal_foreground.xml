@@ -10,27 +10,27 @@
         android:scaleY="0.65">
         <!-- Center core -->
         <path
-            android:fillColor="#000000"
+            android:fillColor="#1B5E20"
             android:pathData="M54,54m-10,0a10,10 0 1,0 20,0a10,10 0 1,0 -20,0" />
         <!-- Top Petal -->
         <path
-            android:fillColor="#000000"
+            android:fillColor="#4CAF50"
             android:pathData="M54,44 C44,28 46,14 54,14 C62,14 64,28 54,44 Z" />
         <!-- Right Petal -->
         <path
-            android:fillColor="#000000"
+            android:fillColor="#66BB6A"
             android:pathData="M63.5,50.9 C79.5,45.7 92.4,51.6 87.7,59.2 C83,66.8 68.7,60.8 63.5,50.9 Z" />
         <!-- Bottom-Right Petal -->
         <path
-            android:fillColor="#000000"
+            android:fillColor="#81C784"
             android:pathData="M59.9,59.9 C69.8,72.4 69.8,86.5 61.8,86.5 C53.8,86.5 50,72.4 59.9,59.9 Z" />
         <!-- Bottom-Left Petal -->
         <path
-            android:fillColor="#000000"
+            android:fillColor="#A5D6A7"
             android:pathData="M48.1,59.9 C38.2,72.4 34.4,86.5 26.4,86.5 C18.4,86.5 18.4,72.4 48.1,59.9 Z" />
         <!-- Left Petal -->
         <path
-            android:fillColor="#000000"
+            android:fillColor="#2E7D32"
             android:pathData="M44.5,50.9 C39.3,60.8 25,66.8 20.3,59.2 C15.6,51.6 28.5,45.7 44.5,50.9 Z" />
     </group>
 </vector>

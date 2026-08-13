@@ -144,10 +144,45 @@ public class PetalPwaManager {
      * Installs PWA to Android Home Screen as a dynamic shortcut or pinned app.
      */
     public void installCurrentPwa(Activity activity) {
-        if (currentManifest == null || activity == null) {
-            // Fallback to standard URL shortcut
-            if (activity instanceof BrowserActivity) {
-                ((BrowserActivity) activity).installPwaShortcut();
+        if (activity == null) return;
+        
+        if (currentManifest == null) {
+            String targetUrl = webView != null ? webView.getUrl() : null;
+            if (targetUrl == null || targetUrl.isEmpty()) return;
+            String rawTitle = webView != null && webView.getTitle() != null ? webView.getTitle() : HelperUnit.domain(targetUrl);
+            final String title = rawTitle;
+
+            try {
+                Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
+                shortcutIntent.setComponent(new android.content.ComponentName(activity, BrowserActivity.class));
+                shortcutIntent.putExtra("pwa_mode", true);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ShortcutManager shortcutManager = activity.getSystemService(ShortcutManager.class);
+                    if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported()) {
+                        Icon icon = Icon.createWithResource(activity, R.mipmap.ic_launcher);
+                        ShortcutInfo pinShortcutInfo = new ShortcutInfo.Builder(activity, "pwa_" + Math.abs(targetUrl.hashCode()))
+                                .setShortLabel(title)
+                                .setLongLabel(title)
+                                .setIcon(icon)
+                                .setIntent(shortcutIntent)
+                                .build();
+
+                        shortcutManager.requestPinShortcut(pinShortcutInfo, null);
+                        activity.runOnUiThread(() -> Toast.makeText(activity, "Added " + title + " to Home screen", Toast.LENGTH_SHORT).show());
+                        return;
+                    }
+                }
+
+                Intent addIntent = new Intent();
+                addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+                addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
+                addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(activity, R.mipmap.ic_launcher));
+                addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+                activity.sendBroadcast(addIntent);
+                activity.runOnUiThread(() -> Toast.makeText(activity, "Added " + title + " to Home screen", Toast.LENGTH_SHORT).show());
+            } catch (Exception e) {
+                Log.e(TAG, "Error installing shortcut fallback", e);
             }
             return;
         }
