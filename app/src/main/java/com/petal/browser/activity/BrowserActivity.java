@@ -523,7 +523,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         contentFrame.removeAllViews();
 
         String url = overrideUrl != null ? overrideUrl : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
-        if (isHomePage(url)) {
+        boolean isIncognitoTab = ninjaWebView != null && ninjaWebView.isIncognito();
+        if (isIncognitoTab) {
+            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.enableIncognitoSecurity(this);
+            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.onIncognitoTabOpened(this);
+        } else {
+            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.disableIncognitoSecurity(this);
+        }
+
+        if (isIncognitoTab && (isHomePage(url) || "petal://incognito".equalsIgnoreCase(url))) {
+            View incognitoHome = com.petal.browser.compose.incognito.PetalIncognitoBridge.createIncognitoHomeView(
+                this,
+                () -> {
+                    try {
+                        initSearch();
+                        if (dialogSearch != null) dialogSearch.show();
+                        if (search_input != null) HelperUnit.showSoftKeyboard(search_input);
+                    } catch (Exception ignored) {}
+                },
+                () -> closeAllIncognitoTabs()
+            );
+            contentFrame.addView(incognitoHome);
+            if (appBar != null) appBar.setVisibility(GONE);
+        } else if (isHomePage(url)) {
             View composeView = PetalComposeBridge.createComposeHomeView(this, BrowserContainer.size(), new PetalHomeActionHandler() {
                 @Override
                 public void onSearch(String query) {
@@ -2932,9 +2954,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public void closeAllIncognitoTabs() {
+        try {
+            List<AlbumController> toRemove = new ArrayList<>();
+            for (AlbumController album : ninjaViewList) {
+                if (album instanceof NinjaWebView && ((NinjaWebView) album).isIncognito()) {
+                    toRemove.add(album);
+                }
+            }
+            for (AlbumController album : toRemove) {
+                removeAlbum(album);
+            }
+            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.setIncognitoTabCount(this, 0);
+            NinjaToast.show(this, "Closed all Incognito tabs");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private void dispatchIntent(Intent intent) {
         String action = intent.getAction();
+        if (com.petal.browser.compose.incognito.PetalIncognitoSessionManager.ACTION_CLOSE_INCOGNITO.equals(action)) {
+            closeAllIncognitoTabs();
+            intent.setAction("");
+            return;
+        }
         String url = intent.getStringExtra(Intent.EXTRA_TEXT);
         Uri dataUri = intent.getData();
         String mimeType = intent.getType();

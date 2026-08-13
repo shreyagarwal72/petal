@@ -49,6 +49,7 @@ fun PetalAddressBar(
     }
 
     val securityIcon: ImageVector = when {
+        isIncognito -> Icons.Rounded.VisibilityOff
         isBlankOrSearch -> Icons.Rounded.Search
         isHttps -> Icons.Rounded.Lock
         isHttp -> Icons.Rounded.Warning
@@ -56,6 +57,7 @@ fun PetalAddressBar(
     }
 
     val securityIconTint = when {
+        isIncognito -> com.petal.browser.ui.theme.IncognitoPrimary
         isBlankOrSearch -> MaterialTheme.colorScheme.onSurfaceVariant
         isHttps -> MaterialTheme.colorScheme.primary
         isHttp -> MaterialTheme.colorScheme.error
@@ -63,7 +65,7 @@ fun PetalAddressBar(
     }
 
     val containerColor = if (isIncognito) {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.90f)
+        com.petal.browser.ui.theme.IncognitoSurfaceContainer
     } else {
         MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.90f)
     }

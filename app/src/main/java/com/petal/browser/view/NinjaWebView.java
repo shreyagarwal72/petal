@@ -531,9 +531,12 @@ public class NinjaWebView extends WebView implements AlbumController {
             this.history = false;
             WebSettings webSettings = getSettings();
             webSettings.setSaveFormData(false);
+            webSettings.setSavePassword(false);
+            webSettings.setDomStorageEnabled(false);
+            webSettings.setDatabaseEnabled(false);
+            webSettings.setGeolocationEnabled(false);
             webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
             try {
-                CookieManager.getInstance().setAcceptCookie(false);
                 CookieManager.getInstance().setAcceptThirdPartyCookies(this, false);
             } catch (Exception ignored) {}
         }

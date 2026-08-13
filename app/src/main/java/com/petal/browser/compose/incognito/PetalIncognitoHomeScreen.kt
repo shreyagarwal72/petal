@@ -1,0 +1,327 @@
+package com.petal.browser.compose.incognito
+
+import androidx.activity.ComponentActivity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.components.entrance
+import com.petal.browser.ui.theme.IncognitoDarkBackground
+import com.petal.browser.ui.theme.IncognitoPrimary
+import com.petal.browser.ui.theme.IncognitoSurfaceContainer
+import com.petal.browser.ui.theme.PetalIncognitoTheme
+
+@Composable
+fun PetalIncognitoHomeScreen(
+    onSearchClick: () -> Unit = {},
+    onCloseIncognito: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    var blockThirdPartyCookies by remember { mutableStateOf(true) }
+
+    PetalIncognitoTheme {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(IncognitoDarkBackground)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(16.dp))
+
+                // Spy Hat & Glasses Circular Badge
+                Surface(
+                    shape = CircleShape,
+                    color = IncognitoSurfaceContainer,
+                    tonalElevation = 4.dp,
+                    modifier = Modifier
+                        .size(88.dp)
+                        .entrance(index = 0)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.VisibilityOff,
+                            contentDescription = "Incognito Mode",
+                            tint = IncognitoPrimary,
+                            modifier = Modifier.size(44.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // Hero Headline
+                Text(
+                    text = "You've gone Incognito",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.2.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.entrance(index = 1)
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = "Now you can browse privately. Other people who use this device won't see your activity. Downloads, bookmarks and reading list items will be saved.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth(0.92f)
+                        .entrance(index = 2)
+                )
+
+                Spacer(Modifier.height(32.dp))
+
+                // Quick Search Bar Box
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = IncognitoSurfaceContainer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .bouncyClickable(onClick = onSearchClick)
+                        .entrance(index = 3)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = "Search",
+                            tint = IncognitoPrimary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Text(
+                            text = "Search or type URL in Incognito...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(28.dp))
+
+                // Cards Row / Grid
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Card 1: What Incognito does
+                    IncognitoInfoCard(
+                        title = "What Incognito does",
+                        icon = Icons.Rounded.Shield,
+                        items = listOf(
+                            "Doesn't save your browsing history",
+                            "Doesn't save cookies and site data",
+                            "Doesn't save information entered in forms"
+                        ),
+                        modifier = Modifier.entrance(index = 4)
+                    )
+
+                    // Card 2: Your activity might still be visible to
+                    IncognitoInfoCard(
+                        title = "Your activity might still be visible to",
+                        icon = Icons.Rounded.Info,
+                        items = listOf(
+                            "Websites you visit",
+                            "Your employer or school",
+                            "Your internet service provider"
+                        ),
+                        modifier = Modifier.entrance(index = 5)
+                    )
+
+                    // Card 3: Cookie Blocking Switch Toggle
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = IncognitoSurfaceContainer,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .entrance(index = 6)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Cookie,
+                                contentDescription = null,
+                                tint = IncognitoPrimary,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .padding(end = 4.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Block third-party cookies",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "When turned on, sites can't use cookies that track you across the web.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Switch(
+                                checked = blockThirdPartyCookies,
+                                onCheckedChange = { blockThirdPartyCookies = it },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                    checkedTrackColor = IncognitoPrimary
+                                )
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(36.dp))
+
+                // Exit Incognito Button
+                OutlinedButton(
+                    onClick = onCloseIncognito,
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = IncognitoPrimary),
+                    modifier = Modifier.entrance(index = 7)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = "Close all Incognito tabs")
+                }
+
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun IncognitoInfoCard(
+    title: String,
+    icon: ImageVector,
+    items: List<String>,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = IncognitoSurfaceContainer,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = IncognitoPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            items.forEach { item ->
+                Row(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = IncognitoPrimary
+                    )
+                    Text(
+                        text = item,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+object PetalIncognitoBridge {
+    @JvmStatic
+    fun createIncognitoHomeView(
+        activity: ComponentActivity,
+        onSearchClick: Runnable,
+        onCloseIncognito: Runnable
+    ): ComposeView {
+        return ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                PetalIncognitoHomeScreen(
+                    onSearchClick = { onSearchClick.run() },
+                    onCloseIncognito = { onCloseIncognito.run() }
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "Incognito Home Screen Preview", showBackground = true)
+@Composable
+private fun PetalIncognitoHomeScreenPreview() {
+    PetalIncognitoHomeScreen()
+}
