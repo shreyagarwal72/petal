@@ -24,8 +24,10 @@
 
 
 
-    <!-- Main Web Content Container -->
-    <FrameLayout
+    <!-- Main Web Content Container. Custom class so a downward drag from the
+         top of the page (WebView or a Compose screen) can be intercepted to
+         drive pull-to-refresh - see PullToRefreshFrameLayout. -->
+    <com.petal.browser.ui.components.PullToRefreshFrameLayout
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
