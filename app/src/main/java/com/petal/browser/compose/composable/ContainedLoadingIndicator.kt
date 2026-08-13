@@ -9,9 +9,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,7 +51,17 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
 }
 
 /**
- * Material 3 built-in PullToRefreshBox component.
+ * M3 Expressive pull-to-refresh indicator.
+ *
+ * This is the native Android/Compose equivalent of ObtainX's
+ * [ExpressiveRefreshIndicator] (Flutter package: expressive_refresh): it swaps
+ * the legacy circular spinner for Material 3's morphing-polygon
+ * [LoadingIndicator] shape. Gesture tracking is done manually in
+ * BrowserActivity (see initPullToRefresh), which drives [pullProgress] and
+ * [isRefreshing] into this composable via [PetalRefreshBarState] - so instead
+ * of delegating to PullToRefreshBox's own drag handling, the indicator itself
+ * scales in with the pull and starts its indeterminate morph/rotate animation
+ * once a refresh is triggered.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -76,13 +83,17 @@ fun RefreshBarLoadingIndicator(
                 .padding(top = 12.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh,
-                modifier = Modifier.wrapContentSize()
-            ) {
-                // Stock Material 3 built-in PullToRefreshBox indicator without color or shape overrides
-            }
+            // While pulling (not yet refreshing) the shape scales in with the
+            // drag distance; once released/refreshing it plays its normal
+            // indeterminate expressive animation at full size.
+            val scale = if (isRefreshing) 1f else pullProgress.coerceIn(0f, 1f)
+            val description = if (isRefreshing) "Refreshing..." else "Pull to refresh"
+            LoadingIndicator(
+                modifier = Modifier
+                    .size(40.dp)
+                    .scale(scale)
+                    .semantics { stateDescription = description }
+            )
         }
     }
 }
