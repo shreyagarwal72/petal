@@ -2741,6 +2741,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
     private void saveBookmark(String title, String url) {
+        if (url == null || url.trim().isEmpty() || isHomePage(url)) {
+            NinjaToast.show(this, "Home page cannot be bookmarked");
+            return;
+        }
         RecordAction action = new RecordAction(context);
         action.open(true);
         String message = context.getString(R.string.app_error) + ": " + context.getString(R.string.app_error_save);

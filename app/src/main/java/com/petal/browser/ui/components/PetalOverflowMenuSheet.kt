@@ -383,10 +383,12 @@ fun PetalOverflowMenuSheet(
                         enabled = canGoBack,
                         onClick = onGoBack
                     )
+                    val isHomePageUrl = pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("file:///android_asset/")
                     CircularIconButton(
-                        icon = if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        icon = if (isBookmarked && !isHomePageUrl) Icons.Rounded.Star else Icons.Rounded.StarBorder,
                         contentDescription = "Toggle Bookmark",
-                        tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        enabled = !isHomePageUrl,
+                        tint = if (isBookmarked && !isHomePageUrl) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                         onClick = onToggleBookmark
                     )
                     CircularIconButton(
