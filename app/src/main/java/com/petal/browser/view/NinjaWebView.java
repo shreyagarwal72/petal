@@ -242,6 +242,25 @@ public class NinjaWebView extends WebView implements AlbumController {
         webSettings.setBlockNetworkImage(!sp.getBoolean(profile + "_images", true));
         webSettings.setGeolocationEnabled(sp.getBoolean(profile + "_location", false));
 
+        boolean forceDark = sp.getBoolean("sp_force_dark_mode", false);
+        if (forceDark) {
+            if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING)) {
+                androidx.webkit.WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, true);
+            } else if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.FORCE_DARK)) {
+                @SuppressWarnings("deprecation")
+                int forceDarkState = androidx.webkit.WebSettingsCompat.FORCE_DARK_ON;
+                androidx.webkit.WebSettingsCompat.setForceDark(webSettings, forceDarkState);
+            }
+        } else {
+            if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING)) {
+                androidx.webkit.WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, false);
+            } else if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.FORCE_DARK)) {
+                @SuppressWarnings("deprecation")
+                int forceDarkState = androidx.webkit.WebSettingsCompat.FORCE_DARK_OFF;
+                androidx.webkit.WebSettingsCompat.setForceDark(webSettings, forceDarkState);
+            }
+        }
+
         boolean enableJs = sp.getBoolean("sp_javascript", sp.getBoolean(profile + "_javascript", true));
         webSettings.setJavaScriptEnabled(enableJs);
 

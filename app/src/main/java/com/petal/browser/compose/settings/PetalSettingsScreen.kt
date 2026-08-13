@@ -161,6 +161,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var customHomeUrl by remember { mutableStateOf(sp.getString("sp_custom_homepage_url", "https://google.com") ?: "https://google.com") }
     var isBackgroundPlay by remember { mutableStateOf(sp.getBoolean("sp_background_play", false)) }
     var isAutoPip by remember { mutableStateOf(sp.getBoolean("sp_auto_pip", true)) }
+    var isForceDarkMode by remember { mutableStateOf(sp.getBoolean("sp_force_dark_mode", false)) }
 
     // Protection & WebView States
     var isAdBlock by remember { mutableStateOf(sp.getBoolean("sp_ad_block", true)) }
@@ -633,6 +634,20 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             onCheckedChange = { newValue ->
                                 isAutoPip = newValue
                                 sp.edit().putBoolean("sp_auto_pip", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        // Force Dark Mode for Web Content Toggle
+                        ToggleRow(
+                            title = "Force Dark Web Content",
+                            subtitle = "Automatically apply dark themes to websites that do not natively support dark mode",
+                            icon = Icons.Rounded.DarkMode,
+                            checked = isForceDarkMode,
+                            onCheckedChange = { newValue ->
+                                isForceDarkMode = newValue
+                                sp.edit().putBoolean("sp_force_dark_mode", newValue).apply()
                             }
                         )
                     }
