@@ -1049,7 +1049,63 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     }
                 }
 
-                // 8. App Updates & Inbuilt Updater Section
+                // 8. Full Backup & Sync Section
+                if ((currentCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Backup Sync", "backup restore sync history bookmarks settings database export import")) {
+                    SettingsCategoryCard(title = "Backup & Restore Sync", icon = Icons.Rounded.Backup) {
+                        Text(
+                            "Export or restore your complete browser data including history, bookmarks, saved sites, and settings:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Button(
+                                onClick = {
+                                    if (context is ComponentActivity) {
+                                        if (!com.petal.browser.unit.BackupUnit.checkPermissionStorage(context)) {
+                                            com.petal.browser.unit.BackupUnit.requestPermission(context)
+                                        } else {
+                                            com.petal.browser.unit.BackupUnit.backupData(context, 4) // history
+                                            com.petal.browser.unit.BackupUnit.backupData(context, 5) // bookmarks
+                                            com.petal.browser.unit.BackupUnit.backupData(context, 1) // saved list
+                                        }
+                                    }
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Backup All")
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    if (context is ComponentActivity) {
+                                        if (!com.petal.browser.unit.BackupUnit.checkPermissionStorage(context)) {
+                                            com.petal.browser.unit.BackupUnit.requestPermission(context)
+                                        } else {
+                                            com.petal.browser.unit.BackupUnit.restoreData(context, 4) // history
+                                            com.petal.browser.unit.BackupUnit.restoreData(context, 5) // bookmarks
+                                            com.petal.browser.unit.BackupUnit.restoreData(context, 1) // saved list
+                                        }
+                                    }
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Restore All")
+                            }
+                        }
+                    }
+                }
+
+                // 9. App Updates & Inbuilt Updater Section
                 if ((currentCategory == SettingsCategory.UPDATER || searchQuery.isNotBlank()) && matchesSearch("App Updates", "update updater version check launch github download upgrade")) {
                     SettingsCategoryCard(title = "App Updates & Inbuilt Updater", icon = Icons.Rounded.SystemUpdate) {
                         ToggleRow(

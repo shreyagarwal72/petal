@@ -671,7 +671,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                     url = "https://" + url;
                                 }
                                 if (title.isEmpty()) title = HelperUnit.domain(url);
-                                saveBookmark(title, url);
 
                                 try {
                                     SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(BrowserActivity.this);
