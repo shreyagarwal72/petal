@@ -40,6 +40,14 @@
         android:layout_below="@id/main_progress_bar_compose"
         android:layout_alignParentBottom="true"/>
 
+    <!-- Pull to Refresh Bar (ContainedLoadingIndicator) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/refresh_bar_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/main_content"
+        android:elevation="12dp" />
+
     <!-- Floating Action Button for Showing Top Bar -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_showAppBar"

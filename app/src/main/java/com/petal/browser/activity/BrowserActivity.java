@@ -178,6 +178,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private FrameLayout contentFrame;
     private LinearLayout tab_container;
     private FrameLayout fullscreenHolder;
+    private com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
+    private float touchStartY = 0f;
+    private boolean isPulling = false;
     private ListView list_search;
 
     // Others
@@ -343,6 +346,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         initOmniBox();
         initSearchOnSite();
+        initPullToRefresh();
         initOverview();
         hideSearch();
         dispatchIntent(getIntent());
@@ -1347,6 +1351,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     HelperUnit.showSoftKeyboard(search_input);
                 }
         );
+        if (refreshState != null && refreshState.isRefreshing()) {
+            refreshState.setRefreshing(false);
+            refreshState.setPullProgress(0f);
+        }
     }
 
     private boolean isAddressBarCollapsed = false;
@@ -1519,6 +1527,56 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
                     }
                 }
+            });
+        }
+    }
+
+    private void initPullToRefresh() {
+        androidx.compose.ui.platform.ComposeView refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+        if (refreshBarCompose != null) {
+            com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
+        }
+
+        View content = findViewById(R.id.main_content);
+        if (content != null) {
+            content.setOnTouchListener((v, event) -> {
+                if (ninjaWebView != null && ninjaWebView.getScrollY() <= 0) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            touchStartY = event.getY();
+                            isPulling = false;
+                            break;
+                        case MotionEvent.ACTION_MOVE:
+                            float deltaY = event.getY() - touchStartY;
+                            if (deltaY > 20) {
+                                isPulling = true;
+                                float progress = Math.min(1.0f, deltaY / 260f);
+                                refreshState.setPullProgress(progress);
+                            }
+                            break;
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL:
+                            if (isPulling) {
+                                if (refreshState.getPullProgress() >= 0.75f) {
+                                    refreshState.setRefreshing(true);
+                                    refreshState.setPullProgress(1.0f);
+                                    String currentUrl = ninjaWebView.getUrl();
+                                    if (isHomePage(currentUrl)) {
+                                        showAlbum(currentAlbumController, currentUrl);
+                                    } else {
+                                        ninjaWebView.reload();
+                                    }
+                                } else {
+                                    refreshState.setPullProgress(0f);
+                                }
+                                isPulling = false;
+                            }
+                            break;
+                    }
+                } else {
+                    refreshState.setPullProgress(0f);
+                }
+                return false;
             });
         }
     }
