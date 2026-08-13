@@ -20,40 +20,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
- * Staggered springy entrance animation: fade-in + rise + gentle overshoot scale.
+ * Fast, lightweight staggered entrance animation: fade-in + subtle Y translation.
  */
 @Composable
 fun Modifier.entrance(index: Int = 0): Modifier {
-    val alphaAnim = remember { Animatable(0f) }
-    val offsetAnim = remember { Animatable(34f) }
-    val scaleAnim = remember { Animatable(0.95f) }
+    val animProgress = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        delay(index * 42L)
-        launch { alphaAnim.animateTo(1f, tween(210, easing = LinearOutSlowInEasing)) }
-        launch {
-            offsetAnim.animateTo(
-                0f,
-                spring(dampingRatio = 0.72f, stiffness = Spring.StiffnessMedium),
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
             )
-        }
-        launch {
-            scaleAnim.animateTo(
-                1f,
-                spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-            )
-        }
+        )
     }
     return graphicsLayer {
-        alpha = alphaAnim.value
-        translationY = offsetAnim.value.dp.toPx()
-        scaleX = scaleAnim.value
-        scaleY = scaleAnim.value
+        alpha = animProgress.value
+        translationY = (1f - animProgress.value) * 16.dp.toPx()
     }
 }
 
@@ -62,7 +48,7 @@ fun Modifier.entrance(index: Int = 0): Modifier {
  */
 @Composable
 fun Modifier.bouncyClickable(
-    scaleDown: Float = 0.9f,
+    scaleDown: Float = 0.94f,
     enabled: Boolean = true,
     onClick: () -> Unit,
 ): Modifier {
@@ -89,7 +75,7 @@ fun Modifier.bouncyClickable(
 
 /** Gentle infinite breathing scale for active elements. */
 @Composable
-fun Modifier.pulse(from: Float = 1f, to: Float = 1.1f, durationMs: Int = 1500): Modifier {
+fun Modifier.pulse(from: Float = 1f, to: Float = 1.08f, durationMs: Int = 1800): Modifier {
     val transition = rememberInfiniteTransition(label = "pulse")
     val scale by transition.animateFloat(
         initialValue = from,
@@ -106,74 +92,62 @@ fun Modifier.pulse(from: Float = 1f, to: Float = 1.1f, durationMs: Int = 1500): 
     }
 }
 
-/** Springy horizontal slide-in entrance from the side. */
+/** Lightweight slide-in entrance from the side. */
 @Composable
 fun Modifier.slideInSpring(fromRight: Boolean = false, index: Int = 0): Modifier {
-    val alphaAnim = remember { Animatable(0f) }
-    val offsetAnim = remember { Animatable(if (fromRight) 60f else -60f) }
+    val animProgress = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        delay(index * 38L)
-        launch { alphaAnim.animateTo(1f, tween(180, easing = LinearOutSlowInEasing)) }
-        launch {
-            offsetAnim.animateTo(
-                0f,
-                spring(dampingRatio = 0.68f, stiffness = Spring.StiffnessMedium),
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
             )
-        }
+        )
     }
+    val startX = if (fromRight) 30.dp else (-30).dp
     return graphicsLayer {
-        alpha = alphaAnim.value
-        translationX = offsetAnim.value.dp.toPx()
+        alpha = animProgress.value
+        translationX = (1f - animProgress.value) * startX.toPx()
     }
 }
 
-/** Elastic pop-in for icons and badges — scale from 0 with spring overshoot. */
+/** Fast pop-in for icons and badges. */
 @Composable
 fun Modifier.popIn(index: Int = 0): Modifier {
-    val scaleAnim = remember { Animatable(0f) }
-    val alphaAnim = remember { Animatable(0f) }
+    val animProgress = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        delay(index * 50L)
-        launch { alphaAnim.animateTo(1f, tween(160, easing = LinearOutSlowInEasing)) }
-        launch {
-            scaleAnim.animateTo(
-                1f,
-                spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium),
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
             )
-        }
+        )
     }
     return graphicsLayer {
-        alpha = alphaAnim.value
-        scaleX = scaleAnim.value
-        scaleY = scaleAnim.value
+        alpha = animProgress.value
+        scaleX = animProgress.value
+        scaleY = animProgress.value
     }
 }
 
-/** Springy expand from zero height — for containers appearing. */
+/** Springy reveal container. */
 @Composable
 fun Modifier.springReveal(index: Int = 0): Modifier {
-    val scaleYAnim = remember { Animatable(0.8f) }
-    val alphaAnim = remember { Animatable(0f) }
-    val offsetAnim = remember { Animatable(20f) }
+    val animProgress = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        delay(index * 45L)
-        launch { alphaAnim.animateTo(1f, tween(200, easing = LinearOutSlowInEasing)) }
-        launch {
-            scaleYAnim.animateTo(
-                1f,
-                spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
             )
-        }
-        launch {
-            offsetAnim.animateTo(
-                0f,
-                spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMedium),
-            )
-        }
+        )
     }
     return graphicsLayer {
-        alpha = alphaAnim.value
-        scaleY = scaleYAnim.value
-        translationY = offsetAnim.value.dp.toPx()
+        alpha = animProgress.value
+        scaleY = 0.95f + (animProgress.value * 0.05f)
+        translationY = (1f - animProgress.value) * 12.dp.toPx()
     }
 }

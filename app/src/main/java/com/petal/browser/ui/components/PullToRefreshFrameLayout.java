@@ -82,6 +82,16 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         this.pullDistancePx = dp * getResources().getDisplayMetrics().density;
     }
 
+    private boolean canChildScrollUp() {
+        for (int i = 0; i < getChildCount(); i++) {
+            android.view.View child = getChildAt(i);
+            if (child.getVisibility() == VISIBLE && child.canScrollVertically(-1)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         switch (ev.getActionMasked()) {
@@ -93,13 +103,11 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if (!intercepting && canPull.canPull()) {
+                if (!intercepting && !canChildScrollUp() && canPull.canPull()) {
                     float dx = ev.getX() - downX;
                     float dy = ev.getY() - downY;
-                    // Only steal the gesture for a clearly vertical, downward drag -
-                    // horizontal swipes (edge navigation) and upward drags (normal
-                    // scrolling) are left alone for the child to handle.
-                    if (dy > touchSlop && dy > Math.abs(dx)) {
+                    // Only steal the gesture for a clearly vertical, downward drag when child cannot scroll up further
+                    if (dy > touchSlop * 2 && dy > Math.abs(dx) * 1.5f) {
                         intercepting = true;
                         dragging = true;
                         return true;

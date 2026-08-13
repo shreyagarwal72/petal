@@ -228,6 +228,9 @@ public class HelperUnit {
                                 }
                                 request.addRequestHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
                                 request.addRequestHeader("Accept-Language", Locale.getDefault().toLanguageTag());
+                                request.addRequestHeader("Accept-Encoding", "identity");
+                                request.addRequestHeader("Connection", "keep-alive");
+                                request.addRequestHeader("Cache-Control", "no-transform");
                                 request.addRequestHeader("Referer", url);
                                 request.setAllowedOverMetered(true);
                                 request.setAllowedOverRoaming(true);
