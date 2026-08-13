@@ -57,34 +57,34 @@ private data class Tiers(
 )
 
 private fun buildTypography(t: Tiers): Typography = Typography(
-    displayLarge = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Black, fontSize = 64.sp, lineHeight = 68.sp, letterSpacing = (-1).sp),
-    displayMedium = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Black, fontSize = 48.sp, lineHeight = 54.sp, letterSpacing = (-0.5).sp),
-    displaySmall = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Black, fontSize = 38.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
-    headlineLarge = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.ExtraBold, fontSize = 32.sp, lineHeight = 40.sp),
-    headlineMedium = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp, lineHeight = 36.sp),
-    headlineSmall = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, lineHeight = 32.sp),
-    titleLarge = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp),
-    titleMedium = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
-    titleSmall = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-    bodyLarge = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.3.sp),
-    bodyMedium = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.2.sp),
-    bodySmall = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
-    labelLarge = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-    labelMedium = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
-    labelSmall = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp)
+    displayLarge = TextStyle(fontFamily = t.display, fontSize = 64.sp, lineHeight = 68.sp, letterSpacing = (-1).sp),
+    displayMedium = TextStyle(fontFamily = t.display, fontSize = 48.sp, lineHeight = 54.sp, letterSpacing = (-0.5).sp),
+    displaySmall = TextStyle(fontFamily = t.display, fontSize = 38.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
+    headlineLarge = TextStyle(fontFamily = t.headline, fontSize = 32.sp, lineHeight = 40.sp),
+    headlineMedium = TextStyle(fontFamily = t.headline, fontSize = 28.sp, lineHeight = 36.sp),
+    headlineSmall = TextStyle(fontFamily = t.headline, fontSize = 24.sp, lineHeight = 32.sp),
+    titleLarge = TextStyle(fontFamily = t.title, fontSize = 22.sp, lineHeight = 28.sp),
+    titleMedium = TextStyle(fontFamily = t.title, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
+    titleSmall = TextStyle(fontFamily = t.title, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    bodyLarge = TextStyle(fontFamily = t.body, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.3.sp),
+    bodyMedium = TextStyle(fontFamily = t.body, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.2.sp),
+    bodySmall = TextStyle(fontFamily = t.body, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
+    labelLarge = TextStyle(fontFamily = t.label, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    labelMedium = TextStyle(fontFamily = t.label, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
+    labelSmall = TextStyle(fontFamily = t.label, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp)
 )
 
 private fun weightedTiers(
     resId: Int,
-    top: Int = 900,
+    top: Int = 400,
     width: Float = 100f,
     roundness: Float = 0f
 ): Tiers = Tiers(
-    display = variableFont(resId, top, width, roundness),
-    headline = variableFont(resId, (top - 100).coerceAtLeast(100), width, roundness),
-    title = variableFont(resId, (top - 200).coerceAtLeast(100), width, roundness),
-    body = variableFont(resId, 450, width, roundness),
-    label = variableFont(resId, 600, width, roundness)
+    display = variableFont(resId, (top + 400).coerceAtMost(900), width, roundness),
+    headline = variableFont(resId, (top + 300).coerceAtMost(900), width, roundness),
+    title = variableFont(resId, (top + 200).coerceAtMost(900), width, roundness),
+    body = variableFont(resId, top, width, roundness),
+    label = variableFont(resId, (top + 100).coerceAtMost(900), width, roundness)
 )
 
 private fun systemTypography(fontWeight: Int): Typography {
@@ -122,7 +122,7 @@ fun petalTypography(
             nunitoFont(fontWeight + 500, fontWidth, fontRoundness),
             nunitoFont(fontWeight + 350, fontWidth, fontRoundness),
             nunitoFont(fontWeight + 300, fontWidth, fontRoundness),
-            nunitoFont(fontWeight + 100, fontWidth, fontRoundness),
+            nunitoFont(fontWeight, fontWidth, fontRoundness),
             nunitoFont(fontWeight + 250, fontWidth, fontRoundness)
         )
     )

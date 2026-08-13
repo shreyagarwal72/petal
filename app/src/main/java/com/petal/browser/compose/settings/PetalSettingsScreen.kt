@@ -66,15 +66,34 @@ object PetalSettingsBridge {
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
-                val fontWidthVal = sp.getFloat("sp_font_width", 100f)
-                val fontWeightVal = sp.getInt("sp_font_weight", 400)
-                val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
-                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                val isAmoled = sp.getBoolean("sp_amoled", false)
+                val context = LocalContext.current
+                val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+
+                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM") }
+                var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
+                var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 400)) }
+                var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
+                var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
+                var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
+                var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+                var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+
+                DisposableEffect(sp) {
+                    val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                        when (key) {
+                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
+                            "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 100f)
+                            "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 400)
+                            "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
+                            "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                            "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                            "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                            "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                        }
+                    }
+                    sp.registerOnSharedPreferenceChangeListener(listener)
+                    onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+                }
 
                 val appFont = remember(fontName) {
                     try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.SYSTEM }
