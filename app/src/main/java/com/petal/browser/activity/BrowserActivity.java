@@ -2957,7 +2957,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void closeAllIncognitoTabs() {
         try {
             List<AlbumController> toRemove = new ArrayList<>();
-            for (AlbumController album : ninjaViewList) {
+            for (AlbumController album : BrowserContainer.list()) {
                 if (album instanceof NinjaWebView && ((NinjaWebView) album).isIncognito()) {
                     toRemove.add(album);
                 }

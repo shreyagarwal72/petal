@@ -1134,7 +1134,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     }
                                 }
 
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                                     OutlinedButton(
                                         onClick = {
                                             try {
@@ -1144,9 +1144,23 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                         shape = RoundedCornerShape(14.dp),
                                         modifier = Modifier.weight(1f)
                                     ) {
-                                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
-                                        Spacer(Modifier.width(6.dp))
-                                        Text("GitHub")
+                                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("GitHub", style = MaterialTheme.typography.labelMedium)
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = {
+                                            try {
+                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://t.me/championworkspace"))
+                                            } catch (e: Exception) { e.printStackTrace() }
+                                        },
+                                        shape = RoundedCornerShape(14.dp),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Telegram", style = MaterialTheme.typography.labelMedium)
                                     }
 
                                     Button(
