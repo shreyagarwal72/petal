@@ -49,6 +49,7 @@ interface PetalOverflowMenuActionHandler {
     fun onOpenPageInfo()
     fun onReload()
     fun onToggleDesktopSite(enabled: Boolean)
+    fun onToggleAdBlock(enabled: Boolean)
     fun onNewTab()
     fun onNewIncognitoTab()
     fun onOpenHistory()
@@ -66,6 +67,7 @@ interface PetalOverflowMenuActionHandler {
 
 object PetalOverflowBridge {
     @JvmStatic
+    @JvmOverloads
     fun showOverflowMenu(
         activity: ComponentActivity,
         title: String,
@@ -74,6 +76,7 @@ object PetalOverflowBridge {
         canGoBack: Boolean,
         canGoForward: Boolean,
         isDesktopSite: Boolean,
+        isAdBlockEnabled: Boolean = true,
         handler: PetalOverflowMenuActionHandler
     ) {
         try {
@@ -118,6 +121,7 @@ object PetalOverflowBridge {
                             canGoBack = canGoBack,
                             canGoForward = canGoForward,
                             isDesktopSite = isDesktopSite,
+                            isAdBlockEnabled = isAdBlockEnabled,
                             onDismissRequest = { dialog.dismiss() },
                             onGoBack = {
                                 dialog.dismiss()
@@ -146,6 +150,10 @@ object PetalOverflowBridge {
                             onToggleDesktopSite = { enabled ->
                                 dialog.dismiss()
                                 handler.onToggleDesktopSite(enabled)
+                            },
+                            onToggleAdBlock = { enabled ->
+                                dialog.dismiss()
+                                handler.onToggleAdBlock(enabled)
                             },
                             onNewTab = {
                                 dialog.dismiss()
@@ -219,6 +227,7 @@ fun PetalOverflowMenuSheet(
     canGoBack: Boolean,
     canGoForward: Boolean,
     isDesktopSite: Boolean,
+    isAdBlockEnabled: Boolean = true,
     onDismissRequest: () -> Unit = {},
     onGoBack: () -> Unit,
     onGoForward: () -> Unit,
@@ -227,6 +236,7 @@ fun PetalOverflowMenuSheet(
     onOpenPageInfo: () -> Unit,
     onReload: () -> Unit,
     onToggleDesktopSite: (Boolean) -> Unit,
+    onToggleAdBlock: (Boolean) -> Unit = {},
     onNewTab: () -> Unit,
     onNewIncognitoTab: () -> Unit,
     onOpenHistory: () -> Unit,
@@ -434,8 +444,15 @@ fun PetalOverflowMenuSheet(
                     pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("petal://") || pageUrl == "file:///android_asset/petal_home.html" || pageTitle == "Petal"
                 }
 
+                // Section 2: Quick Toggles (AdBlocker & Desktop site)
+                MenuRowSwitchItem(
+                    icon = Icons.Rounded.Shield,
+                    title = "AdBlocker",
+                    subtitle = if (isAdBlockEnabled) "Ad & tracker shield active" else "AdBlocker disabled",
+                    checked = isAdBlockEnabled,
+                    onCheckedChange = onToggleAdBlock
+                )
                 if (!isHomePage) {
-                    // Section 2: Page actions (Desktop site & Install as app)
                     MenuRowSwitchItem(
                         icon = Icons.Rounded.DesktopWindows,
                         title = "Desktop site",

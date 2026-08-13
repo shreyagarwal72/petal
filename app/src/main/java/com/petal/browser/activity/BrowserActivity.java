@@ -1716,6 +1716,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean canGoForward = ninjaWebView != null && ninjaWebView.canGoForward();
         String profile = NinjaWebView.getProfile();
         boolean isDesktopSite = sp.getBoolean(profile + "_desktop", false);
+        boolean isAdBlock = sp.getBoolean("sp_ad_block", sp.getBoolean(profile + "_adBlock", true));
 
         com.petal.browser.ui.components.PetalOverflowBridge.showOverflowMenu(
             this,
@@ -1725,6 +1726,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             canGoBack,
             canGoForward,
             isDesktopSite,
+            isAdBlock,
             new com.petal.browser.ui.components.PetalOverflowMenuActionHandler() {
                 @Override
                 public void onGoBack() {
@@ -1774,6 +1776,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         ninjaWebView.setDesktopMode(enabled);
                     }
                     NinjaToast.show(BrowserActivity.this, enabled ? "Desktop site requested" : "Mobile site requested");
+                }
+
+                @Override
+                public void onToggleAdBlock(boolean enabled) {
+                    sp.edit().putBoolean("sp_ad_block", enabled)
+                            .putBoolean(profile + "_adBlock", enabled)
+                            .putBoolean("profileStandard_adBlock", enabled)
+                            .apply();
+                    if (ninjaWebView != null) {
+                        ninjaWebView.initPreferences(ninjaWebView.getUrl());
+                        ninjaWebView.reload();
+                    }
+                    NinjaToast.show(BrowserActivity.this, enabled ? "AdBlocker Enabled" : "AdBlocker Disabled");
                 }
 
                 @Override
