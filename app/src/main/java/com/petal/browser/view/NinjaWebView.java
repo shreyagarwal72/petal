@@ -173,7 +173,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
         this.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, true);
         this.setLayerType(View.LAYER_TYPE_NONE, null);
-        this.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        this.setBackgroundColor(android.graphics.Color.WHITE);
 
         WebSettings webSettings = getSettings();
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {

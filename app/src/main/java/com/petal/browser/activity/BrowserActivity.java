@@ -749,6 +749,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             contentFrame.addView(composeView);
             if (appBar != null) appBar.setVisibility(GONE);
         } else {
+            av.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            ));
             contentFrame.addView(av);
             if (appBar != null) appBar.setVisibility(VISIBLE);
             if (ninjaWebView != null) {

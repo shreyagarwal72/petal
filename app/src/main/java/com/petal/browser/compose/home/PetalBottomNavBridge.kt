@@ -63,14 +63,21 @@ object PetalBottomNavBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    PetalBottomNavBar(
-                        selectedTab = selectedTab,
-                        tabCount = tabCount,
-                        onHomeClick = { handler.onHomeClick() },
-                        onNewTabClick = { handler.onNewTabClick() },
-                        onTabsClick = { handler.onTabsClick() },
-                        onMenuClick = { handler.onMenuClick() }
-                    )
+                    androidx.compose.foundation.layout.Box(
+                        modifier = androidx.compose.ui.Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
+                        contentAlignment = androidx.compose.ui.Alignment.BottomCenter
+                    ) {
+                        PetalBottomNavBar(
+                            selectedTab = selectedTab,
+                            tabCount = tabCount,
+                            onHomeClick = { handler.onHomeClick() },
+                            onNewTabClick = { handler.onNewTabClick() },
+                            onTabsClick = { handler.onTabsClick() },
+                            onMenuClick = { handler.onMenuClick() }
+                        )
+                    }
                 }
             }
         }
