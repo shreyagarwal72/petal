@@ -105,9 +105,14 @@ object GoogleAccountManager {
 
     @JvmStatic
     fun checkAndSyncGoogleAccount(context: Context) {
+        if (context == null) return
         try {
-            val cookieManager = android.webkit.CookieManager.getInstance()
-            val cookies = cookieManager.getCookie("https://accounts.google.com") ?: ""
+            val cookieManager = android.webkit.CookieManager.getInstance() ?: return
+            val cookies = try {
+                cookieManager.getCookie("https://accounts.google.com") ?: ""
+            } catch (e: Exception) {
+                ""
+            }
 
             // Check for Google login authentication cookies (SID, HSID, SSID, OSID, SAPISID)
             val hasAuthCookie = cookies.contains("SID=") || cookies.contains("OSID=") || cookies.contains("SAPISID=") || cookies.contains("SSID=")
@@ -120,7 +125,7 @@ object GoogleAccountManager {
 
                 signIn(context, targetEmail, targetName)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             e.printStackTrace()
         }
     }
