@@ -994,8 +994,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 mainContent.setLayoutParams(contentParams);
 
                 addressBar.bringToFront();
-                if (refreshBarCompose != null) {
-                    refreshBarCompose.bringToFront();
+                View refreshBarComposeView = findViewById(R.id.refresh_bar_compose);
+                if (refreshBarComposeView != null) {
+                    refreshBarComposeView.bringToFront();
                 }
                 addressBar.requestLayout();
                 mainContent.requestLayout();
