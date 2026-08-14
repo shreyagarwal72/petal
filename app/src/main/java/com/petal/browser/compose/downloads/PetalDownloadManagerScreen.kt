@@ -215,9 +215,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        downloadList = getDownloadItems(context, prevBytesMap, 1000L)
-                    }) {
+                    IconButton(onClick = {}) {
                         Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
                     }
                 },

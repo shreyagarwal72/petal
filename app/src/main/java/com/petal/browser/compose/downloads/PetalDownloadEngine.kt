@@ -155,8 +155,9 @@ object PetalDownloadEngine {
                 var lastEmittedTime = System.currentTimeMillis()
                 var lastEmittedBytes = totalRead
 
+                val currentCoroutineContext = kotlin.coroutines.coroutineContext
                 while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                    if (!coroutineContext.isActive) break
+                    if (!currentCoroutineContext.isActive) break
                     randomAccessFile.write(buffer, 0, bytesRead)
                     totalRead += bytesRead
 
@@ -164,9 +165,9 @@ object PetalDownloadEngine {
                     val elapsedMs = now - lastEmittedTime
 
                     // Throttled & Debounced progress state update (every 250ms)
-                    if (elapsedMs >= 250 || totalRead == totalBytes) {
-                        val progressFraction = if (totalBytes > 0) totalRead.toFloat() / totalBytes.toFloat() else 0f
-                        val speedBps = if (elapsedMs > 0) ((totalRead - lastEmittedBytes) * 1000) / elapsedMs else 0L
+                    if (elapsedMs >= 250L || totalRead == totalBytes) {
+                        val progressFraction = if (totalBytes > 0L) totalRead.toFloat() / totalBytes.toFloat() else 0f
+                        val speedBps = if (elapsedMs > 0L) ((totalRead - lastEmittedBytes) * 1000L) / elapsedMs else 0L
 
                         updateTask(id) {
                             it.copy(
