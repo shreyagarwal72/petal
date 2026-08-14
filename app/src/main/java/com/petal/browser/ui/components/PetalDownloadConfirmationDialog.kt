@@ -148,39 +148,50 @@ object PetalDownloadDialogBridge {
         val formattedSize = formatFileSize(contentLength)
         val isDuplicate = isFileExistsInDownloads(guessedFileName)
 
-        val dialogView = ComposeView(context).apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                PetalExpressiveTheme {
-                    var showDialog by remember { mutableStateOf(true) }
-                    if (showDialog) {
-                        PetalDownloadConfirmationDialog(
-                            fileName = guessedFileName,
-                            fileSizeFormatted = formattedSize,
-                            isDuplicate = isDuplicate,
-                            onConfirm = {
-                                showDialog = false
-                                (parent as? android.view.ViewGroup)?.removeView(this)
-                                onConfirmDownload(guessedFileName)
-                            },
-                            onDismiss = {
-                                showDialog = false
-                                (parent as? android.view.ViewGroup)?.removeView(this)
+        activity.runOnUiThread {
+            try {
+                var dialogView: ComposeView? = null
+                dialogView = ComposeView(context).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                    setContent {
+                        PetalExpressiveTheme {
+                            var showDialog by remember { mutableStateOf(true) }
+                            if (showDialog) {
+                                PetalDownloadConfirmationDialog(
+                                    fileName = guessedFileName,
+                                    fileSizeFormatted = formattedSize,
+                                    isDuplicate = isDuplicate,
+                                    onConfirm = {
+                                        showDialog = false
+                                        val parentView = dialogView?.parent as? android.view.ViewGroup
+                                        parentView?.removeView(dialogView)
+                                        onConfirmDownload(guessedFileName)
+                                    },
+                                    onDismiss = {
+                                        showDialog = false
+                                        val parentView = dialogView?.parent as? android.view.ViewGroup
+                                        parentView?.removeView(dialogView)
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
                 }
+
+                activity.addContentView(
+                    dialogView,
+                    android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Fallback to direct download if dialog creation fails
+                onConfirmDownload(guessedFileName)
             }
         }
-
-        activity.addContentView(
-            dialogView,
-            android.view.ViewGroup.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        )
     }
 }
