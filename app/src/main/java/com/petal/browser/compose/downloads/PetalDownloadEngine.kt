@@ -107,87 +107,108 @@ object PetalDownloadEngine {
     }
 
     private suspend fun executeDownload(context: Context, id: Long) {
-        val currentTask = _downloadTasks.value[id] ?: return
-        val targetFile = File(currentTask.destinationPath)
-        val existingLength = if (targetFile.exists()) targetFile.length() else 0L
+        var retryCount = 0
+        val maxRetries = 3
+        var delayMs = 1000L
 
-        updateTask(id) { it.copy(status = DownloadStatus.RUNNING, bytesDownloaded = existingLength) }
+        while (retryCount <= maxRetries) {
+            val currentTask = _downloadTasks.value[id] ?: return
+            val targetFile = File(currentTask.destinationPath)
+            val existingLength = if (targetFile.exists()) targetFile.length() else 0L
 
-        try {
-            val requestBuilder = Request.Builder().url(currentTask.url)
-            if (existingLength > 0) {
-                requestBuilder.header("Range", "bytes=$existingLength-")
-            }
+            updateTask(id) { it.copy(status = DownloadStatus.RUNNING, bytesDownloaded = existingLength) }
 
-            val response = httpClient.newCall(requestBuilder.build()).execute()
-            if (!response.isSuccessful) {
-                updateTask(id) { it.copy(status = DownloadStatus.FAILED) }
-                return
-            }
-
-            val body = response.body ?: throw Exception("Empty response body")
-            val isPartial = response.code == 206
-            val contentLength = body.contentLength()
-            val totalBytes = if (isPartial) existingLength + contentLength else contentLength
-
-            val randomAccessFile = RandomAccessFile(targetFile, "rw")
-            if (isPartial) {
-                randomAccessFile.seek(existingLength)
-            } else {
-                randomAccessFile.setLength(0)
-            }
-
-            val inputStream = body.byteStream()
-            val buffer = ByteArray(16384) // 16KB fixed buffer
-            var bytesRead: Int
-            var totalRead = if (isPartial) existingLength else 0L
-            var lastEmittedTime = System.currentTimeMillis()
-            var lastEmittedBytes = totalRead
-
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                if (!coroutineContext.isActive) break
-                randomAccessFile.write(buffer, 0, bytesRead)
-                totalRead += bytesRead
-
-                val now = System.currentTimeMillis()
-                val elapsedMs = now - lastEmittedTime
-
-                // Throttled & Debounced progress state update (every 250ms)
-                if (elapsedMs >= 250 || totalRead == totalBytes) {
-                    val progressFraction = if (totalBytes > 0) totalRead.toFloat() / totalBytes.toFloat() else 0f
-                    val speedBps = if (elapsedMs > 0) ((totalRead - lastEmittedBytes) * 1000) / elapsedMs else 0L
-
-                    updateTask(id) {
-                        it.copy(
-                            bytesDownloaded = totalRead,
-                            totalBytes = totalBytes,
-                            progressFraction = progressFraction,
-                            speedBps = speedBps
-                        )
-                    }
-
-                    lastEmittedTime = now
-                    lastEmittedBytes = totalRead
+            try {
+                val requestBuilder = Request.Builder().url(currentTask.url)
+                if (existingLength > 0) {
+                    requestBuilder.header("Range", "bytes=$existingLength-")
                 }
-            }
 
-            randomAccessFile.close()
-            inputStream.close()
+                val response = httpClient.newCall(requestBuilder.build()).execute()
+                if (!response.isSuccessful) {
+                    if (retryCount < maxRetries) {
+                        retryCount++
+                        delay(delayMs)
+                        delayMs *= 2
+                        continue
+                    }
+                    updateTask(id) { it.copy(status = DownloadStatus.FAILED) }
+                    return
+                }
 
-            updateTask(id) {
-                it.copy(
-                    status = DownloadStatus.COMPLETED,
-                    bytesDownloaded = totalRead,
-                    totalBytes = totalBytes,
-                    progressFraction = 1.0f,
-                    speedBps = 0L
-                )
-            }
-        } catch (e: Exception) {
-            if (e is CancellationException) {
-                updateTask(id) { it.copy(status = DownloadStatus.PAUSED, speedBps = 0L) }
-            } else {
-                updateTask(id) { it.copy(status = DownloadStatus.FAILED, speedBps = 0L) }
+                val body = response.body ?: throw Exception("Empty response body")
+                val isPartial = response.code == 206
+                val contentLength = body.contentLength()
+                val totalBytes = if (isPartial) existingLength + contentLength else contentLength
+
+                val randomAccessFile = RandomAccessFile(targetFile, "rw")
+                if (isPartial) {
+                    randomAccessFile.seek(existingLength)
+                } else {
+                    randomAccessFile.setLength(0)
+                }
+
+                val inputStream = body.byteStream()
+                val buffer = ByteArray(16384) // 16KB fixed buffer
+                var bytesRead: Int
+                var totalRead = if (isPartial) existingLength else 0L
+                var lastEmittedTime = System.currentTimeMillis()
+                var lastEmittedBytes = totalRead
+
+                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                    if (!coroutineContext.isActive) break
+                    randomAccessFile.write(buffer, 0, bytesRead)
+                    totalRead += bytesRead
+
+                    val now = System.currentTimeMillis()
+                    val elapsedMs = now - lastEmittedTime
+
+                    // Throttled & Debounced progress state update (every 250ms)
+                    if (elapsedMs >= 250 || totalRead == totalBytes) {
+                        val progressFraction = if (totalBytes > 0) totalRead.toFloat() / totalBytes.toFloat() else 0f
+                        val speedBps = if (elapsedMs > 0) ((totalRead - lastEmittedBytes) * 1000) / elapsedMs else 0L
+
+                        updateTask(id) {
+                            it.copy(
+                                bytesDownloaded = totalRead,
+                                totalBytes = totalBytes,
+                                progressFraction = progressFraction,
+                                speedBps = speedBps
+                            )
+                        }
+
+                        lastEmittedTime = now
+                        lastEmittedBytes = totalRead
+                    }
+                }
+
+                randomAccessFile.close()
+                inputStream.close()
+
+                updateTask(id) {
+                    it.copy(
+                        status = DownloadStatus.COMPLETED,
+                        bytesDownloaded = totalRead,
+                        totalBytes = totalBytes,
+                        progressFraction = 1.0f,
+                        speedBps = 0L
+                    )
+                }
+                break // Success - exit retry loop
+            } catch (e: Exception) {
+                if (e is CancellationException) {
+                    updateTask(id) { it.copy(status = DownloadStatus.PAUSED, speedBps = 0L) }
+                    break
+                } else {
+                    if (retryCount < maxRetries) {
+                        retryCount++
+                        delay(delayMs)
+                        delayMs *= 2
+                    } else {
+                        updateTask(id) { it.copy(status = DownloadStatus.FAILED, speedBps = 0L) }
+                        break
+                    }
+                }
             }
         }
     }
