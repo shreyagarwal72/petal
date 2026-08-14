@@ -42,6 +42,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.petal.browser.account.AccountViewModel
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Dp
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.roundToInt
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -926,7 +931,7 @@ private fun RadialLayout(
             val centerX = width / 2
             val centerY = height / 2
             val center = placeables.first()
-            center.place(centerX - center.width / 2, centerY - center.height / 2)
+            center.placeRelative(centerX - center.width / 2, centerY - center.height / 2)
 
             val petals = placeables.drop(1)
             val step = 360f / petals.size.coerceAtLeast(1)
@@ -935,7 +940,7 @@ private fun RadialLayout(
                 val angleRad = Math.toRadians(angleDeg.toDouble())
                 val x = centerX + (radius.roundToPx() * cos(angleRad)).roundToInt() - placeable.width / 2
                 val y = centerY + (radius.roundToPx() * sin(angleRad)).roundToInt() - placeable.height / 2
-                placeable.place(x, y)
+                placeable.placeRelative(x, y)
             }
         }
     }
