@@ -12,6 +12,7 @@ import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,10 +92,16 @@ fun PetalAddressBar(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val useHeaderBlur = remember { sp.getBoolean("sp_use_header_blur", true) }
+
     val containerColor = if (isIncognito) {
         com.petal.browser.ui.theme.IncognitoSurfaceContainer
+    } else if (useHeaderBlur) {
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f)
     } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.90f)
+        MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
     Surface(
