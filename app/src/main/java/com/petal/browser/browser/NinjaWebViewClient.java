@@ -118,6 +118,11 @@ public class NinjaWebViewClient extends WebViewClient {
             String bannerBlockScript = BannerBlock.getBannerBlockScriptPageFinished();
             if (bannerBlockScript != null) view.evaluateJavascript(bannerBlockScript,null);
         }
+
+        // Automatic Google Account Login & Sync State Detection
+        if (url != null && (url.contains("accounts.google.com") || url.contains("myaccount.google.com") || url.contains("google.com"))) {
+            com.petal.browser.account.GoogleAccountManager.checkAndSyncGoogleAccount(context);
+        }
     }
 
     @Override

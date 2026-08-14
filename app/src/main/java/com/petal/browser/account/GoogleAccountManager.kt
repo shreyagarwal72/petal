@@ -102,4 +102,26 @@ object GoogleAccountManager {
             syncPasswords = syncPasswords
         )
     }
+
+    @JvmStatic
+    fun checkAndSyncGoogleAccount(context: Context) {
+        try {
+            val cookieManager = android.webkit.CookieManager.getInstance()
+            val cookies = cookieManager.getCookie("https://accounts.google.com") ?: ""
+
+            // Check for Google login authentication cookies (SID, HSID, SSID, OSID, SAPISID)
+            val hasAuthCookie = cookies.contains("SID=") || cookies.contains("OSID=") || cookies.contains("SAPISID=") || cookies.contains("SSID=")
+
+            if (hasAuthCookie) {
+                val sp = PreferenceManager.getDefaultSharedPreferences(context)
+                val existingEmail = sp.getString(KEY_EMAIL, null)
+                val targetEmail = if (existingEmail.isNullOrEmpty() || existingEmail == "user@gmail.com") "google.user@gmail.com" else existingEmail
+                val targetName = if (sp.getString(KEY_DISPLAY_NAME, null).isNullOrEmpty()) "Google Account User" else sp.getString(KEY_DISPLAY_NAME, "Google Account User")!!
+
+                signIn(context, targetEmail, targetName)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }
