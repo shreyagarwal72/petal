@@ -62,6 +62,8 @@
         <item name="colorSurfaceContainer">@color/md_theme_surfaceContainer</item>
         <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh</item>
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest</item>
+    </style>
+
     <style name="Theme.Petal.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/md_theme_onPrimaryContainer</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
