@@ -9,6 +9,11 @@ import com.petal.browser.ui.components.PetalBottomNavBar
 import com.petal.browser.ui.components.PetalNavTab
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.preference.PreferenceManager
 import androidx.compose.runtime.remember
 import com.petal.browser.ui.theme.AppFont
@@ -63,11 +68,11 @@ object PetalBottomNavBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = androidx.compose.ui.Modifier
+                    Box(
+                        modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(),
-                        contentAlignment = androidx.compose.ui.Alignment.BottomCenter
+                        contentAlignment = Alignment.BottomCenter
                     ) {
                         PetalBottomNavBar(
                             selectedTab = selectedTab,
