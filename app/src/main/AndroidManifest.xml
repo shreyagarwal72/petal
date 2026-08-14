@@ -64,6 +64,7 @@
 
         <activity
             android:name="com.petal.browser.activity.BrowserActivity"
+            android:theme="@style/Theme.Petal.Splash"
             android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
             android:supportsPictureInPicture="true"
             android:windowSoftInputMode="adjustResize"
