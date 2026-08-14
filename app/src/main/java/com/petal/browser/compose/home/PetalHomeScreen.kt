@@ -38,7 +38,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.Layout
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.petal.browser.account.AccountViewModel
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -304,16 +307,20 @@ fun PetalHomeScreen(
             label = "bloomAlphaAnim"
         )
 
-        val profile = com.petal.browser.account.GoogleAccountManager.currentProfile
+        val accountViewModel: AccountViewModel = viewModel()
+        val profile = accountViewModel.profileState
         var showAccountSyncScreen by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
-            com.petal.browser.account.GoogleAccountManager.init(context)
+            accountViewModel.refreshState()
         }
 
         if (showAccountSyncScreen) {
             com.petal.browser.account.ChromeAccountSyncScreen(
-                onBack = { showAccountSyncScreen = false },
+                onBack = {
+                    showAccountSyncScreen = false
+                    accountViewModel.refreshState()
+                },
                 onOpenOAuth = { shortcut ->
                     showAccountSyncScreen = false
                     onOpenShortcut(shortcut)
@@ -339,7 +346,7 @@ fun PetalHomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Dynamic Top-Left Chrome Profile Button
+                        // Dynamic Top-Left Chrome Profile Button with Coil Avatar
                         IconButton(
                             onClick = { showAccountSyncScreen = true },
                             modifier = Modifier
@@ -348,11 +355,22 @@ fun PetalHomeScreen(
                                 .background(if (profile.isSignedIn) Color(0xFF4285F4) else MaterialTheme.colorScheme.surfaceContainerHigh)
                         ) {
                             if (profile.isSignedIn) {
-                                Text(
-                                    text = profile.displayName.take(1).uppercase(),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = Color.White
-                                )
+                                if (!profile.avatarUrl.isNullOrEmpty()) {
+                                    AsyncImage(
+                                        model = profile.avatarUrl,
+                                        contentDescription = profile.displayName,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                } else {
+                                    Text(
+                                        text = profile.displayName.take(1).uppercase(),
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = Color.White
+                                    )
+                                }
                             } else {
                                 Icon(
                                     Icons.Rounded.PersonAdd,
