@@ -3431,8 +3431,84 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return true;
             }
             if (type == WebView.HitTestResult.SRC_ANCHOR_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
-                String urlResult = result.getExtra();
-                showOverflow(null, null, 1, HelperUnit.domain(urlResult), urlResult, null, null, 0);
+                final String urlResult = result.getExtra();
+                v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                com.petal.browser.compose.menu.PetalLinkContextMenuBridge.show(
+                    BrowserActivity.this,
+                    HelperUnit.domain(urlResult),
+                    urlResult,
+                    urlResult + "/favicon.ico",
+                    new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
+                        @Override
+                        public void onOpenInNewTab() {
+                            addAlbum(getString(R.string.app_name), urlResult, false);
+                        }
+
+                        @Override
+                        public void onOpenInNewTabInGroup() {
+                            addAlbum(getString(R.string.app_name), urlResult, false);
+                        }
+
+                        @Override
+                        public void onOpenInIncognitoTab() {
+                            addAlbum(getString(R.string.app_name), urlResult, false);
+                        }
+
+                        @Override
+                        public void onOpenInNewWindow() {
+                            addAlbum(getString(R.string.app_name), urlResult, true);
+                        }
+
+                        @Override
+                        public void onPreviewPage() {
+                            addAlbum(getString(R.string.app_name), urlResult, true);
+                        }
+
+                        @Override
+                        public void onCopyLinkAddress() {
+                            HelperUnit.copy(BrowserActivity.this, urlResult);
+                            NinjaToast.show(BrowserActivity.this, "Link copied");
+                        }
+
+                        @Override
+                        public void onCopyLinkText() {
+                            HelperUnit.copy(BrowserActivity.this, HelperUnit.domain(urlResult));
+                            NinjaToast.show(BrowserActivity.this, "Link text copied");
+                        }
+
+                        @Override
+                        public void onDownloadLink() {
+                            try {
+                                android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(android.net.Uri.parse(urlResult));
+                                request.allowScanningByMediaScanner();
+                                request.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                                android.app.DownloadManager manager = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                                if (manager != null) manager.enqueue(request);
+                                NinjaToast.show(BrowserActivity.this, "Download started");
+                            } catch (Exception e) {
+                                NinjaToast.show(BrowserActivity.this, "Failed to start download");
+                            }
+                        }
+
+                        @Override
+                        public void onAddToReadingList() {
+                            try {
+                                RecordAction action = new RecordAction(BrowserActivity.this);
+                                action.open(true);
+                                action.addBookmark(new Record(HelperUnit.domain(urlResult), urlResult, System.currentTimeMillis(), 0));
+                                action.close();
+                                NinjaToast.show(BrowserActivity.this, "Added to reading list");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        @Override
+                        public void onShareLink() {
+                            shareLink(HelperUnit.domain(urlResult), urlResult);
+                        }
+                    }
+                );
                 return true;
             }
             return false;
