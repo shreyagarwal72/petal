@@ -3397,11 +3397,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updateOmniBox();
     }
 
-    private synchronized void addAlbum(String title, final String url, final boolean foreground) {
+    public synchronized void addAlbum(String title, final String url, final boolean foreground) {
         setWebView(title, url, foreground, false);
     }
 
-    private synchronized void addAlbum(String title, final String url, final boolean foreground, final boolean isIncognito) {
+    public synchronized void addAlbum(String title, final String url, final boolean foreground, final boolean isIncognito) {
         setWebView(title, url, foreground, isIncognito);
     }
 
