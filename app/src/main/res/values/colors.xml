@@ -62,8 +62,4 @@
 
     <color name="ic_launcher_background">#FFFFFF</color>
 
-    <!-- Fallback icon colors for API < 31 (no system_accent* resources exist pre-Android 12) -->
-    <color name="dynamic_icon_bg">#FFFFFF</color>
-    <color name="dynamic_icon_fg">#000000</color>
-
 </resources>
