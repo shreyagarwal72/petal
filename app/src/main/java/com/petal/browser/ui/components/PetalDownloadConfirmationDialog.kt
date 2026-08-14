@@ -1,6 +1,5 @@
 package com.petal.browser.ui.components
 
-import android.app.Activity
 import android.content.Context
 import android.os.Environment
 import android.webkit.URLUtil
@@ -144,7 +143,7 @@ object PetalDownloadDialogBridge {
         contentLength: Long,
         onConfirmDownload: (String) -> Unit
     ) {
-        val activity = context as? Activity ?: return
+        val activity = context as? androidx.activity.ComponentActivity ?: return
         val guessedFileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
         val formattedSize = formatFileSize(contentLength)
         val isDuplicate = isFileExistsInDownloads(guessedFileName)
