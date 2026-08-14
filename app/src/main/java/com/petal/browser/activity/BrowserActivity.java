@@ -601,6 +601,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     enterPictureInPictureMode(pipBuilder.build());
                 }
+            } else if (customView != null || fullscreenHolder != null) {
+                com.petal.browser.media.PetalMediaBridge.enterPipIfSupported(this, customView);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -3719,14 +3721,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    @Override
-    protected void onUserLeaveHint() {
-        super.onUserLeaveHint();
-        if (customView != null || fullscreenHolder != null) {
-            com.petal.browser.media.PetalMediaBridge.enterPipIfSupported(this, customView);
         }
     }
 
