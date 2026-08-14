@@ -1718,8 +1718,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View currentChild = contentFrame.getChildCount() > 0 ? contentFrame.getChildAt(0) : null;
             boolean isWebPage = currentAlbumController != null && currentChild == currentAlbumController.getAlbumView();
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : null;
+            boolean isExternalHttp = currentUrl != null && (currentUrl.startsWith("http://") || currentUrl.startsWith("https://"));
             boolean isHome = isHomePage(currentUrl);
-            return isWebPage && !isHome && !refreshState.isRefreshing() && ninjaWebView != null && ninjaWebView.getScrollY() <= 0;
+            boolean isScrolledToTop = ninjaWebView != null && ninjaWebView.getScrollY() <= 0;
+            return isWebPage && isExternalHttp && !isHome && isScrolledToTop && !refreshState.isRefreshing();
         });
 
         contentFrame.setOnPullListener(progress -> refreshState.setPullProgress(progress));

@@ -629,4 +629,20 @@ public class NinjaWebViewClient extends WebViewClient {
             dialog.cancel();
         });
     }
+
+    @Override
+    public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+        super.onReceivedError(view, errorCode, description, failingUrl);
+        if (context instanceof com.petal.browser.activity.BrowserActivity) {
+            ((com.petal.browser.activity.BrowserActivity) context).resetRefreshState();
+        }
+    }
+
+    @Override
+    public void onReceivedError(WebView view, WebResourceRequest request, android.webkit.WebResourceError error) {
+        super.onReceivedError(view, request, error);
+        if (request != null && request.isForMainFrame() && context instanceof com.petal.browser.activity.BrowserActivity) {
+            ((com.petal.browser.activity.BrowserActivity) context).resetRefreshState();
+        }
+    }
 }
