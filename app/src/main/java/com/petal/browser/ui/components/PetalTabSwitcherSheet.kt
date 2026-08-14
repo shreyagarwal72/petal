@@ -91,46 +91,67 @@ object PetalTabSwitcherBridge {
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
-                        val tabsList = remember {
-                            mutableStateListOf<TabModel>().apply {
+                        val tabItems = remember {
+                            mutableStateListOf<com.petal.browser.compose.tabs.PetalTabItem>().apply {
                                 addAll(
                                     BrowserContainer.list().map { album: AlbumController ->
                                         val rawTitle = try { album.getTitle() } catch (_: Exception) { null }
                                         val rawUrl = try { album.getUrl() } catch (_: Exception) { null }
+                                        val isIncognitoTab = (album is com.petal.browser.view.NinjaWebView) && album.isIncognito()
+                                        val faviconBitmap = try { album.getFavicon() } catch (_: Exception) { null }
                                         val displayTitle = when {
                                             !rawTitle.isNullOrBlank() -> rawTitle
                                             !rawUrl.isNullOrBlank() && rawUrl != "about:blank" && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
                                             else -> "New Tab"
                                         }
                                         val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl == "about:blank" || rawUrl.startsWith("file:///android_asset/")) "about:blank" else rawUrl
-                                        TabModel(
-                                            album = album,
+                                        com.petal.browser.compose.tabs.PetalTabItem(
+                                            id = album.hashCode().toString(),
                                             title = displayTitle,
                                             url = displayUrl,
-                                            isActive = album == currentAlbum
+                                            faviconBitmap = faviconBitmap,
+                                            isIncognito = isIncognitoTab,
+                                            isSelected = (album == currentAlbum)
                                         )
                                     }
                                 )
                             }
                         }
 
-                        PetalTabSwitcherContent(
-                            tabs = tabsList,
-                            onSelectTab = { model ->
+                        com.petal.browser.compose.tabs.PetalTabGridSwitcher(
+                            tabs = tabItems,
+                            onTabSelect = { tabItem ->
                                 try { dialog.dismiss() } catch (ignored: Exception) {}
-                                onSelectTab(model.album)
+                                val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
+                                if (targetAlbum != null) {
+                                    onSelectTab(targetAlbum)
+                                }
                             },
-                            onCloseTab = { model ->
-                                tabsList.remove(model)
-                                onCloseTab(model.album)
+                            onTabClose = { tabItem ->
+                                val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
+                                if (targetAlbum != null) {
+                                    tabItems.removeAll { it.id == tabItem.id }
+                                    onCloseTab(targetAlbum)
+                                    if (tabItems.isEmpty()) {
+                                        try { dialog.dismiss() } catch (ignored: Exception) {}
+                                    }
+                                }
+                            },
+                            onNewTab = { isIncognito ->
+                                try { dialog.dismiss() } catch (ignored: Exception) {}
+                                if (isIncognito) {
+                                    (activity as? com.petal.browser.activity.BrowserActivity)?.addAlbum("Incognito Tab", "about:blank", true, true)
+                                } else {
+                                    onNewTab()
+                                }
                             },
                             onCloseAllTabs = {
                                 try { dialog.dismiss() } catch (ignored: Exception) {}
                                 onCloseAllTabs()
                             },
-                            onNewTab = {
+                            onOpenSettings = {
                                 try { dialog.dismiss() } catch (ignored: Exception) {}
-                                onNewTab()
+                                (activity as? com.petal.browser.activity.BrowserActivity)?.showOverflow(null, null, 0, "", "", null, null, 0)
                             }
                         )
                     }
