@@ -355,13 +355,50 @@ fun PetalTabGridSwitcher(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(filteredTabs, key = { it.id }) { tab ->
-                            PetalTabCard(
-                                tab = tab,
-                                isIncognitoMode = isIncognitoMode,
-                                accentColor = accentColor,
-                                onTabSelect = { onTabSelect(tab) },
-                                onTabClose = { onTabClose(tab) }
-                            )
+                            val dismissState = rememberSwipeToDismissBoxState()
+                            LaunchedEffect(dismissState.currentValue) {
+                                if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
+                                    dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd
+                                ) {
+                                    onTabClose(tab)
+                                }
+                            }
+
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                backgroundContent = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(RoundedCornerShape(18.dp))
+                                            .background(MaterialTheme.colorScheme.errorContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Close,
+                                            contentDescription = "Close",
+                                            tint = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                    }
+                                },
+                                modifier = Modifier
+                                    .animateItem(
+                                        fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                        fadeOutSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                        placementSpec = spring(
+                                            dampingRatio = Spring.DampingRatioLowBouncy,
+                                            stiffness = Spring.StiffnessLow
+                                        )
+                                    )
+                            ) {
+                                PetalTabCard(
+                                    tab = tab,
+                                    isIncognitoMode = isIncognitoMode,
+                                    accentColor = accentColor,
+                                    onTabSelect = { onTabSelect(tab) },
+                                    onTabClose = { onTabClose(tab) }
+                                )
+                            }
                         }
                     }
                 } else {
@@ -370,13 +407,51 @@ fun PetalTabGridSwitcher(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(filteredTabs, key = { it.id }) { tab ->
-                            PetalTabListItem(
-                                tab = tab,
-                                isIncognitoMode = isIncognitoMode,
-                                accentColor = accentColor,
-                                onTabSelect = { onTabSelect(tab) },
-                                onTabClose = { onTabClose(tab) }
-                            )
+                            val dismissState = rememberSwipeToDismissBoxState()
+                            LaunchedEffect(dismissState.currentValue) {
+                                if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
+                                    dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd
+                                ) {
+                                    onTabClose(tab)
+                                }
+                            }
+
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                backgroundContent = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(MaterialTheme.colorScheme.errorContainer),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Close,
+                                            contentDescription = "Close",
+                                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.padding(end = 16.dp)
+                                        )
+                                    }
+                                },
+                                modifier = Modifier
+                                    .animateItem(
+                                        fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                        fadeOutSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                        placementSpec = spring(
+                                            dampingRatio = Spring.DampingRatioLowBouncy,
+                                            stiffness = Spring.StiffnessLow
+                                        )
+                                    )
+                            ) {
+                                PetalTabListItem(
+                                    tab = tab,
+                                    isIncognitoMode = isIncognitoMode,
+                                    accentColor = accentColor,
+                                    onTabSelect = { onTabSelect(tab) },
+                                    onTabClose = { onTabClose(tab) }
+                                )
+                            }
                         }
                     }
                 }
