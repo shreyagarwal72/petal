@@ -177,6 +177,7 @@ fun getZenithPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, Fo
     }
 }
 
+@OptIn(ExperimentalTextApi::class)
 fun petalTypography(
     appFont: AppFont,
     fontWidth: Float = 100f,
