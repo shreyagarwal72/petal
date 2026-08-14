@@ -24,15 +24,31 @@
 
 
 
-    <!-- Main Web Content Container. Custom class so a downward drag from the
-         top of the page (WebView or a Compose screen) can be intercepted to
-         drive pull-to-refresh - see PullToRefreshFrameLayout. -->
+    <!-- Persistent Bottom Navigation Container with Reserved Height -->
+    <RelativeLayout
+        android:id="@+id/bottom_nav_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="?attr/colorSurface"
+        android:elevation="16dp">
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/bottom_nav_compose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+    </RelativeLayout>
+
+    <!-- Main Web Content Container (Reserves explicit height above bottom_nav_container) -->
     <com.petal.browser.ui.components.PullToRefreshFrameLayout
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/main_progress_bar_compose"
-        android:layout_alignParentBottom="true"/>
+        android:layout_above="@id/bottom_nav_container"/>
 
     <!-- Pull to Refresh Bar (ContainedLoadingIndicator) -->
     <androidx.compose.ui.platform.ComposeView
@@ -125,15 +141,7 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Persistent Floating Stride Bottom Navigation Bar (Floating Overlay) -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/bottom_nav_compose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="16dp"
-        android:elevation="16dp"/>
+
     <!-- Small Circular Floating Bubble for Collapsed Address Bar (Bottom-Right) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/fab_bubble"

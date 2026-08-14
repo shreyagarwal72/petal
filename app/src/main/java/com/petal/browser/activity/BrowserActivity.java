@@ -360,11 +360,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             v.setBackgroundColor(ContextCompat.getColor(context, R.color.md_theme_background));
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
             controller.setAppearanceLightStatusBars(false);
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, isKeyboardVisible ? keyboardHeight : systemBars.bottom);
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, isKeyboardVisible ? keyboardHeight : 0);
 
-            View bottomNav = findViewById(R.id.bottom_nav_compose);
-            if (bottomNav != null) {
-                bottomNav.setVisibility(isKeyboardVisible ? View.GONE : View.VISIBLE);
+            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+            if (bottomNavContainer != null) {
+                bottomNavContainer.setPadding(0, 0, 0, isKeyboardVisible ? 0 : systemBars.bottom);
+                bottomNavContainer.setVisibility(isKeyboardVisible ? View.GONE : View.VISIBLE);
             }
             return insets;
         });
@@ -750,6 +751,31 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else {
             contentFrame.addView(av);
             if (appBar != null) appBar.setVisibility(VISIBLE);
+            if (ninjaWebView != null) {
+                ninjaWebView.setOnScrollChangeListener(new NinjaWebView.OnScrollChangeListener() {
+                    @Override
+                    public void onScrollDown() {
+                        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+                        if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
+                            bottomNavContainer.animate()
+                                .translationY(bottomNavContainer.getHeight())
+                                .setDuration(220)
+                                .start();
+                        }
+                    }
+
+                    @Override
+                    public void onScrollUp() {
+                        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+                        if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
+                            bottomNavContainer.animate()
+                                .translationY(0f)
+                                .setDuration(220)
+                                .start();
+                        }
+                    }
+                });
+            }
         }
         updateOmniBox();
         updatePersistentBottomNav();
