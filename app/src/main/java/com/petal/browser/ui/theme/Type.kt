@@ -38,7 +38,9 @@ private fun variableFont(
             variationSettings = FontVariation.Settings(
                 FontVariation.weight(clampedWeight),
                 FontVariation.width(clampedWidth),
-                FontVariation.Setting("RNDS", clampedRoundness)
+                FontVariation.Setting("RNDS", clampedRoundness),
+                FontVariation.Setting("SOFT", clampedRoundness),
+                FontVariation.Setting("ROUND", clampedRoundness)
             ),
             weight = FontWeight(clampedWeight)
         )

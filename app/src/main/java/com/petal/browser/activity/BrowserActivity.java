@@ -1482,6 +1482,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         View progressBar = findViewById(R.id.main_progress_bar);
         View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
 
+        if (getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false)) {
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (fab_bubble != null) fab_bubble.setVisibility(GONE);
+            if (contentFrame != null) contentFrame.setTranslationY(0f);
+            return;
+        }
+
         if (isHomePage(currentUrl)) {
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
@@ -1492,6 +1501,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             isAddressBarCollapsed = false;
             return;
         }
+
+        View bottomNav = findViewById(R.id.bottom_nav_compose);
 
         if (composeAddressBar == null) return;
 
@@ -1504,6 +1515,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             float contentTargetY = isBottom ? 0f : -barHeight;
 
             springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
+
+            if (bottomNav != null) {
+                float bottomNavTargetY = HelperUnit.convertDpToPixel(120f, context);
+                springTranslateY(bottomNav, bottomNavTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
+            }
 
             if (contentFrame != null) {
                 springTranslateY(contentFrame, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
@@ -1532,6 +1548,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             composeAddressBar.setVisibility(VISIBLE);
 
             springTranslateY(composeAddressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
+
+            if (bottomNav != null) {
+                springTranslateY(bottomNav, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
+            }
 
             if (contentFrame != null) {
                 springTranslateY(contentFrame, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
@@ -3052,6 +3072,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @SuppressLint("SetJavaScriptEnabled")
     private void dispatchIntent(Intent intent) {
+        if (intent == null) return;
+        boolean isPwaMode = intent.getBooleanExtra("pwa_mode", false);
+        if (isPwaMode) {
+            View composeAddr = findViewById(R.id.compose_address_bar);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (composeAddr != null) composeAddr.setVisibility(GONE);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+        }
+
         String action = intent.getAction();
         if (com.petal.browser.compose.incognito.PetalIncognitoSessionManager.ACTION_CLOSE_INCOGNITO.equals(action)) {
             closeAllIncognitoTabs();
@@ -3072,6 +3101,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 sp.edit().putBoolean("show_overview", false).apply();
                 getIntent().setAction("");
                 addAlbum(null, dataUri.toString(), true);
+                if (isPwaMode) {
+                    View composeAddr = findViewById(R.id.compose_address_bar);
+                    View bottomNav = findViewById(R.id.bottom_nav_compose);
+                    if (composeAddr != null) composeAddr.setVisibility(GONE);
+                    if (bottomNav != null) bottomNav.setVisibility(GONE);
+                }
                 return;
             }
             String fileName = null;

@@ -53,7 +53,7 @@ import com.petal.browser.database.RecordAction;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 
-public class NinjaWebView extends WebView implements AlbumController {
+public class NinjaWebView extends NestedScrollWebView implements AlbumController {
 
     public boolean fingerPrintProtection;
     public boolean history;
@@ -572,16 +572,10 @@ public class NinjaWebView extends WebView implements AlbumController {
         this.isIncognito = incognito;
         if (incognito) {
             this.history = false;
-            WebSettings webSettings = getSettings();
-            webSettings.setSaveFormData(false);
-            webSettings.setSavePassword(false);
-            webSettings.setDomStorageEnabled(false);
-            webSettings.setDatabaseEnabled(false);
-            webSettings.setGeolocationEnabled(false);
-            webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
             try {
                 CookieManager.getInstance().setAcceptThirdPartyCookies(this, false);
             } catch (Exception ignored) {}
         }
+        com.petal.browser.unit.BrowsingDataManager.configureWebSettings(this, incognito);
     }
 }

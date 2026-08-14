@@ -95,6 +95,7 @@ public class PetalPwaManager {
         webSettings.setGeolocationEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
     }
 
@@ -105,6 +106,8 @@ public class PetalPwaManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
                 ServiceWorkerController controller = ServiceWorkerController.getInstance();
+                controller.getServiceWorkerWebSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+                controller.getServiceWorkerWebSettings().setAllowContentAccess(true);
                 controller.setServiceWorkerClient(new ServiceWorkerClient() {
                     @Override
                     public WebResourceResponse shouldInterceptRequest(WebResourceRequest request) {

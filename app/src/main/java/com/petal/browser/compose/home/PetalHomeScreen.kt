@@ -362,14 +362,6 @@ fun PetalHomeScreen(
                                 )
                             }
                         }
-
-                        IconButton(onClick = onOpenSettings) {
-                            Icon(
-                                Icons.Rounded.Settings,
-                                contentDescription = "Settings",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
 
                     Spacer(Modifier.height(12.dp))
@@ -418,84 +410,6 @@ fun PetalHomeScreen(
                     Spacer(Modifier.height(20.dp))
 
                     PetalSearchBar(onSearch = onSearch)
-
-                    Spacer(Modifier.height(20.dp))
-
-                    // Universal Google Apps Quick Action Row
-                    Surface(
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
-                        tonalElevation = 1.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.Public,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = "Google Web Services",
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                                AssistChip(
-                                    onClick = { showAccountSyncScreen = true },
-                                    label = { Text(if (profile.isSignedIn) profile.displayName else "Account", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)) },
-                                    leadingIcon = { Icon(Icons.Rounded.AccountCircle, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                                    colors = AssistChipDefaults.assistChipColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                val googleApps = listOf(
-                                    Triple("Google", "https://www.google.com", Color(0xFF4285F4)),
-                                    Triple("Gmail", "https://mail.google.com", Color(0xFFEA4335)),
-                                    Triple("Drive", "https://drive.google.com", Color(0xFF34A853)),
-                                    Triple("Maps", "https://maps.google.com", Color(0xFFFBBC05)),
-                                    Triple("YouTube", "https://www.youtube.com", Color(0xFFFF0000))
-                                )
-                                googleApps.forEach { (appName, appUrl, appColor) ->
-                                    FilterChip(
-                                        selected = false,
-                                        onClick = { onOpenShortcut(PetalShortcut(appName, appUrl, "google", appColor)) },
-                                        label = { Text(appName, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold)) },
-                                        leadingIcon = {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(12.dp)
-                                                    .clip(CircleShape)
-                                                    .background(appColor)
-                                            )
-                                        },
-                                        shape = RoundedCornerShape(16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
 
                     Spacer(Modifier.height(24.dp))
 

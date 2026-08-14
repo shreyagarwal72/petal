@@ -151,20 +151,16 @@ public class NinjaDownloadListener implements DownloadListener {
                     R.drawable.icon_close, () -> true
             );
         } else {
-            String filename = URLUtil.guessFileName(downloadUrl, contentDisposition, mimeType);
-            if (filename.length() > 150) {
-                filename = filename.substring(0, 150) + " [...]?\"";
-            }
-            String m = webView.getContext().getString(R.string.dialog_title_download) + " - " + filename;
-            String finalFilename = filename;
-            HelperUnit.showCustomSnackbarWithTwoActions(
-                    webView.getContext(), webView, null,
-                    webView.getTitle(), m, downloadUrl,
-                    R.drawable.icon_check, () -> {
-                        BrowserUnit.download(context, downloadUrl, finalFilename, mimeType);
-                        return true;
-                    },
-                    R.drawable.icon_close, () -> true
+            com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
+                context,
+                downloadUrl,
+                contentDisposition,
+                mimeType,
+                contentLength,
+                confirmedFileName -> {
+                    BrowserUnit.download(context, downloadUrl, confirmedFileName, mimeType);
+                    return kotlin.Unit.INSTANCE;
+                }
             );
         }
     }

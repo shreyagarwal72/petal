@@ -68,6 +68,17 @@ public class NinjaWebViewClient extends WebViewClient {
     public void onPageFinished(WebView view, String url) {
         super.onPageFinished(view, url);
 
+        // Inject smooth scroll behavior into DOM for seamless page transitions
+        view.evaluateJavascript(
+            "(function() {" +
+            "   try {" +
+            "       document.documentElement.style.scrollBehavior = 'smooth';" +
+            "       document.body.style.scrollBehavior = 'smooth';" +
+            "   } catch(e) {}" +
+            "})();",
+            null
+        );
+
         if (ninjaWebView.isForeground()) ninjaWebView.invalidate();
         else ninjaWebView.postInvalidate();
         CookieManager.getInstance().flush();
