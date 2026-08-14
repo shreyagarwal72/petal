@@ -39,7 +39,7 @@ import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 
 /**
- * Aurora Store extracted Material 3 Expressive ContainedLoadingIndicator composable.
+ * Petal Material 3 Expressive ContainedLoadingIndicator composable.
  * Displays an indeterminate loading indicator filling available screen bounds.
  *
  * @param modifier The modifier to be applied to the composable
@@ -63,7 +63,7 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
 }
 
 /**
- * RefreshBar pull-to-refresh loading indicator utilizing Aurora Store style [ContainedLoadingIndicator].
+ * RefreshBar pull-to-refresh loading indicator utilizing [ContainedLoadingIndicator].
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -141,7 +141,7 @@ object PetalRefreshBarBridge {
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Preview(name = "Aurora Store Contained Loading Indicator Preview", showBackground = true)
+@Preview(name = "Petal Contained Loading Indicator Preview", showBackground = true)
 @Composable
 private fun ContainedLoadingIndicatorPreview() {
     PetalExpressiveTheme(darkTheme = true) {
