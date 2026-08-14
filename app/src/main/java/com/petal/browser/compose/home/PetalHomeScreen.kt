@@ -472,11 +472,9 @@ fun PetalHomeScreen(
                     }
                     shortcuts = newList
                     saveHomeShortcuts(context, newList)
-                    editingSlotIndex = null
                 }
             )
         }
-    }
     }
 }
 
