@@ -431,19 +431,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
         }
 
-        // Show Professional Material 3 Welcome Dialog on first launch
-        if (!sp.getBoolean("sp_welcome_shown", false)) {
-            sp.edit().putBoolean("sp_welcome_shown", true).apply();
-            try {
-                com.petal.browser.ui.components.PetalWelcomeBridge.showWelcomeDialog(this, () -> {
-                    if (!sp.getBoolean("sp_search_engine_chosen", false)) {
-                        com.petal.browser.ui.components.PetalSearchEngineBridge.showSearchEngineDialog(BrowserActivity.this, null);
-                    }
-                    return kotlin.Unit.INSTANCE;
-                });
-            } catch (Exception ignored) {}
-        } else if (!sp.getBoolean("sp_search_engine_chosen", false)) {
-            com.petal.browser.ui.components.PetalSearchEngineBridge.showSearchEngineDialog(this, null);
+        // Welcome and Search Engine dialogs are displayed in onStart() to ensure the Activity window and decor view are fully attached.
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (sp != null) {
+            if (!sp.getBoolean("sp_welcome_shown", false)) {
+                sp.edit().putBoolean("sp_welcome_shown", true).apply();
+                try {
+                    com.petal.browser.ui.components.PetalWelcomeBridge.showWelcomeDialog(this, () -> {
+                        if (!sp.getBoolean("sp_search_engine_chosen", false)) {
+                            com.petal.browser.ui.components.PetalSearchEngineBridge.showSearchEngineDialog(BrowserActivity.this, null);
+                        }
+                        return kotlin.Unit.INSTANCE;
+                    });
+                } catch (Exception ignored) {}
+            } else if (!sp.getBoolean("sp_search_engine_chosen", false)) {
+                com.petal.browser.ui.components.PetalSearchEngineBridge.showSearchEngineDialog(this, null);
+            }
         }
     }
 
