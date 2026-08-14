@@ -1306,6 +1306,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         fab_menu = findViewById(R.id.fab_menu);
         if (fab_menu != null) {
+            HelperUnit.applyBouncyTouchFeedback(fab_menu);
             fab_menu.setOnClickListener(view -> {
                 String title = ninjaWebView != null ? ninjaWebView.getTitle() : "";
                 String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
@@ -1320,6 +1321,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         FloatingActionButton fab_share = findViewById(R.id.fab_share);
         if (fab_share != null) {
+            HelperUnit.applyBouncyTouchFeedback(fab_share);
             fab_share.setOnClickListener(v -> {
                 if (ninjaWebView != null && ninjaWebView.getUrl() != null) {
                     shareLink(ninjaWebView.getTitle(), ninjaWebView.getUrl());
@@ -1329,6 +1331,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         FloatingActionButton fab_undo = findViewById(R.id.fab_undo);
         if (fab_undo != null) {
+            HelperUnit.applyBouncyTouchFeedback(fab_undo);
             fab_undo.setOnClickListener(v -> {
                 if (ninjaWebView != null && ninjaWebView.canGoBack()) {
                     ninjaWebView.goBack();
@@ -1475,6 +1478,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
         }
         if (fab_overview != null) {
+            HelperUnit.applyBouncyTouchFeedback(fab_overview);
             fab_overview.setOnClickListener(v -> showOverview());
             fab_overview.setOnLongClickListener(v -> {
                 performGesture("setting_gesture_overViewButton", ninjaWebView != null ? ninjaWebView.getUrl() : "");
@@ -1491,6 +1495,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         View fab_bubble = findViewById(R.id.fab_bubble);
         if (fab_bubble != null) {
+            HelperUnit.applyBouncyTouchFeedback(fab_bubble);
             fab_bubble.setOnClickListener(v -> animateAddressBarCollapse(false));
         }
 
@@ -1808,13 +1813,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // intercepts the drag regardless of what's currently inside it.
         contentFrame.setPullDistanceDp(300f);
         contentFrame.setCanPull(() -> {
-            View currentChild = contentFrame.getChildCount() > 0 ? contentFrame.getChildAt(0) : null;
-            boolean isWebPage = currentAlbumController != null && currentChild == currentAlbumController.getAlbumView();
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : null;
-            boolean isExternalHttp = currentUrl != null && (currentUrl.startsWith("http://") || currentUrl.startsWith("https://"));
             boolean isHome = isHomePage(currentUrl);
             boolean isScrolledToTop = ninjaWebView != null && ninjaWebView.getScrollY() <= 0;
-            return isWebPage && isExternalHttp && !isHome && isScrolledToTop && !refreshState.isRefreshing();
+            return !isHome && isScrolledToTop && !refreshState.isRefreshing();
         });
 
         contentFrame.setOnPullListener(progress -> refreshState.setPullProgress(progress));
@@ -2538,6 +2540,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             });
 
+            HelperUnit.applyBouncyTouchFeedback(ib_save);
             ib_save.setOnClickListener(v -> {
                 listStandard.removeDomain(HelperUnit.domain(url));
                 listStandard.addDomain(HelperUnit.domain(url));
@@ -2569,6 +2572,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ninjaWebView.reload();
             });
 
+            HelperUnit.applyBouncyTouchFeedback(ib_delete, 0.88f);
             ib_delete.setOnClickListener(view -> {
                 listStandard.removeDomain(HelperUnit.domain(url));
                 String profileToSave = HelperUnit.domain(url);
@@ -2600,6 +2604,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
 
             Button ib_reload = dialogViewFastToggle.findViewById(R.id.ib_reload);
+            HelperUnit.applyBouncyTouchFeedback(ib_reload);
             ib_reload.setOnClickListener(view -> {
                 if (ninjaWebView != null) {
                     dialogFastToggle.cancel();
@@ -2608,6 +2613,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
 
             Button ib_settings = dialogViewFastToggle.findViewById(R.id.ib_settings);
+            HelperUnit.applyBouncyTouchFeedback(ib_settings);
             ib_settings.setOnClickListener(view -> {
                 if (ninjaWebView != null) {
                     dialogFastToggle.cancel();
@@ -2617,6 +2623,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
 
             Button button_help = dialogViewFastToggle.findViewById(R.id.button_help);
+            HelperUnit.applyBouncyTouchFeedback(button_help);
             button_help.setOnClickListener(view -> {
                 dialogFastToggle.cancel();
                 if (ninjaWebView != null) {
@@ -2918,8 +2925,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             Dialog dialog = builder.create();
 
                             Button ib_cancel = dialogEdit.findViewById(R.id.editCancel);
+                            HelperUnit.applyBouncyTouchFeedback(ib_cancel);
                             ib_cancel.setOnClickListener(v -> dialog.cancel());
                             Button ib_ok = dialogEdit.findViewById(R.id.editOK);
+                            HelperUnit.applyBouncyTouchFeedback(ib_ok);
                             ib_ok.setOnClickListener(v -> {
                                 dialog.dismiss();
                                 String newValue = Objects.requireNonNull(input.getText()).toString();
@@ -2972,8 +2981,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             HelperUnit.setupDialog(context, dialog);
 
             Button ib_cancel = dialogViewSubMenu.findViewById(R.id.editCancel);
+            HelperUnit.applyBouncyTouchFeedback(ib_cancel);
             ib_cancel.setOnClickListener(v -> dialog.cancel());
             Button ib_ok = dialogViewSubMenu.findViewById(R.id.editOK);
+            HelperUnit.applyBouncyTouchFeedback(ib_ok);
             ib_ok.setOnClickListener(v -> {
                 EditText editBottom = dialogViewSubMenu.findViewById(R.id.editBottom);
                 String shareTop = editBottom.getText().toString().trim();

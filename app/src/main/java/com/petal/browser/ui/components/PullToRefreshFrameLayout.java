@@ -103,11 +103,10 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                float topThresholdPx = 180f * getResources().getDisplayMetrics().density;
-                if (!intercepting && downY <= topThresholdPx && !canChildScrollUp() && canPull.canPull()) {
+                if (!intercepting && !canChildScrollUp() && canPull.canPull()) {
                     float dx = ev.getX() - downX;
                     float dy = ev.getY() - downY;
-                    // Allow pulling when dragging downward from top portion of web content
+                    // Allow pulling when dragging downward from top of web content
                     if (dy > touchSlop * 1.5f && dy > Math.abs(dx) * 1.2f) {
                         intercepting = true;
                         dragging = true;
