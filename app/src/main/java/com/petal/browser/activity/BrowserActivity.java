@@ -845,12 +845,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 });
             }
         }
+        updateOmniBox();
+        updatePersistentBottomNav();
         View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         if (refreshBarCompose != null) {
             refreshBarCompose.bringToFront();
+            refreshBarCompose.requestLayout();
         }
-        updateOmniBox();
-        updatePersistentBottomNav();
     }
 
     public void updatePersistentBottomNav() {
@@ -995,12 +996,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 mainContent.setLayoutParams(contentParams);
 
                 addressBar.bringToFront();
+                addressBar.requestLayout();
+                mainContent.requestLayout();
+
                 View refreshBarComposeView = findViewById(R.id.refresh_bar_compose);
                 if (refreshBarComposeView != null) {
                     refreshBarComposeView.bringToFront();
+                    refreshBarComposeView.requestLayout();
                 }
-                addressBar.requestLayout();
-                mainContent.requestLayout();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error applying address bar position", e);
