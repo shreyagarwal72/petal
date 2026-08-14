@@ -675,13 +675,17 @@ private fun PetalBloom(
                 label = "petalIconAnim"
             )
 
-            Box(modifier = Modifier.size(petalSize)) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.width(72.dp)
+            ) {
                 Surface(
                     shape = shape,
                     color = shortcut.containerColor,
                     contentColor = shortcut.contentColor,
                     modifier = Modifier
-                        .fillMaxSize()
+                        .size(petalSize)
                         .graphicsLayer {
                             scaleX = scale
                             scaleY = scale
@@ -698,18 +702,17 @@ private fun PetalBloom(
                         SiteBrandIcon(siteId = shortcut.siteId, label = shortcut.label)
                     }
                 }
+                Text(
+                    text = shortcut.label,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
-    Spacer(Modifier.height(8.dp))
-    val labels = shortcuts.take(5).joinToString("  ·  ") { it.label }
-    Text(
-        labels,
-        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.outline,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth(),
-    )
 }
 
 @Composable
