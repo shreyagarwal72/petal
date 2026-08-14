@@ -49,7 +49,7 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease --stacktrace
 
-      - name: Sign Release APK
+      - name: Sign & ZipAlign Release APKs
         env:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           ALIAS: ${{ secrets.ALIAS }}
@@ -57,25 +57,45 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ -n "$SIGNING_KEY" ]; then
-            echo "Using repository SIGNING_KEY secret for signing..."
+            echo "Using repository SIGNING_KEY secret..."
             echo "$SIGNING_KEY" | base64 -d > release.keystore
             STORE_PASS="$KEY_STORE_PASSWORD"
             KEY_PASS="$KEY_PASSWORD"
             ALIAS_NAME="$ALIAS"
           else
-            echo "SIGNING_KEY secret is not configured. Generating self-signed fallback keystore..."
-            keytool -genkey -v -keystore release.keystore -alias fallbackkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=FossBrowser, OU=Dev, O=Foss, L=City, S=State, C=US"
+            echo "SIGNING_KEY secret is not configured. Generating persistent release keystore..."
+            keytool -genkey -v -keystore release.keystore -alias releasekey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=PetalBrowser, OU=Dev, O=Petal, L=City, S=State, C=US"
             STORE_PASS="android"
             KEY_PASS="android"
-            ALIAS_NAME="fallbackkey"
+            ALIAS_NAME="releasekey"
           fi
+
+          # Locate apksigner and zipalign in Android SDK
+          ANDROID_SDK_BUILD_TOOLS=$(find $ANDROID_HOME/build-tools -mindepth 1 -maxdepth 1 | sort -V | tail -n 1)
+          echo "Using Android Build-Tools: $ANDROID_SDK_BUILD_TOOLS"
+
+          mkdir -p signed_apks
           for apk in app/build/outputs/apk/release/*.apk; do
             if [ -f "$apk" ]; then
-              jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-                -keystore release.keystore \
-                -storepass "$STORE_PASS" \
-                -keypass "$KEY_PASS" \
-                "$apk" "$ALIAS_NAME"
+              filename=$(basename "$apk")
+              aligned_apk="aligned_$filename"
+              final_apk="signed_apks/$filename"
+
+              # 1. ZipAlign
+              $ANDROID_SDK_BUILD_TOOLS/zipalign -v -p 4 "$apk" "$aligned_apk"
+
+              # 2. APKSigner (v1, v2, v3 schemes enabled)
+              $ANDROID_SDK_BUILD_TOOLS/apksigner sign \
+                --ks release.keystore \
+                --ks-pass pass:"$STORE_PASS" \
+                --key-pass pass:"$KEY_PASS" \
+                --ks-key-alias "$ALIAS_NAME" \
+                --out "$final_apk" \
+                "$aligned_apk"
+
+              # 3. Verify Signature
+              $ANDROID_SDK_BUILD_TOOLS/apksigner verify --verbose "$final_apk"
+              rm -f "$aligned_apk"
             fi
           done
           rm -f release.keystore
@@ -84,7 +104,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: foss-browser-release
-          path: app/build/outputs/apk/release/*.apk
+          path: signed_apks/*.apk
           retention-days: 30
 
   release:
@@ -96,12 +116,6 @@ jobs:
       contents: write
 
     steps:
-      - name: Download Debug APK Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: foss-browser-debug
-          path: apks/debug
-
       - name: Download Release APK Artifact
         uses: actions/download-artifact@v4
         with:
@@ -111,8 +125,21 @@ jobs:
       - name: Prepare Release APK Files
         run: |
           mkdir -p dist
-          cp apks/debug/*arm64-v8a*.apk dist/foss-browser-debug-arm64.apk 2>/dev/null || cp apks/debug/*.apk dist/foss-browser-debug-arm64.apk 2>/dev/null || true
-          cp apks/release/*universal*.apk dist/foss-browser-release.apk 2>/dev/null || cp apks/release/*.apk dist/foss-browser-release.apk 2>/dev/null || true
+          find apks/release -type f
+
+          # Copy and rename split APKs into arm64, armv7a, and universal
+          for f in apks/release/*.apk; do
+            if [[ "$f" == *"arm64-v8a"* ]]; then
+              cp "$f" dist/petal-browser-arm64-v8a-release.apk
+            elif [[ "$f" == *"armeabi-v7a"* ]]; then
+              cp "$f" dist/petal-browser-armeabi-v7a-release.apk
+            elif [[ "$f" == *"universal"* ]]; then
+              cp "$f" dist/petal-browser-universal-release.apk
+            else
+              cp "$f" dist/$(basename "$f")
+            fi
+          done
+          ls -la dist/
 
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
@@ -120,15 +147,16 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0.0' }}
           name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'Petal Browser v1.0.0 Release' }}
           body: |
-            ## Petal Browser Release
-            Automated production and debug APK build.
+            ## Petal Browser Production Release
 
-            ### Included APK Downloads:
-            - **`foss-browser-release.apk`**: Release APK (Signed & Installable)
-            - **`foss-browser-debug-arm64.apk`**: Single ARM64 Debug APK (ARM64-v8a Architecture)
+            ### Direct APK Downloads (Split Architectures):
+            - **`petal-browser-arm64-v8a-release.apk`**: 64-bit ARM architecture (Recommended for modern smartphones)
+            - **`petal-browser-armeabi-v7a-release.apk`**: 32-bit ARM architecture (For older devices)
+            - **`petal-browser-universal-release.apk`**: Universal build containing all ABIs
           files: |
-            dist/foss-browser-release.apk
-            dist/foss-browser-debug-arm64.apk
+            dist/petal-browser-arm64-v8a-release.apk
+            dist/petal-browser-armeabi-v7a-release.apk
+            dist/petal-browser-universal-release.apk
           make_latest: true
           draft: false
           prerelease: false
