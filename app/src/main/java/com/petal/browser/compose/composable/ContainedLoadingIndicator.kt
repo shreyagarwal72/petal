@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -74,7 +77,7 @@ fun RefreshBarLoadingIndicator(
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
-        visible = isRefreshing || pullProgress > 0.15f,
+        visible = isRefreshing || pullProgress > 0.05f,
         enter = slideInVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium), initialOffsetY = { -it }) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
         exit = slideOutVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium), targetOffsetY = { -it }) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
         modifier = modifier
@@ -82,12 +85,32 @@ fun RefreshBarLoadingIndicator(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp),
+                .zIndex(10f)
+                .padding(top = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            ContainedLoadingIndicator(
-                modifier = Modifier.requiredSize(48.dp)
-            )
+            val offsetY = if (isRefreshing) 24.dp else (pullProgress * 48.dp.value).dp
+            Surface(
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp,
+                modifier = Modifier
+                    .graphicsLayer {
+                        translationY = offsetY.toPx()
+                    }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .requiredSize(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ContainedLoadingIndicator(
+                        modifier = Modifier.requiredSize(36.dp)
+                    )
+                }
+            }
         }
     }
 }
