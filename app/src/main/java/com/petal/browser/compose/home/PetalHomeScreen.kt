@@ -304,143 +304,200 @@ fun PetalHomeScreen(
             label = "bloomAlphaAnim"
         )
 
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Spacer(Modifier.height(24.dp))
+        val profile = com.petal.browser.account.GoogleAccountManager.currentProfile
+        var showAccountSyncScreen by remember { mutableStateOf(false) }
 
-                // Animated Logo & Greeting Container
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            scaleX = logoScale
-                            scaleY = logoScale
-                        }
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier
-                                .size(76.dp)
-                                .padding(4.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(56.dp))
-                            }
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            text = greeting(greetingName),
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = (-0.5).sp,
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
-                        )
-                        Text(
-                            text = "Petal",
-                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
+        LaunchedEffect(Unit) {
+            com.petal.browser.account.GoogleAccountManager.init(context)
+        }
+
+        if (showAccountSyncScreen) {
+            com.petal.browser.account.ChromeAccountSyncScreen(
+                onBack = { showAccountSyncScreen = false },
+                onOpenOAuth = { shortcut ->
+                    showAccountSyncScreen = false
+                    onOpenShortcut(shortcut)
                 }
-
-                Spacer(Modifier.height(20.dp))
-
-                PetalSearchBar(onSearch = onSearch)
-
-                Spacer(Modifier.height(20.dp))
-
-                // Universal Google Apps & Login Quick Action Row
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
-                    tonalElevation = 1.dp,
-                    modifier = Modifier.fillMaxWidth()
+            )
+        } else {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.background
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    Spacer(Modifier.height(16.dp))
+
+                    // Top Bar with Profile Button & Logo
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        // Dynamic Top-Left Chrome Profile Button
+                        IconButton(
+                            onClick = { showAccountSyncScreen = true },
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(if (profile.isSignedIn) Color(0xFF4285F4) else MaterialTheme.colorScheme.surfaceContainerHigh)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
+                            if (profile.isSignedIn) {
+                                Text(
+                                    text = profile.displayName.take(1).uppercase(),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = Color.White
+                                )
+                            } else {
                                 Icon(
-                                    Icons.Rounded.AccountCircle,
-                                    contentDescription = null,
+                                    Icons.Rounded.PersonAdd,
+                                    contentDescription = "Chrome Google Account & Sync",
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(22.dp)
                                 )
-                                Text(
-                                    text = "Google Apps & Account",
-                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
                             }
-                            AssistChip(
-                                onClick = { onOpenShortcut(PetalShortcut("Google Account", "https://accounts.google.com/ServiceLogin", "google", Color(0xFF4285F4))) },
-                                label = { Text("Sign In", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)) },
-                                leadingIcon = { Icon(Icons.Rounded.Login, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                                colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            )
                         }
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            val googleApps = listOf(
-                                Triple("Google", "https://www.google.com", Color(0xFF4285F4)),
-                                Triple("Gmail", "https://mail.google.com", Color(0xFFEA4335)),
-                                Triple("Drive", "https://drive.google.com", Color(0xFF34A853)),
-                                Triple("Maps", "https://maps.google.com", Color(0xFFFBBC05)),
-                                Triple("YouTube", "https://www.youtube.com", Color(0xFFFF0000))
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(
+                                Icons.Rounded.Settings,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            googleApps.forEach { (appName, appUrl, appColor) ->
-                                FilterChip(
-                                    selected = false,
-                                    onClick = { onOpenShortcut(PetalShortcut(appName, appUrl, "google", appColor)) },
-                                    label = { Text(appName, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold)) },
-                                    leadingIcon = {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(12.dp)
-                                                .clip(CircleShape)
-                                                .background(appColor)
-                                        )
-                                    },
-                                    shape = RoundedCornerShape(16.dp)
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Animated Logo & Greeting Container
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .graphicsLayer {
+                                scaleX = logoScale
+                                scaleY = logoScale
+                            }
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier
+                                    .size(76.dp)
+                                    .padding(4.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(56.dp))
+                                }
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                text = greeting(greetingName),
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = (-0.5).sp,
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                textAlign = TextAlign.Center,
+                            )
+                            Text(
+                                text = "Petal",
+                                style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    PetalSearchBar(onSearch = onSearch)
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // Universal Google Apps Quick Action Row
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
+                        tonalElevation = 1.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Public,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = "Google Web Services",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                AssistChip(
+                                    onClick = { showAccountSyncScreen = true },
+                                    label = { Text(if (profile.isSignedIn) profile.displayName else "Account", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)) },
+                                    leadingIcon = { Icon(Icons.Rounded.AccountCircle, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                                    colors = AssistChipDefaults.assistChipColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
                                 )
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                val googleApps = listOf(
+                                    Triple("Google", "https://www.google.com", Color(0xFF4285F4)),
+                                    Triple("Gmail", "https://mail.google.com", Color(0xFFEA4335)),
+                                    Triple("Drive", "https://drive.google.com", Color(0xFF34A853)),
+                                    Triple("Maps", "https://maps.google.com", Color(0xFFFBBC05)),
+                                    Triple("YouTube", "https://www.youtube.com", Color(0xFFFF0000))
+                                )
+                                googleApps.forEach { (appName, appUrl, appColor) ->
+                                    FilterChip(
+                                        selected = false,
+                                        onClick = { onOpenShortcut(PetalShortcut(appName, appUrl, "google", appColor)) },
+                                        label = { Text(appName, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold)) },
+                                        leadingIcon = {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(12.dp)
+                                                    .clip(CircleShape)
+                                                    .background(appColor)
+                                            )
+                                        },
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(24.dp))
 
                 // Animated 5-Petal Bloom Ring
                 Box(
