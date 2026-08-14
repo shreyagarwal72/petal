@@ -419,8 +419,14 @@ fun PetalOverflowMenuSheet(
                         onCheckedChange = onToggleDesktopSite
                     )
                     MenuRowItem(
+                        icon = if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        title = if (isBookmarked) "Remove bookmark" else "Add bookmark",
+                        subtitle = if (isBookmarked) "Remove current page from bookmarks" else "Save page to your bookmarks",
+                        onClick = onToggleBookmark
+                    )
+                    MenuRowItem(
                         icon = Icons.Rounded.AppShortcut,
-                        title = "Install as app",
+                        title = "Install site",
                         subtitle = "Add Web App shortcut to Home screen",
                         onClick = onInstallPwa
                     )
