@@ -37,6 +37,7 @@ public class Settings_Delete extends AppCompatActivity {
                 .commit();
 
         Button button = findViewById(R.id.profileListAdd);
+        HelperUnit.applyBouncyTouchFeedback(button, 0.88f);
         button.setOnClickListener(v -> {
             LinearLayout root = findViewById(R.id.root);
             Snackbar snackbarBottom = Snackbar.make(root, R.string.hint_database, Snackbar.LENGTH_SHORT);

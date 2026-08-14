@@ -734,4 +734,40 @@ public class HelperUnit {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Applies bouncy scale-down and spring-back touch feedback to any Android View.
+     */
+    public static void applyBouncyTouchFeedback(android.view.View view, float scaleDown) {
+        if (view == null) return;
+        view.setOnTouchListener(new android.view.View.OnTouchListener() {
+            @Override
+            public boolean onTouch(android.view.View v, android.view.MotionEvent event) {
+                switch (event.getAction()) {
+                    case android.view.MotionEvent.ACTION_DOWN:
+                        v.animate()
+                                .scaleX(scaleDown)
+                                .scaleY(scaleDown)
+                                .setDuration(100)
+                                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                                .start();
+                        break;
+                    case android.view.MotionEvent.ACTION_UP:
+                    case android.view.MotionEvent.ACTION_CANCEL:
+                        v.animate()
+                                .scaleX(1.0f)
+                                .scaleY(1.0f)
+                                .setDuration(200)
+                                .setInterpolator(new android.view.animation.OvershootInterpolator(2.0f))
+                                .start();
+                        break;
+                }
+                return false;
+            }
+        });
+    }
+
+    public static void applyBouncyTouchFeedback(android.view.View view) {
+        applyBouncyTouchFeedback(view, 0.94f);
+    }
 }

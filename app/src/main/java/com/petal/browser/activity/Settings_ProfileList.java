@@ -71,6 +71,7 @@ public class Settings_ProfileList extends AppCompatActivity {
                 int color = typedValue.data;
                 MaterialCardView cardView = v.findViewById(R.id.menuCardView);
                 cardView.setBackgroundColor(color);
+                HelperUnit.applyBouncyTouchFeedback(deleteEntry, 0.88f);
                 deleteEntry.setOnClickListener(v1 -> {
 
                     Snackbar snackbarDelete = Snackbar.make(v1, R.string.hint_database, Snackbar.LENGTH_SHORT);

@@ -146,7 +146,7 @@ fun PetalAddressBar(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(16.dp))
-                    .clickable { onAddressClick() }
+                    .bouncyClickable(onClick = { onAddressClick() })
                     .padding(horizontal = 8.dp, vertical = 6.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
