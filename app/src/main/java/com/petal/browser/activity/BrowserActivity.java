@@ -844,6 +844,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 });
             }
         }
+        View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+        if (refreshBarCompose != null) {
+            refreshBarCompose.bringToFront();
+        }
         updateOmniBox();
         updatePersistentBottomNav();
     }
@@ -990,6 +994,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 mainContent.setLayoutParams(contentParams);
 
                 addressBar.bringToFront();
+                if (refreshBarCompose != null) {
+                    refreshBarCompose.bringToFront();
+                }
                 addressBar.requestLayout();
                 mainContent.requestLayout();
             }
@@ -1803,6 +1810,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         androidx.compose.ui.platform.ComposeView refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         if (refreshBarCompose != null) {
             com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
+            refreshBarCompose.bringToFront();
         }
 
         if (contentFrame == null) return;
