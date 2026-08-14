@@ -76,7 +76,7 @@ fun RefreshBarLoadingIndicator(
     pullProgress: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
-    val isVisible = isRefreshing || pullProgress > 0.05f
+    val isVisible = isRefreshing || pullProgress > 0.01f
 
     AnimatedVisibility(
         visible = isVisible,
@@ -93,25 +93,25 @@ fun RefreshBarLoadingIndicator(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .zIndex(100f)
-                .padding(top = 16.dp),
+                .zIndex(500f)
+                .padding(top = 12.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            val offsetY = if (isRefreshing) 28.dp else (pullProgress.coerceIn(0f, 1f) * 56.dp.value).dp
-            val currentOpacity = if (isRefreshing) 1.0f else (pullProgress * 1.5f).coerceIn(0f, 1f)
-            val currentScale = if (isRefreshing) 1.0f else (0.4f + (pullProgress * 0.6f)).coerceIn(0.4f, 1.0f)
+            val offsetY = if (isRefreshing) 24.dp else if (!isVisible) 0.dp else (pullProgress.coerceIn(0f, 1f) * 64.dp.value).dp
+            val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.8f).coerceIn(0f, 1f)
+            val currentScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.3f + (pullProgress * 0.7f)).coerceIn(0.3f, 1.0f)
 
             Surface(
                 shape = androidx.compose.foundation.shape.CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                tonalElevation = 10.dp,
-                shadowElevation = 10.dp,
+                tonalElevation = 12.dp,
+                shadowElevation = 12.dp,
                 modifier = Modifier
                     .graphicsLayer {
-                        translationY = offsetY.toPx()
-                        alpha = currentOpacity
-                        scaleX = currentScale
-                        scaleY = currentScale
+                        translationY = if (isVisible) offsetY.toPx() else 0f
+                        alpha = if (isVisible) currentOpacity else 0f
+                        scaleX = if (isVisible) currentScale else 0f
+                        scaleY = if (isVisible) currentScale else 0f
                     }
             ) {
                 Box(

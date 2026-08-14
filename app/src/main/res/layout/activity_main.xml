@@ -20,7 +20,8 @@
         android:id="@+id/main_progress_bar_compose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/compose_address_bar"/>
+        android:layout_below="@id/compose_address_bar"
+        android:elevation="14dp"/>
 
 
 
@@ -55,7 +56,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignTop="@id/main_content"
-        android:elevation="20dp" />
+        android:elevation="30dp" />
 
     <!-- Floating Action Button for Showing Top Bar -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
