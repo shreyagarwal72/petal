@@ -149,6 +149,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var selectedFont by remember {
         mutableStateOf(try { AppFont.valueOf(sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM") } catch (e: Exception) { AppFont.SYSTEM })
     }
+    var selectedPreset by remember {
+        mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT") } catch (e: Exception) { GSFlexPreset.DEFAULT })
+    }
     var fontWidth by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
     var fontWeight by remember { mutableFloatStateOf(sp.getInt("sp_font_weight", 400).toFloat()) }
     var fontRoundness by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
@@ -222,6 +225,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         fontWidth = fontWidth,
         fontWeight = fontWeight.toInt(),
         fontRoundness = fontRoundness,
+        gsFlexPreset = selectedPreset,
         colorStyle = selectedColorStyle,
         paletteId = selectedPaletteId
     ) {
@@ -388,12 +392,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         }
 
                         if (selectedFont == AppFont.GS_FLEX) {
-                            var gsFlexPreset by remember {
-                                mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT") } catch (e: Exception) { GSFlexPreset.DEFAULT })
-                            }
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Zenith Variable Font Presets:",
+                                "Google Sans Flex Presets:",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -405,13 +406,26 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             ) {
                                 GSFlexPreset.values().forEach { preset ->
                                     FilterChip(
-                                        selected = gsFlexPreset == preset,
+                                        selected = selectedPreset == preset,
                                         onClick = {
-                                            gsFlexPreset = preset
+                                            selectedPreset = preset
                                             sp.edit().putString("sp_gs_flex_preset", preset.name).apply()
+                                            if (preset != GSFlexPreset.DEFAULT) {
+                                                val axes = getPresetFontAxes(preset)
+                                                if (axes != null) {
+                                                    fontWidth = axes.third.width
+                                                    fontWeight = axes.third.weight
+                                                    fontRoundness = axes.third.roundness
+                                                    sp.edit()
+                                                        .putFloat("sp_font_width", fontWidth)
+                                                        .putInt("sp_font_weight", fontWeight.toInt())
+                                                        .putFloat("sp_font_roundness", fontRoundness)
+                                                        .apply()
+                                                }
+                                            }
                                         },
                                         label = { Text(preset.label) },
-                                        leadingIcon = if (gsFlexPreset == preset) {
+                                        leadingIcon = if (selectedPreset == preset) {
                                             { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                         } else null
                                     )
@@ -439,7 +453,8 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 value = fontWidth,
                                 onValueChange = { newValue ->
                                     fontWidth = newValue
-                                    sp.edit().putFloat("sp_font_width", newValue).apply()
+                                    selectedPreset = GSFlexPreset.DEFAULT
+                                    sp.edit().putFloat("sp_font_width", newValue).putString("sp_gs_flex_preset", GSFlexPreset.DEFAULT.name).apply()
                                 },
                                 valueRange = 75f..125f,
                                 modifier = Modifier.fillMaxWidth()
@@ -459,7 +474,8 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 value = fontWeight,
                                 onValueChange = { newValue ->
                                     fontWeight = newValue
-                                    sp.edit().putInt("sp_font_weight", newValue.toInt()).apply()
+                                    selectedPreset = GSFlexPreset.DEFAULT
+                                    sp.edit().putInt("sp_font_weight", newValue.toInt()).putString("sp_gs_flex_preset", GSFlexPreset.DEFAULT.name).apply()
                                 },
                                 valueRange = 100f..900f,
                                 modifier = Modifier.fillMaxWidth()
@@ -479,7 +495,8 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 value = fontRoundness,
                                 onValueChange = { newValue ->
                                     fontRoundness = newValue
-                                    sp.edit().putFloat("sp_font_roundness", newValue).apply()
+                                    selectedPreset = GSFlexPreset.DEFAULT
+                                    sp.edit().putFloat("sp_font_roundness", newValue).putString("sp_gs_flex_preset", GSFlexPreset.DEFAULT.name).apply()
                                 },
                                 valueRange = 0f..100f,
                                 modifier = Modifier.fillMaxWidth()

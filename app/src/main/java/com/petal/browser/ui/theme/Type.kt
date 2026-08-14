@@ -123,8 +123,8 @@ private fun systemTypography(fontWeight: Int): Typography {
 }
 
 enum class GSFlexPreset(val label: String) {
-    DEFAULT("Default"),
-    ZENITH("Zenith (Ultra Round & Expressive)"),
+    DEFAULT("Custom Sliders"),
+    EXPRESSIVE("Expressive (Ultra Round)"),
     NEO("Neo (Wide & Clean)"),
     COMPACT("Compact (High Density)"),
     AIRY("Airy (Spacious & Light)")
@@ -139,21 +139,19 @@ data class FontAxes(
     val roundness: Float = 0f
 ) {
     fun toVariationSettings() = FontVariation.Settings(
-        FontVariation.weight(weight.toInt().coerceIn(1, 1000)),
-        FontVariation.width(width.coerceIn(25f, 150f)),
+        FontVariation.weight(weight.toInt().coerceIn(100, 900)),
+        FontVariation.width(width.coerceIn(75f, 125f)),
         FontVariation.Setting("opsz", opsz.coerceIn(6f, 72f)),
-        FontVariation.grade(grade.toInt().coerceIn(-200, 200)),
-        FontVariation.slant(slant.coerceIn(-10f, 0f)),
-        FontVariation.Setting("ROND", roundness.coerceIn(0f, 100f)),
         FontVariation.Setting("RNDS", roundness.coerceIn(0f, 100f)),
-        FontVariation.Setting("wght", weight.toInt().coerceIn(1, 1000).toFloat()),
-        FontVariation.Setting("wdth", width.coerceIn(25f, 150f))
+        FontVariation.Setting("ROND", roundness.coerceIn(0f, 100f)),
+        FontVariation.Setting("SOFT", roundness.coerceIn(0f, 100f)),
+        FontVariation.Setting("ROUND", roundness.coerceIn(0f, 100f))
     )
 }
 
-fun getZenithPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes>? {
+fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes>? {
     return when (preset) {
-        GSFlexPreset.ZENITH -> Triple(
+        GSFlexPreset.EXPRESSIVE -> Triple(
             FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
             FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
             FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
@@ -185,11 +183,11 @@ fun petalTypography(
     fontRoundness: Float = 0f,
     preset: GSFlexPreset = GSFlexPreset.DEFAULT
 ): Typography = try {
-    val zenithAxes = getZenithPresetFontAxes(preset)
-    if (appFont == AppFont.GS_FLEX && zenithAxes != null) {
-        val displayFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = zenithAxes.first.toVariationSettings()))
-        val headlineFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = zenithAxes.second.toVariationSettings()))
-        val bodyFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = zenithAxes.third.toVariationSettings()))
+    val presetAxes = getPresetFontAxes(preset)
+    if (appFont == AppFont.GS_FLEX && presetAxes != null) {
+        val displayFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = presetAxes.first.toVariationSettings()))
+        val headlineFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = presetAxes.second.toVariationSettings()))
+        val bodyFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = presetAxes.third.toVariationSettings()))
         buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
     } else {
         when (appFont) {
