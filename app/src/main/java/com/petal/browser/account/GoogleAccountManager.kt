@@ -37,50 +37,62 @@ object GoogleAccountManager {
         private set
 
     fun init(context: Context) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val isSignedIn = sp.getBoolean(KEY_IS_SIGNED_IN, false)
-        val email = sp.getString(KEY_EMAIL, "user@gmail.com") ?: "user@gmail.com"
-        val displayName = sp.getString(KEY_DISPLAY_NAME, "Google User") ?: "Google User"
-        val avatarUrl = sp.getString(KEY_AVATAR_URL, null)
-        val syncBookmarks = sp.getBoolean(KEY_SYNC_BOOKMARKS, true)
-        val syncHistory = sp.getBoolean(KEY_SYNC_HISTORY, true)
-        val syncPasswords = sp.getBoolean(KEY_SYNC_PASSWORDS, true)
+        try {
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            val isSignedIn = sp.getBoolean(KEY_IS_SIGNED_IN, false)
+            val email = sp.getString(KEY_EMAIL, "user@gmail.com") ?: "user@gmail.com"
+            val displayName = sp.getString(KEY_DISPLAY_NAME, "Google User") ?: "Google User"
+            val avatarUrl = sp.getString(KEY_AVATAR_URL, null)
+            val syncBookmarks = sp.getBoolean(KEY_SYNC_BOOKMARKS, true)
+            val syncHistory = sp.getBoolean(KEY_SYNC_HISTORY, true)
+            val syncPasswords = sp.getBoolean(KEY_SYNC_PASSWORDS, true)
 
-        currentProfile = GoogleUserProfile(
-            email = email,
-            displayName = displayName,
-            avatarUrl = avatarUrl,
-            isSignedIn = isSignedIn,
-            syncBookmarks = syncBookmarks,
-            syncHistory = syncHistory,
-            syncPasswords = syncPasswords
-        )
+            currentProfile = GoogleUserProfile(
+                email = email,
+                displayName = displayName,
+                avatarUrl = avatarUrl,
+                isSignedIn = isSignedIn,
+                syncBookmarks = syncBookmarks,
+                syncHistory = syncHistory,
+                syncPasswords = syncPasswords
+            )
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
     }
 
     fun signIn(context: Context, email: String, displayName: String, avatarUrl: String? = null) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        sp.edit()
-            .putBoolean(KEY_IS_SIGNED_IN, true)
-            .putString(KEY_EMAIL, email)
-            .putString(KEY_DISPLAY_NAME, displayName)
-            .putString(KEY_AVATAR_URL, avatarUrl)
-            .apply()
+        try {
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            sp.edit()
+                .putBoolean(KEY_IS_SIGNED_IN, true)
+                .putString(KEY_EMAIL, email)
+                .putString(KEY_DISPLAY_NAME, displayName)
+                .putString(KEY_AVATAR_URL, avatarUrl)
+                .apply()
 
-        currentProfile = currentProfile.copy(
-            email = email,
-            displayName = displayName,
-            avatarUrl = avatarUrl,
-            isSignedIn = true
-        )
+            currentProfile = currentProfile.copy(
+                email = email,
+                displayName = displayName,
+                avatarUrl = avatarUrl,
+                isSignedIn = true
+            )
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
     }
 
     fun signOut(context: Context) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        sp.edit()
-            .putBoolean(KEY_IS_SIGNED_IN, false)
-            .apply()
+        try {
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            sp.edit()
+                .putBoolean(KEY_IS_SIGNED_IN, false)
+                .apply()
 
-        currentProfile = currentProfile.copy(isSignedIn = false)
+            currentProfile = currentProfile.copy(isSignedIn = false)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
     }
 
     fun updateSyncSettings(
@@ -89,18 +101,22 @@ object GoogleAccountManager {
         syncHistory: Boolean,
         syncPasswords: Boolean
     ) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        sp.edit()
-            .putBoolean(KEY_SYNC_BOOKMARKS, syncBookmarks)
-            .putBoolean(KEY_SYNC_HISTORY, syncHistory)
-            .putBoolean(KEY_SYNC_PASSWORDS, syncPasswords)
-            .apply()
+        try {
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            sp.edit()
+                .putBoolean(KEY_SYNC_BOOKMARKS, syncBookmarks)
+                .putBoolean(KEY_SYNC_HISTORY, syncHistory)
+                .putBoolean(KEY_SYNC_PASSWORDS, syncPasswords)
+                .apply()
 
-        currentProfile = currentProfile.copy(
-            syncBookmarks = syncBookmarks,
-            syncHistory = syncHistory,
-            syncPasswords = syncPasswords
-        )
+            currentProfile = currentProfile.copy(
+                syncBookmarks = syncBookmarks,
+                syncHistory = syncHistory,
+                syncPasswords = syncPasswords
+            )
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
     }
 
     @JvmStatic

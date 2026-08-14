@@ -82,8 +82,9 @@ fun ChromeAccountSyncScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (profile.isSignedIn) {
+                            val initial = profile.displayName.trim().take(1).ifEmpty { "G" }.uppercase()
                             Text(
-                                text = profile.displayName.take(1).uppercase(),
+                                text = initial,
                                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                 color = Color.White
                             )
