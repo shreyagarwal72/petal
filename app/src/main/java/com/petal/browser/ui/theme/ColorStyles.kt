@@ -23,12 +23,16 @@ data class PetalPalette(
 )
 
 private fun Color.mapHsv(block: (FloatArray) -> Unit): Color {
-    val hsv = FloatArray(3)
-    android.graphics.Color.colorToHSV(toArgb(), hsv)
-    block(hsv)
-    hsv[1] = hsv[1].coerceIn(0f, 1f)
-    hsv[2] = hsv[2].coerceIn(0f, 1f)
-    return Color(android.graphics.Color.HSVToColor((alpha * 255).toInt(), hsv))
+    return try {
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(toArgb(), hsv)
+        block(hsv)
+        hsv[1] = hsv[1].coerceIn(0f, 1f)
+        hsv[2] = hsv[2].coerceIn(0f, 1f)
+        Color(android.graphics.Color.HSVToColor((alpha * 255).toInt().coerceIn(0, 255), hsv))
+    } catch (e: Throwable) {
+        this
+    }
 }
 
 private fun Color.saturate(factor: Float) = mapHsv { it[1] = it[1] * factor }
@@ -74,17 +78,21 @@ private fun ColorScheme.mapAll(transform: (Color) -> Color): ColorScheme =
         inverseOnSurface = transform(inverseOnSurface)
     )
 
-fun ColorScheme.applyStyle(style: ColorStyle): ColorScheme = when (style) {
-    ColorStyle.TONAL_SPOT -> this
-    ColorStyle.NEUTRAL -> mapAccents { it.saturate(0.35f) }
-    ColorStyle.MONOCHROME -> mapAll { it.saturate(0f) }
-    ColorStyle.VIBRANT -> mapAccents { it.saturate(1.45f) }
-    ColorStyle.EXPRESSIVE -> mapAccents { it.saturate(1.2f) }
-        .mapTertiary { it.hueShift(-45f) }
-        .copy(
-            secondary = secondary.hueShift(30f).saturate(1.25f),
-            secondaryContainer = secondaryContainer.hueShift(30f).saturate(1.2f)
-        )
+fun ColorScheme.applyStyle(style: ColorStyle): ColorScheme = try {
+    when (style) {
+        ColorStyle.TONAL_SPOT -> this
+        ColorStyle.NEUTRAL -> mapAccents { it.saturate(0.35f) }
+        ColorStyle.MONOCHROME -> mapAll { it.saturate(0f) }
+        ColorStyle.VIBRANT -> mapAccents { it.saturate(1.45f) }
+        ColorStyle.EXPRESSIVE -> mapAccents { it.saturate(1.2f) }
+            .mapTertiary { it.hueShift(-45f) }
+            .copy(
+                secondary = secondary.hueShift(30f).saturate(1.25f),
+                secondaryContainer = secondaryContainer.hueShift(30f).saturate(1.2f)
+            )
+    }
+} catch (e: Throwable) {
+    this
 }
 
 // --- Stride & Petal Color Palettes ---

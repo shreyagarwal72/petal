@@ -271,14 +271,6 @@ fun PetalHomeScreen(
         try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }
     }
 
-    PetalExpressiveTheme(
-        dynamicColor = isDynamicColorEnabled,
-        useAmoled = isAmoledEnabled,
-        appFont = appFont,
-        fontWidth = fontWidthVal,
-        fontWeight = fontWeightVal,
-        fontRoundness = fontRoundnessVal
-    ) {
         var pageLoaded by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) {
             pageLoaded = true
