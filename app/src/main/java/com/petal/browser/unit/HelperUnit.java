@@ -721,4 +721,17 @@ public class HelperUnit {
         snackbarView.setBackground(background);
         snackbar.setTextMaxLines(100);
     }
+
+    public static void copy(Context context, String text) {
+        if (context == null || text == null) return;
+        try {
+            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard != null) {
+                android.content.ClipData clip = android.content.ClipData.newPlainText("text", text);
+                clipboard.setPrimaryClip(clip);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
