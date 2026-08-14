@@ -554,7 +554,7 @@ fun PetalHomeScreen(
     }
 }
 
-private fun greeting(name: String?): String {
+internal fun greeting(name: String?): String {
     val base = when (java.time.LocalTime.now().hour) {
         in 5..11 -> "Good morning"
         in 12..17 -> "Good afternoon"
@@ -564,7 +564,7 @@ private fun greeting(name: String?): String {
 }
 
 @Composable
-private fun PetalSearchBar(onSearch: (String) -> Unit) {
+internal fun PetalSearchBar(onSearch: (String) -> Unit) {
     var searchText by remember { mutableStateOf("") }
     Surface(
         shape = RoundedCornerShape(50),
@@ -626,7 +626,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PetalBloom(
+internal fun PetalBloom(
     shortcuts: List<PetalShortcut>,
     onOpenShortcut: (PetalShortcut) -> Unit,
     onAddShortcutClick: () -> Unit,
@@ -638,62 +638,45 @@ private fun PetalBloom(
 
     RadialLayout(
         radius = ringRadius,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(ringRadius * 2 + petalSize),
+        modifier = Modifier.padding(vertical = 12.dp)
     ) {
-        // Center (+) Button for customizing shortcuts
         Surface(
-            onClick = onAddShortcutClick,
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-            modifier = Modifier.size(budSize),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            tonalElevation = 4.dp,
+            shadowElevation = 8.dp,
+            modifier = Modifier
+                .size(budSize)
+                .clickable { onAddShortcutClick() }
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.Add, contentDescription = "Manage shortcuts")
+                Icon(
+                    Icons.Rounded.Add,
+                    contentDescription = "Add Shortcut",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(32.dp)
+                )
             }
         }
 
-        // 5 Customizable Bloom Ring Shortcuts
         shortcuts.take(5).forEachIndexed { index, shortcut ->
             val shape = petalShapes[index % petalShapes.size]
-            var isPressed by remember { mutableStateOf(false) }
-
-            val scale by animateFloatAsState(
-                targetValue = if (isPressed) 0.84f else 1.0f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                ),
-                finishedListener = {
-                    if (isPressed) {
-                        isPressed = false
-                        onOpenShortcut(shortcut)
-                    }
-                },
-                label = "petalIconAnim"
-            )
-
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.width(72.dp)
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .width(petalSize)
+                    .combinedClickable(
+                        onClick = { onOpenShortcut(shortcut) },
+                        onLongClick = { onEditShortcutSlot(index) }
+                    )
             ) {
                 Surface(
                     shape = shape,
                     color = shortcut.containerColor,
-                    contentColor = shortcut.contentColor,
-                    modifier = Modifier
-                        .size(petalSize)
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                        }
-                        .combinedClickable(
-                            onClick = { isPressed = true },
-                            onLongClick = { onEditShortcutSlot(index) }
-                        )
+                    tonalElevation = 3.dp,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier.size(petalSize)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -716,7 +699,7 @@ private fun PetalBloom(
 }
 
 @Composable
-private fun SiteBrandIcon(siteId: String, label: String) {
+internal fun SiteBrandIcon(siteId: String, label: String) {
     when (siteId) {
         "youtube" -> {
             Icon(Icons.Rounded.PlayArrow, contentDescription = "YouTube", tint = Color.White, modifier = Modifier.size(28.dp))
@@ -738,10 +721,10 @@ private fun SiteBrandIcon(siteId: String, label: String) {
             Icon(Icons.Rounded.Shield, contentDescription = "DuckDuckGo", tint = Color.White, modifier = Modifier.size(26.dp))
         }
         "weather" -> {
-            Icon(Icons.Rounded.WbSunny, contentDescription = "Google Weather", tint = Color(0xFFFFD54F), modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.WbSunny, contentDescription = "Weather", tint = Color.White, modifier = Modifier.size(26.dp))
         }
         "globe" -> {
-            Icon(Icons.Rounded.Public, contentDescription = "Web", tint = Color.White, modifier = Modifier.size(26.dp))
+            Icon(Icons.Rounded.Language, contentDescription = "Web", tint = Color.White, modifier = Modifier.size(26.dp))
         }
         "star" -> {
             Icon(Icons.Rounded.Star, contentDescription = "Star", tint = Color.White, modifier = Modifier.size(26.dp))
@@ -749,32 +732,29 @@ private fun SiteBrandIcon(siteId: String, label: String) {
         "bookmark" -> {
             Icon(Icons.Rounded.Bookmark, contentDescription = "Bookmark", tint = Color.White, modifier = Modifier.size(26.dp))
         }
-        "lock" -> {
-            Icon(Icons.Rounded.Lock, contentDescription = "Lock", tint = Color.White, modifier = Modifier.size(26.dp))
-        }
         else -> {
             Text(
-                label.take(1).uppercase(),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                text = label.take(1).uppercase().ifBlank { "S" },
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.White
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditShortcutDialog(
-    slotIndex: Int,
-    currentShortcut: PetalShortcut,
+internal fun EditShortcutDialog(
+    initialShortcut: PetalShortcut,
+    slotNumber: Int,
     onDismiss: () -> Unit,
-    onSelectSlot: (Int) -> Unit,
     onSave: (PetalShortcut) -> Unit,
     onResetSlot: () -> Unit
 ) {
-    var nameText by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.label) }
-    var urlText by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.url) }
-    var selectedSiteId by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.siteId) }
-    var selectedColor by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.containerColor) }
+    var nameText by remember { mutableStateOf(initialShortcut.label) }
+    var urlText by remember { mutableStateOf(initialShortcut.url) }
+    var selectedSiteId by remember { mutableStateOf(initialShortcut.siteId) }
+    var selectedColor by remember { mutableStateOf(initialShortcut.containerColor) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
