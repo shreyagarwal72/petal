@@ -76,38 +76,52 @@ fun RefreshBarLoadingIndicator(
     pullProgress: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
+    val isVisible = isRefreshing || pullProgress > 0.05f
+
     AnimatedVisibility(
-        visible = isRefreshing || pullProgress > 0.05f,
-        enter = slideInVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium), initialOffsetY = { -it }) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
-        exit = slideOutVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium), targetOffsetY = { -it }) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
+        visible = isVisible,
+        enter = slideInVertically(
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+            initialOffsetY = { -it }
+        ) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
+        exit = slideOutVertically(
+            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+            targetOffsetY = { -it }
+        ) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
         modifier = modifier
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .zIndex(10f)
+                .zIndex(100f)
                 .padding(top = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            val offsetY = if (isRefreshing) 24.dp else (pullProgress * 48.dp.value).dp
+            val offsetY = if (isRefreshing) 28.dp else (pullProgress.coerceIn(0f, 1f) * 56.dp.value).dp
+            val currentOpacity = if (isRefreshing) 1.0f else (pullProgress * 1.5f).coerceIn(0f, 1f)
+            val currentScale = if (isRefreshing) 1.0f else (0.4f + (pullProgress * 0.6f)).coerceIn(0.4f, 1.0f)
+
             Surface(
                 shape = androidx.compose.foundation.shape.CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp,
+                tonalElevation = 10.dp,
+                shadowElevation = 10.dp,
                 modifier = Modifier
                     .graphicsLayer {
                         translationY = offsetY.toPx()
+                        alpha = currentOpacity
+                        scaleX = currentScale
+                        scaleY = currentScale
                     }
             ) {
                 Box(
                     modifier = Modifier
                         .padding(8.dp)
-                        .requiredSize(40.dp),
+                        .requiredSize(42.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     ContainedLoadingIndicator(
-                        modifier = Modifier.requiredSize(36.dp)
+                        modifier = Modifier.requiredSize(38.dp)
                     )
                 }
             }
