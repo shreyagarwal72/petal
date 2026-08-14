@@ -525,7 +525,7 @@ fun PetalHomeScreen(
         editingSlotIndex?.let { slotIndex ->
             EditShortcutDialog(
                 slotIndex = slotIndex,
-                currentShortcut = shortcuts.getOrElse(slotIndex) { defaultPetalShortcuts[slotIndex % defaultPetalShortcuts.size] },
+                initialShortcut = shortcuts.getOrElse(slotIndex) { defaultPetalShortcuts[slotIndex % defaultPetalShortcuts.size] },
                 onDismiss = { editingSlotIndex = null },
                 onSelectSlot = { newSlot -> editingSlotIndex = newSlot },
                 onSave = { updatedShortcut ->
