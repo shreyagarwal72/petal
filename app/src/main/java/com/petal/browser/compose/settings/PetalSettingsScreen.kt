@@ -617,14 +617,19 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                         // Auto Picture-in-Picture Toggle
+                        val isPipSupported = remember {
+                            context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
+                        }
                         ToggleRow(
-                            title = "Auto Picture-in-Picture (PiP)",
-                            subtitle = "Automatically enter floating PiP window when performing home gesture during full-screen video playback",
+                            title = if (isPipSupported) "Auto Picture-in-Picture (PiP)" else "Auto Picture-in-Picture (Not Supported)",
+                            subtitle = if (isPipSupported) "Automatically enter floating PiP window when leaving app during video playback" else "Picture-in-Picture mode is not supported on this device",
                             icon = Icons.Rounded.PictureInPicture,
-                            checked = isAutoPip,
+                            checked = isAutoPip && isPipSupported,
                             onCheckedChange = { newValue ->
-                                isAutoPip = newValue
-                                sp.edit().putBoolean("sp_auto_pip", newValue).apply()
+                                if (isPipSupported) {
+                                    isAutoPip = newValue
+                                    sp.edit().putBoolean("sp_auto_pip", newValue).apply()
+                                }
                             }
                         )
 

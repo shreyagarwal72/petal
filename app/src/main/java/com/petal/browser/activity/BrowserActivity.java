@@ -575,6 +575,67 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return super.onKeyDown(keyCode, event);
     }
 
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        try {
+            boolean isPipSupported = getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
+            boolean isAutoPipEnabled = sp.getBoolean("sp_auto_pip", true);
+            boolean isMediaPlaying = (customView != null || fullscreenHolder != null || videoView != null);
+
+            if (isPipSupported && isAutoPipEnabled && isMediaPlaying) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                        pipBuilder.setAutoEnterEnabled(true);
+                    }
+                    View targetView = customView != null ? customView : (videoView != null ? videoView : contentFrame);
+                    if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
+                        int width = targetView.getWidth();
+                        int height = targetView.getHeight();
+                        android.util.Rational aspectRatio = new android.util.Rational(width, height);
+                        pipBuilder.setAspectRatio(aspectRatio);
+                        android.graphics.Rect rect = new android.graphics.Rect();
+                        targetView.getGlobalVisibleRect(rect);
+                        pipBuilder.setSourceRectHint(rect);
+                    }
+                    enterPictureInPictureMode(pipBuilder.build());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+        try {
+            View composeAddressBar = findViewById(R.id.compose_address_bar);
+            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+            View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+            View mainProgressBar = findViewById(R.id.main_progress_bar_compose);
+
+            if (isInPictureInPictureMode) {
+                if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+                if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
+                if (refreshBarCompose != null) refreshBarCompose.setVisibility(GONE);
+                if (mainProgressBar != null) mainProgressBar.setVisibility(GONE);
+                if (appBar != null) appBar.setVisibility(GONE);
+            } else {
+                if (composeAddressBar != null) composeAddressBar.setVisibility(VISIBLE);
+                if (bottomNavContainer != null) bottomNavContainer.setVisibility(VISIBLE);
+                if (refreshBarCompose != null) refreshBarCompose.setVisibility(VISIBLE);
+                if (mainProgressBar != null) mainProgressBar.setVisibility(VISIBLE);
+                if (appBar != null && currentAlbumController != null && !isHomePage(ninjaWebView != null ? ninjaWebView.getUrl() : "")) {
+                    appBar.setVisibility(VISIBLE);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void onTabUrlStarted(NinjaWebView webView, String url) {
         runOnUiThread(() -> {
             if (webView == ninjaWebView) {
