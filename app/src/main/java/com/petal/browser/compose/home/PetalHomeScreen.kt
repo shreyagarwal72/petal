@@ -552,6 +552,7 @@ fun PetalHomeScreen(
             )
         }
     }
+    }
 }
 
 private fun greeting(name: String?): String {
