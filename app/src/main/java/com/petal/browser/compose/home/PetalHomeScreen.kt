@@ -43,10 +43,6 @@ import coil.compose.AsyncImage
 import com.petal.browser.account.AccountViewModel
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.unit.Dp
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.roundToInt
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
