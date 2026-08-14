@@ -40,7 +40,10 @@ private fun variableFont(
                 FontVariation.width(clampedWidth),
                 FontVariation.Setting("RNDS", clampedRoundness),
                 FontVariation.Setting("SOFT", clampedRoundness),
-                FontVariation.Setting("ROUND", clampedRoundness)
+                FontVariation.Setting("ROUND", clampedRoundness),
+                FontVariation.Setting("rnd ", clampedRoundness),
+                FontVariation.Setting("wght", clampedWeight.toFloat()),
+                FontVariation.Setting("wdth", clampedWidth)
             ),
             weight = FontWeight(clampedWeight)
         )

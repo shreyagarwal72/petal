@@ -335,9 +335,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     }
                 }
 
-                // 1. Live Interactive Font & Accent Customization (Stride Fonts & Monet Colors)
+                // 1. Live Interactive Font & Accent Customization
                 if ((currentCategory == SettingsCategory.APPEARANCE || searchQuery.isNotBlank()) && matchesSearch("Appearance", "fonts accent theme palette amoled")) {
-                    SettingsCategoryCard(title = "Stride Custom Fonts & Accent Themes", icon = Icons.Rounded.Palette) {
+                    SettingsCategoryCard(title = "Custom Fonts & Accent Themes", icon = Icons.Rounded.Palette) {
                         Text(
                             "Customize app typography and accent style",
                             style = MaterialTheme.typography.bodySmall,
@@ -371,7 +371,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             }
                         }
 
-                        // --- Font Variation Axes from Stride (Width, Weight, Roundness) ---
+                        // --- Font Variation Axes (Width, Weight, Roundness) ---
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -436,44 +436,6 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 valueRange = 0f..100f,
                                 modifier = Modifier.fillMaxWidth()
                             )
-
-                            Spacer(Modifier.height(10.dp))
-                            // LIVE TYPOGRAPHY PREVIEW BOX
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            "LIVE FONT PREVIEW",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Text(
-                                            "${selectedFont.label} (${fontWidth.toInt()}%, ${fontWeight.toInt()}, ${fontRoundness.toInt()}%)",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(
-                                        "The quick brown fox jumps over the lazy dog.",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        "0123456789 • Stride Typography & Motion",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
                         }
 
                         // --- Accent Style Chips ---
