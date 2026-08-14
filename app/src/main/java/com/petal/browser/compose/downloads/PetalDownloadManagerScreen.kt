@@ -169,19 +169,30 @@ fun getFileTypeIcon(fileName: String): ImageVector {
 @Composable
 fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     val context = LocalContext.current
-    var prevBytesMap by remember { mutableStateOf(mapOf<Long, Long>()) }
-    var lastCheckTime by remember { mutableStateOf(System.currentTimeMillis()) }
-    var downloadList by remember { mutableStateOf(getDownloadItems(context, prevBytesMap, 1000L)) }
+    val engineTasksState by PetalDownloadEngine.downloadTasks.collectAsState()
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1000L)
-            val currentTime = System.currentTimeMillis()
-            val elapsedTime = (currentTime - lastCheckTime).coerceAtLeast(100L)
-            val newItems = getDownloadItems(context, prevBytesMap, elapsedTime)
-            prevBytesMap = newItems.associate { it.id to it.bytesDownloaded }
-            lastCheckTime = currentTime
-            downloadList = newItems
+    val downloadList by remember {
+        derivedStateOf {
+            engineTasksState.values.map { task ->
+                DownloadItem(
+                    id = task.id,
+                    fileName = task.fileName,
+                    fileUrl = task.url,
+                    progress = if (task.status == DownloadStatus.COMPLETED) 1.0f else task.progressFraction,
+                    status = when (task.status) {
+                        DownloadStatus.COMPLETED -> DownloadManager.STATUS_SUCCESSFUL
+                        DownloadStatus.RUNNING -> DownloadManager.STATUS_RUNNING
+                        DownloadStatus.PAUSED -> DownloadManager.STATUS_PAUSED
+                        DownloadStatus.PENDING -> DownloadManager.STATUS_PENDING
+                        else -> DownloadManager.STATUS_FAILED
+                    },
+                    bytesDownloaded = task.bytesDownloaded,
+                    totalSize = task.totalBytes,
+                    speedBytesPerSec = task.speedBps,
+                    localUri = task.destinationPath,
+                    timestampMs = task.timestampMs
+                )
+            }.sortedByDescending { it.timestampMs }
         }
     }
 
