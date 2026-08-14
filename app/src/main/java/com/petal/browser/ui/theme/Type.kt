@@ -122,32 +122,97 @@ private fun systemTypography(fontWeight: Int): Typography {
     )
 }
 
+enum class GSFlexPreset(val label: String) {
+    DEFAULT("Default"),
+    ZENITH("Zenith (Ultra Round & Expressive)"),
+    NEO("Neo (Wide & Clean)"),
+    COMPACT("Compact (High Density)"),
+    AIRY("Airy (Spacious & Light)")
+}
+
+data class FontAxes(
+    val weight: Float = 400f,
+    val width: Float = 100f,
+    val opsz: Float = 16f,
+    val grade: Float = 0f,
+    val slant: Float = 0f,
+    val roundness: Float = 0f
+) {
+    fun toVariationSettings() = FontVariation.Settings(
+        FontVariation.weight(weight.toInt().coerceIn(1, 1000)),
+        FontVariation.width(width.coerceIn(25f, 150f)),
+        FontVariation.Setting("opsz", opsz.coerceIn(6f, 72f)),
+        FontVariation.grade(grade.toInt().coerceIn(-200, 200)),
+        FontVariation.slant(slant.coerceIn(-10f, 0f)),
+        FontVariation.Setting("ROND", roundness.coerceIn(0f, 100f)),
+        FontVariation.Setting("RNDS", roundness.coerceIn(0f, 100f)),
+        FontVariation.Setting("wght", weight.toInt().coerceIn(1, 1000).toFloat()),
+        FontVariation.Setting("wdth", width.coerceIn(25f, 150f))
+    )
+}
+
+fun getZenithPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes>? {
+    return when (preset) {
+        GSFlexPreset.ZENITH -> Triple(
+            FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
+            FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
+            FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
+        )
+        GSFlexPreset.NEO -> Triple(
+            FontAxes(800f, 125f, 72f, 0f, 0f, 0f),
+            FontAxes(600f, 100f, 32f, 0f, 0f, 0f),
+            FontAxes(400f, 95f, 16f, 10f, 0f, 0f)
+        )
+        GSFlexPreset.COMPACT -> Triple(
+            FontAxes(900f, 75f, 30f, 0f, 0f, 30f),
+            FontAxes(800f, 85f, 32f, 50f, 0f, 20f),
+            FontAxes(500f, 90f, 16f, 30f, 0f, 10f)
+        )
+        GSFlexPreset.AIRY -> Triple(
+            FontAxes(300f, 130f, 72f, 0f, 0f, 100f),
+            FontAxes(500f, 120f, 32f, 0f, 0f, 100f),
+            FontAxes(400f, 110f, 16f, 0f, 0f, 50f)
+        )
+        GSFlexPreset.DEFAULT -> null
+    }
+}
+
 fun petalTypography(
     appFont: AppFont,
     fontWidth: Float = 100f,
     fontWeight: Int = 400,
-    fontRoundness: Float = 0f
+    fontRoundness: Float = 0f,
+    preset: GSFlexPreset = GSFlexPreset.DEFAULT
 ): Typography = try {
-    when (appFont) {
-        AppFont.SYSTEM -> systemTypography(fontWeight)
-        AppFont.GS_FLEX -> buildTypography(weightedTiers(R.font.google_sans_flex, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-        AppFont.NUNITO -> buildTypography(
-            Tiers(
-                nunitoFont(fontWeight + 500, fontWidth, fontRoundness),
-                nunitoFont(fontWeight + 350, fontWidth, fontRoundness),
-                nunitoFont(fontWeight + 300, fontWidth, fontRoundness),
-                nunitoFont(fontWeight, fontWidth, fontRoundness),
-                nunitoFont(fontWeight + 250, fontWidth, fontRoundness)
+    val zenithAxes = getZenithPresetFontAxes(preset)
+    if (appFont == AppFont.GS_FLEX && zenithAxes != null) {
+        val displayFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = zenithAxes.first.toVariationSettings()))
+        val headlineFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = zenithAxes.second.toVariationSettings()))
+        val bodyFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = zenithAxes.third.toVariationSettings()))
+        buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
+    } else {
+        when (appFont) {
+            AppFont.SYSTEM -> systemTypography(fontWeight)
+            AppFont.GS_FLEX -> buildTypography(weightedTiers(R.font.google_sans_flex, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+            AppFont.NUNITO -> buildTypography(
+                Tiers(
+                    nunitoFont(fontWeight + 500, fontWidth, fontRoundness),
+                    nunitoFont(fontWeight + 350, fontWidth, fontRoundness),
+                    nunitoFont(fontWeight + 300, fontWidth, fontRoundness),
+                    nunitoFont(fontWeight, fontWidth, fontRoundness),
+                    nunitoFont(fontWeight + 250, fontWidth, fontRoundness)
+                )
             )
-        )
-        AppFont.INTER -> buildTypography(weightedTiers(R.font.inter_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-        AppFont.OUTFIT -> buildTypography(weightedTiers(R.font.outfit_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-        AppFont.LEXEND -> buildTypography(weightedTiers(R.font.lexend_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-        AppFont.MANROPE -> buildTypography(weightedTiers(R.font.manrope_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-        AppFont.GROTESK -> buildTypography(weightedTiers(R.font.spacegrotesk_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+            AppFont.INTER -> buildTypography(weightedTiers(R.font.inter_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+            AppFont.OUTFIT -> buildTypography(weightedTiers(R.font.outfit_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+            AppFont.LEXEND -> buildTypography(weightedTiers(R.font.lexend_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+            AppFont.MANROPE -> buildTypography(weightedTiers(R.font.manrope_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+            AppFont.GROTESK -> buildTypography(weightedTiers(R.font.spacegrotesk_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+        }
     }
 } catch (e: Throwable) {
     systemTypography(fontWeight)
 }
 
 val StrideTypography: Typography = Typography()
+

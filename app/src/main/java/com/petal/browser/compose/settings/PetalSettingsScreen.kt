@@ -73,6 +73,7 @@ object PetalSettingsBridge {
                 var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
                 var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 400)) }
                 var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
+                var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT") }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
@@ -85,6 +86,7 @@ object PetalSettingsBridge {
                             "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 100f)
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 400)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
+                            "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT"
                             "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
@@ -98,6 +100,9 @@ object PetalSettingsBridge {
                 val appFont = remember(fontName) {
                     try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.SYSTEM }
                 }
+                val gsFlexPreset = remember(presetName) {
+                    try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.DEFAULT }
+                }
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
@@ -109,6 +114,7 @@ object PetalSettingsBridge {
                     fontWidth = fontWidthVal,
                     fontWeight = fontWeightVal,
                     fontRoundness = fontRoundnessVal,
+                    gsFlexPreset = gsFlexPreset,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -190,6 +196,16 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 },
                 onCancel = { showEngineSheet = false }
             )
+        }
+    }
+
+    val isBackHandlerEnabled = currentCategory != SettingsCategory.OVERVIEW
+    androidx.activity.compose.PredictiveBackHandler(enabled = isBackHandlerEnabled) { progress ->
+        try {
+            progress.collect { }
+            currentCategory = SettingsCategory.OVERVIEW
+        } catch (e: Exception) {
+            // Cancelled or completed gesture
         }
     }
 
@@ -368,6 +384,38 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                         { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                     } else null
                                 )
+                            }
+                        }
+
+                        if (selectedFont == AppFont.GS_FLEX) {
+                            var gsFlexPreset by remember {
+                                mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT") } catch (e: Exception) { GSFlexPreset.DEFAULT })
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Zenith Variable Font Presets:",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                GSFlexPreset.values().forEach { preset ->
+                                    FilterChip(
+                                        selected = gsFlexPreset == preset,
+                                        onClick = {
+                                            gsFlexPreset = preset
+                                            sp.edit().putString("sp_gs_flex_preset", preset.name).apply()
+                                        },
+                                        label = { Text(preset.label) },
+                                        leadingIcon = if (gsFlexPreset == preset) {
+                                            { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                        } else null
+                                    )
+                                }
                             }
                         }
 

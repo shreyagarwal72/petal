@@ -208,6 +208,10 @@ object PetalComposeBridge {
                 val fontWidthVal = sp.getFloat("sp_font_width", 100f)
                 val fontWeightVal = sp.getInt("sp_font_weight", 400)
                 val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
+                val presetName = sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT"
+                val gsFlexPreset = remember(presetName) {
+                    try { com.petal.browser.ui.theme.GSFlexPreset.valueOf(presetName) } catch (e: Exception) { com.petal.browser.ui.theme.GSFlexPreset.DEFAULT }
+                }
 
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
@@ -216,6 +220,7 @@ object PetalComposeBridge {
                     fontWidth = fontWidthVal,
                     fontWeight = fontWeightVal,
                     fontRoundness = fontRoundnessVal,
+                    gsFlexPreset = gsFlexPreset,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -309,6 +314,13 @@ fun PetalHomeScreen(
         }
 
         if (showAccountSyncScreen) {
+            androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
+                try {
+                    progress.collect { }
+                    showAccountSyncScreen = false
+                    accountViewModel.refreshState()
+                } catch (e: Exception) {}
+            }
             com.petal.browser.account.ChromeAccountSyncScreen(
                 onBack = {
                     showAccountSyncScreen = false

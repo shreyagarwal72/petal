@@ -32,9 +32,6 @@ fun ChromeAccountSyncScreen(
     val context = LocalContext.current
     val profile = GoogleAccountManager.currentProfile
 
-    var syncBookmarks by remember(profile.syncBookmarks) { mutableStateOf(profile.syncBookmarks) }
-    var syncHistory by remember(profile.syncHistory) { mutableStateOf(profile.syncHistory) }
-    var syncPasswords by remember(profile.syncPasswords) { mutableStateOf(profile.syncPasswords) }
 
     Scaffold(
         topBar = {
@@ -124,65 +121,6 @@ fun ChromeAccountSyncScreen(
                 }
             }
 
-            // Sync Settings Card
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(Icons.Rounded.Sync, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Text(
-                            text = "Chrome Sync Services",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                    SyncToggleRow(
-                        title = "Sync Bookmarks",
-                        subtitle = "Keep your saved bookmarks in sync across devices",
-                        icon = Icons.Rounded.Bookmark,
-                        checked = syncBookmarks,
-                        onCheckedChange = {
-                            syncBookmarks = it
-                            GoogleAccountManager.updateSyncSettings(context, syncBookmarks, syncHistory, syncPasswords)
-                        }
-                    )
-
-                    SyncToggleRow(
-                        title = "Sync History",
-                        subtitle = "Sync visited pages and open tab sessions",
-                        icon = Icons.Rounded.History,
-                        checked = syncHistory,
-                        onCheckedChange = {
-                            syncHistory = it
-                            GoogleAccountManager.updateSyncSettings(context, syncBookmarks, syncHistory, syncPasswords)
-                        }
-                    )
-
-                    SyncToggleRow(
-                        title = "Sync Passwords & Credentials",
-                        subtitle = "Securely save and autofill passwords",
-                        icon = Icons.Rounded.Key,
-                        checked = syncPasswords,
-                        onCheckedChange = {
-                            syncPasswords = it
-                            GoogleAccountManager.updateSyncSettings(context, syncBookmarks, syncHistory, syncPasswords)
-                        }
-                    )
-                }
-            }
-
             // Account Actions Card
             Surface(
                 shape = RoundedCornerShape(24.dp),
@@ -202,8 +140,8 @@ fun ChromeAccountSyncScreen(
                     if (profile.isSignedIn) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                         ListItem(
-                            headlineContent = { Text("Sign Out of Chrome", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.error) },
-                            supportingContent = { Text("Turn off sync and clear account credentials", style = MaterialTheme.typography.bodySmall) },
+                            headlineContent = { Text("Sign Out", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.error) },
+                            supportingContent = { Text("Clear Google account session", style = MaterialTheme.typography.bodySmall) },
                             leadingContent = { Icon(Icons.Rounded.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                             modifier = Modifier.clickable {
                                 GoogleAccountManager.signOut(context)
@@ -216,32 +154,3 @@ fun ChromeAccountSyncScreen(
     }
 }
 
-@Composable
-private fun SyncToggleRow(
-    title: String,
-    subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
-            Column {
-                Text(title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}

@@ -53,6 +53,7 @@ fun PetalExpressiveTheme(
     fontWidth: Float = 100f,
     fontWeight: Int = 400,
     fontRoundness: Float = 0f,
+    gsFlexPreset: GSFlexPreset = GSFlexPreset.DEFAULT,
     colorStyle: ColorStyle = ColorStyle.TONAL_SPOT,
     paletteId: String = defaultPaletteId,
     content: @Composable () -> Unit
@@ -90,7 +91,7 @@ fun PetalExpressiveTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness),
+        typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexPreset),
         content = content
     )
 }
