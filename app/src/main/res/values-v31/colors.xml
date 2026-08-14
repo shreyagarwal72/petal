@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ (API 31+) only. system_accent1_* are public platform resources
+  exposing the wallpaper-derived Material You palette directly — no root,
+  Shizuku, ADB, or "Themed icons" launcher setting required. Overrides the
+  static fallbacks in values/colors.xml on devices that support them.
+-->
+<resources>
+    <color name="dynamic_icon_bg">@android:color/system_accent1_100</color>
+    <color name="dynamic_icon_fg">@android:color/system_accent1_800</color>
+</resources>
