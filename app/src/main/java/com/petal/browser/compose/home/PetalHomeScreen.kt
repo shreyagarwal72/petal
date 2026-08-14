@@ -745,9 +745,10 @@ internal fun SiteBrandIcon(siteId: String, label: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun EditShortcutDialog(
+    slotIndex: Int,
     initialShortcut: PetalShortcut,
-    slotNumber: Int,
     onDismiss: () -> Unit,
+    onSelectSlot: (Int) -> Unit,
     onSave: (PetalShortcut) -> Unit,
     onResetSlot: () -> Unit
 ) {
@@ -959,7 +960,7 @@ internal fun EditShortcutDialog(
 }
 
 @Composable
-private fun RadialLayout(
+internal fun RadialLayout(
     radius: Dp,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
