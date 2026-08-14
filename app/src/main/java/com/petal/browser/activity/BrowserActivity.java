@@ -361,6 +361,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
             controller.setAppearanceLightStatusBars(false);
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, isKeyboardVisible ? keyboardHeight : systemBars.bottom);
+
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) {
+                bottomNav.setVisibility(isKeyboardVisible ? View.GONE : View.VISIBLE);
+            }
             return insets;
         });
 
