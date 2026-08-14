@@ -199,17 +199,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         return sectionTitle.lowercase().contains(query) || keywords.lowercase().contains(query)
     }
 
-    PetalExpressiveTheme(
-        dynamicColor = isDynamicColor,
-        useAmoled = isAmoled,
-        appFont = selectedFont,
-        fontWidth = fontWidth,
-        fontWeight = fontWeight.toInt(),
-        fontRoundness = fontRoundness,
-        colorStyle = selectedColorStyle,
-        paletteId = selectedPaletteId
-    ) {
-        Scaffold(
+    Scaffold(
             topBar = {
                 Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
                     TopAppBar(

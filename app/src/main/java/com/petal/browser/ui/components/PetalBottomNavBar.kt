@@ -153,14 +153,19 @@ private fun NavItemPill(
     onClick: () -> Unit,
     iconContent: @Composable (Color) -> Unit
 ) {
-    val scale by animateFloatAsState(
-        targetValue = if (selected) 1.12f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = 220f
-        ),
-        label = "navPillScale"
-    )
+    val pop = remember { Animatable(1f) }
+    LaunchedEffect(selected) {
+        if (selected) {
+            pop.snapTo(0.65f)
+            pop.animateTo(
+                1f,
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
+            )
+        }
+    }
 
     val contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
     val containerColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -188,8 +193,8 @@ private fun NavItemPill(
         ) {
             Box(
                 modifier = Modifier.graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
+                    scaleX = pop.value
+                    scaleY = pop.value
                 }
             ) {
                 iconContent(contentColor)

@@ -32,22 +32,30 @@ private fun variableFont(
     val clampedWidth = width.coerceIn(75f, 125f)
     val clampedRoundness = roundness.coerceIn(0f, 100f)
 
-    return FontFamily(
-        Font(
-            resId = resId,
-            variationSettings = FontVariation.Settings(
-                FontVariation.weight(clampedWeight),
-                FontVariation.width(clampedWidth),
-                FontVariation.Setting("RNDS", clampedRoundness),
-                FontVariation.Setting("SOFT", clampedRoundness),
-                FontVariation.Setting("ROUND", clampedRoundness),
-                FontVariation.Setting("rnd ", clampedRoundness),
-                FontVariation.Setting("wght", clampedWeight.toFloat()),
-                FontVariation.Setting("wdth", clampedWidth)
-            ),
-            weight = FontWeight(clampedWeight)
+    return try {
+        FontFamily(
+            Font(
+                resId = resId,
+                variationSettings = FontVariation.Settings(
+                    FontVariation.weight(clampedWeight),
+                    FontVariation.width(clampedWidth),
+                    FontVariation.Setting("RNDS", clampedRoundness),
+                    FontVariation.Setting("SOFT", clampedRoundness),
+                    FontVariation.Setting("ROUND", clampedRoundness),
+                    FontVariation.Setting("rnd ", clampedRoundness),
+                    FontVariation.Setting("wght", clampedWeight.toFloat()),
+                    FontVariation.Setting("wdth", clampedWidth)
+                ),
+                weight = FontWeight(clampedWeight)
+            )
         )
-    )
+    } catch (e: Throwable) {
+        try {
+            FontFamily(Font(resId = resId, weight = FontWeight(clampedWeight)))
+        } catch (t: Throwable) {
+            FontFamily.Default
+        }
+    }
 }
 
 private fun nunitoFont(weight: Int, width: Float, roundness: Float): FontFamily =
@@ -119,23 +127,27 @@ fun petalTypography(
     fontWidth: Float = 100f,
     fontWeight: Int = 400,
     fontRoundness: Float = 0f
-): Typography = when (appFont) {
-    AppFont.SYSTEM -> systemTypography(fontWeight)
-    AppFont.GS_FLEX -> buildTypography(weightedTiers(R.font.google_sans_flex, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-    AppFont.NUNITO -> buildTypography(
-        Tiers(
-            nunitoFont(fontWeight + 500, fontWidth, fontRoundness),
-            nunitoFont(fontWeight + 350, fontWidth, fontRoundness),
-            nunitoFont(fontWeight + 300, fontWidth, fontRoundness),
-            nunitoFont(fontWeight, fontWidth, fontRoundness),
-            nunitoFont(fontWeight + 250, fontWidth, fontRoundness)
+): Typography = try {
+    when (appFont) {
+        AppFont.SYSTEM -> systemTypography(fontWeight)
+        AppFont.GS_FLEX -> buildTypography(weightedTiers(R.font.google_sans_flex, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+        AppFont.NUNITO -> buildTypography(
+            Tiers(
+                nunitoFont(fontWeight + 500, fontWidth, fontRoundness),
+                nunitoFont(fontWeight + 350, fontWidth, fontRoundness),
+                nunitoFont(fontWeight + 300, fontWidth, fontRoundness),
+                nunitoFont(fontWeight, fontWidth, fontRoundness),
+                nunitoFont(fontWeight + 250, fontWidth, fontRoundness)
+            )
         )
-    )
-    AppFont.INTER -> buildTypography(weightedTiers(R.font.inter_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-    AppFont.OUTFIT -> buildTypography(weightedTiers(R.font.outfit_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-    AppFont.LEXEND -> buildTypography(weightedTiers(R.font.lexend_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-    AppFont.MANROPE -> buildTypography(weightedTiers(R.font.manrope_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-    AppFont.GROTESK -> buildTypography(weightedTiers(R.font.spacegrotesk_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+        AppFont.INTER -> buildTypography(weightedTiers(R.font.inter_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+        AppFont.OUTFIT -> buildTypography(weightedTiers(R.font.outfit_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+        AppFont.LEXEND -> buildTypography(weightedTiers(R.font.lexend_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+        AppFont.MANROPE -> buildTypography(weightedTiers(R.font.manrope_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+        AppFont.GROTESK -> buildTypography(weightedTiers(R.font.spacegrotesk_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+    }
+} catch (e: Throwable) {
+    systemTypography(fontWeight)
 }
 
 val StrideTypography: Typography = Typography()
