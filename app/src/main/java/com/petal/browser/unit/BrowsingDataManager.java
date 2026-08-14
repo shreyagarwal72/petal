@@ -13,9 +13,6 @@ import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 
 import java.io.File;
-import kotlinx.coroutines.Dispatchers;
-import kotlinx.coroutines.GlobalScope;
-import kotlinx.coroutines.LaunchKt;
 
 /**
  * Chromium-style BrowsingDataManager.
@@ -109,35 +106,17 @@ public class BrowsingDataManager {
         final boolean permissions,
         final Runnable onCompleted
     ) {
-        LaunchKt.launch$default(
-            androidx.lifecycle.ProcessLifecycleOwner.get().getLifecycleScope(),
-            Dispatchers.getIO(),
-            null,
-            (scope, continuation) -> {
-                if (cache) clearCache(context, webView);
-                if (cookies) clearCookies();
-                if (webStorage) clearWebStorage();
-                if (autofill) clearAutofillData(context);
-                if (permissions) clearPermissions();
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+            if (cache) clearCache(context, webView);
+            if (cookies) clearCookies();
+            if (webStorage) clearWebStorage();
+            if (autofill) clearAutofillData(context);
+            if (permissions) clearPermissions();
 
-                if (onCompleted != null) {
-                    LaunchKt.launch$default(
-                        androidx.lifecycle.ProcessLifecycleOwner.get().getLifecycleScope(),
-                        Dispatchers.getMain(),
-                        null,
-                        (s, c) -> {
-                            onCompleted.run();
-                            return kotlin.Unit.INSTANCE;
-                        },
-                        2,
-                        null
-                    );
-                }
-                return kotlin.Unit.INSTANCE;
-            },
-            2,
-            null
-        );
+            if (onCompleted != null) {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(onCompleted);
+            }
+        });
     }
 
     private static boolean deleteDir(File dir) {

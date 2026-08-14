@@ -77,9 +77,8 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         }
     }
 
-    @Override
-    public void fling(int vx, int vy) {
-        super.fling(vx, vy);
+    public void flingScroll(int vx, int vy) {
+        super.flingScroll(vx, vy);
         if (customScroller != null) {
             int scrollY = getScrollY();
             customScroller.fling(0, scrollY, 0, vy, 0, 0, 0, Math.max(0, computeVerticalScrollRange() - getHeight()), 0, 0);
@@ -152,11 +151,10 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                     int newScrollY = Math.max(0, oldY + deltaY);
                     int unconsumedY = deltaY - (newScrollY - oldY);
 
-                    if (dispatchNestedScroll(0, newScrollY - unconsumedY, 0, unconsumedY, scrollOffset, ViewCompat.TYPE_TOUCH, scrollConsumed)) {
-                        lastMotionY -= scrollOffset[1];
-                        vtev.offsetLocation(0, scrollOffset[1]);
-                        nestedOffsets[1] += scrollOffset[1];
-                    }
+                    dispatchNestedScroll(0, newScrollY - unconsumedY, 0, unconsumedY, scrollOffset, ViewCompat.TYPE_TOUCH, scrollConsumed);
+                    lastMotionY -= scrollOffset[1];
+                    vtev.offsetLocation(0, scrollOffset[1]);
+                    nestedOffsets[1] += scrollOffset[1];
                 }
                 break;
             }
@@ -166,7 +164,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                     int initialVelocity = (int) velocityTracker.getYVelocity(activePointerId);
 
                     if ((Math.abs(initialVelocity) > minimumVelocity)) {
-                        fling(0, -initialVelocity);
+                        flingScroll(0, -initialVelocity);
                     } else {
                         startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL, ViewCompat.TYPE_NON_TOUCH);
                     }
