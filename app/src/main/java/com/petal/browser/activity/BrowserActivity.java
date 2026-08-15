@@ -171,6 +171,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private static NinjaWebView ninjaWebView;
     private View customView;
     private VideoView videoView;
+    private boolean isMediaPlaying = false;
     private FloatingActionButton fab_menu;
     private BadgeDrawable badgeDrawable;
     private AdapterSearch adapterSearch;
@@ -1976,6 +1977,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean isDesktopSite = sp.getBoolean(profile + "_desktop", false);
         boolean isAdBlock = sp.getBoolean("sp_ad_block", sp.getBoolean(profile + "_adBlock", true));
 
+        boolean isMediaActive = isMediaPlaying || (customView != null || fullscreenHolder != null || videoView != null);
+
         com.petal.browser.ui.components.PetalOverflowBridge.showOverflowMenu(
             this,
             ninjaWebView != null && ninjaWebView.getTitle() != null ? ninjaWebView.getTitle() : "",
@@ -1985,6 +1988,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             canGoForward,
             isDesktopSite,
             isAdBlock,
+            isMediaActive,
             new com.petal.browser.ui.components.PetalOverflowMenuActionHandler() {
                 @Override
                 public void onGoBack() {
@@ -2136,6 +2140,36 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 @Override
                 public void onOpenSettings() {
                     openSettingsScreen();
+                }
+
+                @Override
+                public void onTriggerMediaMode() {
+                    boolean isPipSupported = getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
+                    boolean isAutoPipEnabled = sp.getBoolean("sp_auto_pip", true);
+                    boolean isBgPlayEnabled = sp.getBoolean("sp_background_play", false);
+
+                    if (isPipSupported && isAutoPipEnabled) {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            try {
+                                android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
+                                View targetView = customView != null ? customView : (videoView != null ? videoView : contentFrame);
+                                if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
+                                    android.util.Rational aspectRatio = new android.util.Rational(targetView.getWidth(), targetView.getHeight());
+                                    pipBuilder.setAspectRatio(aspectRatio);
+                                } else {
+                                    pipBuilder.setAspectRatio(new android.util.Rational(16, 9));
+                                }
+                                enterPictureInPictureMode(pipBuilder.build());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } else if (isBgPlayEnabled) {
+                        NinjaToast.show(BrowserActivity.this, "Playing media in background mode");
+                        moveTaskToBack(true);
+                    } else {
+                        com.petal.browser.media.PetalMediaBridge.enterPipIfSupported(BrowserActivity.this, customView);
+                    }
                 }
             }
         );
@@ -3417,6 +3451,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 new com.petal.browser.media.PetalMediaBridge.MediaStateListener() {
                     @Override
                     public void onMediaPlay(String title, long positionMs, long durationMs) {
+                        isMediaPlaying = true;
                         if (mediaService != null) {
                             mediaService.updateMediaState(title, ninjaWebView.getTitle(), true, positionMs, durationMs);
                         }
@@ -3424,6 +3459,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                     @Override
                     public void onMediaPause(long positionMs, long durationMs) {
+                        isMediaPlaying = false;
                         if (mediaService != null) {
                             mediaService.updateMediaState(ninjaWebView.getTitle(), ninjaWebView.getTitle(), false, positionMs, durationMs);
                         }
@@ -3432,6 +3468,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     @Override
                     public void onMediaProgress(long positionMs, long durationMs) {
                         // Progress update handler
+                    }
+
+                    @Override
+                    public void onMediaPlayingStateChanged(boolean playing) {
+                        isMediaPlaying = playing;
                     }
                 }
         );

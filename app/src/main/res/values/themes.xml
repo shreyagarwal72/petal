@@ -65,7 +65,7 @@
     </style>
 
     <style name="Theme.Petal.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/md_theme_onPrimaryContainer</item>
+        <item name="windowSplashScreenBackground">@color/md_theme_background</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/AppTheme</item>
     </style>

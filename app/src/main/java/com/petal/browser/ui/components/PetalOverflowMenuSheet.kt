@@ -63,6 +63,7 @@ interface PetalOverflowMenuActionHandler {
     fun onShareLink()
     fun onViewSource()
     fun onOpenSettings()
+    fun onTriggerMediaMode() {}
 }
 
 object PetalOverflowBridge {
@@ -77,6 +78,7 @@ object PetalOverflowBridge {
         canGoForward: Boolean,
         isDesktopSite: Boolean,
         isAdBlockEnabled: Boolean = true,
+        isMediaPlaying: Boolean = false,
         handler: PetalOverflowMenuActionHandler
     ) {
         try {
@@ -122,6 +124,7 @@ object PetalOverflowBridge {
                             canGoForward = canGoForward,
                             isDesktopSite = isDesktopSite,
                             isAdBlockEnabled = isAdBlockEnabled,
+                            isMediaPlaying = isMediaPlaying,
                             onDismissRequest = { dialog.dismiss() },
                             onGoBack = {
                                 dialog.dismiss()
@@ -206,6 +209,10 @@ object PetalOverflowBridge {
                             onOpenSettings = {
                                 dialog.dismiss()
                                 handler.onOpenSettings()
+                            },
+                            onTriggerMediaMode = {
+                                dialog.dismiss()
+                                handler.onTriggerMediaMode()
                             }
                         )
                     }
@@ -228,6 +235,7 @@ fun PetalOverflowMenuSheet(
     canGoForward: Boolean,
     isDesktopSite: Boolean,
     isAdBlockEnabled: Boolean = true,
+    isMediaPlaying: Boolean = false,
     onDismissRequest: () -> Unit = {},
     onGoBack: () -> Unit,
     onGoForward: () -> Unit,
@@ -249,7 +257,8 @@ fun PetalOverflowMenuSheet(
     onSavePage: () -> Unit,
     onShareLink: () -> Unit,
     onViewSource: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onTriggerMediaMode: () -> Unit = {}
 ) {
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(false) }
@@ -410,6 +419,39 @@ fun PetalOverflowMenuSheet(
                     checked = isAdBlockEnabled,
                     onCheckedChange = onToggleAdBlock
                 )
+                if (isMediaPlaying) {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+                    val autoPip = sp.getBoolean("sp_auto_pip", true)
+                    val backgroundPlay = sp.getBoolean("sp_background_play", false)
+                    val isPipSupported = remember {
+                        context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
+                    }
+
+                    if (autoPip && isPipSupported) {
+                        MenuRowItem(
+                            icon = Icons.Rounded.PictureInPicture,
+                            title = "Play in Picture-in-Picture",
+                            subtitle = "Open floating video window (per PiP settings)",
+                            onClick = onTriggerMediaMode
+                        )
+                    } else if (backgroundPlay) {
+                        MenuRowItem(
+                            icon = Icons.Rounded.PlayCircle,
+                            title = "Play in Background",
+                            subtitle = "Continue video/audio when switching apps (per settings)",
+                            onClick = onTriggerMediaMode
+                        )
+                    } else {
+                        MenuRowItem(
+                            icon = Icons.Rounded.PictureInPicture,
+                            title = "Play Video in Window",
+                            subtitle = "Open video playback mode",
+                            onClick = onTriggerMediaMode
+                        )
+                    }
+                }
+
                 if (!isHomePage) {
                     MenuRowSwitchItem(
                         icon = Icons.Rounded.DesktopWindows,

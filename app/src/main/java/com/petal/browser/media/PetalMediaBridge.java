@@ -59,6 +59,7 @@ public class PetalMediaBridge {
         void onMediaPlay(String title, long positionMs, long durationMs);
         void onMediaPause(long positionMs, long durationMs);
         void onMediaProgress(long positionMs, long durationMs);
+        default void onMediaPlayingStateChanged(boolean isPlaying) {}
     }
 
     public PetalMediaBridge(Context context, WebView webView, MediaStateListener listener) {
@@ -129,6 +130,7 @@ public class PetalMediaBridge {
         @JavascriptInterface
         public void onMediaStateChanged(boolean isPlaying, String title, double positionMs, double durationMs) {
             if (listener != null) {
+                listener.onMediaPlayingStateChanged(isPlaying);
                 if (isPlaying) {
                     listener.onMediaPlay(title, (long) positionMs, (long) durationMs);
                 } else {
