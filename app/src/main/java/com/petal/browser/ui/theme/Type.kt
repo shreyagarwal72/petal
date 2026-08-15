@@ -12,13 +12,8 @@ import com.petal.browser.R
 
 enum class AppFont(val label: String) {
     SYSTEM("System Default"),
-    GS_FLEX("Google Sans Flex"),
-    NUNITO("Nunito"),
-    INTER("Inter"),
-    OUTFIT("Outfit"),
-    LEXEND("Lexend"),
-    MANROPE("Manrope"),
-    GROTESK("Space Grotesk")
+    GS_FLEX("GS FLEX"),
+    NUNITO("Nunito")
 }
 
 @OptIn(ExperimentalTextApi::class)
@@ -211,11 +206,6 @@ fun petalTypography(
                     nunitoFont(fontWeight + 250, fontWidth, fontRoundness)
                 )
             )
-            AppFont.INTER -> buildTypography(weightedTiers(R.font.inter_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-            AppFont.OUTFIT -> buildTypography(weightedTiers(R.font.outfit_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-            AppFont.LEXEND -> buildTypography(weightedTiers(R.font.lexend_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-            AppFont.MANROPE -> buildTypography(weightedTiers(R.font.manrope_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
-            AppFont.GROTESK -> buildTypography(weightedTiers(R.font.spacegrotesk_variable, top = fontWeight, width = fontWidth, roundness = fontRoundness))
         }
     }
 } catch (e: Throwable) {
