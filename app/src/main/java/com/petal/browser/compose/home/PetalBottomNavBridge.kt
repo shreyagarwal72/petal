@@ -34,6 +34,7 @@ object PetalBottomNavBridge {
         activity: ComponentActivity,
         selectedTab: PetalNavTab,
         tabCount: Int,
+        isIncognito: Boolean,
         handler: PetalBottomNavHandler
     ) {
         composeView.apply {
@@ -79,6 +80,7 @@ object PetalBottomNavBridge {
                         PetalBottomNavBar(
                             selectedTab = selectedTab,
                             tabCount = tabCount,
+                            isIncognito = isIncognito,
                             onHomeClick = { handler.onHomeClick() },
                             onNewTabClick = { handler.onNewTabClick() },
                             onTabsClick = { handler.onTabsClick() },
@@ -88,5 +90,16 @@ object PetalBottomNavBridge {
                 }
             }
         }
+    }
+
+    @JvmStatic
+    fun bindBottomNav(
+        composeView: ComposeView,
+        activity: ComponentActivity,
+        selectedTab: PetalNavTab,
+        tabCount: Int,
+        handler: PetalBottomNavHandler
+    ) {
+        bindBottomNav(composeView, activity, selectedTab, tabCount, false, handler)
     }
 }

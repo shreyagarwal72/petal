@@ -862,13 +862,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 bottomNavCompose.setVisibility(VISIBLE);
                 String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                 boolean isHome = isHomePage(currentUrl);
+                boolean isIncognito = ninjaWebView != null && ninjaWebView.isIncognito();
+                int currentTabCount = isIncognito ? BrowserContainer.getIncognitoCount() : BrowserContainer.getNormalCount();
                 com.petal.browser.ui.components.PetalNavTab activeTab = isHome ? com.petal.browser.ui.components.PetalNavTab.HOME : com.petal.browser.ui.components.PetalNavTab.TABS;
 
                 com.petal.browser.compose.home.PetalBottomNavBridge.bindBottomNav(
                     bottomNavCompose,
                     this,
                     activeTab,
-                    BrowserContainer.size(),
+                    currentTabCount,
+                    isIncognito,
                     new com.petal.browser.compose.home.PetalBottomNavHandler() {
                         @Override
                         public void onHomeClick() {
@@ -1042,6 +1045,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
         }
         updateOmniBox();
+        updatePersistentBottomNav();
         saveOpenedTabs();
     }
 
@@ -3700,6 +3704,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         } catch (Exception ignored) {}
         updateOmniBox();
+        updatePersistentBottomNav();
     }
 
     public synchronized void addAlbum(String title, final String url, final boolean foreground) {

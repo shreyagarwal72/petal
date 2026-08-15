@@ -54,6 +54,7 @@ enum class PetalNavTab {
 fun PetalBottomNavBar(
     selectedTab: PetalNavTab,
     tabCount: Int,
+    isIncognito: Boolean = false,
     onHomeClick: () -> Unit,
     onNewTabClick: () -> Unit,
     onTabsClick: () -> Unit,
@@ -62,10 +63,10 @@ fun PetalBottomNavBar(
 ) {
     Surface(
         shape = RoundedCornerShape(36.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = modifier
             .clip(RoundedCornerShape(36.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .background(if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh)
             .entrance()
     ) {
         Row(
@@ -90,7 +91,7 @@ fun PetalBottomNavBar(
             // 2nd Item: (+) New Tab
             NavItemPill(
                 selected = selectedTab == PetalNavTab.NEW_TAB,
-                label = "New",
+                label = if (isIncognito) "Incognito" else "New",
                 onClick = onNewTabClick
             ) { color ->
                 Icon(
@@ -101,15 +102,40 @@ fun PetalBottomNavBar(
                 )
             }
 
-            // 3rd Item: Live Tab Switcher (Chrome Android Style Badge)
+            // 3rd Item: Live Tab Switcher (Chrome Android Style Badge with scale spring animation)
+            val animatedCount by androidx.compose.animation.core.animateIntAsState(
+                targetValue = tabCount,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                ),
+                label = "tabCountAnimation"
+            )
+
+            val badgeScale = remember { Animatable(1f) }
+            LaunchedEffect(tabCount) {
+                badgeScale.snapTo(1.35f)
+                badgeScale.animateTo(
+                    1f,
+                    spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+                )
+            }
+
             NavItemPill(
                 selected = selectedTab == PetalNavTab.TABS,
-                label = "Tabs ($tabCount)",
+                label = if (isIncognito) "Incognito ($animatedCount)" else "Tabs ($animatedCount)",
                 onClick = onTabsClick
             ) { color ->
                 Box(
                     modifier = Modifier
                         .size(22.dp)
+                        .graphicsLayer {
+                            scaleX = badgeScale.value
+                            scaleY = badgeScale.value
+                        }
                         .border(
                             width = 2.dp,
                             color = color,
@@ -118,7 +144,7 @@ fun PetalBottomNavBar(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (tabCount > 99) "99+" else tabCount.toString(),
+                        text = if (animatedCount > 99) "99+" else animatedCount.toString(),
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold

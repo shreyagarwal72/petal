@@ -39,6 +39,30 @@ public class BrowserContainer {
         return list.size();
     }
 
+    public synchronized static int getNormalCount() {
+        int count = 0;
+        for (AlbumController controller : list) {
+            if (controller instanceof NinjaWebView) {
+                if (!((NinjaWebView) controller).isIncognito()) {
+                    count++;
+                }
+            } else {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public synchronized static int getIncognitoCount() {
+        int count = 0;
+        for (AlbumController controller : list) {
+            if (controller instanceof NinjaWebView && ((NinjaWebView) controller).isIncognito()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public synchronized static void clear() {
         for (AlbumController albumController : list) {
             if (albumController instanceof NinjaWebView) {
