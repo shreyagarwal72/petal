@@ -143,11 +143,20 @@ object PetalDownloadDialogBridge {
         mimeType: String?,
         contentLength: Long,
         onConfirmDownload: (String) -> Unit
-    ) {
-        val activity = context as? androidx.activity.ComponentActivity ?: return
         val guessedFileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
         val formattedSize = formatFileSize(contentLength)
         val isDuplicate = isFileExistsInDownloads(guessedFileName)
+
+        var currContext = context
+        while (currContext is android.content.ContextWrapper) {
+            if (currContext is androidx.activity.ComponentActivity) break
+            currContext = currContext.baseContext
+        }
+        val activity = currContext as? androidx.activity.ComponentActivity
+        if (activity == null || activity.isFinishing || activity.isDestroyed) {
+            onConfirmDownload(guessedFileName)
+            return
+        }
 
         activity.runOnUiThread {
             try {
