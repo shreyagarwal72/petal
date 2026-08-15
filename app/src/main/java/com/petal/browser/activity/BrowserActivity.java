@@ -1049,6 +1049,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         saveOpenedTabs();
     }
 
+    public synchronized void removeAlbumSilently(final AlbumController controller) {
+        if (controller == null) return;
+        try {
+            if (tab_container != null && controller.getAlbumView() != null) {
+                tab_container.removeView(controller.getAlbumView());
+            }
+            boolean isClosingCurrent = (controller == currentAlbumController);
+            BrowserContainer.remove(controller);
+            if (isClosingCurrent && BrowserContainer.size() > 0) {
+                showAlbum(BrowserContainer.get(Math.max(0, BrowserContainer.size() - 1)));
+            }
+            updatePersistentBottomNav();
+            saveOpenedTabs();
+        } catch (Exception e) {
+            Log.e(TAG, "Error removing album silently", e);
+        }
+    }
+
     @Override
     public synchronized void updateProgress(int progress) {
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
@@ -1917,7 +1935,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 },
                 album -> {
-                    removeAlbum(album);
+                    removeAlbumSilently(album);
                     return kotlin.Unit.INSTANCE;
                 },
                 () -> {
