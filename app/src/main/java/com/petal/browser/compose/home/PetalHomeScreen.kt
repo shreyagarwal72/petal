@@ -163,7 +163,41 @@ val petalShapes: List<Shape> = listOf(
     RoundedCornerShape(20.dp)
 )
 
-// ── 2. Compose View Host Extension ────────────────────────────────────────
+// ── 2. Java Interop Callback Interface & Bridge ───────────────────────────
+
+interface PetalHomeActionHandler {
+    fun onSearch(query: String)
+    fun onOpenUrl(url: String)
+    fun onAddShortcut()
+    fun onNewTab()
+    fun onOpenBookmarks()
+    fun onOpenHistory()
+    fun onOpenDownloads()
+    fun onOpenSettings()
+    fun onOpenTabsOverview()
+}
+
+object PetalComposeBridge {
+    @JvmStatic
+    fun createComposeHomeView(
+        activity: ComponentActivity,
+        tabCount: Int,
+        handler: PetalHomeActionHandler
+    ): ComposeView {
+        val accountViewModel = viewModel<AccountViewModel>(activity)
+        return ComposeView(activity).apply {
+            setupExpressiveHomeScreen(
+                activity = activity,
+                accountViewModel = accountViewModel,
+                onSearch = { query -> handler.onSearch(query) },
+                onOpenShortcutUrl = { url -> handler.onOpenUrl(url) },
+                onOpenAccountSync = { handler.onOpenSettings() }
+            )
+        }
+    }
+}
+
+// ── 3. Compose View Host Extension ────────────────────────────────────────
 
 fun ComposeView.setupExpressiveHomeScreen(
     activity: ComponentActivity,
