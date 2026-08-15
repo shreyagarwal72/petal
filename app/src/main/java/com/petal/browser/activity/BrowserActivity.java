@@ -1609,6 +1609,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     if (dialogSearch != null) dialogSearch.show();
                     HelperUnit.showSoftKeyboard(search_input);
+                },
+                () -> {
+                    com.petal.browser.ui.components.PetalSiteInfoBridge.showSiteInfoBottomSheet(
+                        this,
+                        ninjaWebView,
+                        () -> {
+                            if (ninjaWebView != null) ninjaWebView.reload();
+                        }
+                    );
                 }
         );
         if (refreshState != null && refreshState.isRefreshing()) {
