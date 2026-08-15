@@ -71,10 +71,8 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         customScroller = new OverScroller(context);
         customScroller.setFriction(0.015f);
 
-        // Support Android 12+ stretch overscroll effect
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            setOverScrollMode(OVER_SCROLL_ALWAYS);
-        }
+        // Disable native webview overscroll effect so custom pull-to-refresh handles gestures cleanly without distortion
+        setOverScrollMode(OVER_SCROLL_NEVER);
     }
 
     public void flingScroll(int vx, int vy) {

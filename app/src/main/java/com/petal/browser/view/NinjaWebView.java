@@ -163,6 +163,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     private synchronized void initWebView() {
+        setOverScrollMode(View.OVER_SCROLL_NEVER);
         setWebViewClient(webViewClient);
         setWebChromeClient(webChromeClient);
         setDownloadListener(downloadListener);
