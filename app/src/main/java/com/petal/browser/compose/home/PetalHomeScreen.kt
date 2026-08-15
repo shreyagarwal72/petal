@@ -184,11 +184,9 @@ object PetalComposeBridge {
         tabCount: Int,
         handler: PetalHomeActionHandler
     ): ComposeView {
-        val accountViewModel = viewModel<AccountViewModel>(activity)
         return ComposeView(activity).apply {
             setupExpressiveHomeScreen(
                 activity = activity,
-                accountViewModel = accountViewModel,
                 onSearch = { query -> handler.onSearch(query) },
                 onOpenShortcutUrl = { url -> handler.onOpenUrl(url) },
                 onOpenAccountSync = { handler.onOpenSettings() }
@@ -201,7 +199,6 @@ object PetalComposeBridge {
 
 fun ComposeView.setupExpressiveHomeScreen(
     activity: ComponentActivity,
-    accountViewModel: AccountViewModel,
     onSearch: (String) -> Unit,
     onOpenShortcutUrl: (String) -> Unit,
     onOpenAccountSync: () -> Unit
@@ -212,6 +209,7 @@ fun ComposeView.setupExpressiveHomeScreen(
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
     setContent {
+        val accountViewModel = viewModel<AccountViewModel>(activity)
         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
         val currentPaletteId = remember {
             sp.getString("sp_petal_palette_id", defaultPaletteId) ?: defaultPaletteId
