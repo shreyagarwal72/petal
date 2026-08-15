@@ -146,7 +146,7 @@ object PetalSettingsBridge {
 
 enum class SettingsCategory(val title: String, val subtitle: String, val icon: ImageVector) {
     OVERVIEW("Settings", "Browse all settings categories", Icons.Rounded.Settings),
-    APPEARANCE("Appearance & Theme", "Fonts, color palettes, AMOLED & UI blur", Icons.Rounded.Palette),
+    APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", Icons.Rounded.Palette),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine, custom homepage", Icons.Rounded.Search),
     DISPLAY_ZOOM("Display & Scaling", "Text font scaling and page zoom preview", Icons.Rounded.ZoomIn),
