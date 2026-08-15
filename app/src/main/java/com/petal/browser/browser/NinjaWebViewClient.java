@@ -100,7 +100,7 @@ public class NinjaWebViewClient extends WebViewClient {
         if (ninjaWebView.isSaveData())
             view.evaluateJavascript("var links=document.getElementsByTagName('video'); for(let i=0;i<links.length;i++){links[i].pause()};", null);
 
-        if (!ninjaWebView.isIncognito() && ninjaWebView.isHistory()) {
+        if (!ninjaWebView.isIncognito() && ninjaWebView.isHistory() && ninjaWebView.getUrl() != null && !ninjaWebView.getUrl().trim().equalsIgnoreCase("about:blank") && !ninjaWebView.getUrl().trim().startsWith("about:")) {
             RecordAction action = new RecordAction(ninjaWebView.getContext());
             action.open(true);
             if (action.checkUrl(ninjaWebView.getUrl(), RecordUnit.TABLE_HISTORY)) action.deleteURL(ninjaWebView.getUrl(), RecordUnit.TABLE_HISTORY);

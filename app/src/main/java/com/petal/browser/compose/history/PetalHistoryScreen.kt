@@ -135,7 +135,10 @@ fun PetalHistoryScreen(
             action.open(false)
             val list = action.listHistory(context)
             action.close()
-            rawHistory = list.reversed()
+            rawHistory = list.reversed().filter { record ->
+                val url = record.url?.trim() ?: ""
+                url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true) && !url.startsWith("about:", ignoreCase = true)
+            }
         } catch (e: Exception) {
             rawHistory = emptyList()
         }

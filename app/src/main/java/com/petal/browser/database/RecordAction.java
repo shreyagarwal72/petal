@@ -98,6 +98,8 @@ public class RecordAction {
                 || record.getTitle().trim().isEmpty()
                 || record.getURL() == null
                 || record.getURL().trim().isEmpty()
+                || record.getURL().trim().equalsIgnoreCase("about:blank")
+                || record.getURL().trim().startsWith("about:")
                 || record.getTime() < 0L) {
             return;
         }
