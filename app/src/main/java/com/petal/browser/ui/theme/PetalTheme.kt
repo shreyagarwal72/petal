@@ -74,21 +74,24 @@ fun PetalExpressiveTheme(
         }
     }
 
+    var colorScheme = baseScheme
+        .applyStyle(colorStyle)
+
     if (expressiveColors) {
-        baseScheme = if (darkTheme) {
-            baseScheme.copy(
-                background = baseScheme.surfaceContainerLow,
-                surface = baseScheme.surfaceContainerLow,
-                surfaceContainer = baseScheme.surfaceContainerHigh,
-                surfaceContainerLow = baseScheme.surfaceContainerHigh,
-                surfaceContainerHigh = baseScheme.surfaceContainerHigh,
-                surfaceContainerHighest = baseScheme.surfaceContainerHigh,
-                surfaceContainerLowest = baseScheme.surfaceContainerHigh
+        colorScheme = if (darkTheme) {
+            colorScheme.copy(
+                background = colorScheme.surfaceContainerLow,
+                surface = colorScheme.surfaceContainerLow,
+                surfaceContainer = colorScheme.surfaceContainerHigh,
+                surfaceContainerLow = colorScheme.surfaceContainerHigh,
+                surfaceContainerHigh = colorScheme.surfaceContainerHigh,
+                surfaceContainerHighest = colorScheme.surfaceContainerHigh,
+                surfaceContainerLowest = colorScheme.surfaceContainerHigh
             )
         } else {
-            baseScheme.copy(
-                background = baseScheme.surfaceContainerLow,
-                surface = baseScheme.surfaceContainerLow,
+            colorScheme.copy(
+                background = colorScheme.surfaceContainerLow,
+                surface = colorScheme.surfaceContainerLow,
                 surfaceContainer = Color.White,
                 surfaceContainerLow = Color.White,
                 surfaceContainerHigh = Color.White,
@@ -97,9 +100,6 @@ fun PetalExpressiveTheme(
             )
         }
     }
-
-    var colorScheme = baseScheme
-        .applyStyle(colorStyle)
 
     if (darkTheme && useAmoled) {
         colorScheme = colorScheme.applyAmoled()

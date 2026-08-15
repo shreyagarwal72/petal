@@ -163,6 +163,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var selectedPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+    var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
 
     // Private DNS & Language States
     var privateDnsMode by remember { mutableStateOf(sp.getString("sp_private_dns_mode", "OFF") ?: "OFF") }
@@ -223,7 +224,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     PetalExpressiveTheme(
         dynamicColor = isDynamicColor,
         useAmoled = isAmoled,
-        expressiveColors = sp.getBoolean("sp_expressive_colors", false),
+        expressiveColors = isExpressiveColors,
         appFont = selectedFont,
         fontWidth = fontWidth,
         fontWeight = fontWeight.toInt(),
@@ -486,14 +487,13 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         )
 
                         // Expressive Colors Toggle
-                        var expressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
                         ToggleRow(
                             title = "Expressive Container Colors",
                             subtitle = "Use vibrant container tint contrast for background and surfaces",
                             icon = Icons.Rounded.Palette,
-                            checked = expressiveColors,
+                            checked = isExpressiveColors,
                             onCheckedChange = { newValue ->
-                                expressiveColors = newValue
+                                isExpressiveColors = newValue
                                 sp.edit().putBoolean("sp_expressive_colors", newValue).apply()
                             }
                         )
