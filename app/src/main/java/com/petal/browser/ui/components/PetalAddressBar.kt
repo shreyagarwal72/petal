@@ -1,6 +1,5 @@
 package com.petal.browser.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,9 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -27,8 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.petal.browser.ui.modifiers.BlurDirection
-import com.petal.browser.ui.modifiers.progressiveBlur
 
 /**
  * Material 3 Expressive Collapsed/Scrolled Address Bar.
@@ -101,25 +96,17 @@ fun PetalAddressBar(
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val useHeaderBlur = remember { sp.getBoolean("sp_use_header_blur", true) }
 
-    // Base fill color: fully opaque when blur is off (matches the previous
-    // "no blur" look). When Header Blur is on, the real progressive blur is
-    // now applied natively to the page content behind this bar (see
-    // BrowserActivity#refreshBackdropBlur), so a lower alpha here lets that
-    // genuinely blurred content show through the pill.
     val containerColor = if (isIncognito) {
         com.petal.browser.ui.theme.IncognitoSurfaceContainer
     } else if (useHeaderBlur) {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f)
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f)
     } else {
         MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
-    val density = LocalDensity.current
-    val blurHeightPx = with(density) { 26.dp.toPx() }
-
     Surface(
         shape = RoundedCornerShape(28.dp),
-        color = Color.Transparent,
+        color = containerColor,
         tonalElevation = 6.dp,
         shadowElevation = 6.dp,
         modifier = modifier
@@ -127,109 +114,90 @@ fun PetalAddressBar(
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .entrance()
     ) {
-        Box {
-            // Header Blur: the real progressive blur (ported from essentials)
-            // now runs natively on the page content behind this bar. Here we
-            // only draw the translucent fill plus a soft gradient scrim so
-            // the pill blends into that blurred backdrop instead of showing
-            // a hard edge. Text/icons are drawn separately below, unaffected.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Far Left: Back Navigation / Stop Loading Icon Button (min 48dp tap target)
+            val leftIcon = if (isLoading) Icons.Rounded.Close else Icons.Rounded.ArrowBack
+            val leftContentDesc = if (isLoading) "Stop Loading" else "Back"
+            val isLeftEnabled = isLoading || canGoBack
+
+            IconButton(
+                onClick = onBackClick,
+                enabled = isLeftEnabled,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = leftIcon,
+                    contentDescription = leftContentDesc,
+                    tint = if (isLeftEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(2.dp))
+
+            // Center: Flexible Width URL Text & Site Controls / Security Icon
             Box(
                 modifier = Modifier
-                    .matchParentSize()
-                    .background(containerColor)
-                    .progressiveBlur(
-                        blurRadius = 0f,
-                        height = blurHeightPx,
-                        direction = BlurDirection.TOP,
-                        showGradientOverlay = useHeaderBlur && !isIncognito
-                    )
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .weight(1f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .bouncyClickable(onClick = { onAddressClick() })
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                contentAlignment = Alignment.CenterStart
             ) {
-                // Far Left: Back Navigation / Stop Loading Icon Button (min 48dp tap target)
-                val leftIcon = if (isLoading) Icons.Rounded.Close else Icons.Rounded.ArrowBack
-                val leftContentDesc = if (isLoading) "Stop Loading" else "Back"
-                val isLeftEnabled = isLoading || canGoBack
-
-                IconButton(
-                    onClick = onBackClick,
-                    enabled = isLeftEnabled,
-                    modifier = Modifier.size(48.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        imageVector = leftIcon,
-                        contentDescription = leftContentDesc,
-                        tint = if (isLeftEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(2.dp))
-
-                // Center: Flexible Width URL Text & Site Controls / Security Icon
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .bouncyClickable(onClick = { onAddressClick() })
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                    IconButton(
+                        onClick = {
+                            if (isHttps || isHttp) {
+                                onSiteControlsClick()
+                            } else {
+                                onAddressClick()
+                            }
+                        },
+                        modifier = Modifier.size(28.dp)
                     ) {
-                        IconButton(
-                            onClick = {
-                                if (isHttps || isHttp) {
-                                    onSiteControlsClick()
-                                } else {
-                                    onAddressClick()
-                                }
-                            },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                imageVector = securityIcon,
-                                contentDescription = "Site Controls and Security",
-                                tint = securityIconTint,
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .popIn()
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        Text(
-                            text = formattedUrl,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.bodyMedium
+                        Icon(
+                            imageVector = securityIcon,
+                            contentDescription = "Site Controls and Security",
+                            tint = securityIconTint,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .popIn()
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.width(2.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
 
-                // Far Right: Share Icon Button (min 48dp tap target)
-                IconButton(
-                    onClick = onShareClick,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Share,
-                        contentDescription = "Share",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(24.dp)
+                    Text(
+                        text = formattedUrl,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.width(2.dp))
+
+            // Far Right: Share Icon Button (min 48dp tap target)
+            IconButton(
+                onClick = onShareClick,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Share,
+                    contentDescription = "Share",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }
