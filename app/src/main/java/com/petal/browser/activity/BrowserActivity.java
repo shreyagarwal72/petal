@@ -1080,7 +1080,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public synchronized void updateProgress(int progress) {
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
-        if (progressBarCompose != null) {
+        // While the pull-to-refresh spinner is showing, don't also show the top wavy
+        // progress line - both anchor to the same spot right below the address bar and
+        // were overlapping/clashing visually. One loading indicator at a time.
+        if (progressBarCompose != null && !refreshState.isRefreshing()) {
             com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(progressBarCompose, progress);
         }
         if (progressBar != null) {
@@ -1859,6 +1862,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     private void initPullToRefresh() {
         androidx.compose.ui.platform.ComposeView refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+        View addressBarForMargin = findViewById(R.id.compose_address_bar);
         if (refreshBarCompose != null) {
             // Remove from RelativeLayout if present and re-add directly to window overlay so WebView hardware layer can never obscure it
             android.view.ViewParent parent = refreshBarCompose.getParent();
@@ -1869,10 +1873,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT
             );
+            // 56dp was a guess and didn't match the address bar's real height on this
+            // device, so the spinner landed on top of the wavy progress line instead of
+            // below it. Measure the actual address bar height once it's laid out, and
+            // keep it in sync if that height ever changes (font scale, theme, etc.).
             params.topMargin = (int) HelperUnit.convertDpToPixel(56f, this);
             addContentView(refreshBarCompose, params);
             com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
             refreshBarCompose.bringToFront();
+
+            if (addressBarForMargin != null) {
+                final android.widget.FrameLayout.LayoutParams finalParams = params;
+                final androidx.compose.ui.platform.ComposeView finalRefreshBar = refreshBarCompose;
+                addressBarForMargin.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    int realHeight = v.getHeight();
+                    if (realHeight > 0 && finalParams.topMargin != realHeight) {
+                        finalParams.topMargin = realHeight;
+                        finalRefreshBar.setLayoutParams(finalParams);
+                    }
+                });
+            }
         }
 
         if (contentFrame == null) return;
