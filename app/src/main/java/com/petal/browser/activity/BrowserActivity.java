@@ -1833,16 +1833,35 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return !isHome && isScrolledToTop && !refreshState.isRefreshing();
         });
 
-        contentFrame.setOnPullListener(progress -> refreshState.setPullProgress(progress));
+        contentFrame.setOnPullListener(progress -> {
+            refreshState.setPullProgress(progress);
+            if (ninjaWebView != null) {
+                if (progress > 0f) {
+                    if (ninjaWebView.getLayerType() != View.LAYER_TYPE_SOFTWARE) {
+                        ninjaWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+                    }
+                } else if (!refreshState.isRefreshing()) {
+                    if (ninjaWebView.getLayerType() != View.LAYER_TYPE_HARDWARE) {
+                        ninjaWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                    }
+                }
+            }
+        });
 
         contentFrame.setOnReleaseListener(triggered -> {
             if (!triggered) {
                 refreshState.setPullProgress(0f);
+                if (ninjaWebView != null && ninjaWebView.getLayerType() != View.LAYER_TYPE_HARDWARE) {
+                    ninjaWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                }
                 return;
             }
             refreshState.setRefreshing(true);
             refreshState.setPullProgress(1.0f);
             if (ninjaWebView != null) {
+                if (ninjaWebView.getLayerType() != View.LAYER_TYPE_SOFTWARE) {
+                    ninjaWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+                }
                 ninjaWebView.reload();
             } else {
                 resetRefreshState();
@@ -1855,6 +1874,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (refreshState != null) {
                 refreshState.setRefreshing(false);
                 refreshState.setPullProgress(0f);
+            }
+            if (ninjaWebView != null && ninjaWebView.getLayerType() != View.LAYER_TYPE_HARDWARE) {
+                ninjaWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
             }
         });
     }
