@@ -1015,10 +1015,125 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // 8. Full Backup & Sync Section
-                if ((currentCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Backup Sync", "backup restore sync history bookmarks settings database export import")) {
-                    SettingsCategoryCard(title = "Backup & Restore Sync", icon = Icons.Rounded.Backup) {
+                var showBackupDialog by remember { mutableStateOf(false) }
+                var showRestoreDialog by remember { mutableStateOf(false) }
+
+                var backupBookmarks by remember { mutableStateOf(true) }
+                var backupHistory by remember { mutableStateOf(true) }
+                var backupSavedSites by remember { mutableStateOf(true) }
+                var backupSettings by remember { mutableStateOf(true) }
+
+                var restoreBookmarks by remember { mutableStateOf(true) }
+                var restoreHistory by remember { mutableStateOf(true) }
+                var restoreSavedSites by remember { mutableStateOf(true) }
+                var restoreSettings by remember { mutableStateOf(true) }
+
+                if (showBackupDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showBackupDialog = false },
+                        title = { Text("Backup Options (JSON)") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Select items to include in backup file:")
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupBookmarks = !backupBookmarks }) {
+                                    Checkbox(checked = backupBookmarks, onCheckedChange = { backupBookmarks = it })
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Bookmarks")
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupHistory = !backupHistory }) {
+                                    Checkbox(checked = backupHistory, onCheckedChange = { backupHistory = it })
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Browsing History")
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSavedSites = !backupSavedSites }) {
+                                    Checkbox(checked = backupSavedSites, onCheckedChange = { backupSavedSites = it })
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Saved Startsite Webpages")
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSettings = !backupSettings }) {
+                                    Checkbox(checked = backupSettings, onCheckedChange = { backupSettings = it })
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Browser & Theme Settings")
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            Button(onClick = {
+                                showBackupDialog = false
+                                if (context is ComponentActivity) {
+                                    if (!com.petal.browser.unit.BackupUnit.checkPermissionStorage(context)) {
+                                        com.petal.browser.unit.BackupUnit.requestPermission(context)
+                                    } else {
+                                        com.petal.browser.unit.BackupUnit.backupToJson(context, backupBookmarks, backupHistory, backupSavedSites, backupSettings)
+                                    }
+                                }
+                            }) {
+                                Text("Export JSON")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showBackupDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                if (showRestoreDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showRestoreDialog = false },
+                        title = { Text("Restore Options (JSON)") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Select items to restore from JSON file:")
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreBookmarks = !restoreBookmarks }) {
+                                    Checkbox(checked = restoreBookmarks, onCheckedChange = { restoreBookmarks = it })
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Bookmarks")
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreHistory = !restoreHistory }) {
+                                    Checkbox(checked = restoreHistory, onCheckedChange = { restoreHistory = it })
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Browsing History")
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSavedSites = !restoreSavedSites }) {
+                                    Checkbox(checked = restoreSavedSites, onCheckedChange = { restoreSavedSites = it })
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Saved Startsite Webpages")
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSettings = !restoreSettings }) {
+                                    Checkbox(checked = restoreSettings, onCheckedChange = { restoreSettings = it })
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Browser & Theme Settings")
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            Button(onClick = {
+                                showRestoreDialog = false
+                                if (context is ComponentActivity) {
+                                    if (!com.petal.browser.unit.BackupUnit.checkPermissionStorage(context)) {
+                                        com.petal.browser.unit.BackupUnit.requestPermission(context)
+                                    } else {
+                                        com.petal.browser.unit.BackupUnit.restoreFromJson(context, restoreBookmarks, restoreHistory, restoreSavedSites, restoreSettings)
+                                    }
+                                }
+                            }) {
+                                Text("Restore JSON")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showRestoreDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                if ((currentCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Backup Sync", "backup restore sync history bookmarks settings database export import json")) {
+                    SettingsCategoryCard(title = "Backup & Restore (JSON)", icon = Icons.Rounded.Backup) {
                         Text(
-                            "Export or restore your complete browser data including history, bookmarks, saved sites, and settings:",
+                            "Export or restore specific items to/from a single JSON file (Documents/browser_backup/petal_browser_backup.json):",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1028,43 +1143,23 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Button(
-                                onClick = {
-                                    if (context is ComponentActivity) {
-                                        if (!com.petal.browser.unit.BackupUnit.checkPermissionStorage(context)) {
-                                            com.petal.browser.unit.BackupUnit.requestPermission(context)
-                                        } else {
-                                            com.petal.browser.unit.BackupUnit.backupData(context, 4) // history
-                                            com.petal.browser.unit.BackupUnit.backupData(context, 5) // bookmarks
-                                            com.petal.browser.unit.BackupUnit.backupData(context, 1) // saved list
-                                        }
-                                    }
-                                },
+                                onClick = { showBackupDialog = true },
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Backup All")
+                                Text("Backup...")
                             }
 
                             OutlinedButton(
-                                onClick = {
-                                    if (context is ComponentActivity) {
-                                        if (!com.petal.browser.unit.BackupUnit.checkPermissionStorage(context)) {
-                                            com.petal.browser.unit.BackupUnit.requestPermission(context)
-                                        } else {
-                                            com.petal.browser.unit.BackupUnit.restoreData(context, 4) // history
-                                            com.petal.browser.unit.BackupUnit.restoreData(context, 5) // bookmarks
-                                            com.petal.browser.unit.BackupUnit.restoreData(context, 1) // saved list
-                                        }
-                                    }
-                                },
+                                onClick = { showRestoreDialog = true },
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Restore All")
+                                Text("Restore...")
                             }
                         }
                     }

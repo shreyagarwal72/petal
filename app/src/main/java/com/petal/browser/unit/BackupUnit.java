@@ -102,11 +102,8 @@ public class BackupUnit {
     public static void makeBackupDir(Context context) {
         if (context == null) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Unter Scoped Storage übernimmt der MediaStore das automatische Erstellen von Unterordnern beim ersten Schreiben.
-            // Ein manuelles Vorerstellen über File-Objekte im öffentlichen Speicher ist ab Android 10 blockiert.
             Log.d("Petal", "Verzeichnis-Erstellung wird automatisch vom MediaStore verwaltet.");
         } else {
-            // Klassischer Weg für ältere Geräte (Fehlerhaften Doppel-Slash '//' entfernt)
             File backupDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "browser_backup");
             if (!backupDir.exists() && !backupDir.mkdirs()) {
                 Log.e("Petal", "Ordner konnte auf altem Gerät nicht erstellt werden.");
@@ -114,214 +111,212 @@ public class BackupUnit {
         }
     }
 
-    public static void backupData(Activity context, int i) {
+    public static void backupToJson(Activity context, boolean backupBookmarks, boolean backupHistory, boolean backupSavedSites, boolean backupSettings) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
-            if (i == 5) {
-                exportBookmarksSimple(context);
-            } else if (i == 4) {
-                exportHistory(context);
-            } else {
-                exportList(context);
+            try {
+                org.json.JSONObject backupJson = new org.json.JSONObject();
+                backupJson.put("version", 1);
+                backupJson.put("timestamp", System.currentTimeMillis());
+
+                RecordAction action = new RecordAction(context);
+
+                if (backupBookmarks) {
+                    action.open(false);
+                    List<Record> bookmarks = action.listBookmark(context, false, 0);
+                    action.close();
+
+                    org.json.JSONArray bookmarksArray = new org.json.JSONArray();
+                    for (Record r : bookmarks) {
+                        org.json.JSONObject obj = new org.json.JSONObject();
+                        obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                        obj.put("url", r.getURL() != null ? r.getURL() : "");
+                        obj.put("time", r.getTime());
+                        bookmarksArray.put(obj);
+                    }
+                    backupJson.put("bookmarks", bookmarksArray);
+                }
+
+                if (backupHistory) {
+                    action.open(false);
+                    List<Record> history = action.listHistory(context);
+                    action.close();
+
+                    org.json.JSONArray historyArray = new org.json.JSONArray();
+                    for (Record r : history) {
+                        org.json.JSONObject obj = new org.json.JSONObject();
+                        obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                        obj.put("url", r.getURL() != null ? r.getURL() : "");
+                        obj.put("time", r.getTime());
+                        historyArray.put(obj);
+                    }
+                    backupJson.put("history", historyArray);
+                }
+
+                if (backupSavedSites) {
+                    action.open(false);
+                    List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
+                    action.close();
+
+                    org.json.JSONArray sitesArray = new org.json.JSONArray();
+                    for (String domain : domains) {
+                        sitesArray.put(domain);
+                    }
+                    backupJson.put("saved_sites", sitesArray);
+                }
+
+                if (backupSettings) {
+                    android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                    org.json.JSONObject settingsObj = new org.json.JSONObject();
+                    for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
+                        Object val = entry.getValue();
+                        if (val != null) {
+                            settingsObj.put(entry.getKey(), val);
+                        }
+                    }
+                    backupJson.put("settings", settingsObj);
+                }
+
+                File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
+                if (!backupDir.exists()) backupDir.mkdirs();
+                File jsonFile = new File(backupDir, "petal_browser_backup.json");
+
+                BufferedWriter writer = new BufferedWriter(new FileWriter(jsonFile, false));
+                writer.write(backupJson.toString(2));
+                writer.close();
+
+                handler.post(() -> {
+                    NinjaToast.show(context, context.getString(R.string.app_done) + ": Backup saved to " + jsonFile.getName());
+                });
+            } catch (Exception e) {
+                Log.e("Petal", "backupToJson error", e);
+                handler.post(() -> {
+                    NinjaToast.show(context, "Backup failed: " + e.getMessage());
+                });
             }
-            handler.post(() -> {
-                String text = context.getString(R.string.app_done) + ": " + context.getString(R.string.setting_title_data);
-                NinjaToast.show(context, text);
-            });
         });
+    }
+
+    public static void restoreFromJson(Activity context, boolean restoreBookmarks, boolean restoreHistory, boolean restoreSavedSites, boolean restoreSettings) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            try {
+                File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
+                File jsonFile = new File(backupDir, "petal_browser_backup.json");
+                if (!jsonFile.exists()) {
+                    handler.post(() -> NinjaToast.show(context, "No backup file found at Documents/browser_backup/petal_browser_backup.json"));
+                    return;
+                }
+
+                BufferedReader reader = new BufferedReader(new FileReader(jsonFile));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+                reader.close();
+
+                org.json.JSONObject backupJson = new org.json.JSONObject(sb.toString());
+                RecordAction action = new RecordAction(context);
+
+                if (restoreBookmarks && backupJson.has("bookmarks")) {
+                    org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
+                    action.open(true);
+                    for (int i = 0; i < bookmarksArray.length(); i++) {
+                        org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
+                        String title = obj.optString("title", "");
+                        String url = obj.optString("url", "");
+                        long time = obj.optLong("time", System.currentTimeMillis());
+                        if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
+                            Record record = new Record();
+                            record.setTitle(title);
+                            record.setURL(url);
+                            record.setTime(time);
+                            record.setIconColor(1);
+                            action.addBookmark(record);
+                        }
+                    }
+                    action.close();
+                }
+
+                if (restoreHistory && backupJson.has("history")) {
+                    org.json.JSONArray historyArray = backupJson.getJSONArray("history");
+                    action.open(true);
+                    for (int i = 0; i < historyArray.length(); i++) {
+                        org.json.JSONObject obj = historyArray.getJSONObject(i);
+                        String title = obj.optString("title", "");
+                        String url = obj.optString("url", "");
+                        long time = obj.optLong("time", System.currentTimeMillis());
+                        if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
+                            action.addHistory(new Record(title, url, time, 0L));
+                        }
+                    }
+                    action.close();
+                }
+
+                if (restoreSavedSites && backupJson.has("saved_sites")) {
+                    org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
+                    List_standard listStandard = new List_standard(context);
+                    action.open(true);
+                    for (int i = 0; i < sitesArray.length(); i++) {
+                        String domain = sitesArray.getString(i);
+                        if (!action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
+                            listStandard.addDomain(domain);
+                        }
+                    }
+                    action.close();
+                }
+
+                if (restoreSettings && backupJson.has("settings")) {
+                    org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
+                    android.content.SharedPreferences.Editor editor = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit();
+                    java.util.Iterator<String> keys = settingsObj.keys();
+                    while (keys.hasNext()) {
+                        String key = keys.next();
+                        Object val = settingsObj.get(key);
+                        if (val instanceof Boolean) {
+                            editor.putBoolean(key, (Boolean) val);
+                        } else if (val instanceof Integer) {
+                            editor.putInt(key, (Integer) val);
+                        } else if (val instanceof Long) {
+                            editor.putLong(key, (Long) val);
+                        } else if (val instanceof Double) {
+                            editor.putFloat(key, ((Double) val).floatValue());
+                        } else if (val instanceof Float) {
+                            editor.putFloat(key, (Float) val);
+                        } else if (val instanceof String) {
+                            editor.putString(key, (String) val);
+                        }
+                    }
+                    editor.apply();
+                }
+
+                handler.post(() -> {
+                    NinjaToast.show(context, context.getString(R.string.app_done) + ": " + context.getString(R.string.settings_data_restore));
+                });
+            } catch (Exception e) {
+                Log.e("Petal", "restoreFromJson error", e);
+                handler.post(() -> {
+                    NinjaToast.show(context, "Restore failed: " + e.getMessage());
+                });
+            }
+        });
+    }
+
+    public static void backupData(Activity context, int i) {
+        backupToJson(context, true, true, true, true);
     }
 
     public static void restoreData(Activity context, int i) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-        executor.execute(() -> {
-            if (i == 5) {
-                importBookmarksSimple(context);
-            } else if (i == 4) {
-                importHistory(context);
-            } else {
-                importList(context);
-            }
-            handler.post(() -> {
-                String text = context.getString(R.string.app_done) + ": " + context.getString(R.string.settings_data_restore);
-                NinjaToast.show(context, text);
-            });
-        });
+        restoreFromJson(context, true, true, true, true);
     }
 
-    public static void exportList(Context context) {
-        RecordAction action = new RecordAction(context);
-        List<String> list;
-        String filename;
-        action.open(false);
-        list = action.listDomains(RecordUnit.TABLE_STANDARD);
-        filename = "list_savedWebSites.txt";
-        action.close();
-        File file = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup//" + filename);
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file, false));
-            for (String domain : list) {
-                writer.write(domain);
-                writer.newLine();
-            }
-            writer.close();
-            String wasSuccessful = file.getAbsolutePath();
-            if (wasSuccessful.isEmpty()) System.out.println("was not successful."); }
-        catch (Exception ignored) { }
-    }
-
-    public static void importList(Context context) {
-        try {
-            String filename;
-            List_standard listStandard;
-            listStandard = new List_standard(context);
-            filename = "list_savedWebSites.txt";
-            File file = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup//" + filename);
-            RecordAction action = new RecordAction(context);
-            action.open(true);
-            listStandard.clearDomains();
-
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!action.checkDomain(line, RecordUnit.TABLE_STANDARD)) listStandard.addDomain(line);
-            }
-            reader.close();
-            action.close(); }
-        catch (Exception e) {
-            Log.w("browser", "Error reading file", e);
-        }
-    }
-
-    public static void exportBookmarksSimple(Context context) {
-        RecordAction action = new RecordAction(context);
-        action.open(false);
-        List<Record> list = action.listBookmark(context, false, 0);
-        action.close();
-        File fileTxt = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup//list_bookmarks_simple.html");
-
-        try {
-            BufferedWriter writerTxt = new BufferedWriter(new FileWriter(fileTxt, false));
-            for (Record record : list) {
-                String type = BOOKMARK_TYPE_SIMPLE;
-                type = type.replace(BOOKMARK_TITLE, record.getTitle());
-                type = type.replace(BOOKMARK_URL, record.getURL());
-                writerTxt.write(type);
-                writerTxt.newLine();
-            }
-            writerTxt.close();
-            String wasSuccessfulTxt = fileTxt.getAbsolutePath();
-            if (wasSuccessfulTxt.isEmpty()) {System.out.println("was not successful."); }
-        } catch (Exception ignored) { }
-    }
-
-    public static void importBookmarksSimple(Context context) {
-        File file = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup//list_bookmarks_simple.html");
-        List<Record> list = new ArrayList<>();
-        try {
-            RecordAction action = new RecordAction(context);
-            action.open(true);
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (!((line.startsWith("<dt><a ") && line.endsWith("</a>")) || (line.startsWith("<DT><A ") && line.endsWith("</A>")))) {
-                    continue; }
-                String title = getBookmarkTitle(line);
-                String url = extractLinks(line);
-                //if no color defined yet set it red (123 is max: 11 for color + 16 for desktop mode + 32 for List_trusted + 64 for List_standard Content
-                if (title.trim().isEmpty() || url.trim().isEmpty()) {
-                    continue; }
-                Record record = new Record();
-                record.setTitle(title);
-                record.setURL(url);
-                record.setIconColor(1);
-
-                if (!action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) list.add(record);}
-            reader.close();
-            list.sort(Comparator.comparing(Record::getTitle));
-            for (Record record : list) {action.addBookmark(record);}
-            action.close();
-        } catch (Exception ignored) { }
-        list.size();
-    }
-
-    private static String getBookmarkTitle(String line) {
-        // Remove last </a>
-        line = line.substring(0, line.length() - 4);
-        int index = line.lastIndexOf(">");
-        return line.substring(index + 1);
-    }
-
-    public static String extractLinks(String text) {
-        List<String> links = new ArrayList<>();
-        String link = null;
-        Matcher m = Patterns.WEB_URL.matcher(text);
-        while (m.find()) {
-            String url = m.group();
-            Log.d("Petal", "URL extracted: " + url);
-            if (links.isEmpty()) {
-                links.add(url);
-                link = url;
-            }
-        }
-        return link;
-    }
-
-    public static void exportHistory(Context context) {
-        RecordAction action = new RecordAction(context);
-        action.open(false);
-        List<Record> list = action.listHistory(context);
-        action.close();
-        File fileTxt = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup/history_backup.txt");
-        try {
-            File dir = fileTxt.getParentFile();
-            if (dir != null && !dir.exists()) dir.mkdirs();
-            BufferedWriter writer = new BufferedWriter(new FileWriter(fileTxt, false));
-            for (Record record : list) {
-                String title = record.getTitle() != null ? record.getTitle().replace("|", " ") : "";
-                String url = record.getURL() != null ? record.getURL() : "";
-                long time = record.getTime();
-                if (!url.isEmpty()) {
-                    writer.write(url + "|" + title + "|" + time);
-                    writer.newLine();
-                }
-            }
-            writer.close();
-        } catch (Exception e) {
-            Log.e("Petal", "exportHistory error", e);
-        }
-    }
-
-    public static void importHistory(Context context) {
-        File fileTxt = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup/history_backup.txt");
-        if (!fileTxt.exists()) return;
-        try {
-            RecordAction action = new RecordAction(context);
-            action.open(true);
-            BufferedReader reader = new BufferedReader(new FileReader(fileTxt));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty()) continue;
-                String[] parts = line.split("\\|", 3);
-                if (parts.length >= 2) {
-                    String url = parts[0];
-                    String title = parts[1];
-                    long time = System.currentTimeMillis();
-                    if (parts.length >= 3) {
-                        try { time = Long.parseLong(parts[2]); } catch (Exception ignored) {}
-                    }
-                    if (!action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
-                        action.addHistory(new Record(title, url, time, 0L));
-                    }
-                }
-            }
-            reader.close();
-            action.close();
-        } catch (Exception e) {
-            Log.e("Petal", "importHistory error", e);
-        }
-    }
+    public static void exportList(Context context) {}
+    public static void importList(Context context) {}
+    public static void exportBookmarksSimple(Context context) {}
+    public static void importBookmarksSimple(Context context) {}
+    public static void exportHistory(Context context) {}
+    public static void importHistory(Context context) {}
 }
