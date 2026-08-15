@@ -168,4 +168,138 @@
 
     </com.google.android.material.card.MaterialCardView>
 
+</RelativeLayout>        android:id="@+id/main_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/compose_address_bar"
+        android:layout_above="@id/bottom_nav_container"/>
+
+    <!-- Fancy Rippling Wavy Top Loading Progress Line: now a true overlay drawn AFTER main_content, so it never gets painted over -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/main_progress_bar_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/compose_address_bar"
+        android:elevation="14dp"/>
+
+    <!-- Pull to Refresh Bar (ContainedLoadingIndicator) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/refresh_bar_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/main_content"
+        android:elevation="30dp" />
+
+    <!-- Floating Action Button for Showing Top Bar -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_showAppBar"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/icon_up"
+        app:elevation="2dp"
+        style="@style/Widget.Material3.Button.IconButton.Outlined"
+        app:backgroundTint="?attr/colorSurfaceContainerHighest"
+        app:borderWidth="0.5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        app:maxImageSize="20dp"
+        app:fabCustomSize="42dp"
+        android:visibility="gone"/>
+
+    <!-- Search On Site Bar -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/searchOnSiteLayout"
+        android:visibility="gone"
+        style="@style/Widget.Material3.CardView.Elevated"
+        android:backgroundTint="?attr/colorSurfaceContainerHigh"
+        app:cardElevation="4dp"
+        app:strokeWidth="0dp"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_margin="12dp"
+        android:layout_alignParentTop="true"
+        app:cardCornerRadius="28dp"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <Button
+                android:id="@+id/searchOnSite_buttonClose"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerInParent="true"
+                android:layout_marginEnd="10dp"
+                app:icon="@drawable/icon_close" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/searchOnSite_textField"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_alignParentTop="true"
+                android:layout_toStartOf="@+id/searchOnSite_buttonClose"
+                android:paddingEnd="10dp"
+                android:paddingStart="10dp"
+                android:paddingBottom="5dp"
+                android:paddingTop="5dp"
+                android:hint="@string/menu_other_searchSite"
+                app:boxCornerRadiusTopStart="24dp"
+                app:boxCornerRadiusTopEnd="24dp"
+                app:boxCornerRadiusBottomStart="24dp"
+                app:boxCornerRadiusBottomEnd="24dp"
+                app:boxStrokeWidth="0.8dp"
+                app:boxStrokeWidthFocused="1.5dp"
+                app:startIconDrawable="@drawable/icon_up"
+                app:endIconDrawable="@drawable/icon_down"
+                app:endIconMode="custom">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/searchOnSite_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text|textUri"
+                    android:selectAllOnFocus="true"/>
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </RelativeLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+
+    <!-- Small Circular Floating Bubble for Collapsed Address Bar (Bottom-Right) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/fab_bubble"
+        style="@style/Widget.Material3.CardView.Filled"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="90dp"
+        android:layout_marginEnd="16dp"
+        android:visibility="gone"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="16dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="?attr/colorOutlineVariant"
+        android:backgroundTint="?attr/colorSurfaceContainerHighest">
+
+        <ImageView
+            android:id="@+id/bubble_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:src="@drawable/icon_secure"
+            app:tint="?attr/colorPrimary"
+            tools:ignore="ContentDescription"/>
+
+    </com.google.android.material.card.MaterialCardView>
+
 </RelativeLayout>
