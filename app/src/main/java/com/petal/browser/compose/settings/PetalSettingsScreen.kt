@@ -570,8 +570,8 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         var useHeaderBlur by remember { mutableStateOf(sp.getBoolean("sp_use_header_blur", true)) }
 
                         ToggleRow(
-                            title = "Header Blur",
-                            subtitle = "Enable translucent frosted blur background on address bar & top headers",
+                            title = "Header & Nav Bar Blur",
+                            subtitle = "Real-time frosted blur of page content behind the address bar & bottom nav bar",
                             icon = Icons.Rounded.AutoAwesome,
                             checked = useHeaderBlur,
                             onCheckedChange = { newValue ->

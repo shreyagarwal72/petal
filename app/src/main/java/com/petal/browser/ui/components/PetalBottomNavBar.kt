@@ -33,10 +33,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.modifiers.BlurDirection
+import com.petal.browser.ui.modifiers.progressiveBlur
 
 enum class PetalNavTab {
     HOME, NEW_TAB, TABS, MENU
@@ -61,19 +64,51 @@ fun PetalBottomNavBar(
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val useNavBarBlur = remember { sp.getBoolean("sp_use_header_blur", true) }
+
+    val containerColor = if (isIncognito) {
+        MaterialTheme.colorScheme.surfaceContainerHighest
+    } else if (useNavBarBlur) {
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+
+    val density = LocalDensity.current
+    val blurHeightPx = with(density) { 22.dp.toPx() }
+
     Surface(
         shape = RoundedCornerShape(36.dp),
-        color = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = Color.Transparent,
         modifier = modifier
             .clip(RoundedCornerShape(36.dp))
-            .background(if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh)
             .entrance()
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        Box {
+            // Navigation Bar Blur: the real progressive blur (ported from
+            // essentials) now runs natively on the page content behind this
+            // bar (see BrowserActivity#refreshBackdropBlur). Here we only
+            // draw the translucent fill + a soft gradient scrim so the pill
+            // blends into that blurred backdrop; icons/labels stay crisp.
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(containerColor)
+                    .progressiveBlur(
+                        blurRadius = 0f,
+                        height = blurHeightPx,
+                        direction = BlurDirection.BOTTOM,
+                        showGradientOverlay = useNavBarBlur && !isIncognito
+                    )
+            )
+
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
             // 1st Item: Home
             NavItemPill(
                 selected = selectedTab == PetalNavTab.HOME,
@@ -167,6 +202,7 @@ fun PetalBottomNavBar(
                     tint = color,
                     modifier = Modifier.size(22.dp)
                 )
+            }
             }
         }
     }

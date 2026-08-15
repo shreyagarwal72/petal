@@ -355,6 +355,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
 
+        // Real backdrop (behind-the-bars) progressive blur: blurs the actual
+        // page content near the top/bottom edges so the translucent address
+        // bar and floating nav bar show genuinely blurred content through
+        // them, instead of a flat tinted color. Re-runs on every layout pass
+        // so it stays correct if the bars resize/hide (e.g. auto-hide on scroll).
+        if (contentFrame != null) {
+            contentFrame.getViewTreeObserver().addOnGlobalLayoutListener(this::refreshBackdropBlur);
+        }
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             boolean isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
             int keyboardHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
@@ -499,6 +508,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onResume() {
         super.onResume();
         applyAddressBarPosition();
+        refreshBackdropBlur();
         if (ninjaWebView != null) {
             ninjaWebView.onResume();
             ninjaWebView.resumeTimers();
@@ -1058,6 +1068,55 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         } catch (Exception ignored) {}
         applyAddressBarPosition();
+    }
+
+    /**
+     * Applies (or clears) the real progressive backdrop blur on the web
+     * content container ({@link #contentFrame}) based on the current
+     * Header Blur preference, device capability, and the live measured
+     * heights of the address bar / bottom nav bar. Cheap to call from a
+     * global layout listener or onResume().
+     */
+    private void refreshBackdropBlur() {
+        try {
+            if (contentFrame == null) return;
+            boolean enabled = sp.getBoolean("sp_use_header_blur", true);
+            if (enabled && com.petal.browser.ui.blur.PetalBackdropBlur.isSupported(context)) {
+                View addressBar = findViewById(R.id.compose_address_bar);
+                View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+                boolean addressBarAtBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
+
+                float addressBarHeightPx = (addressBar != null && addressBar.getVisibility() == View.VISIBLE)
+                        ? addressBar.getHeight()
+                        : 0f;
+                float navBarHeightPx = (bottomNavContainer != null && bottomNavContainer.getVisibility() == View.VISIBLE)
+                        ? bottomNavContainer.getHeight()
+                        : 0f;
+
+                float topHeightPx;
+                float bottomHeightPx;
+                if (addressBarAtBottom) {
+                    // Address bar sits stacked above the nav bar near the bottom;
+                    // nothing covers the top edge in this mode.
+                    topHeightPx = 0f;
+                    bottomHeightPx = (addressBarHeightPx + navBarHeightPx) * 1.1f;
+                } else {
+                    topHeightPx = addressBarHeightPx * 1.1f;
+                    bottomHeightPx = navBarHeightPx * 1.15f;
+                }
+
+                float density = context.getResources().getDisplayMetrics().density;
+                float blurRadiusPx = 32f * density;
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    com.petal.browser.ui.blur.PetalBackdropBlur.apply(contentFrame, blurRadiusPx, topHeightPx, bottomHeightPx);
+                }
+            } else {
+                com.petal.browser.ui.blur.PetalBackdropBlur.clear(contentFrame);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating backdrop blur", e);
+        }
     }
 
     public void applyAddressBarPosition() {
