@@ -92,14 +92,8 @@ fun PetalAddressBar(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val useHeaderBlur = remember { sp.getBoolean("sp_use_header_blur", true) }
-
     val containerColor = if (isIncognito) {
         com.petal.browser.ui.theme.IncognitoSurfaceContainer
-    } else if (useHeaderBlur) {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f)
     } else {
         MaterialTheme.colorScheme.surfaceContainerHigh
     }

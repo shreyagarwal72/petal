@@ -577,32 +577,6 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             }
                         )
 
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var useBlur by remember { mutableStateOf(sp.getBoolean("sp_use_blur", true)) }
-                        var useHeaderBlur by remember { mutableStateOf(sp.getBoolean("sp_use_header_blur", true)) }
-
-                        ToggleRow(
-                            title = "Header Blur",
-                            subtitle = "Enable translucent frosted blur background on address bar & top headers",
-                            icon = Icons.Rounded.AutoAwesome,
-                            checked = useHeaderBlur,
-                            onCheckedChange = { newValue ->
-                                useHeaderBlur = newValue
-                                sp.edit().putBoolean("sp_use_header_blur", newValue).apply()
-                            }
-                        )
-
-                        ToggleRow(
-                            title = "UI Blur & Glassmorphism",
-                            subtitle = "Enable translucent blurred surfaces across sheets & menus",
-                            icon = Icons.Rounded.BlurOn,
-                            checked = useBlur,
-                            onCheckedChange = { newValue ->
-                                useBlur = newValue
-                                sp.edit().putBoolean("sp_use_blur", newValue).apply()
-                            }
-                        )
                     }
                 }
 
