@@ -58,13 +58,12 @@ jobs:
         run: |
           if [ -n "$SIGNING_KEY" ]; then
             echo "Using repository SIGNING_KEY secret..."
-            echo "$SIGNING_KEY" | base64 -d > release.keystore
+            echo "$SIGNING_KEY" | base64 -d > app/release.keystore
             STORE_PASS="$KEY_STORE_PASSWORD"
             KEY_PASS="$KEY_PASSWORD"
             ALIAS_NAME="$ALIAS"
           else
-            echo "SIGNING_KEY secret is not configured. Generating persistent release keystore..."
-            keytool -genkey -v -keystore release.keystore -alias releasekey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=PetalBrowser, OU=Dev, O=Petal, L=City, S=State, C=US"
+            echo "SIGNING_KEY secret is not configured. Using repo release.keystore..."
             STORE_PASS="android"
             KEY_PASS="android"
             ALIAS_NAME="releasekey"
@@ -86,7 +85,7 @@ jobs:
 
               # 2. APKSigner (v1, v2, v3 schemes enabled)
               $ANDROID_SDK_BUILD_TOOLS/apksigner sign \
-                --ks release.keystore \
+                --ks app/release.keystore \
                 --ks-pass pass:"$STORE_PASS" \
                 --key-pass pass:"$KEY_PASS" \
                 --ks-key-alias "$ALIAS_NAME" \
@@ -98,7 +97,6 @@ jobs:
               rm -f "$aligned_apk"
             fi
           done
-          rm -f release.keystore
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4

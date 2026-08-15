@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.petal.browser.account.AccountViewModel
+import com.petal.browser.account.ProfileAvatarDisplay
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.ComposeView
@@ -295,36 +296,9 @@ fun PetalHomeScreen(
                 ) {
                     IconButton(
                         onClick = onOpenAccountSync,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                shape = CircleShape
-                            )
+                        modifier = Modifier.size(44.dp)
                     ) {
-                        if (isSignedIn && profile.avatarUrl != null) {
-                            AsyncImage(
-                                model = profile.avatarUrl,
-                                contentDescription = "Profile",
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else if (isSignedIn) {
-                            Text(
-                                text = (profile.displayName ?: "User").take(1).uppercase(),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Icon(
-                                Icons.Rounded.PersonAdd,
-                                contentDescription = "Chrome Google Account & Sync",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
+                        ProfileAvatarDisplay(profile = profile, sizeDp = 36)
                     }
                 }
 

@@ -119,8 +119,8 @@ public class NinjaWebViewClient extends WebViewClient {
             if (bannerBlockScript != null) view.evaluateJavascript(bannerBlockScript,null);
         }
 
-        // Automatic Google Account Login & Sync State Detection
-        if (url != null && (url.contains("accounts.google.com") || url.contains("myaccount.google.com") || url.contains("google.com"))) {
+        // Automatic Google Account Single Sign-On (SSO) & Cookie Sync Engine
+        if (url != null && (url.contains("accounts.google.com") || url.contains("myaccount.google.com") || url.contains("google.com") || url.contains("youtube.com"))) {
             com.petal.browser.account.GoogleAccountManager.checkAndSyncGoogleAccount(context);
         }
     }
