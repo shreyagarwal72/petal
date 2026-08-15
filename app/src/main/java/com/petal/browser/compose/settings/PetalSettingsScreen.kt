@@ -36,6 +36,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import com.petal.browser.ui.components.PetalFeatureTile
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -382,51 +383,22 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         SettingsCategory.ABOUT
                     )
 
-                    categories.forEach { cat ->
-                        Surface(
+                    val tileColorway = listOf(
+                        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
+                        MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
+                        MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+
+                    categories.forEachIndexed { index, cat ->
+                        val (container, onContainer) = tileColorway[index % tileColorway.size]
+                        PetalFeatureTile(
+                            title = cat.title,
+                            subtitle = cat.subtitle,
+                            icon = cat.icon,
+                            container = container,
+                            onContainer = onContainer,
                             onClick = { currentCategory = cat },
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            tonalElevation = 2.dp,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        modifier = Modifier.size(48.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(cat.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                                        }
-                                    }
-                                    Column {
-                                        Text(
-                                            cat.title,
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            cat.subtitle,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
-                            }
-                        }
+                        )
                     }
                 }
 
