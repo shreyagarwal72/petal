@@ -16,10 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.petal.browser.compose.home.PetalShortcut
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +80,17 @@ fun ChromeAccountSyncScreen(
                             .background(if (profile.isSignedIn) Color(0xFF4285F4) else MaterialTheme.colorScheme.secondaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (profile.isSignedIn) {
+                        if (profile.isSignedIn && !profile.avatarUrl.isNullOrEmpty()) {
+                            // Show the real Google account photo, same as the home screen.
+                            AsyncImage(
+                                model = profile.avatarUrl,
+                                contentDescription = "Profile",
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else if (profile.isSignedIn) {
                             val initial = profile.displayName.trim().take(1).ifEmpty { "G" }.uppercase()
                             Text(
                                 text = initial,

@@ -2,10 +2,17 @@ package com.petal.browser.account
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.preference.PreferenceManager
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONArray
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 data class GoogleUserProfile(
     val email: String,
@@ -119,30 +126,116 @@ object GoogleAccountManager {
         }
     }
 
+    // Used only to fetch the signed-in user's real name/email/avatar from Google
+    // once an auth cookie is detected - never used for the download engine etc.
+    private val profileHttpClient = OkHttpClient.Builder()
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(8, TimeUnit.SECONDS)
+        .followRedirects(true)
+        .build()
+    private val profileFetchExecutor = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    @Volatile private var isFetchingProfile = false
+
     @JvmStatic
     fun checkAndSyncGoogleAccount(context: Context) {
-        if (context == null) return
+        val appContext = context.applicationContext ?: context
         try {
             val cookieManager = android.webkit.CookieManager.getInstance() ?: return
-            val cookies = try {
+            val cookieHeader = try {
                 cookieManager.getCookie("https://accounts.google.com") ?: ""
             } catch (e: Exception) {
                 ""
             }
 
             // Check for Google login authentication cookies (SID, HSID, SSID, OSID, SAPISID)
-            val hasAuthCookie = cookies.contains("SID=") || cookies.contains("OSID=") || cookies.contains("SAPISID=") || cookies.contains("SSID=")
+            val hasAuthCookie = cookieHeader.contains("SID=") || cookieHeader.contains("OSID=") ||
+                cookieHeader.contains("SAPISID=") || cookieHeader.contains("SSID=")
+            if (!hasAuthCookie) return
 
-            if (hasAuthCookie) {
-                val sp = PreferenceManager.getDefaultSharedPreferences(context)
-                val existingEmail = sp.getString(KEY_EMAIL, null)
-                val targetEmail = if (existingEmail.isNullOrEmpty() || existingEmail == "user@gmail.com") "google.user@gmail.com" else existingEmail
-                val targetName = if (sp.getString(KEY_DISPLAY_NAME, null).isNullOrEmpty()) "Google Account User" else sp.getString(KEY_DISPLAY_NAME, "Google Account User")!!
+            // Already have real, non-placeholder profile data (name + avatar) - nothing to refresh.
+            if (currentProfile.isSignedIn && !currentProfile.avatarUrl.isNullOrEmpty()) return
+            if (isFetchingProfile) return
 
-                signIn(context, targetEmail, targetName)
-            }
+            fetchRealGoogleProfile(appContext, cookieHeader)
         } catch (e: Throwable) {
             e.printStackTrace()
+        }
+    }
+
+    /**
+     * Fetches the *actual* signed-in Google account's name, email and avatar
+     * using the same cookie-based account-status endpoint Chromium itself uses
+     * for its account-consistency ("Gaia") checks, rather than fabricating
+     * placeholder values. Runs entirely off the main thread; applies the
+     * result (if any) back on the main thread via [signIn].
+     */
+    private fun fetchRealGoogleProfile(context: Context, cookieHeader: String) {
+        isFetchingProfile = true
+        profileFetchExecutor.execute {
+            try {
+                val request = Request.Builder()
+                    .url("https://accounts.google.com/ListAccounts?gpsia=1&source=ChromiumBrowser&json=standard")
+                    .header("Cookie", cookieHeader)
+                    .build()
+
+                profileHttpClient.newCall(request).execute().use { response ->
+                    val body = response.body?.string().orEmpty()
+                    if (!response.isSuccessful || body.isBlank()) return@use
+
+                    // Response is prefixed with an XSSI-protection token, e.g. )]}'
+                    val jsonText = body.substring(body.indexOf('[').coerceAtLeast(0))
+                    val account = parseFirstAccount(jsonText)
+                    if (account != null) {
+                        mainHandler.post {
+                            signIn(context, account.email, account.displayName, account.avatarUrl)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isFetchingProfile = false
+            }
+        }
+    }
+
+    private data class ParsedGoogleAccount(
+        val email: String,
+        val displayName: String,
+        val avatarUrl: String?
+    )
+
+    private fun parseFirstAccount(json: String): ParsedGoogleAccount? {
+        return try {
+            val root = JSONArray(json)
+            val strings = mutableListOf<String>()
+            collectStrings(root, strings)
+
+            val email = strings.firstOrNull { it.contains("@") && it.contains(".") && !it.startsWith("http") }
+                ?: return null
+
+            val avatarUrl = strings.firstOrNull {
+                it.startsWith("http") && (it.contains("googleusercontent") || it.contains("photo"))
+            } ?: strings.firstOrNull { it.startsWith("http") }
+
+            val displayName = strings.firstOrNull { candidate ->
+                candidate != email && candidate != avatarUrl &&
+                    !candidate.startsWith("http") && !candidate.startsWith("gaia.") &&
+                    candidate.contains(" ") && candidate.any { it.isLetter() } &&
+                    candidate.length in 2..60
+            } ?: email.substringBefore("@")
+
+            ParsedGoogleAccount(email = email, displayName = displayName, avatarUrl = avatarUrl)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun collectStrings(value: Any?, out: MutableList<String>) {
+        when (value) {
+            is JSONArray -> for (i in 0 until value.length()) collectStrings(value.opt(i), out)
+            is String -> if (value.isNotBlank()) out.add(value)
         }
     }
 }
