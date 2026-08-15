@@ -57,13 +57,18 @@ fun interface HistoryActionHandler {
 
 object PetalHistoryBridge {
     @JvmStatic
+    @JvmOverloads
     fun showHistory(
         activity: ComponentActivity,
         onOpenUrl: HistoryUrlHandler,
-        onClearBrowsingData: HistoryActionHandler
+        onClearBrowsingData: HistoryActionHandler,
+        onDismiss: Runnable? = null
     ) {
         try {
             val dialog = BottomSheetDialog(activity)
+            dialog.setOnDismissListener {
+                onDismiss?.run()
+            }
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)

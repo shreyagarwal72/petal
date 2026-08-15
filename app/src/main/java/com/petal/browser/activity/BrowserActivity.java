@@ -2352,7 +2352,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 showAlbum(currentAlbumController, url);
                             }
                         },
-                        () -> startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class))
+                        () -> startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class)),
+                        () -> {
+                            if (bottomNav != null) bottomNav.setVisibility(VISIBLE);
+                        }
                     );
                 }
 
