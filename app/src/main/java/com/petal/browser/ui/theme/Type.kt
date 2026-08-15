@@ -153,7 +153,7 @@ data class GSFlexSettings(
     val body: FontAxes = FontAxes(400f, 100f, 16f, 0f, 0f, 0f)
 )
 
-fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes>? {
+fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes> {
     return when (preset) {
         GSFlexPreset.EXPRESSIVE -> Triple(
             FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
@@ -175,7 +175,11 @@ fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes
             FontAxes(500f, 120f, 32f, 0f, 0f, 100f),
             FontAxes(400f, 110f, 16f, 0f, 0f, 50f)
         )
-        GSFlexPreset.DEFAULT -> null
+        GSFlexPreset.DEFAULT -> Triple(
+            FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
+            FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
+            FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
+        )
     }
 }
 
@@ -188,7 +192,7 @@ fun petalTypography(
     preset: GSFlexPreset = GSFlexPreset.DEFAULT
 ): Typography = try {
     val presetAxes = getPresetFontAxes(preset)
-    if (appFont == AppFont.GS_FLEX && presetAxes != null) {
+    if (appFont == AppFont.GS_FLEX) {
         val displayFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = presetAxes.first.toVariationSettings()))
         val headlineFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = presetAxes.second.toVariationSettings()))
         val bodyFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = presetAxes.third.toVariationSettings()))
@@ -196,7 +200,7 @@ fun petalTypography(
     } else {
         when (appFont) {
             AppFont.SYSTEM -> systemTypography(fontWeight)
-            AppFont.GS_FLEX -> buildTypography(weightedTiers(R.font.google_sans_flex, top = fontWeight, width = fontWidth, roundness = fontRoundness))
+            AppFont.GS_FLEX -> systemTypography(fontWeight)
             AppFont.NUNITO -> buildTypography(
                 Tiers(
                     nunitoFont(fontWeight + 500, fontWidth, fontRoundness),
