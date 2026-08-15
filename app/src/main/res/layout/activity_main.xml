@@ -15,16 +15,6 @@
         android:layout_alignParentTop="true"
         android:elevation="12dp" />
 
-    <!-- Fancy Rippling Wavy Top Loading Progress Line -->
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/main_progress_bar_compose"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/compose_address_bar"
-        android:elevation="14dp"/>
-
-
-
     <!-- Persistent Bottom Navigation Container with Reserved Height -->
     <RelativeLayout
         android:id="@+id/bottom_nav_container"
@@ -42,13 +32,21 @@
             android:layout_marginBottom="8dp" />
     </RelativeLayout>
 
-    <!-- Main Web Content Container (Reserves explicit height above bottom_nav_container) -->
+    <!-- Main Web Content Container: anchored directly below the address bar, independent of the progress bar's size -->
     <com.petal.browser.ui.components.PullToRefreshFrameLayout
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/main_progress_bar_compose"
+        android:layout_below="@id/compose_address_bar"
         android:layout_above="@id/bottom_nav_container"/>
+
+    <!-- Fancy Rippling Wavy Top Loading Progress Line: now a true overlay drawn AFTER main_content, so it never gets painted over -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/main_progress_bar_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/compose_address_bar"
+        android:elevation="14dp"/>
 
     <!-- Pull to Refresh Bar (ContainedLoadingIndicator) -->
     <androidx.compose.ui.platform.ComposeView
