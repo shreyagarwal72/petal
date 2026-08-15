@@ -1576,6 +1576,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         boolean isIncognito = ninjaWebView != null && ninjaWebView.isIncognito();
+        boolean canGoBack = ninjaWebView != null && ninjaWebView.canGoBack();
+        boolean isLoading = ninjaWebView != null && ninjaWebView.getProgress() < 100;
 
         com.petal.browser.compose.home.PetalAddressBarBridge.bindAddressBar(
                 composeAddressBar,
@@ -1583,6 +1585,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 currentUrl != null ? currentUrl : "",
                 currentTitle != null ? currentTitle : "",
                 isIncognito,
+                isLoading,
+                canGoBack,
                 () -> {
                     if (ninjaWebView != null && ninjaWebView.canGoBack()) {
                         ninjaWebView.goBack();
