@@ -43,7 +43,11 @@ public class AdBlock {
         "hilltopads.com", "adcash.com", "adsterra.com", "a-ads.com", "mgid.com",
         "revcontent.com", "juicyads.com", "trafficjunky.com", "coinhive.com",
         "statcounter.com", "hotjar.com", "mixpanel.com", "segment.io", "clarity.ms",
-        "pixel.facebook.com", "adservice", "popunder", "popups", "tracking"
+        "pixel.facebook.com", "adservice", "popunder", "popups", "tracking",
+        // uBlock Origin Core Filters & Trackers
+        "ublockorigin", "gorhill", "easylist", "easyprivacy", "adguard",
+        "uBlock-filters", "uBlock-unbreak", "uBlock-badware", "uBlock-privacy",
+        "uBlock-quick-fixes", "analytics", "telemetry", "tracking", "tracker"
     };
 
     private static final String[] AD_PATH_PATTERNS = new String[] {
@@ -117,7 +121,7 @@ public class AdBlock {
     public static void downloadHosts(final Context context) {
         Thread thread = new Thread(() -> {
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-            String hostURL = sp.getString("ab_hosts", "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts");
+            String hostURL = sp.getString("ab_hosts", "https://raw.githubusercontent.com/gorhill/uBlock/master/assets/ublock/filters.txt");
 
             try {
                 URL url = new URL(hostURL);
