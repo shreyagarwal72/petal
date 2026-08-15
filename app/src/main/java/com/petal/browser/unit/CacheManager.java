@@ -28,51 +28,32 @@ public class CacheManager {
         if (context == null) return;
         Context appContext = context.getApplicationContext();
 
-        // 1. Clear WebView instance cache (disk and RAM)
+        // 1. Clear Chromium WebView Cache & WebStorage
         try {
-            if (activeWebView != null) {
-                activeWebView.clearCache(true);
-                activeWebView.clearFormData();
-                activeWebView.clearHistory();
-            } else {
-                WebView tempWebView = new WebView(appContext);
-                tempWebView.clearCache(true);
-                tempWebView.destroy();
-            }
+            BrowsingDataManager.clearCache(appContext, activeWebView);
+            BrowsingDataManager.clearWebStorage();
+            BrowsingDataManager.clearCookies();
+            BrowsingDataManager.clearAutofillData(appContext);
+            BrowsingDataManager.clearPermissions();
         } catch (Exception e) {
-            Log.w(TAG, "Error clearing WebView instance cache", e);
+            Log.w(TAG, "Error clearing Chromium cache sources", e);
         }
 
-        // 2. Clear WebStorage (DOM Storage, IndexedDB storage quotas)
-        try {
-            WebStorage.getInstance().deleteAllData();
-        } catch (Exception e) {
-            Log.w(TAG, "Error clearing WebStorage", e);
-        }
-
-        // 3. Clear Cookies safely
-        try {
-            CookieManager cookieManager = CookieManager.getInstance();
-            cookieManager.flush();
-            cookieManager.removeAllCookies(null);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                cookieManager.flush();
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Error clearing Cookies", e);
-        }
-
-        // 4. Delete Application Cache Directory
+        // 2. Delete Application Cache Directory
         try {
             File cacheDir = appContext.getCacheDir();
             if (cacheDir != null && cacheDir.isDirectory()) {
                 deleteDirContents(cacheDir);
             }
+            File extCacheDir = appContext.getExternalCacheDir();
+            if (extCacheDir != null && extCacheDir.isDirectory()) {
+                deleteDirContents(extCacheDir);
+            }
         } catch (Exception e) {
             Log.w(TAG, "Error clearing app cache directory", e);
         }
 
-        // 5. Safely clean app_webview directory structures
+        // 3. Safely clean app_webview directory structures
         try {
             File appDataDir = new File(appContext.getApplicationInfo().dataDir);
             File appWebviewDir = new File(appDataDir, "app_webview");

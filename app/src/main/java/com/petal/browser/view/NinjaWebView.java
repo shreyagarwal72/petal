@@ -254,6 +254,8 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
 
+        com.petal.browser.unit.BrowsingDataManager.configureWebSettings(this, isIncognito);
+
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         boolean backgroundPlay = sp.getBoolean("sp_background_play", false);
         webSettings.setMediaPlaybackRequiresUserGesture(backgroundPlay ? false : sp.getBoolean(profile + "_saveData", true));
