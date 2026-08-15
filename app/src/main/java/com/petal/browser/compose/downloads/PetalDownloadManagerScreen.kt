@@ -44,6 +44,7 @@ import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.components.LinearRipplingWavyProgressIndicator
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.cos
@@ -171,30 +172,27 @@ fun getFileTypeIcon(fileName: String): ImageVector {
 @Composable
 fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     val context = LocalContext.current
-    val engineTasksState by PetalDownloadEngine.downloadTasks.collectAsState()
 
-    val downloadList by remember {
-        derivedStateOf {
-            engineTasksState.values.map { task ->
-                DownloadItem(
-                    id = task.id,
-                    fileName = task.fileName,
-                    fileUrl = task.url,
-                    progress = if (task.status == DownloadStatus.COMPLETED) 1.0f else task.progressFraction,
-                    status = when (task.status) {
-                        DownloadStatus.COMPLETED -> DownloadManager.STATUS_SUCCESSFUL
-                        DownloadStatus.RUNNING -> DownloadManager.STATUS_RUNNING
-                        DownloadStatus.PAUSED -> DownloadManager.STATUS_PAUSED
-                        DownloadStatus.PENDING -> DownloadManager.STATUS_PENDING
-                        else -> DownloadManager.STATUS_FAILED
-                    },
-                    bytesDownloaded = task.bytesDownloaded,
-                    totalSize = task.totalBytes,
-                    speedBytesPerSec = task.speedBps,
-                    localUri = task.destinationPath,
-                    timestampMs = task.timestampMs
-                )
-            }.sortedByDescending { it.timestampMs }
+    // The app's actual downloads are created via Android's system DownloadManager
+    // (see BrowserUnit / HelperUnit / NinjaDownloadListener), not via PetalDownloadEngine
+    // (which nothing in the app ever calls). So this screen has to read its list from
+    // the system DownloadManager - the same source the row actions below (open/share/
+    // rename/delete, all keyed by DownloadManager id) already assume.
+    var downloadList by remember { mutableStateOf<List<DownloadItem>>(emptyList()) }
+    var prevBytesMap by remember { mutableStateOf<Map<Long, Long>>(emptyMap()) }
+
+    LaunchedEffect(Unit) {
+        var lastPollTime = System.currentTimeMillis()
+        while (isActive) {
+            val now = System.currentTimeMillis()
+            val elapsed = now - lastPollTime
+            lastPollTime = now
+
+            val items = getDownloadItems(context, prevBytesMap, elapsed)
+            downloadList = items
+            prevBytesMap = items.associate { it.id to it.bytesDownloaded }
+
+            delay(1000L)
         }
     }
 
@@ -217,7 +215,11 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
+                    IconButton(onClick = {
+                        val items = getDownloadItems(context, prevBytesMap, 0L)
+                        downloadList = items
+                        prevBytesMap = items.associate { it.id to it.bytesDownloaded }
+                    }) {
                         Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
                     }
                 },
