@@ -8,12 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -32,7 +28,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
-import kotlin.math.roundToInt
 
 /**
  * Shared state for one edge's predictive gesture (back on the left, forward on the right).
@@ -44,9 +39,11 @@ class PetalEdgeGestureState {
 }
 
 /**
- * Circular bubble matching RefreshBarLoadingIndicator's styling, peeking in from the
- * given edge as the gesture progresses, with a directional chevron instead of a spinner.
+ * Circular bubble - the exact same Surface (CircleShape, same colors/elevation) and the
+ * exact same ContainedLoadingIndicator spinner used by RefreshBarLoadingIndicator in
+ * ContainedLoadingIndicator.kt, just peeking in from an edge instead of the top.
  */
+@OptIn(com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EdgeGestureIndicator(
     isLeftEdge: Boolean,
@@ -92,11 +89,9 @@ fun EdgeGestureIndicator(
                         .requiredSize(42.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = if (isLeftEdge) Icons.AutoMirrored.Filled.KeyboardArrowLeft else Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = if (isLeftEdge) "Back" else "Forward",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.requiredSize(28.dp)
+                    // Same call, same size, as the refresh spinner in ContainedLoadingIndicator.kt.
+                    ContainedLoadingIndicator(
+                        modifier = Modifier.requiredSize(38.dp)
                     )
                 }
             }
