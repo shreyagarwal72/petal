@@ -27,6 +27,17 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import java.io.File
 import java.util.Locale
 
+/**
+ * NOTE: This is intentionally a *plain* composable (Surface/Column), not a
+ * Compose `AlertDialog`/`Dialog`. This content is hosted inside a real
+ * platform `AlertDialog` (see [PetalDownloadDialogBridge.showDownloadConfirmation]).
+ * Compose's `AlertDialog` internally opens its own separate Android window,
+ * so nesting it inside another platform dialog created two stacked windows:
+ * tapping "Download"/"Cancel" only dismissed the outer (invisible) wrapper
+ * while the actual visible inner window stayed on screen, appearing frozen.
+ * Keeping this as flat content that shares the single outer dialog's window
+ * ensures dismiss() from the bridge actually closes what the user sees.
+ */
 @Composable
 fun PetalDownloadConfirmationDialog(
     fileName: String,
@@ -35,26 +46,33 @@ fun PetalDownloadConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
+    Surface(
         shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        icon = {
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth(0.9f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
             Icon(
                 imageVector = Icons.Rounded.Download,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp)
             )
-        },
-        title = {
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
                 text = if (isDuplicate) "Download file again?" else "Download file?",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
-        },
-        text = {
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             val annotatedText = buildAnnotatedString {
                 append("Do you want to download ")
                 withStyle(
@@ -78,34 +96,42 @@ fun PetalDownloadConfirmationDialog(
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = if (isDuplicate) "Download again" else "Download",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(
-                    text = "Cancel",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
-                )
+                TextButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = "Cancel",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
+                    onClick = onConfirm,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text(
+                        text = if (isDuplicate) "Download again" else "Download",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
             }
         }
-    )
+    }
 }
 
 object PetalDownloadDialogBridge {
