@@ -161,6 +161,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         mutableStateOf(try { ColorStyle.valueOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") } catch (e: Exception) { ColorStyle.TONAL_SPOT })
     }
     var selectedPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
+    var selectedThemeConfig by remember {
+        mutableStateOf(try { ThemeConfig.valueOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") } catch (e: Exception) { ThemeConfig.FOLLOW_SYSTEM })
+    }
     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
@@ -221,7 +224,15 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         return sectionTitle.lowercase().contains(query) || keywords.lowercase().contains(query)
     }
 
+    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDarkTheme = when (selectedThemeConfig) {
+        ThemeConfig.FOLLOW_SYSTEM -> systemDark
+        ThemeConfig.LIGHT -> false
+        ThemeConfig.DARK -> true
+    }
+
     PetalExpressiveTheme(
+        darkTheme = isDarkTheme,
         dynamicColor = isDynamicColor,
         useAmoled = isAmoled,
         expressiveColors = isExpressiveColors,
@@ -367,6 +378,43 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        // --- Theme Mode Chips (Light, Dark, System) ---
+                        Text(
+                            "App Theme Mode:",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ThemeConfig.values().forEach { config ->
+                                val label = when (config) {
+                                    ThemeConfig.FOLLOW_SYSTEM -> "System Default"
+                                    ThemeConfig.LIGHT -> "Light Mode"
+                                    ThemeConfig.DARK -> "Dark Mode"
+                                }
+                                val icon = when (config) {
+                                    ThemeConfig.FOLLOW_SYSTEM -> Icons.Rounded.BrightnessAuto
+                                    ThemeConfig.LIGHT -> Icons.Rounded.LightMode
+                                    ThemeConfig.DARK -> Icons.Rounded.DarkMode
+                                }
+                                FilterChip(
+                                    selected = selectedThemeConfig == config,
+                                    onClick = {
+                                        selectedThemeConfig = config
+                                        sp.edit().putString("sp_theme_config", config.name).apply()
+                                    },
+                                    label = { Text(label) },
+                                    leadingIcon = {
+                                        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    }
+                                )
+                            }
+                        }
 
                         // --- Font Choice Chips ---
                         Text(

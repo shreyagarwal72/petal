@@ -79,15 +79,28 @@ fun PetalExpressiveTheme(
 
     if (expressiveColors) {
         colorScheme = if (darkTheme) {
-            colorScheme.copy(
-                background = colorScheme.surfaceContainerLow,
-                surface = colorScheme.surfaceContainerLow,
-                surfaceContainer = colorScheme.surfaceContainerHigh,
-                surfaceContainerLow = colorScheme.surfaceContainerHigh,
-                surfaceContainerHigh = colorScheme.surfaceContainerHigh,
-                surfaceContainerHighest = colorScheme.surfaceContainerHigh,
-                surfaceContainerLowest = colorScheme.surfaceContainerHigh
-            )
+            if (useAmoled) {
+                // When AMOLED is active, expressive surfaces use dark grey (#121212 / #1A1A1A) contrast instead of pitch pure black
+                colorScheme.copy(
+                    background = Color(0xFF121212),
+                    surface = Color(0xFF121212),
+                    surfaceContainer = Color(0xFF1E1E1E),
+                    surfaceContainerLow = Color(0xFF1A1A1A),
+                    surfaceContainerHigh = Color(0xFF242424),
+                    surfaceContainerHighest = Color(0xFF2C2C2C),
+                    surfaceContainerLowest = Color(0xFF161616)
+                )
+            } else {
+                colorScheme.copy(
+                    background = colorScheme.surfaceContainerLow,
+                    surface = colorScheme.surfaceContainerLow,
+                    surfaceContainer = colorScheme.surfaceContainerHigh,
+                    surfaceContainerLow = colorScheme.surfaceContainerHigh,
+                    surfaceContainerHigh = colorScheme.surfaceContainerHigh,
+                    surfaceContainerHighest = colorScheme.surfaceContainerHigh,
+                    surfaceContainerLowest = colorScheme.surfaceContainerHigh
+                )
+            }
         } else {
             colorScheme.copy(
                 background = colorScheme.surfaceContainerLow,
@@ -101,7 +114,7 @@ fun PetalExpressiveTheme(
         }
     }
 
-    if (darkTheme && useAmoled) {
+    if (darkTheme && useAmoled && !expressiveColors) {
         colorScheme = colorScheme.applyAmoled()
     }
 
