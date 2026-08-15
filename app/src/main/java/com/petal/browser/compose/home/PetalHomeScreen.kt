@@ -175,6 +175,7 @@ interface PetalHomeActionHandler {
     fun onOpenDownloads()
     fun onOpenSettings()
     fun onOpenTabsOverview()
+    fun onOpenAccountSync()
 }
 
 object PetalComposeBridge {
@@ -189,7 +190,7 @@ object PetalComposeBridge {
                 activity = activity,
                 onSearch = { query -> handler.onSearch(query) },
                 onOpenShortcutUrl = { url -> handler.onOpenUrl(url) },
-                onOpenAccountSync = { handler.onOpenSettings() }
+                onOpenAccountSync = { handler.onOpenAccountSync() }
             )
         }
     }
