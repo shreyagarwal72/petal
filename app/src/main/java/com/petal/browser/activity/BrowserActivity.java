@@ -411,6 +411,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         initOmniBox();
         initSearchOnSite();
         initPullToRefresh();
+        initPredictiveEdgeGestures();
         initOverview();
         hideSearch();
         dispatchIntent(getIntent());
@@ -546,6 +547,171 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     private long lastBackPressTime = 0;
 
+    /**
+     * The actual back-navigation decision logic. Shared between the legacy KEYCODE_BACK
+     * path (3-button nav / hardware back) and the OnBackPressedCallback path (gesture
+     * nav / predictive back) below, so both routes behave identically.
+     */
+    private void performBackNavigation() {
+        if (fullscreenHolder != null || customView != null || videoView != null) {
+            Log.v(TAG, "Petal in fullscreen mode");
+        } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
+            searchOnSiteInput.setText("");
+            searchOnSiteLayout.setVisibility(GONE);
+            appBar.setVisibility(VISIBLE);
+        } else if (ninjaWebView != null && ninjaWebView.canGoBack()){
+            sp.edit().putBoolean("backPressed", true).apply();
+            ninjaWebView.goBack();
+        } else {
+            String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+            String homeUrl = sp.getString("favoriteURL", "about:blank");
+            if (currentUrl != null && !isHomePage(currentUrl) && !currentUrl.equals(homeUrl)) {
+                ninjaWebView.loadUrl(homeUrl);
+                showAlbum(currentAlbumController, homeUrl);
+            } else {
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastBackPressTime < 2000) {
+                    finish();
+                } else {
+                    lastBackPressTime = currentTime;
+                    NinjaToast.show(BrowserActivity.this, "Press back again to exit Petal");
+                }
+            }
+        }
+    }
+
+    // State driving the left (back) and right (forward) edge bubbles.
+    private final com.petal.browser.compose.composable.PetalEdgeGestureState backGestureState = new com.petal.browser.compose.composable.PetalEdgeGestureState();
+    private final com.petal.browser.compose.composable.PetalEdgeGestureState forwardGestureState = new com.petal.browser.compose.composable.PetalEdgeGestureState();
+
+    /**
+     * Registers the predictive-back callback (drives the left-edge bubble on gesture-nav
+     * devices, API 33+) and adds the two edge indicator ComposeViews as window overlays -
+     * same addContentView approach used for the refresh spinner, so the WebView can never
+     * draw over them.
+     */
+    private void initPredictiveEdgeGestures() {
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackStarted(@androidx.annotation.NonNull androidx.activity.BackEventCompat backEvent) {
+                backGestureState.setActive(true);
+                backGestureState.setProgress(0f);
+            }
+
+            @Override
+            public void handleOnBackProgressed(@androidx.annotation.NonNull androidx.activity.BackEventCompat backEvent) {
+                backGestureState.setProgress(backEvent.getProgress());
+            }
+
+            @Override
+            public void handleOnBackPressed() {
+                backGestureState.setActive(false);
+                backGestureState.setProgress(0f);
+                performBackNavigation();
+            }
+
+            @Override
+            public void handleOnBackCancelled() {
+                backGestureState.setActive(false);
+                backGestureState.setProgress(0f);
+            }
+        });
+
+        android.widget.FrameLayout.LayoutParams leftParams = new android.widget.FrameLayout.LayoutParams(
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        );
+        leftParams.gravity = android.view.Gravity.START;
+        androidx.compose.ui.platform.ComposeView leftEdgeCompose = new androidx.compose.ui.platform.ComposeView(this);
+        addContentView(leftEdgeCompose, leftParams);
+        com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bind(leftEdgeCompose, this, backGestureState, true);
+        leftEdgeCompose.bringToFront();
+
+        android.widget.FrameLayout.LayoutParams rightParams = new android.widget.FrameLayout.LayoutParams(
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        );
+        rightParams.gravity = android.view.Gravity.END;
+        androidx.compose.ui.platform.ComposeView rightEdgeCompose = new androidx.compose.ui.platform.ComposeView(this);
+        addContentView(rightEdgeCompose, rightParams);
+        com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bind(rightEdgeCompose, this, forwardGestureState, false);
+        rightEdgeCompose.bringToFront();
+    }
+
+    // Right-edge swipe-to-forward: there is no OS predictive-back-style API for forward
+    // navigation, so this is a hand-rolled gesture, deliberately scoped to only claim
+    // touches that START within EDGE_MARGIN_DP of the right edge - everything else
+    // (page scrolling, horizontal carousels, etc.) passes through untouched.
+    private static final float FORWARD_EDGE_MARGIN_DP = 24f;
+    private static final float FORWARD_COMMIT_THRESHOLD = 0.4f;
+    private boolean forwardGestureTracking = false;
+    private boolean forwardGestureClaimed = false;
+    private float forwardGestureStartX = 0f;
+
+    @Override
+    public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
+        if (handleForwardEdgeGesture(ev)) {
+            return true;
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    private boolean handleForwardEdgeGesture(android.view.MotionEvent ev) {
+        float edgeMarginPx = HelperUnit.convertDpToPixel(FORWARD_EDGE_MARGIN_DP, this);
+        float screenWidth = getResources().getDisplayMetrics().widthPixels;
+        float triggerDistancePx = HelperUnit.convertDpToPixel(120f, this);
+
+        switch (ev.getActionMasked()) {
+            case android.view.MotionEvent.ACTION_DOWN:
+                boolean canGoForward = ninjaWebView != null && ninjaWebView.canGoForward();
+                if (canGoForward && ev.getRawX() >= screenWidth - edgeMarginPx) {
+                    forwardGestureTracking = true;
+                    forwardGestureClaimed = false;
+                    forwardGestureStartX = ev.getRawX();
+                }
+                return false;
+
+            case android.view.MotionEvent.ACTION_MOVE:
+                if (!forwardGestureTracking) return false;
+                float dragDistance = forwardGestureStartX - ev.getRawX();
+                if (!forwardGestureClaimed) {
+                    if (dragDistance > HelperUnit.convertDpToPixel(8f, this)) {
+                        forwardGestureClaimed = true;
+                        forwardGestureState.setActive(true);
+                        if (ninjaWebView != null) {
+                            ninjaWebView.dispatchTouchEvent(android.view.MotionEvent.obtain(
+                                ev.getDownTime(), ev.getEventTime(), android.view.MotionEvent.ACTION_CANCEL,
+                                ev.getX(), ev.getY(), 0));
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+                float progress = Math.min(1f, Math.max(0f, dragDistance / triggerDistancePx));
+                forwardGestureState.setProgress(progress);
+                return true;
+
+            case android.view.MotionEvent.ACTION_UP:
+            case android.view.MotionEvent.ACTION_CANCEL:
+                if (forwardGestureClaimed) {
+                    if (forwardGestureState.getProgress() >= FORWARD_COMMIT_THRESHOLD && ninjaWebView != null && ninjaWebView.canGoForward()) {
+                        ninjaWebView.goForward();
+                    }
+                    forwardGestureState.setActive(false);
+                    forwardGestureState.setProgress(0f);
+                    forwardGestureTracking = false;
+                    forwardGestureClaimed = false;
+                    return true;
+                }
+                forwardGestureTracking = false;
+                forwardGestureClaimed = false;
+                return false;
+
+            default:
+                return forwardGestureClaimed;
+        }
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
@@ -553,31 +719,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showOverflow(null, null, 0, ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "", null, null, 0);
                 return true;
             case KeyEvent.KEYCODE_BACK:
-                if (fullscreenHolder != null || customView != null || videoView != null) {
-                    Log.v(TAG, "Petal in fullscreen mode");
-                } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
-                    searchOnSiteInput.setText("");
-                    searchOnSiteLayout.setVisibility(GONE);
-                    appBar.setVisibility(VISIBLE);
-                } else if (ninjaWebView != null && ninjaWebView.canGoBack()){
-                    sp.edit().putBoolean("backPressed", true).apply();
-                    ninjaWebView.goBack();
-                } else {
-                    String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-                    String homeUrl = sp.getString("favoriteURL", "about:blank");
-                    if (currentUrl != null && !isHomePage(currentUrl) && !currentUrl.equals(homeUrl)) {
-                        ninjaWebView.loadUrl(homeUrl);
-                        showAlbum(currentAlbumController, homeUrl);
-                    } else {
-                        long currentTime = System.currentTimeMillis();
-                        if (currentTime - lastBackPressTime < 2000) {
-                            finish();
-                        } else {
-                            lastBackPressTime = currentTime;
-                            NinjaToast.show(BrowserActivity.this, "Press back again to exit Petal");
-                        }
-                    }
-                }
+                // Fallback path for 3-button navigation / hardware back key. Gesture-nav
+                // devices are handled by the OnBackPressedCallback registered in
+                // initPredictiveEdgeGestures() instead, which is predictive-back aware.
+                performBackNavigation();
                 return true;
         }
         return super.onKeyDown(keyCode, event);
