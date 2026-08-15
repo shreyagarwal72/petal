@@ -636,6 +636,28 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         addContentView(rightEdgeCompose, rightParams);
         com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bind(rightEdgeCompose, this, forwardGestureState, false);
         rightEdgeCompose.bringToFront();
+
+        // Gesture-nav Android reserves BOTH screen edges for the system back gesture by
+        // default, not just the left. Without this, a right-edge swipe never reaches
+        // dispatchTouchEvent below at all - the system claims it as a back gesture first.
+        // This carves out a thin strip on the right edge so those touches are delivered
+        // to the app instead, letting the forward gesture actually receive them.
+        final View decorView = getWindow().getDecorView();
+        decorView.post(() -> {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                int screenWidth = decorView.getWidth();
+                int screenHeight = decorView.getHeight();
+                if (screenWidth > 0 && screenHeight > 0) {
+                    int marginPx = (int) HelperUnit.convertDpToPixel(FORWARD_EDGE_MARGIN_DP, this);
+                    android.graphics.Rect exclusionRect = new android.graphics.Rect(
+                        screenWidth - marginPx, 0, screenWidth, screenHeight
+                    );
+                    decorView.setSystemGestureExclusionRects(
+                        java.util.Collections.singletonList(exclusionRect)
+                    );
+                }
+            }
+        });
     }
 
     // Right-edge swipe-to-forward: there is no OS predictive-back-style API for forward
@@ -960,11 +982,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 @Override
                 public void onOpenTabsOverview() {
                     showOverview();
-                }
-
-                @Override
-                public void onOpenAccountSync() {
-                    showAccountSyncScreen();
                 }
             });
             contentFrame.addView(composeView);
@@ -2445,41 +2462,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void showAccountSyncScreen() {
-        try {
-            contentFrame.removeAllViews();
-            if (appBar != null) appBar.setVisibility(GONE);
-            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
-            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
-            View bottomNav = findViewById(R.id.bottom_nav_compose);
-            if (bottomNav != null) bottomNav.setVisibility(GONE);
-            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
-            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
-            View fab_bubble_account = findViewById(R.id.fab_bubble);
-            if (fab_bubble_account != null) fab_bubble_account.setVisibility(GONE);
-            View accountSyncView = com.petal.browser.account.PetalAccountSyncBridge.createAccountSyncView(
-                BrowserActivity.this,
-                () -> {
-                    showAlbum(currentAlbumController);
-                    return kotlin.Unit.INSTANCE;
-                },
-                shortcut -> {
-                    // Load the Google sign-in / add-account URL in the active tab so the
-                    // user can actually authenticate; NinjaWebViewClient will pick up the
-                    // resulting auth cookies and GoogleAccountManager will sync the profile.
-                    if (ninjaWebView != null) {
-                        ninjaWebView.loadUrl(shortcut.getUrl());
-                        showAlbum(currentAlbumController, shortcut.getUrl());
-                    }
-                    return kotlin.Unit.INSTANCE;
-                }
-            );
-            contentFrame.addView(accountSyncView);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final AdapterRecord adapterRecord, List<Record> recordList, int location) {
         showOverflowMenu(view != null ? view : findViewById(R.id.bottom_nav_compose));
     }
@@ -3521,16 +3503,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @SuppressLint("SetJavaScriptEnabled")
     private void dispatchIntent(Intent intent) {
         if (intent == null) return;
-
-        // Tapping a download notification (see PetalLiveAlertManager) launches
-        // BrowserActivity with this extra so it lands on the Download Manager
-        // screen instead of just reopening to whatever was last on screen.
-        if (intent.getBooleanExtra("open_downloads", false)) {
-            intent.removeExtra("open_downloads");
-            showDownloads();
-            return;
-        }
-
         boolean isPwaMode = intent.getBooleanExtra("pwa_mode", false);
         if (isPwaMode) {
             View composeAddr = findViewById(R.id.compose_address_bar);
