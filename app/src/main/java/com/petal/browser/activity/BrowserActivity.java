@@ -3521,6 +3521,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @SuppressLint("SetJavaScriptEnabled")
     private void dispatchIntent(Intent intent) {
         if (intent == null) return;
+
+        // Tapping a download notification (see PetalLiveAlertManager) launches
+        // BrowserActivity with this extra so it lands on the Download Manager
+        // screen instead of just reopening to whatever was last on screen.
+        if (intent.getBooleanExtra("open_downloads", false)) {
+            intent.removeExtra("open_downloads");
+            showDownloads();
+            return;
+        }
+
         boolean isPwaMode = intent.getBooleanExtra("pwa_mode", false);
         if (isPwaMode) {
             View composeAddr = findViewById(R.id.compose_address_bar);
