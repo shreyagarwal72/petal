@@ -223,14 +223,8 @@ object PetalLinkContextMenuBridge {
         faviconUrl: String? = null,
         handler: PetalLinkContextMenuHandler
     ) {
-        val dialog = android.app.Dialog(activity, com.google.android.material.R.style.Theme_Design_BottomSheetDialog)
-        dialog.window?.let { window ->
-            window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-            window.setGravity(android.view.Gravity.BOTTOM)
-            window.setBackgroundDrawableResource(android.R.color.transparent)
-        }
-
-        val composeView = ComposeView(activity).apply {
+        var composeView: ComposeView? = null
+        composeView = ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
@@ -261,13 +255,21 @@ object PetalLinkContextMenuBridge {
                         linkTitle = linkTitle,
                         linkUrl = linkUrl,
                         faviconUrl = faviconUrl,
-                        onDismiss = { dialog.dismiss() },
+                        onDismiss = {
+                            val parent = composeView?.parent as? android.view.ViewGroup
+                            parent?.removeView(composeView)
+                        },
                         handler = handler
                     )
                 }
             }
         }
-        dialog.setContentView(composeView)
-        dialog.show()
+        activity.addContentView(
+            composeView,
+            android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
     }
 }

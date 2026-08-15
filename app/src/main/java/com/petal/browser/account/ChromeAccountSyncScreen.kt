@@ -43,6 +43,10 @@ fun ChromeAccountSyncScreen(
     val context = LocalContext.current
     val profile = GoogleAccountManager.currentProfile
 
+    LaunchedEffect(Unit) {
+        GoogleAccountManager.checkAndSyncGoogleAccount(context)
+    }
+
 
     Scaffold(
         topBar = {

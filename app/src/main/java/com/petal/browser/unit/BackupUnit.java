@@ -198,6 +198,216 @@ public class BackupUnit {
         });
     }
 
+    public static void backupToUri(Context context, android.net.Uri uri, boolean backupBookmarks, boolean backupHistory, boolean backupSavedSites, boolean backupSettings) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            try {
+                org.json.JSONObject backupJson = new org.json.JSONObject();
+                backupJson.put("version", 1);
+                backupJson.put("timestamp", System.currentTimeMillis());
+
+                RecordAction action = new RecordAction(context);
+
+                if (backupBookmarks) {
+                    action.open(false);
+                    List<Record> bookmarks = action.listBookmark(context, false, 0);
+                    action.close();
+
+                    org.json.JSONArray bookmarksArray = new org.json.JSONArray();
+                    for (Record r : bookmarks) {
+                        org.json.JSONObject obj = new org.json.JSONObject();
+                        obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                        obj.put("url", r.getURL() != null ? r.getURL() : "");
+                        obj.put("time", r.getTime());
+                        bookmarksArray.put(obj);
+                    }
+                    backupJson.put("bookmarks", bookmarksArray);
+                }
+
+                if (backupHistory) {
+                    action.open(false);
+                    List<Record> history = action.listHistory(context);
+                    action.close();
+
+                    org.json.JSONArray historyArray = new org.json.JSONArray();
+                    for (Record r : history) {
+                        org.json.JSONObject obj = new org.json.JSONObject();
+                        obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                        obj.put("url", r.getURL() != null ? r.getURL() : "");
+                        obj.put("time", r.getTime());
+                        historyArray.put(obj);
+                    }
+                    backupJson.put("history", historyArray);
+                }
+
+                if (backupSavedSites) {
+                    action.open(false);
+                    List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
+                    action.close();
+
+                    org.json.JSONArray sitesArray = new org.json.JSONArray();
+                    for (String domain : domains) {
+                        sitesArray.put(domain);
+                    }
+                    backupJson.put("saved_sites", sitesArray);
+                }
+
+                if (backupSettings) {
+                    android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                    org.json.JSONObject settingsObj = new org.json.JSONObject();
+                    for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
+                        Object val = entry.getValue();
+                        if (val != null) {
+                            settingsObj.put(entry.getKey(), val);
+                        }
+                    }
+                    backupJson.put("settings", settingsObj);
+                }
+
+                java.io.OutputStream os = context.getContentResolver().openOutputStream(uri);
+                if (os != null) {
+                    BufferedWriter writer = new BufferedWriter(new java.io.OutputStreamWriter(os));
+                    writer.write(backupJson.toString(2));
+                    writer.close();
+                }
+
+                handler.post(() -> {
+                    NinjaToast.show(context, context.getString(R.string.app_done) + ": Backup saved successfully");
+                });
+            } catch (Exception e) {
+                Log.e("Petal", "backupToUri error", e);
+                handler.post(() -> {
+                    NinjaToast.show(context, "Backup failed: " + e.getMessage());
+                });
+            }
+        });
+    }
+
+    public static void restoreFromUri(Context context, android.net.Uri uri, boolean restoreBookmarks, boolean restoreHistory, boolean restoreSavedSites, boolean restoreSettings) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            try {
+                java.io.InputStream is = context.getContentResolver().openInputStream(uri);
+                if (is == null) {
+                    handler.post(() -> NinjaToast.show(context, "Failed to open selected file"));
+                    return;
+                }
+
+                BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(is));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+                reader.close();
+
+                org.json.JSONObject backupJson = new org.json.JSONObject(sb.toString());
+
+                if (restoreBookmarks && backupJson.has("bookmarks")) {
+                    try {
+                        org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
+                        RecordAction action = new RecordAction(context);
+                        action.open(true);
+                        for (int i = 0; i < bookmarksArray.length(); i++) {
+                            org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
+                            String title = obj.optString("title", "");
+                            String url = obj.optString("url", "");
+                            long time = obj.optLong("time", System.currentTimeMillis());
+                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
+                                Record record = new Record();
+                                record.setTitle(title);
+                                record.setURL(url);
+                                record.setTime(time);
+                                record.setIconColor(1);
+                                action.addBookmark(record);
+                            }
+                        }
+                        action.close();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring bookmarks", e);
+                    }
+                }
+
+                if (restoreHistory && backupJson.has("history")) {
+                    try {
+                        org.json.JSONArray historyArray = backupJson.getJSONArray("history");
+                        RecordAction action = new RecordAction(context);
+                        action.open(true);
+                        for (int i = 0; i < historyArray.length(); i++) {
+                            org.json.JSONObject obj = historyArray.getJSONObject(i);
+                            String title = obj.optString("title", "");
+                            String url = obj.optString("url", "");
+                            long time = obj.optLong("time", System.currentTimeMillis());
+                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
+                                action.addHistory(new Record(title, url, time, 0L));
+                            }
+                        }
+                        action.close();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring history", e);
+                    }
+                }
+
+                if (restoreSavedSites && backupJson.has("saved_sites")) {
+                    try {
+                        org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
+                        RecordAction action = new RecordAction(context);
+                        List_standard listStandard = new List_standard(context);
+                        action.open(true);
+                        for (int i = 0; i < sitesArray.length(); i++) {
+                            String domain = sitesArray.optString(i, "");
+                            if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
+                                listStandard.addDomain(domain);
+                            }
+                        }
+                        action.close();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring saved sites", e);
+                    }
+                }
+
+                if (restoreSettings && backupJson.has("settings")) {
+                    try {
+                        org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
+                        android.content.SharedPreferences.Editor editor = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit();
+                        java.util.Iterator<String> keys = settingsObj.keys();
+                        while (keys.hasNext()) {
+                            String key = keys.next();
+                            Object val = settingsObj.opt(key);
+                            if (val instanceof Boolean) {
+                                editor.putBoolean(key, (Boolean) val);
+                            } else if (val instanceof Integer) {
+                                editor.putInt(key, (Integer) val);
+                            } else if (val instanceof Long) {
+                                editor.putLong(key, (Long) val);
+                            } else if (val instanceof Double) {
+                                editor.putFloat(key, ((Double) val).floatValue());
+                            } else if (val instanceof Float) {
+                                editor.putFloat(key, (Float) val);
+                            } else if (val instanceof String) {
+                                editor.putString(key, (String) val);
+                            }
+                        }
+                        editor.apply();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring settings", e);
+                    }
+                }
+
+                handler.post(() -> {
+                    NinjaToast.show(context, context.getString(R.string.app_done) + ": " + context.getString(R.string.settings_data_restore));
+                });
+            } catch (Exception e) {
+                Log.e("Petal", "restoreFromUri error", e);
+                handler.post(() -> {
+                    NinjaToast.show(context, "Restore failed: " + e.getMessage());
+                });
+            }
+        });
+    }
+
     public static void restoreFromJson(Activity context, boolean restoreBookmarks, boolean restoreHistory, boolean restoreSavedSites, boolean restoreSettings) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());

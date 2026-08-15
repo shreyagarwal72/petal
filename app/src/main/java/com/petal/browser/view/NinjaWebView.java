@@ -214,7 +214,12 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         }
 
         if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
-            WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, sp.getBoolean(profile + "_night", true));
+            String themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM");
+            boolean forceDark = sp.getBoolean("sp_force_dark_mode", false);
+            boolean profileNight = sp.getBoolean(profile + "_night", true);
+            boolean systemDark = (context.getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            boolean isDarkTheme = forceDark || "DARK".equalsIgnoreCase(themeConfig) || ("FOLLOW_SYSTEM".equalsIgnoreCase(themeConfig) && systemDark);
+            WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, isDarkTheme && profileNight);
         }
 
         String desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";

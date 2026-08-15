@@ -80,6 +80,7 @@ object PetalSettingsBridge {
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                var themeConfigName by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
 
                 DisposableEffect(sp) {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -93,6 +94,7 @@ object PetalSettingsBridge {
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
                             "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                            "sp_theme_config" -> themeConfigName = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
                         }
                     }
                     sp.registerOnSharedPreferenceChangeListener(listener)
@@ -108,8 +110,19 @@ object PetalSettingsBridge {
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
+                val themeConfig = remember(themeConfigName) {
+                    try { ThemeConfig.valueOf(themeConfigName) } catch (e: Exception) { ThemeConfig.FOLLOW_SYSTEM }
+                }
+
+                val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+                val isDarkTheme = when (themeConfig) {
+                    ThemeConfig.FOLLOW_SYSTEM -> systemDark
+                    ThemeConfig.LIGHT -> false
+                    ThemeConfig.DARK -> true
+                }
 
                 PetalExpressiveTheme(
+                    darkTheme = isDarkTheme,
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
                     appFont = appFont,
@@ -1094,6 +1107,36 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 var restoreSavedSites by remember { mutableStateOf(true) }
                 var restoreSettings by remember { mutableStateOf(true) }
 
+                val createBackupLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
+                ) { uri: android.net.Uri? ->
+                    if (uri != null) {
+                        com.petal.browser.unit.BackupUnit.backupToUri(
+                            context,
+                            uri,
+                            backupBookmarks,
+                            backupHistory,
+                            backupSavedSites,
+                            backupSettings
+                        )
+                    }
+                }
+
+                val openRestoreLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+                ) { uri: android.net.Uri? ->
+                    if (uri != null) {
+                        com.petal.browser.unit.BackupUnit.restoreFromUri(
+                            context,
+                            uri,
+                            restoreBookmarks,
+                            restoreHistory,
+                            restoreSavedSites,
+                            restoreSettings
+                        )
+                    }
+                }
+
                 if (showBackupDialog) {
                     AlertDialog(
                         onDismissRequest = { showBackupDialog = false },
@@ -1126,15 +1169,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         confirmButton = {
                             Button(onClick = {
                                 showBackupDialog = false
-                                if (context is ComponentActivity) {
-                                    if (!com.petal.browser.unit.BackupUnit.checkPermissionStorage(context)) {
-                                        com.petal.browser.unit.BackupUnit.requestPermission(context)
-                                    } else {
-                                        com.petal.browser.unit.BackupUnit.backupToJson(context, backupBookmarks, backupHistory, backupSavedSites, backupSettings)
-                                    }
-                                }
+                                createBackupLauncher.launch("petal_browser_backup.json")
                             }) {
-                                Text("Export JSON")
+                                Text("Choose Save Folder")
                             }
                         },
                         dismissButton = {
@@ -1177,15 +1214,9 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         confirmButton = {
                             Button(onClick = {
                                 showRestoreDialog = false
-                                if (context is ComponentActivity) {
-                                    if (!com.petal.browser.unit.BackupUnit.checkPermissionStorage(context)) {
-                                        com.petal.browser.unit.BackupUnit.requestPermission(context)
-                                    } else {
-                                        com.petal.browser.unit.BackupUnit.restoreFromJson(context, restoreBookmarks, restoreHistory, restoreSavedSites, restoreSettings)
-                                    }
-                                }
+                                openRestoreLauncher.launch(arrayOf("application/json", "*/*"))
                             }) {
-                                Text("Restore JSON")
+                                Text("Choose Backup File")
                             }
                         },
                         dismissButton = {

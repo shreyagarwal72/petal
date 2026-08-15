@@ -153,8 +153,8 @@ object GoogleAccountManager {
                 cookieHeader.contains("SAPISID=") || cookieHeader.contains("SSID=")
             if (!hasAuthCookie) return
 
-            // Already have real, non-placeholder profile data (name + avatar) - nothing to refresh.
-            if (currentProfile.isSignedIn && !currentProfile.avatarUrl.isNullOrEmpty()) return
+            // Refresh profile if signed out OR if signed in with placeholder data / missing avatar
+            if (currentProfile.isSignedIn && !currentProfile.avatarUrl.isNullOrEmpty() && !currentProfile.email.endsWith("user@gmail.com")) return
             if (isFetchingProfile) return
 
             fetchRealGoogleProfile(appContext, cookieHeader)

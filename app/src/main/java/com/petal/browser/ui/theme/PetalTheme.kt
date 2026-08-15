@@ -50,7 +50,16 @@ fun ColorScheme.applyAmoled(): ColorScheme = copy(
  */
 @Composable
 fun PetalExpressiveTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val configStr = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
+        val config = try { ThemeConfig.valueOf(configStr) } catch (e: Exception) { ThemeConfig.FOLLOW_SYSTEM }
+        when (config) {
+            ThemeConfig.FOLLOW_SYSTEM -> isSystemInDarkTheme()
+            ThemeConfig.LIGHT -> false
+            ThemeConfig.DARK -> true
+        }
+    },
     dynamicColor: Boolean = isDynamicColorSupported,
     useAmoled: Boolean = false,
     expressiveColors: Boolean = false,
