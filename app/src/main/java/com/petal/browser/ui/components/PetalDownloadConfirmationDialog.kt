@@ -143,6 +143,7 @@ object PetalDownloadDialogBridge {
         mimeType: String?,
         contentLength: Long,
         onConfirmDownload: (String) -> Unit
+    ) {
         val guessedFileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
         val formattedSize = formatFileSize(contentLength)
         val isDuplicate = isFileExistsInDownloads(guessedFileName)
