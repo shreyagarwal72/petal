@@ -1837,6 +1837,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private void initPullToRefresh() {
         androidx.compose.ui.platform.ComposeView refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         if (refreshBarCompose != null) {
+            // Remove from RelativeLayout if present and re-add directly to window overlay so WebView hardware layer can never obscure it
+            android.view.ViewParent parent = refreshBarCompose.getParent();
+            if (parent instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) parent).removeView(refreshBarCompose);
+            }
+            android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            params.topMargin = (int) HelperUnit.convertDpToPixel(56f, this);
+            addContentView(refreshBarCompose, params);
             com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
             refreshBarCompose.bringToFront();
         }
