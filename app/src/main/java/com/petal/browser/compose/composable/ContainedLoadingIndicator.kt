@@ -11,6 +11,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -94,6 +95,13 @@ fun RefreshBarLoadingIndicator(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                // Fixed height tall enough to contain the circle's full travel range
+                // (its own ~58dp size plus the largest translationY offset used below,
+                // 64dp, plus margin). translationY is a paint-time transform - it never
+                // changes this Box's measured size, so without reserving space for the
+                // worst case up front, the ComposeView hosting this clips the circle
+                // wherever its un-translated resting bounds happened to end.
+                .height(140.dp)
                 .zIndex(500f)
                 .padding(top = 12.dp),
             contentAlignment = Alignment.TopCenter
