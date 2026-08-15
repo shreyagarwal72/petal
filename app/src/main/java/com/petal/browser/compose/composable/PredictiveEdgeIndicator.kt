@@ -139,4 +139,86 @@ object PetalEdgeIndicatorBridge {
             }
         }
     }
+
+    @JvmStatic
+    fun bindContentTransform(
+        activity: ComponentActivity,
+        contentView: android.view.View,
+        backState: PetalEdgeGestureState,
+        forwardState: PetalEdgeGestureState
+    ) {
+        val overlayView = ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                PredictiveContentTransformer(
+                    contentView = contentView,
+                    backState = backState,
+                    forwardState = forwardState
+                )
+            }
+        }
+        activity.addContentView(
+            overlayView,
+            android.widget.FrameLayout.LayoutParams(1, 1)
+        )
+    }
+}
+
+@Composable
+fun PredictiveContentTransformer(
+    contentView: android.view.View,
+    backState: PetalEdgeGestureState,
+    forwardState: PetalEdgeGestureState
+) {
+    val backActive = backState.isActive
+    val backProgress = backState.progress
+    val forwardActive = forwardState.isActive
+    val forwardProgress = forwardState.progress
+
+    androidx.compose.runtime.LaunchedEffect(backActive, backProgress, forwardActive, forwardProgress) {
+        val isLeft = backActive || (!forwardActive && backProgress > 0f)
+        val active = backActive || forwardActive
+        val rawProgress = if (isLeft) backProgress else forwardProgress
+        val progress = rawProgress.coerceIn(0f, 1f)
+
+        if (!active && progress == 0f) {
+            contentView.animate().cancel()
+            contentView.scaleX = 1.0f
+            contentView.scaleY = 1.0f
+            contentView.translationX = 0.0f
+            contentView.alpha = 1.0f
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                contentView.setRenderEffect(null)
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.BASE) {
+                contentView.clipToOutline = false
+            }
+        } else {
+            contentView.animate().cancel()
+            val scale = 1.0f - (progress * 0.10f)
+            val maxOffsetPx = 48f * contentView.resources.displayMetrics.density
+            val translateX = if (isLeft) (progress * maxOffsetPx) else (-progress * maxOffsetPx)
+            val alpha = 1.0f - (progress * 0.15f)
+
+            contentView.scaleX = scale
+            contentView.scaleY = scale
+            contentView.translationX = translateX
+            contentView.alpha = alpha
+
+            val cornerRadiusPx = (progress * 28f) * contentView.resources.displayMetrics.density
+            if (cornerRadiusPx > 0f) {
+                contentView.outlineProvider = object : android.view.ViewOutlineProvider() {
+                    override fun getOutline(view: android.view.View, outline: android.graphics.Outline) {
+                        outline.setRoundRect(0, 0, view.width, view.height, cornerRadiusPx)
+                    }
+                }
+                contentView.clipToOutline = true
+            } else {
+                contentView.clipToOutline = false
+            }
+        }
+    }
 }

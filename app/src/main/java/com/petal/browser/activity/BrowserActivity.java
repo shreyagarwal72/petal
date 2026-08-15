@@ -637,6 +637,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bind(rightEdgeCompose, this, forwardGestureState, false);
         rightEdgeCompose.bringToFront();
 
+        if (contentFrame != null) {
+            com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bindContentTransform(
+                this, contentFrame, backGestureState, forwardGestureState
+            );
+        }
+
         // Gesture-nav Android reserves BOTH screen edges for the system back gesture by
         // default, not just the left. Without this, a right-edge swipe never reaches
         // dispatchTouchEvent below at all - the system claims it as a back gesture first.
