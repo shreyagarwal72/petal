@@ -983,6 +983,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 public void onOpenTabsOverview() {
                     showOverview();
                 }
+
+                @Override
+                public void onOpenAccountSync() {
+                    showAccountSyncScreen();
+                }
             });
             contentFrame.addView(composeView);
             if (appBar != null) appBar.setVisibility(GONE);
@@ -2462,6 +2467,41 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public void showAccountSyncScreen() {
+        try {
+            contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_account = findViewById(R.id.fab_bubble);
+            if (fab_bubble_account != null) fab_bubble_account.setVisibility(GONE);
+            View accountSyncView = com.petal.browser.account.PetalAccountSyncBridge.createAccountSyncView(
+                BrowserActivity.this,
+                () -> {
+                    showAlbum(currentAlbumController);
+                    return kotlin.Unit.INSTANCE;
+                },
+                shortcut -> {
+                    // Load the Google sign-in / add-account URL in the active tab so the
+                    // user can actually authenticate; NinjaWebViewClient will pick up the
+                    // resulting auth cookies and GoogleAccountManager will sync the profile.
+                    if (ninjaWebView != null) {
+                        ninjaWebView.loadUrl(shortcut.getUrl());
+                        showAlbum(currentAlbumController, shortcut.getUrl());
+                    }
+                    return kotlin.Unit.INSTANCE;
+                }
+            );
+            contentFrame.addView(accountSyncView);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final AdapterRecord adapterRecord, List<Record> recordList, int location) {
         showOverflowMenu(view != null ? view : findViewById(R.id.bottom_nav_compose));
     }
@@ -3503,6 +3543,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @SuppressLint("SetJavaScriptEnabled")
     private void dispatchIntent(Intent intent) {
         if (intent == null) return;
+
+        // Tapping a download notification (see PetalLiveAlertManager) launches
+        // BrowserActivity with this extra so it lands on the Download Manager
+        // screen instead of just reopening to whatever was last on screen.
+        if (intent.getBooleanExtra("open_downloads", false)) {
+            intent.removeExtra("open_downloads");
+            showDownloads();
+            return;
+        }
+
         boolean isPwaMode = intent.getBooleanExtra("pwa_mode", false);
         if (isPwaMode) {
             View composeAddr = findViewById(R.id.compose_address_bar);
