@@ -445,6 +445,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     protected void onStart() {
         super.onStart();
+        try {
+            com.petal.browser.account.GoogleAccountManager.INSTANCE.init(this);
+            com.petal.browser.account.GoogleAccountManager.checkAndSyncGoogleAccount(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (sp != null) {
             if (!sp.getBoolean("sp_welcome_shown", false)) {
                 sp.edit().putBoolean("sp_welcome_shown", true).apply();
@@ -583,19 +589,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             boolean isPipSupported = getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
             boolean isAutoPipEnabled = sp.getBoolean("sp_auto_pip", true);
-            boolean isMediaPlaying = (customView != null || fullscreenHolder != null || videoView != null);
+            boolean hasMediaPlaying = isMediaPlaying || customView != null || fullscreenHolder != null || videoView != null;
 
-            if (isPipSupported && isAutoPipEnabled && isMediaPlaying) {
+            if (isPipSupported && isAutoPipEnabled && hasMediaPlaying) {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                     android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                         pipBuilder.setAutoEnterEnabled(true);
                     }
-                    View targetView = customView != null ? customView : (videoView != null ? videoView : contentFrame);
+                    View targetView = customView != null ? customView : (videoView != null ? videoView : (ninjaWebView != null ? ninjaWebView : contentFrame));
                     if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
                         int width = targetView.getWidth();
                         int height = targetView.getHeight();
-                        android.util.Rational aspectRatio = new android.util.Rational(width, height);
+                        android.util.Rational aspectRatio = new android.util.Rational(Math.max(1, width), Math.max(1, height));
                         pipBuilder.setAspectRatio(aspectRatio);
                         android.graphics.Rect rect = new android.graphics.Rect();
                         targetView.getGlobalVisibleRect(rect);

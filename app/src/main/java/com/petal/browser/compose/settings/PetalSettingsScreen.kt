@@ -144,6 +144,24 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
+    val appVersionName = remember {
+        try {
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            pInfo.versionName ?: "1.0.0"
+        } catch (e: Exception) { "1.0.0" }
+    }
+    val appVersionCode = remember {
+        try {
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                pInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode.toLong()
+            }
+        } catch (e: Exception) { 100L }
+    }
+
     var currentCategory by remember { mutableStateOf(SettingsCategory.OVERVIEW) }
     var searchQuery by remember { mutableStateOf("") }
 
@@ -1246,7 +1264,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Current Version: v1.5.0-expressive",
+                                        text = "Current Version: v$appVersionName",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1286,7 +1304,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     }
                                     Column {
                                         Text("Petal Browser", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                                        Text("v1.5.0-expressive (Build 150)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                        Text("v$appVersionName (Build $appVersionCode)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
 

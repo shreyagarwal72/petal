@@ -86,6 +86,15 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     @Override
+    protected void onWindowVisibilityChanged(int visibility) {
+        if (sp != null && sp.getBoolean("sp_background_play", false)) {
+            super.onWindowVisibilityChanged(View.VISIBLE);
+        } else {
+            super.onWindowVisibilityChanged(visibility);
+        }
+    }
+
+    @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
         if (onScrollChangeListener != null) {

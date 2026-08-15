@@ -22,6 +22,12 @@ public class PetalMediaBridge {
 
     public static final String MEDIA_JS_INJECTION =
             "(function() {" +
+            "   try {" +
+            "       Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });" +
+            "       Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; }, configurable: true });" +
+            "       window.addEventListener('visibilitychange', function(e) { e.stopImmediatePropagation(); }, true);" +
+            "       document.addEventListener('visibilitychange', function(e) { e.stopImmediatePropagation(); }, true);" +
+            "   } catch(e) {}" +
             "   if (window.petalMediaInjected) return;" +
             "   window.petalMediaInjected = true;" +
             "   function hookMediaElements() {" +

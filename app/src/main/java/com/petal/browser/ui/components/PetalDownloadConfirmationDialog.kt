@@ -161,44 +161,38 @@ object PetalDownloadDialogBridge {
 
         activity.runOnUiThread {
             try {
-                var dialogView: ComposeView? = null
-                dialogView = ComposeView(context).apply {
+                lateinit var dialog: androidx.appcompat.app.AlertDialog
+                val composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
                         PetalExpressiveTheme {
-                            var showDialog by remember { mutableStateOf(true) }
-                            if (showDialog) {
-                                PetalDownloadConfirmationDialog(
-                                    fileName = guessedFileName,
-                                    fileSizeFormatted = formattedSize,
-                                    isDuplicate = isDuplicate,
-                                    onConfirm = {
-                                        showDialog = false
-                                        val parentView = dialogView?.parent as? android.view.ViewGroup
-                                        parentView?.removeView(dialogView)
-                                        onConfirmDownload(guessedFileName)
-                                    },
-                                    onDismiss = {
-                                        showDialog = false
-                                        val parentView = dialogView?.parent as? android.view.ViewGroup
-                                        parentView?.removeView(dialogView)
-                                    }
-                                )
-                            }
+                            PetalDownloadConfirmationDialog(
+                                fileName = guessedFileName,
+                                fileSizeFormatted = formattedSize,
+                                isDuplicate = isDuplicate,
+                                onConfirm = {
+                                    if (dialog.isShowing) dialog.dismiss()
+                                    onConfirmDownload(guessedFileName)
+                                },
+                                onDismiss = {
+                                    if (dialog.isShowing) dialog.dismiss()
+                                }
+                            )
                         }
                     }
                 }
 
-                activity.addContentView(
-                    dialogView,
-                    android.view.ViewGroup.LayoutParams(
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                )
+                dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+                    .setView(composeView)
+                    .setCancelable(true)
+                    .create()
+
+                dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                dialog.show()
+                com.petal.browser.unit.HelperUnit.setupDialog(activity, dialog)
             } catch (e: Exception) {
                 e.printStackTrace()
                 // Fallback to direct download if dialog creation fails
