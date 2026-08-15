@@ -1,6 +1,7 @@
 package com.petal.browser.account
 
 import android.content.Context
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,12 +18,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.AsyncImage
 import com.petal.browser.compose.home.PetalShortcut
+import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.defaultPaletteId
+import com.petal.browser.ui.theme.isDynamicColorSupported
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,6 +169,45 @@ fun ChromeAccountSyncScreen(
                             }
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+// ── Java Interop Bridge ────────────────────────────────────────────────────
+// Hosts ChromeAccountSyncScreen in a standalone ComposeView so it can be
+// swapped into the activity's contentFrame the same way the settings and
+// download-manager screens are (see PetalSettingsBridge / PetalDownloadBridge).
+object PetalAccountSyncBridge {
+    @JvmStatic
+    fun createAccountSyncView(
+        activity: ComponentActivity,
+        onBack: () -> Unit,
+        onOpenOAuth: (PetalShortcut) -> Unit
+    ): ComposeView {
+        return ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+                val currentPaletteId = remember {
+                    sp.getString("sp_petal_palette_id", defaultPaletteId) ?: defaultPaletteId
+                }
+                val isAmoled = remember { sp.getBoolean("sp_petal_amoled_mode", false) }
+                val useDynamic = remember { isDynamicColorSupported }
+
+                PetalExpressiveTheme(
+                    paletteId = currentPaletteId,
+                    useAmoled = isAmoled,
+                    dynamicColor = useDynamic
+                ) {
+                    ChromeAccountSyncScreen(
+                        onBack = onBack,
+                        onOpenOAuth = onOpenOAuth
+                    )
                 }
             }
         }
