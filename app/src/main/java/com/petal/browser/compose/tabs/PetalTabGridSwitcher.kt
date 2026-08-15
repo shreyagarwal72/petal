@@ -384,7 +384,7 @@ fun PetalTabGridSwitcher(
                                         )
                                     }
                                 },
-                                modifier = Modifier.animateItemPlacement()
+                                modifier = Modifier.animateItem()
                             ) {
                                 PetalTabCard(
                                     tab = tab,
@@ -429,7 +429,7 @@ fun PetalTabGridSwitcher(
                                         )
                                     }
                                 },
-                                modifier = Modifier.animateItemPlacement()
+                                modifier = Modifier.animateItem()
                             ) {
                                 PetalTabListItem(
                                     tab = tab,

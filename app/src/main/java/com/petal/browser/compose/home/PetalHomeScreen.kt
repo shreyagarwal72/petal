@@ -13,6 +13,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -182,12 +183,12 @@ fun ComposeView.setupExpressiveHomeScreen(
             sp.getString("sp_petal_palette_id", defaultPaletteId) ?: defaultPaletteId
         }
         val isAmoled = remember { sp.getBoolean("sp_petal_amoled_mode", false) }
-        val useDynamic = remember { isDynamicColorSupported() }
+        val useDynamic = remember { isDynamicColorSupported }
 
         PetalExpressiveTheme(
             paletteId = currentPaletteId,
-            amoledMode = isAmoled,
-            useDynamicColor = useDynamic
+            useAmoled = isAmoled,
+            dynamicColor = useDynamic
         ) {
             PetalHomeScreen(
                 accountViewModel = accountViewModel,
@@ -212,9 +213,9 @@ fun PetalHomeScreen(
     var shortcuts by remember { mutableStateOf(loadHomeShortcuts(context)) }
     var editingSlotIndex by remember { mutableStateOf<Int?>(null) }
 
-    val accountState by accountViewModel.accountState.collectAsState()
-    val isSignedIn = accountState.isSignedIn
-    val greetingName = accountState.displayName
+    val profile = accountViewModel.profileState
+    val isSignedIn = profile.isSignedIn
+    val greetingName = profile.displayName
 
     val onOpenShortcut: (PetalShortcut) -> Unit = { shortcut ->
         onOpenShortcutUrl(shortcut.url)
@@ -268,9 +269,9 @@ fun PetalHomeScreen(
                                 shape = CircleShape
                             )
                     ) {
-                        if (isSignedIn && accountState.avatarUrl != null) {
+                        if (isSignedIn && profile.avatarUrl != null) {
                             AsyncImage(
-                                model = accountState.avatarUrl,
+                                model = profile.avatarUrl,
                                 contentDescription = "Profile",
                                 modifier = Modifier
                                     .size(32.dp)
@@ -279,7 +280,7 @@ fun PetalHomeScreen(
                             )
                         } else if (isSignedIn) {
                             Text(
-                                text = (accountState.displayName ?: "User").take(1).uppercase(),
+                                text = (profile.displayName ?: "User").take(1).uppercase(),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.primary
                             )
