@@ -488,6 +488,26 @@ private fun DownloadRowItem(item: DownloadItem, onOpenFile: () -> Unit) {
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
+                        if (item.status == DownloadManager.STATUS_RUNNING) {
+                            DropdownMenuItem(
+                                text = { Text("Pause") },
+                                leadingIcon = { Icon(Icons.Rounded.Pause, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    PetalLiveAlertManager.pauseDownload(context, item.id)
+                                }
+                            )
+                        }
+                        if (item.status == DownloadManager.STATUS_PAUSED) {
+                            DropdownMenuItem(
+                                text = { Text("Resume") },
+                                leadingIcon = { Icon(Icons.Rounded.PlayArrow, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    PetalLiveAlertManager.resumeDownload(context, item.id)
+                                }
+                            )
+                        }
                         if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
                             DropdownMenuItem(
                                 text = { Text("Open") },

@@ -104,9 +104,11 @@ public class LiveUpdateNotificationManager {
             String contentText,
             int progressPercent,
             boolean isIndeterminate,
+            boolean isPaused,
             String chipText,
             PendingIntent contentPendingIntent,
-            PendingIntent cancelPendingIntent
+            PendingIntent cancelPendingIntent,
+            PendingIntent togglePendingIntent
     ) {
         ensureChannelCreated(context);
 
@@ -126,11 +128,19 @@ public class LiveUpdateNotificationManager {
                 .setContentTitle(title)
                 .setContentText(contentText)
                 .setSubText(chipText)
-                .setOngoing(true)
+                .setOngoing(!isPaused)
                 .setOnlyAlertOnce(true)
                 .setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(contentPendingIntent);
+
+        if (togglePendingIntent != null) {
+            if (isPaused) {
+                builder.addAction(R.drawable.icon_play, "Resume", togglePendingIntent);
+            } else {
+                builder.addAction(R.drawable.icon_pause, "Pause", togglePendingIntent);
+            }
+        }
 
         if (cancelPendingIntent != null) {
             builder.addAction(R.drawable.icon_close, "Cancel", cancelPendingIntent);

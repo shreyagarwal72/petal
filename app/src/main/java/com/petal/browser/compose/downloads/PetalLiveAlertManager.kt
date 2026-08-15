@@ -129,6 +129,84 @@ object PetalLiveAlertManager {
         }
     }
 
+    @JvmStatic
+    fun pauseDownload(context: Context, downloadId: Long) {
+        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
+        try {
+            // Using system DownloadManager pause logic
+            val method = dm.javaClass.getMethod("pauseDownload", Long::class.javaPrimitiveType)
+            method.invoke(dm, downloadId)
+        } catch (e: Exception) {
+            PetalDownloadEngine.pauseDownload(downloadId)
+        }
+        showPausedNotification(context, downloadId)
+    }
+
+    @JvmStatic
+    fun resumeDownload(context: Context, downloadId: Long) {
+        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
+        try {
+            // Using system DownloadManager resume logic
+            val method = dm.javaClass.getMethod("resumeDownload", Long::class.javaPrimitiveType)
+            method.invoke(dm, downloadId)
+        } catch (e: Exception) {
+            PetalDownloadEngine.resumeDownload(context, downloadId)
+        }
+    }
+
+    private fun showPausedNotification(context: Context, downloadId: Long) {
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+
+        val openAppIntent = Intent(context, BrowserActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("open_downloads", true)
+        }
+        val openAppPendingIntent = PendingIntent.getActivity(
+            context,
+            downloadId.toInt(),
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val resumeIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
+            action = PetalDownloadCancelReceiver.ACTION_RESUME_DOWNLOAD
+            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, downloadId)
+        }
+        val resumePendingIntent = PendingIntent.getBroadcast(
+            context,
+            downloadId.toInt() + 30000,
+            resumeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val cancelIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
+            action = PetalDownloadCancelReceiver.ACTION_CANCEL_DOWNLOAD
+            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, downloadId)
+        }
+        val cancelPendingIntent = PendingIntent.getBroadcast(
+            context,
+            downloadId.toInt(),
+            cancelIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builderNotif = LiveUpdateNotificationManager.buildLiveNotification(
+            context,
+            downloadId,
+            "Download Paused",
+            "Tap to resume downloading",
+            0,
+            false,
+            true,
+            "Paused",
+            openAppPendingIntent,
+            cancelPendingIntent,
+            resumePendingIntent
+        )
+
+        nm.notify(downloadId.toInt(), builderNotif)
+    }
+
     private fun showLiveNotification(
         context: Context,
         downloadId: Long,
@@ -159,6 +237,18 @@ object PetalLiveAlertManager {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Toggle action intent (Pause)
+        val pauseIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
+            action = PetalDownloadCancelReceiver.ACTION_PAUSE_DOWNLOAD
+            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, downloadId)
+        }
+        val pausePendingIntent = PendingIntent.getBroadcast(
+            context,
+            downloadId.toInt() + 20000,
+            pauseIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         // Cancel action intent
         val cancelIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
             action = PetalDownloadCancelReceiver.ACTION_CANCEL_DOWNLOAD
@@ -181,9 +271,11 @@ object PetalLiveAlertManager {
             contentText,
             progressPercent,
             isIndeterminate,
+            false,
             liveAlertChip,
             openAppPendingIntent,
-            cancelPendingIntent
+            cancelPendingIntent,
+            pausePendingIntent
         )
 
         nm.notify(downloadId.toInt(), builderNotif)
