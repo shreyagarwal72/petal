@@ -239,13 +239,23 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         }
     }
 
+    var backProgress by remember { mutableFloatStateOf(0f) }
+    val animatedBackProgress by animateFloatAsState(
+        targetValue = backProgress,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "SettingsBackProgress"
+    )
+
     val isBackHandlerEnabled = currentCategory != SettingsCategory.OVERVIEW
     androidx.activity.compose.PredictiveBackHandler(enabled = isBackHandlerEnabled) { progress ->
         try {
-            progress.collect { }
+            progress.collect { backEvent ->
+                backProgress = backEvent.progress
+            }
+            backProgress = 0f
             currentCategory = SettingsCategory.OVERVIEW
         } catch (e: Exception) {
-            // Cancelled or completed gesture
+            backProgress = 0f
         }
     }
 
@@ -328,14 +338,29 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
-            Column(
+            val scale = 1.0f - (animatedBackProgress * 0.10f)
+            val cornerRadius = (animatedBackProgress * 28f).dp
+            val alpha = 1.0f - (animatedBackProgress * 0.15f)
+
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        this.alpha = alpha
+                        clip = animatedBackProgress > 0.01f
+                        shape = RoundedCornerShape(cornerRadius)
+                    }
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
                 if (currentCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
                     Text(
                         "Categories",
@@ -1414,6 +1439,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
             }
         }
     }
+}
 }
 
 @Composable
