@@ -99,344 +99,249 @@ fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
                 val colorStr = obj.optString("color", "#4285F4")
                 val parsedColor = try {
                     Color(android.graphics.Color.parseColor(colorStr))
-                } catch (e: Exception) {
+                } catch (_: Throwable) {
                     Color(0xFF4285F4)
                 }
                 list.add(PetalShortcut(label, url, siteId, parsedColor))
             }
-            if (list.size == 5) return list
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+            if (list.isNotEmpty()) return list
+        } catch (_: Throwable) { }
     }
     return defaultPetalShortcuts
 }
 
-fun saveHomeShortcuts(context: Context, shortcuts: List<PetalShortcut>) {
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    try {
-        val array = JSONArray()
-        for (s in shortcuts.take(5)) {
-            val obj = JSONObject()
-            obj.put("label", s.label)
-            obj.put("url", s.url)
-            obj.put("siteId", s.siteId)
-            val argb = s.containerColor.toArgb()
-            val hexColor = String.format("#%06X", 0xFFFFFF and argb)
-            obj.put("color", hexColor)
-            array.put(obj)
-        }
-        sp.edit().putString("sp_custom_home_shortcuts_json_v3", array.toString()).apply()
-    } catch (e: Exception) {
-        e.printStackTrace()
+fun saveHomeShortcuts(context: Context, list: List<PetalShortcut>) {
+    val array = JSONArray()
+    for (item in list) {
+        val obj = JSONObject()
+        obj.put("label", item.label)
+        obj.put("url", item.url)
+        obj.put("siteId", item.siteId)
+        val argb = item.containerColor.toArgb()
+        obj.put("color", String.format("#%08X", argb))
+        array.put(obj)
     }
+    PreferenceManager.getDefaultSharedPreferences(context)
+        .edit()
+        .putString("sp_custom_home_shortcuts_json_v3", array.toString())
+        .apply()
 }
 
-private val petalShapes: List<Shape> = listOf(
-    RoundedCornerShape(28.dp),
-    RoundedCornerShape(topStart = 28.dp, topEnd = 12.dp, bottomEnd = 28.dp, bottomStart = 12.dp),
-    RoundedCornerShape(topStart = 12.dp, topEnd = 28.dp, bottomEnd = 12.dp, bottomStart = 28.dp),
-    CutCornerShape(topStart = 20.dp, bottomEnd = 20.dp),
-    RoundedCornerShape(24.dp),
+val availableColors = listOf(
+    Color(0xFFFF0000) to "YouTube Red",
+    Color(0xFF4285F4) to "Google Blue",
+    Color(0xFF34A853) to "Emerald",
+    Color(0xFFFBBC05) to "Amber Gold",
+    Color(0xFFEA4335) to "Crimson",
+    Color(0xFF9C27B0) to "Violet",
+    Color(0xFF00BCD4) to "Cyan Oceanic",
+    Color(0xFF24292E) to "GitHub Black",
+    Color(0xFFDE5833) to "DuckDuckGo Orange",
+    Color(0xFF673AB7) to "Deep Purple"
 )
 
-// Preset options for icon and color picking
-val iconPresets = listOf(
-    "youtube" to "YouTube Play",
-    "google" to "Google Search",
-    "github" to "GitHub Code",
-    "wikipedia" to "Wikipedia",
-    "duckduckgo" to "Privacy Shield",
+val availableIcons = listOf(
+    "youtube" to "YouTube",
+    "google" to "Search",
+    "github" to "Code",
+    "wikipedia" to "Wikipedia (W)",
+    "duckduckgo" to "Shield",
     "weather" to "Weather Sun",
-    "globe" to "Globe / Web",
-    "star" to "Star Icon",
+    "globe" to "Globe",
+    "star" to "Star",
+    "heart" to "Heart",
     "bookmark" to "Bookmark",
-    "initial" to "First Letter"
+    "lock" to "Lock"
 )
 
-val colorPresets = listOf(
-    Color(0xFFFF0000) to "Red",
-    Color(0xFF24292E) to "Dark Gray",
-    Color(0xFF43464E) to "Slate",
-    Color(0xFFDE5833) to "Orange",
-    Color(0xFF4285F4) to "Blue",
-    Color(0xFF2E7D32) to "Green",
-    Color(0xFF7B1FA2) to "Purple",
-    Color(0xFF00796B) to "Teal",
-    Color(0xFFF57C00) to "Amber"
+val petalShapes: List<Shape> = listOf(
+    RoundedCornerShape(topStart = 28.dp, topEnd = 8.dp, bottomStart = 8.dp, bottomEnd = 28.dp),
+    RoundedCornerShape(topStart = 8.dp, topEnd = 28.dp, bottomStart = 28.dp, bottomEnd = 8.dp),
+    CutCornerShape(16.dp),
+    CircleShape,
+    RoundedCornerShape(20.dp)
 )
 
-// ── 2. Java Interop Callback Interface ──────────────────────────────────
+// ── 2. Compose View Host Extension ────────────────────────────────────────
 
-interface PetalHomeActionHandler {
-    fun onSearch(query: String)
-    fun onOpenUrl(url: String)
-    fun onAddShortcut()
-    fun onNewTab()
-    fun onOpenBookmarks()
-    fun onOpenHistory()
-    fun onOpenDownloads()
-    fun onOpenSettings()
-    fun onOpenTabsOverview()
-}
+fun ComposeView.setupExpressiveHomeScreen(
+    activity: ComponentActivity,
+    accountViewModel: AccountViewModel,
+    onSearch: (String) -> Unit,
+    onOpenShortcutUrl: (String) -> Unit,
+    onOpenAccountSync: () -> Unit
+) {
+    setViewTreeLifecycleOwner(activity)
+    setViewTreeViewModelStoreOwner(activity)
+    setViewTreeSavedStateRegistryOwner(activity)
+    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
-object PetalComposeBridge {
-    @JvmStatic
-    fun createComposeHomeView(
-        activity: ComponentActivity,
-        tabCount: Int,
-        handler: PetalHomeActionHandler
-    ): ComposeView {
-        return ComposeView(activity).apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeViewModelStoreOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
-                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                val isAmoled = sp.getBoolean("sp_amoled", false)
+    setContent {
+        val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
+        val currentPaletteId = remember {
+            sp.getString("sp_petal_palette_id", defaultPaletteId) ?: defaultPaletteId
+        }
+        val isAmoled = remember { sp.getBoolean("sp_petal_amoled_mode", false) }
+        val useDynamic = remember { isDynamicColorSupported() }
 
-                val appFont = remember(fontName) {
-                    try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }
-                }
-                val colorStyle = remember(styleName) {
-                    try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
-                }
-
-                val fontWidthVal = sp.getFloat("sp_font_width", 100f)
-                val fontWeightVal = sp.getInt("sp_font_weight", 400)
-                val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
-                val presetName = sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT"
-                val gsFlexPreset = remember(presetName) {
-                    try { com.petal.browser.ui.theme.GSFlexPreset.valueOf(presetName) } catch (e: Exception) { com.petal.browser.ui.theme.GSFlexPreset.DEFAULT }
-                }
-
-                PetalExpressiveTheme(
-                    dynamicColor = dynamicColor,
-                    useAmoled = isAmoled,
-                    appFont = appFont,
-                    fontWidth = fontWidthVal,
-                    fontWeight = fontWeightVal,
-                    fontRoundness = fontRoundnessVal,
-                    gsFlexPreset = gsFlexPreset,
-                    colorStyle = colorStyle,
-                    paletteId = paletteId
-                ) {
-                    PetalHomeScreen(
-                        tabCount = tabCount,
-                        onSearch = { handler.onSearch(it) },
-                        onOpenShortcut = { handler.onOpenUrl(it.url) },
-                        onAddShortcut = { handler.onAddShortcut() },
-                        onNewTab = { handler.onNewTab() },
-                        onOpenBookmarks = { handler.onOpenBookmarks() },
-                        onOpenHistory = { handler.onOpenHistory() },
-                        onOpenDownloads = { handler.onOpenDownloads() },
-                        onOpenSettings = { handler.onOpenSettings() },
-                        onTabsClick = { handler.onOpenTabsOverview() }
-                    )
-                }
-            }
+        PetalExpressiveTheme(
+            paletteId = currentPaletteId,
+            amoledMode = isAmoled,
+            useDynamicColor = useDynamic
+        ) {
+            PetalHomeScreen(
+                accountViewModel = accountViewModel,
+                onSearch = onSearch,
+                onOpenShortcutUrl = onOpenShortcutUrl,
+                onOpenAccountSync = onOpenAccountSync
+            )
         }
     }
 }
 
-// ── 3. Screen Composable ────────────────────────────────────────────────
+// ── 3. Main Petal Home Screen Composable ──────────────────────────────────
 
 @Composable
 fun PetalHomeScreen(
-    greetingName: String? = null,
-    tabCount: Int = 1,
-    onSearch: (String) -> Unit = {},
-    onOpenShortcut: (PetalShortcut) -> Unit = {},
-    onAddShortcut: () -> Unit = {},
-    onNewTab: () -> Unit = {},
-    onOpenBookmarks: () -> Unit = {},
-    onOpenHistory: () -> Unit = {},
-    onOpenDownloads: () -> Unit = {},
-    onOpenSettings: () -> Unit = {},
-    onTabsClick: () -> Unit = {},
+    accountViewModel: AccountViewModel,
+    onSearch: (String) -> Unit,
+    onOpenShortcutUrl: (String) -> Unit,
+    onOpenAccountSync: () -> Unit
 ) {
     val context = LocalContext.current
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-
     var shortcuts by remember { mutableStateOf(loadHomeShortcuts(context)) }
     var editingSlotIndex by remember { mutableStateOf<Int?>(null) }
 
-    var isAmoledEnabled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-    var isDynamicColorEnabled by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+    val accountState by accountViewModel.accountState.collectAsState()
+    val isSignedIn = accountState.isSignedIn
+    val greetingName = accountState.displayName
 
-    val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
-    val fontWidthVal = sp.getFloat("sp_font_width", 100f)
-    val fontWeightVal = sp.getInt("sp_font_weight", 400)
-    val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
-
-    val appFont = remember(fontName) {
-        try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }
+    val onOpenShortcut: (PetalShortcut) -> Unit = { shortcut ->
+        onOpenShortcutUrl(shortcut.url)
     }
 
-        var pageLoaded by remember { mutableStateOf(false) }
-        LaunchedEffect(Unit) {
-            pageLoaded = true
-        }
+    var animateEntrance by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        animateEntrance = true
+    }
 
-        val logoScale by animateFloatAsState(
-            targetValue = if (pageLoaded) 1.0f else 0.4f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
-            label = "logoZoomAnim"
-        )
+    val logoScale by animateFloatAsState(
+        targetValue = if (animateEntrance) 1f else 0.82f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "logoScale"
+    )
+    val bloomScale by animateFloatAsState(
+        targetValue = if (animateEntrance) 1f else 0.7f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
+        label = "bloomScale"
+    )
+    val bloomAlpha by animateFloatAsState(
+        targetValue = if (animateEntrance) 1f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "bloomAlpha"
+    )
 
-        val bloomScale by animateFloatAsState(
-            targetValue = if (pageLoaded) 1.0f else 0.2f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessVeryLow
-            ),
-            label = "bloomZoomAnim"
-        )
-
-        val bloomAlpha by animateFloatAsState(
-            targetValue = if (pageLoaded) 1.0f else 0.0f,
-            animationSpec = spring(stiffness = Spring.StiffnessLow),
-            label = "bloomAlphaAnim"
-        )
-
-        val accountViewModel: AccountViewModel = viewModel()
-        val profile = accountViewModel.profileState
-        var showAccountSyncScreen by remember { mutableStateOf(false) }
-
-        LaunchedEffect(Unit) {
-            accountViewModel.refreshState()
-        }
-
-        if (showAccountSyncScreen) {
-            androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
-                try {
-                    progress.collect { }
-                    showAccountSyncScreen = false
-                    accountViewModel.refreshState()
-                } catch (e: Exception) {}
-            }
-            com.petal.browser.account.ChromeAccountSyncScreen(
-                onBack = {
-                    showAccountSyncScreen = false
-                    accountViewModel.refreshState()
-                },
-                onOpenOAuth = { shortcut ->
-                    showAccountSyncScreen = false
-                    onOpenShortcut(shortcut)
-                }
-            )
-        } else {
-            Scaffold(
-                containerColor = MaterialTheme.colorScheme.background
-            ) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Top Bar Profile / Sync Action Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Spacer(Modifier.height(16.dp))
-
-                    // Top Bar with Profile Button & Logo
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Dynamic Top-Left Chrome Profile Button with Coil Avatar
-                        IconButton(
-                            onClick = { showAccountSyncScreen = true },
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(if (profile.isSignedIn) Color(0xFF4285F4) else MaterialTheme.colorScheme.surfaceContainerHigh)
-                        ) {
-                            if (profile.isSignedIn) {
-                                if (!profile.avatarUrl.isNullOrEmpty()) {
-                                    AsyncImage(
-                                        model = profile.avatarUrl,
-                                        contentDescription = profile.displayName,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(CircleShape)
-                                    )
-                                } else {
-                                    Text(
-                                        text = profile.displayName.take(1).uppercase(),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = Color.White
-                                    )
-                                }
-                            } else {
-                                Icon(
-                                    Icons.Rounded.PersonAdd,
-                                    contentDescription = "Chrome Google Account & Sync",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(12.dp))
-
-                    // Animated Logo & Greeting Container
-                    Box(
-                        contentAlignment = Alignment.Center,
+                    IconButton(
+                        onClick = onOpenAccountSync,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .graphicsLayer {
-                                scaleX = logoScale
-                                scaleY = logoScale
-                            }
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier
-                                    .size(76.dp)
-                                    .padding(4.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(56.dp))
-                                }
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            Text(
-                                text = greeting(greetingName),
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    letterSpacing = (-0.5).sp,
-                                ),
-                                color = MaterialTheme.colorScheme.onBackground,
-                                textAlign = TextAlign.Center,
+                            .size(44.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = CircleShape
                             )
+                    ) {
+                        if (isSignedIn && accountState.avatarUrl != null) {
+                            AsyncImage(
+                                model = accountState.avatarUrl,
+                                contentDescription = "Profile",
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else if (isSignedIn) {
                             Text(
-                                text = "Petal",
-                                style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary,
-                                textAlign = TextAlign.Center,
+                                text = (accountState.displayName ?: "User").take(1).uppercase(),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Icon(
+                                Icons.Rounded.PersonAdd,
+                                contentDescription = "Chrome Google Account & Sync",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }
+                }
 
-                    Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(12.dp))
 
-                    PetalSearchBar(onSearch = onSearch)
+                // Animated Logo & Greeting Container
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            scaleX = logoScale
+                            scaleY = logoScale
+                        }
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier
+                                .size(76.dp)
+                                .padding(4.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(56.dp))
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            text = greeting(greetingName),
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = (-0.5).sp,
+                            ),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            text = "Petal",
+                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
 
-                    Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(20.dp))
+
+                PetalSearchBar(onSearch = onSearch)
+
+                Spacer(Modifier.height(24.dp))
 
                 // Animated 5-Petal Bloom Ring
                 Box(
@@ -466,7 +371,6 @@ fun PetalHomeScreen(
                 slotIndex = slotIndex,
                 currentShortcut = shortcuts.getOrElse(slotIndex) { defaultPetalShortcuts[slotIndex % defaultPetalShortcuts.size] },
                 onDismiss = { editingSlotIndex = null },
-                onSelectSlot = { newSlot -> editingSlotIndex = newSlot },
                 onSave = { updatedShortcut ->
                     val newList = shortcuts.toMutableList()
                     if (slotIndex in newList.indices) {
@@ -477,15 +381,6 @@ fun PetalHomeScreen(
                     shortcuts = newList
                     saveHomeShortcuts(context, newList)
                     editingSlotIndex = null
-                },
-                onResetSlot = {
-                    val defaultShortcut = defaultPetalShortcuts[slotIndex % defaultPetalShortcuts.size]
-                    val newList = shortcuts.toMutableList()
-                    if (slotIndex in newList.indices) {
-                        newList[slotIndex] = defaultShortcut
-                    }
-                    shortcuts = newList
-                    saveHomeShortcuts(context, newList)
                 }
             )
         }
@@ -604,12 +499,6 @@ private fun PetalBloom(
                     dampingRatio = Spring.DampingRatioMediumBouncy,
                     stiffness = Spring.StiffnessLow
                 ),
-                finishedListener = {
-                    if (isPressed) {
-                        isPressed = false
-                        onOpenShortcut(shortcut)
-                    }
-                },
                 label = "petalIconAnim"
             )
 
@@ -629,7 +518,10 @@ private fun PetalBloom(
                             scaleY = scale
                         }
                         .combinedClickable(
-                            onClick = { isPressed = true },
+                            onClick = {
+                                isPressed = true
+                                onOpenShortcut(shortcut)
+                            },
                             onLongClick = { onEditShortcutSlot(index) }
                         )
                 ) {
@@ -684,6 +576,9 @@ private fun SiteBrandIcon(siteId: String, label: String) {
         "star" -> {
             Icon(Icons.Rounded.Star, contentDescription = "Star", tint = Color.White, modifier = Modifier.size(26.dp))
         }
+        "heart" -> {
+            Icon(Icons.Rounded.Favorite, contentDescription = "Heart", tint = Color.White, modifier = Modifier.size(26.dp))
+        }
         "bookmark" -> {
             Icon(Icons.Rounded.Bookmark, contentDescription = "Bookmark", tint = Color.White, modifier = Modifier.size(26.dp))
         }
@@ -705,9 +600,7 @@ private fun EditShortcutDialog(
     slotIndex: Int,
     currentShortcut: PetalShortcut,
     onDismiss: () -> Unit,
-    onSelectSlot: (Int) -> Unit,
-    onSave: (PetalShortcut) -> Unit,
-    onResetSlot: () -> Unit
+    onSave: (PetalShortcut) -> Unit
 ) {
     var nameText by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.label) }
     var urlText by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.url) }
@@ -716,36 +609,7 @@ private fun EditShortcutDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Column {
-                Text(
-                    "Customize Shortcut ${slotIndex + 1}",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    for (i in 0 until 5) {
-                        Surface(
-                            onClick = { onSelectSlot(i) },
-                            shape = CircleShape,
-                            color = if (i == slotIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    "${i + 1}",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = if (i == slotIndex) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
+        title = { Text("Edit Shortcut ${slotIndex + 1}") },
         text = {
             Column(
                 modifier = Modifier
@@ -753,128 +617,105 @@ private fun EditShortcutDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Shortcut Name Input
                 OutlinedTextField(
                     value = nameText,
                     onValueChange = { nameText = it },
-                    label = { Text("Shortcut Name") },
-                    placeholder = { Text("e.g. YouTube, Google") },
+                    label = { Text("Name") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Shortcut URL Input
                 OutlinedTextField(
                     value = urlText,
                     onValueChange = { urlText = it },
-                    label = { Text("Website Link (URL)") },
-                    placeholder = { Text("e.g. https://www.youtube.com") },
+                    label = { Text("URL") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Live Icon Preview
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp))
+                        .background(
+                            MaterialTheme.colorScheme.surfaceContainerLow,
+                            RoundedCornerShape(16.dp)
+                        )
                         .padding(12.dp)
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
+                        shape = petalShapes[slotIndex % petalShapes.size],
                         color = selectedColor,
                         modifier = Modifier.size(48.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            SiteBrandIcon(siteId = selectedSiteId, label = if (nameText.isBlank()) "S" else nameText)
+                            SiteBrandIcon(siteId = selectedSiteId, label = nameText.ifBlank { "S" })
                         }
                     }
                     Column {
+                        Text("Live Preview", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                         Text(
-                            text = if (nameText.isBlank()) "Shortcut Preview" else nameText,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = if (urlText.isBlank()) "https://..." else urlText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            nameText.ifBlank { "Shortcut" },
+                            style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
-                // Icon Preset Picker
-                Text("Select Icon:", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                // Choose Icon Style
+                Text("Select Icon Style", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    iconPresets.forEach { (presetId, presetName) ->
-                        val isSelected = selectedSiteId == presetId
-                        Surface(
-                            onClick = { selectedSiteId = presetId },
-                            shape = RoundedCornerShape(14.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                            border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
+                    availableIcons.forEach { (id, name) ->
+                        FilterChip(
+                            selected = (selectedSiteId == id),
+                            onClick = { selectedSiteId = id },
+                            label = { Text(name) },
+                            leadingIcon = {
                                 Box(
                                     modifier = Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(selectedColor),
+                                        .size(18.dp)
+                                        .background(selectedColor, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    SiteBrandIcon(siteId = presetId, label = if (nameText.isBlank()) "S" else nameText)
+                                    SiteBrandIcon(siteId = id, label = name)
                                 }
-                                Text(
-                                    presetName,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                                )
                             }
-                        }
+                        )
                     }
                 }
 
-                // Color Preset Picker
-                Text("Select Color:", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                // Choose Palette Color
+                Text("Select Container Color", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    colorPresets.forEach { (colorOption, colorName) ->
-                        val isSelected = selectedColor == colorOption
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(colorOption)
-                                .clickable { selectedColor = colorOption }
-                                .then(
-                                    if (isSelected) Modifier.border(
-                                        3.dp,
-                                        MaterialTheme.colorScheme.primary,
-                                        CircleShape
-                                    ) else Modifier
-                                ),
-                            contentAlignment = Alignment.Center
+                    availableColors.forEach { (color, colorName) ->
+                        Surface(
+                            onClick = { selectedColor = color },
+                            shape = CircleShape,
+                            color = color,
+                            border = if (selectedColor == color) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
+                            modifier = Modifier.size(40.dp)
                         ) {
-                            if (isSelected) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            if (selectedColor == color) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = colorName,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -884,15 +725,13 @@ private fun EditShortcutDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    var formattedUrl = urlText.trim()
-                    if (formattedUrl.isNotBlank() && !formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
-                        formattedUrl = "https://$formattedUrl"
-                    }
-                    val finalName = if (nameText.isBlank()) "Shortcut" else nameText.trim()
-                    val finalUrl = if (formattedUrl.isBlank()) "https://google.com" else formattedUrl
+                    val finalUrl = if (urlText.isNotBlank() && !urlText.startsWith("http://") && !urlText.startsWith("https://")) {
+                        "https://$urlText"
+                    } else urlText.ifBlank { "https://google.com" }
+
                     onSave(
                         PetalShortcut(
-                            label = finalName,
+                            label = nameText.ifBlank { "Shortcut ${slotIndex + 1}" },
                             url = finalUrl,
                             siteId = selectedSiteId,
                             containerColor = selectedColor
@@ -904,13 +743,8 @@ private fun EditShortcutDialog(
             }
         },
         dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onResetSlot) {
-                    Text("Reset", color = MaterialTheme.colorScheme.error)
-                }
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
             }
         }
     )

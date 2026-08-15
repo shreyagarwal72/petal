@@ -384,15 +384,7 @@ fun PetalTabGridSwitcher(
                                         )
                                     }
                                 },
-                                modifier = Modifier
-                                    .animateItem(
-                                        fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                                        fadeOutSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                                        placementSpec = spring(
-                                            dampingRatio = Spring.DampingRatioLowBouncy,
-                                            stiffness = Spring.StiffnessLow
-                                        )
-                                    )
+                                modifier = Modifier.animateItemPlacement()
                             ) {
                                 PetalTabCard(
                                     tab = tab,
@@ -437,15 +429,7 @@ fun PetalTabGridSwitcher(
                                         )
                                     }
                                 },
-                                modifier = Modifier
-                                    .animateItem(
-                                        fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                                        fadeOutSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                                        placementSpec = spring(
-                                            dampingRatio = Spring.DampingRatioLowBouncy,
-                                            stiffness = Spring.StiffnessLow
-                                        )
-                                    )
+                                modifier = Modifier.animateItemPlacement()
                             ) {
                                 PetalTabListItem(
                                     tab = tab,
