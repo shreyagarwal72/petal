@@ -376,7 +376,54 @@ private val PetalDark = darkColorScheme(
     outlineVariant = Color(0xFF514347)
 )
 
+private val DefaultLight = lightColorScheme(
+    primary = Color(0xFF4D568D),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFDEE0FF),
+    onPrimaryContainer = Color(0xFF06114E),
+    secondary = Color(0xFF5B5D72),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFE0E1F9),
+    onSecondaryContainer = Color(0xFF181A2C),
+    tertiary = Color(0xFF77536D),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFFFD7F1),
+    onTertiaryContainer = Color(0xFF2D1228),
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+    background = Color(0xFFFBF8FF),
+    onBackground = Color(0xFF1B1B21),
+    surface = Color(0xFFFBF8FF),
+    onSurface = Color(0xFF1B1B21),
+    surfaceVariant = Color(0xFFE3E1EC),
+    onSurfaceVariant = Color(0xFF46464F)
+)
+
+private val DefaultDark = darkColorScheme(
+    primary = Color(0xFFB8C3FF),
+    onPrimary = Color(0xFF1D285C),
+    primaryContainer = Color(0xFF353D74),
+    onPrimaryContainer = Color(0xFFDEE0FF),
+    secondary = Color(0xFFC4C5DD),
+    onSecondary = Color(0xFF2E2F42),
+    secondaryContainer = Color(0xFF444559),
+    onSecondaryContainer = Color(0xFFE0E1F9),
+    tertiary = Color(0xFFE6BAD7),
+    onTertiary = Color(0xFF46263C),
+    tertiaryContainer = Color(0xFF5F3C53),
+    onTertiaryContainer = Color(0xFFFFD8EE),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    background = Color(0xFF0D0E11),
+    onBackground = Color(0xFFE2E2E6),
+    surface = Color(0xFF16171B),
+    onSurface = Color(0xFFE2E2E6),
+    surfaceVariant = Color(0xFF424450),
+    onSurfaceVariant = Color(0xFFC4C6D0)
+)
+
 val PetalPalettes: List<PetalPalette> = listOf(
+    PetalPalette("default", "Indigo", Color(0xFF4D568D), DefaultLight, DefaultDark),
     PetalPalette("petal", "Petal Pink", Color(0xFFD81B60), PetalLight, PetalDark),
     PetalPalette("tide", "Tide", Color(0xFF00A88E), TideLight, TideDark),
     PetalPalette("zen", "Zen", Color(0xFF445E91), ZenLight, ZenDark),

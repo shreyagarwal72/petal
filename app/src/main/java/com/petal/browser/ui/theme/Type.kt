@@ -139,15 +139,24 @@ data class FontAxes(
     val roundness: Float = 0f
 ) {
     fun toVariationSettings() = FontVariation.Settings(
-        FontVariation.weight(weight.toInt().coerceIn(100, 900)),
-        FontVariation.width(width.coerceIn(75f, 125f)),
+        FontVariation.weight(weight.toInt().coerceIn(1, 1000)),
+        FontVariation.width(width.coerceIn(25f, 150f)),
         FontVariation.Setting("opsz", opsz.coerceIn(6f, 72f)),
+        FontVariation.grade(grade.toInt().coerceIn(-200, 200)),
+        FontVariation.slant(slant.coerceIn(-10f, 0f)),
         FontVariation.Setting("RNDS", roundness.coerceIn(0f, 100f)),
         FontVariation.Setting("ROND", roundness.coerceIn(0f, 100f)),
         FontVariation.Setting("SOFT", roundness.coerceIn(0f, 100f)),
         FontVariation.Setting("ROUND", roundness.coerceIn(0f, 100f))
     )
 }
+
+data class GSFlexSettings(
+    val preset: GSFlexPreset = GSFlexPreset.DEFAULT,
+    val display: FontAxes = FontAxes(400f, 100f, 72f, 0f, 0f, 0f),
+    val headline: FontAxes = FontAxes(400f, 100f, 32f, 0f, 0f, 0f),
+    val body: FontAxes = FontAxes(400f, 100f, 16f, 0f, 0f, 0f)
+)
 
 fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes>? {
     return when (preset) {

@@ -28,6 +28,10 @@ val isDynamicColorSupported: Boolean
 val defaultPaletteId: String
     get() = if (isDynamicColorSupported) "tide" else "petal"
 
+enum class ThemeConfig {
+    FOLLOW_SYSTEM, LIGHT, DARK
+}
+
 /** Pure-black window with a near-black elevation ladder for AMOLED panels. */
 fun ColorScheme.applyAmoled(): ColorScheme = copy(
     background = Color.Black,
@@ -49,6 +53,7 @@ fun PetalExpressiveTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = isDynamicColorSupported,
     useAmoled: Boolean = false,
+    expressiveColors: Boolean = false,
     appFont: AppFont = AppFont.SYSTEM,
     fontWidth: Float = 100f,
     fontWeight: Int = 400,
@@ -59,13 +64,37 @@ fun PetalExpressiveTheme(
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val baseScheme = when {
+    var baseScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
         else -> {
             val palette = paletteById(paletteId)
             if (darkTheme) palette.dark else palette.light
+        }
+    }
+
+    if (expressiveColors) {
+        baseScheme = if (darkTheme) {
+            baseScheme.copy(
+                background = baseScheme.surfaceContainerLow,
+                surface = baseScheme.surfaceContainerLow,
+                surfaceContainer = baseScheme.surfaceContainerHigh,
+                surfaceContainerLow = baseScheme.surfaceContainerHigh,
+                surfaceContainerHigh = baseScheme.surfaceContainerHigh,
+                surfaceContainerHighest = baseScheme.surfaceContainerHigh,
+                surfaceContainerLowest = baseScheme.surfaceContainerHigh
+            )
+        } else {
+            baseScheme.copy(
+                background = baseScheme.surfaceContainerLow,
+                surface = baseScheme.surfaceContainerLow,
+                surfaceContainer = Color.White,
+                surfaceContainerLow = Color.White,
+                surfaceContainerHigh = Color.White,
+                surfaceContainerHighest = Color.White,
+                surfaceContainerLowest = Color.White
+            )
         }
     }
 

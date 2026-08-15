@@ -223,6 +223,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     PetalExpressiveTheme(
         dynamicColor = isDynamicColor,
         useAmoled = isAmoled,
+        expressiveColors = sp.getBoolean("sp_expressive_colors", false),
         appFont = selectedFont,
         fontWidth = fontWidth,
         fontWeight = fontWeight.toInt(),
@@ -483,6 +484,71 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 modifier = Modifier.fillMaxWidth()
                             )
 
+                            // Optical Size
+                            var fontOpsz by remember { mutableFloatStateOf(sp.getFloat("sp_font_opsz", 16f)) }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Optical Size (opsz)", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                Text("${fontOpsz.toInt()}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            StrideSlider(
+                                value = fontOpsz,
+                                onValueChange = { newValue ->
+                                    fontOpsz = newValue
+                                    sp.edit().putFloat("sp_font_opsz", newValue).apply()
+                                },
+                                valueRange = 6f..72f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(Modifier.height(8.dp))
+                            // Grade
+                            var fontGrade by remember { mutableFloatStateOf(sp.getFloat("sp_font_grade", 0f)) }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Font Grade", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                Text("${fontGrade.toInt()}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            StrideSlider(
+                                value = fontGrade,
+                                onValueChange = { newValue ->
+                                    fontGrade = newValue
+                                    sp.edit().putFloat("sp_font_grade", newValue).apply()
+                                },
+                                valueRange = -200f..200f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(Modifier.height(8.dp))
+                            // Slant
+                            var fontSlant by remember { mutableFloatStateOf(sp.getFloat("sp_font_slant", 0f)) }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Font Slant", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                Text("${fontSlant.toInt()}°", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            StrideSlider(
+                                value = fontSlant,
+                                onValueChange = { newValue ->
+                                    fontSlant = newValue
+                                    sp.edit().putFloat("sp_font_slant", newValue).apply()
+                                },
+                                valueRange = -10f..0f,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
                             Spacer(Modifier.height(8.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -593,6 +659,19 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             onCheckedChange = { newValue ->
                                 isDynamicColor = newValue
                                 sp.edit().putBoolean("useDynamicColor", newValue).apply()
+                            }
+                        )
+
+                        // Expressive Colors Toggle
+                        var expressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
+                        ToggleRow(
+                            title = "Expressive Container Colors",
+                            subtitle = "Use vibrant container tint contrast for background and surfaces",
+                            icon = Icons.Rounded.Palette,
+                            checked = expressiveColors,
+                            onCheckedChange = { newValue ->
+                                expressiveColors = newValue
+                                sp.edit().putBoolean("sp_expressive_colors", newValue).apply()
                             }
                         )
 
