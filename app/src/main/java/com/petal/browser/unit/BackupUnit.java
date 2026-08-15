@@ -219,78 +219,96 @@ public class BackupUnit {
                 reader.close();
 
                 org.json.JSONObject backupJson = new org.json.JSONObject(sb.toString());
-                RecordAction action = new RecordAction(context);
 
                 if (restoreBookmarks && backupJson.has("bookmarks")) {
-                    org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
-                    action.open(true);
-                    for (int i = 0; i < bookmarksArray.length(); i++) {
-                        org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
-                        String title = obj.optString("title", "");
-                        String url = obj.optString("url", "");
-                        long time = obj.optLong("time", System.currentTimeMillis());
-                        if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
-                            Record record = new Record();
-                            record.setTitle(title);
-                            record.setURL(url);
-                            record.setTime(time);
-                            record.setIconColor(1);
-                            action.addBookmark(record);
+                    try {
+                        org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
+                        RecordAction action = new RecordAction(context);
+                        action.open(true);
+                        for (int i = 0; i < bookmarksArray.length(); i++) {
+                            org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
+                            String title = obj.optString("title", "");
+                            String url = obj.optString("url", "");
+                            long time = obj.optLong("time", System.currentTimeMillis());
+                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
+                                Record record = new Record();
+                                record.setTitle(title);
+                                record.setURL(url);
+                                record.setTime(time);
+                                record.setIconColor(1);
+                                action.addBookmark(record);
+                            }
                         }
+                        action.close();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring bookmarks", e);
                     }
-                    action.close();
                 }
 
                 if (restoreHistory && backupJson.has("history")) {
-                    org.json.JSONArray historyArray = backupJson.getJSONArray("history");
-                    action.open(true);
-                    for (int i = 0; i < historyArray.length(); i++) {
-                        org.json.JSONObject obj = historyArray.getJSONObject(i);
-                        String title = obj.optString("title", "");
-                        String url = obj.optString("url", "");
-                        long time = obj.optLong("time", System.currentTimeMillis());
-                        if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
-                            action.addHistory(new Record(title, url, time, 0L));
+                    try {
+                        org.json.JSONArray historyArray = backupJson.getJSONArray("history");
+                        RecordAction action = new RecordAction(context);
+                        action.open(true);
+                        for (int i = 0; i < historyArray.length(); i++) {
+                            org.json.JSONObject obj = historyArray.getJSONObject(i);
+                            String title = obj.optString("title", "");
+                            String url = obj.optString("url", "");
+                            long time = obj.optLong("time", System.currentTimeMillis());
+                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
+                                action.addHistory(new Record(title, url, time, 0L));
+                            }
                         }
+                        action.close();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring history", e);
                     }
-                    action.close();
                 }
 
                 if (restoreSavedSites && backupJson.has("saved_sites")) {
-                    org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
-                    List_standard listStandard = new List_standard(context);
-                    action.open(true);
-                    for (int i = 0; i < sitesArray.length(); i++) {
-                        String domain = sitesArray.getString(i);
-                        if (!action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
-                            listStandard.addDomain(domain);
+                    try {
+                        org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
+                        RecordAction action = new RecordAction(context);
+                        List_standard listStandard = new List_standard(context);
+                        action.open(true);
+                        for (int i = 0; i < sitesArray.length(); i++) {
+                            String domain = sitesArray.optString(i, "");
+                            if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
+                                listStandard.addDomain(domain);
+                            }
                         }
+                        action.close();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring saved sites", e);
                     }
-                    action.close();
                 }
 
                 if (restoreSettings && backupJson.has("settings")) {
-                    org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
-                    android.content.SharedPreferences.Editor editor = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit();
-                    java.util.Iterator<String> keys = settingsObj.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        Object val = settingsObj.get(key);
-                        if (val instanceof Boolean) {
-                            editor.putBoolean(key, (Boolean) val);
-                        } else if (val instanceof Integer) {
-                            editor.putInt(key, (Integer) val);
-                        } else if (val instanceof Long) {
-                            editor.putLong(key, (Long) val);
-                        } else if (val instanceof Double) {
-                            editor.putFloat(key, ((Double) val).floatValue());
-                        } else if (val instanceof Float) {
-                            editor.putFloat(key, (Float) val);
-                        } else if (val instanceof String) {
-                            editor.putString(key, (String) val);
+                    try {
+                        org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
+                        android.content.SharedPreferences.Editor editor = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit();
+                        java.util.Iterator<String> keys = settingsObj.keys();
+                        while (keys.hasNext()) {
+                            String key = keys.next();
+                            Object val = settingsObj.opt(key);
+                            if (val instanceof Boolean) {
+                                editor.putBoolean(key, (Boolean) val);
+                            } else if (val instanceof Integer) {
+                                editor.putInt(key, (Integer) val);
+                            } else if (val instanceof Long) {
+                                editor.putLong(key, (Long) val);
+                            } else if (val instanceof Double) {
+                                editor.putFloat(key, ((Double) val).floatValue());
+                            } else if (val instanceof Float) {
+                                editor.putFloat(key, (Float) val);
+                            } else if (val instanceof String) {
+                                editor.putString(key, (String) val);
+                            }
                         }
+                        editor.apply();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring settings", e);
                     }
-                    editor.apply();
                 }
 
                 handler.post(() -> {
