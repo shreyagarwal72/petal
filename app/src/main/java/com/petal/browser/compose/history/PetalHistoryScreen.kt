@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import coil.compose.AsyncImage
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
@@ -395,18 +396,33 @@ private fun HistoryCardItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            val faviconUrl = remember(record.url) {
+                val domain = record.domain?.takeIf { it.isNotBlank() }
+                    ?: try { java.net.URI(record.url ?: "").host } catch (e: Exception) { null }
+                if (!domain.isNullOrEmpty()) "https://www.google.com/s2/favicons?domain=$domain&sz=128" else null
+            }
+
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Rounded.Public,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    if (faviconUrl != null) {
+                        AsyncImage(
+                            model = faviconUrl,
+                            contentDescription = "Website Icon",
+                            modifier = Modifier.size(24.dp).clip(CircleShape),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                        )
+                    } else {
+                        Icon(
+                            Icons.Rounded.Public,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
             Spacer(Modifier.width(12.dp))
