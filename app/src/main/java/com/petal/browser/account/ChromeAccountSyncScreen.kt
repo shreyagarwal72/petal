@@ -39,6 +39,7 @@ import com.petal.browser.ui.components.PetalFeatureTile
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileAvatarDisplay(
@@ -124,9 +125,24 @@ fun PetalUserProfileScreen(
 ) {
     val context = LocalContext.current
     val profile = GoogleAccountManager.currentProfile
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var isSigningIn by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        GoogleAccountManager.checkAndSyncGoogleAccount(context)
+    fun startGoogleSignIn() {
+        if (isSigningIn) return
+        isSigningIn = true
+        coroutineScope.launch {
+            when (val result = GoogleAccountManager.signIn(context)) {
+                is GoogleSignInResult.Success -> {
+                    snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
+                }
+                is GoogleSignInResult.Failure -> {
+                    snackbarHostState.showSnackbar(result.message)
+                }
+            }
+            isSigningIn = false
+        }
     }
 
     var showEditNameDialog by remember { mutableStateOf(false) }
@@ -155,6 +171,7 @@ fun PetalUserProfileScreen(
                 )
             )
         },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
@@ -308,46 +325,47 @@ fun PetalUserProfileScreen(
                 }
             )
 
-            // Google Account Status & Auth Actions — Gramly-style feature tiles
+            // Google Account Status & Auth Actions — real Credential Manager sign-in
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 PetalFeatureTile(
-                    title = if (profile.isSignedIn) "Google Account Signed In" else "Sign In with Google",
-                    subtitle = if (profile.isSignedIn) profile.email else "Connect your Google account for cross-device session access",
+                    title = when {
+                        profile.isSignedIn -> "Google Account Signed In"
+                        isSigningIn -> "Signing In..."
+                        else -> "Sign In with Google"
+                    },
+                    subtitle = when {
+                        profile.isSignedIn -> profile.email
+                        isSigningIn -> "Waiting for Google account picker"
+                        else -> "Choose your Google account to sign in"
+                    },
                     icon = Icons.Rounded.AccountCircle,
                     container = MaterialTheme.colorScheme.primaryContainer,
                     onContainer = MaterialTheme.colorScheme.onPrimaryContainer,
                     pillLabel = if (profile.isSignedIn) null else "Sign In",
                     onClick = {
                         if (!profile.isSignedIn) {
-                            onOpenOAuth(PetalShortcut("Google Login", "https://accounts.google.com/ServiceLogin", "google", Color(0xFF4285F4)))
+                            startGoogleSignIn()
                         }
-                    }
-                )
-
-                PetalFeatureTile(
-                    title = "Add Another Google Session",
-                    subtitle = "Sign in with an additional Google account",
-                    icon = Icons.Rounded.Add,
-                    container = MaterialTheme.colorScheme.secondaryContainer,
-                    onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
-                    pillLabel = "Add",
-                    onClick = {
-                        onOpenOAuth(PetalShortcut("Add Google Session", "https://accounts.google.com/AddSession", "google", Color(0xFF4285F4)))
                     }
                 )
 
                 if (profile.isSignedIn) {
                     PetalFeatureTile(
                         title = "Sign Out of Google",
-                        subtitle = "Disconnect session & clear account cookies",
+                        subtitle = "Disconnect this Google account from Petal Browser",
                         icon = Icons.Rounded.Logout,
                         container = MaterialTheme.colorScheme.errorContainer,
                         onContainer = MaterialTheme.colorScheme.onErrorContainer,
                         pillLabel = "Sign Out",
-                        onClick = { GoogleAccountManager.signOut(context) }
+                        onClick = {
+                            coroutineScope.launch {
+                                GoogleAccountManager.signOut(context)
+                                snackbarHostState.showSnackbar("Signed out of Google")
+                            }
+                        }
                     )
                 }
             }

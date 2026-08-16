@@ -448,7 +448,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onStart();
         try {
             com.petal.browser.account.GoogleAccountManager.INSTANCE.init(this);
-            com.petal.browser.account.GoogleAccountManager.checkAndSyncGoogleAccount(this);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -2519,13 +2518,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 },
                 shortcut -> {
-                    // Load the Google sign-in / add-account URL in the active tab so the
-                    // user can actually authenticate; NinjaWebViewClient will pick up the
-                    // resulting auth cookies and GoogleAccountManager will sync the profile.
-                    if (ninjaWebView != null) {
-                        ninjaWebView.loadUrl(shortcut.getUrl());
-                        showAlbum(currentAlbumController, shortcut.getUrl());
-                    }
+                    // Unused: Google sign-in now goes through GoogleAccountManager.signIn()
+                    // (Credential Manager's account picker), not a WebView-loaded URL.
+                    // This callback is kept only for PetalUserProfileScreen's signature.
                     return kotlin.Unit.INSTANCE;
                 }
             );

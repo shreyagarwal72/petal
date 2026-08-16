@@ -1,18 +1,20 @@
 package com.petal.browser.account
 
 import android.content.Context
-import android.content.SharedPreferences
-import android.os.Handler
-import android.os.Looper
+import android.util.Base64
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.preference.PreferenceManager
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONArray
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import org.json.JSONObject
 
 enum class AvatarType { PRESET, GALLERY_URI, GOOGLE_URL }
 
@@ -32,7 +34,18 @@ data class GoogleUserProfile(
     val syncSearchEngines: Boolean = true
 )
 
+sealed class GoogleSignInResult {
+    data class Success(val profile: GoogleUserProfile) : GoogleSignInResult()
+    data class Failure(val message: String) : GoogleSignInResult()
+}
+
 object GoogleAccountManager {
+
+    // Web application OAuth client ID from Google Cloud Console.
+    // Credential Manager uses this as the audience for the ID token it requests -
+    // required even though this app has no backend of its own.
+    private const val WEB_CLIENT_ID =
+        "755813875491-35lst7559uns78mpm3bt5nsf8r9m3n2o.apps.googleusercontent.com"
 
     private const val KEY_IS_SIGNED_IN = "sp_google_account_signed_in"
     private const val KEY_EMAIL = "sp_google_account_email"
@@ -160,38 +173,111 @@ object GoogleAccountManager {
         }
     }
 
-    fun signIn(context: Context, email: String, displayName: String, avatarUrl: String? = null) {
-        try {
-            val sp = PreferenceManager.getDefaultSharedPreferences(context)
-            val effectiveAvatarType = if (!avatarUrl.isNullOrEmpty()) AvatarType.GOOGLE_URL else currentProfile.avatarType
-            sp.edit()
-                .putBoolean(KEY_IS_SIGNED_IN, true)
-                .putString(KEY_EMAIL, email)
-                .putString(KEY_DISPLAY_NAME, displayName)
-                .putString(KEY_AVATAR_URL, avatarUrl)
-                .putString(KEY_AVATAR_TYPE, effectiveAvatarType.name)
-                .apply()
+    private fun persistSignedInProfile(context: Context, email: String, displayName: String, avatarUrl: String?) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val effectiveAvatarType = if (!avatarUrl.isNullOrEmpty()) AvatarType.GOOGLE_URL else currentProfile.avatarType
+        sp.edit()
+            .putBoolean(KEY_IS_SIGNED_IN, true)
+            .putString(KEY_EMAIL, email)
+            .putString(KEY_DISPLAY_NAME, displayName)
+            .putString(KEY_AVATAR_URL, avatarUrl)
+            .putString(KEY_AVATAR_TYPE, effectiveAvatarType.name)
+            .apply()
 
-            currentProfile = currentProfile.copy(
-                email = email,
-                displayName = displayName,
-                avatarUrl = avatarUrl,
-                avatarType = effectiveAvatarType,
-                isSignedIn = true
-            )
+        currentProfile = currentProfile.copy(
+            email = email,
+            displayName = displayName,
+            avatarUrl = avatarUrl,
+            avatarType = effectiveAvatarType,
+            isSignedIn = true
+        )
+    }
+
+    /**
+     * Launches the real Google Sign-In flow via Credential Manager. This shows Google's own
+     * account picker + consent screen - the user explicitly chooses an account and approves
+     * sharing their basic profile. Reads the standard OpenID claims (email, name, picture) from
+     * the returned ID token to populate the account section. There is no backend for this app,
+     * so the token is only decoded for display, never treated as a verified auth credential.
+     *
+     * Must be called with an Activity context (required by Credential Manager / Play Services
+     * Auth to show the account picker UI).
+     */
+    suspend fun signIn(context: Context): GoogleSignInResult {
+        return try {
+            val signInOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build()
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(signInOption)
+                .build()
+
+            val credentialManager = CredentialManager.create(context)
+            val response = credentialManager.getCredential(context, request)
+
+            val credential = response.credential
+            if (credential !is CustomCredential ||
+                credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+            ) {
+                return GoogleSignInResult.Failure("Unexpected credential type returned")
+            }
+
+            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+            val claims = decodeIdTokenClaims(googleIdTokenCredential.idToken)
+
+            val email = claims?.optString("email")?.takeIf { it.isNotBlank() }
+                ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
+            val displayName = googleIdTokenCredential.displayName
+                ?: claims.optString("name").takeIf { it.isNotBlank() }
+                ?: email.substringBefore("@")
+            val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+                ?: claims.optString("picture").takeIf { it.isNotBlank() }
+
+            persistSignedInProfile(context, email, displayName, avatarUrl)
+            GoogleSignInResult.Success(currentProfile)
+        } catch (e: GetCredentialException) {
+            e.printStackTrace()
+            GoogleSignInResult.Failure(e.message ?: "Sign-in was cancelled or unavailable")
+        } catch (e: GoogleIdTokenParsingException) {
+            e.printStackTrace()
+            GoogleSignInResult.Failure("Could not parse the credential returned by Google")
         } catch (e: Throwable) {
             e.printStackTrace()
+            GoogleSignInResult.Failure(e.message ?: "Unknown sign-in error")
         }
     }
 
-    fun signOut(context: Context) {
+    /**
+     * Decodes the (unverified) payload segment of the JWT ID token purely to read the standard
+     * profile claims for display. This is safe only because there is no backend relying on this
+     * value for authorization - it is used for UI display only. If this app ever adds a backend,
+     * the ID token must be sent there and verified server-side instead of trusted client-side.
+     */
+    private fun decodeIdTokenClaims(idToken: String): JSONObject? {
+        return try {
+            val parts = idToken.split(".")
+            if (parts.size < 2) return null
+            val payload = Base64.decode(parts[1], Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+            JSONObject(String(payload, Charsets.UTF_8))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun signOut(context: Context) {
         try {
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
             sp.edit()
                 .putBoolean(KEY_IS_SIGNED_IN, false)
                 .apply()
-
             currentProfile = currentProfile.copy(isSignedIn = false)
+
+            // Also clears the Credential Manager's cached sign-in state so the account
+            // picker is shown again next time instead of silently re-signing in.
+            try {
+                CredentialManager.create(context).clearCredentialState(ClearCredentialStateRequest())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         } catch (e: Throwable) {
             e.printStackTrace()
         }
@@ -224,119 +310,6 @@ object GoogleAccountManager {
             )
         } catch (e: Throwable) {
             e.printStackTrace()
-        }
-    }
-
-    // Used only to fetch the signed-in user's real name/email/avatar from Google
-    // once an auth cookie is detected - never used for the download engine etc.
-    private val profileHttpClient = OkHttpClient.Builder()
-        .connectTimeout(8, TimeUnit.SECONDS)
-        .readTimeout(8, TimeUnit.SECONDS)
-        .followRedirects(true)
-        .build()
-    private val profileFetchExecutor = Executors.newSingleThreadExecutor()
-    private val mainHandler = Handler(Looper.getMainLooper())
-    @Volatile private var isFetchingProfile = false
-
-    @JvmStatic
-    fun checkAndSyncGoogleAccount(context: Context) {
-        val appContext = context.applicationContext ?: context
-        try {
-            val cookieManager = android.webkit.CookieManager.getInstance() ?: return
-            val cookieHeader = try {
-                cookieManager.getCookie("https://accounts.google.com") ?: ""
-            } catch (e: Exception) {
-                ""
-            }
-
-            // Check for Google login authentication cookies (SID, HSID, SSID, OSID, SAPISID)
-            val hasAuthCookie = cookieHeader.contains("SID=") || cookieHeader.contains("OSID=") ||
-                cookieHeader.contains("SAPISID=") || cookieHeader.contains("SSID=")
-            if (!hasAuthCookie) return
-
-            // Refresh profile if signed out OR if signed in with placeholder data / missing avatar
-            if (currentProfile.isSignedIn && !currentProfile.avatarUrl.isNullOrEmpty() && !currentProfile.email.endsWith("user@gmail.com")) return
-            if (isFetchingProfile) return
-
-            fetchRealGoogleProfile(appContext, cookieHeader)
-        } catch (e: Throwable) {
-            e.printStackTrace()
-        }
-    }
-
-    /**
-     * Fetches the *actual* signed-in Google account's name, email and avatar
-     * using the same cookie-based account-status endpoint Chromium itself uses
-     * for its account-consistency ("Gaia") checks, rather than fabricating
-     * placeholder values. Runs entirely off the main thread; applies the
-     * result (if any) back on the main thread via [signIn].
-     */
-    private fun fetchRealGoogleProfile(context: Context, cookieHeader: String) {
-        isFetchingProfile = true
-        profileFetchExecutor.execute {
-            try {
-                val request = Request.Builder()
-                    .url("https://accounts.google.com/ListAccounts?gpsia=1&source=ChromiumBrowser&json=standard")
-                    .header("Cookie", cookieHeader)
-                    .build()
-
-                profileHttpClient.newCall(request).execute().use { response ->
-                    val body = response.body?.string().orEmpty()
-                    if (!response.isSuccessful || body.isBlank()) return@use
-
-                    // Response is prefixed with an XSSI-protection token, e.g. )]}'
-                    val jsonText = body.substring(body.indexOf('[').coerceAtLeast(0))
-                    val account = parseFirstAccount(jsonText)
-                    if (account != null) {
-                        mainHandler.post {
-                            signIn(context, account.email, account.displayName, account.avatarUrl)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                isFetchingProfile = false
-            }
-        }
-    }
-
-    private data class ParsedGoogleAccount(
-        val email: String,
-        val displayName: String,
-        val avatarUrl: String?
-    )
-
-    private fun parseFirstAccount(json: String): ParsedGoogleAccount? {
-        return try {
-            val root = JSONArray(json)
-            val strings = mutableListOf<String>()
-            collectStrings(root, strings)
-
-            val email = strings.firstOrNull { it.contains("@") && it.contains(".") && !it.startsWith("http") }
-                ?: return null
-
-            val avatarUrl = strings.firstOrNull {
-                it.startsWith("http") && (it.contains("googleusercontent") || it.contains("photo"))
-            } ?: strings.firstOrNull { it.startsWith("http") }
-
-            val displayName = strings.firstOrNull { candidate ->
-                candidate != email && candidate != avatarUrl &&
-                    !candidate.startsWith("http") && !candidate.startsWith("gaia.") &&
-                    candidate.contains(" ") && candidate.any { it.isLetter() } &&
-                    candidate.length in 2..60
-            } ?: email.substringBefore("@")
-
-            ParsedGoogleAccount(email = email, displayName = displayName, avatarUrl = avatarUrl)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun collectStrings(value: Any?, out: MutableList<String>) {
-        when (value) {
-            is JSONArray -> for (i in 0 until value.length()) collectStrings(value.opt(i), out)
-            is String -> if (value.isNotBlank()) out.add(value)
         }
     }
 }
