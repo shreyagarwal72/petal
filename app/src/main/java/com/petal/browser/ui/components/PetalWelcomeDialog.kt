@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.runtime.*
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.R
 import com.petal.browser.account.GoogleAccountManager
@@ -70,6 +71,12 @@ object PetalWelcomeBridge {
                 }
             }
             dialog.setContentView(composeView)
+            dialog.behavior.apply {
+                state = BottomSheetBehavior.STATE_EXPANDED
+                skipCollapsed = true
+                isFitToContents = false
+                expandedOffset = 0
+            }
             dialog.show()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -79,17 +86,16 @@ object PetalWelcomeBridge {
 
 @Composable
 fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize()
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(16.dp))
 
@@ -97,11 +103,6 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
             val iconContext = LocalContext.current
             val density = LocalDensity.current
             val appIconPainter = remember(iconContext) {
-                // R.mipmap.ic_launcher resolves to an AdaptiveIconDrawable on API 26+.
-                // painterResource() only supports VectorDrawables and rasterized assets and
-                // throws IllegalArgumentException for AdaptiveIconDrawable, which crashed this
-                // dialog on virtually every modern device. Render the drawable into a bitmap
-                // ourselves instead, which works for adaptive icons and plain bitmaps alike.
                 val sizePx = with(density) { 80.dp.roundToPx() }.coerceAtLeast(1)
                 val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
                 val drawable = ContextCompat.getDrawable(iconContext, R.mipmap.ic_launcher)
@@ -418,4 +419,5 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
         }
     }
 }
+
 

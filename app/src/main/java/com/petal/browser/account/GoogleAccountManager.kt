@@ -205,7 +205,9 @@ object GoogleAccountManager {
      */
     suspend fun signIn(context: Context): GoogleSignInResult {
         return try {
-            val signInOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build()
+            val signInOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID)
+                .setAutoSelectEnabled(false)
+                .build()
             val request = GetCredentialRequest.Builder()
                 .addCredentialOption(signInOption)
                 .build()
@@ -235,7 +237,12 @@ object GoogleAccountManager {
             GoogleSignInResult.Success(currentProfile)
         } catch (e: GetCredentialException) {
             e.printStackTrace()
-            GoogleSignInResult.Failure(e.message ?: "Sign-in was cancelled or unavailable")
+            val cleanMsg = e.message ?: ""
+            if (cleanMsg.contains("16") || cleanMsg.contains("Canceled", ignoreCase = true) || cleanMsg.contains("Cancelled", ignoreCase = true)) {
+                GoogleSignInResult.Failure("Sign-in cancelled or account re-authentication required. Please try again.")
+            } else {
+                GoogleSignInResult.Failure(cleanMsg.ifBlank { "Sign-in was cancelled or unavailable" })
+            }
         } catch (e: GoogleIdTokenParsingException) {
             e.printStackTrace()
             GoogleSignInResult.Failure("Could not parse the credential returned by Google")
