@@ -754,16 +754,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private boolean forwardGestureClaimed = false;
     private float forwardGestureStartX = 0f;
 
-    // True while a full-screen Compose overlay (e.g. the link long-press context menu
-    // bottom sheet) is showing. The right-edge forward-swipe gesture below is hijacked
-    // straight out of dispatchTouchEvent, above the normal view hierarchy, so without this
-    // guard it can steal taps meant for anything drawn near the right edge - including the
-    // "Share link" row/icon in the context menu - making that overlay feel unresponsive.
-    private boolean edgeGestureSuppressed = false;
-
     @Override
     public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
-        if (!edgeGestureSuppressed && handleForwardEdgeGesture(ev)) {
+        if (handleForwardEdgeGesture(ev)) {
             return true;
         }
         return super.dispatchTouchEvent(ev);
@@ -4019,13 +4012,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (type == WebView.HitTestResult.SRC_ANCHOR_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
                 final String urlResult = result.getExtra();
                 v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
-                edgeGestureSuppressed = true;
                 com.petal.browser.compose.menu.PetalLinkContextMenuBridge.show(
                     BrowserActivity.this,
                     HelperUnit.domain(urlResult),
                     urlResult,
                     urlResult + "/favicon.ico",
-                    () -> edgeGestureSuppressed = false,
                     new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
                         @Override
                         public void onOpenInNewTab() {

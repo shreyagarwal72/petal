@@ -216,13 +216,11 @@ private fun ContextMenuItem(
 
 object PetalLinkContextMenuBridge {
     @JvmStatic
-    @JvmOverloads
     fun show(
         activity: ComponentActivity,
         linkTitle: String?,
         linkUrl: String,
         faviconUrl: String? = null,
-        onDismissed: Runnable? = null,
         handler: PetalLinkContextMenuHandler
     ) {
         var composeView: ComposeView? = null
@@ -260,7 +258,6 @@ object PetalLinkContextMenuBridge {
                         onDismiss = {
                             val parent = composeView?.parent as? android.view.ViewGroup
                             parent?.removeView(composeView)
-                            onDismissed?.run()
                         },
                         handler = handler
                     )
