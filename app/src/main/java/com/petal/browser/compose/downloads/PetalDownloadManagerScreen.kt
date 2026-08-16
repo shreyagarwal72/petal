@@ -12,7 +12,9 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -29,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -204,14 +207,24 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     // straight through to the Activity-level browser back logic, which knows nothing
     // about the download manager being open and can exit the app directly instead of
     // first returning to the home/current site screen (Chrome-style back chain).
+    var backProgress by remember { mutableFloatStateOf(0f) }
+    val animatedBackProgress by animateFloatAsState(
+        targetValue = backProgress,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "DownloadsBackProgress"
+    )
     androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
         try {
-            progress.collect { }
+            progress.collect { backEvent ->
+                backProgress = backEvent.progress
+            }
             // collect completes normally only when the back gesture is committed;
             // a cancelled swipe throws instead and is caught below without firing this.
+            backProgress = 0f
             onBackPress()
         } catch (e: Exception) {
             // gesture cancelled - stay on the download manager screen
+            backProgress = 0f
         }
     }
 
@@ -245,37 +258,52 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        if (downloadList.isEmpty()) {
-            DownloadsEmptyState(modifier = Modifier.padding(innerPadding))
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(bottom = 24.dp)
-            ) {
-                groupedDownloads.forEach { (dateHeader, items) ->
-                    stickyHeader(key = dateHeader) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.background,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = dateHeader,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp)
+        val scale = 1.0f - (animatedBackProgress * 0.10f)
+        val cornerRadius = (animatedBackProgress * 28f).dp
+        val alpha = 1.0f - (animatedBackProgress * 0.15f)
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    this.alpha = alpha
+                    clip = animatedBackProgress > 0.01f
+                    shape = RoundedCornerShape(cornerRadius)
+                }
+        ) {
+            if (downloadList.isEmpty()) {
+                DownloadsEmptyState()
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    groupedDownloads.forEach { (dateHeader, items) ->
+                        stickyHeader(key = dateHeader) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.background,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = dateHeader,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp)
+                                )
+                            }
+                        }
+
+                        items(items, key = { it.id }) { item ->
+                            DownloadRowItem(
+                                item = item,
+                                onOpenFile = { openDownloadedFile(context, item) }
                             )
                         }
-                    }
-
-                    items(items, key = { it.id }) { item ->
-                        DownloadRowItem(
-                            item = item,
-                            onOpenFile = { openDownloadedFile(context, item) }
-                        )
                     }
                 }
             }
