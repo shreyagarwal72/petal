@@ -1258,11 +1258,33 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public synchronized void updateProgress(int progress) {
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
-        if (progressBarCompose != null) {
+        String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+        boolean isInternalPage = currentUrl != null && (
+            currentUrl.startsWith("petal://settings") ||
+            currentUrl.startsWith("petal://history") ||
+            currentUrl.startsWith("petal://account") ||
+            currentUrl.startsWith("petal://downloads") ||
+            currentUrl.startsWith("about:blank") ||
+            isHomePage(currentUrl)
+        );
+
+        if (progressBarCompose != null && !refreshState.isRefreshing() && !isInternalPage) {
+            com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(progressBarCompose, progress);
+        } else if (progressBarCompose != null) {
             progressBarCompose.setVisibility(GONE);
         }
+
         if (progressBar != null) {
-            progressBar.setVisibility(GONE);
+            if (!isInternalPage) {
+                progressBar.setProgressCompat(progress, true);
+                if (progress < 100) {
+                    progressBar.setVisibility(VISIBLE);
+                } else {
+                    progressBar.setVisibility(GONE);
+                }
+            } else {
+                progressBar.setVisibility(GONE);
+            }
             if (progress >= 100) {
                 updateOmniBox();
                 saveOpenedTabs();
