@@ -207,7 +207,10 @@ object GoogleAccountManager {
      * Auth to show the account picker UI).
      */
     suspend fun signIn(context: Context): GoogleSignInResult {
-        return try {
+        val credentialManager = CredentialManager.create(context)
+
+        // Primary: Try GetGoogleIdOption (standard identity API)
+        try {
             val googleIdOption = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(WEB_CLIENT_ID)
@@ -217,46 +220,82 @@ object GoogleAccountManager {
                 .addCredentialOption(googleIdOption)
                 .build()
 
-            val credentialManager = CredentialManager.create(context)
             val response = credentialManager.getCredential(context, request)
-
             val credential = response.credential
-            if (credential !is CustomCredential ||
-                credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+            if (credential is CustomCredential &&
+                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
             ) {
-                return GoogleSignInResult.Failure("Unexpected credential type returned")
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                val claims = decodeIdTokenClaims(googleIdTokenCredential.idToken)
+
+                val email = claims?.optString("email")?.takeIf { it.isNotBlank() }
+                    ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
+                val displayName = googleIdTokenCredential.displayName
+                    ?: claims.optString("name").takeIf { it.isNotBlank() }
+                    ?: email.substringBefore("@")
+                val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+                    ?: claims.optString("picture").takeIf { it.isNotBlank() }
+
+                persistSignedInProfile(context, email, displayName, avatarUrl)
+                return GoogleSignInResult.Success(currentProfile)
             }
+        } catch (e: NoCredentialException) {
+            // Fall through to GetSignInWithGoogleOption fallback below
+        } catch (e: GetCredentialCancellationException) {
+            return GoogleSignInResult.Failure("Sign-in was cancelled.")
+        } catch (e: Throwable) {
+            val msg = e.message ?: ""
+            if (msg.contains("16") || msg.contains("Canceled", ignoreCase = true) || msg.contains("Cancelled", ignoreCase = true)) {
+                return GoogleSignInResult.Failure("Sign-in was cancelled.")
+            }
+        }
 
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-            val claims = decodeIdTokenClaims(googleIdTokenCredential.idToken)
+        // Secondary: Fallback to GetSignInWithGoogleOption for broader device/account compatibility
+        try {
+            val signInOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build()
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(signInOption)
+                .build()
 
-            val email = claims?.optString("email")?.takeIf { it.isNotBlank() }
-                ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
-            val displayName = googleIdTokenCredential.displayName
-                ?: claims.optString("name").takeIf { it.isNotBlank() }
-                ?: email.substringBefore("@")
-            val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
-                ?: claims.optString("picture").takeIf { it.isNotBlank() }
+            val response = credentialManager.getCredential(context, request)
+            val credential = response.credential
+            if (credential is CustomCredential &&
+                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+            ) {
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                val claims = decodeIdTokenClaims(googleIdTokenCredential.idToken)
 
-            persistSignedInProfile(context, email, displayName, avatarUrl)
-            GoogleSignInResult.Success(currentProfile)
+                val email = claims?.optString("email")?.takeIf { it.isNotBlank() }
+                    ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
+                val displayName = googleIdTokenCredential.displayName
+                    ?: claims.optString("name").takeIf { it.isNotBlank() }
+                    ?: email.substringBefore("@")
+                val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+                    ?: claims.optString("picture").takeIf { it.isNotBlank() }
+
+                persistSignedInProfile(context, email, displayName, avatarUrl)
+                return GoogleSignInResult.Success(currentProfile)
+            }
+        } catch (e: GetCredentialCancellationException) {
+            return GoogleSignInResult.Failure("Sign-in was cancelled.")
+        } catch (e: NoCredentialException) {
+            return GoogleSignInResult.Failure("No Google accounts found. Please add a Google Account in Android Device Settings -> Accounts.")
         } catch (e: GetCredentialException) {
             e.printStackTrace()
             val cleanMsg = e.message ?: ""
-            if (cleanMsg.contains("No credentials", ignoreCase = true) || e is NoCredentialException) {
-                GoogleSignInResult.Failure("No Google account found or signed into Google Play Services on this device.")
-            } else if (cleanMsg.contains("16") || cleanMsg.contains("Canceled", ignoreCase = true) || cleanMsg.contains("Cancelled", ignoreCase = true) || e is GetCredentialCancellationException) {
-                GoogleSignInResult.Failure("Sign-in was cancelled.")
+            if (cleanMsg.contains("No credentials", ignoreCase = true)) {
+                return GoogleSignInResult.Failure("No Google accounts found. Please add a Google Account in Android Device Settings -> Accounts.")
+            } else if (cleanMsg.contains("16") || cleanMsg.contains("Canceled", ignoreCase = true) || cleanMsg.contains("Cancelled", ignoreCase = true)) {
+                return GoogleSignInResult.Failure("Sign-in was cancelled.")
             } else {
-                GoogleSignInResult.Failure(cleanMsg.ifBlank { "Sign-in was unavailable or failed" })
+                return GoogleSignInResult.Failure(cleanMsg.ifBlank { "Sign-in was unavailable or failed" })
             }
-        } catch (e: GoogleIdTokenParsingException) {
-            e.printStackTrace()
-            GoogleSignInResult.Failure("Could not parse the credential returned by Google")
         } catch (e: Throwable) {
             e.printStackTrace()
-            GoogleSignInResult.Failure(e.message ?: "Unknown sign-in error")
+            return GoogleSignInResult.Failure(e.message ?: "Unknown sign-in error")
         }
+
+        return GoogleSignInResult.Failure("No credentials returned by Google Play Services.")
     }
 
     /**
