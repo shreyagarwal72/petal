@@ -12,7 +12,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
-import androidx.credentials.exceptions.NoCredentialsException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.preference.PreferenceManager
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -243,7 +243,7 @@ object GoogleAccountManager {
         } catch (e: GetCredentialException) {
             e.printStackTrace()
             val cleanMsg = e.message ?: ""
-            if (cleanMsg.contains("No credentials", ignoreCase = true) || e is NoCredentialsException) {
+            if (cleanMsg.contains("No credentials", ignoreCase = true) || e is NoCredentialException) {
                 GoogleSignInResult.Failure("No Google account found or signed into Google Play Services on this device.")
             } else if (cleanMsg.contains("16") || cleanMsg.contains("Canceled", ignoreCase = true) || cleanMsg.contains("Cancelled", ignoreCase = true) || e is GetCredentialCancellationException) {
                 GoogleSignInResult.Failure("Sign-in was cancelled.")
