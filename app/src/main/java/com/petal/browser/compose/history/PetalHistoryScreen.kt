@@ -40,6 +40,7 @@ import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.compose.composable.ContainedLoadingIndicator
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -247,13 +248,20 @@ fun PetalHistoryScreen(
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 24.dp)
-            ) {
+            if (rawHistory == null) {
+                ContainedLoadingIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
                     item(key = "search_bar") {
                         Surface(
                             shape = RoundedCornerShape(28.dp),
@@ -371,7 +379,7 @@ fun PetalHistoryScreen(
                                     }
                                 }
                             )
-                        }
+                    }
                     }
                 }
             }

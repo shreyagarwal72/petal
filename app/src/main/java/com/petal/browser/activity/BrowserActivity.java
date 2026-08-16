@@ -1258,18 +1258,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public synchronized void updateProgress(int progress) {
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
-        // While the pull-to-refresh spinner is showing, don't also show the top wavy
-        // progress line - both anchor to the same spot right below the address bar and
-        // were overlapping/clashing visually. One loading indicator at a time.
-        if (progressBarCompose != null && !refreshState.isRefreshing()) {
-            com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(progressBarCompose, progress);
+        if (progressBarCompose != null) {
+            progressBarCompose.setVisibility(GONE);
         }
         if (progressBar != null) {
-            progressBar.setProgressCompat(progress, true);
-            if (progress < 100) {
-                progressBar.setVisibility(VISIBLE);
-            } else {
-                progressBar.setVisibility(GONE);
+            progressBar.setVisibility(GONE);
+            if (progress >= 100) {
                 updateOmniBox();
                 saveOpenedTabs();
                 FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken);
