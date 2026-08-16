@@ -47,12 +47,9 @@ data class SearchEngineItem(
 val availableSearchEngines = listOf(
     SearchEngineItem(0, "Google", "Fast and comprehensive global search", "https://google.com"),
     SearchEngineItem(1, "DuckDuckGo", "Privacy search without tracking", "https://duckduckgo.com"),
-    SearchEngineItem(2, "Startpage", "Google results with total privacy protection", "https://startpage.com"),
-    SearchEngineItem(3, "Brave Search", "Independent, privacy-focused search index", "https://search.brave.com"),
-    SearchEngineItem(4, "Bing", "Microsoft intelligent search & discovery", "https://bing.com"),
-    SearchEngineItem(5, "SearXNG", "Open-source decentralized metasearch", "https://searx.be"),
-    SearchEngineItem(6, "Qwant", "European privacy search engine", "https://qwant.com"),
-    SearchEngineItem(7, "Ecosia", "Search engine that plants trees", "https://ecosia.org")
+    SearchEngineItem(2, "Brave Search", "Independent, privacy-focused search index", "https://search.brave.com"),
+    SearchEngineItem(3, "Bing", "Microsoft intelligent search & discovery", "https://bing.com"),
+    SearchEngineItem(4, "Ecosia", "Search engine that plants trees", "https://ecosia.org")
 )
 
 object PetalSearchEngineBridge {

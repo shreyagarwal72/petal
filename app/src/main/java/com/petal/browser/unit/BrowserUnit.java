@@ -139,16 +139,10 @@ public class BrowserUnit {
                     case 1:
                         return "https://duckduckgo.com/?q=" + encodedQuery;
                     case 2:
-                        return "https://startpage.com/do/search?query=" + encodedQuery;
-                    case 3:
                         return "https://search.brave.com/search?q=" + encodedQuery;
-                    case 4:
+                    case 3:
                         return "https://www.bing.com/search?q=" + encodedQuery;
-                    case 5:
-                        return "https://searx.be/?q=" + encodedQuery;
-                    case 6:
-                        return "https://www.qwant.com/?q=" + encodedQuery;
-                    case 7:
+                    case 4:
                         return "https://www.ecosia.org/search?q=" + encodedQuery;
                     default:
                         return "https://www.google.com/search?q=" + encodedQuery;

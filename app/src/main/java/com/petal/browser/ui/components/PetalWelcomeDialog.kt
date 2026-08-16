@@ -1,12 +1,7 @@
-/*
- * PetalWelcomeDialog.kt
- * ─────────────────────────────────────────────────────────────────────────
- * Professional Material 3 Welcome & Onboarding Screen for Petal Browser.
- */
-
 package com.petal.browser.ui.components
 
 import android.content.Context
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.*
@@ -25,7 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,6 +33,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 object PetalWelcomeBridge {
@@ -74,20 +73,36 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 28.dp, vertical = 24.dp),
+                .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Spacer(Modifier.height(16.dp))
 
-            // Hero Icon Badge
-            PetalWelcomeLottie(
+            // App Logo Hero Section with prominent launcher icon & Lottie glow backdrop
+            Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(120.dp)
+                    .size(110.dp)
                     .entrance(index = 0)
-            )
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.fillMaxSize()
+                ) {}
 
-            Spacer(Modifier.height(24.dp))
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_launcher),
+                    contentDescription = "Petal Logo",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
 
             // Title & Subtitle
             Column(
@@ -102,38 +117,51 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Experience rapid web browsing, absolute privacy, and expressive Stride Material 3 components.",
+                    text = "Experience rapid web browsing, multi-threaded fast downloads, and expressive Stride Material 3 customization.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(28.dp))
 
-            // Feature Cards
+            // Expressive PetalFeatureTile Components
             Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.entrance(index = 2)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .entrance(index = 2)
             ) {
-                FeatureCard(
-                    icon = Icons.Rounded.Shield,
+                PetalFeatureTile(
                     title = "Built-in Privacy Shield",
-                    description = "Automated ad blocking, tracker protection, and HTTPS enforcement."
+                    subtitle = "Automated ad blocking, tracker protection, and HTTPS security enforcement",
+                    icon = Icons.Rounded.Shield,
+                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    onContainer = MaterialTheme.colorScheme.onSurface,
+                    pillLabel = "Protected"
                 )
-                FeatureCard(
-                    icon = Icons.Rounded.Bolt,
-                    title = "Lightning Speed",
-                    description = "Optimized rendering engine tuned for instantaneous load times."
+
+                PetalFeatureTile(
+                    title = "High-Speed Multi-Thread Engine",
+                    subtitle = "Integrated parallel chunk download manager for maximum download speeds",
+                    icon = Icons.Rounded.Download,
+                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    onContainer = MaterialTheme.colorScheme.onSurface,
+                    pillLabel = "Fast MDM"
                 )
-                FeatureCard(
+
+                PetalFeatureTile(
+                    title = "Material You & Dynamic Themes",
+                    subtitle = "Personalized Monet palette colors, Stride variable fonts, and OLED AMOLED black",
                     icon = Icons.Rounded.Palette,
-                    title = "Material You & AMOLED Black",
-                    description = "Android 12+ wallpaper dynamic colors & OLED dark mode."
+                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    onContainer = MaterialTheme.colorScheme.onSurface,
+                    pillLabel = "Expressive"
                 )
             }
 
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(32.dp))
 
             // Get Started Button
             Button(
@@ -161,41 +189,8 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
 
-@Composable
-private fun FeatureCard(
-    icon: ImageVector,
-    title: String,
-    description: String
-) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(46.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                Spacer(Modifier.height(2.dp))
-                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
