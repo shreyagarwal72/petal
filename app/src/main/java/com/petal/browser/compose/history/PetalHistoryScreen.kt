@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
@@ -409,11 +409,27 @@ private fun HistoryCardItem(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     if (faviconUrl != null) {
-                        AsyncImage(
+                        SubcomposeAsyncImage(
                             model = faviconUrl,
                             contentDescription = "Website Icon",
                             modifier = Modifier.size(24.dp).clip(CircleShape),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                            loading = {
+                                Icon(
+                                    Icons.Rounded.Public,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            error = {
+                                Icon(
+                                    Icons.Rounded.Public,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         )
                     } else {
                         Icon(
