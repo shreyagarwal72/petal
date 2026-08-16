@@ -689,14 +689,14 @@ object PetalTabGridBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
+                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val isAmoled = sp.getBoolean("sp_amoled", false)
                 val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
                 val appFont = remember(fontName) {
-                    try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.SYSTEM }
+                    try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.GS_FLEX }
                 }
                 val colorStyle = remember(styleName) {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }

@@ -63,7 +63,7 @@ fun PetalExpressiveTheme(
     dynamicColor: Boolean = isDynamicColorSupported,
     useAmoled: Boolean = false,
     expressiveColors: Boolean = false,
-    appFont: AppFont = AppFont.SYSTEM,
+    appFont: AppFont = AppFont.GS_FLEX,
     fontWidth: Float = 100f,
     fontWeight: Int = 400,
     fontRoundness: Float = 0f,

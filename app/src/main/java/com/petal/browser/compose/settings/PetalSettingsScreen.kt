@@ -76,7 +76,7 @@ object PetalSettingsBridge {
                 val context = LocalContext.current
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM") }
+                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX") }
                 var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
                 var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 400)) }
                 var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
@@ -90,7 +90,7 @@ object PetalSettingsBridge {
                 DisposableEffect(sp) {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                         when (key) {
-                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
+                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                             "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 100f)
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 400)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
@@ -107,7 +107,7 @@ object PetalSettingsBridge {
                 }
 
                 val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.SYSTEM }
+                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.GS_FLEX }
                 }
                 val gsFlexPreset = remember(presetName) {
                     try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.DEFAULT }
@@ -185,7 +185,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
 
     // Saved Preference States
     var selectedFont by remember {
-        mutableStateOf(try { AppFont.valueOf(sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM") } catch (e: Exception) { AppFont.SYSTEM })
+        mutableStateOf(try { AppFont.valueOf(sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX") } catch (e: Exception) { AppFont.GS_FLEX })
     }
     var selectedPreset by remember {
         mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT") } catch (e: Exception) { GSFlexPreset.DEFAULT })

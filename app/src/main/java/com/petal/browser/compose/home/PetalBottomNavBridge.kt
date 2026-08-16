@@ -44,14 +44,14 @@ object PetalBottomNavBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                val fontName = sp.getString("sp_app_font", "SYSTEM") ?: "SYSTEM"
+                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
                 val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.SYSTEM }
+                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.GS_FLEX }
                 }
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
