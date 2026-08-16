@@ -36,7 +36,13 @@ public class PetalDownloadEngine {
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
                 .setDownloadConcurrentLimit(4)
                 .enableLogging(true)
-                .setNotificationManager(new DefaultFetchNotificationManager(appContext))
+                .setNotificationManager(new DefaultFetchNotificationManager(appContext) {
+                    @NotNull
+                    @Override
+                    public Fetch getFetchInstanceForNamespace(@NotNull String namespace) {
+                        return fetch;
+                    }
+                })
                 .build();
         fetch = Fetch.Impl.getInstance(fetchConfiguration);
 
