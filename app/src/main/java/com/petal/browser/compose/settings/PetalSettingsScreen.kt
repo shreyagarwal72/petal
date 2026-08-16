@@ -1011,9 +1011,10 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                         val isPredictiveAnimEnabled = predictiveBackAnim != com.petal.browser.animation.predictiveback.PredictiveBackAnimation.NONE
-                        SettingSwitchItem(
+                        ToggleRow(
                             title = "Predictive Back Animation",
-                            summary = if (isPredictiveAnimEnabled) "Enabled" else "Disabled",
+                            subtitle = if (isPredictiveAnimEnabled) "Enabled predictive gesture animations" else "Disabled predictive gesture animations",
+                            icon = Icons.Rounded.Gesture,
                             checked = isPredictiveAnimEnabled,
                             onCheckedChange = { enabled ->
                                 val targetAnim = if (enabled) {

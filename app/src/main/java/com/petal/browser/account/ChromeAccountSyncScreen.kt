@@ -181,7 +181,6 @@ fun PetalUserProfileScreen(
         animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
         label = "AccountBackProgress"
     )
-    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
     androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
         try {
             progress.collect { backEvent ->
