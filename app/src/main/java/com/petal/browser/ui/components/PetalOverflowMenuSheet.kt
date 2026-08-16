@@ -83,10 +83,10 @@ object PetalOverflowBridge {
         handler: PetalOverflowMenuActionHandler
     ) {
         try {
-            val dialog = android.app.Dialog(activity, com.google.android.material.R.style.Theme_Design_BottomSheetDialog)
+            val dialog = android.app.Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar)
             dialog.window?.let { window ->
                 window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
-                window.setGravity(android.view.Gravity.TOP or android.view.Gravity.END)
+                window.setGravity(android.view.Gravity.FILL)
                 window.setDimAmount(0.35f) // 35% background backdrop dimming
                 window.setBackgroundDrawableResource(android.R.color.transparent)
             }
