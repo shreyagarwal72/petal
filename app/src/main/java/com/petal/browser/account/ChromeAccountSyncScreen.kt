@@ -350,7 +350,6 @@ fun PetalUserProfileScreen(
         )
     }
 }
-}
 
 // ── Java Interop Bridge ────────────────────────────────────────────────────
 object PetalAccountSyncBridge {
