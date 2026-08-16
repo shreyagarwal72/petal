@@ -1,5 +1,6 @@
 package com.petal.browser.ui.components
 
+import android.app.Activity
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -172,6 +173,14 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
 
             // Google Sign-In & Data Privacy Section
             val context = LocalContext.current
+            val activity = remember(context) {
+                var c = context
+                while (c is android.content.ContextWrapper) {
+                    if (c is Activity) break
+                    c = c.baseContext
+                }
+                c as? Activity
+            }
             val coroutineScope = rememberCoroutineScope()
             var isSigningIn by remember { mutableStateOf(false) }
             var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -229,17 +238,23 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                         Button(
                             onClick = {
                                 if (!isSigningIn) {
+                                    val targetContext = activity ?: context
                                     isSigningIn = true
                                     errorMessage = null
                                     coroutineScope.launch {
-                                        when (val result = GoogleAccountManager.signIn(context)) {
-                                            is GoogleSignInResult.Success -> {
-                                                isSigningIn = false
+                                        try {
+                                            when (val result = GoogleAccountManager.signIn(targetContext)) {
+                                                is GoogleSignInResult.Success -> {
+                                                    isSigningIn = false
+                                                }
+                                                is GoogleSignInResult.Failure -> {
+                                                    isSigningIn = false
+                                                    errorMessage = result.message
+                                                }
                                             }
-                                            is GoogleSignInResult.Failure -> {
-                                                isSigningIn = false
-                                                errorMessage = result.message
-                                            }
+                                        } catch (e: Throwable) {
+                                            isSigningIn = false
+                                            errorMessage = e.message ?: "Sign-in error occurred"
                                         }
                                     }
                                 }
