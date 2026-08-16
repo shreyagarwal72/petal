@@ -261,6 +261,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     }
 
     var backProgress by remember { mutableFloatStateOf(0f) }
+    var backIsLeftEdge by remember { mutableStateOf(true) }
     val animatedBackProgress by animateFloatAsState(
         targetValue = backProgress,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
@@ -277,6 +278,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         try {
             progress.collect { backEvent ->
                 backProgress = backEvent.progress
+                backIsLeftEdge = backEvent.swipeEdge == androidx.activity.BackEventCompat.EDGE_LEFT
             }
             backProgress = 0f
             if (currentCategory != SettingsCategory.OVERVIEW) {
@@ -387,20 +389,27 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
-            val scale = 1.0f - (animatedBackProgress * 0.10f)
-            val cornerRadius = (animatedBackProgress * 28f).dp
-            val alpha = 1.0f - (animatedBackProgress * 0.15f)
+            // Reflects whichever Predictive Back Animation style is selected above, so the
+            // Settings screen itself previews the same AOSP / MIUIX / Scale / Classic / None
+            // feel that's applied to the browser's own back gesture.
+            val backFrame = com.petal.browser.animation.predictiveback.PredictiveBackStyle.frameFor(
+                animation = predictiveBackAnim,
+                exitDirection = predictiveBackExitDir,
+                progress = animatedBackProgress,
+                isLeftEdge = backIsLeftEdge,
+            )
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
                     .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        this.alpha = alpha
+                        scaleX = backFrame.scale
+                        scaleY = backFrame.scale
+                        this.alpha = backFrame.alpha
+                        translationX = backFrame.translationXDp.dp.toPx()
                         clip = animatedBackProgress > 0.01f
-                        shape = RoundedCornerShape(cornerRadius)
+                        shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
                     }
             ) {
                 Column(

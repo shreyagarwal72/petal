@@ -173,6 +173,7 @@ fun PredictiveContentTransformer(
     backState: PetalEdgeGestureState,
     forwardState: PetalEdgeGestureState
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val backActive = backState.isActive
     val backProgress = backState.progress
     val forwardActive = forwardState.isActive
@@ -193,22 +194,40 @@ fun PredictiveContentTransformer(
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 contentView.setRenderEffect(null)
             }
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.BASE) {
-                contentView.clipToOutline = false
-            }
+            contentView.clipToOutline = false
         } else {
             contentView.animate().cancel()
-            val scale = 1.0f - (progress * 0.10f)
-            val maxOffsetPx = 48f * contentView.resources.displayMetrics.density
-            val translateX = if (isLeft) (progress * maxOffsetPx) else (-progress * maxOffsetPx)
-            val alpha = 1.0f - (progress * 0.15f)
 
-            contentView.scaleX = scale
-            contentView.scaleY = scale
-            contentView.translationX = translateX
-            contentView.alpha = alpha
+            // Read the user's chosen animation style/direction fresh on every gesture tick so a
+            // change made in Settings while the browser is running takes effect immediately.
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            val animation = com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
+                sp.getString(
+                    "sp_predictive_back_anim",
+                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value
+                ) ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value
+            )
+            val exitDirection = com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
+                sp.getString(
+                    "sp_predictive_back_exit_dir",
+                    com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value
+                ) ?: com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value
+            )
 
-            val cornerRadiusPx = (progress * 28f) * contentView.resources.displayMetrics.density
+            val frame = com.petal.browser.animation.predictiveback.PredictiveBackStyle.frameFor(
+                animation = animation,
+                exitDirection = exitDirection,
+                progress = progress,
+                isLeftEdge = isLeft,
+            )
+            val density = contentView.resources.displayMetrics.density
+
+            contentView.scaleX = frame.scale
+            contentView.scaleY = frame.scale
+            contentView.translationX = frame.translationXDp * density
+            contentView.alpha = frame.alpha
+
+            val cornerRadiusPx = frame.cornerRadiusDp * density
             if (cornerRadiusPx > 0f) {
                 contentView.outlineProvider = object : android.view.ViewOutlineProvider() {
                     override fun getOutline(view: android.view.View, outline: android.graphics.Outline) {
