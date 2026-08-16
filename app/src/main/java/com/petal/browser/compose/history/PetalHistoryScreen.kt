@@ -399,7 +399,7 @@ private fun HistoryCardItem(
             val faviconUrl = remember(record.url) {
                 val domain = record.domain?.takeIf { it.isNotBlank() }
                     ?: try { java.net.URI(record.url ?: "").host } catch (e: Exception) { null }
-                if (!domain.isNullOrEmpty()) "https://www.google.com/s2/favicons?domain=$domain&sz=128" else null
+                if (!domain.isNullOrEmpty()) "https://www.google.com/s2/favicons?domain=$domain&sz=32" else null
             }
 
             Surface(
