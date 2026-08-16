@@ -251,12 +251,9 @@ object GoogleAccountManager {
             // account picker rather than only previously-authorized accounts.
             Log.d(TAG, "No authorized credential for primary attempt, falling back", e)
         } catch (e: GetCredentialCancellationException) {
-            // This is the only exception type that reliably means "the user
-            // backed out of the picker/consent screen". Everything else below
-            // is a real error and must NOT be reported as a cancellation -
-            // doing so (e.g. via fragile message string-matching) was hiding
-            // the actual failure and skipping the fallback that could work.
-            return GoogleSignInResult.Failure("Sign-in was cancelled.")
+            // GetGoogleIdOption can throw GetCredentialCancellationException if no pre-authorized account match exists.
+            // Fall through to GetSignInWithGoogleOption below to display Google's standard account picker.
+            Log.d(TAG, "Primary attempt cancelled or no match, falling back", e)
         } catch (e: GetCredentialException) {
             // Any other credential failure here (config issue, transient
             // Play Services error, etc.) - log it and let the secondary
