@@ -83,14 +83,18 @@ public class PetalHapticEngine {
         float clamped = Math.max(0f, Math.min(1f, intensity));
         VibrationEffect effect = effectFor(pattern, clamped);
         if (effect != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && touchAttrs != null) {
-                vibrator.vibrate(effect, touchAttrs);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(effect);
-            } else {
-                vibrator.vibrate(40);
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && touchAttrs != null) {
+                    vibrator.vibrate(effect, touchAttrs);
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(effect);
+                } else {
+                    vibrator.vibrate(40);
+                }
+                return true;
+            } catch (Throwable ignored) {
+                return false;
             }
-            return true;
         }
         return false;
     }
@@ -123,56 +127,63 @@ public class PetalHapticEngine {
     }
 
     private VibrationEffect buildEffect(Pattern pattern, float intensity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            VibrationEffect.Composition composition = VibrationEffect.startComposition();
-            switch (pattern) {
-                case CLICK:
-                    composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
-                    break;
-                case TICK:
-                    composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity);
-                    break;
-                case HEAVY_CLICK:
-                    composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
-                    composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, Math.max(0f, Math.min(1f, intensity * 0.6f)), 40);
-                    break;
-                case DOUBLE_CLICK:
-                    composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
-                    composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity, 80);
-                    break;
-                case SOFT_BUMP:
-                    composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, intensity);
-                    break;
-                case DOUBLE_TICK:
-                    composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity);
-                    composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity, 60);
-                    break;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                VibrationEffect.Composition composition = VibrationEffect.startComposition();
+                switch (pattern) {
+                    case CLICK:
+                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
+                        break;
+                    case TICK:
+                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity);
+                        break;
+                    case HEAVY_CLICK:
+                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
+                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, Math.max(0f, Math.min(1f, intensity * 0.6f)), 40);
+                        break;
+                    case DOUBLE_CLICK:
+                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
+                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity, 80);
+                        break;
+                    case SOFT_BUMP:
+                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, intensity);
+                        break;
+                    case DOUBLE_TICK:
+                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity);
+                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity, 60);
+                        break;
+                }
+                return composition.compose();
             }
-            return composition.compose();
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            int effectId;
-            switch (pattern) {
-                case HEAVY_CLICK:
-                    effectId = VibrationEffect.EFFECT_HEAVY_CLICK;
-                    break;
-                case DOUBLE_CLICK:
-                case DOUBLE_TICK:
-                    effectId = VibrationEffect.EFFECT_DOUBLE_CLICK;
-                    break;
-                case TICK:
-                case SOFT_BUMP:
-                    effectId = VibrationEffect.EFFECT_TICK;
-                    break;
-                case CLICK:
-                default:
-                    effectId = VibrationEffect.EFFECT_CLICK;
-                    break;
+        } catch (Throwable ignored) {}
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                int effectId;
+                switch (pattern) {
+                    case HEAVY_CLICK:
+                        effectId = VibrationEffect.EFFECT_HEAVY_CLICK;
+                        break;
+                    case DOUBLE_CLICK:
+                    case DOUBLE_TICK:
+                        effectId = VibrationEffect.EFFECT_DOUBLE_CLICK;
+                        break;
+                    case TICK:
+                    case SOFT_BUMP:
+                        effectId = VibrationEffect.EFFECT_TICK;
+                        break;
+                    case CLICK:
+                    default:
+                        effectId = VibrationEffect.EFFECT_CLICK;
+                        break;
+                }
+                return VibrationEffect.createPredefined(effectId);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                int amplitude = (int) (intensity * 255);
+                return VibrationEffect.createOneShot(30, Math.max(1, amplitude));
             }
-            return VibrationEffect.createPredefined(effectId);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            int amplitude = (int) (intensity * 255);
-            return VibrationEffect.createOneShot(30, Math.max(1, amplitude));
-        }
+        } catch (Throwable ignored) {}
+
         return null;
     }
 }
