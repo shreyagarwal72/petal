@@ -205,10 +205,13 @@ object GoogleAccountManager {
      */
     suspend fun signIn(context: Context): GoogleSignInResult {
         return try {
-            val signInOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID)
+            val googleIdOption = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(WEB_CLIENT_ID)
+                .setAutoSelectEnabled(false)
                 .build()
             val request = GetCredentialRequest.Builder()
-                .addCredentialOption(signInOption)
+                .addCredentialOption(googleIdOption)
                 .build()
 
             val credentialManager = CredentialManager.create(context)
