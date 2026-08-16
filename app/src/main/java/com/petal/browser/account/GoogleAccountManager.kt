@@ -2,7 +2,6 @@ package com.petal.browser.account
 
 import android.content.Context
 import android.util.Base64
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,13 +9,7 @@ import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.ClearCredentialException
-import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
-import androidx.credentials.exceptions.GetCredentialInterruptedException
-import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
-import androidx.credentials.exceptions.GetCredentialUnsupportedException
-import androidx.credentials.exceptions.NoCredentialException
 import androidx.preference.PreferenceManager
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -47,8 +40,6 @@ sealed class GoogleSignInResult {
 }
 
 object GoogleAccountManager {
-
-    private const val TAG = "GoogleAccountManager"
 
     // Web application OAuth client ID from Google Cloud Console.
     // Credential Manager uses this as the audience for the ID token it requests -
@@ -213,116 +204,45 @@ object GoogleAccountManager {
      * Auth to show the account picker UI).
      */
     suspend fun signIn(context: Context): GoogleSignInResult {
-        val credentialManager = CredentialManager.create(context)
-
-        // Primary: Try GetGoogleIdOption (standard identity API)
-        try {
-            val googleIdOption = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(WEB_CLIENT_ID)
-                .setAutoSelectEnabled(false)
-                .build()
-            val request = GetCredentialRequest.Builder()
-                .addCredentialOption(googleIdOption)
-                .build()
-
-            val response = credentialManager.getCredential(context, request)
-            val credential = response.credential
-            if (credential is CustomCredential &&
-                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-            ) {
-                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                val claims = decodeIdTokenClaims(googleIdTokenCredential.idToken)
-
-                val email = claims?.optString("email")?.takeIf { it.isNotBlank() }
-                    ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
-                val displayName = googleIdTokenCredential.displayName
-                    ?: claims.optString("name").takeIf { it.isNotBlank() }
-                    ?: email.substringBefore("@")
-                val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
-                    ?: claims.optString("picture").takeIf { it.isNotBlank() }
-
-                persistSignedInProfile(context, email, displayName, avatarUrl)
-                return GoogleSignInResult.Success(currentProfile)
-            }
-        } catch (e: NoCredentialException) {
-            // No authorized account for this app yet - fall through to the
-            // GetSignInWithGoogleOption flow below, which can show the full
-            // account picker rather than only previously-authorized accounts.
-            Log.d(TAG, "No authorized credential for primary attempt, falling back", e)
-        } catch (e: GetCredentialCancellationException) {
-            // GetGoogleIdOption can throw GetCredentialCancellationException if no pre-authorized account match exists.
-            // Fall through to GetSignInWithGoogleOption below to display Google's standard account picker.
-            Log.d(TAG, "Primary attempt cancelled or no match, falling back", e)
-        } catch (e: GetCredentialException) {
-            // Any other credential failure here (config issue, transient
-            // Play Services error, etc.) - log it and let the secondary
-            // GetSignInWithGoogleOption flow have a chance to succeed
-            // instead of guessing this was a user cancellation.
-            Log.w(TAG, "Primary sign-in attempt failed (type=${e.type}), trying fallback", e)
-        } catch (e: Throwable) {
-            Log.w(TAG, "Primary sign-in attempt threw unexpectedly, trying fallback", e)
-        }
-
-        // Secondary: Fallback to GetSignInWithGoogleOption for broader device/account compatibility
-        try {
+        return try {
             val signInOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build()
             val request = GetCredentialRequest.Builder()
                 .addCredentialOption(signInOption)
                 .build()
 
+            val credentialManager = CredentialManager.create(context)
             val response = credentialManager.getCredential(context, request)
+
             val credential = response.credential
-            if (credential is CustomCredential &&
-                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+            if (credential !is CustomCredential ||
+                credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
             ) {
-                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                val claims = decodeIdTokenClaims(googleIdTokenCredential.idToken)
-
-                val email = claims?.optString("email")?.takeIf { it.isNotBlank() }
-                    ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
-                val displayName = googleIdTokenCredential.displayName
-                    ?: claims.optString("name").takeIf { it.isNotBlank() }
-                    ?: email.substringBefore("@")
-                val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
-                    ?: claims.optString("picture").takeIf { it.isNotBlank() }
-
-                persistSignedInProfile(context, email, displayName, avatarUrl)
-                return GoogleSignInResult.Success(currentProfile)
+                return GoogleSignInResult.Failure("Unexpected credential type returned")
             }
-        } catch (e: GetCredentialCancellationException) {
-            // Genuine user cancellation - confirmed by exception type, not message text.
-            return GoogleSignInResult.Failure("Sign-in was cancelled.")
-        } catch (e: NoCredentialException) {
-            return GoogleSignInResult.Failure("No Google accounts found. Please add a Google Account in Android Device Settings -> Accounts.")
-        } catch (e: GetCredentialProviderConfigurationException) {
-            // Thrown when there's no credential provider able to handle the
-            // request - typically an OAuth client ID that doesn't match this
-            // app's package name / signing certificate (SHA-1) in Google
-            // Cloud Console, not something the user did.
-            Log.e(TAG, "Credential provider configuration issue", e)
-            return GoogleSignInResult.Failure(
-                "Google Sign-In isn't configured correctly for this app build " +
-                    "(OAuth client ID / SHA-1 fingerprint mismatch). This is a setup issue, not a cancellation."
-            )
-        } catch (e: GetCredentialUnsupportedException) {
-            return GoogleSignInResult.Failure("Google Sign-In isn't supported on this device. Please update Google Play Services and try again.")
-        } catch (e: GetCredentialInterruptedException) {
-            return GoogleSignInResult.Failure("Sign-in was interrupted. Please try again.")
-        } catch (e: GetCredentialException) {
-            // Log the real type/message instead of guessing "cancelled" from
-            // a substring match - that was the source of false cancellations.
-            Log.e(TAG, "Sign-in failed: type=${e.type}", e)
-            val cleanMsg = e.message ?: ""
-            return GoogleSignInResult.Failure(
-                cleanMsg.ifBlank { "Sign-in failed (${e.type}). Please try again." }
-            )
-        } catch (e: Throwable) {
-            Log.e(TAG, "Unexpected sign-in error", e)
-            return GoogleSignInResult.Failure(e.message ?: "Unknown sign-in error")
-        }
 
-        return GoogleSignInResult.Failure("No credentials returned by Google Play Services.")
+            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+            val claims = decodeIdTokenClaims(googleIdTokenCredential.idToken)
+
+            val email = claims?.optString("email")?.takeIf { it.isNotBlank() }
+                ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
+            val displayName = googleIdTokenCredential.displayName
+                ?: claims.optString("name").takeIf { it.isNotBlank() }
+                ?: email.substringBefore("@")
+            val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+                ?: claims.optString("picture").takeIf { it.isNotBlank() }
+
+            persistSignedInProfile(context, email, displayName, avatarUrl)
+            GoogleSignInResult.Success(currentProfile)
+        } catch (e: GetCredentialException) {
+            e.printStackTrace()
+            GoogleSignInResult.Failure(e.message ?: "Sign-in was cancelled or unavailable")
+        } catch (e: GoogleIdTokenParsingException) {
+            e.printStackTrace()
+            GoogleSignInResult.Failure("Could not parse the credential returned by Google")
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            GoogleSignInResult.Failure(e.message ?: "Unknown sign-in error")
+        }
     }
 
     /**
