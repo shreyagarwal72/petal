@@ -337,21 +337,33 @@ fun PetalHomeScreen(
                             }
                         }
                         Spacer(Modifier.height(10.dp))
-                        Text(
-                            text = greeting(greetingName),
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = (-0.5).sp,
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
-                        )
-                        Text(
-                            text = "Petal",
-                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            Text(
+                                text = "${greeting(greetingName)} · ",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = (-0.2).sp
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = "Petal",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = (-0.2).sp
+                                ),
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
 
