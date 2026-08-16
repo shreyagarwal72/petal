@@ -200,6 +200,21 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         downloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
     }
 
+    // Without this, a back-swipe here is never caught by Compose at all - it falls
+    // straight through to the Activity-level browser back logic, which knows nothing
+    // about the download manager being open and can exit the app directly instead of
+    // first returning to the home/current site screen (Chrome-style back chain).
+    androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
+        try {
+            progress.collect { }
+            // collect completes normally only when the back gesture is committed;
+            // a cancelled swipe throws instead and is caught below without firing this.
+            onBackPress()
+        } catch (e: Exception) {
+            // gesture cancelled - stay on the download manager screen
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
