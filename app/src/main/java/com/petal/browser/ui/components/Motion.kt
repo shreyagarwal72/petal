@@ -52,8 +52,20 @@ fun Modifier.bouncyClickable(
     enabled: Boolean = true,
     onClick: () -> Unit,
 ): Modifier {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            if (sp.getBoolean("sp_touch_haptics", true)) {
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+            }
+        }
+    }
+
     val scale by animateFloatAsState(
         targetValue = if (pressed) scaleDown else 1f,
         animationSpec = spring(
@@ -69,7 +81,13 @@ fun Modifier.bouncyClickable(
         interactionSource = interaction,
         indication = null,
         enabled = enabled,
-        onClick = onClick,
+        onClick = {
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            if (sp.getBoolean("sp_touch_haptics", true)) {
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+            }
+            onClick()
+        },
     )
 }
 

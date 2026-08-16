@@ -150,7 +150,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val icon: I
     APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", Icons.Rounded.Palette),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine, custom homepage", Icons.Rounded.Search),
-    DISPLAY_ZOOM("Display & Scaling", "Text font scaling and page zoom preview", Icons.Rounded.ZoomIn),
+    DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", Icons.Rounded.Accessibility),
     DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", Icons.Rounded.Backup),
     UPDATER("App Updates", "Check for updates and auto-check on launch", Icons.Rounded.SystemUpdate),
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", Icons.Rounded.Info)
@@ -222,6 +222,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var isBlockPopups by remember { mutableStateOf(sp.getBoolean("sp_block_popups", true)) }
     var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", true)) }
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
+    var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
     var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
@@ -915,9 +916,22 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     }
                 }
 
-                // 7. Display & Scaling Sliders (using StrideSlider)
-                if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Display", "text font scale page zoom text scaling stride slider blur address bar top bottom")) {
-                    SettingsCategoryCard(title = "Display & Layout Options", icon = Icons.Rounded.FormatSize) {
+                // 7. Accessibility & Scaling (using StrideSlider)
+                if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom")) {
+                    SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
+                        ToggleRow(
+                            title = "Touch Haptics",
+                            subtitle = "Vibrate with tactile feedback on button presses throughout the app",
+                            icon = Icons.Rounded.Vibration,
+                            checked = isTouchHaptics,
+                            onCheckedChange = { newValue ->
+                                isTouchHaptics = newValue
+                                sp.edit().putBoolean("sp_touch_haptics", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                         Text(
                             "Address Bar Location:",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
