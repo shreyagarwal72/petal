@@ -65,21 +65,21 @@ private data class Tiers(
 )
 
 private fun buildTypography(t: Tiers): Typography = Typography(
-    displayLarge = TextStyle(fontFamily = t.display, fontSize = 64.sp, lineHeight = 68.sp, letterSpacing = (-1).sp),
-    displayMedium = TextStyle(fontFamily = t.display, fontSize = 48.sp, lineHeight = 54.sp, letterSpacing = (-0.5).sp),
-    displaySmall = TextStyle(fontFamily = t.display, fontSize = 38.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
-    headlineLarge = TextStyle(fontFamily = t.headline, fontSize = 32.sp, lineHeight = 40.sp),
-    headlineMedium = TextStyle(fontFamily = t.headline, fontSize = 28.sp, lineHeight = 36.sp),
-    headlineSmall = TextStyle(fontFamily = t.headline, fontSize = 24.sp, lineHeight = 32.sp),
-    titleLarge = TextStyle(fontFamily = t.title, fontSize = 22.sp, lineHeight = 28.sp),
-    titleMedium = TextStyle(fontFamily = t.title, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
-    titleSmall = TextStyle(fontFamily = t.title, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-    bodyLarge = TextStyle(fontFamily = t.body, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.3.sp),
-    bodyMedium = TextStyle(fontFamily = t.body, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.2.sp),
-    bodySmall = TextStyle(fontFamily = t.body, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
-    labelLarge = TextStyle(fontFamily = t.label, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-    labelMedium = TextStyle(fontFamily = t.label, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
-    labelSmall = TextStyle(fontFamily = t.label, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp)
+    displayLarge = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
+    displayMedium = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp),
+    displaySmall = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
+    headlineLarge = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
+    headlineMedium = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp),
+    headlineSmall = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp),
+    titleLarge = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp),
+    titleMedium = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
+    titleSmall = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    bodyLarge = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.5.sp),
+    bodyMedium = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.25.sp),
+    bodySmall = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
+    labelLarge = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    labelMedium = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp),
+    labelSmall = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp)
 )
 
 private fun weightedTiers(
@@ -96,24 +96,23 @@ private fun weightedTiers(
 )
 
 private fun systemTypography(fontWeight: Int): Typography {
-    val weight = FontWeight(fontWeight.coerceIn(100, 900))
     val t = Tiers(FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default, FontFamily.Default)
     return Typography(
-        displayLarge = TextStyle(fontFamily = t.display, fontWeight = weight, fontSize = 64.sp, lineHeight = 68.sp, letterSpacing = (-1).sp),
-        displayMedium = TextStyle(fontFamily = t.display, fontWeight = weight, fontSize = 48.sp, lineHeight = 54.sp, letterSpacing = (-0.5).sp),
-        displaySmall = TextStyle(fontFamily = t.display, fontWeight = weight, fontSize = 38.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
-        headlineLarge = TextStyle(fontFamily = t.headline, fontWeight = weight, fontSize = 32.sp, lineHeight = 40.sp),
-        headlineMedium = TextStyle(fontFamily = t.headline, fontWeight = weight, fontSize = 28.sp, lineHeight = 36.sp),
-        headlineSmall = TextStyle(fontFamily = t.headline, fontWeight = weight, fontSize = 24.sp, lineHeight = 32.sp),
-        titleLarge = TextStyle(fontFamily = t.title, fontWeight = weight, fontSize = 22.sp, lineHeight = 28.sp),
-        titleMedium = TextStyle(fontFamily = t.title, fontWeight = weight, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
-        titleSmall = TextStyle(fontFamily = t.title, fontWeight = weight, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-        bodyLarge = TextStyle(fontFamily = t.body, fontWeight = weight, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.3.sp),
-        bodyMedium = TextStyle(fontFamily = t.body, fontWeight = weight, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.2.sp),
-        bodySmall = TextStyle(fontFamily = t.body, fontWeight = weight, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
-        labelLarge = TextStyle(fontFamily = t.label, fontWeight = weight, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
-        labelMedium = TextStyle(fontFamily = t.label, fontWeight = weight, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
-        labelSmall = TextStyle(fontFamily = t.label, fontWeight = weight, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp)
+        displayLarge = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 57.sp, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
+        displayMedium = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 45.sp, lineHeight = 52.sp, letterSpacing = 0.sp),
+        displaySmall = TextStyle(fontFamily = t.display, fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = 0.sp),
+        headlineLarge = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
+        headlineMedium = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 36.sp, letterSpacing = 0.sp),
+        headlineSmall = TextStyle(fontFamily = t.headline, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 32.sp, letterSpacing = 0.sp),
+        titleLarge = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp),
+        titleMedium = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp),
+        titleSmall = TextStyle(fontFamily = t.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+        bodyLarge = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.5.sp),
+        bodyMedium = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.25.sp),
+        bodySmall = TextStyle(fontFamily = t.body, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp),
+        labelLarge = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+        labelMedium = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp),
+        labelSmall = TextStyle(fontFamily = t.label, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.5.sp)
     )
 }
 
