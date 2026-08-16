@@ -21,7 +21,7 @@ data class GoogleUserProfile(
     val displayName: String,
     val avatarUrl: String? = null,
     val avatarType: AvatarType = AvatarType.PRESET,
-    val avatarPresetId: String = "petal_flower",
+    val avatarPresetId: String = "app_icon",
     val customAvatarUri: String? = null,
     val isSignedIn: Boolean = false,
     val globalGoogleLogin: Boolean = true,
@@ -49,14 +49,15 @@ object GoogleAccountManager {
     private const val KEY_SYNC_SEARCH_ENGINES = "sp_google_sync_search_engines"
 
     val builtinAvatarPresets = listOf(
-        "petal_flower" to "🌸 Petal",
-        "cosmic_star" to "⭐ Cosmic Star",
-        "cyber_shield" to "🛡️ Cyber Shield",
-        "rocket_boost" to "🚀 Rocket",
-        "ocean_wave" to "🌊 Ocean",
-        "ninja_cat" to "🐱 Ninja",
-        "sparkle" to "✨ Sparkles",
-        "bot_avatar" to "🤖 Cyber Bot"
+        "app_icon" to "App Icon (Default)",
+        "petal_flower" to "Petal",
+        "cosmic_star" to "Cosmic Star",
+        "cyber_shield" to "Cyber Shield",
+        "rocket_boost" to "Rocket",
+        "ocean_wave" to "Ocean",
+        "ninja_cat" to "Ninja",
+        "sparkle" to "Sparkles",
+        "bot_avatar" to "Cyber Bot"
     )
 
     var currentProfile by mutableStateOf(

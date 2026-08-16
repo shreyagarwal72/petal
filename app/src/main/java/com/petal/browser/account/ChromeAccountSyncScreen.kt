@@ -70,12 +70,22 @@ fun ProfileAvatarDisplay(
                     contentScale = ContentScale.Crop
                 )
             }
+            profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == "app_icon" -> {
+                AsyncImage(
+                    model = com.petal.browser.R.mipmap.ic_launcher,
+                    contentDescription = "App Icon Avatar",
+                    modifier = Modifier.size(size * 0.7f),
+                    contentScale = ContentScale.Fit
+                )
+            }
             else -> {
-                val presetEmoji = getPresetEmoji(profile.avatarPresetId)
-                if (presetEmoji != null) {
-                    Text(
-                        text = presetEmoji,
-                        fontSize = (sizeDp * 0.45).sp
+                val iconVector = getPresetMaterialIcon(profile.avatarPresetId)
+                if (iconVector != null) {
+                    Icon(
+                        imageVector = iconVector,
+                        contentDescription = "Preset Avatar",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(size * 0.5f)
                     )
                 } else {
                     val initial = profile.displayName.trim().take(1).ifEmpty { "P" }.uppercase()
@@ -90,16 +100,16 @@ fun ProfileAvatarDisplay(
     }
 }
 
-fun getPresetEmoji(presetId: String): String? {
+fun getPresetMaterialIcon(presetId: String): androidx.compose.ui.graphics.vector.ImageVector? {
     return when (presetId) {
-        "petal_flower" -> "🌸"
-        "cosmic_star" -> "⭐"
-        "cyber_shield" -> "🛡️"
-        "rocket_boost" -> "🚀"
-        "ocean_wave" -> "🌊"
-        "ninja_cat" -> "🐱"
-        "sparkle" -> "✨"
-        "bot_avatar" -> "🤖"
+        "petal_flower" -> Icons.Rounded.LocalFlorist
+        "cosmic_star" -> Icons.Rounded.Star
+        "cyber_shield" -> Icons.Rounded.Shield
+        "rocket_boost" -> Icons.Rounded.RocketLaunch
+        "ocean_wave" -> Icons.Rounded.Water
+        "ninja_cat" -> Icons.Rounded.Pets
+        "sparkle" -> Icons.Rounded.AutoAwesome
+        "bot_avatar" -> Icons.Rounded.SmartToy
         else -> null
     }
 }
@@ -245,10 +255,31 @@ fun PetalUserProfileScreen(
                                 modifier = Modifier.size(52.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = getPresetEmoji(presetId) ?: "🌸",
-                                        fontSize = 24.sp
-                                    )
+                                    if (presetId == "app_icon") {
+                                        AsyncImage(
+                                            model = com.petal.browser.R.mipmap.ic_launcher,
+                                            contentDescription = label,
+                                            modifier = Modifier.size(32.dp),
+                                            contentScale = ContentScale.Fit
+                                        )
+                                    } else {
+                                        val iconVec = getPresetMaterialIcon(presetId)
+                                        if (iconVec != null) {
+                                            Icon(
+                                                imageVector = iconVec,
+                                                contentDescription = label,
+                                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Person,
+                                                contentDescription = label,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
