@@ -286,8 +286,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void attachBaseContext(Context newBase) {
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(newBase);
-        String lang = sp.getString("sp_app_language", "system");
+        com.petal.browser.settings.AppPreferences.init(newBase);
+        String lang = com.petal.browser.settings.AppPreferences.getAppLanguage(newBase);
         if (lang != null && !lang.equals("system")) {
             Locale locale = Locale.forLanguageTag(lang);
             Locale.setDefault(locale);
@@ -304,6 +304,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onCreate(savedInstanceState);
         context = this;
         activity = this;
+        com.petal.browser.settings.AppPreferences.init(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -412,19 +413,44 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         initSearchOnSite();
         initPullToRefresh();
         initPredictiveEdgeGestures();
+        if (com.petal.browser.settings.AppPreferences.isScreenOn(this)) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (sp.getBoolean("sp_standard_restart", false)) com.petal.browser.settings.AppPreferences.setProfile("profileStandard", this);
+
+        sp.edit()
+                .putInt("restart_changed", 0)
+                .putBoolean("pdf_create", false)
+                .putBoolean("show_overview", true)
+                .apply();
+
+        // 1. Core Services & Database
+        com.petal.browser.database.RecordAction action = new com.petal.browser.database.RecordAction(context);
+        action.open(false);
+        recordList = action.listBookmarks(context, false, 0);
+        action.close();
+
+        // 2. Custom Engine Helper Initialization
+        try {
+            com.petal.browser.objects.CustomSearchesHelper.load(context);
+            com.petal.browser.objects.CustomRedirectsHelper.load(context);
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading custom search/redirect helpers", e);
+        }
+
+        // 3. UI Container & Navigation Framework
+        initView();
         initOverview();
         hideSearch();
         dispatchIntent(getIntent());
 
-        if (sp.getBoolean("sp_check_update_on_launch", true)) {
+        if (com.petal.browser.settings.AppPreferences.isCheckUpdateOnLaunch(this)) {
             com.petal.browser.unit.UpdateUnit.checkForUpdates(this, true);
         }
 
         //restore open Tabs from shared preferences if app got killed
-        if (sp.getBoolean("sp_restoreTabs", false)
-                || sp.getBoolean("sp_reloadTabs", false)
-                || sp.getBoolean("restoreOnRestart", false)) {
-            String saveDefaultProfile = sp.getString("profile", "profileStandard");
+        if (com.petal.browser.settings.AppPreferences.isRestoreTabs(this)
+                || com.petal.browser.settings.AppPreferences.isReloadTabs(this)
+                || com.petal.browser.settings.AppPreferences.isRestoreOnRestart(this)) {
+            String saveDefaultProfile = com.petal.browser.settings.AppPreferences.getProfile(this);
             ArrayList<String> openTabs;
             openTabs = new ArrayList<>(Arrays.asList(TextUtils.split(sp.getString("openTabs", ""), "‚‗‚")));
             if (!openTabs.isEmpty()) {
@@ -432,12 +458,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     addAlbum(getString(R.string.app_name), openTabs.get(counter), BrowserContainer.size() < 1);
                 }
             }
-            sp.edit().putString("profile", saveDefaultProfile).apply();
+            com.petal.browser.settings.AppPreferences.setProfile(saveDefaultProfile, this);
             sp.edit().putBoolean("restoreOnRestart", false).apply();
         }
         //if still no open Tab open default page
         if (BrowserContainer.size() < 1) {
-            addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
+            addAlbum(getString(R.string.app_name), com.petal.browser.settings.AppPreferences.getFavoriteUrl(this), true);
         }
 
         // Welcome and Search Engine dialogs are displayed in onStart() to ensure the Activity window and decor view are fully attached.
@@ -453,17 +479,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             e.printStackTrace();
         }
         if (sp != null) {
-            if (!sp.getBoolean("sp_welcome_shown", false)) {
-                sp.edit().putBoolean("sp_welcome_shown", true).apply();
+            if (!com.petal.browser.settings.AppPreferences.isWelcomeShown(this)) {
+                com.petal.browser.settings.AppPreferences.setWelcomeShown(true, this);
                 try {
                     com.petal.browser.ui.components.PetalWelcomeBridge.showWelcomeDialog(this, () -> {
-                        if (!sp.getBoolean("sp_search_engine_chosen", false)) {
+                        if (!com.petal.browser.settings.AppPreferences.isSearchEngineChosen(BrowserActivity.this)) {
                             com.petal.browser.ui.components.PetalSearchEngineBridge.showSearchEngineDialog(BrowserActivity.this, null);
                         }
                         return kotlin.Unit.INSTANCE;
                     });
                 } catch (Exception ignored) {}
-            } else if (!sp.getBoolean("sp_search_engine_chosen", false)) {
+            } else if (!com.petal.browser.settings.AppPreferences.isSearchEngineChosen(this)) {
                 com.petal.browser.ui.components.PetalSearchEngineBridge.showSearchEngineDialog(this, null);
             }
         }
@@ -761,7 +787,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onUserLeaveHint();
         try {
             boolean isPipSupported = getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
-            boolean isAutoPipEnabled = sp.getBoolean("sp_auto_pip", true);
+            boolean isAutoPipEnabled = com.petal.browser.settings.AppPreferences.isAutoPip(this);
             boolean hasMediaPlaying = isMediaPlaying || customView != null || fullscreenHolder != null || videoView != null;
 
             if (isPipSupported && isAutoPipEnabled && hasMediaPlaying) {
@@ -1090,7 +1116,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void applyAddressBarPosition() {
         try {
-            String pos = sp.getString("sp_address_bar_position", "TOP");
+            String pos = com.petal.browser.settings.AppPreferences.getAddressBarPosition(this);
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
 
             View addressBar = findViewById(R.id.compose_address_bar);
@@ -1881,7 +1907,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (collapse && !isAddressBarCollapsed) {
             isAddressBarCollapsed = true;
-            String pos = sp.getString("sp_address_bar_position", "TOP");
+            String pos = com.petal.browser.settings.AppPreferences.getAddressBarPosition(this);
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
             float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
             float targetY = isBottom ? (barHeight + HelperUnit.convertDpToPixel(40f, context)) : -(barHeight + HelperUnit.convertDpToPixel(40f, context));
@@ -2275,7 +2301,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean canGoForward = ninjaWebView != null && ninjaWebView.canGoForward();
         String profile = NinjaWebView.getProfile();
         boolean isDesktopSite = sp.getBoolean(profile + "_desktop", false);
-        boolean isAdBlock = sp.getBoolean("sp_ad_block", sp.getBoolean(profile + "_adBlock", true));
+        boolean isAdBlock = com.petal.browser.settings.AppPreferences.isAdBlock(this);
 
         boolean isMediaActive = isMediaPlaying || (customView != null || fullscreenHolder != null || videoView != null);
 
@@ -2342,7 +2368,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 @Override
                 public void onToggleAdBlock(boolean enabled) {
-                    sp.edit().putBoolean("sp_ad_block", enabled)
+                    com.petal.browser.settings.AppPreferences.setAdBlock(enabled, BrowserActivity.this);
+                    sp.edit()
                             .putBoolean(profile + "_adBlock", enabled)
                             .putBoolean("profileStandard_adBlock", enabled)
                             .apply();
@@ -2448,8 +2475,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 @Override
                 public void onTriggerMediaMode() {
                     boolean isPipSupported = getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
-                    boolean isAutoPipEnabled = sp.getBoolean("sp_auto_pip", true);
-                    boolean isBgPlayEnabled = sp.getBoolean("sp_background_play", false);
+                    boolean isAutoPipEnabled = com.petal.browser.settings.AppPreferences.isAutoPip(this);
+                    boolean isBgPlayEnabled = com.petal.browser.settings.AppPreferences.isBackgroundPlay(this);
 
                     if (isPipSupported && isAutoPipEnabled) {
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
-import androidx.preference.PreferenceManager
+import com.petal.browser.settings.AppPreferences
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.PetalSearchEngineSheetContent
@@ -75,50 +75,22 @@ object PetalSettingsBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val context = LocalContext.current
-                val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX") }
-                var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
-                var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 400)) }
-                var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
-                var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT") }
-                var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
-                var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
-                var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
-                var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-                var themeConfigName by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
+                val appFontState by AppPreferences.appFontFlow.collectAsState()
+                val fontWidthVal by AppPreferences.fontWidthFlow.collectAsState()
+                val fontWeightVal by AppPreferences.fontWeightFlow.collectAsState()
+                val fontRoundnessVal by AppPreferences.fontRoundnessFlow.collectAsState()
+                val gsFlexPresetState by AppPreferences.gsFlexPresetFlow.collectAsState()
+                val colorStyleState by AppPreferences.colorStyleFlow.collectAsState()
+                val paletteId by AppPreferences.paletteIdFlow.collectAsState()
+                val dynamicColor by AppPreferences.isDynamicColorFlow.collectAsState()
+                val isAmoled by AppPreferences.isAmoledFlow.collectAsState()
+                val themeConfigState by AppPreferences.themeConfigFlow.collectAsState()
 
-                DisposableEffect(sp) {
-                    val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                        when (key) {
-                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
-                            "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 100f)
-                            "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 400)
-                            "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
-                            "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT"
-                            "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                            "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                            "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                            "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
-                            "sp_theme_config" -> themeConfigName = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-                        }
-                    }
-                    sp.registerOnSharedPreferenceChangeListener(listener)
-                    onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-                }
-
-                val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.GS_FLEX }
-                }
-                val gsFlexPreset = remember(presetName) {
-                    try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.DEFAULT }
-                }
-                val colorStyle = remember(styleName) {
-                    try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
-                }
-                val themeConfig = remember(themeConfigName) {
-                    try { ThemeConfig.valueOf(themeConfigName) } catch (e: Exception) { ThemeConfig.FOLLOW_SYSTEM }
-                }
+                val appFont = appFontState
+                val gsFlexPreset = gsFlexPresetState
+                val colorStyle = colorStyleState
+                val themeConfig = themeConfigState
 
                 val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
                 val isDarkTheme = when (themeConfig) {
@@ -161,7 +133,6 @@ enum class SettingsCategory(val title: String, val subtitle: String, val icon: I
 @Composable
 fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     val context = LocalContext.current
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
     val appVersionName = remember {
         try {
@@ -185,63 +156,43 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var searchQuery by remember { mutableStateOf("") }
 
     // Saved Preference States
-    var selectedFont by remember {
-        mutableStateOf(try { AppFont.valueOf(sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX") } catch (e: Exception) { AppFont.GS_FLEX })
-    }
-    var selectedPreset by remember {
-        mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT") } catch (e: Exception) { GSFlexPreset.DEFAULT })
-    }
-    var fontWidth by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
-    var fontWeight by remember { mutableFloatStateOf(sp.getInt("sp_font_weight", 400).toFloat()) }
-    var fontRoundness by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
-    var selectedColorStyle by remember {
-        mutableStateOf(try { ColorStyle.valueOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") } catch (e: Exception) { ColorStyle.TONAL_SPOT })
-    }
-    var selectedPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
-    var selectedThemeConfig by remember {
-        mutableStateOf(try { ThemeConfig.valueOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") } catch (e: Exception) { ThemeConfig.FOLLOW_SYSTEM })
-    }
-    var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-    var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
-    var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
+    var selectedFont by remember { mutableStateOf(AppPreferences.getAppFont(context)) }
+    var selectedPreset by remember { mutableStateOf(AppPreferences.getGsFlexPreset(context)) }
+    var fontWidth by remember { mutableFloatStateOf(AppPreferences.getFontWidth(context)) }
+    var fontWeight by remember { mutableFloatStateOf(AppPreferences.getFontWeight(context)) }
+    var fontRoundness by remember { mutableFloatStateOf(AppPreferences.getFontRoundness(context)) }
+    var selectedColorStyle by remember { mutableStateOf(AppPreferences.getColorStyle(context)) }
+    var selectedPaletteId by remember { mutableStateOf(AppPreferences.getPaletteId(context)) }
+    var selectedThemeConfig by remember { mutableStateOf(AppPreferences.getThemeConfig(context)) }
+    var isAmoled by remember { mutableStateOf(AppPreferences.isAmoled(context)) }
+    var isDynamicColor by remember { mutableStateOf(AppPreferences.isDynamicColor(context)) }
+    var isExpressiveColors by remember { mutableStateOf(AppPreferences.isExpressiveColors(context)) }
 
     // Private DNS & Language States
-    var privateDnsMode by remember { mutableStateOf(sp.getString("sp_private_dns_mode", "OFF") ?: "OFF") }
-    var appLanguage by remember { mutableStateOf(sp.getString("sp_app_language", "system") ?: "system") }
+    var privateDnsMode by remember { mutableStateOf(AppPreferences.getPrivateDnsMode(context)) }
+    var appLanguage by remember { mutableStateOf(AppPreferences.getAppLanguage(context)) }
 
     // Custom Homepage & Background Play
-    var homepageType by remember { mutableStateOf(sp.getString("sp_home_type", "0") ?: "0") }
-    var customHomeUrl by remember { mutableStateOf(sp.getString("sp_custom_homepage_url", "https://google.com") ?: "https://google.com") }
-    var isBackgroundPlay by remember { mutableStateOf(sp.getBoolean("sp_background_play", false)) }
-    var isAutoPip by remember { mutableStateOf(sp.getBoolean("sp_auto_pip", true)) }
-    var isForceDarkMode by remember { mutableStateOf(sp.getBoolean("sp_force_dark_mode", false)) }
+    var homepageType by remember { mutableStateOf(AppPreferences.getHomeType(context)) }
+    var customHomeUrl by remember { mutableStateOf(AppPreferences.getCustomHomepageUrl(context)) }
+    var isBackgroundPlay by remember { mutableStateOf(AppPreferences.isBackgroundPlay(context)) }
+    var isAutoPip by remember { mutableStateOf(AppPreferences.isAutoPip(context)) }
+    var isForceDarkMode by remember { mutableStateOf(AppPreferences.isForceDarkMode(context)) }
 
     // Protection & WebView States
-    var isAdBlock by remember { mutableStateOf(sp.getBoolean("sp_ad_block", true)) }
-    var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
-    var isJavaScript by remember { mutableStateOf(sp.getBoolean("sp_javascript", true)) }
-    var isBlockPopups by remember { mutableStateOf(sp.getBoolean("sp_block_popups", true)) }
-    var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", true)) }
-    var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
-    var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
-    var predictiveBackAnim by remember {
-        mutableStateOf(
-            com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value) ?: "aosp"
-            )
-        )
-    }
-    var predictiveBackExitDir by remember {
-        mutableStateOf(
-            com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
-                sp.getString("sp_predictive_back_exit_dir", com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value) ?: "always_right"
-            )
-        )
-    }
-    var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
-    var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
-    var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
-    var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
+    var isAdBlock by remember { mutableStateOf(AppPreferences.isAdBlock(context)) }
+    var isHttpsOnly by remember { mutableStateOf(AppPreferences.isHttpsOnly(context)) }
+    var isJavaScript by remember { mutableStateOf(AppPreferences.isJavaScript(context)) }
+    var isBlockPopups by remember { mutableStateOf(AppPreferences.isBlockPopups(context)) }
+    var isAutoOpenApps by remember { mutableStateOf(AppPreferences.isAutoOpenApps(context)) }
+    var isCheckUpdateOnLaunch by remember { mutableStateOf(AppPreferences.isCheckUpdateOnLaunch(context)) }
+    var isTouchHaptics by remember { mutableStateOf(AppPreferences.isTouchHaptics(context)) }
+    var predictiveBackAnim by remember { mutableStateOf(AppPreferences.getPredictiveBackAnim(context)) }
+    var predictiveBackExitDir by remember { mutableStateOf(AppPreferences.getPredictiveBackExitDir(context)) }
+    var addressBarPosition by remember { mutableStateOf(AppPreferences.getAddressBarPosition(context)) }
+    var fontSize by remember { mutableFloatStateOf(AppPreferences.getFontSizeScale(context)) }
+    var zoomLevel by remember { mutableFloatStateOf(AppPreferences.getZoomLevelScale(context)) }
+    var searchEngineIndex by remember { mutableStateOf(AppPreferences.getSearchEngine(context)) }
     var showEngineSheet by remember { mutableStateOf(false) }
 
     if (showEngineSheet) {
@@ -251,7 +202,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         ) {
             PetalSearchEngineSheetContent(
                 onConfirm = { idx ->
-                    sp.edit().putString("sp_search_engine", idx.toString()).apply()
+                    AppPreferences.setSearchEngine(idx.toString(), context)
                     searchEngineIndex = idx.toString()
                     showEngineSheet = false
                 },
@@ -491,7 +442,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     selected = selectedThemeConfig == config,
                                     onClick = {
                                         selectedThemeConfig = config
-                                        sp.edit().putString("sp_theme_config", config.name).apply()
+                                        AppPreferences.setThemeConfig(config, context)
                                     },
                                     label = { Text(label) },
                                     leadingIcon = {
@@ -518,7 +469,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     selected = selectedFont == font,
                                     onClick = {
                                         selectedFont = font
-                                        sp.edit().putString("sp_app_font", font.name).apply()
+                                        AppPreferences.setAppFont(font, context)
                                     },
                                     label = { Text(font.label) },
                                     leadingIcon = if (selectedFont == font) {
@@ -545,7 +496,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     selected = selectedColorStyle == style,
                                     onClick = {
                                         selectedColorStyle = style
-                                        sp.edit().putString("sp_color_style", style.name).apply()
+                                        AppPreferences.setColorStyle(style, context)
                                     },
                                     label = { Text(style.label) },
                                     leadingIcon = if (selectedColorStyle == style) {
@@ -580,7 +531,8 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                         .clickable {
                                             selectedPaletteId = pal.id
                                             isDynamicColor = false
-                                            sp.edit().putString("sp_palette_id", pal.id).putBoolean("useDynamicColor", false).apply()
+                                            AppPreferences.setPaletteId(pal.id, context)
+                                            AppPreferences.setDynamicColor(false, context)
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -601,7 +553,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isAmoled,
                             onCheckedChange = { newValue ->
                                 isAmoled = newValue
-                                sp.edit().putBoolean("sp_amoled", newValue).apply()
+                                AppPreferences.setAmoled(newValue, context)
                             }
                         )
 
@@ -615,7 +567,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isDynamicColor,
                             onCheckedChange = { newValue ->
                                 isDynamicColor = newValue
-                                sp.edit().putBoolean("useDynamicColor", newValue).apply()
+                                AppPreferences.setDynamicColor(newValue, context)
                             }
                         )
 
@@ -627,7 +579,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isExpressiveColors,
                             onCheckedChange = { newValue ->
                                 isExpressiveColors = newValue
-                                sp.edit().putBoolean("sp_expressive_colors", newValue).apply()
+                                AppPreferences.setExpressiveColors(newValue, context)
                             }
                         )
 
@@ -648,7 +600,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 selected = homepageType == "0",
                                 onClick = {
                                     homepageType = "0"
-                                    sp.edit().putString("sp_home_type", "0").apply()
+                                    AppPreferences.setHomeType("0", context)
                                 },
                                 label = { Text("Petal Start Page") }
                             )
@@ -656,7 +608,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 selected = homepageType == "1",
                                 onClick = {
                                     homepageType = "1"
-                                    sp.edit().putString("sp_home_type", "1").apply()
+                                    AppPreferences.setHomeType("1", context)
                                 },
                                 label = { Text("Custom URL") }
                             )
@@ -667,7 +619,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 value = customHomeUrl,
                                 onValueChange = {
                                     customHomeUrl = it
-                                    sp.edit().putString("sp_custom_homepage_url", it).apply()
+                                    AppPreferences.setCustomHomepageUrl(it, context)
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Enter Homepage URL") },
@@ -686,7 +638,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isBackgroundPlay,
                             onCheckedChange = { newValue ->
                                 isBackgroundPlay = newValue
-                                sp.edit().putBoolean("sp_background_play", newValue).apply()
+                                AppPreferences.setBackgroundPlay(newValue, context)
                             }
                         )
 
@@ -704,7 +656,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             onCheckedChange = { newValue ->
                                 if (isPipSupported) {
                                     isAutoPip = newValue
-                                    sp.edit().putBoolean("sp_auto_pip", newValue).apply()
+                                    AppPreferences.setAutoPip(newValue, context)
                                 }
                             }
                         )
@@ -719,7 +671,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isForceDarkMode,
                             onCheckedChange = { newValue ->
                                 isForceDarkMode = newValue
-                                sp.edit().putBoolean("sp_force_dark_mode", newValue).apply()
+                                AppPreferences.setForceDarkMode(newValue, context)
                             }
                         )
                     }
@@ -746,7 +698,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             Surface(
                                 onClick = {
                                     privateDnsMode = mode
-                                    sp.edit().putString("sp_private_dns_mode", mode).apply()
+                                    AppPreferences.setPrivateDnsMode(mode, context)
                                 },
                                 shape = RoundedCornerShape(14.dp),
                                 color = if (privateDnsMode == mode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
@@ -837,7 +789,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     selected = appLanguage == tag,
                                     onClick = {
                                         appLanguage = tag
-                                        sp.edit().putString("sp_app_language", tag).apply()
+                                        AppPreferences.setAppLanguage(tag, context)
                                         val localeList = if (tag == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
                                         AppCompatDelegate.setApplicationLocales(localeList)
                                     },
@@ -901,7 +853,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isAdBlock,
                             onCheckedChange = { newValue ->
                                 isAdBlock = newValue
-                                sp.edit().putBoolean("sp_ad_block", newValue).putBoolean("profileStandard_adBlock", newValue).apply()
+                                AppPreferences.setAdBlock(newValue, context)
                             }
                         )
 
@@ -914,7 +866,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isBlockPopups,
                             onCheckedChange = { newValue ->
                                 isBlockPopups = newValue
-                                sp.edit().putBoolean("sp_block_popups", newValue).putBoolean("profileStandard_javascriptPopUp", !newValue).apply()
+                                AppPreferences.setBlockPopups(newValue, context)
                             }
                         )
 
@@ -927,7 +879,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isAutoOpenApps,
                             onCheckedChange = { newValue ->
                                 isAutoOpenApps = newValue
-                                sp.edit().putBoolean("sp_auto_open_apps", newValue).apply()
+                                AppPreferences.setAutoOpenApps(newValue, context)
                             }
                         )
 
@@ -940,7 +892,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isHttpsOnly,
                             onCheckedChange = { newValue ->
                                 isHttpsOnly = newValue
-                                sp.edit().putBoolean("sp_https_only", newValue).apply()
+                                AppPreferences.setHttpsOnly(newValue, context)
                             }
                         )
 
@@ -953,7 +905,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isJavaScript,
                             onCheckedChange = { newValue ->
                                 isJavaScript = newValue
-                                sp.edit().putBoolean("sp_javascript", newValue).putBoolean("profileStandard_javascript", newValue).apply()
+                                AppPreferences.setJavaScript(newValue, context)
                             }
                         )
                     }
@@ -969,7 +921,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isTouchHaptics,
                             onCheckedChange = { newValue ->
                                 isTouchHaptics = newValue
-                                sp.edit().putBoolean("sp_touch_haptics", newValue).apply()
+                                AppPreferences.setTouchHaptics(newValue, context)
                             }
                         )
 
@@ -991,7 +943,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                     selected = predictiveBackAnim == anim,
                                     onClick = {
                                         predictiveBackAnim = anim
-                                        sp.edit().putString("sp_predictive_back_anim", anim.value).apply()
+                                        AppPreferences.setPredictiveBackAnim(anim, context)
                                     },
                                     label = { Text(anim.label) },
                                     leadingIcon = if (predictiveBackAnim == anim) {
@@ -1018,7 +970,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                         selected = predictiveBackExitDir == dir,
                                         onClick = {
                                             predictiveBackExitDir = dir
-                                            sp.edit().putString("sp_predictive_back_exit_dir", dir.value).apply()
+                                            AppPreferences.setPredictiveBackExitDir(dir, context)
                                         },
                                         label = { Text(dir.label) },
                                         leadingIcon = if (predictiveBackExitDir == dir) {
@@ -1044,7 +996,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 selected = addressBarPosition == "TOP",
                                 onClick = {
                                     addressBarPosition = "TOP"
-                                    sp.edit().putString("sp_address_bar_position", "TOP").apply()
+                                    AppPreferences.setAddressBarPosition("TOP", context)
                                     if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
                                         (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
                                     }
@@ -1058,7 +1010,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 selected = addressBarPosition == "BOTTOM",
                                 onClick = {
                                     addressBarPosition = "BOTTOM"
-                                    sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
+                                    AppPreferences.setAddressBarPosition("BOTTOM", context)
                                     if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
                                         (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
                                     }
@@ -1092,7 +1044,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 value = fontSize,
                                 onValueChange = { newValue ->
                                     fontSize = newValue
-                                    sp.edit().putFloat("sp_font_size_scale", newValue).apply()
+                                    AppPreferences.setFontSizeScale(newValue, context)
                                 },
                                 valueRange = 0.7f..1.5f,
                                 modifier = Modifier.fillMaxWidth()
@@ -1143,7 +1095,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 value = zoomLevel,
                                 onValueChange = { newValue ->
                                     zoomLevel = newValue
-                                    sp.edit().putFloat("sp_zoom_level_scale", newValue).apply()
+                                    AppPreferences.setZoomLevelScale(newValue, context)
                                 },
                                 valueRange = 0.8f..2.0f,
                                 modifier = Modifier.fillMaxWidth()
@@ -1369,7 +1321,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             checked = isCheckUpdateOnLaunch,
                             onCheckedChange = { newValue ->
                                 isCheckUpdateOnLaunch = newValue
-                                sp.edit().putBoolean("sp_check_update_on_launch", newValue).apply()
+                                AppPreferences.setCheckUpdateOnLaunch(newValue, context)
                             }
                         )
 

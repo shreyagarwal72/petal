@@ -22,12 +22,8 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.lifecycle.setViewTreeViewModelStoreOwner
-import androidx.preference.PreferenceManager
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.settings.AppPreferences
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.theme.defaultPaletteId
-import com.petal.browser.ui.theme.isDynamicColorSupported
 
 /**
  * Shared state for one edge's predictive gesture (back on the left, forward on the right).
@@ -113,15 +109,10 @@ object PetalEdgeIndicatorBridge {
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
-                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                val isAmoled = sp.getBoolean("sp_amoled", false)
-                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-
-                val appFont = try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.GS_FLEX }
-                val colorStyle = try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                val appFont = AppPreferences.getAppFont(activity)
+                val colorStyle = AppPreferences.getColorStyle(activity)
+                val isAmoled = AppPreferences.isAmoled(activity)
+                val dynamicColor = AppPreferences.isDynamicColor(activity)
 
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
@@ -200,19 +191,8 @@ fun PredictiveContentTransformer(
 
             // Read the user's chosen animation style/direction fresh on every gesture tick so a
             // change made in Settings while the browser is running takes effect immediately.
-            val sp = PreferenceManager.getDefaultSharedPreferences(context)
-            val animation = com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString(
-                    "sp_predictive_back_anim",
-                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value
-                ) ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value
-            )
-            val exitDirection = com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
-                sp.getString(
-                    "sp_predictive_back_exit_dir",
-                    com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value
-                ) ?: com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value
-            )
+            val animation = AppPreferences.getPredictiveBackAnim(context)
+            val exitDirection = AppPreferences.getPredictiveBackExitDir(context)
 
             val frame = com.petal.browser.animation.predictiveback.PredictiveBackStyle.frameFor(
                 animation = animation,

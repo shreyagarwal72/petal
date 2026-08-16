@@ -57,7 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
-import androidx.preference.PreferenceManager
+import com.petal.browser.settings.AppPreferences
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
@@ -212,22 +212,9 @@ fun ComposeView.setupExpressiveHomeScreen(
 
     setContent {
         val accountViewModel = viewModel<AccountViewModel>(activity)
-        val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-        var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
-        var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-        var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
-
-        DisposableEffect(sp) {
-            val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                when (key) {
-                    "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                    "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
-                    "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                }
-            }
-            sp.registerOnSharedPreferenceChangeListener(listener)
-            onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-        }
+        val currentPaletteId by AppPreferences.paletteIdFlow.collectAsState()
+        val isAmoled by AppPreferences.isAmoledFlow.collectAsState()
+        val useDynamic by AppPreferences.isDynamicColorFlow.collectAsState()
 
         PetalExpressiveTheme(
             paletteId = currentPaletteId,

@@ -281,20 +281,20 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             }
         }
 
-        boolean enableJs = sp.getBoolean("sp_javascript", sp.getBoolean(profile + "_javascript", true));
+        boolean enableJs = com.petal.browser.settings.AppPreferences.isJavaScript(context);
         webSettings.setJavaScriptEnabled(enableJs);
 
-        boolean blockPopups = sp.getBoolean("sp_block_popups", true);
+        boolean blockPopups = com.petal.browser.settings.AppPreferences.isBlockPopups(context);
         webSettings.setJavaScriptCanOpenWindowsAutomatically(!blockPopups);
 
-        float fontScale = sp.getFloat("sp_font_size_scale", 1.0f);
-        float zoomScale = sp.getFloat("sp_zoom_level_scale", 1.0f);
+        float fontScale = com.petal.browser.settings.AppPreferences.getFontSizeScale(context);
+        float zoomScale = com.petal.browser.settings.AppPreferences.getZoomLevelScale(context);
         int totalTextZoom = (int) (fontScale * zoomScale * 100);
         webSettings.setTextZoom(totalTextZoom);
 
         fingerPrintProtection = sp.getBoolean(profile + "_fingerPrintProtection", false);
         history = sp.getBoolean("sp_history", sp.getBoolean(profile + "_saveHistory", true));
-        adBlock = sp.getBoolean("sp_ad_block", sp.getBoolean(profile + "_adBlock", true));
+        adBlock = com.petal.browser.settings.AppPreferences.isAdBlock(context);
         saveData = sp.getBoolean(profile + "_saveData", true);
         camera = sp.getBoolean(profile + "_camera", true);
 
