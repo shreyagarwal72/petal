@@ -10,6 +10,7 @@ package com.petal.browser.compose.history
 
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,6 +25,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -83,10 +86,36 @@ object PetalHistoryBridge {
             dialog.setOnDismissListener {
                 onDismiss?.run()
             }
+
+            // BottomSheetDialog is a plain Dialog with its own Window, so it doesn't
+            // automatically inherit the Activity's OnBackPressedDispatcher the way views
+            // added directly into the Activity's own hierarchy (Settings/Downloads/Account)
+            // do. Without this, PredictiveBackHandler inside PetalHistoryScreen would have
+            // no dispatcher to attach to. This wires a small dispatcher of its own - backed
+            // by the dialog's own window on API 33+ for real predictive-back gesture events,
+            // falling back to a plain dismiss() otherwise - and hands it to the ComposeView
+            // via the standard ViewTree owner mechanism.
+            val historyBackDispatcher = androidx.activity.OnBackPressedDispatcher {
+                try { dialog.dismiss() } catch (ignored: Exception) {}
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                try {
+                    historyBackDispatcher.setOnBackInvokedDispatcher(dialog.window!!.onBackInvokedDispatcher)
+                } catch (ignored: Exception) {
+                }
+            }
+            val historyBackDispatcherOwner = object : androidx.activity.OnBackPressedDispatcherOwner {
+                override val lifecycle: androidx.lifecycle.Lifecycle
+                    get() = activity.lifecycle
+                override val onBackPressedDispatcher: androidx.activity.OnBackPressedDispatcher
+                    get() = historyBackDispatcher
+            }
+
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
+                setViewTreeOnBackPressedDispatcherOwner(historyBackDispatcherOwner)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
@@ -209,6 +238,31 @@ fun PetalHistoryScreen(
         )
     }
 
+    // Same predictive-back wiring as Settings/Downloads/Account - see the dispatcher set up
+    // in PetalHistoryBridge.showHistory above, which is what makes this usable at all inside
+    // a BottomSheetDialog's own window.
+    var backProgress by remember { mutableFloatStateOf(0f) }
+    var backIsLeftEdge by remember { mutableStateOf(true) }
+    val animatedBackProgress by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = backProgress,
+        animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+        label = "HistoryBackProgress"
+    )
+    val historySp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+    androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
+        try {
+            progress.collect { backEvent ->
+                backProgress = backEvent.progress
+                backIsLeftEdge = backEvent.swipeEdge == androidx.activity.BackEventCompat.EDGE_LEFT
+            }
+            backProgress = 0f
+            onDismiss()
+        } catch (e: Exception) {
+            // gesture cancelled - stay on the history screen
+            backProgress = 0f
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -241,11 +295,71 @@ fun PetalHistoryScreen(
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) { innerPadding ->
+        // Reflects the selected Predictive Back Animation style, with the browser page this
+        // was opened from peeking in from behind - same InstallerX-Revived-style choreography
+        // as Settings/Downloads/Account.
+        val animation = remember(historySp) {
+            com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
+                historySp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value)
+                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value
+            )
+        }
+        val exitDirection = remember(historySp) {
+            com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
+                historySp.getString("sp_predictive_back_exit_dir", com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value)
+                    ?: com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value
+            )
+        }
+        val backFrame = com.petal.browser.animation.predictiveback.PredictiveBackStyle.frameFor(
+            animation = animation,
+            exitDirection = exitDirection,
+            progress = animatedBackProgress,
+            isLeftEdge = backIsLeftEdge,
+        )
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            val previewBitmap = remember(animatedBackProgress > 0f) {
+                com.petal.browser.animation.predictiveback.PagePreviewCache.get(
+                    com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN
+                )
+            }
+            if (previewBitmap != null && animatedBackProgress > 0.001f) {
+                val underlay = com.petal.browser.animation.predictiveback.PredictiveBackStyle.underlayFrameFor(
+                    animation = animation,
+                    exitDirection = exitDirection,
+                    progress = animatedBackProgress,
+                    isLeftEdge = backIsLeftEdge,
+                )
+                androidx.compose.foundation.Image(
+                    bitmap = previewBitmap.asImageBitmap(),
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = underlay.scale
+                            scaleY = underlay.scale
+                            alpha = underlay.alpha
+                            translationX = underlay.translationXDp.dp.toPx()
+                            clip = underlay.cornerRadiusDp > 0.01f
+                            shape = RoundedCornerShape(underlay.cornerRadiusDp.dp)
+                        }
+                )
+            }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .graphicsLayer {
+                    scaleX = backFrame.scale
+                    scaleY = backFrame.scale
+                    alpha = backFrame.alpha
+                    translationX = backFrame.translationXDp.dp.toPx()
+                    clip = animatedBackProgress > 0.01f
+                    shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
+                },
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (rawHistory == null) {
@@ -384,6 +498,7 @@ fun PetalHistoryScreen(
                 }
             }
         }
+    }
     }
 }
 

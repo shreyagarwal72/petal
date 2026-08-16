@@ -90,4 +90,64 @@ object PredictiveBackStyle {
         alpha = (1f - eased * eased * 0.6f).coerceAtLeast(0.4f),
         cornerRadiusDp = 0f,
     )
+
+    /**
+     * Computes the transform for the "last page" preview layer that sits *underneath* the
+     * page being swiped away - the InstallerX-style two-screen choreography where the
+     * previous/destination screen is visibly growing into place as the gesture progresses,
+     * rather than a flat scrim. Mirrors [frameFor]'s per-style feel but inverted: this layer
+     * starts small/offset/faded and settles to a normal, full-size page by the time the
+     * gesture commits.
+     */
+    fun underlayFrameFor(
+        animation: PredictiveBackAnimation,
+        exitDirection: PredictiveBackExitDirection,
+        progress: Float,
+        isLeftEdge: Boolean,
+    ): PredictiveBackFrame {
+        val clamped = progress.coerceIn(0f, 1f)
+        if (animation == PredictiveBackAnimation.NONE || clamped <= 0f) {
+            return PredictiveBackFrame(alpha = 0f)
+        }
+        val eased = BackGestureEasing.transform(clamped)
+        return when (animation) {
+            PredictiveBackAnimation.NONE -> PredictiveBackFrame(alpha = 0f)
+            PredictiveBackAnimation.AOSP -> underlayAospFrame(eased, isLeftEdge)
+            PredictiveBackAnimation.MIUIX -> underlayMiuixFrame(eased, isLeftEdge)
+            PredictiveBackAnimation.SCALE -> underlayScaleFrame(eased, isLeftEdge, exitDirection)
+            PredictiveBackAnimation.CLASSIC -> underlayClassicFrame(eased, isLeftEdge)
+        }
+    }
+
+    private fun underlayAospFrame(eased: Float, isLeftEdge: Boolean) = PredictiveBackFrame(
+        scale = 0.92f + eased * 0.08f,
+        translationXDp = -driftSign(isLeftEdge) * (1f - eased) * 20f,
+        alpha = 0.55f + eased * 0.45f,
+        cornerRadiusDp = (1f - eased) * 28f,
+    )
+
+    private fun underlayMiuixFrame(eased: Float, isLeftEdge: Boolean) = PredictiveBackFrame(
+        scale = 0.96f + eased * 0.04f,
+        translationXDp = -driftSign(isLeftEdge) * (1f - eased) * 12f,
+        alpha = 0.65f + eased * 0.35f,
+        cornerRadiusDp = (1f - eased) * 20f,
+    )
+
+    private fun underlayScaleFrame(
+        eased: Float,
+        isLeftEdge: Boolean,
+        exitDirection: PredictiveBackExitDirection,
+    ) = PredictiveBackFrame(
+        scale = 0.85f + eased * 0.15f,
+        translationXDp = -exitSign(exitDirection, isLeftEdge) * (1f - eased) * 40f,
+        alpha = 0.4f + eased * 0.6f,
+        cornerRadiusDp = (1f - eased) * 32f,
+    )
+
+    private fun underlayClassicFrame(eased: Float, isLeftEdge: Boolean) = PredictiveBackFrame(
+        scale = 0.90f + eased * 0.10f,
+        translationXDp = -driftSign(isLeftEdge) * (1f - eased) * 30f,
+        alpha = (0.35f + eased * eased * 0.65f).coerceAtMost(1f),
+        cornerRadiusDp = 0f,
+    )
 }

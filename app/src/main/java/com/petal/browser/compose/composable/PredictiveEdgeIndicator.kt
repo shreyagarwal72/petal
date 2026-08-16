@@ -36,6 +36,14 @@ import com.petal.browser.ui.theme.isDynamicColorSupported
 class PetalEdgeGestureState {
     var isActive by mutableStateOf(false)
     var progress by mutableFloatStateOf(0f)
+
+    /**
+     * Cache key (see [com.petal.browser.animation.predictiveback.PagePreviewCache]) for the
+     * "last page" preview that should be revealed underneath this gesture - the page/screen
+     * the user is swiping back (or forward) *to*. Set right as the gesture starts so the
+     * preview layer always reflects the correct destination, InstallerX-Revived style.
+     */
+    var previewKey by mutableStateOf<String?>(null)
 }
 
 /**
@@ -140,13 +148,42 @@ object PetalEdgeIndicatorBridge {
         }
     }
 
+    /**
+     * Wires up the predictive-back content transform for the *whole page* - address bar
+     * header, page content, and bottom nav all animate together in [pageView] - plus a
+     * "last page" preview layer that peeks in from behind it, matching InstallerX-Revived's
+     * two-screen choreography instead of a flat shrink-on-scrim.
+     *
+     * [pageView] should be the top-level page container (activity_main's root layout) so the
+     * header and bottom nav move in lockstep with the content instead of staying static while
+     * only the WebView container animates.
+     */
     @JvmStatic
     fun bindContentTransform(
         activity: ComponentActivity,
-        contentView: android.view.View,
+        pageView: android.view.View,
         backState: PetalEdgeGestureState,
         forwardState: PetalEdgeGestureState
     ) {
+        // A plain ImageView inserted behind pageView in the same parent (not via
+        // addContentView, which always appends on top) - this is what actually shows through
+        // as pageView shrinks/rounds/fades away during the gesture.
+        val previewImage = android.widget.ImageView(activity).apply {
+            scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+            visibility = android.view.View.INVISIBLE
+        }
+        val parent = pageView.parent as? android.view.ViewGroup
+        parent?.addView(
+            previewImage,
+            parent.indexOfChild(pageView).coerceAtLeast(0),
+            android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        // Headless 1x1 ComposeView purely to host a LaunchedEffect that drives pageView's and
+        // previewImage's real (imperative) View properties every gesture tick.
         val overlayView = ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
@@ -154,7 +191,8 @@ object PetalEdgeIndicatorBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 PredictiveContentTransformer(
-                    contentView = contentView,
+                    pageView = pageView,
+                    previewImage = previewImage,
                     backState = backState,
                     forwardState = forwardState
                 )
@@ -169,7 +207,8 @@ object PetalEdgeIndicatorBridge {
 
 @Composable
 fun PredictiveContentTransformer(
-    contentView: android.view.View,
+    pageView: android.view.View,
+    previewImage: android.widget.ImageView,
     backState: PetalEdgeGestureState,
     forwardState: PetalEdgeGestureState
 ) {
@@ -186,17 +225,24 @@ fun PredictiveContentTransformer(
         val progress = rawProgress.coerceIn(0f, 1f)
 
         if (!active && progress == 0f) {
-            contentView.animate().cancel()
-            contentView.scaleX = 1.0f
-            contentView.scaleY = 1.0f
-            contentView.translationX = 0.0f
-            contentView.alpha = 1.0f
+            pageView.animate().cancel()
+            pageView.scaleX = 1.0f
+            pageView.scaleY = 1.0f
+            pageView.translationX = 0.0f
+            pageView.alpha = 1.0f
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                contentView.setRenderEffect(null)
+                pageView.setRenderEffect(null)
             }
-            contentView.clipToOutline = false
+            pageView.clipToOutline = false
+
+            previewImage.visibility = android.view.View.INVISIBLE
+            previewImage.alpha = 0f
+            previewImage.scaleX = 1f
+            previewImage.scaleY = 1f
+            previewImage.translationX = 0f
+            previewImage.clipToOutline = false
         } else {
-            contentView.animate().cancel()
+            pageView.animate().cancel()
 
             // Read the user's chosen animation style/direction fresh on every gesture tick so a
             // change made in Settings while the browser is running takes effect immediately.
@@ -220,23 +266,61 @@ fun PredictiveContentTransformer(
                 progress = progress,
                 isLeftEdge = isLeft,
             )
-            val density = contentView.resources.displayMetrics.density
+            val density = pageView.resources.displayMetrics.density
 
-            contentView.scaleX = frame.scale
-            contentView.scaleY = frame.scale
-            contentView.translationX = frame.translationXDp * density
-            contentView.alpha = frame.alpha
+            pageView.scaleX = frame.scale
+            pageView.scaleY = frame.scale
+            pageView.translationX = frame.translationXDp * density
+            pageView.alpha = frame.alpha
 
             val cornerRadiusPx = frame.cornerRadiusDp * density
             if (cornerRadiusPx > 0f) {
-                contentView.outlineProvider = object : android.view.ViewOutlineProvider() {
+                pageView.outlineProvider = object : android.view.ViewOutlineProvider() {
                     override fun getOutline(view: android.view.View, outline: android.graphics.Outline) {
                         outline.setRoundRect(0, 0, view.width, view.height, cornerRadiusPx)
                     }
                 }
-                contentView.clipToOutline = true
+                pageView.clipToOutline = true
             } else {
-                contentView.clipToOutline = false
+                pageView.clipToOutline = false
+            }
+
+            // "Last page" preview layer: whichever page/screen this gesture is heading
+            // towards, peeking in from behind pageView as it shrinks out of the way -
+            // the InstallerX-Revived two-screen look instead of a flat shrink-on-scrim.
+            val activeState = if (isLeft) backState else forwardState
+            val previewBitmap = com.petal.browser.animation.predictiveback.PagePreviewCache.get(activeState.previewKey)
+            if (previewBitmap != null) {
+                if (previewImage.drawable == null || (previewImage.tag as? String) != activeState.previewKey) {
+                    previewImage.setImageBitmap(previewBitmap)
+                    previewImage.tag = activeState.previewKey
+                }
+                previewImage.visibility = android.view.View.VISIBLE
+
+                val underlay = com.petal.browser.animation.predictiveback.PredictiveBackStyle.underlayFrameFor(
+                    animation = animation,
+                    exitDirection = exitDirection,
+                    progress = progress,
+                    isLeftEdge = isLeft,
+                )
+                previewImage.scaleX = underlay.scale
+                previewImage.scaleY = underlay.scale
+                previewImage.translationX = underlay.translationXDp * density
+                previewImage.alpha = underlay.alpha
+
+                val underlayCornerPx = underlay.cornerRadiusDp * density
+                if (underlayCornerPx > 0f) {
+                    previewImage.outlineProvider = object : android.view.ViewOutlineProvider() {
+                        override fun getOutline(view: android.view.View, outline: android.graphics.Outline) {
+                            outline.setRoundRect(0, 0, view.width, view.height, underlayCornerPx)
+                        }
+                    }
+                    previewImage.clipToOutline = true
+                } else {
+                    previewImage.clipToOutline = false
+                }
+            } else {
+                previewImage.visibility = android.view.View.INVISIBLE
             }
         }
     }

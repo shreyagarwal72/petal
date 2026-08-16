@@ -579,6 +579,76 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    /**
+     * Leaves a snapshot of "what the main browser page currently looks like" behind for
+     * PagePreviewCache, right before a full-screen surface (Settings/Downloads/Account) is
+     * about to replace it in contentFrame. When the user later predictive-back-swipes out of
+     * that surface, this is what peeks in from behind it instead of a flat scrim.
+     */
+    private void captureBrowserMainPreview() {
+        try {
+            android.view.View pageRootView = findViewById(R.id.main);
+            if (pageRootView != null && pageRootView.getWidth() > 0) {
+                com.petal.browser.animation.predictiveback.PagePreviewCache.capture(
+                    com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN, pageRootView
+                );
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error capturing browser main preview", e);
+        }
+    }
+
+    /**
+     * Mirrors {@link #performBackNavigation()}'s own decision tree (without any side effects)
+     * to figure out, the instant a back gesture starts, which page/screen it's actually
+     * heading towards - so the "last page" preview layer (see PagePreviewCache) can show the
+     * right snapshot the whole time the gesture is in progress, InstallerX-Revived style.
+     */
+    private String computeBackPreviewKey() {
+        try {
+            if (fullscreenHolder != null || customView != null || videoView != null) {
+                return null;
+            }
+            if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE) {
+                return null;
+            }
+            if (ninjaWebView != null && ninjaWebView.canGoBack()) {
+                android.webkit.WebBackForwardList list = ninjaWebView.copyBackForwardList();
+                int currentIndex = list.getCurrentIndex();
+                if (currentIndex > 0) {
+                    String prevUrl = list.getItemAtIndex(currentIndex - 1).getUrl();
+                    return com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(prevUrl);
+                }
+                return null;
+            }
+            String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+            String homeUrl = sp.getString("favoriteURL", "about:blank");
+            if (currentUrl != null && !isHomePage(currentUrl) && !currentUrl.equals(homeUrl)) {
+                return com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_HOME;
+            }
+            // Nothing left to go back to (exit chain) - no meaningful preview.
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Same idea as {@link #computeBackPreviewKey()}, but for the hand-rolled forward gesture. */
+    private String computeForwardPreviewKey() {
+        try {
+            if (ninjaWebView == null || !ninjaWebView.canGoForward()) return null;
+            android.webkit.WebBackForwardList list = ninjaWebView.copyBackForwardList();
+            int currentIndex = list.getCurrentIndex();
+            if (currentIndex >= 0 && currentIndex + 1 < list.getSize()) {
+                String nextUrl = list.getItemAtIndex(currentIndex + 1).getUrl();
+                return com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(nextUrl);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // State driving the left (back) and right (forward) edge bubbles.
     private final com.petal.browser.compose.composable.PetalEdgeGestureState backGestureState = new com.petal.browser.compose.composable.PetalEdgeGestureState();
     private final com.petal.browser.compose.composable.PetalEdgeGestureState forwardGestureState = new com.petal.browser.compose.composable.PetalEdgeGestureState();
@@ -595,6 +665,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             public void handleOnBackStarted(@androidx.annotation.NonNull androidx.activity.BackEventCompat backEvent) {
                 backGestureState.setActive(true);
                 backGestureState.setProgress(0f);
+                backGestureState.setPreviewKey(computeBackPreviewKey());
             }
 
             @Override
@@ -636,7 +707,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bind(rightEdgeCompose, this, forwardGestureState, false);
         rightEdgeCompose.bringToFront();
 
-        if (contentFrame != null) {
+        // Animate the *whole* page - header (address bar) + content + bottom nav together -
+        // rather than just the WebView container, so predictive back feels like the entire
+        // screen is being swiped away instead of only the middle of it moving.
+        android.view.View pageRootView = findViewById(R.id.main);
+        if (pageRootView != null) {
+            com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bindContentTransform(
+                this, pageRootView, backGestureState, forwardGestureState
+            );
+        } else if (contentFrame != null) {
             com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bindContentTransform(
                 this, contentFrame, backGestureState, forwardGestureState
             );
@@ -705,6 +784,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     if (dragDistance > HelperUnit.convertDpToPixel(8f, this)) {
                         forwardGestureClaimed = true;
                         forwardGestureState.setActive(true);
+                        forwardGestureState.setPreviewKey(computeForwardPreviewKey());
                         if (ninjaWebView != null) {
                             ninjaWebView.dispatchTouchEvent(android.view.MotionEvent.obtain(
                                 ev.getDownTime(), ev.getEventTime(), android.view.MotionEvent.ACTION_CANCEL,
@@ -970,6 +1050,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 @Override
                 public void onOpenDownloads() {
                     try {
+                        captureBrowserMainPreview();
                         contentFrame.removeAllViews();
                         View downloadView = PetalDownloadBridge.createDownloadView(BrowserActivity.this, () -> {
                             showAlbum(currentAlbumController);
@@ -1298,6 +1379,30 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken);
                 final Handler handler = new Handler();
                 handler.postDelayed(() -> FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken), 500);
+
+                // Leave a "last page" snapshot behind for the predictive-back preview layer
+                // (see PagePreviewCache) - captured after a short delay so the page has had
+                // a chance to actually render before we screenshot it. Keyed by URL so a
+                // later back/forward gesture into this exact history entry can find it again.
+                final String snapshotUrl = ninjaWebView.getUrl();
+                final boolean snapshotIsHome = isHomePage(snapshotUrl);
+                handler.postDelayed(() -> {
+                    try {
+                        android.view.View pageRootView = findViewById(R.id.main);
+                        if (pageRootView == null || pageRootView.getWidth() <= 0) return;
+                        String urlKey = com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(snapshotUrl);
+                        if (urlKey != null) {
+                            com.petal.browser.animation.predictiveback.PagePreviewCache.capture(urlKey, pageRootView);
+                        }
+                        if (snapshotIsHome) {
+                            com.petal.browser.animation.predictiveback.PagePreviewCache.capture(
+                                com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_HOME, pageRootView
+                            );
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error capturing page preview snapshot", e);
+                    }
+                }, 350);
             }
         }
     }
@@ -2365,6 +2470,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 @Override
                 public void onOpenHistory() {
+                    captureBrowserMainPreview();
                     View bottomNav = findViewById(R.id.bottom_nav_compose);
                     if (bottomNav != null) bottomNav.setVisibility(GONE);
                     com.petal.browser.compose.history.PetalHistoryBridge.showHistory(
@@ -2479,6 +2585,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void showDownloads() {
         try {
+            captureBrowserMainPreview();
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -2501,6 +2608,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void showAccountSyncScreen() {
         try {
+            captureBrowserMainPreview();
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -4092,6 +4200,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     private void openSettingsScreen() {
         try {
+            captureBrowserMainPreview();
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
