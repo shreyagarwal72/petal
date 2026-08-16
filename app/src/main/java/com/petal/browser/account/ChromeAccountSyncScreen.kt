@@ -1,6 +1,7 @@
 package com.petal.browser.account
 
 import android.net.Uri
+import android.preference.PreferenceManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
