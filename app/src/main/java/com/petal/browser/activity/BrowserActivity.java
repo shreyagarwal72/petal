@@ -1214,7 +1214,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else {
                 doubleTapsQuit();
             }
+            updateOmniBox();
+            updatePersistentBottomNav();
+            saveOpenedTabs();
         } else {
+            // closeTabConfirmation() runs okAction asynchronously (it waits for the
+            // user to tap "OK" on a Snackbar) when the "confirm before closing tab"
+            // preference is on. The tab bar refresh must happen inside the callback,
+            // after the tab is actually removed - otherwise it fired immediately and
+            // showed a stale tab count/list until the user confirmed.
             closeTabConfirmation(() -> {
                 AlbumController predecessor;
                 if (controller == currentAlbumController) predecessor = ((NinjaWebView) controller).getPredecessor();
@@ -1230,11 +1238,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     if (index >= BrowserContainer.size()) index = BrowserContainer.size() - 1;
                     showAlbum(BrowserContainer.get(index));
                 }
+                updateOmniBox();
+                updatePersistentBottomNav();
+                saveOpenedTabs();
             });
         }
-        updateOmniBox();
-        updatePersistentBottomNav();
-        saveOpenedTabs();
     }
 
     public synchronized void removeAlbumSilently(final AlbumController controller) {

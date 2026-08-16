@@ -77,19 +77,22 @@ fun PetalTabGridSwitcher(
     var isIncognitoMode by remember { mutableStateOf(tabs.any { it.isSelected && it.isIncognito }) }
     var isOverflowMenuExpanded by remember { mutableStateOf(false) }
 
-    val standardCount = remember(tabs) { tabs.count { !it.isIncognito } }
-    val incognitoCount = remember(tabs) { tabs.count { it.isIncognito } }
+    // NOTE: `tabs` is the same SnapshotStateList instance across recompositions -
+    // only its *contents* change when a tab is added/removed. Wrapping these
+    // derived values in remember(tabs) {...} used the list's identity as the key,
+    // which never changes, so the memoized block never re-ran and the switcher
+    // kept showing stale counts/grid contents after adding or closing tabs.
+    // Computing them directly on every recomposition keeps them reading (and
+    // therefore observing) the live list contents, so the UI updates immediately.
+    val standardCount = tabs.count { !it.isIncognito }
+    val incognitoCount = tabs.count { it.isIncognito }
 
-    val currentModeTabs = remember(tabs, isIncognitoMode) {
-        tabs.filter { it.isIncognito == isIncognitoMode }
-    }
+    val currentModeTabs = tabs.filter { it.isIncognito == isIncognitoMode }
 
-    val filteredTabs = remember(currentModeTabs, searchQuery) {
-        currentModeTabs.filter { tab ->
-            searchQuery.isBlank() ||
-            tab.title.contains(searchQuery, ignoreCase = true) ||
-            tab.url.contains(searchQuery, ignoreCase = true)
-        }
+    val filteredTabs = currentModeTabs.filter { tab ->
+        searchQuery.isBlank() ||
+        tab.title.contains(searchQuery, ignoreCase = true) ||
+        tab.url.contains(searchQuery, ignoreCase = true)
     }
 
     val backgroundColor = if (isIncognitoMode) Color(0xFF121318) else MaterialTheme.colorScheme.background

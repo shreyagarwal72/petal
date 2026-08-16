@@ -224,6 +224,20 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", true)) }
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
     var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
+    var predictiveBackAnim by remember {
+        mutableStateOf(
+            com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
+                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value) ?: "aosp"
+            )
+        )
+    }
+    var predictiveBackExitDir by remember {
+        mutableStateOf(
+            com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
+                sp.getString("sp_predictive_back_exit_dir", com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value) ?: "always_right"
+            )
+        )
+    }
     var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
@@ -949,6 +963,62 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_touch_haptics", newValue).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Text(
+                            "Predictive Back Animation:",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            com.petal.browser.animation.predictiveback.PredictiveBackAnimation.entries.forEach { anim ->
+                                FilterChip(
+                                    selected = predictiveBackAnim == anim,
+                                    onClick = {
+                                        predictiveBackAnim = anim
+                                        sp.edit().putString("sp_predictive_back_anim", anim.value).apply()
+                                    },
+                                    label = { Text(anim.label) },
+                                    leadingIcon = if (predictiveBackAnim == anim) {
+                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                    } else null
+                                )
+                            }
+                        }
+
+                        if (predictiveBackAnim == com.petal.browser.animation.predictiveback.PredictiveBackAnimation.SCALE) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "Predictive Exit Direction:",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.entries.forEach { dir ->
+                                    FilterChip(
+                                        selected = predictiveBackExitDir == dir,
+                                        onClick = {
+                                            predictiveBackExitDir = dir
+                                            sp.edit().putString("sp_predictive_back_exit_dir", dir.value).apply()
+                                        },
+                                        label = { Text(dir.label) },
+                                        leadingIcon = if (predictiveBackExitDir == dir) {
+                                            { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                        } else null
+                                    )
+                                }
+                            }
+                        }
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
