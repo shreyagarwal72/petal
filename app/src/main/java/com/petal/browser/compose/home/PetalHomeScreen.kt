@@ -340,28 +340,38 @@ fun PetalHomeScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "${greeting(greetingName)} · ",
-                                style = MaterialTheme.typography.titleLarge.copy(
+                                text = "${getTimeGreeting()} · ",
+                                style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
                                     letterSpacing = (-0.2).sp
                                 ),
-                                color = MaterialTheme.colorScheme.onBackground,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
                                 text = "Petal",
-                                style = MaterialTheme.typography.titleLarge.copy(
+                                style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.ExtraBold,
                                     letterSpacing = (-0.2).sp
                                 ),
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        if (!greetingName.isNullOrBlank()) {
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = greetingName,
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = (-0.5).sp
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
                             )
                         }
                     }
@@ -417,13 +427,12 @@ fun PetalHomeScreen(
     }
 }
 
-private fun greeting(name: String?): String {
-    val base = when (java.time.LocalTime.now().hour) {
+private fun getTimeGreeting(): String {
+    return when (java.time.LocalTime.now().hour) {
         in 5..11 -> "Good morning"
         in 12..17 -> "Good afternoon"
         else -> "Good evening"
     }
-    return if (name.isNullOrBlank()) base else "$base, $name"
 }
 
 @Composable
