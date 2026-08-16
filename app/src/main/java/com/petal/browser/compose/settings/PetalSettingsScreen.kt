@@ -100,7 +100,8 @@ object PetalSettingsBridge {
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
                             "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
-                            "sp_theme_config" -> themeConfigName = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
+                            "sp_expressive_colors" -> {}
+                            "sp_expressive_feature_tiles" -> {}
                         }
                     }
                     sp.registerOnSharedPreferenceChangeListener(listener)
@@ -204,6 +205,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
+    var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
 
     // Private DNS & Language States
     var privateDnsMode by remember { mutableStateOf(sp.getString("sp_private_dns_mode", "OFF") ?: "OFF") }
@@ -227,7 +229,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var predictiveBackAnim by remember {
         mutableStateOf(
             com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value) ?: "aosp"
+                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value) ?: "ksu_classic"
             )
         )
     }
@@ -243,6 +245,18 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
     var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
     var showEngineSheet by remember { mutableStateOf(false) }
+
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                "sp_expressive_feature_tiles" -> {
+                    isExpressiveFeatureTiles = sp.getBoolean("sp_expressive_feature_tiles", true)
+                }
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     if (showEngineSheet) {
         ModalBottomSheet(
@@ -443,15 +457,24 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     )
 
                     categories.forEachIndexed { index, cat ->
-                        val (container, onContainer) = tileColorway[index % tileColorway.size]
-                        PetalFeatureTile(
-                            title = cat.title,
-                            subtitle = cat.subtitle,
-                            icon = cat.icon,
-                            container = container,
-                            onContainer = onContainer,
-                            onClick = { currentCategory = cat },
-                        )
+                        if (isExpressiveFeatureTiles) {
+                            val (container, onContainer) = tileColorway[index % tileColorway.size]
+                            PetalFeatureTile(
+                                title = cat.title,
+                                subtitle = cat.subtitle,
+                                icon = cat.icon,
+                                container = container,
+                                onContainer = onContainer,
+                                onClick = { currentCategory = cat },
+                            )
+                        } else {
+                            SettingsCategoryRow(
+                                title = cat.title,
+                                subtitle = cat.subtitle,
+                                icon = cat.icon,
+                                onClick = { currentCategory = cat }
+                            )
+                        }
                     }
                 }
 
@@ -628,6 +651,18 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             onCheckedChange = { newValue ->
                                 isExpressiveColors = newValue
                                 sp.edit().putBoolean("sp_expressive_colors", newValue).apply()
+                            }
+                        )
+
+                        // Expressive Feature Tiles Toggle
+                        ToggleRow(
+                            title = "Expressive Feature Tiles",
+                            subtitle = "Use scalloped icon cards for settings and account actions instead of plain rows",
+                            icon = Icons.Rounded.GridView,
+                            checked = isExpressiveFeatureTiles,
+                            onCheckedChange = { newValue ->
+                                isExpressiveFeatureTiles = newValue
+                                sp.edit().putBoolean("sp_expressive_feature_tiles", newValue).apply()
                             }
                         )
 
@@ -975,31 +1010,21 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                        Text(
-                            "Predictive Back Animation:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        OptIn(ExperimentalLayoutApi::class)
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            com.petal.browser.animation.predictiveback.PredictiveBackAnimation.entries.forEach { anim ->
-                                FilterChip(
-                                    selected = predictiveBackAnim == anim,
-                                    onClick = {
-                                        predictiveBackAnim = anim
-                                        sp.edit().putString("sp_predictive_back_anim", anim.value).apply()
-                                    },
-                                    label = { Text(anim.label) },
-                                    leadingIcon = if (predictiveBackAnim == anim) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
+                        val isPredictiveAnimEnabled = predictiveBackAnim != com.petal.browser.animation.predictiveback.PredictiveBackAnimation.NONE
+                        SettingSwitchItem(
+                            title = "Predictive Back Animation",
+                            summary = if (isPredictiveAnimEnabled) "Enabled" else "Disabled",
+                            checked = isPredictiveAnimEnabled,
+                            onCheckedChange = { enabled ->
+                                val targetAnim = if (enabled) {
+                                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC
+                                } else {
+                                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.NONE
+                                }
+                                predictiveBackAnim = targetAnim
+                                sp.edit().putString("sp_predictive_back_anim", targetAnim.value).apply()
                             }
-                        }
+                        )
 
                         if (predictiveBackAnim == com.petal.browser.animation.predictiveback.PredictiveBackAnimation.SCALE) {
                             Spacer(modifier = Modifier.height(4.dp))
@@ -1567,6 +1592,58 @@ private fun SettingsCategoryCard(
                 )
             }
             content()
+        }
+    }
+}
+
+@Composable
+private fun SettingsCategoryRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }

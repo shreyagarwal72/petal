@@ -13,6 +13,6 @@ enum class PredictiveBackAnimation(val value: String, val label: String) {
 
     companion object {
         fun fromValueOrDefault(value: String): PredictiveBackAnimation =
-            entries.find { it.value == value || it.name.equals(value, ignoreCase = true) } ?: AOSP
+            entries.find { it.value == value || it.name.equals(value, ignoreCase = true) } ?: CLASSIC
     }
 }

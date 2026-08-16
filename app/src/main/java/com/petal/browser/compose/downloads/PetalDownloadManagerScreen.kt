@@ -267,8 +267,8 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         // for Downloads always looking the same regardless of that setting.
         val animation = remember(sp) {
             com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value
+                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value)
+                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value
             )
         }
         val exitDirection = remember(sp) {

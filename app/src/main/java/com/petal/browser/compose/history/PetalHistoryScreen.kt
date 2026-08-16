@@ -300,8 +300,8 @@ fun PetalHistoryScreen(
         // as Settings/Downloads/Account.
         val animation = remember(historySp) {
             com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                historySp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value
+                historySp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value)
+                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value
             )
         }
         val exitDirection = remember(historySp) {

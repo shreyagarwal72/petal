@@ -250,8 +250,8 @@ fun PredictiveContentTransformer(
             val animation = com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
                 sp.getString(
                     "sp_predictive_back_anim",
-                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value
-                ) ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.AOSP.value
+                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value
+                ) ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value
             )
             val exitDirection = com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
                 sp.getString(
