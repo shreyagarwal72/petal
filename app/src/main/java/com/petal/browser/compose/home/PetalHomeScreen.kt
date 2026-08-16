@@ -298,12 +298,35 @@ fun PetalHomeScreen(
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Top Bar Profile / Sync Action Button
+                // Top Bar: Petal Brand Mark at Top-Left & Profile Avatar at Top-Right
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(28.dp))
+                            }
+                        }
+                        Text(
+                            text = "Petal",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = (-0.3).sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
                     IconButton(
                         onClick = onOpenAccountSync,
                         modifier = Modifier.size(44.dp)
@@ -312,9 +335,14 @@ fun PetalHomeScreen(
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(24.dp))
 
-                // Animated Logo & Greeting Container
+                // Greeting & Username Container on Same Line
+                val nameDisplay = remember(greetingName) {
+                    val name = greetingName?.trim()?.take(15) ?: ""
+                    if (name.isNotEmpty()) name else "Explorer"
+                }
+
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -324,57 +352,28 @@ fun PetalHomeScreen(
                             scaleY = logoScale
                         }
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier
-                                .size(76.dp)
-                                .padding(4.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(56.dp))
-                            }
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "${getTimeGreeting()} · ",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    letterSpacing = (-0.2).sp
-                                ),
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                            Text(
-                                text = "Petal",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = (-0.2).sp
-                                ),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        if (!greetingName.isNullOrBlank()) {
-                            Spacer(Modifier.height(2.dp))
-                            Text(
-                                text = greetingName,
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = (-0.5).sp
-                                ),
-                                color = MaterialTheme.colorScheme.onBackground,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp)
-                            )
-                        }
+                    val fullGreetingText = "${getTimeGreeting()}, $nameDisplay"
+                    val fontSize = when {
+                        fullGreetingText.length > 24 -> 20.sp
+                        fullGreetingText.length > 18 -> 24.sp
+                        else -> 28.sp
                     }
+
+                    Text(
+                        text = fullGreetingText,
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = fontSize,
+                            letterSpacing = (-0.4).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                    )
                 }
 
                 Spacer(Modifier.height(20.dp))

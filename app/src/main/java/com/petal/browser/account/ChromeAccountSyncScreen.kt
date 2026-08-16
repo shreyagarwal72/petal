@@ -361,8 +361,8 @@ fun PetalUserProfileScreen(
             text = {
                 OutlinedTextField(
                     value = nameInput,
-                    onValueChange = { nameInput = it },
-                    label = { Text("User Name") },
+                    onValueChange = { if (it.length <= 15) nameInput = it },
+                    label = { Text("User Name (max 15 chars)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )

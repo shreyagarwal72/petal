@@ -109,7 +109,7 @@ object GoogleAccountManager {
 
     fun updateDisplayName(context: Context, newName: String) {
         try {
-            val trimmed = newName.trim().ifEmpty { "Petal Explorer" }
+            val trimmed = newName.trim().take(15).ifEmpty { "Petal Explorer" }
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
             sp.edit().putString(KEY_DISPLAY_NAME, trimmed).apply()
             currentProfile = currentProfile.copy(displayName = trimmed)
