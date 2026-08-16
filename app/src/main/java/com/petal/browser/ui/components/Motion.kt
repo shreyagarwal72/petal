@@ -61,7 +61,8 @@ fun Modifier.bouncyClickable(
         if (pressed) {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
             if (sp.getBoolean("sp_touch_haptics", true)) {
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                    .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.45f)
             }
         }
     }
@@ -84,7 +85,8 @@ fun Modifier.bouncyClickable(
         onClick = {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
             if (sp.getBoolean("sp_touch_haptics", true)) {
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                    .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
             }
             onClick()
         },
