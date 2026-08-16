@@ -69,7 +69,7 @@ fun PetalFeatureTile(
     icon: ImageVector,
     container: Color,
     onContainer: Color,
-    onClick: () -> Unit,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     height: Dp = 128.dp,
     pillLabel: String? = "Open",
