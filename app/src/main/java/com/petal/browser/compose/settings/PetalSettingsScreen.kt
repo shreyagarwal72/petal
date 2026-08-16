@@ -251,14 +251,23 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         label = "SettingsBackProgress"
     )
 
-    val isBackHandlerEnabled = currentCategory != SettingsCategory.OVERVIEW
-    androidx.activity.compose.PredictiveBackHandler(enabled = isBackHandlerEnabled) { progress ->
+    // Always keep this handler active - including on the Overview screen - so that a
+    // back-swipe from Settings is never left for the Activity-level browser back logic
+    // to handle. That logic knows nothing about Settings being open and would otherwise
+    // fall straight through to "press back again to exit", skipping the home/current
+    // site screen entirely. Chrome-style behavior: sub-page -> Overview -> browser
+    // (home/current site) -> exit, one destination at a time.
+    androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
         try {
             progress.collect { backEvent ->
                 backProgress = backEvent.progress
             }
             backProgress = 0f
-            currentCategory = SettingsCategory.OVERVIEW
+            if (currentCategory != SettingsCategory.OVERVIEW) {
+                currentCategory = SettingsCategory.OVERVIEW
+            } else {
+                onBackPress()
+            }
         } catch (e: Exception) {
             backProgress = 0f
         }
