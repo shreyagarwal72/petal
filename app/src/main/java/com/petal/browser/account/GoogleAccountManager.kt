@@ -45,7 +45,7 @@ object GoogleAccountManager {
     // Credential Manager uses this as the audience for the ID token it requests -
     // required even though this app has no backend of its own.
     private const val WEB_CLIENT_ID =
-        "755813875491-35lst7559uns78mpm3bt5nsf8r9m3n2o.apps.googleusercontent.com"
+        "755813875491-tfaor37ei7a72lc5g0ghachduetf9fj6.apps.googleusercontent.com"
 
     private const val KEY_IS_SIGNED_IN = "sp_google_account_signed_in"
     private const val KEY_EMAIL = "sp_google_account_email"
