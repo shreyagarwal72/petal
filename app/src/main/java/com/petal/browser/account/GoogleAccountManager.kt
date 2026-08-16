@@ -2,6 +2,7 @@ package com.petal.browser.account
 
 import android.content.Context
 import android.util.Base64
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,6 +13,9 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.GetCredentialInterruptedException
+import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
+import androidx.credentials.exceptions.GetCredentialUnsupportedException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.preference.PreferenceManager
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
@@ -43,6 +47,8 @@ sealed class GoogleSignInResult {
 }
 
 object GoogleAccountManager {
+
+    private const val TAG = "GoogleAccountManager"
 
     // Web application OAuth client ID from Google Cloud Console.
     // Credential Manager uses this as the audience for the ID token it requests -
@@ -240,14 +246,25 @@ object GoogleAccountManager {
                 return GoogleSignInResult.Success(currentProfile)
             }
         } catch (e: NoCredentialException) {
-            // Fall through to GetSignInWithGoogleOption fallback below
+            // No authorized account for this app yet - fall through to the
+            // GetSignInWithGoogleOption flow below, which can show the full
+            // account picker rather than only previously-authorized accounts.
+            Log.d(TAG, "No authorized credential for primary attempt, falling back", e)
         } catch (e: GetCredentialCancellationException) {
+            // This is the only exception type that reliably means "the user
+            // backed out of the picker/consent screen". Everything else below
+            // is a real error and must NOT be reported as a cancellation -
+            // doing so (e.g. via fragile message string-matching) was hiding
+            // the actual failure and skipping the fallback that could work.
             return GoogleSignInResult.Failure("Sign-in was cancelled.")
+        } catch (e: GetCredentialException) {
+            // Any other credential failure here (config issue, transient
+            // Play Services error, etc.) - log it and let the secondary
+            // GetSignInWithGoogleOption flow have a chance to succeed
+            // instead of guessing this was a user cancellation.
+            Log.w(TAG, "Primary sign-in attempt failed (type=${e.type}), trying fallback", e)
         } catch (e: Throwable) {
-            val msg = e.message ?: ""
-            if (msg.contains("16") || msg.contains("Canceled", ignoreCase = true) || msg.contains("Cancelled", ignoreCase = true)) {
-                return GoogleSignInResult.Failure("Sign-in was cancelled.")
-            }
+            Log.w(TAG, "Primary sign-in attempt threw unexpectedly, trying fallback", e)
         }
 
         // Secondary: Fallback to GetSignInWithGoogleOption for broader device/account compatibility
@@ -277,21 +294,34 @@ object GoogleAccountManager {
                 return GoogleSignInResult.Success(currentProfile)
             }
         } catch (e: GetCredentialCancellationException) {
+            // Genuine user cancellation - confirmed by exception type, not message text.
             return GoogleSignInResult.Failure("Sign-in was cancelled.")
         } catch (e: NoCredentialException) {
             return GoogleSignInResult.Failure("No Google accounts found. Please add a Google Account in Android Device Settings -> Accounts.")
+        } catch (e: GetCredentialProviderConfigurationException) {
+            // Thrown when there's no credential provider able to handle the
+            // request - typically an OAuth client ID that doesn't match this
+            // app's package name / signing certificate (SHA-1) in Google
+            // Cloud Console, not something the user did.
+            Log.e(TAG, "Credential provider configuration issue", e)
+            return GoogleSignInResult.Failure(
+                "Google Sign-In isn't configured correctly for this app build " +
+                    "(OAuth client ID / SHA-1 fingerprint mismatch). This is a setup issue, not a cancellation."
+            )
+        } catch (e: GetCredentialUnsupportedException) {
+            return GoogleSignInResult.Failure("Google Sign-In isn't supported on this device. Please update Google Play Services and try again.")
+        } catch (e: GetCredentialInterruptedException) {
+            return GoogleSignInResult.Failure("Sign-in was interrupted. Please try again.")
         } catch (e: GetCredentialException) {
-            e.printStackTrace()
+            // Log the real type/message instead of guessing "cancelled" from
+            // a substring match - that was the source of false cancellations.
+            Log.e(TAG, "Sign-in failed: type=${e.type}", e)
             val cleanMsg = e.message ?: ""
-            if (cleanMsg.contains("No credentials", ignoreCase = true)) {
-                return GoogleSignInResult.Failure("No Google accounts found. Please add a Google Account in Android Device Settings -> Accounts.")
-            } else if (cleanMsg.contains("16") || cleanMsg.contains("Canceled", ignoreCase = true) || cleanMsg.contains("Cancelled", ignoreCase = true)) {
-                return GoogleSignInResult.Failure("Sign-in was cancelled.")
-            } else {
-                return GoogleSignInResult.Failure(cleanMsg.ifBlank { "Sign-in was unavailable or failed" })
-            }
+            return GoogleSignInResult.Failure(
+                cleanMsg.ifBlank { "Sign-in failed (${e.type}). Please try again." }
+            )
         } catch (e: Throwable) {
-            e.printStackTrace()
+            Log.e(TAG, "Unexpected sign-in error", e)
             return GoogleSignInResult.Failure(e.message ?: "Unknown sign-in error")
         }
 
