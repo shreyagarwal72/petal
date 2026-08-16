@@ -43,13 +43,27 @@ fun PetalIncognitoHomeScreen(
     onCloseIncognito: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sp_amoled") {
+                isAmoled = sp.getBoolean("sp_amoled", false)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
     var blockThirdPartyCookies by remember { mutableStateOf(true) }
 
-    PetalIncognitoTheme {
+    PetalIncognitoTheme(useAmoled = isAmoled) {
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(IncognitoDarkBackground)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Column(
                 modifier = Modifier

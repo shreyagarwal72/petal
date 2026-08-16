@@ -398,12 +398,22 @@ object PetalAccountSyncBridge {
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val currentPaletteId = remember {
-                    sp.getString("sp_petal_palette_id", defaultPaletteId) ?: defaultPaletteId
+                val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
+                var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
+                var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+
+                DisposableEffect(sp) {
+                    val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                        when (key) {
+                            "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                            "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                            "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                        }
+                    }
+                    sp.registerOnSharedPreferenceChangeListener(listener)
+                    onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
                 }
-                val isAmoled = remember { sp.getBoolean("sp_petal_amoled_mode", false) }
-                val useDynamic = remember { isDynamicColorSupported }
 
                 PetalExpressiveTheme(
                     paletteId = currentPaletteId,

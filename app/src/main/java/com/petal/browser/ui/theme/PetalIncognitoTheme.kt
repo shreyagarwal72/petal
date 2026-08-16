@@ -38,12 +38,33 @@ val IncognitoColorScheme: ColorScheme = darkColorScheme(
     outline = IncognitoOutline
 )
 
+val IncognitoAmoledBackground = Color(0xFF000000)
+
+val IncognitoAmoledColorScheme: ColorScheme = darkColorScheme(
+    primary = IncognitoPrimary,
+    onPrimary = IncognitoOnPrimary,
+    primaryContainer = IncognitoPrimaryContainer,
+    onPrimaryContainer = IncognitoOnPrimaryContainer,
+    secondary = IncognitoSecondary,
+    onSecondary = IncognitoOnSecondary,
+    background = IncognitoAmoledBackground,
+    onBackground = IncognitoOnSurface,
+    surface = IncognitoAmoledBackground,
+    onSurface = IncognitoOnSurface,
+    surfaceVariant = IncognitoSurfaceContainer,
+    onSurfaceVariant = IncognitoOnSurfaceVariant,
+    surfaceContainer = IncognitoSurfaceContainer,
+    surfaceContainerHigh = IncognitoSurfaceContainerHigh,
+    outline = IncognitoOutline
+)
+
 @Composable
 fun PetalIncognitoTheme(
+    useAmoled: Boolean = false,
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = IncognitoColorScheme,
+        colorScheme = if (useAmoled) IncognitoAmoledColorScheme else IncognitoColorScheme,
         typography = StrideTypography,
         content = content
     )
