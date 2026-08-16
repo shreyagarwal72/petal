@@ -240,10 +240,12 @@ object GoogleAccountManager {
         } catch (e: GetCredentialException) {
             e.printStackTrace()
             val cleanMsg = e.message ?: ""
-            if (cleanMsg.contains("16") || cleanMsg.contains("Canceled", ignoreCase = true) || cleanMsg.contains("Cancelled", ignoreCase = true)) {
-                GoogleSignInResult.Failure("Sign-in cancelled or account re-authentication required. Please try again.")
+            if (cleanMsg.contains("No credentials", ignoreCase = true) || e is androidx.credentials.exceptions.NoCredentialsException) {
+                GoogleSignInResult.Failure("No Google account found or signed into Google Play Services on this device.")
+            } else if (cleanMsg.contains("16") || cleanMsg.contains("Canceled", ignoreCase = true) || cleanMsg.contains("Cancelled", ignoreCase = true) || e is androidx.credentials.exceptions.GetCredentialCancellationException) {
+                GoogleSignInResult.Failure("Sign-in was cancelled.")
             } else {
-                GoogleSignInResult.Failure(cleanMsg.ifBlank { "Sign-in was cancelled or unavailable" })
+                GoogleSignInResult.Failure(cleanMsg.ifBlank { "Sign-in was unavailable or failed" })
             }
         } catch (e: GoogleIdTokenParsingException) {
             e.printStackTrace()
