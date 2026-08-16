@@ -32,9 +32,16 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.runtime.*
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.R
+import com.petal.browser.account.GoogleAccountManager
+import com.petal.browser.account.GoogleSignInResult
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import kotlinx.coroutines.launch
 
 object PetalWelcomeBridge {
     @JvmStatic
@@ -161,7 +168,185 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 )
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
+
+            // Google Sign-In & Data Privacy Section
+            val context = LocalContext.current
+            val coroutineScope = rememberCoroutineScope()
+            var isSigningIn by remember { mutableStateOf(false) }
+            var errorMessage by remember { mutableStateOf<String?>(null) }
+            val currentProfile = GoogleAccountManager.currentProfile
+
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .entrance(index = 3)
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.AccountCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (currentProfile.isSignedIn) "Signed in as ${currentProfile.displayName}" else "Google Account Sync",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (currentProfile.isSignedIn) currentProfile.email else "Sync bookmarks & preferences securely",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    if (!currentProfile.isSignedIn) {
+                        Button(
+                            onClick = {
+                                if (!isSigningIn) {
+                                    isSigningIn = true
+                                    errorMessage = null
+                                    coroutineScope.launch {
+                                        when (val result = GoogleAccountManager.signIn(context)) {
+                                            is GoogleSignInResult.Success -> {
+                                                isSigningIn = false
+                                            }
+                                            is GoogleSignInResult.Failure -> {
+                                                isSigningIn = false
+                                                errorMessage = result.message
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = !isSigningIn,
+                            shape = RoundedCornerShape(20.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            if (isSigningIn) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Connecting to Google...", style = MaterialTheme.typography.labelLarge)
+                            } else {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Lock,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        "Sign in with Google",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                }
+                            }
+                        }
+
+                        if (errorMessage != null) {
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = errorMessage!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    GoogleAccountManager.signOut(context)
+                                }
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                        ) {
+                            Text("Sign Out", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // Material Design Data Privacy & Safety Disclaimer
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.VerifiedUser,
+                                contentDescription = "Data Safety",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(top = 2.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = "Data Privacy & Safety",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = "Google Sign-In is used exclusively to display your profile and sync your personal browser settings (bookmarks & history) locally. Petal Browser does not host a remote server or collect, sell, or share your data.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(28.dp))
 
             // Get Started Button
             Button(
@@ -175,7 +360,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                     .fillMaxWidth()
                     .height(56.dp)
                     .bouncyClickable(scaleDown = 0.94f, onClick = onGetStarted)
-                    .entrance(index = 3)
+                    .entrance(index = 4)
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
