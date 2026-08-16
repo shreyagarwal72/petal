@@ -255,58 +255,24 @@ fun PetalUserProfileScreen(
                 }
             }
 
-            // Global Google One-Click Login Switch Section
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF4285F4)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Rounded.VpnKey,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = "One-Click Google Single Sign-On (SSO)",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "Log in to all Google sites (YouTube, Gmail, Drive, Maps) automatically in one session",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        Switch(
-                            checked = profile.globalGoogleLogin,
-                            onCheckedChange = { GoogleAccountManager.setGlobalGoogleLogin(context, it) }
-                        )
-                    }
+            // Global Google One-Click Login Switch Section (PetalFeatureTile styled)
+            PetalFeatureTile(
+                title = "One-Click Google Single Sign-On (SSO)",
+                subtitle = "Log in to all Google sites (YouTube, Gmail, Drive, Maps) automatically in one session",
+                icon = Icons.Rounded.VpnKey,
+                container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                onContainer = MaterialTheme.colorScheme.onSurface,
+                onClick = {
+                    GoogleAccountManager.setGlobalGoogleLogin(context, !profile.globalGoogleLogin)
+                },
+                pillLabel = null,
+                trailing = {
+                    Switch(
+                        checked = profile.globalGoogleLogin,
+                        onCheckedChange = { GoogleAccountManager.setGlobalGoogleLogin(context, it) }
+                    )
                 }
-            }
+            )
 
             // Google Account Status & Auth Actions — Gramly-style feature tiles
             Column(
@@ -315,7 +281,7 @@ fun PetalUserProfileScreen(
             ) {
                 PetalFeatureTile(
                     title = if (profile.isSignedIn) "Google Account Signed In" else "Sign In with Google",
-                    subtitle = if (profile.isSignedIn) profile.email else "Connect your Google account for cross-device sync",
+                    subtitle = if (profile.isSignedIn) profile.email else "Connect your Google account for cross-device session access",
                     icon = Icons.Rounded.AccountCircle,
                     container = MaterialTheme.colorScheme.primaryContainer,
                     onContainer = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -348,63 +314,6 @@ fun PetalUserProfileScreen(
                         onContainer = MaterialTheme.colorScheme.onErrorContainer,
                         pillLabel = "Sign Out",
                         onClick = { GoogleAccountManager.signOut(context) }
-                    )
-                }
-            }
-
-            // Sync Data Features Card
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Browser Data Synchronization",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(Modifier.height(10.dp))
-
-                    SyncToggleItem(
-                        title = "Sync Bookmarks & Starred Sites",
-                        subtitle = "Keep bookmarks accessible across devices",
-                        checked = profile.syncBookmarks,
-                        onCheckedChange = {
-                            GoogleAccountManager.updateSyncSettings(context, it, profile.syncHistory, profile.syncPasswords, profile.syncOpenTabs, profile.syncSearchEngines)
-                        }
-                    )
-                    SyncToggleItem(
-                        title = "Sync Browsing History",
-                        subtitle = "Remember recently visited websites",
-                        checked = profile.syncHistory,
-                        onCheckedChange = {
-                            GoogleAccountManager.updateSyncSettings(context, profile.syncBookmarks, it, profile.syncPasswords, profile.syncOpenTabs, profile.syncSearchEngines)
-                        }
-                    )
-                    SyncToggleItem(
-                        title = "Sync Passwords & Autofill",
-                        subtitle = "Securely save web credentials",
-                        checked = profile.syncPasswords,
-                        onCheckedChange = {
-                            GoogleAccountManager.updateSyncSettings(context, profile.syncBookmarks, profile.syncHistory, it, profile.syncOpenTabs, profile.syncSearchEngines)
-                        }
-                    )
-                    SyncToggleItem(
-                        title = "Sync Active Open Tabs",
-                        subtitle = "Switch between open tabs seamless across screens",
-                        checked = profile.syncOpenTabs,
-                        onCheckedChange = {
-                            GoogleAccountManager.updateSyncSettings(context, profile.syncBookmarks, profile.syncHistory, profile.syncPasswords, it, profile.syncSearchEngines)
-                        }
-                    )
-                    SyncToggleItem(
-                        title = "Sync Custom Search Engines",
-                        subtitle = "Keep search preferences and shortcuts backed up",
-                        checked = profile.syncSearchEngines,
-                        onCheckedChange = {
-                            GoogleAccountManager.updateSyncSettings(context, profile.syncBookmarks, profile.syncHistory, profile.syncPasswords, profile.syncOpenTabs, it)
-                        }
                     )
                 }
             }
@@ -441,27 +350,6 @@ fun PetalUserProfileScreen(
         )
     }
 }
-
-@Composable
-private fun SyncToggleItem(
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
 }
 
 // ── Java Interop Bridge ────────────────────────────────────────────────────
