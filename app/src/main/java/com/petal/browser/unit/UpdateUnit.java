@@ -49,17 +49,17 @@ public class UpdateUnit {
                     reader.close();
 
                     JSONObject json = new JSONObject(sb.toString());
-                    final String latestVersion = json.optString("tag_name", "v1.5.0");
+                    final String latestVersion = json.optString("tag_name", "v1.0.2");
                     final String releaseNotes = json.optString("body", "Bug fixes and performance improvements.");
                     final String downloadUrl = json.optString("html_url", "https://github.com/shreyagarwal72/foss_browser/releases");
 
-                    String ver = "v1.5.0";
+                    String ver = "v1.0.2";
                     try {
                         ver = "v" + activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0).versionName;
                     } catch (Exception ignored) {}
                     final String currentVersion = ver;
 
-                    final boolean hasUpdate = !latestVersion.equalsIgnoreCase(currentVersion);
+                    final boolean hasUpdate = isNewerVersion(latestVersion, currentVersion);
 
                     new Handler(Looper.getMainLooper()).post(() -> {
                         if (activity.isFinishing()) return;
@@ -83,17 +83,41 @@ public class UpdateUnit {
                     });
                 } else if (!isLaunchCheck) {
                     new Handler(Looper.getMainLooper()).post(() ->
-                            NinjaToast.show(activity, "You are using the latest version of Petal Browser (v1.5.0)")
+                            NinjaToast.show(activity, "You are using the latest version of Petal Browser")
                     );
                 }
             } catch (Exception e) {
                 Log.e("UpdateUnit", "Error checking for updates", e);
                 if (!isLaunchCheck) {
                     new Handler(Looper.getMainLooper()).post(() ->
-                            NinjaToast.show(activity, "You are using the latest version of Petal Browser (v1.5.0)")
+                            NinjaToast.show(activity, "You are using the latest version of Petal Browser")
                     );
                 }
             }
         });
+    }
+
+    private static boolean isNewerVersion(String latest, String current) {
+        if (latest == null || current == null) return false;
+        String cleanLatest = latest.trim().replaceAll("^[vV]", "");
+        String cleanCurrent = current.trim().replaceAll("^[vV]", "");
+
+        String[] latestParts = cleanLatest.split("\\.");
+        String[] currentParts = cleanCurrent.split("\\.");
+
+        int length = Math.max(latestParts.length, currentParts.length);
+        for (int i = 0; i < length; i++) {
+            int latestNum = 0;
+            int currentNum = 0;
+            if (i < latestParts.length) {
+                try { latestNum = Integer.parseInt(latestParts[i].replaceAll("[^0-9]", "")); } catch (Exception ignored) {}
+            }
+            if (i < currentParts.length) {
+                try { currentNum = Integer.parseInt(currentParts[i].replaceAll("[^0-9]", "")); } catch (Exception ignored) {}
+            }
+            if (latestNum > currentNum) return true;
+            if (latestNum < currentNum) return false;
+        }
+        return false;
     }
 }
