@@ -199,6 +199,11 @@ public class BrowserUnit {
                 if (manager != null) {
                     long downloadId = manager.enqueue(request);
                     com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(context, downloadId, fileName);
+                    try {
+                        com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(context, verifiedUrl, fileName, userAgent, cookie, null);
+                    } catch (Exception ex) {
+                        Log.e(TAG, "PetalDownloadEngine fast download fallback notice", ex);
+                    }
                 } else {
                     throw new IllegalStateException("DownloadManager not available");
                 }
