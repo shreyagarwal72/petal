@@ -305,19 +305,38 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
                     TopAppBar(
                         title = {
-                            Text(
-                                currentCategory.title,
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                            )
+                            AnimatedContent(
+                                targetState = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
+                                transitionSpec = {
+                                    (fadeIn() + scaleIn(initialScale = 0.92f))
+                                        .togetherWith(fadeOut() + scaleOut(targetScale = 0.92f))
+                                },
+                                label = "ZenithHeaderTitleAnimation"
+                            ) { titleText ->
+                                Text(
+                                    text = titleText,
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         },
                         navigationIcon = {
-                            IconButton(onClick = {
-                                if (currentCategory != SettingsCategory.OVERVIEW) {
-                                    currentCategory = SettingsCategory.OVERVIEW
-                                } else {
-                                    onBackPress()
+                            IconButton(
+                                onClick = {
+                                    if (currentCategory != SettingsCategory.OVERVIEW) {
+                                        currentCategory = SettingsCategory.OVERVIEW
+                                    } else {
+                                        onBackPress()
+                                    }
+                                },
+                                modifier = Modifier.bouncyClickable {
+                                    if (currentCategory != SettingsCategory.OVERVIEW) {
+                                        currentCategory = SettingsCategory.OVERVIEW
+                                    } else {
+                                        onBackPress()
+                                    }
                                 }
-                            }) {
+                            ) {
                                 Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                             }
                         },
