@@ -461,6 +461,25 @@ fun PetalUserProfileScreen(
                         }
                     )
 
+                    PetalFeatureTile(
+                        title = "Open Google Accounts SSO Web Login",
+                        subtitle = "Open Google Accounts sign-in page to log in to Google Web Services across all Google apps & sites",
+                        icon = Icons.Rounded.Language,
+                        container = MaterialTheme.colorScheme.secondaryContainer,
+                        onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
+                        pillLabel = "Open SSO",
+                        onClick = {
+                            onOpenOAuth(
+                                PetalShortcut(
+                                    "Google Accounts SSO",
+                                    "https://accounts.google.com/ServiceLogin?hl=en",
+                                    "https://accounts.google.com/ServiceLogin?hl=en",
+                                    "Google Accounts"
+                                )
+                            )
+                        }
+                    )
+
                     if (profile.isSignedIn) {
                         PetalFeatureTile(
                             title = "Sign Out of Google",

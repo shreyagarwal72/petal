@@ -2626,9 +2626,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 },
                 shortcut -> {
-                    // Unused: Google sign-in now goes through GoogleAccountManager.signIn()
-                    // (Credential Manager's account picker), not a WebView-loaded URL.
-                    // This callback is kept only for PetalUserProfileScreen's signature.
+                    showAlbum(currentAlbumController);
+                    if (shortcut != null && shortcut.getUrl() != null) {
+                        openUrlInCurrentTab(shortcut.getUrl());
+                    }
                     return kotlin.Unit.INSTANCE;
                 }
             );
