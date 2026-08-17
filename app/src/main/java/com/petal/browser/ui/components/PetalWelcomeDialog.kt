@@ -43,6 +43,8 @@ import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.runtime.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import com.petal.browser.account.ProfileAvatarDisplay
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.R
