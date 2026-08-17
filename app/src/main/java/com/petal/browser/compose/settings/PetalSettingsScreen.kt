@@ -666,6 +666,21 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                             }
                         )
 
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isWaterRipplePull by remember { mutableStateOf(sp.getBoolean("sp_water_ripple_pull", true)) }
+
+                        // Expressive Water Ripple Pull-to-Refresh Toggle
+                        ToggleRow(
+                            title = "Expressive Water Ripple Pull-to-Refresh",
+                            subtitle = "Elastic M3 water-ripple wave animation when pulling down web pages",
+                            icon = Icons.Rounded.Waves,
+                            checked = isWaterRipplePull,
+                            onCheckedChange = { newValue ->
+                                isWaterRipplePull = newValue
+                                sp.edit().putBoolean("sp_water_ripple_pull", newValue).apply()
+                            }
+                        )
                     }
                 }
 
