@@ -53,47 +53,59 @@ public class BrowsingDataManager {
         }
     }
 
-    public static void clearCache(Context context, WebView webView) {
+    public static void clearCache(final Context context, final WebView webView) {
         if (webView != null) {
-            webView.clearCache(true);
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                try {
+                    webView.clearCache(true);
+                } catch (Exception ignored) {}
+            });
         }
         if (context != null) {
             try {
-                deleteDir(context.getCacheDir());
-                deleteDir(context.getExternalCacheDir());
+                deleteDirContents(context.getCacheDir());
+                deleteDirContents(context.getExternalCacheDir());
             } catch (Exception ignored) {}
         }
     }
 
     public static void clearCookies() {
-        try {
-            CookieManager cookieManager = CookieManager.getInstance();
-            cookieManager.removeAllCookies(null);
-            cookieManager.flush();
-        } catch (Exception ignored) {}
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            try {
+                CookieManager cookieManager = CookieManager.getInstance();
+                cookieManager.removeAllCookies(null);
+                cookieManager.flush();
+            } catch (Exception ignored) {}
+        });
     }
 
     public static void clearWebStorage() {
-        try {
-            WebStorage.getInstance().deleteAllData();
-        } catch (Exception ignored) {}
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            try {
+                WebStorage.getInstance().deleteAllData();
+            } catch (Exception ignored) {}
+        });
     }
 
-    public static void clearAutofillData(Context context) {
+    public static void clearAutofillData(final Context context) {
         if (context == null) return;
-        try {
-            WebViewDatabase webViewDatabase = WebViewDatabase.getInstance(context);
-            if (webViewDatabase != null) {
-                webViewDatabase.clearHttpAuthUsernamePassword();
-                webViewDatabase.clearFormData();
-            }
-        } catch (Exception ignored) {}
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            try {
+                WebViewDatabase webViewDatabase = WebViewDatabase.getInstance(context);
+                if (webViewDatabase != null) {
+                    webViewDatabase.clearHttpAuthUsernamePassword();
+                    webViewDatabase.clearFormData();
+                }
+            } catch (Exception ignored) {}
+        });
     }
 
     public static void clearPermissions() {
-        try {
-            GeolocationPermissions.getInstance().clearAll();
-        } catch (Exception ignored) {}
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            try {
+                GeolocationPermissions.getInstance().clearAll();
+            } catch (Exception ignored) {}
+        });
     }
 
     public static void clearBrowsingDataAsync(
@@ -119,15 +131,23 @@ public class BrowsingDataManager {
         });
     }
 
+    public static void deleteDirContents(File dir) {
+        if (dir != null && dir.isDirectory()) {
+            File[] children = dir.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteDir(child);
+                }
+            }
+        }
+    }
+
     private static boolean deleteDir(File dir) {
         if (dir != null && dir.isDirectory()) {
-            String[] children = dir.list();
+            File[] children = dir.listFiles();
             if (children != null) {
-                for (String child : children) {
-                    boolean success = deleteDir(new File(dir, child));
-                    if (!success) {
-                        return false;
-                    }
+                for (File child : children) {
+                    deleteDir(child);
                 }
             }
             return dir.delete();
