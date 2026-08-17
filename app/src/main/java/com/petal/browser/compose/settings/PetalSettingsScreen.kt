@@ -1618,6 +1618,35 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_quad9_doh", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enableOpenDnsApi by remember { mutableStateOf(sp.getBoolean("sp_enable_opendns_doh", true)) }
+                        var enableVoiceSearchApi by remember { mutableStateOf(sp.getBoolean("sp_enable_voice_search", true)) }
+
+                        ToggleRow(
+                            title = "OpenDNS DoH Threat Filter API",
+                            subtitle = "Secondary encrypted DNS-over-HTTPS fallback provider",
+                            icon = Icons.Rounded.Security,
+                            checked = enableOpenDnsApi,
+                            onCheckedChange = {
+                                enableOpenDnsApi = it
+                                sp.edit().putBoolean("sp_enable_opendns_doh", it).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "Google Voice Search Recognition API",
+                            subtitle = "Enable hands-free voice search button inside address bar search dialog",
+                            icon = Icons.Rounded.Mic,
+                            checked = enableVoiceSearchApi,
+                            onCheckedChange = {
+                                enableVoiceSearchApi = it
+                                sp.edit().putBoolean("sp_enable_voice_search", it).apply()
+                            }
+                        )
                     }
                 }
 
