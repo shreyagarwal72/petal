@@ -50,6 +50,7 @@ import com.petal.browser.ui.theme.isDynamicColorSupported
 
 enum class TabDisplayMode {
     GRID,
+    CAROUSEL,
     LIST
 }
 
