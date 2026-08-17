@@ -144,20 +144,28 @@ fun PetalUserProfileScreen(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
-    fun startGoogleSignIn() {
-        if (isSigningIn) return
-        isSigningIn = true
-        coroutineScope.launch {
-            when (val result = GoogleAccountManager.signIn(context)) {
-                is GoogleSignInResult.Success -> {
+    val legacySignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { activityResult ->
+        isSigningIn = false
+        when (val result = GoogleAccountManager.handleLegacySignInResult(context, activityResult.data)) {
+            is GoogleSignInResult.Success -> {
+                coroutineScope.launch {
                     snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
                 }
-                is GoogleSignInResult.Failure -> {
+            }
+            is GoogleSignInResult.Failure -> {
+                coroutineScope.launch {
                     snackbarHostState.showSnackbar(result.message)
                 }
             }
-            isSigningIn = false
         }
+    }
+
+    fun startGoogleSignIn() {
+        if (isSigningIn) return
+        isSigningIn = true
+        legacySignInLauncher.launch(GoogleAccountManager.createLegacySignInIntent(context))
     }
 
     var showEditNameDialog by remember { mutableStateOf(false) }
@@ -463,7 +471,7 @@ fun PetalUserProfileScreen(
                             pillLabel = "Sign Out",
                             onClick = {
                                 coroutineScope.launch {
-                                    GoogleAccountManager.signOut(context)
+                                    GoogleAccountManager.legacySignOut(context)
                                     snackbarHostState.showSnackbar("Signed out of Google")
                                 }
                             }
@@ -523,7 +531,7 @@ fun PetalUserProfileScreen(
                                 icon = Icons.Rounded.Logout,
                                 onClick = {
                                     coroutineScope.launch {
-                                        GoogleAccountManager.signOut(context)
+                                        GoogleAccountManager.legacySignOut(context)
                                         snackbarHostState.showSnackbar("Signed out of Google")
                                     }
                                 }

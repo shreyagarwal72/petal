@@ -1,6 +1,7 @@
 package com.petal.browser.account
 
 import android.content.Context
+import android.content.Intent
 import android.util.Base64
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,6 +12,11 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.preference.PreferenceManager
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
@@ -193,6 +199,68 @@ object GoogleAccountManager {
         )
     }
 
+    // ---- Legacy Google Sign-In (play-services-auth) ----
+    // Deprecated by Google in favor of Credential Manager, but used here as the active
+    // sign-in path: it sidesteps a known, still-open Credential Manager bug
+    // ("[16] Account reauth failed") that some devices hit even with fully correct
+    // OAuth config. Uses the classic Intent + onActivityResult-style flow instead of
+    // Credential Manager's IPC path.
+
+    private fun buildLegacySignInClient(context: Context): GoogleSignInClient {
+        val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(WEB_CLIENT_ID)
+            .requestEmail()
+            .requestProfile()
+            .build()
+        return GoogleSignIn.getClient(context, options)
+    }
+
+    /**
+     * Returns the Intent to launch (via an ActivityResultLauncher) to start the legacy
+     * Google Sign-In account picker + consent flow.
+     */
+    fun createLegacySignInIntent(context: Context): Intent {
+        return buildLegacySignInClient(context).signInIntent
+    }
+
+    /**
+     * Call this with the Intent returned in the ActivityResultLauncher's callback after
+     * createLegacySignInIntent's Intent completes.
+     */
+    fun handleLegacySignInResult(context: Context, data: Intent?): GoogleSignInResult {
+        return try {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            val account = task.getResult(ApiException::class.java)
+
+            val email = account.email
+                ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
+            val displayName = account.displayName ?: email.substringBefore("@")
+            val avatarUrl = account.photoUrl?.toString()
+
+            persistSignedInProfile(context, email, displayName, avatarUrl)
+            GoogleSignInResult.Success(currentProfile)
+        } catch (e: ApiException) {
+            e.printStackTrace()
+            GoogleSignInResult.Failure("Sign-in failed (code ${e.statusCode})")
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            GoogleSignInResult.Failure(e.message ?: "Unknown sign-in error")
+        }
+    }
+
+    /**
+     * Signs out of the legacy Google Sign-In client. Call alongside signOut() when using
+     * the legacy sign-in path.
+     */
+    suspend fun legacySignOut(context: Context) {
+        try {
+            buildLegacySignInClient(context).signOut()
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
+        signOut(context)
+    }
+
     /**
      * Launches the real Google Sign-In flow via Credential Manager. This shows Google's own
      * account picker + consent screen - the user explicitly chooses an account and approves
@@ -200,19 +268,49 @@ object GoogleAccountManager {
      * the returned ID token to populate the account section. There is no backend for this app,
      * so the token is only decoded for display, never treated as a verified auth credential.
      *
+     * Tries a silent, authorized-accounts-only request first, then falls back to the full
+     * account picker if that fails. Trying both is a documented workaround for a known
+     * Credential Manager / Play Services quirk that can throw
+     * "[16] Account reauth failed" (GetCredentialCancellationException) even when the app's
+     * OAuth config (SHA-1, client IDs, consent screen) is entirely correct - see
+     * https://github.com/android/identity-samples/issues/90.
+     *
      * Must be called with an Activity context (required by Credential Manager / Play Services
      * Auth to show the account picker UI).
      */
     suspend fun signIn(context: Context): GoogleSignInResult {
-        return try {
-            val signInOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build()
-            val request = GetCredentialRequest.Builder()
-                .addCredentialOption(signInOption)
+        val credentialManager = CredentialManager.create(context)
+
+        val response = try {
+            // Attempt 1: silent request for an already-authorized Google account.
+            val googleIdOption = GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(true)
+                .setServerClientId(WEB_CLIENT_ID)
+                .setAutoSelectEnabled(false)
                 .build()
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build()
+            credentialManager.getCredential(context, request)
+        } catch (e: GetCredentialException) {
+            e.printStackTrace()
+            try {
+                // Attempt 2: fall back to the full account picker + consent screen.
+                val signInOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build()
+                val request = GetCredentialRequest.Builder()
+                    .addCredentialOption(signInOption)
+                    .build()
+                credentialManager.getCredential(context, request)
+            } catch (e2: GetCredentialException) {
+                e2.printStackTrace()
+                return GoogleSignInResult.Failure(e2.message ?: "Sign-in was cancelled or unavailable")
+            }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            return GoogleSignInResult.Failure(e.message ?: "Unknown sign-in error")
+        }
 
-            val credentialManager = CredentialManager.create(context)
-            val response = credentialManager.getCredential(context, request)
-
+        return try {
             val credential = response.credential
             if (credential !is CustomCredential ||
                 credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
@@ -233,9 +331,6 @@ object GoogleAccountManager {
 
             persistSignedInProfile(context, email, displayName, avatarUrl)
             GoogleSignInResult.Success(currentProfile)
-        } catch (e: GetCredentialException) {
-            e.printStackTrace()
-            GoogleSignInResult.Failure(e.message ?: "Sign-in was cancelled or unavailable")
         } catch (e: GoogleIdTokenParsingException) {
             e.printStackTrace()
             GoogleSignInResult.Failure("Could not parse the credential returned by Google")
