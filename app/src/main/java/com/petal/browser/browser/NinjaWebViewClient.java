@@ -96,7 +96,17 @@ public class NinjaWebViewClient extends WebViewClient {
 
         if (ninjaWebView.isForeground()) ninjaWebView.invalidate();
         else ninjaWebView.postInvalidate();
-        CookieManager.getInstance().flush();
+
+        if (sp.getBoolean("sp_global_google_login", true)) {
+            try {
+                CookieManager cm = CookieManager.getInstance();
+                cm.setAcceptCookie(true);
+                cm.setAcceptThirdPartyCookies(view, true);
+                cm.flush();
+            } catch (Exception ignored) {}
+        } else {
+            CookieManager.getInstance().flush();
+        }
 
         if (context instanceof com.petal.browser.activity.BrowserActivity) {
             ((com.petal.browser.activity.BrowserActivity) context).resetRefreshState();

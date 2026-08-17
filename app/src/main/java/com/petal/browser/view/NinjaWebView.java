@@ -300,14 +300,15 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
         try {
             CookieManager manager = CookieManager.getInstance();
-            if (sp.getBoolean(profile + "_cookies", true)) {
-                manager.setAcceptCookie(true);
+            boolean globalSso = sp.getBoolean("sp_global_google_login", true);
+            boolean acceptCookies = globalSso || sp.getBoolean(profile + "_cookies", true);
+            boolean acceptThirdParty = globalSso || sp.getBoolean(profile + "_cookiesThirdParty", false);
+
+            manager.setAcceptCookie(acceptCookies);
+            manager.setAcceptThirdPartyCookies(this, acceptThirdParty);
+            if (acceptCookies) {
                 manager.getCookie(url);
-            } else manager.setAcceptCookie(false);
-            if (sp.getBoolean(profile + "_cookiesThirdParty", false)) {
-                manager.setAcceptThirdPartyCookies(this, true);
-                manager.getCookie(url);
-            } else manager.setAcceptThirdPartyCookies(this, false);
+            }
         } catch (Exception e) {
             Log.i(TAG, "Error loading cookies:" + e);
         }
