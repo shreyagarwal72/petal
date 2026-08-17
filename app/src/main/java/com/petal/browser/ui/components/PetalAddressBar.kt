@@ -156,14 +156,14 @@ fun PetalAddressBar(
                                 onAddressClick()
                             }
                         },
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = securityIcon,
                             contentDescription = "Site Controls and Security",
                             tint = securityIconTint,
                             modifier = Modifier
-                                .size(18.dp)
+                                .size(20.dp)
                                 .popIn()
                         )
                     }
