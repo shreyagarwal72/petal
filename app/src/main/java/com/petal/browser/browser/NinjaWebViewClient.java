@@ -23,6 +23,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
+import androidx.webkit.WebViewFeature;
 import androidx.appcompat.app.AlertDialog;
 import androidx.preference.PreferenceManager;
 
@@ -632,6 +633,28 @@ public class NinjaWebViewClient extends WebViewClient {
             handler.proceed(user, pass);
             dialog.cancel();
         });
+    }
+
+    @Override
+    public void onSafeBrowsingHit(WebView view, WebResourceRequest request, int threatType, final android.webkit.SafeBrowsingResponse response) {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_RESPONSE_BACK_TO_SAFETY)) {
+            HelperUnit.showCustomSnackbarWithTwoActions(
+                    context, view, null,
+                    "Security Warning",
+                    "Deceptive or malicious website detected! Back to safety recommended.",
+                    ninjaWebView.getUrl(),
+                    R.drawable.icon_secure, () -> {
+                        response.backToSafety(true);
+                        return true;
+                    },
+                    R.drawable.icon_unsecure, () -> {
+                        response.proceed(true);
+                        return true;
+                    }
+            );
+        } else {
+            response.showInterop(true);
+        }
     }
 
     @Override

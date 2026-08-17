@@ -190,7 +190,25 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             webSettings.setOffscreenPreRaster(true);
         }
         webSettings.setDefaultTextEncodingName("utf-8");
-        webSettings.setSafeBrowsingEnabled(true);
+
+        // 1. Google Safe Browsing & Malware Protection API
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.START_SAFE_BROWSING)) {
+            try {
+                androidx.webkit.WebViewCompat.startSafeBrowsing(context.getApplicationContext(), value -> {
+                    Log.i("NinjaWebView", "Google Safe Browsing initialized: " + value);
+                });
+            } catch (Exception e) {
+                Log.w("NinjaWebView", "Safe browsing init failed", e);
+            }
+        }
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
+            try {
+                WebSettingsCompat.setSafeBrowsingEnabled(webSettings, true);
+            } catch (Exception ignored) {}
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            webSettings.setSafeBrowsingEnabled(true);
+        }
+
         webSettings.setSupportZoom(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
