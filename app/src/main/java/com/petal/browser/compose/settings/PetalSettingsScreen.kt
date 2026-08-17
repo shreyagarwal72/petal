@@ -681,6 +681,35 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_water_ripple_pull", newValue).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isWallpaperBlur by remember { mutableStateOf(sp.getBoolean("sp_wallpaper_blur", true)) }
+                        var isExpressiveToast by remember { mutableStateOf(sp.getBoolean("sp_expressive_toast", true)) }
+
+                        ToggleRow(
+                            title = "Dynamic Wallpaper Blur Backdrop Engine",
+                            subtitle = "Real-time frosted glass backdrop blur behind browser toolbars",
+                            icon = Icons.Rounded.BlurOn,
+                            checked = isWallpaperBlur,
+                            onCheckedChange = { newValue ->
+                                isWallpaperBlur = newValue
+                                sp.edit().putBoolean("sp_wallpaper_blur", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "Floating Expressive Toast Pills",
+                            subtitle = "Slide-up spring animated toast notification pills for actions",
+                            icon = Icons.Rounded.NotificationsActive,
+                            checked = isExpressiveToast,
+                            onCheckedChange = { newValue ->
+                                isExpressiveToast = newValue
+                                sp.edit().putBoolean("sp_expressive_toast", newValue).apply()
+                            }
+                        )
                     }
                 }
 
