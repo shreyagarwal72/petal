@@ -270,16 +270,6 @@ fun PetalHomeScreen(
         animateEntrance = true
     }
 
-    val logoScale by animateFloatAsState(
-        targetValue = if (animateEntrance) 1f else 0.82f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "logoScale"
-    )
-    val bloomScale by animateFloatAsState(
-        targetValue = if (animateEntrance) 1f else 0.7f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
-        label = "bloomScale"
-    )
     val bloomAlpha by animateFloatAsState(
         targetValue = if (animateEntrance) 1f else 0f,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
@@ -322,12 +312,7 @@ fun PetalHomeScreen(
 
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            scaleX = logoScale
-                            scaleY = logoScale
-                        }
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Surface(
@@ -380,8 +365,6 @@ fun PetalHomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .graphicsLayer {
-                            scaleX = bloomScale
-                            scaleY = bloomScale
                             alpha = bloomAlpha
                         }
                 ) {
@@ -522,16 +505,6 @@ private fun PetalBloom(
         // 5 Customizable Bloom Ring Shortcuts
         shortcuts.take(5).forEachIndexed { index, shortcut ->
             val shape = petalShapes[index % petalShapes.size]
-            var isPressed by remember { mutableStateOf(false) }
-
-            val scale by animateFloatAsState(
-                targetValue = if (isPressed) 0.84f else 1.0f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                ),
-                label = "petalIconAnim"
-            )
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -544,15 +517,8 @@ private fun PetalBloom(
                     contentColor = shortcut.contentColor,
                     modifier = Modifier
                         .size(petalSize)
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                        }
                         .combinedClickable(
-                            onClick = {
-                                isPressed = true
-                                onOpenShortcut(shortcut)
-                            },
+                            onClick = { onOpenShortcut(shortcut) },
                             onLongClick = { onEditShortcutSlot(index) }
                         )
                 ) {
