@@ -1428,6 +1428,35 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_wayback_api", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enableDuckAssistApi by remember { mutableStateOf(sp.getBoolean("sp_enable_duck_assist", true)) }
+                        var enableSslAuditApi by remember { mutableStateOf(sp.getBoolean("sp_enable_ssl_audit", true)) }
+
+                        ToggleRow(
+                            title = "DuckAssist Instant Answer API",
+                            subtitle = "Fetch instant topic summaries and definition boxes for search queries",
+                            icon = Icons.Rounded.Lightbulb,
+                            checked = enableDuckAssistApi,
+                            onCheckedChange = {
+                                enableDuckAssistApi = it
+                                sp.edit().putBoolean("sp_enable_duck_assist", it).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "DNS & SSL Health Audit API",
+                            subtitle = "Resolve DoH IP records and audit domain security in Site Info sheet",
+                            icon = Icons.Rounded.Security,
+                            checked = enableSslAuditApi,
+                            onCheckedChange = {
+                                enableSslAuditApi = it
+                                sp.edit().putBoolean("sp_enable_ssl_audit", it).apply()
+                            }
+                        )
                     }
                 }
 
