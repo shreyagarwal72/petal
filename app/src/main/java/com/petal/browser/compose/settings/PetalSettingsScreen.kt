@@ -1574,6 +1574,21 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_phishtank", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enableDnssecApi by remember { mutableStateOf(sp.getBoolean("sp_enable_dnssec_audit", true)) }
+
+                        ToggleRow(
+                            title = "Cloudflare DoH DNSSEC Audit API",
+                            subtitle = "Validate DNSSEC cryptographic signatures and DoH records in Site Info",
+                            icon = Icons.Rounded.Key,
+                            checked = enableDnssecApi,
+                            onCheckedChange = {
+                                enableDnssecApi = it
+                                sp.edit().putBoolean("sp_enable_dnssec_audit", it).apply()
+                            }
+                        )
                     }
                 }
 
