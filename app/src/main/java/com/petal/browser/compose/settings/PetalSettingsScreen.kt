@@ -1515,6 +1515,21 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_unsplash_wallpapers", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enableWhoisRdapApi by remember { mutableStateOf(sp.getBoolean("sp_enable_whois_rdap", true)) }
+
+                        ToggleRow(
+                            title = "Whois & RDAP Domain Trust Audit API",
+                            subtitle = "Inspect domain registration, owner, and registrar info in Site Info sheet",
+                            icon = Icons.Rounded.VerifiedUser,
+                            checked = enableWhoisRdapApi,
+                            onCheckedChange = {
+                                enableWhoisRdapApi = it
+                                sp.edit().putBoolean("sp_enable_whois_rdap", it).apply()
+                            }
+                        )
                     }
                 }
 
