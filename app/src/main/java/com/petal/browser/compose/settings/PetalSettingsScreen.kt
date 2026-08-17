@@ -1385,6 +1385,52 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     }
                 }
 
+                // API Integration & Services Settings
+                if ((currentCategory == SettingsCategory.PRIVACY || currentCategory == SettingsCategory.GENERAL || searchQuery.isNotBlank()) && matchesSearch("API Services", "api search suggestions reader wayback translation google bing duckduckgo")) {
+                    SettingsCategoryCard(title = "API Integrations & Web Services", icon = Icons.Rounded.Api) {
+                        var enableLiveSuggestions by remember { mutableStateOf(sp.getBoolean("sp_enable_live_suggestions", true)) }
+                        var enableReaderApi by remember { mutableStateOf(sp.getBoolean("sp_enable_reader_api", true)) }
+                        var enableWaybackApi by remember { mutableStateOf(sp.getBoolean("sp_enable_wayback_api", true)) }
+
+                        ToggleRow(
+                            title = "Live Search Recommendations",
+                            subtitle = "Fetch live autocomplete suggestions from Google, DuckDuckGo, or Bing",
+                            icon = Icons.Rounded.Search,
+                            checked = enableLiveSuggestions,
+                            onCheckedChange = {
+                                enableLiveSuggestions = it
+                                sp.edit().putBoolean("sp_enable_live_suggestions", it).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "Readability Reader Mode API",
+                            subtitle = "Automatically parse uncluttered article view for blogs and news sites",
+                            icon = Icons.Rounded.Article,
+                            checked = enableReaderApi,
+                            onCheckedChange = {
+                                enableReaderApi = it
+                                sp.edit().putBoolean("sp_enable_reader_api", it).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "Wayback Machine Snapshot API",
+                            subtitle = "Offer Internet Archive snapshots when encountering broken links or 404 pages",
+                            icon = Icons.Rounded.History,
+                            checked = enableWaybackApi,
+                            onCheckedChange = {
+                                enableWaybackApi = it
+                                sp.edit().putBoolean("sp_enable_wayback_api", it).apply()
+                            }
+                        )
+                    }
+                }
+
                 // 9. App Updates & Inbuilt Updater Section
                 if ((currentCategory == SettingsCategory.UPDATER || searchQuery.isNotBlank()) && matchesSearch("App Updates", "update updater version check launch github download upgrade")) {
                     SettingsCategoryCard(title = "App Updates & Inbuilt Updater", icon = Icons.Rounded.SystemUpdate) {

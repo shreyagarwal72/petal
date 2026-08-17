@@ -1877,7 +1877,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     sp.edit().putString("searchInput", s.toString()).apply();
 
-                    if (hasText && adapterSearch != null) {
+                    boolean enableLiveSuggestions = sp.getBoolean("sp_enable_live_suggestions", true);
+                    if (hasText && adapterSearch != null && enableLiveSuggestions) {
                         String searchEngine = sp.getString("sp_search_engine", "0");
                         if ("1".equals(searchEngine)) { // DuckDuckGo
                             com.petal.browser.unit.SearchSuggestionsManager.fetchDuckDuckGoSuggestions(liveText, suggestions -> {
