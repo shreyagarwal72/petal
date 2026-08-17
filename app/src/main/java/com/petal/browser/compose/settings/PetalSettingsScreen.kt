@@ -1589,6 +1589,35 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_dnssec_audit", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enableTrackerProtection by remember { mutableStateOf(sp.getBoolean("sp_enable_disconnect_tracker", true)) }
+                        var enableQuad9Dns by remember { mutableStateOf(sp.getBoolean("sp_enable_quad9_doh", true)) }
+
+                        ToggleRow(
+                            title = "Disconnect.me Tracker Protection API",
+                            subtitle = "Block third-party privacy tracking pixels and analytics scripts",
+                            icon = Icons.Rounded.Block,
+                            checked = enableTrackerProtection,
+                            onCheckedChange = {
+                                enableTrackerProtection = it
+                                sp.edit().putBoolean("sp_enable_disconnect_tracker", it).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "Quad9 DoH Security Resolver API",
+                            subtitle = "Encrypted DNS-over-HTTPS resolution with threat blocking",
+                            icon = Icons.Rounded.Lock,
+                            checked = enableQuad9Dns,
+                            onCheckedChange = {
+                                enableQuad9Dns = it
+                                sp.edit().putBoolean("sp_enable_quad9_doh", it).apply()
+                            }
+                        )
                     }
                 }
 
