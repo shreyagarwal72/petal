@@ -120,7 +120,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                 int deltaX = lastMotionX - x;
                 int deltaY = lastMotionY - y;
 
-                // Gesture arbitration: Avoid conflict with horizontal swipe navigation
+                // Gesture arbitration: Allow vertical nested scrolling while preserving native webview horizontal gestures
                 if (!isBeingDragged) {
                     int xDiff = Math.abs(x - initialDownX);
                     int yDiff = Math.abs(y - initialDownY);
@@ -131,9 +131,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                         } else {
                             deltaY += touchSlop;
                         }
-                    } else if (xDiff > touchSlop && xDiff > yDiff) {
-                        // Horizontal swipe precedence -> yield to browser swipe navigation
-                        getParent().requestDisallowInterceptTouchEvent(false);
+                        getParent().requestDisallowInterceptTouchEvent(true);
                     }
                 }
 
