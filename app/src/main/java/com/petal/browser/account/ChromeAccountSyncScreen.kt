@@ -354,7 +354,7 @@ fun PetalUserProfileScreen(
                     }
 
                     Text(
-                        text = if (profile.isSignedIn) profile.email else "Local Profile (Not signed in to Google)",
+                        text = if (profile.isSignedIn) profile.email else "Local Petal Explorer Profile",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -437,6 +437,26 @@ fun PetalUserProfileScreen(
                     }
                 }
             }
+
+            // Tappable-only Google Web Accounts SSO tile
+            PetalFeatureTile(
+                title = "Open Google Accounts Web SSO",
+                subtitle = "Launch Google Accounts login page to sign in to Google Web Services (YouTube, Gmail, Drive, Maps)",
+                icon = Icons.Rounded.Language,
+                container = MaterialTheme.colorScheme.secondaryContainer,
+                onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
+                pillLabel = "Open SSO",
+                onClick = {
+                    onOpenOAuth(
+                        PetalShortcut(
+                            "Google Accounts SSO",
+                            "https://accounts.google.com/ServiceLogin?hl=en",
+                            "https://accounts.google.com/ServiceLogin?hl=en",
+                            Color(0xFF4285F4)
+                        )
+                    )
+                }
+            )
 
 
         }
