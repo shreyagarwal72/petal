@@ -582,6 +582,36 @@ fun PetalUserProfileScreen(
                     }
                 )
             }
+            var showClearDataDialog by remember { mutableStateOf(false) }
+
+            if (showClearDataDialog) {
+                com.petal.browser.ui.components.PetalClearBrowsingDataDialog(
+                    onDismiss = { showClearDataDialog = false },
+                    onPerformClear = { cache, cookies, storage, autofill, permissions ->
+                        showClearDataDialog = false
+                        com.petal.browser.unit.BrowsingDataManager.clearBrowsingDataAsync(
+                            context,
+                            null,
+                            cache,
+                            cookies,
+                            storage,
+                            autofill,
+                            permissions
+                        ) {
+                            try {
+                                val cacheDir = context.cacheDir
+                                val bytes = cacheDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+                                cacheSizeMb = String.format("%.1f MB", bytes / (1024f * 1024f))
+                            } catch (e: Exception) {
+                                cacheSizeMb = "0.0 MB"
+                            }
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Selected browsing data cleared successfully")
+                            }
+                        }
+                    }
+                )
+            }
 
             Surface(
                 shape = RoundedCornerShape(24.dp),
@@ -600,18 +630,25 @@ fun PetalUserProfileScreen(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )
-                        Text(
-                            text = "Storage & Data Audit",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Column {
+                            Text(
+                                text = "Storage & Data Audit",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Inspect application storage & manage browsing data",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(14.dp))
 
                     // Storage Consumption Summary Card
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(18.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -622,25 +659,44 @@ fun PetalUserProfileScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Text(
-                                    text = "Web Cache & Temporary Data",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = cacheSizeMb,
-                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(42.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Rounded.CleaningServices,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+                                Column {
+                                    Text(
+                                        text = "Web Cache & App Data",
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = cacheSizeMb,
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                             Button(
                                 onClick = {
                                     try {
-                                        context.cacheDir.deleteRecursively()
+                                        com.petal.browser.unit.BrowsingDataManager.clearCache(context, null)
                                         cacheSizeMb = "0.0 MB"
                                         coroutineScope.launch {
-                                            snackbarHostState.showSnackbar("Temporary cache cleared successfully")
+                                            snackbarHostState.showSnackbar("Temporary web cache cleared")
                                         }
                                     } catch (e: Exception) {
                                         coroutineScope.launch {
@@ -659,17 +715,13 @@ fun PetalUserProfileScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
 
                     AccountActionRow(
-                        title = "Clear Browsing Data",
-                        subtitle = "Clear history, cookies, cached images, and site data",
-                        icon = Icons.Rounded.DeleteForever,
-                        onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Use clear browsing data from options menu")
-                            }
-                        }
+                        title = "Clear Browsing Data...",
+                        subtitle = "Select & remove history, cookies, web storage, autofill & permissions",
+                        icon = Icons.Rounded.DeleteSweep,
+                        onClick = { showClearDataDialog = true }
                     )
                 }
             }
