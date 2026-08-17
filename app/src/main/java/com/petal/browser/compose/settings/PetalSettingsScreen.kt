@@ -1530,6 +1530,35 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_whois_rdap", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enableUrlScanApi by remember { mutableStateOf(sp.getBoolean("sp_enable_urlscan", true)) }
+                        var enableHackerNewsApi by remember { mutableStateOf(sp.getBoolean("sp_enable_hackernews", true)) }
+
+                        ToggleRow(
+                            title = "URLScan.io Malicious Domain Scanner API",
+                            subtitle = "Check community security scores and safety verdicts before loading links",
+                            icon = Icons.Rounded.Shield,
+                            checked = enableUrlScanApi,
+                            onCheckedChange = {
+                                enableUrlScanApi = it
+                                sp.edit().putBoolean("sp_enable_urlscan", it).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "HackerNews Tech News Feed API",
+                            subtitle = "Optional tech news feed section on Home Screen via Firebase API",
+                            icon = Icons.Rounded.RssFeed,
+                            checked = enableHackerNewsApi,
+                            onCheckedChange = {
+                                enableHackerNewsApi = it
+                                sp.edit().putBoolean("sp_enable_hackernews", it).apply()
+                            }
+                        )
                     }
                 }
 
