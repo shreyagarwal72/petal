@@ -32,10 +32,15 @@ import com.petal.browser.unit.HelperUnit;
 public class AdapterSearch extends BaseAdapter implements Filterable {
     private final Context context;
     private final int layoutResId;
-    private final List<CompleteItem> originalList;
-    private final CompleteFilter filter = new CompleteFilter();
-    private List<CompleteItem> resultList;
-    private int count;
+    private final List<String> liveSuggestions = new ArrayList<>();
+
+    public synchronized void setLiveSuggestions(List<String> suggestions) {
+        liveSuggestions.clear();
+        if (suggestions != null) {
+            liveSuggestions.addAll(suggestions);
+        }
+        filter.refilter();
+    }
 
     public AdapterSearch(Context context, int layoutResId, List<Record> recordList) {
         this.context = context;
@@ -172,23 +177,51 @@ public class AdapterSearch extends BaseAdapter implements Filterable {
     }
 
     private class CompleteFilter extends Filter {
+        private CharSequence lastConstraint = "";
+
+        public void refilter() {
+            filter(lastConstraint);
+        }
+
         @Override
         protected FilterResults performFiltering(CharSequence prefix) {
             if (prefix == null) {
                 return new FilterResults();
             }
+            lastConstraint = prefix;
 
             List<CompleteItem> workList = new ArrayList<>();
-            for (CompleteItem item : originalList) {
-                if (item.getTitle().contains(prefix) || item.getTitle().toLowerCase().contains(prefix) || item.getURL().contains(prefix)) {
-                    if (item.getTitle().contains(prefix) || item.getTitle().toLowerCase().contains(prefix)) {
-                        item.setIndex(item.getTitle().indexOf(prefix.toString()));
-                    } else if (item.getURL().contains(prefix)) {
-                        item.setIndex(item.getURL().indexOf(prefix.toString()));
+            Set<String> addedTitles = new HashSet<>();
+
+            // 1. Add Live Google Search Recommendations
+            synchronized (AdapterSearch.this) {
+                for (String suggestion : liveSuggestions) {
+                    if (suggestion != null && !suggestion.trim().isEmpty() && !addedTitles.contains(suggestion.toLowerCase())) {
+                        CompleteItem sugItem = new CompleteItem(suggestion, suggestion);
+                        sugItem.setIndex(-1); // Top priority
+                        workList.add(sugItem);
+                        addedTitles.add(suggestion.toLowerCase());
                     }
-                    workList.add(item);
                 }
             }
+
+            // 2. Add matching local history & bookmarks
+            for (CompleteItem item : originalList) {
+                String titleLower = item.getTitle() != null ? item.getTitle().toLowerCase() : "";
+                String urlLower = item.getURL() != null ? item.getURL().toLowerCase() : "";
+                String prefixLower = prefix.toString().toLowerCase();
+
+                if (titleLower.contains(prefixLower) || urlLower.contains(prefixLower)) {
+                    if (!addedTitles.contains(titleLower)) {
+                        int index = titleLower.indexOf(prefixLower);
+                        if (index < 0) index = urlLower.indexOf(prefixLower);
+                        item.setIndex(index >= 0 ? index + 10 : 100);
+                        workList.add(item);
+                        addedTitles.add(titleLower);
+                    }
+                }
+            }
+
             workList.sort(Comparator.comparingInt(CompleteItem::getIndex));
             FilterResults results = new FilterResults();
             results.values = workList;
@@ -199,13 +232,12 @@ public class AdapterSearch extends BaseAdapter implements Filterable {
         @SuppressWarnings("unchecked")
         @Override
         protected void publishResults(CharSequence constraint, FilterResults results) {
-            count = results.count;
-            if (results.count > 0) {
-                // The API returned at least one result, update the data.
+            count = results != null ? results.count : 0;
+            if (results != null && results.count > 0) {
                 resultList = (List<CompleteItem>) results.values;
                 notifyDataSetChanged();
             } else {
-                // The API did not return any results, invalidate the data set.
+                resultList = new ArrayList<>();
                 notifyDataSetInvalidated();
             }
         }

@@ -1876,6 +1876,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         adapterSearch.getFilter().filter(s);
                     }
                     sp.edit().putString("searchInput", s.toString()).apply();
+
+                    if (hasText && adapterSearch != null) {
+                        com.petal.browser.unit.SearchSuggestionsManager.fetchSuggestions(liveText, suggestions -> {
+                            if (adapterSearch != null) {
+                                adapterSearch.setLiveSuggestions(suggestions);
+                            }
+                        });
+                    } else if (adapterSearch != null) {
+                        adapterSearch.setLiveSuggestions(null);
+                    }
                 }
 
                 @Override
