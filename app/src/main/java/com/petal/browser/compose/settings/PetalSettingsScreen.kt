@@ -725,6 +725,21 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_floating_dock_bar", newValue).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isReadingProgressPill by remember { mutableStateOf(sp.getBoolean("sp_reading_progress_pill", true)) }
+
+                        ToggleRow(
+                            title = "Floating Expressive Reading Progress Pill",
+                            subtitle = "Slim animated reading progress bar at top of browser while scrolling web pages",
+                            icon = Icons.Rounded.LinearScale,
+                            checked = isReadingProgressPill,
+                            onCheckedChange = { newValue ->
+                                isReadingProgressPill = newValue
+                                sp.edit().putBoolean("sp_reading_progress_pill", newValue).apply()
+                            }
+                        )
                     }
                 }
 
