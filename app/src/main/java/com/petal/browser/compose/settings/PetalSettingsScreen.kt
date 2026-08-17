@@ -1559,6 +1559,21 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_hackernews", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enablePhishTankApi by remember { mutableStateOf(sp.getBoolean("sp_enable_phishtank", true)) }
+
+                        ToggleRow(
+                            title = "PhishTank Real-Time Anti-Phishing API",
+                            subtitle = "Verify URLs against active phishing database before opening login pages",
+                            icon = Icons.Rounded.GppBad,
+                            checked = enablePhishTankApi,
+                            onCheckedChange = {
+                                enablePhishTankApi = it
+                                sp.edit().putBoolean("sp_enable_phishtank", it).apply()
+                            }
+                        )
                     }
                 }
 
