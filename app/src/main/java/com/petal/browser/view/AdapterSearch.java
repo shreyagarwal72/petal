@@ -33,6 +33,10 @@ public class AdapterSearch extends BaseAdapter implements Filterable {
     private final Context context;
     private final int layoutResId;
     private final List<String> liveSuggestions = new ArrayList<>();
+    private final List<CompleteItem> originalList;
+    private List<CompleteItem> resultList;
+    private int count = 0;
+    private final CompleteFilter filter = new CompleteFilter();
 
     public synchronized void setLiveSuggestions(List<String> suggestions) {
         liveSuggestions.clear();
