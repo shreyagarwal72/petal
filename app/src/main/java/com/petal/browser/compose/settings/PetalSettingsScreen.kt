@@ -1647,6 +1647,21 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_voice_search", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enableNextDnsApi by remember { mutableStateOf(sp.getBoolean("sp_enable_nextdns_doh", true)) }
+
+                        ToggleRow(
+                            title = "NextDNS Privacy DoH Security API",
+                            subtitle = "Encrypted DNS-over-HTTPS resolution with custom privacy filters",
+                            icon = Icons.Rounded.Shield,
+                            checked = enableNextDnsApi,
+                            onCheckedChange = {
+                                enableNextDnsApi = it
+                                sp.edit().putBoolean("sp_enable_nextdns_doh", it).apply()
+                            }
+                        )
                     }
                 }
 
