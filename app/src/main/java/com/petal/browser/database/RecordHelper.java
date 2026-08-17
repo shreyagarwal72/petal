@@ -8,7 +8,7 @@ import com.petal.browser.unit.RecordUnit;
 
 class RecordHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "Ninja4.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
 
     RecordHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -22,6 +22,7 @@ class RecordHelper extends SQLiteOpenHelper {
         database.execSQL(RecordUnit.CREATE_START);
         database.execSQL(RecordUnit.CREATE_BOOKMARK);
         database.execSQL(RecordUnit.CREATE_STANDARD);
+        database.execSQL(RecordUnit.CREATE_SESSION);
     }
 
     // UPGRADE ATTENTION!!!
@@ -33,7 +34,8 @@ class RecordHelper extends SQLiteOpenHelper {
             case 2:
                 database.execSQL(RecordUnit.CREATE_STANDARD);
             case 3:
-                // database.execSQL(RecordUnit.CREATE_TAB);
+            case 4:
+                database.execSQL(RecordUnit.CREATE_SESSION);
                 // we want all updates, so no break statement here...
         }
     }

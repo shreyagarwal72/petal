@@ -122,6 +122,11 @@ public class NinjaWebViewClient extends WebViewClient {
             String bannerBlockScript = BannerBlock.getBannerBlockScriptPageFinished();
             if (bannerBlockScript != null) view.evaluateJavascript(bannerBlockScript,null);
         }
+
+        // Persist open tabs and WebView state bundle on page finished
+        if (!ninjaWebView.isIncognito()) {
+            com.petal.browser.unit.TabSessionManager.saveSession(context);
+        }
     }
 
     @Override

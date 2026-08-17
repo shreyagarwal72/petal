@@ -254,4 +254,50 @@ public class RecordAction {
         action.close();
         return list;
     }
+
+    public void saveSessionStateJson(String json) {
+        if (json == null) return;
+        database.beginTransaction();
+        try {
+            database.execSQL("DELETE FROM " + RecordUnit.TABLE_SESSION);
+            ContentValues values = new ContentValues();
+            values.put(RecordUnit.COLUMN_ORDINAL, 1);
+            values.put(RecordUnit.COLUMN_DATA, json);
+            database.insert(RecordUnit.TABLE_SESSION, null, values);
+            database.setTransactionSuccessful();
+        } finally {
+            database.endTransaction();
+        }
+    }
+
+    public String getSessionStateJson() {
+        Cursor cursor = null;
+        try {
+            cursor = database.query(
+                    RecordUnit.TABLE_SESSION,
+                    new String[]{RecordUnit.COLUMN_DATA},
+                    RecordUnit.COLUMN_ORDINAL + "=?",
+                    new String[]{"1"},
+                    null,
+                    null,
+                    null
+            );
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getString(0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+        return null;
+    }
+
+    public void clearSessionStateJson() {
+        try {
+            database.execSQL("DELETE FROM " + RecordUnit.TABLE_SESSION);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

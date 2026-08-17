@@ -420,10 +420,55 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.unit.UpdateUnit.checkForUpdates(this, true);
         }
 
-        //restore open Tabs from shared preferences if app got killed
-        if (sp.getBoolean("sp_restoreTabs", false)
+        // Chrome-style Tab Session Restoration & Rehydration
+        try {
+            java.util.List<com.petal.browser.unit.TabSessionManager.TabStateRecord> savedSession =
+                    com.petal.browser.unit.TabSessionManager.loadSession(this);
+            if (savedSession != null && !savedSession.isEmpty()) {
+                NinjaWebView activeRestoredWebView = null;
+                for (int i = 0; i < savedSession.size(); i++) {
+                    com.petal.browser.unit.TabSessionManager.TabStateRecord record = savedSession.get(i);
+                    boolean isForegroundTab = record.isActive || (i == 0 && BrowserContainer.size() == 0);
+                    NinjaWebView restoredWebView = new NinjaWebView(context);
+                    restoredWebView.initPreferences(record.url);
+                    
+                    Bundle webState = com.petal.browser.unit.TabSessionManager.base64ToBundle(record.webViewStateBase64);
+                    if (webState != null && !webState.isEmpty()) {
+                        restoredWebView.restoreState(webState);
+                    } else if (record.url != null && !record.url.isEmpty()) {
+                        restoredWebView.loadUrl(record.url);
+                    } else {
+                        restoredWebView.loadUrl("about:blank");
+                    }
+
+                    if (record.title != null && !record.title.isEmpty()) {
+                        restoredWebView.setAlbumTitle(record.title, record.url);
+                    }
+                    if (record.scrollX > 0 || record.scrollY > 0) {
+                        restoredWebView.post(() -> restoredWebView.scrollTo(record.scrollX, record.scrollY));
+                    }
+
+                    BrowserContainer.add(restoredWebView);
+                    if (isForegroundTab) {
+                        activeRestoredWebView = restoredWebView;
+                    } else {
+                        restoredWebView.deactivate();
+                    }
+                }
+                if (activeRestoredWebView != null) {
+                    showAlbum(activeRestoredWebView);
+                } else if (BrowserContainer.size() > 0 && BrowserContainer.get(0) instanceof NinjaWebView) {
+                    showAlbum(BrowserContainer.get(0));
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error restoring tab session", e);
+        }
+
+        // Fallback: restore legacy URLs if TabSessionManager had no saved records
+        if (BrowserContainer.size() < 1 && (sp.getBoolean("sp_restoreTabs", false)
                 || sp.getBoolean("sp_reloadTabs", false)
-                || sp.getBoolean("restoreOnRestart", false)) {
+                || sp.getBoolean("restoreOnRestart", false))) {
             String saveDefaultProfile = sp.getString("profile", "profileStandard");
             ArrayList<String> openTabs;
             openTabs = new ArrayList<>(Arrays.asList(TextUtils.split(sp.getString("openTabs", ""), "‚‗‚")));
@@ -435,7 +480,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             sp.edit().putString("profile", saveDefaultProfile).apply();
             sp.edit().putBoolean("restoreOnRestart", false).apply();
         }
-        //if still no open Tab open default page
+
+        // If still no open tab, open default page
         if (BrowserContainer.size() < 1) {
             addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
         }
@@ -4251,5 +4297,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ninjaWebView.onPause();
             ninjaWebView.pauseTimers();
         }
+        com.petal.browser.unit.TabSessionManager.saveSession(this);
     }
 }

@@ -63,6 +63,16 @@ public class RecordUnit {
             + " " + COLUMN_DOMAIN + " text"
             + ")";
 
+    public static final String TABLE_SESSION = "TAB_SESSION";
+    public static final String COLUMN_DATA = "DATA";
+
+    public static final String CREATE_SESSION = "CREATE TABLE IF NOT EXISTS "
+            + TABLE_SESSION
+            + " ("
+            + " " + COLUMN_ORDINAL + " integer primary key,"
+            + " " + COLUMN_DATA + " text"
+            + ")";
+
     public static final String CREATE_START = "CREATE TABLE "
             + TABLE_START
             + " ("
