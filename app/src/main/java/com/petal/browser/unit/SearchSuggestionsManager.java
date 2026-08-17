@@ -28,6 +28,60 @@ public class SearchSuggestionsManager {
     }
 
     /**
+     * Fetches search recommendations using Bing Search Autocomplete API.
+     * Endpoint: https://api.bing.com/osjson.aspx?query=
+     */
+    public static void fetchBingSuggestions(final String query, final SuggestionCallback callback) {
+        if (query == null || query.trim().length() == 0) {
+            if (callback != null) callback.onSuggestionsFetched(new ArrayList<>());
+            return;
+        }
+
+        executor.execute(() -> {
+            List<String> results = new ArrayList<>();
+            HttpURLConnection connection = null;
+            try {
+                String encodedQuery = URLEncoder.encode(query.trim(), "UTF-8");
+                String urlString = "https://api.bing.com/osjson.aspx?query=" + encodedQuery;
+                URL url = new URL(urlString);
+
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(2500);
+                connection.setReadTimeout(2500);
+
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    StringBuilder builder = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        builder.append(line);
+                    }
+                    reader.close();
+
+                    JSONArray jsonArray = new JSONArray(builder.toString());
+                    if (jsonArray.length() >= 2) {
+                        JSONArray suggestionsArray = jsonArray.getJSONArray(1);
+                        for (int i = 0; i < suggestionsArray.length(); i++) {
+                            results.add(suggestionsArray.getString(i));
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Bing suggestions failed for: " + query, e);
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+
+            if (callback != null) {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
+                    callback.onSuggestionsFetched(results)
+                );
+            }
+        });
+    }
+
+    /**
      * Fetches privacy-first search recommendations using DuckDuckGo Autocomplete API.
      * Endpoint: https://duckduckgo.com/ac/?q=
      */

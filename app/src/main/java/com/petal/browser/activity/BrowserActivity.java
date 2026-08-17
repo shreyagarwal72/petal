@@ -1883,6 +1883,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             com.petal.browser.unit.SearchSuggestionsManager.fetchDuckDuckGoSuggestions(liveText, suggestions -> {
                                 if (adapterSearch != null) adapterSearch.setLiveSuggestions(suggestions);
                             });
+                        } else if ("2".equals(searchEngine)) { // Bing
+                            com.petal.browser.unit.SearchSuggestionsManager.fetchBingSuggestions(liveText, suggestions -> {
+                                if (adapterSearch != null) adapterSearch.setLiveSuggestions(suggestions);
+                            });
                         } else {
                             com.petal.browser.unit.SearchSuggestionsManager.fetchSuggestions(liveText, suggestions -> {
                                 if (adapterSearch != null) adapterSearch.setLiveSuggestions(suggestions);
