@@ -474,7 +474,7 @@ fun PetalUserProfileScreen(
                                     "Google Accounts SSO",
                                     "https://accounts.google.com/ServiceLogin?hl=en",
                                     "https://accounts.google.com/ServiceLogin?hl=en",
-                                    "Google Accounts"
+                                    Color(0xFF4285F4)
                                 )
                             )
                         }
