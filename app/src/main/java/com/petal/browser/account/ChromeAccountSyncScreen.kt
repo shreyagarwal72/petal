@@ -458,6 +458,222 @@ fun PetalUserProfileScreen(
                 }
             )
 
+            // Section 1: 🛡️ Security & Privacy Center
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Security,
+                            contentDescription = "Security Center",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = "Security & Privacy Center",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // Biometric Lock Preference
+                    var isBiometricEnabled by remember { mutableStateOf(sp.getBoolean("sp_biometric_lock", false)) }
+                    AccountActionRow(
+                        title = "App & Profile Lock",
+                        subtitle = "Require biometric / device lock when launching Petal Browser",
+                        icon = Icons.Rounded.Lock,
+                        trailing = {
+                            Switch(
+                                checked = isBiometricEnabled,
+                                onCheckedChange = { checked ->
+                                    isBiometricEnabled = checked
+                                    sp.edit().putBoolean("sp_biometric_lock", checked).apply()
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (checked) "Biometric App Lock enabled" else "Biometric App Lock disabled"
+                                        )
+                                    }
+                                }
+                            )
+                        },
+                        onClick = {
+                            isBiometricEnabled = !isBiometricEnabled
+                            sp.edit().putBoolean("sp_biometric_lock", isBiometricEnabled).apply()
+                        }
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+
+                    // Auto-Clear on Exit Preference
+                    var isClearOnExit by remember { mutableStateOf(sp.getBoolean("sp_clear_on_exit", false)) }
+                    AccountActionRow(
+                        title = "Auto-Clear Data on Exit",
+                        subtitle = "Automatically purge cache, history, and cookies on close",
+                        icon = Icons.Rounded.CleaningServices,
+                        trailing = {
+                            Switch(
+                                checked = isClearOnExit,
+                                onCheckedChange = { checked ->
+                                    isClearOnExit = checked
+                                    sp.edit().putBoolean("sp_clear_on_exit", checked).apply()
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            if (checked) "Auto-Clear on exit enabled" else "Auto-Clear on exit disabled"
+                                        )
+                                    }
+                                }
+                            )
+                        },
+                        onClick = {
+                            isClearOnExit = !isClearOnExit
+                            sp.edit().putBoolean("sp_clear_on_exit", isClearOnExit).apply()
+                        }
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+
+                    // HTTPS-Only Mode Status
+                    var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
+                    AccountActionRow(
+                        title = "HTTPS-Only Mode",
+                        subtitle = "Automatically upgrade HTTP requests to secure HTTPS connection",
+                        icon = Icons.Rounded.VerifiedUser,
+                        trailing = {
+                            Switch(
+                                checked = isHttpsOnly,
+                                onCheckedChange = { checked ->
+                                    isHttpsOnly = checked
+                                    sp.edit().putBoolean("sp_https_only", checked).apply()
+                                }
+                            )
+                        },
+                        onClick = {
+                            isHttpsOnly = !isHttpsOnly
+                            sp.edit().putBoolean("sp_https_only", isHttpsOnly).apply()
+                        }
+                    )
+                }
+            }
+
+            // Section 5: 📊 Local Data & Storage Audit
+            var cacheSizeMb by remember {
+                mutableStateOf(
+                    try {
+                        val cacheDir = context.cacheDir
+                        val bytes = cacheDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+                        String.format("%.1f MB", bytes / (1024f * 1024f))
+                    } catch (e: Exception) {
+                        "0.0 MB"
+                    }
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Storage,
+                            contentDescription = "Data Storage Audit",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = "Storage & Data Audit",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // Storage Consumption Summary Card
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Web Cache & Temporary Data",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = cacheSizeMb,
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    try {
+                                        context.cacheDir.deleteRecursively()
+                                        cacheSizeMb = "0.0 MB"
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar("Temporary cache cleared successfully")
+                                        }
+                                    } catch (e: Exception) {
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar("Failed to clear cache: ${e.message}")
+                                        }
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Clear Cache")
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    AccountActionRow(
+                        title = "Clear Browsing Data",
+                        subtitle = "Clear history, cookies, cached images, and site data",
+                        icon = Icons.Rounded.DeleteForever,
+                        onClick = {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Use clear browsing data from options menu")
+                            }
+                        }
+                    )
+                }
+            }
+
 
         }
     }
