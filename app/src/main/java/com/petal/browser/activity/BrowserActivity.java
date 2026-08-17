@@ -2627,8 +2627,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 shortcut -> {
                     showAlbum(currentAlbumController);
-                    if (shortcut != null && shortcut.getUrl() != null) {
-                        openUrlInCurrentTab(shortcut.getUrl());
+                    if (shortcut != null && shortcut.getUrl() != null && ninjaWebView != null) {
+                        ninjaWebView.loadUrl(shortcut.getUrl());
                     }
                     return kotlin.Unit.INSTANCE;
                 }
