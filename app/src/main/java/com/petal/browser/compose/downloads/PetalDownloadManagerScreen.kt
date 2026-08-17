@@ -232,33 +232,95 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         }
     }
 
+    var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    val isSelectionMode = selectedIds.isNotEmpty()
+
+    fun toggleSelectAll() {
+        if (selectedIds.size == downloadList.size) {
+            selectedIds = emptySet()
+        } else {
+            selectedIds = downloadList.map { it.id }.toSet()
+        }
+    }
+
+    fun toggleSelection(id: Long) {
+        selectedIds = if (selectedIds.contains(id)) {
+            selectedIds - id
+        } else {
+            selectedIds + id
+        }
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Downloads",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            if (isSelectionMode) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "${selectedIds.size} Selected",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { selectedIds = emptySet() }) {
+                            Icon(Icons.Rounded.Close, contentDescription = "Cancel Selection")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { toggleSelectAll() }) {
+                            Icon(
+                                if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                                contentDescription = "Select All"
+                            )
+                        }
+                        IconButton(onClick = {
+                            val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
+                            shareMultipleFiles(context, itemsToShare)
+                            selectedIds = emptySet()
+                        }) {
+                            Icon(Icons.Rounded.Share, contentDescription = "Share Selected")
+                        }
+                        IconButton(onClick = {
+                            val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
+                            deleteMultipleFiles(context, itemsToDelete)
+                            selectedIds = emptySet()
+                            val items = getDownloadItems(context, prevBytesMap, 0L)
+                            downloadList = items
+                        }) {
+                            Icon(Icons.Rounded.Delete, contentDescription = "Delete Selected", tint = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackPress) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        val items = getDownloadItems(context, prevBytesMap, 0L)
-                        downloadList = items
-                        prevBytesMap = items.associate { it.id to it.bytesDownloaded }
-                    }) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
                 )
-            )
+            } else {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "Downloads",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackPress) {
+                            Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            val items = getDownloadItems(context, prevBytesMap, 0L)
+                            downloadList = items
+                            prevBytesMap = items.associate { it.id to it.bytesDownloaded }
+                        }) {
+                            Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background
+                    )
+                )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
@@ -359,8 +421,17 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                         }
 
                         items(items, key = { it.id }) { item ->
+                            val isSelected = selectedIds.contains(item.id)
                             DownloadRowItem(
                                 item = item,
+                                isSelected = isSelected,
+                                isSelectionMode = isSelectionMode,
+                                onToggleSelect = { toggleSelection(item.id) },
+                                onLongClick = {
+                                    if (!isSelectionMode) {
+                                        toggleSelection(item.id)
+                                    }
+                                },
                                 onOpenFile = { openDownloadedFile(context, item) }
                             )
                         }
@@ -372,86 +443,16 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun DownloadsEmptyState(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Box(
-            modifier = Modifier.size(140.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            val blobColor = MaterialTheme.colorScheme.primary
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawPath(path = createBlobPath(size.width), color = blobColor)
-            }
-            Icon(
-                imageVector = Icons.Rounded.Download,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(60.dp)
-            )
-        }
-
-        Spacer(Modifier.height(28.dp))
-
-        Text(
-            text = "You'll find your downloads here",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(Modifier.height(10.dp))
-
-        Text(
-            text = "You can save files to view offline or share in other apps",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-private fun createBlobPath(size: Float): Path {
-    val points = 7
-    val radiusVariance = floatArrayOf(1f, 0.86f, 1.04f, 0.9f, 1f, 0.88f, 0.96f)
-    val baseRadius = size / 2.15f
-    val center = size / 2f
-
-    val vertices = (0 until points).map { i ->
-        val angle = (2 * Math.PI / points) * i - Math.PI / 2
-        val r = baseRadius * radiusVariance[i % radiusVariance.size]
-        Offset(
-            x = (center + r * cos(angle)).toFloat(),
-            y = (center + r * sin(angle)).toFloat()
-        )
-    }
-
-    val midPoints = (0 until points).map { i ->
-        val p1 = vertices[i]
-        val p2 = vertices[(i + 1) % points]
-        Offset((p1.x + p2.x) / 2f, (p1.y + p2.y) / 2f)
-    }
-
-    return Path().apply {
-        moveTo(midPoints[0].x, midPoints[0].y)
-        for (i in 0 until points) {
-            val vertex = vertices[(i + 1) % points]
-            val mid = midPoints[(i + 1) % points]
-            quadraticBezierTo(vertex.x, vertex.y, mid.x, mid.y)
-        }
-        close()
-    }
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
-@Composable
-private fun DownloadRowItem(item: DownloadItem, onOpenFile: () -> Unit) {
+private fun DownloadRowItem(
+    item: DownloadItem,
+    isSelected: Boolean,
+    isSelectionMode: Boolean,
+    onToggleSelect: () -> Unit,
+    onLongClick: () -> Unit,
+    onOpenFile: () -> Unit
+) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var renameInput by remember { mutableStateOf(item.fileName) }
@@ -489,12 +490,18 @@ private fun DownloadRowItem(item: DownloadItem, onOpenFile: () -> Unit) {
     }
 
     Surface(
-        color = MaterialTheme.colorScheme.background,
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.background,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(
-                enabled = item.status == DownloadManager.STATUS_SUCCESSFUL,
-                onClick = onOpenFile
+            .combinedClickable(
+                onClick = {
+                    if (isSelectionMode) {
+                        onToggleSelect()
+                    } else if (item.status == DownloadManager.STATUS_SUCCESSFUL) {
+                        onOpenFile()
+                    }
+                },
+                onLongClick = onLongClick
             )
     ) {
         Column(
@@ -508,17 +515,25 @@ private fun DownloadRowItem(item: DownloadItem, onOpenFile: () -> Unit) {
                     .heightIn(min = 56.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (isSelectionMode) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = { onToggleSelect() },
+                        modifier = Modifier.padding(end = 12.dp)
+                    )
+                }
+
                 // Leading circular avatar/icon container using surfaceContainerHighest color
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
                     modifier = Modifier.size(44.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = getFileTypeIcon(item.fileName),
+                            imageVector = if (isSelected) Icons.Rounded.Check else getFileTypeIcon(item.fileName),
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface,
+                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -854,3 +869,62 @@ private fun shareDownloadedFile(context: Context, item: DownloadItem) {
         e.printStackTrace()
     }
 }
+
+private fun shareMultipleFiles(context: Context, items: List<DownloadItem>) {
+    if (items.isEmpty()) return
+    if (items.size == 1) {
+        shareDownloadedFile(context, items.first())
+        return
+    }
+    try {
+        val uris = ArrayList<Uri>()
+        items.forEach { item ->
+            if (item.localUri != null) {
+                uris.add(Uri.parse(item.localUri))
+            }
+        }
+        if (uris.isNotEmpty()) {
+            val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                type = "*/*"
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val chooser = Intent.createChooser(intent, "Share ${items.size} files")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
+        } else {
+            val linksText = items.joinToString("\n") { it.fileUrl }
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                putExtra(Intent.EXTRA_TEXT, linksText)
+                type = "text/plain"
+            }
+            val chooser = Intent.createChooser(intent, "Share links")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+private fun deleteMultipleFiles(context: Context, items: List<DownloadItem>) {
+    if (items.isEmpty()) return
+    try {
+        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val idsToRemove = items.map { it.id }.toLongArray()
+        dm.remove(*idsToRemove)
+        items.forEach { item ->
+            if (item.localUri != null) {
+                val uri = Uri.parse(item.localUri)
+                val file = java.io.File(uri.path ?: "")
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        }
+        android.widget.Toast.makeText(context, "Deleted ${items.size} items", android.widget.Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
