@@ -71,28 +71,7 @@ public class NinjaWebViewClient extends WebViewClient {
     public void onPageFinished(WebView view, String url) {
         super.onPageFinished(view, url);
 
-        // Inject smooth scroll and ViewTransitions predictive animations into DOM
-        view.evaluateJavascript(
-            "(function() {" +
-            "   try {" +
-            "       document.documentElement.style.scrollBehavior = 'smooth';" +
-            "       document.body.style.scrollBehavior = 'smooth';" +
-            "       if (!document.getElementById('petal-predictive-anim')) {" +
-            "           var style = document.createElement('style');" +
-            "           style.id = 'petal-predictive-anim';" +
-            "           style.innerHTML = '@view-transition { navigation: auto; } " +
-            "                              ::view-transition-old(root) { animation: 240ms cubic-bezier(0.4, 0, 0.2, 1) both fade-out, 240ms cubic-bezier(0.4, 0, 0.2, 1) both scale-down; } " +
-            "                              ::view-transition-new(root) { animation: 300ms cubic-bezier(0.0, 0, 0.2, 1) both fade-in, 300ms cubic-bezier(0.0, 0, 0.2, 1) both scale-up; } " +
-            "                              @keyframes fade-out { to { opacity: 0; } } " +
-            "                              @keyframes fade-in { from { opacity: 0; } } " +
-            "                              @keyframes scale-down { to { transform: scale(0.96); } } " +
-            "                              @keyframes scale-up { from { transform: scale(1.04); } }';" +
-            "           (document.head || document.documentElement).appendChild(style);" +
-            "       }" +
-            "   } catch(e) {}" +
-            "})();",
-            null
-        );
+
 
         if (ninjaWebView.isForeground()) ninjaWebView.invalidate();
         else ninjaWebView.postInvalidate();
