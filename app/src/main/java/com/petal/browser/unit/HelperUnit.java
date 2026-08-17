@@ -587,22 +587,20 @@ public class HelperUnit {
             snackbarText.append(text);
         }
 
-        // Dynamische Bestimmung der Farben basierend auf dem Night Mode
-        int currentNightMode = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-        int backgroundColor;
-        ColorStateList contentColor;
-
+        // Pull colors straight from the active app theme (day/night, and any
+        // custom/dynamic theme the user has picked) instead of hardcoding hex
+        // values, so this box always matches the rest of the browser chrome.
         TypedValue typedValue = new TypedValue();
         context.getTheme().resolveAttribute(R.attr.colorPrimaryInverse, typedValue, true);
         int color = typedValue.data;
 
-        if (currentNightMode == Configuration.UI_MODE_NIGHT_YES) {
-            backgroundColor = Color.parseColor("#E0E0E0");
-            contentColor = ColorStateList.valueOf(Color.BLACK);
-        } else {
-            backgroundColor = Color.parseColor("#323232");
-            contentColor = ColorStateList.valueOf(Color.WHITE); // Weiß
-        }
+        TypedValue surfaceValue = new TypedValue();
+        context.getTheme().resolveAttribute(R.attr.colorSurfaceContainerHigh, surfaceValue, true);
+        int backgroundColor = surfaceValue.data;
+
+        TypedValue onSurfaceValue = new TypedValue();
+        context.getTheme().resolveAttribute(R.attr.colorOnSurface, onSurfaceValue, true);
+        ColorStateList contentColor = ColorStateList.valueOf(onSurfaceValue.data);
 
         LayoutInflater inflater = LayoutInflater.from(context);
         @SuppressLint("InflateParams")
