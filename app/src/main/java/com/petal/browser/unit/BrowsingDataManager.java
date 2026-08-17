@@ -53,13 +53,42 @@ public class BrowsingDataManager {
         }
     }
 
+    /**
+     * Runs {@code action} on the main thread and blocks the calling thread until it has
+     * actually completed. WebView/WebStorage/CookieManager APIs must run on the main
+     * thread, but callers that go on to touch the underlying profile files on disk
+     * (e.g. CacheManager) must not proceed until these calls have really finished -
+     * a fire-and-forget Handler.post() lets file deletion race the still-pending
+     * Chromium operation, which crashes the native WebView engine.
+     */
+    private static void runOnMainThreadBlocking(Runnable action) {
+        android.os.Looper mainLooper = android.os.Looper.getMainLooper();
+        if (android.os.Looper.myLooper() == mainLooper) {
+            try {
+                action.run();
+            } catch (Exception ignored) {}
+            return;
+        }
+        final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        new android.os.Handler(mainLooper).post(() -> {
+            try {
+                action.run();
+            } catch (Exception ignored) {
+            } finally {
+                latch.countDown();
+            }
+        });
+        try {
+            // Bounded wait: never block indefinitely if the main thread is stuck.
+            latch.await(3, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     public static void clearCache(final Context context, final WebView webView) {
         if (webView != null) {
-            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                try {
-                    webView.clearCache(true);
-                } catch (Exception ignored) {}
-            });
+            runOnMainThreadBlocking(() -> webView.clearCache(true));
         }
         if (context != null) {
             try {
@@ -70,42 +99,30 @@ public class BrowsingDataManager {
     }
 
     public static void clearCookies() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-            try {
-                CookieManager cookieManager = CookieManager.getInstance();
-                cookieManager.removeAllCookies(null);
-                cookieManager.flush();
-            } catch (Exception ignored) {}
+        runOnMainThreadBlocking(() -> {
+            CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.removeAllCookies(null);
+            cookieManager.flush();
         });
     }
 
     public static void clearWebStorage() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-            try {
-                WebStorage.getInstance().deleteAllData();
-            } catch (Exception ignored) {}
-        });
+        runOnMainThreadBlocking(() -> WebStorage.getInstance().deleteAllData());
     }
 
     public static void clearAutofillData(final Context context) {
         if (context == null) return;
-        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-            try {
-                WebViewDatabase webViewDatabase = WebViewDatabase.getInstance(context);
-                if (webViewDatabase != null) {
-                    webViewDatabase.clearHttpAuthUsernamePassword();
-                    webViewDatabase.clearFormData();
-                }
-            } catch (Exception ignored) {}
+        runOnMainThreadBlocking(() -> {
+            WebViewDatabase webViewDatabase = WebViewDatabase.getInstance(context);
+            if (webViewDatabase != null) {
+                webViewDatabase.clearHttpAuthUsernamePassword();
+                webViewDatabase.clearFormData();
+            }
         });
     }
 
     public static void clearPermissions() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-            try {
-                GeolocationPermissions.getInstance().clearAll();
-            } catch (Exception ignored) {}
-        });
+        runOnMainThreadBlocking(() -> GeolocationPermissions.getInstance().clearAll());
     }
 
     public static void clearBrowsingDataAsync(

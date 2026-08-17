@@ -53,12 +53,23 @@ public class CacheManager {
             Log.w(TAG, "Error clearing app cache directory", e);
         }
 
-        // 3. Safely clean app_webview directory structures
+        // 3. Safely clean app_webview directory structures.
+        // This is only safe when NO WebView instance is alive anywhere in the app:
+        // these files (IndexedDB, Local Storage, Web Data, QuotaManager, ...) are the
+        // live Chromium profile that every open/stored tab reads and writes through.
+        // Deleting them while a tab's WebView still holds them open crashes the
+        // native engine - and the more tabs are stored, the more likely that is.
         try {
-            File appDataDir = new File(appContext.getApplicationInfo().dataDir);
-            File appWebviewDir = new File(appDataDir, "app_webview");
-            if (appWebviewDir.exists() && appWebviewDir.isDirectory()) {
-                cleanWebviewData(appWebviewDir);
+            if (com.petal.browser.browser.BrowserContainer.size() == 0) {
+                File appDataDir = new File(appContext.getApplicationInfo().dataDir);
+                File appWebviewDir = new File(appDataDir, "app_webview");
+                if (appWebviewDir.exists() && appWebviewDir.isDirectory()) {
+                    cleanWebviewData(appWebviewDir);
+                }
+            } else {
+                Log.w(TAG, "Skipping raw app_webview cleanup: " +
+                        com.petal.browser.browser.BrowserContainer.size() +
+                        " tab(s) still hold live WebView instances");
             }
         } catch (Exception e) {
             Log.w(TAG, "Error cleaning app_webview directory", e);

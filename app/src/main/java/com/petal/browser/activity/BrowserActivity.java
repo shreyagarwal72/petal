@@ -577,13 +577,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(1);
+        // Destroy all tab WebViews FIRST. clearBrowserData() deletes the live
+        // Chromium profile files (IndexedDB, Local Storage, Web Data, ...) under
+        // app_webview/Default; doing that while stored tabs still hold WebView
+        // instances open on those same files causes native crashes, and the risk
+        // grows with every extra stored tab.
+        BrowserContainer.clear();
         if (sp.getBoolean("sp_clear_quit", true)) {
             BrowserUnit.clearBrowserData(this);
         }
         if (sp.getBoolean("sp_backup_quit", false)) {
             Fragment_settings_Backup.backup(activity);
         }
-        BrowserContainer.clear();
         if (!sp.getBoolean("sp_reloadTabs", false) || sp.getInt("restart_changed", 1) == 1) {
             sp.edit().putString("openTabs", "").apply();
         }
