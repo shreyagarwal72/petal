@@ -1486,6 +1486,35 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_weather", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enablePasswordBreachApi by remember { mutableStateOf(sp.getBoolean("sp_enable_hibp_breach", true)) }
+                        var enableUnsplashWallpaperApi by remember { mutableStateOf(sp.getBoolean("sp_enable_unsplash_wallpapers", true)) }
+
+                        ToggleRow(
+                            title = "Password Breach Audit API (HIBP)",
+                            subtitle = "K-anonymity hash lookup to audit saved passwords against data breaches",
+                            icon = Icons.Rounded.Lock,
+                            checked = enablePasswordBreachApi,
+                            onCheckedChange = {
+                                enablePasswordBreachApi = it
+                                sp.edit().putBoolean("sp_enable_hibp_breach", it).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "Dynamic Unsplash Wallpapers API",
+                            subtitle = "Fetch daily high-resolution wallpapers for the browser Home Screen",
+                            icon = Icons.Rounded.Image,
+                            checked = enableUnsplashWallpaperApi,
+                            onCheckedChange = {
+                                enableUnsplashWallpaperApi = it
+                                sp.edit().putBoolean("sp_enable_unsplash_wallpapers", it).apply()
+                            }
+                        )
                     }
                 }
 
