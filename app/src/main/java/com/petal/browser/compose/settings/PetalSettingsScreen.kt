@@ -1475,7 +1475,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                 }
 
                 // API Integration & Services Settings
-                if ((currentCategory == SettingsCategory.PRIVACY || currentCategory == SettingsCategory.GENERAL || searchQuery.isNotBlank()) && matchesSearch("API Services", "api search suggestions reader wayback translation google bing duckduckgo")) {
+                if ((currentCategory == SettingsCategory.PRIVACY || currentCategory == SettingsCategory.OVERVIEW || searchQuery.isNotBlank()) && matchesSearch("API Services", "api search suggestions reader wayback translation google bing duckduckgo")) {
                     SettingsCategoryCard(title = "API Integrations & Web Services", icon = Icons.Rounded.Api) {
                         var enableLiveSuggestions by remember { mutableStateOf(sp.getBoolean("sp_enable_live_suggestions", true)) }
                         var enableReaderApi by remember { mutableStateOf(sp.getBoolean("sp_enable_reader_api", true)) }
