@@ -147,17 +147,26 @@ fun PetalUserProfileScreen(
     val legacySignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { activityResult ->
-        isSigningIn = false
-        when (val result = GoogleAccountManager.handleLegacySignInResult(context, activityResult.data)) {
-            is GoogleSignInResult.Success -> {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
-                }
+        val result = GoogleAccountManager.handleLegacySignInResult(context, activityResult.data)
+        if (result is GoogleSignInResult.Success) {
+            isSigningIn = false
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
             }
-            is GoogleSignInResult.Failure -> {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(result.message)
+        } else {
+            // If legacy intent returns failure/cancellation, seamlessly fall back to Credential Manager UI
+            coroutineScope.launch {
+                when (val fallbackResult = GoogleAccountManager.signIn(context)) {
+                    is GoogleSignInResult.Success -> {
+                        snackbarHostState.showSnackbar("Signed in as ${fallbackResult.profile.email}")
+                    }
+                    is GoogleSignInResult.Failure -> {
+                        if (result is GoogleSignInResult.Failure) {
+                            snackbarHostState.showSnackbar(result.message)
+                        }
+                    }
                 }
+                isSigningIn = false
             }
         }
     }
@@ -165,7 +174,23 @@ fun PetalUserProfileScreen(
     fun startGoogleSignIn() {
         if (isSigningIn) return
         isSigningIn = true
-        legacySignInLauncher.launch(GoogleAccountManager.createLegacySignInIntent(context))
+        coroutineScope.launch {
+            try {
+                val intent = GoogleAccountManager.createLegacySignInIntent(context)
+                legacySignInLauncher.launch(intent)
+            } catch (e: Throwable) {
+                // Fallback to Credential Manager if Play Services auth client fails
+                when (val result = GoogleAccountManager.signIn(context)) {
+                    is GoogleSignInResult.Success -> {
+                        snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
+                    }
+                    is GoogleSignInResult.Failure -> {
+                        snackbarHostState.showSnackbar(result.message)
+                    }
+                }
+                isSigningIn = false
+            }
+        }
     }
 
     var showEditNameDialog by remember { mutableStateOf(false) }
