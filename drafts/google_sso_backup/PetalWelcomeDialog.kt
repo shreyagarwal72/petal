@@ -197,21 +197,24 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
 
             Spacer(Modifier.height(24.dp))
 
-            // User Profile Customization Section (Name & Avatar Setup)
+            // Google Sign-In & Data Privacy Section
             val context = iconContext
-            val currentProfile = GoogleAccountManager.currentProfile
-            var nameInput by remember { mutableStateOf(currentProfile.displayName) }
-            val galleryLauncher = rememberLauncherForActivityResult(
-                contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
-            ) { uri: android.net.Uri? ->
-                uri?.let {
-                    GoogleAccountManager.updateAvatarGalleryUri(context, it.toString())
+            val activity = remember(context) {
+                var c = context
+                while (c is android.content.ContextWrapper) {
+                    if (c is Activity) break
+                    c = c.baseContext
                 }
+                c as? Activity
             }
+            val coroutineScope = rememberCoroutineScope()
+            var isSigningIn by remember { mutableStateOf(false) }
+            var errorMessage by remember { mutableStateOf<String?>(null) }
+            val currentProfile = GoogleAccountManager.currentProfile
 
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ),
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier
@@ -222,95 +225,162 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                     modifier = Modifier.padding(18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Customize Profile",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    ProfileAvatarDisplay(profile = currentProfile, sizeDp = 72)
-
-                    Spacer(Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { input ->
-                            if (input.length <= 15) {
-                                nameInput = input
-                                GoogleAccountManager.updateDisplayName(context, input)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.AccountCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
-                        },
-                        label = { Text("User Name") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
-                    )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (currentProfile.isSignedIn) "Signed in as ${currentProfile.displayName}" else "Google Account Sync",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (currentProfile.isSignedIn) currentProfile.email else "Sync bookmarks & preferences securely",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
 
                     Spacer(Modifier.height(14.dp))
 
-                    Text(
-                        text = "Choose Profile Avatar",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    androidx.compose.foundation.lazy.LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        item {
-                            Surface(
-                                onClick = { galleryLauncher.launch("image/*") },
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                modifier = Modifier.size(48.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
+                    if (!currentProfile.isSignedIn) {
+                        Button(
+                            onClick = {
+                                if (!isSigningIn) {
+                                    val targetContext = activity ?: context
+                                    isSigningIn = true
+                                    errorMessage = null
+                                    coroutineScope.launch {
+                                        try {
+                                            when (val result = GoogleAccountManager.signIn(targetContext)) {
+                                                is GoogleSignInResult.Success -> {
+                                                    isSigningIn = false
+                                                }
+                                                is GoogleSignInResult.Failure -> {
+                                                    isSigningIn = false
+                                                    errorMessage = result.message
+                                                }
+                                            }
+                                        } catch (e: Throwable) {
+                                            isSigningIn = false
+                                            errorMessage = e.message ?: "Sign-in error occurred"
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = !isSigningIn,
+                            shape = RoundedCornerShape(20.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            if (isSigningIn) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Connecting to Google...", style = MaterialTheme.typography.labelLarge)
+                            } else {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Icon(
-                                        imageVector = Icons.Rounded.AccountCircle,
-                                        contentDescription = "Gallery",
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.size(24.dp)
+                                        imageVector = Icons.Rounded.Lock,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        "Sign in with Google",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                                     )
                                 }
                             }
                         }
 
-                        items(GoogleAccountManager.builtinAvatarPresets.size) { idx ->
-                            val (presetId, label) = GoogleAccountManager.builtinAvatarPresets[idx]
-                            val isSelected = currentProfile.avatarType == com.petal.browser.account.AvatarType.PRESET && currentProfile.avatarPresetId == presetId
-                            Surface(
-                                onClick = { GoogleAccountManager.updateAvatarPreset(context, presetId) },
-                                shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                                border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-                                modifier = Modifier.size(48.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    val iconVec = com.petal.browser.account.getPresetMaterialIcon(presetId)
-                                    if (iconVec != null) {
-                                        Icon(
-                                            imageVector = iconVec,
-                                            contentDescription = label,
-                                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Rounded.AccountCircle,
-                                            contentDescription = label,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
+                        if (errorMessage != null) {
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = errorMessage!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    GoogleAccountManager.signOut(context)
                                 }
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                        ) {
+                            Text("Sign Out", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // Material Design Data Privacy & Safety Disclaimer
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.Top,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.VerifiedUser,
+                                contentDescription = "Data Safety",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(top = 2.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = "Data Privacy & Safety",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = "Google Sign-In is used exclusively to display your profile and sync your personal browser settings (bookmarks & history) locally. Petal Browser does not host a remote server or collect, sell, or share your data.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 16.sp
+                                )
                             }
                         }
                     }

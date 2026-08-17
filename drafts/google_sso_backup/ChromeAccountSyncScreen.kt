@@ -438,7 +438,152 @@ fun PetalUserProfileScreen(
                 }
             }
 
+            // Global Google One-Click Login Switch Section
+            if (isExpressiveFeatureTiles) {
+                PetalFeatureTile(
+                    title = "One-Click Google Single Sign-On (SSO)",
+                    subtitle = "Log in to all Google sites (YouTube, Gmail, Drive, Maps) automatically in one session",
+                    icon = Icons.Rounded.VpnKey,
+                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    onContainer = MaterialTheme.colorScheme.onSurface,
+                    onClick = {
+                        GoogleAccountManager.setGlobalGoogleLogin(context, !profile.globalGoogleLogin)
+                    },
+                    pillLabel = null,
+                    trailing = {
+                        IconSwitch(
+                            checked = profile.globalGoogleLogin,
+                            icon = Icons.Rounded.VpnKey,
+                            onCheckedChange = { GoogleAccountManager.setGlobalGoogleLogin(context, it) }
+                        )
+                    }
+                )
 
+                // Google Account Status & Auth Actions — real Credential Manager sign-in
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    PetalFeatureTile(
+                        title = when {
+                            profile.isSignedIn -> "Google Account Signed In"
+                            isSigningIn -> "Signing In..."
+                            else -> "Sign In with Google"
+                        },
+                        subtitle = when {
+                            profile.isSignedIn -> profile.email
+                            isSigningIn -> "Waiting for Google account picker"
+                            else -> "Choose your Google account to sign in"
+                        },
+                        icon = Icons.Rounded.AccountCircle,
+                        container = MaterialTheme.colorScheme.primaryContainer,
+                        onContainer = MaterialTheme.colorScheme.onPrimaryContainer,
+                        pillLabel = if (profile.isSignedIn) null else "Sign In",
+                        onClick = {
+                            if (!profile.isSignedIn) {
+                                startGoogleSignIn()
+                            }
+                        }
+                    )
+
+                    PetalFeatureTile(
+                        title = "Open Google Accounts SSO Web Login",
+                        subtitle = "Open Google Accounts sign-in page to log in to Google Web Services across all Google apps & sites",
+                        icon = Icons.Rounded.Language,
+                        container = MaterialTheme.colorScheme.secondaryContainer,
+                        onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
+                        pillLabel = "Open SSO",
+                        onClick = {
+                            onOpenOAuth(
+                                PetalShortcut(
+                                    "Google Accounts SSO",
+                                    "https://accounts.google.com/ServiceLogin?hl=en",
+                                    "https://accounts.google.com/ServiceLogin?hl=en",
+                                    Color(0xFF4285F4)
+                                )
+                            )
+                        }
+                    )
+
+                    if (profile.isSignedIn) {
+                        PetalFeatureTile(
+                            title = "Sign Out of Google",
+                            subtitle = "Disconnect this Google account from Petal Browser",
+                            icon = Icons.Rounded.Logout,
+                            container = MaterialTheme.colorScheme.errorContainer,
+                            onContainer = MaterialTheme.colorScheme.onErrorContainer,
+                            pillLabel = "Sign Out",
+                            onClick = {
+                                coroutineScope.launch {
+                                    GoogleAccountManager.legacySignOut(context)
+                                    snackbarHostState.showSnackbar("Signed out of Google")
+                                }
+                            }
+                        )
+                    }
+                }
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        AccountActionRow(
+                            title = "One-Click Google Single Sign-On (SSO)",
+                            subtitle = "Log in to all Google sites (YouTube, Gmail, Drive, Maps) automatically in one session",
+                            icon = Icons.Rounded.VpnKey,
+                            trailing = {
+                                IconSwitch(
+                                    checked = profile.globalGoogleLogin,
+                                    icon = Icons.Rounded.VpnKey,
+                                    onCheckedChange = { GoogleAccountManager.setGlobalGoogleLogin(context, it) }
+                                )
+                            },
+                            onClick = {
+                                GoogleAccountManager.setGlobalGoogleLogin(context, !profile.globalGoogleLogin)
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        AccountActionRow(
+                            title = when {
+                                profile.isSignedIn -> "Google Account Signed In"
+                                isSigningIn -> "Signing In..."
+                                else -> "Sign In with Google"
+                            },
+                            subtitle = when {
+                                profile.isSignedIn -> profile.email
+                                isSigningIn -> "Waiting for Google account picker"
+                                else -> "Choose your Google account to sign in"
+                            },
+                            icon = Icons.Rounded.AccountCircle,
+                            onClick = {
+                                if (!profile.isSignedIn) {
+                                    startGoogleSignIn()
+                                }
+                            }
+                        )
+
+                        if (profile.isSignedIn) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            AccountActionRow(
+                                title = "Sign Out of Google",
+                                subtitle = "Disconnect this Google account from Petal Browser",
+                                icon = Icons.Rounded.Logout,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        GoogleAccountManager.legacySignOut(context)
+                                        snackbarHostState.showSnackbar("Signed out of Google")
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
     }
