@@ -740,6 +740,21 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_reading_progress_pill", newValue).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isQuickActionsPill by remember { mutableStateOf(sp.getBoolean("sp_quick_actions_pill", true)) }
+
+                        ToggleRow(
+                            title = "Expressive Floating Quick Actions Pill",
+                            subtitle = "Floating quick-settings bottom pill bar for Desktop, AdBlock, and Dark Mode",
+                            icon = Icons.Rounded.Tune,
+                            checked = isQuickActionsPill,
+                            onCheckedChange = { newValue ->
+                                isQuickActionsPill = newValue
+                                sp.edit().putBoolean("sp_quick_actions_pill", newValue).apply()
+                            }
+                        )
                     }
                 }
 
