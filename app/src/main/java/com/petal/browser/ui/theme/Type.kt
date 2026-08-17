@@ -117,11 +117,11 @@ private fun systemTypography(fontWeight: Int): Typography {
 }
 
 enum class GSFlexPreset(val label: String) {
-    DEFAULT("Custom Sliders"),
-    EXPRESSIVE("Expressive (Ultra Round)"),
+    ZENITH("Zenith (Default)"),
     NEO("Neo (Wide & Clean)"),
     COMPACT("Compact (High Density)"),
-    AIRY("Airy (Spacious & Light)")
+    AIRY("Airy (Spacious & Light)"),
+    EXPRESSIVE("Expressive (Ultra Round)")
 }
 
 data class FontAxes(
@@ -146,7 +146,7 @@ data class FontAxes(
 }
 
 data class GSFlexSettings(
-    val preset: GSFlexPreset = GSFlexPreset.DEFAULT,
+    val preset: GSFlexPreset = GSFlexPreset.ZENITH,
     val display: FontAxes = FontAxes(400f, 100f, 72f, 0f, 0f, 0f),
     val headline: FontAxes = FontAxes(400f, 100f, 32f, 0f, 0f, 0f),
     val body: FontAxes = FontAxes(400f, 100f, 16f, 0f, 0f, 0f)
@@ -154,6 +154,11 @@ data class GSFlexSettings(
 
 fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes> {
     return when (preset) {
+        GSFlexPreset.ZENITH -> Triple(
+            FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
+            FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
+            FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
+        )
         GSFlexPreset.EXPRESSIVE -> Triple(
             FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
             FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
@@ -174,11 +179,6 @@ fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes
             FontAxes(500f, 120f, 32f, 0f, 0f, 100f),
             FontAxes(400f, 110f, 16f, 0f, 0f, 50f)
         )
-        GSFlexPreset.DEFAULT -> Triple(
-            FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
-            FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
-            FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
-        )
     }
 }
 
@@ -188,7 +188,7 @@ fun petalTypography(
     fontWidth: Float = 100f,
     fontWeight: Int = 400,
     fontRoundness: Float = 0f,
-    preset: GSFlexPreset = GSFlexPreset.DEFAULT
+    preset: GSFlexPreset = GSFlexPreset.ZENITH
 ): Typography = try {
     val presetAxes = getPresetFontAxes(preset)
     if (appFont == AppFont.GS_FLEX) {

@@ -67,7 +67,7 @@ fun PetalExpressiveTheme(
     fontWidth: Float = 100f,
     fontWeight: Int = 400,
     fontRoundness: Float = 0f,
-    gsFlexPreset: GSFlexPreset = GSFlexPreset.DEFAULT,
+    gsFlexPreset: GSFlexPreset = GSFlexPreset.ZENITH,
     colorStyle: ColorStyle = ColorStyle.TONAL_SPOT,
     paletteId: String = defaultPaletteId,
     content: @Composable () -> Unit

@@ -112,7 +112,7 @@ object PetalSettingsBridge {
                     try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.GS_FLEX }
                 }
                 val gsFlexPreset = remember(presetName) {
-                    try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.DEFAULT }
+                    try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.ZENITH }
                 }
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
@@ -190,7 +190,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         mutableStateOf(try { AppFont.valueOf(sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX") } catch (e: Exception) { AppFont.GS_FLEX })
     }
     var selectedPreset by remember {
-        mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT") } catch (e: Exception) { GSFlexPreset.DEFAULT })
+        mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH") } catch (e: Exception) { GSFlexPreset.ZENITH })
     }
     var fontWidth by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
     var fontWeight by remember { mutableFloatStateOf(sp.getInt("sp_font_weight", 400).toFloat()) }
