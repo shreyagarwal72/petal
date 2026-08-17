@@ -161,4 +161,14 @@ public class FaviconHelper extends SQLiteOpenHelper {
             }
         });
     }
+
+    /**
+     * Constructs a high-resolution 64x64 favicon URL using Google Favicon API for any domain.
+     * Endpoint: https://www.google.com/s2/favicons?domain={domain}&sz=64
+     */
+    public static String getGoogleFaviconUrl(String domain) {
+        if (domain == null || domain.trim().isEmpty()) return "";
+        String cleanDomain = domain.replace("https://", "").replace("http://", "").split("/")[0];
+        return "https://www.google.com/s2/favicons?domain=" + cleanDomain + "&sz=64";
+    }
 }
