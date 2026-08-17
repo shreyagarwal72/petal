@@ -1662,6 +1662,35 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_nextdns_doh", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enableSslLabsGradeApi by remember { mutableStateOf(sp.getBoolean("sp_enable_ssl_labs_grade", true)) }
+                        var enableAdaptiveBrandColorApi by remember { mutableStateOf(sp.getBoolean("sp_enable_adaptive_brand_color", true)) }
+
+                        ToggleRow(
+                            title = "Qualys SSL Labs Security Grade API",
+                            subtitle = "Show live security grade badges (A+, A, B, C, F) inside site info",
+                            icon = Icons.Rounded.Verified,
+                            checked = enableSslLabsGradeApi,
+                            onCheckedChange = {
+                                enableSslLabsGradeApi = it
+                                sp.edit().putBoolean("sp_enable_ssl_labs_grade", it).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "Adaptive Material You Brand Color API",
+                            subtitle = "Morph address bar and UI accent colors to match website primary theme",
+                            icon = Icons.Rounded.Palette,
+                            checked = enableAdaptiveBrandColorApi,
+                            onCheckedChange = {
+                                enableAdaptiveBrandColorApi = it
+                                sp.edit().putBoolean("sp_enable_adaptive_brand_color", it).apply()
+                            }
+                        )
                     }
                 }
 
