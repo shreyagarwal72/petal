@@ -171,4 +171,14 @@ public class FaviconHelper extends SQLiteOpenHelper {
         String cleanDomain = domain.replace("https://", "").replace("http://", "").split("/")[0];
         return "https://www.google.com/s2/favicons?domain=" + cleanDomain + "&sz=64";
     }
+
+    /**
+     * Constructs high-resolution PNG favicon URL using IconHorse API as a secondary fallback.
+     * Endpoint: https://icon.horse/icon/{domain}
+     */
+    public static String getIconHorseFaviconUrl(String domain) {
+        if (domain == null || domain.trim().isEmpty()) return "";
+        String cleanDomain = domain.replace("https://", "").replace("http://", "").split("/")[0];
+        return "https://icon.horse/icon/" + cleanDomain;
+    }
 }

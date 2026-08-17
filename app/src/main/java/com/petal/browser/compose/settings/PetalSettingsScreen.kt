@@ -1457,6 +1457,35 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_enable_ssl_audit", it).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var enableDictionaryApi by remember { mutableStateOf(sp.getBoolean("sp_enable_dictionary", true)) }
+                        var enableWeatherApi by remember { mutableStateOf(sp.getBoolean("sp_enable_weather", true)) }
+
+                        ToggleRow(
+                            title = "English Dictionary Lookup API",
+                            subtitle = "Instant word definitions and phonetic pronunciations on text selection",
+                            icon = Icons.Rounded.Translate,
+                            checked = enableDictionaryApi,
+                            onCheckedChange = {
+                                enableDictionaryApi = it
+                                sp.edit().putBoolean("sp_enable_dictionary", it).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "Privacy-Friendly Weather API",
+                            subtitle = "Lightweight offline-first weather status headers via wttr.in",
+                            icon = Icons.Rounded.Cloud,
+                            checked = enableWeatherApi,
+                            onCheckedChange = {
+                                enableWeatherApi = it
+                                sp.edit().putBoolean("sp_enable_weather", it).apply()
+                            }
+                        )
                     }
                 }
 
