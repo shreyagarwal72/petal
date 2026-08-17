@@ -710,6 +710,21 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_expressive_toast", newValue).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isFloatingDock by remember { mutableStateOf(sp.getBoolean("sp_floating_dock_bar", true)) }
+
+                        ToggleRow(
+                            title = "Expressive Floating Bottom Dock Bar",
+                            subtitle = "Floating glassmorphic bottom navigation dock with spring press haptics",
+                            icon = Icons.Rounded.Dock,
+                            checked = isFloatingDock,
+                            onCheckedChange = { newValue ->
+                                isFloatingDock = newValue
+                                sp.edit().putBoolean("sp_floating_dock_bar", newValue).apply()
+                            }
+                        )
                     }
                 }
 
