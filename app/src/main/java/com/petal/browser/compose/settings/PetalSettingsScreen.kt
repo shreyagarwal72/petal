@@ -2081,6 +2081,7 @@ fun PetalSettingsScreen(
     }
 }
 }
+}
 
 @Composable
 private fun SettingsCategoryCard(
@@ -2196,5 +2197,4 @@ private fun ToggleRow(
             onCheckedChange = onCheckedChange
         )
     }
-}
 }
