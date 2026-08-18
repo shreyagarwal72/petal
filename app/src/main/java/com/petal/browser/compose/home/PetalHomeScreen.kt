@@ -404,58 +404,129 @@ private fun getTimeGreeting(): String {
 @Composable
 private fun PetalSearchBar(onSearch: (String) -> Unit) {
     var searchText by remember { mutableStateOf("") }
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 2.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp),
+    var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(searchText) {
+        if (searchText.trim().length >= 2) {
+            com.petal.browser.unit.SearchSuggestionsManager.fetchSuggestions(searchText.trim()) { results ->
+                suggestions = results.take(6)
+            }
+        } else {
+            suggestions = emptyList()
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 2.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp),
         ) {
-            Icon(
-                Icons.Rounded.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.width(8.dp))
-            TextField(
-                value = searchText,
-                onValueChange = { searchText = it },
-                placeholder = {
-                    Text(
-                        "Search or type web address",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        if (searchText.isNotBlank()) {
-                            onSearch(searchText.trim())
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            ) {
+                Icon(
+                    Icons.Rounded.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.width(8.dp))
+                TextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    placeholder = {
+                        Text(
+                            "Search or type web address",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            if (searchText.isNotBlank()) {
+                                onSearch(searchText.trim())
+                            }
+                        }
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                if (searchText.isNotBlank()) {
+                    IconButton(onClick = {
+                        searchText = ""
+                        suggestions = emptyList()
+                    }) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Clear",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = { onSearch(searchText.trim()) }) {
+                        Icon(
+                            Icons.Rounded.ArrowForward,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        }
+
+        if (suggestions.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 6.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    suggestions.forEach { suggestion ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onSearch(suggestion)
+                                }
+                                .padding(horizontal = 18.dp, vertical = 12.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.TrendingUp,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(14.dp))
+                            Text(
+                                text = suggestion,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                Icons.Rounded.NorthWest,
+                                contentDescription = "Insert",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
-                ),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier.weight(1f)
-            )
-            if (searchText.isNotBlank()) {
-                IconButton(onClick = { onSearch(searchText.trim()) }) {
-                    Icon(
-                        Icons.Rounded.ArrowForward,
-                        contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
                 }
             }
         }
