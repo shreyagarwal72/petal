@@ -192,7 +192,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     public synchronized void initPreferences(String url) {
 
         this.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, true);
-        this.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        this.setLayerType(View.LAYER_TYPE_NONE, null);
         this.setBackgroundColor(android.graphics.Color.WHITE);
 
         WebSettings webSettings = getSettings();
@@ -203,24 +203,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         webSettings.setDefaultTextEncodingName("utf-8");
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
-
-        // Inject Chromium Picture-in-Picture HTML5 Video API Bridge
-        if (sp.getBoolean("sp_auto_pip", true)) {
-            try {
-                this.evaluateJavascript(
-                    "if (!document.pictureInPictureEnabled) { " +
-                    "  document.pictureInPictureEnabled = true; " +
-                    "  HTMLVideoElement.prototype.requestPictureInPicture = function() { " +
-                    "    var self = this; " +
-                    "    return new Promise(function(resolve, reject) { " +
-                    "      if (window.PetalMediaBridge) { window.PetalMediaBridge.triggerPip(); resolve(self); } " +
-                    "      else { resolve(self); } " +
-                    "    }); " +
-                    "  }; " +
-                    "}", null
-                );
-            } catch (Exception ignored) {}
-        }
 
         // Async Safe Browsing initialization to eliminate main thread blocking latency
         if (!isIncognito && WebViewFeature.isFeatureSupported(WebViewFeature.START_SAFE_BROWSING)) {

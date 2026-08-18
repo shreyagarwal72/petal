@@ -98,6 +98,23 @@ public class NinjaWebViewClient extends WebViewClient {
             ninjaWebView.getMediaBridge().injectMediaHooks();
         }
 
+        if (sp.getBoolean("sp_auto_pip", true)) {
+            try {
+                view.evaluateJavascript(
+                    "if (!document.pictureInPictureEnabled) { " +
+                    "  document.pictureInPictureEnabled = true; " +
+                    "  HTMLVideoElement.prototype.requestPictureInPicture = function() { " +
+                    "    var self = this; " +
+                    "    return new Promise(function(resolve, reject) { " +
+                    "      if (window.PetalMediaBridge) { window.PetalMediaBridge.triggerPip(); resolve(self); } " +
+                    "      else { resolve(self); } " +
+                    "    }); " +
+                    "  }; " +
+                    "}", null
+                );
+            } catch (Exception ignored) {}
+        }
+
         if (ninjaWebView.getPwaManager() != null) {
             ninjaWebView.getPwaManager().detectPwaManifest();
         }
