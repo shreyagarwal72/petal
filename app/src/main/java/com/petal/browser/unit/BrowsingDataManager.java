@@ -93,7 +93,7 @@ public class BrowsingDataManager {
         runOnMainThreadBlocking(() -> {
             try {
                 if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
-                    Profile defaultProfile = ProfileStore.getInstance().getProfile(ProfileStore.DEFAULT_PROFILE_NAME);
+                    Profile defaultProfile = ProfileStore.getInstance().getProfile("Default");
                     if (defaultProfile != null) {
                         defaultProfile.getWebStorage().deleteAllData();
                         defaultProfile.getCookieManager().removeAllCookies(null);
