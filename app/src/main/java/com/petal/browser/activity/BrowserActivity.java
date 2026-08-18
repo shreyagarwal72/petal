@@ -436,8 +436,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     boolean stateRestored = false;
                     if (webState != null && !webState.isEmpty()) {
                         try {
-                            Bundle restoredBundle = restoredWebView.restoreState(webState);
-                            stateRestored = (restoredBundle != null);
+                            android.webkit.WebBackForwardList restoredList = restoredWebView.restoreState(webState);
+                            stateRestored = (restoredList != null);
                         } catch (Exception e) {
                             Log.w(TAG, "Error restoring WebView state bundle", e);
                         }
