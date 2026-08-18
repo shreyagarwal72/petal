@@ -19,7 +19,7 @@ public class FaviconPaletteExtractor {
      */
     public static void extractDominantColor(Bitmap bitmap, ColorCallback callback) {
         if (bitmap == null || bitmap.isRecycled()) {
-            if (callback != null) callback.onColorExtracted(ColorKt.Color(0xFF6750A4));
+            if (callback != null) callback.onColorExtracted(ColorKt.Color(0xFF6750A4L));
             return;
         }
 
@@ -30,11 +30,11 @@ public class FaviconPaletteExtractor {
                 if (palette != null) {
                     colorInt = palette.getVibrantColor(palette.getDominantColor(defaultColor));
                 }
-                Color resultColor = ColorKt.Color(colorInt);
+                Color resultColor = ColorKt.Color((long) colorInt & 0xFFFFFFFFL);
                 if (callback != null) callback.onColorExtracted(resultColor);
             });
         } catch (Exception e) {
-            if (callback != null) callback.onColorExtracted(ColorKt.Color(0xFF6750A4));
+            if (callback != null) callback.onColorExtracted(ColorKt.Color(0xFF6750A4L));
         }
     }
 }
