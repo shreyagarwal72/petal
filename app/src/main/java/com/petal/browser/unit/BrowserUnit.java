@@ -402,11 +402,13 @@ public class BrowserUnit {
     }
     public static boolean deleteDir(File dir) {
         if (dir != null && dir.isDirectory()) {
-            String[] children = dir.list();
-            for (String aChildren : Objects.requireNonNull(children)) {
-                boolean success = deleteDir(new File(dir, aChildren));
-                if (!success) {
-                    return false;
+            File[] children = dir.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    boolean success = deleteDir(child);
+                    if (!success) {
+                        return false;
+                    }
                 }
             }
         }

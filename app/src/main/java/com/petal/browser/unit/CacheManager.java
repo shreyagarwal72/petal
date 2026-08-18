@@ -120,18 +120,22 @@ public class CacheManager {
      * Recursively deletes a directory or file.
      */
     public static boolean deleteDir(File dir) {
-        if (dir != null && dir.isDirectory()) {
-            String[] children = dir.list();
-            if (children != null) {
-                for (String child : children) {
-                    boolean success = deleteDir(new File(dir, child));
-                    if (!success) {
-                        return false;
+        if (dir != null && dir.exists()) {
+            if (dir.isDirectory()) {
+                File[] children = dir.listFiles();
+                if (children != null) {
+                    for (File child : children) {
+                        deleteDir(child);
                     }
                 }
             }
+            try {
+                return dir.delete();
+            } catch (Exception ignored) {
+                return false;
+            }
         }
-        return dir != null && dir.delete();
+        return false;
     }
 
     /**
@@ -139,10 +143,10 @@ public class CacheManager {
      */
     public static void deleteDirContents(File dir) {
         if (dir != null && dir.isDirectory()) {
-            String[] children = dir.list();
+            File[] children = dir.listFiles();
             if (children != null) {
-                for (String child : children) {
-                    deleteDir(new File(dir, child));
+                for (File child : children) {
+                    deleteDir(child);
                 }
             }
         }
