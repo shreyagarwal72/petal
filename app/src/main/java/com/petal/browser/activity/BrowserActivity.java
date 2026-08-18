@@ -2289,9 +2289,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         contentFrame.setPullDistanceDp(300f);
         contentFrame.setCanPull(() -> {
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : null;
-            boolean isHome = isHomePage(currentUrl);
+            if (currentUrl == null) currentUrl = "";
+            boolean isInternalPage = isHomePage(currentUrl) ||
+                    currentUrl.startsWith("petal://") ||
+                    currentUrl.contains("petal://settings") ||
+                    currentUrl.contains("petal://history") ||
+                    currentUrl.contains("petal://downloads") ||
+                    currentUrl.contains("petal://account") ||
+                    currentUrl.contains("petal://incognito");
             boolean isScrolledToTop = ninjaWebView != null && ninjaWebView.getScrollY() <= 0;
-            return !isHome && isScrolledToTop && !refreshState.isRefreshing();
+            return !isInternalPage && isScrolledToTop && !refreshState.isRefreshing();
         });
 
         contentFrame.setOnPullListener(progress -> {
