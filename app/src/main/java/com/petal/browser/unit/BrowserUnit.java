@@ -184,8 +184,8 @@ public class BrowserUnit {
                 // DownloadManager/MediaStore afterwards so it shows up in the Files app etc.
                 com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(
                         context, verifiedUrl, fileName, userAgent, cookie, extraHeaders,
-                        fetchId -> com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(
-                                context, fetchId.longValue(), fileName)
+                        (fetchId, resolvedName) -> com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(
+                                context, fetchId.longValue(), resolvedName)
                 );
             } catch (Exception e) {
                 // Sicherer Umgang mit Fehlermeldungen ohne StringIndexOutOfBoundsException

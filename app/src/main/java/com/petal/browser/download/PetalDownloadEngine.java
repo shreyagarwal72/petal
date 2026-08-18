@@ -87,13 +87,27 @@ public class PetalDownloadEngine {
      * queued, so callers (e.g. BrowserUnit) can start live-tracking/notifications for the
      * exact download that was created instead of guessing an ID.
      */
-    public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders, java.util.function.Consumer<Integer> onEnqueued) {
+    public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders, java.util.function.BiConsumer<Integer, String> onEnqueued) {
         File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         if (!downloadsDir.exists()) {
             downloadsDir.mkdirs();
         }
 
         File targetFile = new File(downloadsDir, fileName);
+        if (targetFile.exists()) {
+            String name = fileName;
+            String extension = "";
+            int dotIndex = fileName.lastIndexOf('.');
+            if (dotIndex > 0 && dotIndex < fileName.length() - 1) {
+                name = fileName.substring(0, dotIndex);
+                extension = fileName.substring(dotIndex);
+            }
+            int counter = 1;
+            while (targetFile.exists()) {
+                targetFile = new File(downloadsDir, name + "(" + counter + ")" + extension);
+                counter++;
+            }
+        }
         String filePath = targetFile.getAbsolutePath();
 
         Request request = new Request(url, filePath);
@@ -112,10 +126,11 @@ public class PetalDownloadEngine {
             }
         }
 
+        final String finalResolvedFileName = targetFile.getName();
         fetch.enqueue(request, updatedRequest -> {
             Log.d(TAG, "Download enqueued successfully with ID: " + updatedRequest.getId() + ", file: " + filePath);
             if (onEnqueued != null) {
-                onEnqueued.accept(updatedRequest.getId());
+                onEnqueued.accept(updatedRequest.getId(), finalResolvedFileName);
             }
         }, error -> {
             Log.e(TAG, "Failed to enqueue download: " + error);
