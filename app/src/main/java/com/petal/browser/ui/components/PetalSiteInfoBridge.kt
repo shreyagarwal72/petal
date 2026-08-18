@@ -23,12 +23,12 @@ object PetalSiteInfoBridge {
     ) {
         activity.runOnUiThread {
             try {
-                var dialogView: ComposeView? = null
-                dialogView = ComposeView(activity).apply {
+                var composeView: ComposeView? = null
+                composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
                     setViewTreeSavedStateRegistryOwner(activity)
-                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                     setContent {
                         val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                         val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
@@ -53,11 +53,14 @@ object PetalSiteInfoBridge {
                                     webView = webView,
                                     onDismissRequest = {
                                         showSheet = false
-                                        val parentView = dialogView?.parent as? android.view.ViewGroup
-                                        parentView?.removeView(dialogView)
+                                        val parentView = composeView?.parent as? android.view.ViewGroup
+                                        parentView?.removeView(composeView)
                                     },
                                     onResetSiteData = {
                                         onResetSiteData.run()
+                                        showSheet = false
+                                        val parentView = composeView?.parent as? android.view.ViewGroup
+                                        parentView?.removeView(composeView)
                                     }
                                 )
                             }
@@ -65,13 +68,16 @@ object PetalSiteInfoBridge {
                     }
                 }
 
-                activity.addContentView(
-                    dialogView,
-                    android.view.ViewGroup.LayoutParams(
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content)
+                if (rootView != null) {
+                    rootView.addView(
+                        composeView,
+                        android.view.ViewGroup.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                        )
                     )
-                )
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
