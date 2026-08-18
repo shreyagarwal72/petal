@@ -505,6 +505,13 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             return;
         }
 
+        if (com.petal.browser.extensions.PetalExtensionManager.isExtensionsUrl(targetUrl) || com.petal.browser.extensions.PetalExtensionManager.isExtensionsUrl(url)) {
+            if (context instanceof androidx.activity.ComponentActivity) {
+                com.petal.browser.extensions.PetalExtensionsBridge.showExtensions((androidx.activity.ComponentActivity) context);
+            }
+            return;
+        }
+
         initPreferences(targetUrl);
         super.loadUrl(targetUrl, getRequestHeaders());
     }
