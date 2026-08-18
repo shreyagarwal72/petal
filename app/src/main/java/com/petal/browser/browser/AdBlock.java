@@ -248,16 +248,8 @@ public class AdBlock {
     }
 
     public boolean isAd(String url) {
-        if (url == null || url.isEmpty()) return false;
+        if (url == null || url.length() < 8) return false;
         String lowerUrl = url.toLowerCase(locale);
-
-        for (String pattern : AD_HOST_PATTERNS) {
-            if (lowerUrl.contains(pattern)) return true;
-        }
-
-        for (String pathPattern : AD_PATH_PATTERNS) {
-            if (lowerUrl.contains(pathPattern)) return true;
-        }
 
         String domain;
         try {
@@ -266,12 +258,21 @@ public class AdBlock {
             return false;
         }
 
-        if (hosts.contains(domain.toLowerCase(locale))) return true;
+        String lowerDomain = domain.toLowerCase(locale);
+        if (hosts.contains(lowerDomain)) return true;
 
-        int dot = domain.indexOf('.');
-        if (dot != -1 && dot < domain.length() - 1) {
-            String parentDomain = domain.substring(dot + 1);
-            if (hosts.contains(parentDomain.toLowerCase(locale))) return true;
+        int dot = lowerDomain.indexOf('.');
+        if (dot != -1 && dot < lowerDomain.length() - 1) {
+            String parentDomain = lowerDomain.substring(dot + 1);
+            if (hosts.contains(parentDomain)) return true;
+        }
+
+        for (String pattern : AD_HOST_PATTERNS) {
+            if (lowerUrl.contains(pattern)) return true;
+        }
+
+        for (String pathPattern : AD_PATH_PATTERNS) {
+            if (lowerUrl.contains(pathPattern)) return true;
         }
 
         return false;

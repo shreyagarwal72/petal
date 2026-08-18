@@ -192,7 +192,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     public synchronized void initPreferences(String url) {
 
         this.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, true);
-        this.setLayerType(View.LAYER_TYPE_NONE, null);
+        this.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         this.setBackgroundColor(android.graphics.Color.WHITE);
 
         WebSettings webSettings = getSettings();
@@ -201,16 +201,15 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             webSettings.setOffscreenPreRaster(true);
         }
         webSettings.setDefaultTextEncodingName("utf-8");
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        // 1. Google Safe Browsing & Malware Protection API
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.START_SAFE_BROWSING)) {
-            try {
-                androidx.webkit.WebViewCompat.startSafeBrowsing(context.getApplicationContext(), value -> {
-                    Log.i("NinjaWebView", "Google Safe Browsing initialized: " + value);
-                });
-            } catch (Exception e) {
-                Log.w("NinjaWebView", "Safe browsing init failed", e);
-            }
+        // Async Safe Browsing initialization to eliminate main thread blocking latency
+        if (!isIncognito && WebViewFeature.isFeatureSupported(WebViewFeature.START_SAFE_BROWSING)) {
+            new Thread(() -> {
+                try {
+                    androidx.webkit.WebViewCompat.startSafeBrowsing(context.getApplicationContext(), value -> {});
+                } catch (Exception ignored) {}
+            }).start();
         }
         if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
             try {
