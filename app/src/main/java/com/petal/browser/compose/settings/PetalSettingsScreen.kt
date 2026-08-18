@@ -630,6 +630,57 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                        // API Features Hub Toggle Row & Direct Action
+                        var isApiFeaturesEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
+
+                        ToggleRow(
+                            title = "New API Integration Features Hub",
+                            subtitle = "Enable AndroidX WebKit multi-profile, Google OAuth Credential Manager & Monet color extraction",
+                            icon = Icons.Rounded.Extension,
+                            checked = isApiFeaturesEnabled,
+                            onCheckedChange = { newValue ->
+                                isApiFeaturesEnabled = newValue
+                                sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
+                            }
+                        )
+
+                        if (isApiFeaturesEnabled) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.AutoAwesome,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            "API Integrations Active",
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "• Palette Favicon Accent Color Extraction\n• AndroidX WebKit Private Incognito Multi-Profile\n• Google Credential Manager OAuth Sync\n• Predictive Back Gesture System Integration",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                    )
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                         // Dynamic Color Toggle
                         ToggleRow(
                             title = "Material You Dynamic Colors",
@@ -1096,6 +1147,54 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 sp.edit().putBoolean("sp_touch_haptics", newValue).apply()
                             }
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isApiFeaturesAccessibility by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
+
+                        ToggleRow(
+                            title = "New API Integration Features Hub",
+                            subtitle = "Consolidated switch to enable/disable new WebKit, Credential Manager & Palette API integrations",
+                            icon = Icons.Rounded.Extension,
+                            checked = isApiFeaturesAccessibility,
+                            onCheckedChange = { newValue ->
+                                isApiFeaturesAccessibility = newValue
+                                sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
+                            }
+                        )
+
+                        if (isApiFeaturesAccessibility) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.TouchApp,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.tertiary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            "Accessibility & System Integrations Enabled",
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "Unified API suite providing enhanced touch feedback, predictive back gesture animations, and dynamic high-contrast palette extraction across all screens.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                                    )
+                                }
+                            }
+                        }
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
