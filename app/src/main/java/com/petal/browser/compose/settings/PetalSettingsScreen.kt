@@ -67,6 +67,7 @@ import com.petal.browser.ui.theme.*
 
 object PetalSettingsBridge {
     @JvmStatic
+    @JvmOverloads
     fun createSettingsView(activity: ComponentActivity, initialCategory: SettingsCategory = SettingsCategory.OVERVIEW, onBackPress: () -> Unit): ComposeView {
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
