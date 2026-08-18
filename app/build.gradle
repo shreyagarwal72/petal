@@ -92,6 +92,7 @@ dependencies {
     implementation 'androidx.preference:preference:1.2.1'
     implementation 'androidx.media:media:1.7.0'
     implementation 'androidx.webkit:webkit:1.16.0'
+    implementation 'androidx.palette:palette:1.0.0'
     implementation 'com.google.code.gson:gson:2.11.0'
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
     implementation 'androidx.graphics:graphics-shapes:1.0.1'

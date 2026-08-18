@@ -1,10 +1,5 @@
 package com.petal.browser.ui.components;
 
-import androidx.compose.animation.core.Spring;
-import androidx.compose.animation.core.spring;
-import androidx.compose.ui.unit.Dp;
-import androidx.compose.ui.unit.dp;
-
 /**
  * ElasticOverscrollHelper provides spring resistance physics calculations for overscroll rubber-banding.
  */

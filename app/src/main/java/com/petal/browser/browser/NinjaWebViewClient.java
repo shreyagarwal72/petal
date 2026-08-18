@@ -653,7 +653,7 @@ public class NinjaWebViewClient extends WebViewClient {
                     }
             );
         } else {
-            response.showInterop(true);
+            response.proceed(true);
         }
     }
 
