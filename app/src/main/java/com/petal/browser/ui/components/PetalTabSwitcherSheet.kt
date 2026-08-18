@@ -134,9 +134,10 @@ object PetalTabSwitcherBridge {
                                 if (targetAlbum != null) {
                                     tabItems.removeAll { it.id == tabItem.id }
                                     onCloseTab(targetAlbum)
-                                    if (tabItems.isEmpty()) {
-                                        try { dialog.dismiss() } catch (ignored: Exception) {}
-                                    }
+                                    // Don't auto-dismiss when the last tab closes - like Chrome,
+                                    // stay open and let PetalTabGridSwitcher show its empty-state
+                                    // fallback ("You'll find your tabs here") instead of kicking
+                                    // the user out of the switcher.
                                 }
                             },
                             onNewTab = { isIncognito ->
@@ -395,7 +396,7 @@ fun PetalTabSwitcherContent(
                             )
 
                             Text(
-                                text = if (searchQuery.isNotBlank()) "No Tabs Found" else "No Open Tabs",
+                                text = if (searchQuery.isNotBlank()) "No Tabs Found" else "You'll find your tabs here",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center
@@ -403,7 +404,7 @@ fun PetalTabSwitcherContent(
 
                             Text(
                                 text = if (searchQuery.isNotBlank()) "No matching tabs found for \"$searchQuery\""
-                                else "All tabs are closed. Tap + to open a new tab and start browsing.",
+                                else "Open tabs to visit different pages at the same time",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,

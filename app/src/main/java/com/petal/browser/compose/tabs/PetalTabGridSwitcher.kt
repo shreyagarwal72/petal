@@ -327,7 +327,7 @@ fun PetalTabGridSwitcher(
                             text = when {
                                 searchQuery.isNotEmpty() -> "No matching tabs"
                                 isIncognitoMode -> "No Incognito tabs open"
-                                else -> "No Standard tabs open"
+                                else -> "You'll find your tabs here"
                             },
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = textColor,
@@ -335,7 +335,11 @@ fun PetalTabGridSwitcher(
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            text = if (isIncognitoMode) "Pages you view in incognito won't leave a local trace" else "Tap '+' to open a new tab",
+                            text = when {
+                                searchQuery.isNotEmpty() -> "Try a different search"
+                                isIncognitoMode -> "Pages you view in incognito won't leave a local trace"
+                                else -> "Open tabs to visit different pages at the same time"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
