@@ -833,6 +833,7 @@ fun PetalUserProfileScreen(
             }
         }
     }
+}
 
     // Edit User Name Dialog
     if (showEditNameDialog) {
