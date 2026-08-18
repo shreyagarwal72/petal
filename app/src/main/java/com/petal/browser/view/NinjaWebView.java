@@ -186,6 +186,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         this.setBackgroundColor(android.graphics.Color.WHITE);
 
         WebSettings webSettings = getSettings();
+        com.petal.browser.flags.ChromeFlagsManager.applyFlagsToWebSettings(context, webSettings);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             webSettings.setOffscreenPreRaster(true);
         }

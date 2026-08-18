@@ -76,7 +76,7 @@ public class BrowserUnit {
             if (uri.getScheme() != null) {
                 String scheme = uri.getScheme().toLowerCase();
                 // Erlaubt Web-Links sowie lokale Datei- und Inhalts-Pfade von Android
-                return "http".equals(scheme) || "https".equals(scheme) || "file".equals(scheme) || "content".equals(scheme) || "about".equals(scheme);
+                return "http".equals(scheme) || "https".equals(scheme) || "file".equals(scheme) || "content".equals(scheme) || "about".equals(scheme) || "chrome".equals(scheme) || "petal".equals(scheme);
             }
 
             // Fall 2: Die Eingabe hat kein Schema (z.B. "google.com")
@@ -104,7 +104,7 @@ public class BrowserUnit {
         }
 
         if (isURL(query)) {
-            if (query.startsWith("about:blank") || query.startsWith("mailto:") || query.startsWith("file:") || query.startsWith("content:")) {
+            if (query.startsWith("about:blank") || query.startsWith("mailto:") || query.startsWith("file:") || query.startsWith("content:") || query.startsWith("chrome://") || query.startsWith("about:flags") || query.startsWith("petal://")) {
                 return query;
             }
             if (!query.contains("://")) {
