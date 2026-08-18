@@ -1024,6 +1024,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 @Override
                 public void onOpenUrl(String u) {
+                    if (u != null && u.contains("category=api_integrations")) {
+                        openApiIntegrationsHub();
+                        return;
+                    }
                     if (ninjaWebView != null) {
                         String targetUrl = u;
                         if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
@@ -4293,7 +4297,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public void openApiIntegrationsHub() {
+        openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS);
+    }
+
     private void openSettingsScreen() {
+        openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.OVERVIEW);
+    }
+
+    private void openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory initialCategory) {
         try {
             captureBrowserMainPreview();
             contentFrame.removeAllViews();
@@ -4306,7 +4318,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble_settings = findViewById(R.id.fab_bubble);
             if (fab_bubble_settings != null) fab_bubble_settings.setVisibility(GONE);
-            View settingsView = com.petal.browser.compose.settings.PetalSettingsBridge.createSettingsView(BrowserActivity.this, () -> {
+            View settingsView = com.petal.browser.compose.settings.PetalSettingsBridge.createSettingsView(BrowserActivity.this, initialCategory, () -> {
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
             });

@@ -67,7 +67,7 @@ import com.petal.browser.ui.theme.*
 
 object PetalSettingsBridge {
     @JvmStatic
-    fun createSettingsView(activity: ComponentActivity, onBackPress: () -> Unit): ComposeView {
+    fun createSettingsView(activity: ComponentActivity, initialCategory: SettingsCategory = SettingsCategory.OVERVIEW, onBackPress: () -> Unit): ComposeView {
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
@@ -140,7 +140,7 @@ object PetalSettingsBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    PetalSettingsScreen(onBackPress = onBackPress)
+                    PetalSettingsScreen(initialCategory = initialCategory, onBackPress = onBackPress)
                 }
             }
         }
@@ -161,7 +161,10 @@ enum class SettingsCategory(val title: String, val subtitle: String, val icon: I
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
+fun PetalSettingsScreen(
+    initialCategory: SettingsCategory = SettingsCategory.OVERVIEW,
+    onBackPress: () -> Unit = {}
+) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
@@ -183,7 +186,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
         } catch (e: Exception) { 100L }
     }
 
-    var currentCategory by remember { mutableStateOf(SettingsCategory.OVERVIEW) }
+    var currentCategory by remember(initialCategory) { mutableStateOf(initialCategory) }
     var searchQuery by remember { mutableStateOf("") }
 
     // Saved Preference States
@@ -442,7 +445,6 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     )
 
                     val categories = listOf(
-                        SettingsCategory.API_INTEGRATIONS,
                         SettingsCategory.APPEARANCE,
                         SettingsCategory.PRIVACY,
                         SettingsCategory.SEARCH_HOMEPAGE,

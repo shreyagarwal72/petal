@@ -310,6 +310,12 @@ fun PetalHomeScreen(
                             modifier = Modifier
                                 .size(76.dp)
                                 .padding(4.dp)
+                                .combinedClickable(
+                                    onClick = {},
+                                    onLongClick = {
+                                        onOpenShortcutUrl("petal://settings?category=api_integrations")
+                                    }
+                                )
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(56.dp))
