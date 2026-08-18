@@ -4327,11 +4327,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     protected void onPause() {
         super.onPause();
-        boolean backgroundPlay = sp.getBoolean("sp_background_play", false);
+        boolean backgroundPlay = sp != null && sp.getBoolean("sp_background_play", false);
         if (!backgroundPlay && ninjaWebView != null) {
-            ninjaWebView.onPause();
-            ninjaWebView.pauseTimers();
+            try {
+                ninjaWebView.onPause();
+                ninjaWebView.pauseTimers();
+            } catch (Exception ignored) {}
         }
-        com.petal.browser.unit.TabSessionManager.saveSession(this);
+        try {
+            com.petal.browser.unit.TabSessionManager.saveSession(this);
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving tab session in onPause", e);
+        }
     }
 }
