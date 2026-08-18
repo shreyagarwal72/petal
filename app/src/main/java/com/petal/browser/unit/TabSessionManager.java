@@ -138,15 +138,9 @@ public class TabSessionManager {
                 int scrollY = webView.getScrollY();
                 boolean isActive = webView.isForeground();
 
-                Bundle webViewStateBundle = new Bundle();
-                try {
-                    webView.saveState(webViewStateBundle);
-                } catch (Exception e) {
-                    Log.e(TAG, "Error running webView.saveState() for " + url, e);
-                }
-
-                String base64State = bundleToBase64(webViewStateBundle);
-                records.add(new TabStateRecord(i, title, url, scrollX, scrollY, false, isActive, base64State, now));
+                // Store URL, title, scroll positions & metadata safely. Avoid webView.saveState() Base64
+                // serialization as restoring corrupt webViewState bundles causes native Chromium crashes.
+                records.add(new TabStateRecord(i, title, url, scrollX, scrollY, false, isActive, "", now));
             }
         }
 

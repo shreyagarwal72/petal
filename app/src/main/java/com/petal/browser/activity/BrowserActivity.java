@@ -432,22 +432,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     NinjaWebView restoredWebView = new NinjaWebView(context);
                     restoredWebView.initPreferences(record.url);
                     
-                    Bundle webState = com.petal.browser.unit.TabSessionManager.base64ToBundle(record.webViewStateBase64);
-                    boolean stateRestored = false;
-                    if (webState != null && !webState.isEmpty()) {
-                        try {
-                            android.webkit.WebBackForwardList restoredList = restoredWebView.restoreState(webState);
-                            stateRestored = (restoredList != null);
-                        } catch (Exception e) {
-                            Log.w(TAG, "Error restoring WebView state bundle", e);
-                        }
-                    }
-                    if (!stateRestored) {
-                        if (record.url != null && !record.url.isEmpty()) {
-                            restoredWebView.loadUrl(record.url);
-                        } else {
-                            restoredWebView.loadUrl("about:blank");
-                        }
+                    if (record.url != null && !record.url.isEmpty()) {
+                        restoredWebView.loadUrl(record.url);
+                    } else {
+                        restoredWebView.loadUrl("about:blank");
                     }
 
                     if (record.title != null && !record.title.isEmpty()) {
