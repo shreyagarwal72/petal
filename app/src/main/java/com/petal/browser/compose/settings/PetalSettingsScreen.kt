@@ -189,6 +189,12 @@ fun PetalSettingsScreen(
 
     var currentCategory by remember(initialCategory) { mutableStateOf(initialCategory) }
     var searchQuery by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(800L)
+        isLoading = false
+    }
 
     // Saved Preference States
     var selectedFont by remember {
@@ -431,13 +437,18 @@ fun PetalSettingsScreen(
                         shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
                     }
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
+                if (isLoading) {
+                    com.petal.browser.compose.composable.ContainedLoadingIndicator(
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
                 if (currentCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
                     Text(
                         "Categories",
@@ -2150,4 +2161,5 @@ private fun ToggleRow(
             onCheckedChange = onCheckedChange
         )
     }
+}
 }

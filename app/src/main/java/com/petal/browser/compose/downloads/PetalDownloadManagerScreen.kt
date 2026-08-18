@@ -194,9 +194,12 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     // to it live, so this list updates instantly on progress/pause/resume/completion
     // instead of being polled from the system DownloadManager (which never reflected a
     // pause and is why the feature looked broken).
+    var isLoading by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         PetalFetchDownloadBridge.ensureInitialized(context)
         PetalFetchDownloadBridge.refresh(context)
+        kotlinx.coroutines.delay(1000L)
+        isLoading = false
     }
     val downloadList by PetalFetchDownloadBridge.downloadItems.collectAsState()
 
@@ -390,7 +393,11 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                     shape = RoundedCornerShape(cornerRadius)
                 }
         ) {
-            if (downloadList.isEmpty()) {
+            if (isLoading) {
+                com.petal.browser.compose.composable.ContainedLoadingIndicator(
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else if (downloadList.isEmpty()) {
                 DownloadsEmptyState()
             } else {
                 LazyColumn(

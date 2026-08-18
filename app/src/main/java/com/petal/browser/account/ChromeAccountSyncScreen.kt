@@ -196,6 +196,12 @@ fun PetalUserProfileScreen(
     var showEditNameDialog by remember { mutableStateOf(false) }
     var nameInput by remember { mutableStateOf(profile.displayName) }
 
+    var isLoading by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(600L)
+        isLoading = false
+    }
+
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -300,22 +306,29 @@ fun PetalUserProfileScreen(
                 )
             }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-                .graphicsLayer {
-                    scaleX = backFrame.scale
-                    scaleY = backFrame.scale
-                    alpha = backFrame.alpha
-                    translationX = backFrame.translationXDp.dp.toPx()
-                    clip = animatedBackProgress > 0.01f
-                    shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
-                },
-            verticalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
+        if (isLoading) {
+            com.petal.browser.compose.composable.ContainedLoadingIndicator(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .graphicsLayer {
+                        scaleX = backFrame.scale
+                        scaleY = backFrame.scale
+                        alpha = backFrame.alpha
+                        translationX = backFrame.translationXDp.dp.toPx()
+                        clip = animatedBackProgress > 0.01f
+                        shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
+                    },
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
             // Main User Profile Hero Card
             Surface(
                 shape = RoundedCornerShape(28.dp),
@@ -818,10 +831,7 @@ fun PetalUserProfileScreen(
                     )
                 }
             }
-
-
         }
-    }
     }
 
     // Edit User Name Dialog
