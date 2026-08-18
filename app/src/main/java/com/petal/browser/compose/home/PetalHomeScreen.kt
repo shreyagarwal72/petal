@@ -265,6 +265,88 @@ fun PetalHomeScreen(
         onOpenShortcutUrl(shortcut.url)
     }
 
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Top Bar Profile / Sync Action Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onOpenAccountSync,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        ProfileAvatarDisplay(profile = profile, sizeDp = 36)
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Centered App Logo & Greeting Container
+                val nameDisplay = remember(greetingName) {
+                    val name = greetingName?.trim()?.take(15) ?: ""
+                    if (name.isNotEmpty()) name else "Explorer"
+                }
+
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier
+                                .size(76.dp)
+                                .padding(4.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(56.dp))
+                            }
+                        }
+
+                        Spacer(Modifier.height(14.dp))
+
+                        val fullGreetingText = "${getTimeGreeting()}, $nameDisplay"
+                        val fontSize = when {
+                            fullGreetingText.length > 24 -> 20.sp
+                            fullGreetingText.length > 18 -> 24.sp
+                            else -> 28.sp
+                        }
+
+                        Text(
+                            text = fullGreetingText,
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = fontSize,
+                                letterSpacing = (-0.4).sp
+                            ),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                PetalSearchBar(onSearch = onSearch)
+
                 Spacer(Modifier.height(24.dp))
 
                 // 5-Petal Bloom Shortcuts Ring (No animations, clean static layout)
