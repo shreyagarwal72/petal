@@ -53,12 +53,7 @@ public class CacheManager {
             Log.w(TAG, "Error clearing app cache directory", e);
         }
 
-        // 3. Safely clean app_webview directory structures.
-        // This is only safe when NO WebView instance is alive anywhere in the app:
-        // these files (IndexedDB, Local Storage, Web Data, QuotaManager, ...) are the
-        // live Chromium profile that every open/stored tab reads and writes through.
-        // Deleting them while a tab's WebView still holds them open crashes the
-        // native engine - and the more tabs are stored, the more likely that is.
+        // 3. Safely clean app_webview cache directory structures if completely idle
         try {
             if (com.petal.browser.browser.BrowserContainer.size() == 0) {
                 File appDataDir = new File(appContext.getApplicationInfo().dataDir);
@@ -71,8 +66,8 @@ public class CacheManager {
                         com.petal.browser.browser.BrowserContainer.size() +
                         " tab(s) still hold live WebView instances");
             }
-        } catch (Exception e) {
-            Log.w(TAG, "Error cleaning app_webview directory", e);
+        } catch (Throwable t) {
+            Log.w(TAG, "Error cleaning app_webview directory safely", t);
         }
     }
 
@@ -80,23 +75,12 @@ public class CacheManager {
      * Cleans specific subdirectories inside app_webview safely without corrupting core WebView files.
      */
     private static void cleanWebviewData(File appWebviewDir) {
-        // Roots to clean in app_webview root or app_webview/Default
+        // Safe Cache targets only (do NOT delete live profile databases or locks)
         String[] targets = new String[]{
                 "Cache",
                 "Code Cache",
                 "GPUCache",
-                "blob_storage",
-                "databases",
-                "IndexedDB",
-                "Local Storage",
-                "Service Worker",
-                "Session Storage",
-                "shared_proto_db",
-                "VideoDecodeStats",
-                "QuotaManager",
-                "QuotaManager-journal",
-                "Web Data",
-                "Web Data-journal"
+                "blob_storage"
         };
 
         File defaultDir = new File(appWebviewDir, "Default");
