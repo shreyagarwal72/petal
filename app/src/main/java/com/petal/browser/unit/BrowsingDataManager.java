@@ -149,8 +149,42 @@ public class BrowsingDataManager {
         });
     }
 
+    /**
+     * Clears Service Worker caches & registers using AndroidX WebKit ServiceWorkerController if supported.
+     */
+    public static void clearServiceWorkerCache() {
+        runOnMainThreadBlocking(() -> {
+            try {
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.SERVICE_WORKER_BASIC_USAGE)) {
+                    androidx.webkit.ServiceWorkerController swController = androidx.webkit.ServiceWorkerController.getInstance();
+                    if (swController != null) {
+                        swController.getServiceWorkerWebSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+                    }
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
+    /**
+     * Purges internal Chromium performance and disk tracing buffers using AndroidX WebKit TracingController if supported.
+     */
+    public static void clearTracingControllerBuffers() {
+        runOnMainThreadBlocking(() -> {
+            try {
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.TRACING_CONTROLLER_BASIC_USAGE)) {
+                    androidx.webkit.TracingController tracingController = androidx.webkit.TracingController.getInstance();
+                    if (tracingController != null && tracingController.isTracing()) {
+                        tracingController.stop(null, java.util.concurrent.Executors.newSingleThreadExecutor());
+                    }
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
     public static void clearPermissions() {
         runOnMainThreadBlocking(() -> GeolocationPermissions.getInstance().clearAll());
+        clearServiceWorkerCache();
+        clearTracingControllerBuffers();
     }
 
     public static void clearBrowsingDataAsync(
