@@ -115,8 +115,8 @@ public class BrowsingDataManager {
     public static void clearCache(final Context context, final WebView webView) {
         if (webView != null) {
             runOnMainThreadBlocking(() -> webView.clearCache(true));
-            trimWebViewMemory(webView);
         }
+        trimWebViewMemory(context);
         clearProfileCacheAndStorage();
         clearHttpResponseCache();
         if (context != null) {
@@ -152,13 +152,13 @@ public class BrowsingDataManager {
     }
 
     /**
-     * Clears Service Worker caches & registers using AndroidX WebKit ServiceWorkerController if supported.
+     * Clears Service Worker caches & registers using AndroidX WebKit ServiceWorkerControllerCompat if supported.
      */
     public static void clearServiceWorkerCache() {
         runOnMainThreadBlocking(() -> {
             try {
                 if (WebViewFeature.isFeatureSupported(WebViewFeature.SERVICE_WORKER_BASIC_USAGE)) {
-                    androidx.webkit.ServiceWorkerController swController = androidx.webkit.ServiceWorkerController.getInstance();
+                    androidx.webkit.ServiceWorkerControllerCompat swController = androidx.webkit.ServiceWorkerControllerCompat.getInstance();
                     if (swController != null) {
                         swController.getServiceWorkerWebSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
                     }
@@ -215,11 +215,15 @@ public class BrowsingDataManager {
     /**
      * Trims Chromium V8 RAM garbage collection and GPU memory caches for active webView.
      */
-    public static void trimWebViewMemory(WebView webView) {
-        if (webView == null) return;
+    public static void trimWebViewMemory(Context context) {
+        if (context == null) return;
         runOnMainThreadBlocking(() -> {
             try {
-                webView.onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL);
+                if (context instanceof android.content.ComponentCallbacks2) {
+                    ((android.content.ComponentCallbacks2) context).onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL);
+                } else if (context.getApplicationContext() instanceof android.content.ComponentCallbacks2) {
+                    ((android.content.ComponentCallbacks2) context.getApplicationContext()).onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL);
+                }
             } catch (Exception ignored) {}
         });
     }
