@@ -131,4 +131,7 @@ dependencies {
     // see https://github.com/android/identity-samples/issues/90) that some devices hit
     // even with fully correct OAuth configuration.
     implementation 'com.google.android.gms:play-services-auth:21.3.0'
+
+    // AndroidX Biometric for hardware biometric & device credential lock
+    implementation 'androidx.biometric:biometric:1.2.0-alpha05'
 }

@@ -312,25 +312,36 @@ object GoogleAccountManager {
 
         return try {
             val credential = response.credential
-            if (credential !is CustomCredential ||
-                credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-            ) {
-                return GoogleSignInResult.Failure("Unexpected credential type returned")
+            when (credential) {
+                is CustomCredential -> {
+                    if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                        val claims = decodeIdTokenClaims(googleIdTokenCredential.idToken)
+
+                        val email = claims?.optString("email")?.takeIf { it.isNotBlank() }
+                            ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
+                        val displayName = googleIdTokenCredential.displayName
+                            ?: claims.optString("name").takeIf { it.isNotBlank() }
+                            ?: email.substringBefore("@")
+                        val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
+                            ?: claims.optString("picture").takeIf { it.isNotBlank() }
+
+                        persistSignedInProfile(context, email, displayName, avatarUrl)
+                        GoogleSignInResult.Success(currentProfile)
+                    } else if (credential.type == androidx.credentials.PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL) {
+                        // Successfully authenticated using Google Passkey / WebAuthn Public Key Credential
+                        val rawJson = credential.data.getString("androidx.credentials.BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON")
+                        val json = if (rawJson != null) JSONObject(rawJson) else null
+                        val userEmail = json?.optJSONObject("response")?.optJSONObject("user")?.optString("name")
+                            ?: currentProfile.email
+                        persistSignedInProfile(context, userEmail, currentProfile.displayName, currentProfile.avatarUrl)
+                        GoogleSignInResult.Success(currentProfile)
+                    } else {
+                        GoogleSignInResult.Failure("Unexpected credential type: ${credential.type}")
+                    }
+                }
+                else -> GoogleSignInResult.Failure("Unsupported credential response")
             }
-
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-            val claims = decodeIdTokenClaims(googleIdTokenCredential.idToken)
-
-            val email = claims?.optString("email")?.takeIf { it.isNotBlank() }
-                ?: return GoogleSignInResult.Failure("Google did not return an email for this account")
-            val displayName = googleIdTokenCredential.displayName
-                ?: claims.optString("name").takeIf { it.isNotBlank() }
-                ?: email.substringBefore("@")
-            val avatarUrl = googleIdTokenCredential.profilePictureUri?.toString()
-                ?: claims.optString("picture").takeIf { it.isNotBlank() }
-
-            persistSignedInProfile(context, email, displayName, avatarUrl)
-            GoogleSignInResult.Success(currentProfile)
         } catch (e: GoogleIdTokenParsingException) {
             e.printStackTrace()
             GoogleSignInResult.Failure("Could not parse the credential returned by Google")

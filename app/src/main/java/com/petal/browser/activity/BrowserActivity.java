@@ -331,6 +331,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             Log.e(TAG, "Error binding PetalMediaSessionService", e);
         }
 
+        if (sp.getBoolean("sp_biometric_lock", false)) {
+            com.petal.browser.security.BiometricLockManager.INSTANCE.authenticate(
+                this,
+                "Petal Browser Locked",
+                "Authenticate using biometric or PIN to continue",
+                () -> {
+                    // Success: user authenticated
+                },
+                (error) -> {
+                    Toast.makeText(this, "Biometric authentication required: " + error, Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+            );
+        }
+
         try {
             new BannerBlock(context);
         } catch (Exception ignored) {}
