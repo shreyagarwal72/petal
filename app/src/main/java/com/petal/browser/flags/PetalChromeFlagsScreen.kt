@@ -75,7 +75,7 @@ fun PetalChromeFlagsScreen(
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            "chrome://flags",
+                            "petal://flags • chrome://flags",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary
                         )

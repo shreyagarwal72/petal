@@ -1179,8 +1179,8 @@ fun PetalSettingsScreen(
                 }
 
                 // 3. Private DNS & Chrome Flags
-                if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Chrome Flags", "chrome://flags flags experimental webgpu features force dark safe browsing")) {
-                    SettingsCategoryCard(title = "Experimental Chrome Flags", icon = Icons.Rounded.Science) {
+                if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Chrome Flags", "chrome://flags petal://flags flags experimental webgpu features force dark safe browsing")) {
+                    SettingsCategoryCard(title = "Experimental Petal & Chrome Flags", icon = Icons.Rounded.Science) {
                         Surface(
                             onClick = {
                                 if (context is androidx.activity.ComponentActivity) {
@@ -1198,7 +1198,7 @@ fun PetalSettingsScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        "Chrome Experimental Flags (chrome://flags)",
+                                        "Petal & Chrome Experimental Flags (petal://flags)",
                                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )

@@ -487,6 +487,14 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         if (listStandard.isWhite(url)) profile = HelperUnit.domain(urlToLoad);
 
         String targetUrl = BrowserUnit.queryWrapper(context, urlToLoad);
+
+        if (com.petal.browser.flags.ChromeFlagsManager.isFlagsUrl(targetUrl) || com.petal.browser.flags.ChromeFlagsManager.isFlagsUrl(url)) {
+            if (context instanceof androidx.activity.ComponentActivity) {
+                com.petal.browser.flags.PetalChromeFlagsBridge.showFlags((androidx.activity.ComponentActivity) context, null);
+            }
+            return;
+        }
+
         initPreferences(targetUrl);
         super.loadUrl(targetUrl, getRequestHeaders());
     }
