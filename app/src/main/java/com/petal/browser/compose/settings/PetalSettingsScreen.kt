@@ -498,32 +498,17 @@ fun PetalSettingsScreen(
                 if ((currentCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "api webkit credential manager palette oauth incognito profile multi profile predictive back integration hub search suggestions reader wayback translation google bing duckduckgo")) {
                     SettingsCategoryCard(title = "API Integrations & Web Services Hub", icon = Icons.Rounded.Extension) {
                         Text(
-                            "Combined control dashboard for external cloud web services, system APIs, and search tools:",
+                            "Essential options for web services and Chrome extensions. Core security and system APIs are automatically optimized for performance.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                        var isApiHubEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
-
-                        ToggleRow(
-                            title = "Enable All API & Web Services",
-                            subtitle = "Master switch to enable or disable all background web APIs and integrations",
-                            icon = Icons.Rounded.PowerSettingsNew,
-                            checked = isApiHubEnabled,
-                            onCheckedChange = { newValue ->
-                                isApiHubEnabled = newValue
-                                sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                         var enableLiveSuggestions by remember { mutableStateOf(sp.getBoolean("sp_enable_live_suggestions", true)) }
                         ToggleRow(
                             title = "Live Search Recommendations",
-                            subtitle = "Fetch live autocomplete suggestions from Google, DuckDuckGo, or Bing",
+                            subtitle = "Fetch live autocomplete suggestions from Google, DuckDuckGo, or Bing while typing",
                             icon = Icons.Rounded.Search,
-                            checked = enableLiveSuggestions && isApiHubEnabled,
+                            checked = enableLiveSuggestions,
                             onCheckedChange = {
                                 enableLiveSuggestions = it
                                 sp.edit().putBoolean("sp_enable_live_suggestions", it).apply()
@@ -532,215 +517,17 @@ fun PetalSettingsScreen(
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                        var enableReaderApi by remember { mutableStateOf(sp.getBoolean("sp_enable_reader_api", true)) }
-                        ToggleRow(
-                            title = "Readability Reader Mode API",
-                            subtitle = "Automatically parse uncluttered article view for blogs and news sites",
-                            icon = Icons.Rounded.Article,
-                            checked = enableReaderApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableReaderApi = it
-                                sp.edit().putBoolean("sp_enable_reader_api", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enableWaybackApi by remember { mutableStateOf(sp.getBoolean("sp_enable_wayback_api", true)) }
-                        ToggleRow(
-                            title = "Wayback Machine Snapshot API",
-                            subtitle = "Offer Internet Archive snapshots when encountering broken links or 404 pages",
-                            icon = Icons.Rounded.History,
-                            checked = enableWaybackApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableWaybackApi = it
-                                sp.edit().putBoolean("sp_enable_wayback_api", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enableDuckAssistApi by remember { mutableStateOf(sp.getBoolean("sp_enable_duck_assist", true)) }
-                        ToggleRow(
-                            title = "DuckAssist Instant Answer API",
-                            subtitle = "Fetch instant topic summaries and definition boxes for search queries",
-                            icon = Icons.Rounded.Lightbulb,
-                            checked = enableDuckAssistApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableDuckAssistApi = it
-                                sp.edit().putBoolean("sp_enable_duck_assist", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var isPaletteApiEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_palette_enabled", true)) }
-                        ToggleRow(
-                            title = "AndroidX Palette Color Extraction API",
-                            subtitle = "Extract vibrant accent colors from website favicons for ambient tab glowing & dynamic themes",
-                            icon = Icons.Rounded.Palette,
-                            checked = isPaletteApiEnabled && isApiHubEnabled,
-                            onCheckedChange = { newValue ->
-                                isPaletteApiEnabled = newValue
-                                sp.edit().putBoolean("sp_api_palette_enabled", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var isMultiProfileApiEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_multiprofile_enabled", true)) }
-                        ToggleRow(
-                            title = "AndroidX WebKit Multi-Profile API",
-                            subtitle = "Isolated storage profiles for Incognito tabs preventing cross-site state leaks",
-                            icon = Icons.Rounded.VpnKey,
-                            checked = isMultiProfileApiEnabled && isApiHubEnabled,
-                            onCheckedChange = { newValue ->
-                                isMultiProfileApiEnabled = newValue
-                                sp.edit().putBoolean("sp_api_multiprofile_enabled", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var isCredentialManagerApiEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_credman_enabled", true)) }
-                        ToggleRow(
-                            title = "Google OAuth Credential Manager API",
-                            subtitle = "Native Google Account sign-in consent dialogs & Chrome sync data backup",
-                            icon = Icons.Rounded.AccountCircle,
-                            checked = isCredentialManagerApiEnabled && isApiHubEnabled,
-                            onCheckedChange = { newValue ->
-                                isCredentialManagerApiEnabled = newValue
-                                sp.edit().putBoolean("sp_api_credman_enabled", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enableSslAuditApi by remember { mutableStateOf(sp.getBoolean("sp_enable_ssl_audit", true)) }
-                        ToggleRow(
-                            title = "DNS & SSL Health Audit API",
-                            subtitle = "Resolve DoH IP records and audit domain security in Site Info sheet",
-                            icon = Icons.Rounded.Security,
-                            checked = enableSslAuditApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableSslAuditApi = it
-                                sp.edit().putBoolean("sp_enable_ssl_audit", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enableDictionaryApi by remember { mutableStateOf(sp.getBoolean("sp_enable_dictionary", true)) }
-                        ToggleRow(
-                            title = "English Dictionary Lookup API",
-                            subtitle = "Instant word definitions and phonetic pronunciations on text selection",
-                            icon = Icons.Rounded.Translate,
-                            checked = enableDictionaryApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableDictionaryApi = it
-                                sp.edit().putBoolean("sp_enable_dictionary", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enableWeatherApi by remember { mutableStateOf(sp.getBoolean("sp_enable_weather", true)) }
-                        ToggleRow(
-                            title = "Privacy-Friendly Weather API",
-                            subtitle = "Lightweight offline-first weather status headers via wttr.in",
-                            icon = Icons.Rounded.Cloud,
-                            checked = enableWeatherApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableWeatherApi = it
-                                sp.edit().putBoolean("sp_enable_weather", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enablePasswordBreachApi by remember { mutableStateOf(sp.getBoolean("sp_enable_hibp_breach", true)) }
-                        ToggleRow(
-                            title = "Password Breach Audit API (HIBP)",
-                            subtitle = "K-anonymity hash lookup to audit saved passwords against data breaches",
-                            icon = Icons.Rounded.Lock,
-                            checked = enablePasswordBreachApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enablePasswordBreachApi = it
-                                sp.edit().putBoolean("sp_enable_hibp_breach", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enableUnsplashWallpaperApi by remember { mutableStateOf(sp.getBoolean("sp_enable_unsplash_wallpapers", true)) }
-                        ToggleRow(
-                            title = "Dynamic Unsplash Wallpapers API",
-                            subtitle = "Fetch daily high-resolution wallpapers for the browser Home Screen",
-                            icon = Icons.Rounded.Image,
-                            checked = enableUnsplashWallpaperApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableUnsplashWallpaperApi = it
-                                sp.edit().putBoolean("sp_enable_unsplash_wallpapers", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enableWhoisRdapApi by remember { mutableStateOf(sp.getBoolean("sp_enable_whois_rdap", true)) }
-                        ToggleRow(
-                            title = "Whois & RDAP Domain Trust Audit API",
-                            subtitle = "Inspect domain registration, owner, and registrar info in Site Info sheet",
-                            icon = Icons.Rounded.VerifiedUser,
-                            checked = enableWhoisRdapApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableWhoisRdapApi = it
-                                sp.edit().putBoolean("sp_enable_whois_rdap", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enableUrlScanApi by remember { mutableStateOf(sp.getBoolean("sp_enable_urlscan", true)) }
-                        ToggleRow(
-                            title = "URLScan.io Malicious Domain Scanner API",
-                            subtitle = "Check community security scores and safety verdicts before loading links",
-                            icon = Icons.Rounded.Shield,
-                            checked = enableUrlScanApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableUrlScanApi = it
-                                sp.edit().putBoolean("sp_enable_urlscan", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                         var enableHackerNewsApi by remember { mutableStateOf(sp.getBoolean("sp_enable_hackernews", true)) }
                         ToggleRow(
-                            title = "HackerNews Tech News Feed API",
-                            subtitle = "Optional tech news feed section on Home Screen via Firebase API",
+                            title = "Tech News Feed on Home Screen",
+                            subtitle = "Show trending technology stories and news articles on the home screen",
                             icon = Icons.Rounded.RssFeed,
-                            checked = enableHackerNewsApi && isApiHubEnabled,
+                            checked = enableHackerNewsApi,
                             onCheckedChange = {
                                 enableHackerNewsApi = it
                                 sp.edit().putBoolean("sp_enable_hackernews", it).apply()
                             }
                         )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enablePhishTankApi by remember { mutableStateOf(sp.getBoolean("sp_enable_phishtank", true)) }
-                        ToggleRow(
-                            title = "PhishTank Real-Time Anti-Phishing API",
-                            subtitle = "Verify URLs against active phishing database before opening login pages",
-                            icon = Icons.Rounded.GppBad,
-                            checked = enablePhishTankApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enablePhishTankApi = it
-                                sp.edit().putBoolean("sp_enable_phishtank", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
