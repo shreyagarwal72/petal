@@ -86,10 +86,37 @@ public class BrowsingDataManager {
         }
     }
 
+    /**
+     * Clears cache and storage using Chromium AndroidX WebKit Profile APIs if supported.
+     */
+    public static void clearProfileCacheAndStorage() {
+        runOnMainThreadBlocking(() -> {
+            try {
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
+                    Profile defaultProfile = ProfileStore.getInstance().getProfile(ProfileStore.DEFAULT_PROFILE_NAME);
+                    if (defaultProfile != null) {
+                        defaultProfile.getWebStorage().deleteAllData();
+                        defaultProfile.getCookieManager().removeAllCookies(null);
+                        defaultProfile.getCookieManager().flush();
+                        defaultProfile.getGeolocationPermissions().clearAll();
+                    }
+                    Profile incognitoProfile = ProfileStore.getInstance().getProfile(INCOGNITO_PROFILE_NAME);
+                    if (incognitoProfile != null) {
+                        incognitoProfile.getWebStorage().deleteAllData();
+                        incognitoProfile.getCookieManager().removeAllCookies(null);
+                        incognitoProfile.getCookieManager().flush();
+                        incognitoProfile.getGeolocationPermissions().clearAll();
+                    }
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
     public static void clearCache(final Context context, final WebView webView) {
         if (webView != null) {
             runOnMainThreadBlocking(() -> webView.clearCache(true));
         }
+        clearProfileCacheAndStorage();
         if (context != null) {
             try {
                 deleteDirContents(context.getCacheDir());
@@ -108,6 +135,7 @@ public class BrowsingDataManager {
 
     public static void clearWebStorage() {
         runOnMainThreadBlocking(() -> WebStorage.getInstance().deleteAllData());
+        clearProfileCacheAndStorage();
     }
 
     public static void clearAutofillData(final Context context) {
