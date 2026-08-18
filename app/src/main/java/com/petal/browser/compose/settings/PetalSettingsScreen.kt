@@ -742,17 +742,38 @@ fun PetalSettingsScreen(
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                        var enableVoiceSearchApi by remember { mutableStateOf(sp.getBoolean("sp_enable_voice_search", true)) }
-                        ToggleRow(
-                            title = "Google Voice Search Recognition API",
-                            subtitle = "Enable hands-free voice search button inside address bar search dialog",
-                            icon = Icons.Rounded.Mic,
-                            checked = enableVoiceSearchApi && isApiHubEnabled,
-                            onCheckedChange = {
-                                enableVoiceSearchApi = it
-                                sp.edit().putBoolean("sp_enable_voice_search", it).apply()
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Surface(
+                            onClick = {
+                                if (context is androidx.activity.ComponentActivity) {
+                                    com.petal.browser.extensions.PetalExtensionsBridge.showExtensions(context)
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Chrome Extensions (petal://extensions)",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        "Manage active extensions, install .CRX / .ZIP files, or configure UserScript engine",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                    )
+                                }
+                                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
-                        )
+                        }
                     }
                 }
 
