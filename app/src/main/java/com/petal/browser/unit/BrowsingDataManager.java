@@ -115,8 +115,10 @@ public class BrowsingDataManager {
     public static void clearCache(final Context context, final WebView webView) {
         if (webView != null) {
             runOnMainThreadBlocking(() -> webView.clearCache(true));
+            trimWebViewMemory(webView);
         }
         clearProfileCacheAndStorage();
+        clearHttpResponseCache();
         if (context != null) {
             try {
                 deleteDirContents(context.getCacheDir());
@@ -181,10 +183,53 @@ public class BrowsingDataManager {
         });
     }
 
+    /**
+     * Clears Proxy overrides & flushes Chromium socket pools via ProxyController if supported.
+     */
+    public static void clearProxyOverrides() {
+        runOnMainThreadBlocking(() -> {
+            try {
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
+                    androidx.webkit.ProxyController.getInstance().clearProxyOverride(
+                            java.util.concurrent.Executors.newSingleThreadExecutor(),
+                            () -> {}
+                    );
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
+    /**
+     * Flushes Android system-level HttpResponseCache.
+     */
+    public static void clearHttpResponseCache() {
+        try {
+            android.net.http.HttpResponseCache responseCache = android.net.http.HttpResponseCache.getInstalled();
+            if (responseCache != null) {
+                responseCache.flush();
+                responseCache.delete();
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Trims Chromium V8 RAM garbage collection and GPU memory caches for active webView.
+     */
+    public static void trimWebViewMemory(WebView webView) {
+        if (webView == null) return;
+        runOnMainThreadBlocking(() -> {
+            try {
+                webView.onTrimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL);
+            } catch (Exception ignored) {}
+        });
+    }
+
     public static void clearPermissions() {
         runOnMainThreadBlocking(() -> GeolocationPermissions.getInstance().clearAll());
         clearServiceWorkerCache();
         clearTracingControllerBuffers();
+        clearProxyOverrides();
+        clearHttpResponseCache();
     }
 
     public static void clearBrowsingDataAsync(
