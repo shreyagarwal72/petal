@@ -53,8 +53,8 @@ public class BrowsingDataManager {
 
             try {
                 if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
-                    ProfileStore.getInstance().getOrCreateProfile(ProfileStore.DEFAULT_PROFILE_NAME);
-                    WebViewCompat.setProfile(webView, ProfileStore.DEFAULT_PROFILE_NAME);
+                    ProfileStore.getInstance().getOrCreateProfile(Profile.DEFAULT_PROFILE_NAME);
+                    WebViewCompat.setProfile(webView, Profile.DEFAULT_PROFILE_NAME);
                 }
             } catch (Exception ignored) {}
         }
@@ -100,7 +100,7 @@ public class BrowsingDataManager {
         runOnMainThreadBlocking(() -> {
             try {
                 if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
-                    Profile defaultProfile = ProfileStore.getInstance().getOrCreateProfile(ProfileStore.DEFAULT_PROFILE_NAME);
+                    Profile defaultProfile = ProfileStore.getInstance().getOrCreateProfile(Profile.DEFAULT_PROFILE_NAME);
                     if (defaultProfile != null) {
                         defaultProfile.getWebStorage().deleteAllData();
                         defaultProfile.getCookieManager().removeAllCookies(null);
