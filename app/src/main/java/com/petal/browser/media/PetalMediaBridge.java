@@ -134,6 +134,15 @@ public class PetalMediaBridge {
 
     private class MediaJsInterface {
         @JavascriptInterface
+        public void triggerPip() {
+            if (activity != null) {
+                activity.runOnUiThread(() -> {
+                    enterPipIfSupported(activity, webView);
+                });
+            }
+        }
+
+        @JavascriptInterface
         public void onMediaStateChanged(boolean isPlaying, String title, double positionMs, double durationMs) {
             if (listener != null) {
                 listener.onMediaPlayingStateChanged(isPlaying);
