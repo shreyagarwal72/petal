@@ -217,29 +217,88 @@ fun PetalChromeFlagsScreen(
                         }
                     }
                 }
+            // Category Filter Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = selectedCategory == null,
+                    onClick = { selectedCategory = null },
+                    label = { Text("All") },
+                    leadingIcon = if (selectedCategory == null) {
+                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    } else null
+                )
+                FlagCategory.values().take(3).forEach { cat ->
+                    FilterChip(
+                        selected = selectedCategory == cat,
+                        onClick = {
+                            selectedCategory = if (selectedCategory == cat) null else cat
+                        },
+                        label = { Text(cat.label.split(" ")[0]) },
+                        leadingIcon = if (selectedCategory == cat) {
+                            { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null
+                    )
+                }
             }
 
-            // Flags List
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(filteredFlags, key = { it.key }) { flag ->
-                    val currentState = flagsStateMap[flag.key] ?: FlagState.DEFAULT
-                    ChromeFlagCard(
-                        flag = flag,
-                        currentState = currentState,
-                        onStateSelected = { newState ->
-                            ChromeFlagsManager.setFlagState(context, flag.key, newState)
-                            flagsStateMap = flagsStateMap + (flag.key to newState)
-                            hasChanges = true
-                        }
-                    )
+            // Flags List or Empty State
+            if (filteredFlags.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.SearchOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            "No matching flags found",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "Try searching with different keywords like 'dark', 'gpu', or 'scrolling'",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(filteredFlags, key = { it.key }) { flag ->
+                        val currentState = flagsStateMap[flag.key] ?: FlagState.DEFAULT
+                        ChromeFlagCard(
+                            flag = flag,
+                            currentState = currentState,
+                            onStateSelected = { newState ->
+                                ChromeFlagsManager.setFlagState(context, flag.key, newState)
+                                flagsStateMap = flagsStateMap + (flag.key to newState)
+                                hasChanges = true
+                            }
+                        )
+                    }
                 }
             }
         }
     }
+}
 }
 
 @Composable
