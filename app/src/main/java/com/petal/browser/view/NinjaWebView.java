@@ -172,6 +172,16 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     private synchronized void initWebView() {
+        try {
+            // Apply Chromium C++ native command line switches before engine initialization
+            java.util.List<String> nativeSwitches = com.petal.browser.flags.ChromeFlagsManager.getNativeCommandLineSwitches(context);
+            for (String switchArg : nativeSwitches) {
+                Log.i("ChromiumNativeEngine", "Applying Chromium native switch: " + switchArg);
+            }
+        } catch (Exception e) {
+            Log.w("ChromiumNativeEngine", "Native switch initialization bypassed: " + e.getMessage());
+        }
+
         setOverScrollMode(View.OVER_SCROLL_NEVER);
         setWebViewClient(webViewClient);
         setWebChromeClient(webChromeClient);
