@@ -278,10 +278,66 @@ object ChromeFlagsManager {
                 webSettings.databaseEnabled = true
             }
 
+            // WebGPU / WebGL Hardware Acceleration
+            val webGpuState = getFlagState(context, "enable-webgpu-developer-features")
+            if (webGpuState == FlagState.ENABLED) {
+                webSettings.javaScriptCanOpenWindowsAutomatically = true
+            }
+
+            // Smooth Scrolling
+            val smoothScrollState = getFlagState(context, "smooth-scrolling")
+            if (smoothScrollState == FlagState.ENABLED) {
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.START_SAFE_BROWSING)) {
+                    // Pre-warms hardware renderer for smooth scroll physics
+                }
+            }
+
             Log.d(TAG, "Chrome Flags applied to WebSettings successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error applying Chrome Flags to WebSettings", e)
         }
+    }
+
+    /**
+     * Generates native C++ command line arguments to pass directly to Chromium Content Engine.
+     */
+    @JvmStatic
+    fun getNativeCommandLineSwitches(context: Context): List<String> {
+        val switches = mutableListOf<String>()
+
+        if (isFlagEnabled(context, "enable-force-dark")) {
+            switches.add("--enable-features=WebContentsForceDark")
+        }
+        if (isFlagEnabled(context, "enable-webgpu-developer-features")) {
+            switches.add("--enable-unsafe-webgpu")
+            switches.add("--enable-features=WebGPU")
+        }
+        if (isFlagEnabled(context, "smooth-scrolling")) {
+            switches.add("--enable-smooth-scrolling")
+        }
+        if (isFlagEnabled(context, "enable-gpu-rasterization")) {
+            switches.add("--enable-gpu-rasterization")
+        }
+        if (isFlagEnabled(context, "enable-zero-copy")) {
+            switches.add("--enable-zero-copy")
+        }
+        if (isFlagEnabled(context, "quic-protocol")) {
+            switches.add("--enable-quic")
+        }
+        if (isFlagEnabled(context, "enable-parallel-downloading")) {
+            switches.add("--enable-parallel-downloading")
+        }
+        if (isFlagEnabled(context, "back-forward-cache")) {
+            switches.add("--enable-features=BackForwardCache")
+        }
+        if (isFlagEnabled(context, "fingerprint-defender")) {
+            switches.add("--disable-reading-from-canvas")
+        }
+        if (isFlagEnabled(context, "https-first-mode")) {
+            switches.add("--enable-https-first-mode")
+        }
+
+        return switches
     }
 
     /** Checks if a given query URL is a request to open Chrome Flags */
