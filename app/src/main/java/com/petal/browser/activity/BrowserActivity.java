@@ -433,12 +433,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     restoredWebView.initPreferences(record.url);
                     
                     Bundle webState = com.petal.browser.unit.TabSessionManager.base64ToBundle(record.webViewStateBase64);
+                    boolean stateRestored = false;
                     if (webState != null && !webState.isEmpty()) {
-                        restoredWebView.restoreState(webState);
-                    } else if (record.url != null && !record.url.isEmpty()) {
-                        restoredWebView.loadUrl(record.url);
-                    } else {
-                        restoredWebView.loadUrl("about:blank");
+                        try {
+                            Bundle restoredBundle = restoredWebView.restoreState(webState);
+                            stateRestored = (restoredBundle != null);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Error restoring WebView state bundle", e);
+                        }
+                    }
+                    if (!stateRestored) {
+                        if (record.url != null && !record.url.isEmpty()) {
+                            restoredWebView.loadUrl(record.url);
+                        } else {
+                            restoredWebView.loadUrl("about:blank");
+                        }
                     }
 
                     if (record.title != null && !record.title.isEmpty()) {
@@ -569,28 +578,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onDestroy() {
-        if (isMediaBound) {
-            try {
-                unbindService(mediaConnection);
-                isMediaBound = false;
-            } catch (Exception ignored) {}
-        }
-        NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancel(1);
-        // Destroy all tab WebViews FIRST. clearBrowserData() deletes the live
-        // Chromium profile files (IndexedDB, Local Storage, Web Data, ...) under
-        // app_webview/Default; doing that while stored tabs still hold WebView
-        // instances open on those same files causes native crashes, and the risk
-        // grows with every extra stored tab.
-        BrowserContainer.clear();
-        if (sp.getBoolean("sp_clear_quit", true)) {
-            BrowserUnit.clearBrowserData(this);
-        }
-        if (sp.getBoolean("sp_backup_quit", false)) {
-            Fragment_settings_Backup.backup(activity);
-        }
-        if (!sp.getBoolean("sp_reloadTabs", false) || sp.getInt("restart_changed", 1) == 1) {
-            sp.edit().putString("openTabs", "").apply();
+        try {
+            if (isMediaBound) {
+                try {
+                    unbindService(mediaConnection);
+                    isMediaBound = false;
+                } catch (Exception ignored) {}
+            }
+            NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            if (notificationManager != null) {
+                notificationManager.cancel(1);
+            }
+            BrowserContainer.clear();
+            if (sp != null && sp.getBoolean("sp_clear_quit", true)) {
+                BrowserUnit.clearBrowserData(this);
+            }
+            if (sp != null && sp.getBoolean("sp_backup_quit", false)) {
+                Fragment_settings_Backup.backup(activity);
+            }
+            if (sp != null && (!sp.getBoolean("sp_reloadTabs", false) || sp.getInt("restart_changed", 1) == 1)) {
+                sp.edit().putString("openTabs", "").apply();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in BrowserActivity.onDestroy", e);
         }
         super.onDestroy();
     }
