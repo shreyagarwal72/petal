@@ -12,9 +12,14 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -30,9 +35,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
@@ -178,28 +188,16 @@ fun getFileTypeIcon(fileName: String): ImageVector {
 fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     val context = LocalContext.current
 
-    // The app's actual downloads are created via Android's system DownloadManager
-    // (see BrowserUnit / HelperUnit / NinjaDownloadListener), not via PetalDownloadEngine
-    // (which nothing in the app ever calls). So this screen has to read its list from
-    // the system DownloadManager - the same source the row actions below (open/share/
-    // rename/delete, all keyed by DownloadManager id) already assume.
-    var downloadList by remember { mutableStateOf<List<DownloadItem>>(emptyList()) }
-    var prevBytesMap by remember { mutableStateOf<Map<Long, Long>>(emptyMap()) }
-
+    // Downloads now flow through Fetch2 (see BrowserUnit.download), which is the only
+    // engine here that actually supports pause/resume. PetalFetchDownloadBridge listens
+    // to it live, so this list updates instantly on progress/pause/resume/completion
+    // instead of being polled from the system DownloadManager (which never reflected a
+    // pause and is why the feature looked broken).
     LaunchedEffect(Unit) {
-        var lastPollTime = System.currentTimeMillis()
-        while (isActive) {
-            val now = System.currentTimeMillis()
-            val elapsed = now - lastPollTime
-            lastPollTime = now
-
-            val items = getDownloadItems(context, prevBytesMap, elapsed)
-            downloadList = items
-            prevBytesMap = items.associate { it.id to it.bytesDownloaded }
-
-            delay(1000L)
-        }
+        PetalFetchDownloadBridge.ensureInitialized(context)
+        PetalFetchDownloadBridge.refresh(context)
     }
+    val downloadList by PetalFetchDownloadBridge.downloadItems.collectAsState()
 
     val groupedDownloads = remember(downloadList) {
         downloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
@@ -285,8 +283,6 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                             val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
                             deleteMultipleFiles(context, itemsToDelete)
                             selectedIds = emptySet()
-                            val items = getDownloadItems(context, prevBytesMap, 0L)
-                            downloadList = items
                         }) {
                             Icon(Icons.Rounded.Delete, contentDescription = "Delete Selected", tint = MaterialTheme.colorScheme.error)
                         }
@@ -309,11 +305,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                         }
                     },
                     actions = {
-                        IconButton(onClick = {
-                            val items = getDownloadItems(context, prevBytesMap, 0L)
-                            downloadList = items
-                            prevBytesMap = items.associate { it.id to it.bytesDownloaded }
-                        }) {
+                        IconButton(onClick = { PetalFetchDownloadBridge.refresh(context) }) {
                             Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
                         }
                     },
@@ -524,21 +516,21 @@ private fun DownloadRowItem(
                     )
                 }
 
-                // Leading circular avatar/icon container using surfaceContainerHighest color
-                Surface(
-                    shape = CircleShape,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = if (isSelected) Icons.Rounded.Check else getFileTypeIcon(item.fileName),
-                            contentDescription = null,
-                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(24.dp)
-                        )
+                // Leading avatar: a Play Store-style circular progress ring with a Chrome-style
+                // pause/resume glyph in the center while active, falling back to the plain file
+                // type icon once the download is finished/idle.
+                DownloadProgressRing(
+                    item = item,
+                    isSelected = isSelected,
+                    isSelectionMode = isSelectionMode,
+                    onTogglePauseResume = {
+                        when (item.status) {
+                            DownloadManager.STATUS_RUNNING -> PetalLiveAlertManager.pauseDownload(context, item.id)
+                            DownloadManager.STATUS_PAUSED -> PetalLiveAlertManager.resumeDownload(context, item.id)
+                            else -> {}
+                        }
                     }
-                }
+                )
 
                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -685,56 +677,156 @@ private fun DownloadRowItem(
                     progress = animatedProgress,
                     modifier = Modifier.fillMaxWidth()
                 )
+            } else if (item.status == DownloadManager.STATUS_PAUSED) {
+                // A frozen, muted bar (no wave motion) makes "paused" visually distinct from
+                // an actively downloading file, matching how Chrome dims a paused download.
+                Spacer(modifier = Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = item.progress ?: 0f,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.5.dp)
+                        .clip(RoundedCornerShape(50)),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
+                )
             }
         }
     }
 }
 
-private fun getDownloadItems(
-    context: Context,
-    prevBytesMap: Map<Long, Long>,
-    elapsedTimeMs: Long
-): List<DownloadItem> {
-    val list = mutableListOf<DownloadItem>()
-    try {
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val query = DownloadManager.Query()
-        val cursor = dm.query(query)
-        if (cursor != null && cursor.moveToFirst()) {
-            val idCol = cursor.getColumnIndex(DownloadManager.COLUMN_ID)
-            val titleCol = cursor.getColumnIndex(DownloadManager.COLUMN_TITLE)
-            val uriCol = cursor.getColumnIndex(DownloadManager.COLUMN_URI)
-            val statusCol = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-            val soFarCol = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
-            val totalCol = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
-            val localUriCol = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
-            val timestampCol = cursor.getColumnIndex(DownloadManager.COLUMN_LAST_MODIFIED_TIMESTAMP)
+/**
+ * Chrome/Play Store-style leading control: a circular ring that sweeps around the icon to
+ * show progress, with the icon itself doubling as a tappable pause/resume/status glyph.
+ * - Running: filled progress arc (or an indeterminate spinning arc while size is unknown),
+ *   Pause glyph in the center. Tap to pause.
+ * - Paused: a frozen ring at the current progress, Play glyph in the center. Tap to resume.
+ * - Failed: a plain error glyph, no ring.
+ * - Completed/other: falls back to the original file-type icon, no ring.
+ */
+@Composable
+private fun DownloadProgressRing(
+    item: DownloadItem,
+    isSelected: Boolean,
+    isSelectionMode: Boolean,
+    onTogglePauseResume: () -> Unit
+) {
+    val isRunning = item.status == DownloadManager.STATUS_RUNNING
+    val isPaused = item.status == DownloadManager.STATUS_PAUSED
+    val isPending = item.status == DownloadManager.STATUS_PENDING
+    val isFailed = item.status == DownloadManager.STATUS_FAILED
+    val showRing = (isRunning || isPaused || isPending) && !isSelected
 
-            do {
-                val id = if (idCol >= 0) cursor.getLong(idCol) else 0L
-                val title = if (titleCol >= 0) cursor.getString(titleCol) ?: "Downloaded File" else "Downloaded File"
-                val uri = if (uriCol >= 0) cursor.getString(uriCol) ?: "" else ""
-                val status = if (statusCol >= 0) cursor.getInt(statusCol) else 0
-                val soFar = if (soFarCol >= 0) cursor.getLong(soFarCol) else 0L
-                val total = if (totalCol >= 0) cursor.getLong(totalCol) else 0L
-                val localUri = if (localUriCol >= 0) cursor.getString(localUriCol) else null
-                val timestamp = if (timestampCol >= 0) cursor.getLong(timestampCol) else System.currentTimeMillis()
+    val ringColor = MaterialTheme.colorScheme.primary
+    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
 
-                val progress = if (total > 0) (soFar.toFloat() / total.toFloat()) else null
-                val prevSoFar = prevBytesMap[id] ?: soFar
-                val bytesDiff = (soFar - prevSoFar).coerceAtLeast(0L)
-                val speed = if (elapsedTimeMs > 0 && bytesDiff > 0) (bytesDiff * 1000L) / elapsedTimeMs else 0L
-                val remainingBytes = (total - soFar).coerceAtLeast(0L)
-                val eta = if (speed > 0) remainingBytes / speed else 0L
+    val animatedProgress by animateFloatAsState(
+        targetValue = item.progress ?: 0f,
+        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+        label = "RingProgress"
+    )
 
-                list.add(DownloadItem(id, title, uri, progress, status, soFar, total, speed, eta, localUri, timestamp))
-            } while (cursor.moveToNext())
-            cursor.close()
+    val infiniteTransition = rememberInfiniteTransition(label = "RingSpin")
+    val indeterminateRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1100, easing = LinearEasing)
+        ),
+        label = "RingRotation"
+    )
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(700, easing = FastOutSlowInEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "RingPulse"
+    )
+
+    Surface(
+        shape = CircleShape,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = Modifier
+            .size(44.dp)
+            .then(
+                if (showRing && !isSelectionMode) {
+                    Modifier.clickable(
+                        onClickLabel = if (isRunning) "Pause download" else "Resume download",
+                        onClick = onTogglePauseResume
+                    )
+                } else Modifier
+            )
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            if (showRing) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokeWidthPx = 2.6.dp.toPx()
+                    val diameter = size.minDimension - strokeWidthPx
+                    val topLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f)
+                    val arcSize = Size(diameter, diameter)
+
+                    // Track ring
+                    drawArc(
+                        color = trackColor,
+                        startAngle = 0f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+                    )
+
+                    if (item.progress != null) {
+                        // Determinate sweep starting at 12 o'clock, Play Store-style.
+                        val alpha = if (isPaused) pulseAlpha else 1f
+                        drawArc(
+                            color = ringColor.copy(alpha = ringColor.alpha * alpha),
+                            startAngle = -90f,
+                            sweepAngle = 360f * animatedProgress,
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = arcSize,
+                            style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+                        )
+                    } else {
+                        // Unknown total size: an indeterminate spinning arc instead of a sweep.
+                        rotate(indeterminateRotation) {
+                            drawArc(
+                                color = ringColor,
+                                startAngle = 0f,
+                                sweepAngle = 100f,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+                            )
+                        }
+                    }
+                }
+            }
+
+            val glyph: ImageVector = when {
+                isSelected -> Icons.Rounded.Check
+                isRunning -> Icons.Rounded.Pause
+                isPaused -> Icons.Rounded.PlayArrow
+                isPending -> Icons.Rounded.Schedule
+                isFailed -> Icons.Rounded.ErrorOutline
+                else -> getFileTypeIcon(item.fileName)
+            }
+            Icon(
+                imageVector = glyph,
+                contentDescription = when {
+                    isRunning -> "Pause download"
+                    isPaused -> "Resume download"
+                    else -> null
+                },
+                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(if (showRing) 20.dp else 24.dp)
+            )
         }
-    } catch (e: Exception) {
-        e.printStackTrace()
     }
-    return list.sortedByDescending { it.timestampMs }
 }
 
 private fun openDownloadedFile(context: Context, item: DownloadItem) {
@@ -806,15 +898,7 @@ private fun openDownloadedFile(context: Context, item: DownloadItem) {
 
 private fun deleteDownloadedFile(context: Context, item: DownloadItem) {
     try {
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        dm.remove(item.id)
-        if (item.localUri != null) {
-            val uri = Uri.parse(item.localUri)
-            val file = java.io.File(uri.path ?: "")
-            if (file.exists()) {
-                file.delete()
-            }
-        }
+        PetalFetchDownloadBridge.deleteDownload(context, item)
         android.widget.Toast.makeText(context, "Deleted ${item.fileName}", android.widget.Toast.LENGTH_SHORT).show()
     } catch (e: Exception) {
         e.printStackTrace()
@@ -911,18 +995,7 @@ private fun shareMultipleFiles(context: Context, items: List<DownloadItem>) {
 private fun deleteMultipleFiles(context: Context, items: List<DownloadItem>) {
     if (items.isEmpty()) return
     try {
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val idsToRemove = items.map { it.id }.toLongArray()
-        dm.remove(*idsToRemove)
-        items.forEach { item ->
-            if (item.localUri != null) {
-                val uri = Uri.parse(item.localUri)
-                val file = java.io.File(uri.path ?: "")
-                if (file.exists()) {
-                    file.delete()
-                }
-            }
-        }
+        PetalFetchDownloadBridge.deleteDownloads(context, items)
         android.widget.Toast.makeText(context, "Deleted ${items.size} items", android.widget.Toast.LENGTH_SHORT).show()
     } catch (e: Exception) {
         e.printStackTrace()

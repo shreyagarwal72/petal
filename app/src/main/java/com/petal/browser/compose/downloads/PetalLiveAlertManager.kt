@@ -31,60 +31,44 @@ object PetalLiveAlertManager {
         val appContext = context.applicationContext
 
         ensureNotificationChannel(appContext)
+        PetalFetchDownloadBridge.ensureInitialized(appContext)
 
         // Cancel existing job if re-tracking
         trackingJobs[downloadId]?.cancel()
 
+        // Reacts to Fetch2's live download events instead of polling the system
+        // DownloadManager - that source never actually changed status on pause (the
+        // system DownloadManager has no public pause API), so the notification used to
+        // just keep showing "Downloading" forever even after a pause was requested.
         val job = scope.launch {
-            val dm = appContext.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return@launch
-            var prevSoFar = 0L
-            var lastTime = System.currentTimeMillis()
-
             while (isActive) {
-                val query = DownloadManager.Query().setFilterById(downloadId)
-                val cursor = try { dm.query(query) } catch (e: Exception) { null }
-
-                if (cursor == null || !cursor.moveToFirst()) {
-                    cursor?.close()
-                    break
+                val item = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { it.id == downloadId }
+                if (item == null) {
+                    // Not tracked yet - Fetch2's onQueued event may not have arrived. Keep
+                    // polling briefly rather than giving up immediately.
+                    delay(500L)
+                    continue
                 }
 
-                val statusCol = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                val soFarCol = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
-                val totalCol = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
-                val titleCol = cursor.getColumnIndex(DownloadManager.COLUMN_TITLE)
+                val displayTitle = item.fileName.ifBlank { fileName }
 
-                val status = if (statusCol >= 0) cursor.getInt(statusCol) else 0
-                val soFar = if (soFarCol >= 0) cursor.getLong(soFarCol) else 0L
-                val total = if (totalCol >= 0) cursor.getLong(totalCol) else 0L
-                val titleFromCursor = if (titleCol >= 0) cursor.getString(titleCol) else null
-                val displayTitle = if (!titleFromCursor.isNullOrBlank()) titleFromCursor else fileName
-                cursor.close()
-
-                val now = System.currentTimeMillis()
-                val elapsedTime = (now - lastTime).coerceAtLeast(100L)
-                val bytesDiff = (soFar - prevSoFar).coerceAtLeast(0L)
-                val speed = if (elapsedTime > 0 && bytesDiff > 0) (bytesDiff * 1000L) / elapsedTime else 0L
-                val remainingBytes = (total - soFar).coerceAtLeast(0L)
-                val eta = if (speed > 0) remainingBytes / speed else 0L
-
-                prevSoFar = soFar
-                lastTime = now
-
-                when (status) {
+                when (item.status) {
                     DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
                         showLiveNotification(
                             appContext,
                             downloadId = downloadId,
                             fileName = displayTitle,
-                            soFar = soFar,
-                            total = total,
-                            speedBytesPerSec = speed,
-                            etaSeconds = eta
+                            soFar = item.bytesDownloaded,
+                            total = item.totalSize,
+                            speedBytesPerSec = item.speedBytesPerSec,
+                            etaSeconds = item.etaSeconds
                         )
                     }
+                    DownloadManager.STATUS_PAUSED -> {
+                        showPausedNotification(appContext, downloadId)
+                    }
                     DownloadManager.STATUS_SUCCESSFUL -> {
-                        showCompletionNotification(appContext, downloadId, displayTitle, total)
+                        showCompletionNotification(appContext, downloadId, displayTitle, item.totalSize)
                         break
                     }
                     DownloadManager.STATUS_FAILED -> {
@@ -131,27 +115,16 @@ object PetalLiveAlertManager {
 
     @JvmStatic
     fun pauseDownload(context: Context, downloadId: Long) {
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
-        try {
-            // Using system DownloadManager pause logic
-            val method = dm.javaClass.getMethod("pauseDownload", Long::class.javaPrimitiveType)
-            method.invoke(dm, downloadId)
-        } catch (e: Exception) {
-            PetalDownloadEngine.pauseDownload(downloadId)
-        }
+        // android.app.DownloadManager has no public pause API - the "pauseDownload" method
+        // this used to reach via reflection doesn't exist on that class, so this always threw
+        // and silently did nothing. Fetch2 (via the bridge) genuinely supports pausing.
+        PetalFetchDownloadBridge.pause(context, downloadId)
         showPausedNotification(context, downloadId)
     }
 
     @JvmStatic
     fun resumeDownload(context: Context, downloadId: Long) {
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
-        try {
-            // Using system DownloadManager resume logic
-            val method = dm.javaClass.getMethod("resumeDownload", Long::class.javaPrimitiveType)
-            method.invoke(dm, downloadId)
-        } catch (e: Exception) {
-            PetalDownloadEngine.resumeDownload(context, downloadId)
-        }
+        PetalFetchDownloadBridge.resume(context, downloadId)
     }
 
     private fun showPausedNotification(context: Context, downloadId: Long) {
@@ -289,8 +262,22 @@ object PetalLiveAlertManager {
     ) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-        val fileUri = dm?.getUriForDownloadedFile(downloadId)
+        // downloadId is Fetch2's own id now (not a system DownloadManager row id, since
+        // addCompletedDownload() creates a separate row with its own id purely so the file
+        // shows up in the system Downloads app/Files app). Resolve the actual file via the
+        // bridge and hand it to a FileProvider content:// uri instead.
+        val item = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { it.id == downloadId }
+        val fileUri = try {
+            val path = item?.localUri?.removePrefix("file://")
+            if (!path.isNullOrEmpty()) {
+                val file = java.io.File(path)
+                if (file.exists()) {
+                    androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
+                } else null
+            } else null
+        } catch (e: Exception) {
+            null
+        }
 
         val openFileIntent = if (fileUri != null) {
             Intent(Intent.ACTION_VIEW).apply {

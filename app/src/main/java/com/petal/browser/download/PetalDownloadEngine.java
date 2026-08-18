@@ -79,6 +79,15 @@ public class PetalDownloadEngine {
      * Enqueues a high-speed multi-threaded download request.
      */
     public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders) {
+        enqueueDownload(context, url, fileName, userAgent, cookie, extraHeaders, null);
+    }
+
+    /**
+     * Enqueues a download request and reports the Fetch2-assigned download ID back once
+     * queued, so callers (e.g. BrowserUnit) can start live-tracking/notifications for the
+     * exact download that was created instead of guessing an ID.
+     */
+    public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders, java.util.function.Consumer<Integer> onEnqueued) {
         File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         if (!downloadsDir.exists()) {
             downloadsDir.mkdirs();
@@ -105,6 +114,9 @@ public class PetalDownloadEngine {
 
         fetch.enqueue(request, updatedRequest -> {
             Log.d(TAG, "Download enqueued successfully with ID: " + updatedRequest.getId() + ", file: " + filePath);
+            if (onEnqueued != null) {
+                onEnqueued.accept(updatedRequest.getId());
+            }
         }, error -> {
             Log.e(TAG, "Failed to enqueue download: " + error);
         });

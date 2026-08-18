@@ -164,43 +164,29 @@ public class BrowserUnit {
         boolean hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || BackupUnit.checkPermissionStorage(context);
         if (hasPermission) {
             try {
-                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(verifiedUrl));
                 String userAgent = WebSettings.getDefaultUserAgent(context);
-                if (userAgent != null && !userAgent.isEmpty()) {
-                    request.addRequestHeader("User-Agent", userAgent);
-                }
                 CookieManager cookieManager = CookieManager.getInstance();
                 String cookie = cookieManager.getCookie(verifiedUrl);
-                if (cookie != null) {
-                    request.addRequestHeader("Cookie", cookie);
-                }
-                request.addRequestHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-                request.addRequestHeader("Accept-Language", Locale.getDefault().toLanguageTag());
-                request.addRequestHeader("Accept-Encoding", "identity");
-                request.addRequestHeader("Connection", "keep-alive");
-                request.addRequestHeader("Cache-Control", "no-transform");
-                request.addRequestHeader("Referer", verifiedUrl);
-                request.setAllowedOverMetered(true);
-                request.setAllowedOverRoaming(true);
-                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                request.setTitle(fileName);
-                if (mimeType != null && !mimeType.isEmpty()) {
-                    request.setMimeType(mimeType);
-                }
-                request.allowScanningByMediaScanner();
-                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
-                DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-                if (manager != null) {
-                    long downloadId = manager.enqueue(request);
-                    com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(context, downloadId, fileName);
-                    try {
-                        com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(context, verifiedUrl, fileName, userAgent, cookie, null);
-                    } catch (Exception ex) {
-                        Log.e(TAG, "PetalDownloadEngine fast download fallback notice", ex);
-                    }
-                } else {
-                    throw new IllegalStateException("DownloadManager not available");
-                }
+
+                java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
+                extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+                extraHeaders.put("Accept-Language", Locale.getDefault().toLanguageTag());
+                extraHeaders.put("Accept-Encoding", "identity");
+                extraHeaders.put("Connection", "keep-alive");
+                extraHeaders.put("Cache-Control", "no-transform");
+                extraHeaders.put("Referer", verifiedUrl);
+
+                // Fetch2 is now the single download engine (it's the only one that actually
+                // supports pause/resume) - the system DownloadManager used to also enqueue the
+                // same file in parallel here, which both wasted bandwidth and left the Downloads
+                // screen's pause/resume calling into an engine (system DownloadManager) that
+                // never applied them. The finished file is still registered with the system
+                // DownloadManager/MediaStore afterwards so it shows up in the Files app etc.
+                com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(
+                        context, verifiedUrl, fileName, userAgent, cookie, extraHeaders,
+                        fetchId -> com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(
+                                context, fetchId.longValue(), fileName)
+                );
             } catch (Exception e) {
                 // Sicherer Umgang mit Fehlermeldungen ohne StringIndexOutOfBoundsException
                 String errorMessage = e.getMessage() != null ? e.getMessage() : e.toString();
