@@ -149,6 +149,7 @@ object PetalSettingsBridge {
 
 enum class SettingsCategory(val title: String, val subtitle: String, val icon: ImageVector) {
     OVERVIEW("Settings", "Browse all settings categories", Icons.Rounded.Settings),
+    API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", Icons.Rounded.Extension),
     APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", Icons.Rounded.Palette),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine, custom homepage", Icons.Rounded.Search),
@@ -441,6 +442,7 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                     )
 
                     val categories = listOf(
+                        SettingsCategory.API_INTEGRATIONS,
                         SettingsCategory.APPEARANCE,
                         SettingsCategory.PRIVACY,
                         SettingsCategory.SEARCH_HOMEPAGE,
@@ -475,6 +477,86 @@ fun PetalSettingsScreen(onBackPress: () -> Unit = {}) {
                                 onClick = { currentCategory = cat }
                             )
                         }
+                    }
+                }
+
+                // 0. Dedicated API & Integrations Hub Page
+                if ((currentCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "api webkit credential manager palette oauth incognito profile multi profile predictive back integration hub")) {
+                    SettingsCategoryCard(title = "API & Integration Hub", icon = Icons.Rounded.Extension) {
+                        Text(
+                            "Combined control dashboard for modern AndroidX & Google APIs integrated into Petal Browser:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        var isApiHubEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
+
+                        ToggleRow(
+                            title = "Enable All New API Integrations",
+                            subtitle = "Master switch to enable or disable AndroidX WebKit, Credential Manager & Palette integrations",
+                            icon = Icons.Rounded.PowerSettingsNew,
+                            checked = isApiHubEnabled,
+                            onCheckedChange = { newValue ->
+                                isApiHubEnabled = newValue
+                                sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isPaletteApiEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_palette_enabled", true)) }
+                        ToggleRow(
+                            title = "AndroidX Palette Color Extraction API",
+                            subtitle = "Extract vibrant accent colors from website favicons for ambient tab glowing & dynamic themes",
+                            icon = Icons.Rounded.Palette,
+                            checked = isPaletteApiEnabled && isApiHubEnabled,
+                            onCheckedChange = { newValue ->
+                                isPaletteApiEnabled = newValue
+                                sp.edit().putBoolean("sp_api_palette_enabled", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isMultiProfileApiEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_multiprofile_enabled", true)) }
+                        ToggleRow(
+                            title = "AndroidX WebKit Multi-Profile API",
+                            subtitle = "Isolated storage profiles for Incognito tabs preventing cross-site state leaks",
+                            icon = Icons.Rounded.VpnKey,
+                            checked = isMultiProfileApiEnabled && isApiHubEnabled,
+                            onCheckedChange = { newValue ->
+                                isMultiProfileApiEnabled = newValue
+                                sp.edit().putBoolean("sp_api_multiprofile_enabled", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isCredentialManagerApiEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_credman_enabled", true)) }
+                        ToggleRow(
+                            title = "Google OAuth Credential Manager API",
+                            subtitle = "Native Google Account sign-in consent dialogs & Chrome sync data backup",
+                            icon = Icons.Rounded.AccountCircle,
+                            checked = isCredentialManagerApiEnabled && isApiHubEnabled,
+                            onCheckedChange = { newValue ->
+                                isCredentialManagerApiEnabled = newValue
+                                sp.edit().putBoolean("sp_api_credman_enabled", newValue).apply()
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var isPredictiveBackApiEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_predictive_back_enabled", true)) }
+                        ToggleRow(
+                            title = "Android System Predictive Back API",
+                            subtitle = "Fluid gestures and exit animations integrated into system gesture navigation",
+                            icon = Icons.Rounded.Gesture,
+                            checked = isPredictiveBackApiEnabled && isApiHubEnabled,
+                            onCheckedChange = { newValue ->
+                                isPredictiveBackApiEnabled = newValue
+                                sp.edit().putBoolean("sp_api_predictive_back_enabled", newValue).apply()
+                            }
+                        )
                     }
                 }
 
