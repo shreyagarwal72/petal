@@ -864,6 +864,7 @@ fun PetalUserProfileScreen(
         }
     }
 }
+}
 
 @Composable
 private fun AccountActionRow(
