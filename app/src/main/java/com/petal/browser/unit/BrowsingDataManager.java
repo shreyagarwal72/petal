@@ -50,6 +50,13 @@ public class BrowsingDataManager {
             settings.setSaveFormData(true);
             settings.setSavePassword(true);
             settings.setGeolocationEnabled(true);
+
+            try {
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
+                    ProfileStore.getInstance().getOrCreateProfile(ProfileStore.DEFAULT_PROFILE_NAME);
+                    WebViewCompat.setProfile(webView, ProfileStore.DEFAULT_PROFILE_NAME);
+                }
+            } catch (Exception ignored) {}
         }
     }
 
@@ -93,7 +100,7 @@ public class BrowsingDataManager {
         runOnMainThreadBlocking(() -> {
             try {
                 if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
-                    Profile defaultProfile = ProfileStore.getInstance().getProfile("Default");
+                    Profile defaultProfile = ProfileStore.getInstance().getOrCreateProfile(ProfileStore.DEFAULT_PROFILE_NAME);
                     if (defaultProfile != null) {
                         defaultProfile.getWebStorage().deleteAllData();
                         defaultProfile.getCookieManager().removeAllCookies(null);
