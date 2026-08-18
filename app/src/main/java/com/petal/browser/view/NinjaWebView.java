@@ -514,6 +514,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     public synchronized void updateTitle(int progress) {
+        if (browserController == null) return;
         if (foreground && !stopped) browserController.updateProgress(progress);
         else if (foreground) browserController.updateProgress(BrowserUnit.LOADING_STOPPED);
     }

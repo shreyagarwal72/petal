@@ -431,7 +431,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     boolean isForegroundTab = record.isActive || (i == 0 && BrowserContainer.size() == 0);
                     NinjaWebView restoredWebView = new NinjaWebView(context);
                     restoredWebView.initPreferences(record.url);
-                    
+
+                    // Must be set before loadUrl(): browserController is a static field
+                    // that is null on a cold process start, and loadUrl() can trigger
+                    // Chromium's onProgressChanged callback (-> updateTitle()) almost
+                    // immediately on the main looper, before this restoration loop or
+                    // showAlbum() would otherwise get a chance to set it. Without this,
+                    // restoring the active tab on app relaunch can NPE crash the app.
+                    if (isForegroundTab) {
+                        restoredWebView.setBrowserController(this);
+                    }
+
                     if (record.url != null && !record.url.isEmpty()) {
                         restoredWebView.loadUrl(record.url);
                     } else {
@@ -4162,6 +4172,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             return false;
         });
+
+        // Must be set before loadUrl() below: browserController is a static field that
+        // can still be null (e.g. right after a cold process start) when this runs, and
+        // loadUrl() can trigger Chromium's onProgressChanged (-> updateTitle()) almost
+        // immediately on the main looper - before it would otherwise be set further down.
+        if (foreground) {
+            ninjaWebView.setBrowserController(this);
+        }
 
         if (title == null) title = getString(R.string.app_name);
         if (url == null) {
