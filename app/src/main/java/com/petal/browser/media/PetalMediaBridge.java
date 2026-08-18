@@ -135,9 +135,10 @@ public class PetalMediaBridge {
     private class MediaJsInterface {
         @JavascriptInterface
         public void triggerPip() {
-            if (activity != null) {
-                activity.runOnUiThread(() -> {
-                    enterPipIfSupported(activity, webView);
+            if (context instanceof Activity) {
+                Activity act = (Activity) context;
+                act.runOnUiThread(() -> {
+                    enterPipIfSupported(act, webView);
                 });
             }
         }
