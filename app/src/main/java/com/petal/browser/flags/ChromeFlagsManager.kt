@@ -42,6 +42,7 @@ object ChromeFlagsManager {
     private const val PREF_PREFIX = "chrome_flag_"
 
     val ALL_FLAGS = listOf(
+        // Graphics & Acceleration
         ChromeFlag(
             key = "enable-force-dark",
             title = "Auto Dark Mode for Web Contents",
@@ -55,28 +56,30 @@ object ChromeFlagsManager {
             category = FlagCategory.GRAPHICS
         ),
         ChromeFlag(
-            key = "enable-javascript-harmony",
-            title = "Experimental JavaScript Harmony & WebAssembly Features",
-            description = "Enables bleeding-edge ECMAScript language extensions, SIMD, and WebAssembly thread pooling.",
-            category = FlagCategory.EXPERIMENTAL
+            key = "smooth-scrolling",
+            title = "Hardware Accelerated Smooth Scrolling",
+            description = "Applies sub-pixel touch physics and cubic-bezier interpolation for fluid web scrolling.",
+            category = FlagCategory.GRAPHICS
         ),
         ChromeFlag(
-            key = "safe-browsing-real-time",
-            title = "Real-Time Google Safe Browsing Protection",
-            description = "Checks URLs against Google Safe Browsing API in real-time to prevent phishing and malware.",
-            category = FlagCategory.PRIVACY
+            key = "enable-gpu-rasterization",
+            title = "GPU Rasterization",
+            description = "Uses GPU hardware to rasterize web content layers for high frame rate rendering.",
+            category = FlagCategory.GRAPHICS
         ),
+        ChromeFlag(
+            key = "enable-zero-copy",
+            title = "Zero-Copy Video & Canvas Rasterizer",
+            description = "Writes rasterized tiles directly to GPU memory to reduce RAM memory copies.",
+            category = FlagCategory.GRAPHICS
+        ),
+
+        // Performance & Memory
         ChromeFlag(
             key = "offscreen-pre-raster",
             title = "Offscreen Layer Pre-Rasterization",
             description = "Pre-rasters offscreen compositor tiles before scrolling for 120Hz smooth fling rendering.",
             category = FlagCategory.PERFORMANCE
-        ),
-        ChromeFlag(
-            key = "smooth-scrolling",
-            title = "Hardware Accelerated Smooth Scrolling",
-            description = "Applies sub-pixel touch physics and cubic-bezier interpolation for fluid web scrolling.",
-            category = FlagCategory.GRAPHICS
         ),
         ChromeFlag(
             key = "media-background-playback",
@@ -91,16 +94,94 @@ object ChromeFlagsManager {
             category = FlagCategory.PERFORMANCE
         ),
         ChromeFlag(
-            key = "viewport-fit-cover",
-            title = "Edge-to-Edge Notch Viewport Fitting",
-            description = "Extends web viewports under status bar and display cutout notches seamlessly.",
-            category = FlagCategory.UI
+            key = "enable-parallel-downloading",
+            title = "Parallel Multi-Threaded Downloading",
+            description = "Accelerates file download speeds by splitting files into multiple chunk requests.",
+            category = FlagCategory.PERFORMANCE
+        ),
+        ChromeFlag(
+            key = "back-forward-cache",
+            title = "Instant Back/Forward Navigation Cache (bfcache)",
+            description = "Caches previous web pages in memory for zero-delay instant back and forward navigation.",
+            category = FlagCategory.PERFORMANCE
+        ),
+        ChromeFlag(
+            key = "enable-dns-over-https",
+            title = "DNS-over-HTTPS (DoH) Resolver",
+            description = "Encrypts DNS domain name lookups via secure HTTPS queries.",
+            category = FlagCategory.PERFORMANCE
+        ),
+
+        // Privacy & Security
+        ChromeFlag(
+            key = "safe-browsing-real-time",
+            title = "Real-Time Google Safe Browsing Protection",
+            description = "Checks URLs against Google Safe Browsing API in real-time to prevent phishing and malware.",
+            category = FlagCategory.PRIVACY
         ),
         ChromeFlag(
             key = "fingerprint-defender",
             title = "Canvas & WebGL Anti-Fingerprinting Defender",
             description = "Injects anti-tracking noise into Canvas, WebGL, and AudioContext APIs.",
             category = FlagCategory.PRIVACY
+        ),
+        ChromeFlag(
+            key = "enable-third-party-cookie-blocking",
+            title = "Block Cross-Site Third-Party Tracking Cookies",
+            description = "Blocks cross-domain tracking cookies to protect user privacy across sites.",
+            category = FlagCategory.PRIVACY
+        ),
+        ChromeFlag(
+            key = "https-first-mode",
+            title = "HTTPS-First Upgrade Mode",
+            description = "Upgrades all HTTP website requests to secure HTTPS and warns before unencrypted connections.",
+            category = FlagCategory.PRIVACY
+        ),
+
+        // Experimental Web APIs
+        ChromeFlag(
+            key = "enable-javascript-harmony",
+            title = "Experimental JavaScript Harmony & WebAssembly Features",
+            description = "Enables bleeding-edge ECMAScript language extensions, SIMD, and WebAssembly thread pooling.",
+            category = FlagCategory.EXPERIMENTAL
+        ),
+        ChromeFlag(
+            key = "enable-web-bluetooth",
+            title = "Web Bluetooth & Device Hardware API",
+            description = "Allows websites to communicate securely with nearby Bluetooth Low Energy devices.",
+            category = FlagCategory.EXPERIMENTAL
+        ),
+        ChromeFlag(
+            key = "enable-web-usb",
+            title = "WebUSB Hardware Peripheral API",
+            description = "Allows web applications to connect to external USB hardware peripherals.",
+            category = FlagCategory.EXPERIMENTAL
+        ),
+        ChromeFlag(
+            key = "enable-web-share",
+            title = "Web Share Target API Level 2",
+            description = "Allows websites to send and receive shared text, links, and media files via native share sheet.",
+            category = FlagCategory.EXPERIMENTAL
+        ),
+
+        // UI & Rendering
+        ChromeFlag(
+            key = "viewport-fit-cover",
+            title = "Edge-to-Edge Notch Viewport Fitting",
+            description = "Extends web viewports under status bar and display cutout notches seamlessly.",
+            category = FlagCategory.UI
+        ),
+        ChromeFlag(
+            key = "overlay-scrollbars",
+            title = "Overlay & Minimalist Dynamic Scrollbars",
+            description = "Replaces thick scrollbars with translucent floating overlay scrollbar pills.",
+            category = FlagCategory.UI
+        ),
+        ChromeFlag(
+            key = "enable-desktop-mode-zoom",
+            title = "Automatic Desktop Mode Page Auto-Fit",
+            description = "Automatically scales desktop website viewports to fit mobile screens perfectly.",
+            category = FlagCategory.UI
         )
     )
 
