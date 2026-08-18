@@ -53,51 +53,26 @@ public class CacheManager {
             Log.w(TAG, "Error clearing app cache directory", e);
         }
 
-        // 3. Safely clean app_webview cache directory structures if completely idle
-        try {
-            if (com.petal.browser.browser.BrowserContainer.size() == 0) {
-                File appDataDir = new File(appContext.getApplicationInfo().dataDir);
-                File appWebviewDir = new File(appDataDir, "app_webview");
-                if (appWebviewDir.exists() && appWebviewDir.isDirectory()) {
-                    cleanWebviewData(appWebviewDir);
-                }
-            } else {
-                Log.w(TAG, "Skipping raw app_webview cleanup: " +
-                        com.petal.browser.browser.BrowserContainer.size() +
-                        " tab(s) still hold live WebView instances");
-            }
-        } catch (Throwable t) {
-            Log.w(TAG, "Error cleaning app_webview directory safely", t);
-        }
-    }
-
-    /**
-     * Cleans specific subdirectories inside app_webview safely without corrupting core WebView files.
-     */
-    private static void cleanWebviewData(File appWebviewDir) {
-        // Safe Cache targets only (do NOT delete live profile databases or locks)
-        String[] targets = new String[]{
-                "Cache",
-                "Code Cache",
-                "GPUCache",
-                "blob_storage"
-        };
-
-        File defaultDir = new File(appWebviewDir, "Default");
-        for (String targetName : targets) {
-            // Check direct root
-            File rootTarget = new File(appWebviewDir, targetName);
-            if (rootTarget.exists()) {
-                deleteDir(rootTarget);
-            }
-            // Check Default profile dir
-            if (defaultDir.exists() && defaultDir.isDirectory()) {
-                File defaultTarget = new File(defaultDir, targetName);
-                if (defaultTarget.exists()) {
-                    deleteDir(defaultTarget);
-                }
-            }
-        }
+        // NOTE: We intentionally do NOT manually delete files inside app_webview
+        // (Cache, Code Cache, GPUCache, blob_storage) here.
+        //
+        // Even after every NinjaWebView instance has been destroyed, Chromium's
+        // WebView engine keeps process-wide singleton caches (HTTP disk cache,
+        // V8 code cache, GPU shader cache) backed by memory-mapped index files.
+        // Those singletons are not guaranteed to be torn down just because the
+        // Java-level WebView objects are gone, since this cleanup can run from
+        // onDestroy() while the app process (and the in-process WebView engine)
+        // is still alive.
+        //
+        // Deleting those files out from under a live Chromium instance can
+        // corrupt the on-disk cache index. That corruption doesn't crash the
+        // app immediately - it crashes the *next* time the app launches and
+        // Chromium tries to reinitialize against the now-corrupted cache files.
+        //
+        // Step 1 above (webView.clearCache(true), clearHttpResponseCache(),
+        // clearProfileCacheAndStorage()) already clears these caches through
+        // WebView's own safe, coordinated APIs, so this raw filesystem cleanup
+        // is both redundant and dangerous. Do not reintroduce it.
     }
 
     /**
