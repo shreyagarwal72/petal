@@ -332,16 +332,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (sp.getBoolean("sp_biometric_lock", false)) {
-            com.petal.browser.security.BiometricLockManager.INSTANCE.authenticate(
+            com.petal.browser.security.BiometricLockManager.authenticate(
                 this,
                 "Petal Browser Locked",
                 "Authenticate using biometric or PIN to continue",
-                () -> {
-                    // Success: user authenticated
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        // Success: user authenticated
+                    }
                 },
-                (error) -> {
-                    Toast.makeText(this, "Biometric authentication required: " + error, Toast.LENGTH_SHORT).show();
-                    finish();
+                new java.util.function.Consumer<String>() {
+                    @Override
+                    public void accept(String error) {
+                        Toast.makeText(BrowserActivity.this, "Biometric authentication required: " + error, Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
                 }
             );
         }

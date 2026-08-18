@@ -498,17 +498,17 @@ fun PetalUserProfileScreen(
                                     val activity = context as? androidx.appcompat.app.AppCompatActivity
                                     if (checked && activity != null) {
                                         com.petal.browser.security.BiometricLockManager.authenticate(
-                                            activity = activity,
-                                            title = "Enable Biometric App Lock",
-                                            subtitle = "Verify your fingerprint or PIN to enable lock",
-                                            onSuccess = {
+                                            activity,
+                                            "Enable Biometric App Lock",
+                                            "Verify your fingerprint or PIN to enable lock",
+                                            Runnable {
                                                 isBiometricEnabled = true
                                                 sp.edit().putBoolean("sp_biometric_lock", true).apply()
                                                 coroutineScope.launch {
                                                     snackbarHostState.showSnackbar("Biometric App Lock enabled & verified")
                                                 }
                                             },
-                                            onError = { error ->
+                                            java.util.function.Consumer { error ->
                                                 isBiometricEnabled = false
                                                 sp.edit().putBoolean("sp_biometric_lock", false).apply()
                                                 coroutineScope.launch {
@@ -531,17 +531,17 @@ fun PetalUserProfileScreen(
                             val newChecked = !isBiometricEnabled
                             if (newChecked && activity != null) {
                                 com.petal.browser.security.BiometricLockManager.authenticate(
-                                    activity = activity,
-                                    title = "Enable Biometric App Lock",
-                                    subtitle = "Verify your fingerprint or PIN to enable lock",
-                                    onSuccess = {
+                                    activity,
+                                    "Enable Biometric App Lock",
+                                    "Verify your fingerprint or PIN to enable lock",
+                                    Runnable {
                                         isBiometricEnabled = true
                                         sp.edit().putBoolean("sp_biometric_lock", true).apply()
                                         coroutineScope.launch {
                                             snackbarHostState.showSnackbar("Biometric App Lock enabled & verified")
                                         }
                                     },
-                                    onError = { error ->
+                                    java.util.function.Consumer { error ->
                                         coroutineScope.launch {
                                             snackbarHostState.showSnackbar("Biometric setup failed: $error")
                                         }

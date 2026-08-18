@@ -15,6 +15,7 @@ object BiometricLockManager {
     /**
      * Checks if biometric or device credential authentication is available on the device.
      */
+    @JvmStatic
     fun canAuthenticate(context: Context): Boolean {
         val biometricManager = BiometricManager.from(context)
         val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -28,19 +29,21 @@ object BiometricLockManager {
     /**
      * Triggers the AndroidX BiometricPrompt for app lock authentication.
      */
+    @JvmStatic
+    @JvmOverloads
     fun authenticate(
         activity: AppCompatActivity,
         title: String = "Petal Browser App Lock",
         subtitle: String = "Unlock with biometric or device PIN/pattern",
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit
+        onSuccess: Runnable,
+        onError: java.util.function.Consumer<String>
     ) {
         val executor: Executor = ContextCompat.getMainExecutor(activity)
 
         val callback = object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
-                onSuccess()
+                onSuccess.run()
             }
 
             override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
@@ -48,9 +51,9 @@ object BiometricLockManager {
                 if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
                     errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON
                 ) {
-                    onError(errString.toString())
+                    onError.accept(errString.toString())
                 } else {
-                    onError("Authentication cancelled")
+                    onError.accept("Authentication cancelled")
                 }
             }
 
@@ -76,7 +79,7 @@ object BiometricLockManager {
             biometricPrompt.authenticate(promptInfoBuilder.build())
         } catch (e: Exception) {
             e.printStackTrace()
-            onError(e.message ?: "Failed to launch biometric authentication")
+            onError.accept(e.message ?: "Failed to launch biometric authentication")
         }
     }
 }
