@@ -44,6 +44,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -426,19 +427,47 @@ fun PetalSettingsScreen(
                 isLeftEdge = backIsLeftEdge,
             )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .graphicsLayer {
-                        scaleX = backFrame.scale
-                        scaleY = backFrame.scale
-                        this.alpha = backFrame.alpha
-                        translationX = backFrame.translationXDp.dp.toPx()
-                        clip = animatedBackProgress > 0.01f
-                        shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
-                    }
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                val previewBitmap = remember(animatedBackProgress > 0f) {
+                    com.petal.browser.animation.predictiveback.PagePreviewCache.get(
+                        com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN
+                    )
+                }
+                if (previewBitmap != null && animatedBackProgress > 0.001f) {
+                    val underlay = com.petal.browser.animation.predictiveback.PredictiveBackStyle.underlayFrameFor(
+                        animation = predictiveBackAnim,
+                        exitDirection = predictiveBackExitDir,
+                        progress = animatedBackProgress,
+                        isLeftEdge = backIsLeftEdge,
+                    )
+                    androidx.compose.foundation.Image(
+                        bitmap = previewBitmap.asImageBitmap(),
+                        contentDescription = null,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = underlay.scale
+                                scaleY = underlay.scale
+                                this.alpha = underlay.alpha
+                                translationX = underlay.translationXDp.dp.toPx()
+                            }
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .graphicsLayer {
+                            scaleX = backFrame.scale
+                            scaleY = backFrame.scale
+                            this.alpha = backFrame.alpha
+                            translationX = backFrame.translationXDp.dp.toPx()
+                            clip = animatedBackProgress > 0.01f
+                            shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
+                        }
+                ) {
                 if (isLoading) {
                     com.petal.browser.compose.composable.ContainedLoadingIndicator(
                         modifier = Modifier.fillMaxSize()

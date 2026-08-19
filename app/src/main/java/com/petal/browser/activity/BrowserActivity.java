@@ -719,14 +719,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE) {
                 return null;
             }
-            if (ninjaWebView != null && ninjaWebView.canGoBack()) {
+            if (ninjaWebView != null) {
                 android.webkit.WebBackForwardList list = ninjaWebView.copyBackForwardList();
-                int currentIndex = list.getCurrentIndex();
-                if (currentIndex > 0) {
-                    String prevUrl = list.getItemAtIndex(currentIndex - 1).getUrl();
-                    return com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(prevUrl);
+                if (list != null) {
+                    int currentIndex = list.getCurrentIndex();
+                    if (currentIndex > 0) {
+                        String prevUrl = list.getItemAtIndex(currentIndex - 1).getUrl();
+                        return com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(prevUrl);
+                    }
                 }
-                return null;
             }
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
             String homeUrl = sp.getString("favoriteURL", "about:blank");
