@@ -965,31 +965,59 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             boolean isPipSupported = getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
             boolean isAutoPipEnabled = sp.getBoolean("sp_auto_pip", true);
+            boolean isPipPermissionAsked = sp.getBoolean("sp_pip_asked", false);
             boolean hasMediaPlaying = isMediaPlaying || customView != null || fullscreenHolder != null || videoView != null;
 
-            if (isPipSupported && isAutoPipEnabled && hasMediaPlaying) {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                        pipBuilder.setAutoEnterEnabled(true);
-                    }
-                    View targetView = customView != null ? customView : (videoView != null ? videoView : (ninjaWebView != null ? ninjaWebView : contentFrame));
-                    if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
-                        int width = targetView.getWidth();
-                        int height = targetView.getHeight();
-                        android.util.Rational aspectRatio = new android.util.Rational(Math.max(1, width), Math.max(1, height));
-                        pipBuilder.setAspectRatio(aspectRatio);
-                        android.graphics.Rect rect = new android.graphics.Rect();
-                        targetView.getGlobalVisibleRect(rect);
-                        pipBuilder.setSourceRectHint(rect);
-                    }
-                    enterPictureInPictureMode(pipBuilder.build());
+            if (isPipSupported && hasMediaPlaying) {
+                if (!isPipPermissionAsked) {
+                    sp.edit().putBoolean("sp_pip_asked", true).apply();
+                    new androidx.appcompat.app.AlertDialog.Builder(this)
+                            .setTitle("Picture-in-Picture Permission")
+                            .setMessage("Would you like Petal Browser to automatically enter Picture-in-Picture mode when minimizing the app during video playback?")
+                            .setPositiveButton("Allow", (dialog, which) -> {
+                                sp.edit().putBoolean("sp_auto_pip", true).apply();
+                                triggerSystemPipMode();
+                            })
+                            .setNegativeButton("Don't Allow", (dialog, which) -> {
+                                sp.edit().putBoolean("sp_auto_pip", false).apply();
+                            })
+                            .show();
+                } else if (isAutoPipEnabled) {
+                    triggerSystemPipMode();
                 }
-            } else if (customView != null || fullscreenHolder != null) {
-                com.petal.browser.media.PetalMediaBridge.enterPipIfSupported(this, customView);
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void triggerSystemPipMode() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            try {
+                android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    pipBuilder.setAutoEnterEnabled(true);
+                }
+                View targetView = customView != null ? customView : (videoView != null ? videoView : (ninjaWebView != null ? ninjaWebView : contentFrame));
+                if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
+                    int width = targetView.getWidth();
+                    int height = targetView.getHeight();
+                    float ratio = (float) width / (float) height;
+                    if (ratio > 2.39f) ratio = 2.39f;
+                    if (ratio < 0.418f) ratio = 0.418f;
+                    android.util.Rational aspectRatio = new android.util.Rational((int) (ratio * 1000), 1000);
+                    pipBuilder.setAspectRatio(aspectRatio);
+
+                    android.graphics.Rect rect = new android.graphics.Rect();
+                    targetView.getGlobalVisibleRect(rect);
+                    if (!rect.isEmpty()) {
+                        pipBuilder.setSourceRectHint(rect);
+                    }
+                }
+                enterPictureInPictureMode(pipBuilder.build());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -2786,21 +2814,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     boolean isBgPlayEnabled = sp.getBoolean("sp_background_play", false);
 
                     if (isPipSupported && isAutoPipEnabled) {
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                            try {
-                                android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
-                                View targetView = customView != null ? customView : (videoView != null ? videoView : contentFrame);
-                                if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
-                                    android.util.Rational aspectRatio = new android.util.Rational(targetView.getWidth(), targetView.getHeight());
-                                    pipBuilder.setAspectRatio(aspectRatio);
-                                } else {
-                                    pipBuilder.setAspectRatio(new android.util.Rational(16, 9));
-                                }
-                                enterPictureInPictureMode(pipBuilder.build());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
+                        triggerSystemPipMode();
                     } else if (isBgPlayEnabled) {
                         NinjaToast.show(BrowserActivity.this, "Playing media in background mode");
                         moveTaskToBack(true);
