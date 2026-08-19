@@ -538,39 +538,6 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
             }
         }
 
-        Spacer(Modifier.height(10.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.horizontalScroll(rememberScrollState())
-        ) {
-            FilterChip(
-                selected = false,
-                onClick = { onSearch("https://google.com") },
-                label = { Text("Google", style = MaterialTheme.typography.labelMedium) },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                shape = RoundedCornerShape(14.dp)
-            )
-            FilterChip(
-                selected = false,
-                onClick = { onSearch("about:bookmarks") },
-                label = { Text("Bookmarks", style = MaterialTheme.typography.labelMedium) },
-                leadingIcon = { Icon(Icons.Rounded.Bookmark, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                shape = RoundedCornerShape(14.dp)
-            )
-            FilterChip(
-                selected = false,
-                onClick = { onSearch("about:history") },
-                label = { Text("History", style = MaterialTheme.typography.labelMedium) },
-                leadingIcon = { Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                shape = RoundedCornerShape(14.dp)
-            )
-            FilterChip(
-                selected = false,
-                onClick = { onSearch("about:downloads") },
-                label = { Text("Downloads", style = MaterialTheme.typography.labelMedium) },
-                leadingIcon = { Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                shape = RoundedCornerShape(14.dp)
-            )
         }
     }
 }
