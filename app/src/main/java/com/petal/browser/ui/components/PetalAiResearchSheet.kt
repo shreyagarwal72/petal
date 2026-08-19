@@ -463,12 +463,7 @@ fun PetalAiResearchSheet(
 
                         Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                        Text(
-                            text = response,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = 22.sp
-                        )
+                        PetalMarkdownText(markdown = response)
                     }
                 }
             }
