@@ -393,7 +393,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             v.setBackgroundColor(ContextCompat.getColor(context, R.color.md_theme_background));
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
             controller.setAppearanceLightStatusBars(false);
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, isKeyboardVisible ? keyboardHeight : 0);
+
+            v.setPadding(systemBars.left, 0, systemBars.right, isKeyboardVisible ? keyboardHeight : 0);
+
+            View addressBar = findViewById(R.id.compose_address_bar);
+            if (addressBar != null) {
+                addressBar.setPadding(0, systemBars.top, 0, 0);
+            }
 
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
             if (bottomNavContainer != null) {
