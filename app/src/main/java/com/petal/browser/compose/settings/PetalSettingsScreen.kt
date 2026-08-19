@@ -235,7 +235,7 @@ fun PetalSettingsScreen(
     var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
     var isJavaScript by remember { mutableStateOf(sp.getBoolean("sp_javascript", true)) }
     var isBlockPopups by remember { mutableStateOf(sp.getBoolean("sp_block_popups", true)) }
-    var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", true)) }
+    var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", false)) }
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
     var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
     var predictiveBackAnim by remember {

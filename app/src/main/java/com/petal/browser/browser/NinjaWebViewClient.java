@@ -517,12 +517,10 @@ public class NinjaWebViewClient extends WebViewClient {
             return true;
         }
 
-        boolean autoOpenApps = sp.getBoolean("sp_auto_open_apps", true);
+        boolean autoOpenApps = sp.getBoolean("sp_auto_open_apps", false);
         if (autoOpenApps) {
             if (url.startsWith("intent://") || url.startsWith("market://") || url.startsWith("whatsapp://") ||
-                url.startsWith("tg://") || url.startsWith("tel:") || url.startsWith("mailto:") ||
-                url.contains("youtube.com/watch") || url.contains("youtu.be/") ||
-                url.contains("maps.google.com") || url.contains("play.google.com/store")) {
+                url.startsWith("tg://") || url.startsWith("tel:") || url.startsWith("mailto:")) {
                 try {
                     Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
                     if (intent != null) {
