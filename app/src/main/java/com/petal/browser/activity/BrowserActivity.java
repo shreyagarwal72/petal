@@ -2413,7 +2413,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         });
     }
 
-    private void showOverview() {
+    @Override
+    public void showOverview() {
         try {
             View bottomNav = findViewById(R.id.bottom_nav_compose);
             if (bottomNav != null) bottomNav.setVisibility(GONE);
