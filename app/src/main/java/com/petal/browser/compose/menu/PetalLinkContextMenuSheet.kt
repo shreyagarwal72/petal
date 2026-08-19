@@ -223,12 +223,24 @@ object PetalLinkContextMenuBridge {
         faviconUrl: String? = null,
         handler: PetalLinkContextMenuHandler
     ) {
-        var composeView: ComposeView? = null
-        composeView = ComposeView(activity).apply {
+        val rootGroup = activity.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return
+        val composeView = ComposeView(activity)
+
+        val dismissAction = {
+            activity.runOnUiThread {
+                try {
+                    rootGroup.removeView(composeView)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        composeView.apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrWithLifecycle)
             setContent {
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
@@ -255,16 +267,14 @@ object PetalLinkContextMenuBridge {
                         linkTitle = linkTitle,
                         linkUrl = linkUrl,
                         faviconUrl = faviconUrl,
-                        onDismiss = {
-                            val parent = composeView?.parent as? android.view.ViewGroup
-                            parent?.removeView(composeView)
-                        },
+                        onDismiss = dismissAction,
                         handler = handler
                     )
                 }
             }
         }
-        activity.addContentView(
+
+        rootGroup.addView(
             composeView,
             android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
