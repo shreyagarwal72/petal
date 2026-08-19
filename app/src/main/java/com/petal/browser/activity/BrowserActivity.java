@@ -632,6 +632,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * nav / predictive back) below, so both routes behave identically.
      */
     private void performBackNavigation() {
+        View currentFocus = getCurrentFocus();
+        boolean isKeyboardVisible = false;
+        View mainView = findViewById(R.id.main);
+        if (mainView != null) {
+            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(mainView);
+            if (insets != null) {
+                isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+            }
+        }
+        if (isKeyboardVisible || currentFocus != null) {
+            HelperUnit.hideSoftKeyboard(this, currentFocus);
+            if (isKeyboardVisible) {
+                return;
+            }
+        }
+
         if (fullscreenHolder != null || customView != null || videoView != null) {
             Log.v(TAG, "Petal in fullscreen mode");
         } else if (dialogOverview != null && dialogOverview.isShowing()) {

@@ -431,6 +431,21 @@ public class HelperUnit {
         }, 500);
     }
 
+    public static void hideSoftKeyboard(Context context, View view) {
+        if (context == null) return;
+        InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            if (view != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            } else if (context instanceof android.app.Activity) {
+                View currentFocus = ((android.app.Activity) context).getCurrentFocus();
+                if (currentFocus != null) {
+                    imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
+                }
+            }
+        }
+    }
+
     public static void setupDialog(Context context, Dialog dialog) {
         try {
             if (dialog == null) return;
