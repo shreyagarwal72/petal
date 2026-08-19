@@ -634,6 +634,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private void performBackNavigation() {
         if (fullscreenHolder != null || customView != null || videoView != null) {
             Log.v(TAG, "Petal in fullscreen mode");
+        } else if (dialogOverview != null && dialogOverview.isShowing()) {
+            hideOverview();
         } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
             searchOnSiteInput.setText("");
             searchOnSiteLayout.setVisibility(GONE);
@@ -1384,7 +1386,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public synchronized void removeAlbum(final AlbumController controller) {
-
         if (BrowserContainer.size() <= 1) {
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
             String homeUrl = sp.getString("favoriteURL", "about:blank");
@@ -1397,6 +1398,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             updateOmniBox();
             updatePersistentBottomNav();
             saveOpenedTabs();
+            // Ensure user stays on the tab switcher menu view when 0/1 tabs remain
+            showOverview();
         } else {
             // closeTabConfirmation() runs okAction asynchronously (it waits for the
             // user to tap "OK" on a Snackbar) when the "confirm before closing tab"

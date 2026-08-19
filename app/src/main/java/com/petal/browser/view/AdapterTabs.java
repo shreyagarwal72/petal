@@ -62,9 +62,7 @@ public class AdapterTabs {
         albumClose.setVisibility(View.VISIBLE);
         albumClose.setOnClickListener(view -> {
             browserController.removeAlbum(albumController);
-            if (BrowserContainer.size() < 2) {
-                browserController.hideOverview();
-            }
+            browserController.showOverview();
         });
         assert albumCardView != null;
         albumView.setOnLongClickListener(v -> {
