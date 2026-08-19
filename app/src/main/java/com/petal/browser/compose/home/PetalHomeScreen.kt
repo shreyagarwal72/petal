@@ -538,8 +538,6 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                 }
             }
         }
-
-        }
     }
 }
 
