@@ -11,6 +11,7 @@ import android.animation.ObjectAnimator;
 import androidx.dynamicanimation.animation.SpringForce;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import androidx.appcompat.app.AppCompatDelegate;
 import android.app.Dialog;
 import android.app.DownloadManager;
 import android.app.NotificationChannel;
