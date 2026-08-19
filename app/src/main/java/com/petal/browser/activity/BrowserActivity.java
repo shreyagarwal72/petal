@@ -641,11 +641,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
             }
         }
-        if (isKeyboardVisible || currentFocus != null) {
+        if (isKeyboardVisible) {
             HelperUnit.hideSoftKeyboard(this, currentFocus);
-            if (isKeyboardVisible) {
-                return;
-            }
+            return;
         }
 
         if (fullscreenHolder != null || customView != null || videoView != null) {
