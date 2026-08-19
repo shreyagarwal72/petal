@@ -1944,6 +1944,9 @@ fun PetalSettingsScreen(
         }
     }
 }
+}
+}
+}
 
 @Composable
 private fun SettingsCategoryCard(
