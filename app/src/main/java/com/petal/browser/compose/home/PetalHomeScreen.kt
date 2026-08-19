@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -157,12 +158,33 @@ val availableIcons = listOf(
     "lock" to "Lock"
 )
 
+val FlowerShape: Shape = GenericShape { size, _ ->
+    val cx = size.width / 2f
+    val cy = size.height / 2f
+    val maxR = Math.min(cx, cy)
+    val petals = 5
+    var first = true
+    for (i in 0..360 step 2) {
+        val rad = Math.toRadians(i.toDouble())
+        val r = maxR * (0.81f + 0.19f * Math.cos(petals * rad - Math.PI / 2).toFloat())
+        val x = (cx + r * Math.cos(rad)).toFloat()
+        val y = (cy + r * Math.sin(rad)).toFloat()
+        if (first) {
+            moveTo(x, y)
+            first = false
+        } else {
+            lineTo(x, y)
+        }
+    }
+    close()
+}
+
 val petalShapes: List<Shape> = listOf(
-    RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomStart = 32.dp, bottomEnd = 8.dp),
-    RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomStart = 8.dp, bottomEnd = 32.dp),
-    RoundedCornerShape(topStart = 32.dp, topEnd = 8.dp, bottomStart = 32.dp, bottomEnd = 32.dp),
-    RoundedCornerShape(topStart = 8.dp, topEnd = 32.dp, bottomStart = 32.dp, bottomEnd = 32.dp),
-    RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
+    FlowerShape,
+    FlowerShape,
+    FlowerShape,
+    FlowerShape,
+    FlowerShape
 )
 
 // ── 2. Java Interop Callback Interface & Bridge ───────────────────────────
@@ -561,7 +583,7 @@ private fun PetalBloom(
     ) {
         // Center 5-Petal Flower App Icon (Non-clickable)
         Surface(
-            shape = CircleShape,
+            shape = FlowerShape,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 4.dp,
             shadowElevation = 2.dp,
@@ -571,7 +593,7 @@ private fun PetalBloom(
                 AsyncImage(
                     model = com.petal.browser.R.mipmap.ic_launcher_round,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize().clip(CircleShape)
+                    modifier = Modifier.fillMaxSize().clip(FlowerShape)
                 )
             }
         }
