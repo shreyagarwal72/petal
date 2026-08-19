@@ -217,36 +217,22 @@ public class HelperUnit {
                                 });
                                 snackbar.show();
                             } else {
-                                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
                                 String userAgent = WebSettings.getDefaultUserAgent(activity);
-                                if (userAgent != null && !userAgent.isEmpty()) {
-                                    request.addRequestHeader("User-Agent", userAgent);
-                                }
                                 CookieManager cookieManager = CookieManager.getInstance();
                                 String cookie = cookieManager.getCookie(url);
-                                if (cookie != null) {
-                                    request.addRequestHeader("Cookie", cookie);
-                                }
-                                request.addRequestHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-                                request.addRequestHeader("Accept-Language", Locale.getDefault().toLanguageTag());
-                                request.addRequestHeader("Accept-Encoding", "identity");
-                                request.addRequestHeader("Connection", "keep-alive");
-                                request.addRequestHeader("Cache-Control", "no-transform");
-                                request.addRequestHeader("Referer", url);
-                                request.setAllowedOverMetered(true);
-                                request.setAllowedOverRoaming(true);
-                                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                                request.setTitle(finalFileName);
-                                request.allowScanningByMediaScanner();
-                                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, finalFileName);
-                                DownloadManager manager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
-                                assert manager != null;
-                                if (BackupUnit.checkPermissionStorage(activity)) {
-                                    long downloadId = manager.enqueue(request);
-                                    com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(activity, downloadId, finalFileName);
-                                } else {
-                                    BackupUnit.requestPermission(activity);
-                                }
+                                java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
+                                extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+                                extraHeaders.put("Accept-Language", Locale.getDefault().toLanguageTag());
+                                extraHeaders.put("Accept-Encoding", "identity");
+                                extraHeaders.put("Connection", "keep-alive");
+                                extraHeaders.put("Cache-Control", "no-transform");
+                                extraHeaders.put("Referer", url);
+
+                                com.petal.browser.download.PetalDownloadEngine.getInstance(activity).enqueueDownload(
+                                        activity, url, finalFileName, userAgent, cookie, extraHeaders,
+                                        (fetchId, resolvedName) -> com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(
+                                                activity, fetchId.longValue(), resolvedName)
+                                );
                             }
                         } catch (Exception e) {
                             System.out.println("Error Downloading File: " + e);

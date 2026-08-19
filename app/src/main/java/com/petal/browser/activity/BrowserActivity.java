@@ -4235,11 +4235,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void onDownloadLink() {
                             try {
-                                android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(android.net.Uri.parse(urlResult));
-                                request.allowScanningByMediaScanner();
-                                request.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                                android.app.DownloadManager manager = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-                                if (manager != null) manager.enqueue(request);
+                                String fileName = android.webkit.URLUtil.guessFileName(urlResult, null, null);
+                                com.petal.browser.unit.BrowserUnit.download(BrowserActivity.this, urlResult, fileName, null);
                                 NinjaToast.show(BrowserActivity.this, "Download started");
                             } catch (Exception e) {
                                 NinjaToast.show(BrowserActivity.this, "Failed to start download");

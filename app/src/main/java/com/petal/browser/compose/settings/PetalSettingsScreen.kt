@@ -1246,7 +1246,7 @@ fun PetalSettingsScreen(
                             checked = isBlockPopups,
                             onCheckedChange = { newValue ->
                                 isBlockPopups = newValue
-                                sp.edit().putBoolean("sp_block_popups", newValue).putBoolean("profileStandard_javascriptPopUp", !newValue).apply()
+                                sp.edit().putBoolean("sp_block_popups", newValue).putBoolean("profileStandard_javascriptPopUp", newValue).apply()
                             }
                         )
 
@@ -1943,6 +1943,7 @@ fun PetalSettingsScreen(
             }
         }
     }
+}
 }
 
 @Composable
