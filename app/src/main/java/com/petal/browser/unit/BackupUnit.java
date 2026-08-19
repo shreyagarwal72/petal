@@ -24,6 +24,7 @@ import static android.os.Environment.DIRECTORY_DOCUMENTS;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
