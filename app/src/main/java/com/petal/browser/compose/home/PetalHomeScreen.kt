@@ -417,11 +417,18 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
         }
     }
 
+    val isSearching = searchText.isNotBlank()
+    val searchShapeCorner by animateFloatAsState(
+        targetValue = if (isSearching) 16f else 28f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
+        label = "M3ESearchShape"
+    )
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(searchShapeCorner.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 2.dp,
+            tonalElevation = if (isSearching) 6.dp else 2.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 56.dp),
@@ -528,7 +535,41 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                         }
                     }
                 }
-            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.horizontalScroll(rememberScrollState())
+        ) {
+            FilterChip(
+                selected = false,
+                onClick = { onSearch("https://google.com") },
+                label = { Text("Google", style = MaterialTheme.typography.labelMedium) },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                shape = RoundedCornerShape(14.dp)
+            )
+            FilterChip(
+                selected = false,
+                onClick = { onSearch("about:bookmarks") },
+                label = { Text("Bookmarks", style = MaterialTheme.typography.labelMedium) },
+                leadingIcon = { Icon(Icons.Rounded.Bookmark, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                shape = RoundedCornerShape(14.dp)
+            )
+            FilterChip(
+                selected = false,
+                onClick = { onSearch("about:history") },
+                label = { Text("History", style = MaterialTheme.typography.labelMedium) },
+                leadingIcon = { Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                shape = RoundedCornerShape(14.dp)
+            )
+            FilterChip(
+                selected = false,
+                onClick = { onSearch("about:downloads") },
+                label = { Text("Downloads", style = MaterialTheme.typography.labelMedium) },
+                leadingIcon = { Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                shape = RoundedCornerShape(14.dp)
+            )
         }
     }
 }

@@ -473,12 +473,14 @@ private fun PetalTabCard(
         BorderStroke(1.dp, if (isIncognitoMode) Color(0xFF383944) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     }
 
+    val expressiveShape = RoundedCornerShape(topStart = 24.dp, topEnd = 10.dp, bottomEnd = 24.dp, bottomStart = 10.dp)
+
     Surface(
-        shape = RoundedCornerShape(18.dp),
+        shape = expressiveShape,
         color = cardBg,
         border = borderStroke,
-        tonalElevation = if (tab.isSelected) 8.dp else 2.dp,
-        shadowElevation = 4.dp,
+        tonalElevation = if (tab.isSelected) 10.dp else 2.dp,
+        shadowElevation = if (tab.isSelected) 8.dp else 2.dp,
         modifier = Modifier
             .fillMaxWidth()
             .height(180.dp)

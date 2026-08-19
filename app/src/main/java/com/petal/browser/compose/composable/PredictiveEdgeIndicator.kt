@@ -70,14 +70,21 @@ fun EdgeGestureIndicator(
             contentAlignment = if (isLeftEdge) Alignment.CenterStart else Alignment.CenterEnd
         ) {
             val clamped = progress.coerceIn(0f, 1f)
-            // Bubble starts mostly off-screen at the edge and slides in as the user drags,
-            // the same way the refresh bubble scales/fades in rather than appearing at full size instantly.
-            val travelPx = 56.dp
-            val currentScale = 0.5f + (clamped * 0.5f)
-            val currentAlpha = (clamped * 2.2f).coerceIn(0f, 1f)
+            val springProgress by androidx.compose.animation.core.animateFloatAsState(
+                targetValue = clamped,
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                ),
+                label = "M3EEdgeSpring"
+            )
+            val travelPx = 64.dp
+            val currentScale = 0.5f + (springProgress * 0.55f)
+            val currentAlpha = (springProgress * 2.2f).coerceIn(0f, 1f)
+            val cornerPercent = (50 - (springProgress * 20).toInt()).coerceIn(30, 50)
 
             Surface(
-                shape = androidx.compose.foundation.shape.CircleShape,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerPercent),
                 color = MaterialTheme.colorScheme.surfaceContainerHighest,
                 tonalElevation = 12.dp,
                 shadowElevation = 12.dp,
