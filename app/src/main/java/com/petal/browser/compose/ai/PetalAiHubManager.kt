@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 object PetalAiHubManager {
 
-    private const val CLOUD_BASE_URL = "https://silentcoderhere.github.io/aihub-config-data/"
+    private const val CLOUD_BASE_URL = "https://raw.githubusercontent.com/shreyagarwal72/petal-aihub-config/main/"
     private const val AI_SERVICES_FILE = "ais.json"
     private const val DOMAINS_FILE = "domains.txt"
 
