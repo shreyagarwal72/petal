@@ -8,9 +8,9 @@
 
   <h3>Fast, Ultra-Lightweight & Privacy-Focused Android Browser built with Material 3 Expressive Design & Jetpack Compose</h3>
 
-  [![Latest Release](https://img.shields.io/github/v/release/shreyagarwal72/foss_browser?color=0075ff&style=for-the-badge)](https://github.com/shreyagarwal72/foss_browser/releases/latest)
-  [![Build Status](https://img.shields.io/github/actions/workflow/status/shreyagarwal72/foss_browser/build.yml?branch=main&style=for-the-badge)](https://github.com/shreyagarwal72/foss_browser/actions)
-  [![License](https://img.shields.io/github/license/shreyagarwal72/foss_browser?color=purple&style=for-the-badge)](LICENSE.md)
+  [![Latest Release](https://img.shields.io/github/v/release/shreyagarwal72/petal?color=0075ff&style=for-the-badge)](https://github.com/shreyagarwal72/petal/releases/latest)
+  [![Build Status](https://img.shields.io/github/actions/workflow/status/shreyagarwal72/petal/build.yml?branch=main&style=for-the-badge)](https://github.com/shreyagarwal72/petal/actions)
+  [![License](https://img.shields.io/github/license/shreyagarwal72/petal?color=purple&style=for-the-badge)](LICENSE.md)
 
 </div>
 

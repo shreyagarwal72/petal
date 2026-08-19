@@ -1885,7 +1885,7 @@ fun PetalSettingsScreen(
                                         OutlinedButton(
                                             onClick = {
                                                 try {
-                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser/"))
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/"))
                                                 } catch (e: Exception) { e.printStackTrace() }
                                             },
                                             shape = RoundedCornerShape(12.dp),
@@ -1917,7 +1917,7 @@ fun PetalSettingsScreen(
                                         Button(
                                             onClick = {
                                                 try {
-                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/foss_browser/issues"))
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/issues"))
                                                 } catch (e: Exception) { e.printStackTrace() }
                                             },
                                             shape = RoundedCornerShape(12.dp),

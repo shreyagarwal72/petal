@@ -37,7 +37,8 @@ import java.util.concurrent.Executors;
 public class UpdateUnit {
 
     private static final String TAG = "UpdateUnit";
-    private static final String GITHUB_RELEASES_API = "https://api.github.com/repos/shreyagarwal72/foss_browser/releases/latest";
+    private static final String GITHUB_RELEASES_API = "https://api.github.com/repos/shreyagarwal72/petal/releases/latest";
+    private static final String GITHUB_RELEASES_PAGE = "https://github.com/shreyagarwal72/petal/releases";
     private static final String PREF_KEY_LAST_CHECK_TIME = "sp_update_last_check_timestamp";
     private static final String PREF_KEY_SKIP_VERSION = "sp_update_skipped_version";
 
@@ -84,7 +85,7 @@ public class UpdateUnit {
                     final String releaseNotes = json.optString("body", "Performance polish, security enhancements, and stability improvements.");
 
                     // Locate direct APK asset download URL if available, fallback to html_url release page
-                    String apkDownloadUrl = json.optString("html_url", "https://github.com/shreyagarwal72/foss_browser/releases");
+                    String apkDownloadUrl = json.optString("html_url", "https://github.com/shreyagarwal72/petal/releases");
                     JSONArray assets = json.optJSONArray("assets");
                     if (assets != null && assets.length() > 0) {
                         for (int i = 0; i < assets.length(); i++) {
