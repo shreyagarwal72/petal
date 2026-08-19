@@ -1724,6 +1724,13 @@ fun PetalSettingsScreen(
                                 }
                             }
                         }
+
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Downgrade Data Protection: Automatic snapshots are saved to Documents/browser_backup/petal_downgrade_snapshot.json whenever app version updates, allowing seamless data restoration if downgrading to older versions.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
 

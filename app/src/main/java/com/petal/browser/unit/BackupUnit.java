@@ -537,6 +537,83 @@ public class BackupUnit {
         backupToJson(context, true, true, true, true);
     }
 
+    public static void performAutoVersionBackup(Context context) {
+        if (context == null) return;
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                int currentVersionCode = 0;
+                try {
+                    currentVersionCode = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionCode;
+                } catch (Exception ignored) {}
+
+                int lastVersionCode = sp.getInt("sp_last_app_version_code", 0);
+                if (currentVersionCode > 0 && currentVersionCode != lastVersionCode) {
+                    sp.edit().putInt("sp_last_app_version_code", currentVersionCode).apply();
+                }
+
+                org.json.JSONObject backupJson = new org.json.JSONObject();
+                backupJson.put("version", 1);
+                backupJson.put("app_version_code", currentVersionCode);
+                backupJson.put("timestamp", System.currentTimeMillis());
+
+                RecordAction action = new RecordAction(context);
+                action.open(false);
+                List<Record> bookmarks = action.listBookmark(context, false, 0);
+                List<Record> history = action.listHistory(context);
+                List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
+                action.close();
+
+                org.json.JSONArray bookmarksArray = new org.json.JSONArray();
+                for (Record r : bookmarks) {
+                    org.json.JSONObject obj = new org.json.JSONObject();
+                    obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                    obj.put("url", r.getURL() != null ? r.getURL() : "");
+                    obj.put("time", r.getTime());
+                    bookmarksArray.put(obj);
+                }
+                backupJson.put("bookmarks", bookmarksArray);
+
+                org.json.JSONArray historyArray = new org.json.JSONArray();
+                for (Record r : history) {
+                    org.json.JSONObject obj = new org.json.JSONObject();
+                    obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                    obj.put("url", r.getURL() != null ? r.getURL() : "");
+                    obj.put("time", r.getTime());
+                    historyArray.put(obj);
+                }
+                backupJson.put("history", historyArray);
+
+                org.json.JSONArray sitesArray = new org.json.JSONArray();
+                for (String domain : domains) {
+                    sitesArray.put(domain);
+                }
+                backupJson.put("saved_sites", sitesArray);
+
+                org.json.JSONObject settingsObj = new org.json.JSONObject();
+                for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
+                    Object val = entry.getValue();
+                    if (val != null) {
+                        settingsObj.put(entry.getKey(), val);
+                    }
+                }
+                backupJson.put("settings", settingsObj);
+
+                File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
+                if (!backupDir.exists()) backupDir.mkdirs();
+                File jsonFile = new File(backupDir, "petal_downgrade_snapshot.json");
+
+                BufferedWriter writer = new BufferedWriter(new FileWriter(jsonFile, false));
+                writer.write(backupJson.toString(2));
+                writer.close();
+                Log.i("Petal", "Automatic downgrade protection backup saved: " + jsonFile.getAbsolutePath());
+            } catch (Exception e) {
+                Log.e("Petal", "Failed to save automatic version snapshot", e);
+            }
+        });
+    }
+
     public static void restoreData(Activity context, int i) {
         restoreFromJson(context, true, true, true, true);
     }

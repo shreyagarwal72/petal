@@ -356,6 +356,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             new BannerBlock(context);
         } catch (Exception ignored) {}
         HelperUnit.initTheme(activity);
+        com.petal.browser.unit.BackupUnit.performAutoVersionBackup(this);
 
         if (sp.getBoolean("sp_screenOn", false)) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (sp.getBoolean("sp_standard_restart", false)) sp.edit().putString("profile", "profileStandard").apply();
