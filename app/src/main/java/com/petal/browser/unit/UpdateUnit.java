@@ -180,13 +180,7 @@ public class UpdateUnit {
         if (btnUpdateNow != null) {
             btnUpdateNow.setOnClickListener(v -> {
                 dialog.dismiss();
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    activity.startActivity(intent);
-                } catch (Exception e) {
-                    Toast.makeText(activity, "Unable to launch download link", Toast.LENGTH_SHORT).show();
-                }
+                downloadAndInstallApk(activity, downloadUrl, latestVersion);
             });
         }
 
@@ -204,6 +198,72 @@ public class UpdateUnit {
         }
 
         dialog.show();
+    }
+
+    private static void downloadAndInstallApk(final Activity activity, final String apkUrl, final String version) {
+        Toast.makeText(activity, "Downloading update " + version + "...", Toast.LENGTH_SHORT).show();
+        executor.execute(() -> {
+            try {
+                java.io.File apkFile = new java.io.File(activity.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "petal_update_" + version + ".apk");
+                if (apkFile.exists()) apkFile.delete();
+
+                URL url = new URL(apkUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setInstanceFollowRedirects(true);
+                conn.connect();
+
+                java.io.InputStream is = conn.getInputStream();
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(apkFile);
+                byte[] buffer = new byte[8192];
+                int len;
+                while ((len = is.read(buffer)) != -1) {
+                    fos.write(buffer, 0, len);
+                }
+                fos.close();
+                is.close();
+
+                activity.runOnUiThread(() -> installApk(activity, apkFile));
+            } catch (Exception e) {
+                Log.e(TAG, "Error downloading update APK", e);
+                activity.runOnUiThread(() -> {
+                    Toast.makeText(activity, "Download failed, opening browser...", Toast.LENGTH_SHORT).show();
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        activity.startActivity(intent);
+                    } catch (Exception ignored) {}
+                });
+            }
+        });
+    }
+
+    private static void installApk(Activity activity, java.io.File apkFile) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                if (!activity.getPackageManager().canRequestPackageInstalls()) {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+                    intent.setData(Uri.parse("package:" + activity.getPackageName()));
+                    activity.startActivity(intent);
+                    Toast.makeText(activity, "Please grant permission to install updates", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+
+            Uri apkUri = androidx.core.content.FileProvider.getUriForFile(
+                    activity,
+                    activity.getPackageName() + ".fileprovider",
+                    apkFile
+            );
+
+            Intent installIntent = new Intent(Intent.ACTION_VIEW);
+            installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            installIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            activity.startActivity(installIntent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error launching package installer", e);
+            Toast.makeText(activity, "Failed to launch installer: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private static void showUpToDateToast(Activity activity, String currentVersion) {
