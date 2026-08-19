@@ -559,17 +559,28 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    private static final int VOICE_SEARCH_REQUEST_CODE = 1002;
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == VOICE_SEARCH_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
+            ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            if (matches != null && !matches.isEmpty()) {
+                String query = matches.get(0);
+                if (query != null && !query.trim().isEmpty()) {
+                    String targetUrl = BrowserUnit.queryWrapper(this, query.trim());
+                    addAlbum(null, targetUrl, true);
+                }
+            }
+            return;
+        }
         if (requestCode != INPUT_FILE_REQUEST_CODE || mFilePathCallback == null) {
             super.onActivityResult(requestCode, resultCode, data);
             return;
         }
         Uri[] results = null;
-        // Check that the response is a good one
         if (resultCode == Activity.RESULT_OK) {
             if (data != null) {
-                // If there is not data, then we may have taken a photo
                 String dataString = data.getDataString();
                 if (dataString != null) results = new Uri[]{Uri.parse(dataString)};
             }
@@ -4128,7 +4139,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             try {
                 Intent voiceIntent = new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                 voiceIntent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                startActivity(voiceIntent);
+                voiceIntent.putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak to search...");
+                startActivityForResult(voiceIntent, VOICE_SEARCH_REQUEST_CODE);
             } catch (Exception e) {
                 initSearch();
                 if (dialogSearch != null) dialogSearch.show();
