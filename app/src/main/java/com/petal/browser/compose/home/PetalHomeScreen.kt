@@ -559,9 +559,8 @@ private fun PetalBloom(
             .fillMaxWidth()
             .height(ringRadius * 2 + petalSize + 32.dp),
     ) {
-        // Center 5-Petal Flower App Icon Button for customizing shortcuts
+        // Center 5-Petal Flower App Icon (Non-clickable)
         Surface(
-            onClick = onAddShortcutClick,
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 4.dp,
@@ -571,7 +570,7 @@ private fun PetalBloom(
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(6.dp)) {
                 AsyncImage(
                     model = com.petal.browser.R.mipmap.ic_launcher_round,
-                    contentDescription = "Manage shortcuts",
+                    contentDescription = null,
                     modifier = Modifier.fillMaxSize().clip(CircleShape)
                 )
             }
