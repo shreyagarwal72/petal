@@ -158,11 +158,11 @@ val availableIcons = listOf(
 )
 
 val petalShapes: List<Shape> = listOf(
-    RoundedCornerShape(topStart = 28.dp, topEnd = 8.dp, bottomStart = 8.dp, bottomEnd = 28.dp),
-    RoundedCornerShape(topStart = 8.dp, topEnd = 28.dp, bottomStart = 28.dp, bottomEnd = 8.dp),
-    CutCornerShape(16.dp),
-    CircleShape,
-    RoundedCornerShape(20.dp)
+    RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomStart = 32.dp, bottomEnd = 8.dp),
+    RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomStart = 8.dp, bottomEnd = 32.dp),
+    RoundedCornerShape(topStart = 32.dp, topEnd = 8.dp, bottomStart = 32.dp, bottomEnd = 32.dp),
+    RoundedCornerShape(topStart = 8.dp, topEnd = 32.dp, bottomStart = 32.dp, bottomEnd = 32.dp),
+    RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
 )
 
 // ── 2. Java Interop Callback Interface & Bridge ───────────────────────────
