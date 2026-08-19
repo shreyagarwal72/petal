@@ -1302,6 +1302,49 @@ fun PetalSettingsScreen(
                                 color = if (currentAiKey.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                             )
                         }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var currentDefaultAiAction by remember { mutableStateOf(sp.getString("sp_ai_default_action", "") ?: "") }
+
+                        Text(
+                            "Default Action when Tapping AI Button:",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            FilterChip(
+                                selected = currentDefaultAiAction.isEmpty(),
+                                onClick = {
+                                    currentDefaultAiAction = ""
+                                    sp.edit().putString("sp_ai_default_action", "").apply()
+                                },
+                                label = { Text("Always Ask") },
+                                leadingIcon = { Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            )
+                            FilterChip(
+                                selected = currentDefaultAiAction == "SUMMARIZE",
+                                onClick = {
+                                    currentDefaultAiAction = "SUMMARIZE"
+                                    sp.edit().putString("sp_ai_default_action", "SUMMARIZE").apply()
+                                },
+                                label = { Text("Summarise") },
+                                leadingIcon = { Icon(Icons.Rounded.Subject, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            )
+                            FilterChip(
+                                selected = currentDefaultAiAction == "ASK_QUESTION",
+                                onClick = {
+                                    currentDefaultAiAction = "ASK_QUESTION"
+                                    sp.edit().putString("sp_ai_default_action", "ASK_QUESTION").apply()
+                                },
+                                label = { Text("Ask Question") },
+                                leadingIcon = { Icon(Icons.Rounded.QuestionAnswer, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            )
+                        }
                     }
                 }
 

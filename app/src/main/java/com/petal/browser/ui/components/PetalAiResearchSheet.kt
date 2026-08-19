@@ -39,6 +39,8 @@ fun PetalAiResearchSheet(
     pageTitle: String,
     pageUrl: String,
     pageContent: String,
+    initialMode: ResearchMode = ResearchMode.SUMMARY,
+    autoStart: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -49,12 +51,33 @@ fun PetalAiResearchSheet(
     var apiKey by remember(selectedProvider) { mutableStateOf(PetalAiResearchEngine.getApiKey(context, selectedProvider)) }
     var showApiKeyConfig by remember { mutableStateOf(apiKey.isBlank()) }
 
-    var selectedMode by remember { mutableStateOf(ResearchMode.SUMMARY) }
+    var selectedMode by remember { mutableStateOf(initialMode) }
     var customPromptText by remember { mutableStateOf("") }
 
     var isLoading by remember { mutableStateOf(false) }
     var responseResult by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        if (autoStart && apiKey.isNotBlank() && !isLoading && responseResult == null) {
+            isLoading = true
+            PetalAiResearchEngine.performResearch(
+                context = context,
+                pageTitle = pageTitle,
+                pageUrl = pageUrl,
+                pageTextContent = pageContent,
+                mode = selectedMode,
+                customPrompt = customPromptText
+            ) { result ->
+                isLoading = false
+                result.onSuccess { text ->
+                    responseResult = text
+                }.onFailure { err ->
+                    errorMessage = err.localizedMessage ?: "AI Research request failed."
+                }
+            }
+        }
+    }
 
     var providerMenuExpanded by remember { mutableStateOf(false) }
     var modelMenuExpanded by remember { mutableStateOf(false) }
@@ -282,22 +305,26 @@ fun PetalAiResearchSheet(
                 FilterChip(
                     selected = selectedMode == ResearchMode.SUMMARY,
                     onClick = { selectedMode = ResearchMode.SUMMARY },
-                    label = { Text("⚡ Summary") }
+                    label = { Text("Summary") },
+                    leadingIcon = { Icon(Icons.Rounded.Subject, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 FilterChip(
                     selected = selectedMode == ResearchMode.DEEP_RESEARCH,
                     onClick = { selectedMode = ResearchMode.DEEP_RESEARCH },
-                    label = { Text("🔍 Deep") }
+                    label = { Text("Deep") },
+                    leadingIcon = { Icon(Icons.Rounded.Analytics, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 FilterChip(
                     selected = selectedMode == ResearchMode.KEY_QA,
                     onClick = { selectedMode = ResearchMode.KEY_QA },
-                    label = { Text("❓ Q&A") }
+                    label = { Text("Q&A") },
+                    leadingIcon = { Icon(Icons.Rounded.QuestionAnswer, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 FilterChip(
                     selected = selectedMode == ResearchMode.CRITIQUE,
                     onClick = { selectedMode = ResearchMode.CRITIQUE },
-                    label = { Text("💡 Critique") }
+                    label = { Text("Critique") },
+                    leadingIcon = { Icon(Icons.Rounded.FactCheck, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
             }
 
