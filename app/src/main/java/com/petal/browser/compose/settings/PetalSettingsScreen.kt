@@ -1361,9 +1361,10 @@ fun PetalSettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                        SettingsToggleRow(
+                        ToggleRow(
                             title = "Desktop Mode for AI Services",
                             subtitle = "Force desktop user-agent when loading AI web tools",
+                            icon = Icons.Rounded.DesktopWindows,
                             checked = hubSettings.desktopView,
                             onCheckedChange = { checked ->
                                 hubSettings = hubSettings.copy(desktopView = checked)
@@ -1371,9 +1372,10 @@ fun PetalSettingsScreen(
                             }
                         )
 
-                        SettingsToggleRow(
+                        ToggleRow(
                             title = "Third-Party Cookies",
                             subtitle = "Allow third-party cookies for seamless AI account login",
+                            icon = Icons.Rounded.Cookie,
                             checked = hubSettings.thirdPartyCookies,
                             onCheckedChange = { checked ->
                                 hubSettings = hubSettings.copy(thirdPartyCookies = checked)
@@ -1381,9 +1383,10 @@ fun PetalSettingsScreen(
                             }
                         )
 
-                        SettingsToggleRow(
+                        ToggleRow(
                             title = "Page Zooming",
                             subtitle = "Enable pinch-to-zoom on AI service web pages",
+                            icon = Icons.Rounded.ZoomIn,
                             checked = hubSettings.enableZoom,
                             onCheckedChange = { checked ->
                                 hubSettings = hubSettings.copy(enableZoom = checked)
@@ -1399,9 +1402,10 @@ fun PetalSettingsScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
-                        SettingsToggleRow(
+                        ToggleRow(
                             title = "Enable Custom Proxy for AI",
                             subtitle = "Route AI service web traffic through HTTP/SOCKS proxy",
+                            icon = Icons.Rounded.VpnKey,
                             checked = hubSettings.isProxy,
                             onCheckedChange = { checked ->
                                 hubSettings = hubSettings.copy(isProxy = checked)
