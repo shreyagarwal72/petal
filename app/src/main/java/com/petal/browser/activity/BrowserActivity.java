@@ -670,12 +670,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ninjaWebView.loadUrl(homeUrl);
                 showAlbum(currentAlbumController, homeUrl);
             } else {
-                long currentTime = System.currentTimeMillis();
-                if (currentTime - lastBackPressTime < 2000) {
+                boolean requireDoubleBack = sp.getBoolean("sp_double_back_exit", true);
+                if (!requireDoubleBack) {
                     finish();
                 } else {
-                    lastBackPressTime = currentTime;
-                    NinjaToast.show(BrowserActivity.this, "Press back again to exit Petal");
+                    long currentTime = System.currentTimeMillis();
+                    if (currentTime - lastBackPressTime < 2000) {
+                        finish();
+                    } else {
+                        lastBackPressTime = currentTime;
+                        NinjaToast.show(BrowserActivity.this, "Press back again to exit Petal");
+                    }
                 }
             }
         }

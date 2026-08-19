@@ -238,6 +238,7 @@ fun PetalSettingsScreen(
     var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", false)) }
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
     var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
+    var isDoubleBackExit by remember { mutableStateOf(sp.getBoolean("sp_double_back_exit", true)) }
     var predictiveBackAnim by remember {
         mutableStateOf(
             com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
@@ -1336,6 +1337,19 @@ fun PetalSettingsScreen(
                                 }
                             }
                         }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        ToggleRow(
+                            title = "Press Back Again to Exit",
+                            subtitle = "Require confirmation back press before closing Petal (works with both gesture and 3-button navigation)",
+                            icon = Icons.Rounded.ExitToApp,
+                            checked = isDoubleBackExit,
+                            onCheckedChange = { newValue ->
+                                isDoubleBackExit = newValue
+                                sp.edit().putBoolean("sp_double_back_exit", newValue).apply()
+                            }
+                        )
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
