@@ -101,6 +101,7 @@ object PetalSettingsBridge {
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
                             "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                            "sp_theme_config" -> themeConfigName = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
                             "sp_expressive_colors" -> {}
                             "sp_expressive_feature_tiles" -> {}
                         }
@@ -601,6 +602,11 @@ fun PetalSettingsScreen(
                                     onClick = {
                                         selectedThemeConfig = config
                                         sp.edit().putString("sp_theme_config", config.name).apply()
+                                        when (config) {
+                                            ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                                            ThemeConfig.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                                            ThemeConfig.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                                        }
                                     },
                                     label = { Text(label) },
                                     leadingIcon = {
@@ -699,6 +705,20 @@ fun PetalSettingsScreen(
                                 }
                             }
                         }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        // Material You Dynamic Color Toggle
+                        ToggleRow(
+                            title = "Material You Dynamic Color",
+                            subtitle = "Adapt accent colors from your system wallpaper (Android 12+)",
+                            icon = Icons.Rounded.ColorLens,
+                            checked = isDynamicColor,
+                            onCheckedChange = { newValue ->
+                                isDynamicColor = newValue
+                                sp.edit().putBoolean("useDynamicColor", newValue).apply()
+                            }
+                        )
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
