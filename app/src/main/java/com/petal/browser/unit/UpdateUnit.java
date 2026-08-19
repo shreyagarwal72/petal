@@ -207,11 +207,31 @@ public class UpdateUnit {
                 java.io.File apkFile = new java.io.File(activity.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "petal_update_" + version + ".apk");
                 if (apkFile.exists()) apkFile.delete();
 
-                URL url = new URL(apkUrl);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setInstanceFollowRedirects(true);
-                conn.connect();
+                String currentUrl = apkUrl;
+                HttpURLConnection conn = null;
+                int redirects = 0;
+                while (redirects < 5) {
+                    URL url = new URL(currentUrl);
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestProperty("User-Agent", "PetalBrowserApp/" + version);
+                    conn.setInstanceFollowRedirects(true);
+                    conn.setConnectTimeout(10000);
+                    conn.setReadTimeout(10000);
+                    int status = conn.getResponseCode();
+                    if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == 307 || status == 308) {
+                        String redirectUrl = conn.getHeaderField("Location");
+                        if (redirectUrl != null && !redirectUrl.isEmpty()) {
+                            currentUrl = redirectUrl;
+                            redirects++;
+                            continue;
+                        }
+                    }
+                    break;
+                }
+
+                if (conn == null || conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    throw new Exception("HTTP status " + (conn != null ? conn.getResponseCode() : -1));
+                }
 
                 java.io.InputStream is = conn.getInputStream();
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(apkFile);
