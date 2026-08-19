@@ -667,7 +667,7 @@ fun PetalSettingsScreen(
                                     },
                                     label = { Text(font.label) },
                                     leadingIcon = if (selectedFont == font) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                        @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                     } else null
                                 )
                             }
@@ -694,7 +694,7 @@ fun PetalSettingsScreen(
                                     },
                                     label = { Text(style.label) },
                                     leadingIcon = if (selectedColorStyle == style) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                        @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                     } else null
                                 )
                             }
