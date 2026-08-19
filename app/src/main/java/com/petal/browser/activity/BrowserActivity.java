@@ -287,6 +287,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     protected void attachBaseContext(Context newBase) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(newBase);
+        String themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM");
+        if ("LIGHT".equals(themeConfig)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        } else if ("DARK".equals(themeConfig)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
+
         String lang = sp.getString("sp_app_language", "system");
         if (lang != null && !lang.equals("system")) {
             Locale locale = Locale.forLanguageTag(lang);
