@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.petal.browser.account.AccountViewModel
@@ -628,17 +629,25 @@ private fun SiteBrandIcon(siteId: String, label: String) {
             Icon(Icons.Rounded.Search, contentDescription = "Google", tint = Color.White, modifier = Modifier.size(26.dp))
         }
         "github" -> {
-            Icon(Icons.Rounded.Code, contentDescription = "GitHub", tint = Color.White, modifier = Modifier.size(26.dp))
+            androidx.compose.foundation.Image(
+                painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_github),
+                contentDescription = "GitHub",
+                modifier = Modifier.size(28.dp)
+            )
         }
         "wikipedia" -> {
-            Text(
-                "W",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
-                color = Color.White
+            androidx.compose.foundation.Image(
+                painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_wikipedia),
+                contentDescription = "Wikipedia",
+                modifier = Modifier.size(28.dp)
             )
         }
         "duckduckgo" -> {
-            Icon(Icons.Rounded.Shield, contentDescription = "DuckDuckGo", tint = Color.White, modifier = Modifier.size(26.dp))
+            androidx.compose.foundation.Image(
+                painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_duckduckgo),
+                contentDescription = "DuckDuckGo",
+                modifier = Modifier.size(28.dp)
+            )
         }
         "weather" -> {
             Icon(Icons.Rounded.WbSunny, contentDescription = "Google Weather", tint = Color(0xFFFFD54F), modifier = Modifier.size(26.dp))
