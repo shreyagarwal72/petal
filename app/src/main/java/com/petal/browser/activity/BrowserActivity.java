@@ -980,7 +980,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void onTabUrlStarted(NinjaWebView webView, String url) {
         runOnUiThread(() -> {
-            if (webView == ninjaWebView) {
+            if (webView != ninjaWebView) return;
+
+            // If this WebView is already the one attached and visible (i.e. we're just
+            // navigating within the currently-shown tab, not switching tabs or coming
+            // from the home screen), do NOT tear down and rebuild the content view.
+            // Removing/re-adding the WebView to contentFrame while it is mid-navigation
+            // kills its rendering surface, which causes pages to hang on a blank
+            // screen with the loading spinner never resolving.
+            boolean alreadyAttached = currentAlbumController == webView
+                    && contentFrame != null
+                    && contentFrame.getChildCount() == 1
+                    && contentFrame.getChildAt(0) == webView;
+
+            if (alreadyAttached) {
+                updateAddressBar();
+                updatePersistentBottomNav();
+            } else {
                 showAlbum(currentAlbumController, url);
             }
         });
