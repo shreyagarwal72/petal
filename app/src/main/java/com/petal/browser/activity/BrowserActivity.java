@@ -1251,12 +1251,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ninjaWebView.setOnScrollChangeListener(new NinjaWebView.OnScrollChangeListener() {
                     @Override
                     public void onScrollDown() {
-                        runOnUiThread(() -> animateAddressBarCollapse(true));
+                        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+                        if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
+                            bottomNavContainer.animate()
+                                .translationY(bottomNavContainer.getHeight())
+                                .setDuration(220)
+                                .start();
+                        }
                     }
 
                     @Override
                     public void onScrollUp() {
-                        runOnUiThread(() -> animateAddressBarCollapse(false));
+                        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+                        if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
+                            bottomNavContainer.animate()
+                                .translationY(0f)
+                                .setDuration(220)
+                                .start();
+                        }
                     }
                 });
             }
@@ -2174,15 +2186,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        View bottomNav = findViewById(R.id.bottom_nav_compose);
-
         if (isHomePage(currentUrl)) {
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
-            if (bottomNav != null) {
-                bottomNav.setVisibility(VISIBLE);
-                springTranslateY(bottomNav, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
-            }
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
             if (progressBar != null) progressBar.setTranslationY(0f);
@@ -2190,6 +2196,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             isAddressBarCollapsed = false;
             return;
         }
+
+        View bottomNav = findViewById(R.id.bottom_nav_compose);
 
         if (composeAddressBar == null) return;
 
@@ -2204,7 +2212,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
 
             if (bottomNav != null) {
-                bottomNav.setVisibility(VISIBLE);
                 float bottomNavTargetY = HelperUnit.convertDpToPixel(120f, context);
                 springTranslateY(bottomNav, bottomNavTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
             }
@@ -2238,7 +2245,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             springTranslateY(composeAddressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
 
             if (bottomNav != null) {
-                bottomNav.setVisibility(VISIBLE);
                 springTranslateY(bottomNav, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
             }
 
