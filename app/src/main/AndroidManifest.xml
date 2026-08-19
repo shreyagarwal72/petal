@@ -185,6 +185,18 @@
             android:name="com.petal.browser.compose.downloads.PetalDownloadCancelReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name="com.petal.browser.widget.PetalSearchWidgetProvider"
+            android:label="Petal Quick Search"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/petal_search_widget_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

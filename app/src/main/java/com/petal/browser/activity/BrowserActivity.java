@@ -4111,6 +4111,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             sp.edit().putBoolean("show_overview", false).apply();
             getIntent().setAction("");
             addAlbum(null, url, true);
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)) {
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            initSearch();
+            String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+            if (search_input != null) {
+                search_input.setText(cUrl);
+                search_input.selectAll();
+            }
+            if (dialogSearch != null) dialogSearch.show();
+            HelperUnit.showSoftKeyboard(search_input);
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI.equals(action)) {
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            showAiResearchSheet();
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)) {
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            try {
+                Intent voiceIntent = new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                voiceIntent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                startActivity(voiceIntent);
+            } catch (Exception e) {
+                initSearch();
+                if (dialogSearch != null) dialogSearch.show();
+            }
         }
     }
     private String readTextFromUri(Context context, Uri uri) {
