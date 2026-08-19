@@ -1933,17 +1933,11 @@ fun PetalSettingsScreen(
                                             Text("Feedback", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                                         }
                                     }
-                                }
-                            }
                         }
                     }
                 }
 
-                                Spacer(Modifier.height(32.dp))
-                            }
-                        }
-                    }
-                }
+                Spacer(Modifier.height(32.dp))
             }
         }
     }
