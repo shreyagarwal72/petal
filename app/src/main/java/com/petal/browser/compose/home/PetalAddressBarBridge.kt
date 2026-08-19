@@ -26,7 +26,8 @@ object PetalAddressBarBridge {
         onBackClick: Runnable,
         onShareClick: Runnable,
         onAddressClick: Runnable,
-        onSiteControlsClick: Runnable? = null
+        onSiteControlsClick: Runnable? = null,
+        onAiResearchClick: Runnable? = null
     ) {
         composeView.apply {
             setViewTreeLifecycleOwner(activity)
@@ -67,7 +68,8 @@ object PetalAddressBarBridge {
                         onBackClick = { onBackClick.run() },
                         onShareClick = { onShareClick.run() },
                         onAddressClick = { onAddressClick.run() },
-                        onSiteControlsClick = { onSiteControlsClick?.run() }
+                        onSiteControlsClick = { onSiteControlsClick?.run() },
+                        onAiResearchClick = { onAiResearchClick?.run() }
                     )
                 }
             }

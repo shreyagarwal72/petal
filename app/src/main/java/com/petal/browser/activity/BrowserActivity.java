@@ -2113,12 +2113,46 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             if (ninjaWebView != null) ninjaWebView.reload();
                         }
                     );
-                }
+                },
+                this::showAiResearchSheet
         );
         if (refreshState != null && refreshState.isRefreshing()) {
             refreshState.setRefreshing(false);
             refreshState.setPullProgress(0f);
         }
+    }
+
+    public void showAiResearchSheet() {
+        if (ninjaWebView == null) return;
+        final String currentUrl = ninjaWebView.getUrl();
+        final String currentTitle = ninjaWebView.getTitle() != null ? ninjaWebView.getTitle() : "";
+
+        if (!com.petal.browser.compose.ai.PetalAiResearchEngine.INSTANCE.isProperWebSite(currentUrl)) {
+            return;
+        }
+
+        ninjaWebView.evaluateJavascript(
+            "(function() { " +
+            "  var title = document.title || ''; " +
+            "  var metaDesc = (document.querySelector('meta[name=\"description\"]') || {}).content || ''; " +
+            "  var bodyText = document.body ? document.body.innerText : ''; " +
+            "  return title + '\\n' + metaDesc + '\\n' + bodyText; " +
+            "})();",
+            value -> {
+                String cleanText = value != null ? value : "";
+                if (cleanText.startsWith("\"") && cleanText.endsWith("\"") && cleanText.length() >= 2) {
+                    cleanText = cleanText.substring(1, cleanText.length() - 1);
+                }
+                cleanText = cleanText.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+
+                com.petal.browser.ui.components.PetalAiResearchBridge.showAiResearchSheet(
+                    BrowserActivity.this,
+                    currentTitle,
+                    currentUrl,
+                    cleanText
+                );
+            }
+        );
     }
 
     private boolean isAddressBarCollapsed = false;

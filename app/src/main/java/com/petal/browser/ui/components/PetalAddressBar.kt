@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.petal.browser.compose.ai.PetalAiResearchEngine
 
 /**
  * Material 3 Expressive Collapsed/Scrolled Address Bar.
@@ -31,7 +33,7 @@ import androidx.compose.ui.unit.dp
  * - Far left: Back/Navigation arrow icon button or Stop button when loading (min 48dp touch target, 24dp icon)
  * - Security/Page Controls Icon: Tune (HTTPS/HTTP) / Search (blank) / VisibilityOff (Incognito)
  * - Center: Flexible width URL text (root domain highlighted, path muted, single line, end ellipsis)
- * - Far right: Share icon button (min 48dp touch target, 24dp icon)
+ * - Far right: AI Research button (for proper sites) & Share icon button (min 48dp touch target, 24dp icon)
  */
 @Composable
 fun PetalAddressBar(
@@ -44,6 +46,7 @@ fun PetalAddressBar(
     onShareClick: () -> Unit,
     onAddressClick: () -> Unit,
     onSiteControlsClick: () -> Unit = {},
+    onAiResearchClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isBlankOrSearch = url.isEmpty() || url == "about:blank" || url.startsWith("file:///android_asset/")
@@ -175,6 +178,22 @@ fun PetalAddressBar(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            val isProperSite = remember(url) { PetalAiResearchEngine.isProperWebSite(url) }
+
+            if (isProperSite) {
+                IconButton(
+                    onClick = onAiResearchClick,
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.AutoAwesome,
+                        contentDescription = "AI Real-Time Web Research",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
