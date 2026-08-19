@@ -4122,10 +4122,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             if (dialogSearch != null) dialogSearch.show();
             HelperUnit.showSoftKeyboard(search_input);
-        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI.equals(action)) {
-            getIntent().setAction("");
-            sp.edit().putBoolean("show_overview", false).apply();
-            showAiResearchSheet();
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();

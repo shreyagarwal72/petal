@@ -14,7 +14,6 @@ import com.petal.browser.activity.BrowserActivity;
 public class PetalSearchWidgetProvider extends AppWidgetProvider {
 
     public static final String ACTION_OPEN_SEARCH = "com.petal.browser.action.OPEN_SEARCH";
-    public static final String ACTION_OPEN_AI = "com.petal.browser.action.OPEN_AI";
     public static final String ACTION_OPEN_VOICE = "com.petal.browser.action.OPEN_VOICE";
 
     @Override
@@ -27,7 +26,6 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
     private static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_petal_search);
 
-        // Flag for PendingIntent
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             flags |= PendingIntent.FLAG_IMMUTABLE;
@@ -39,13 +37,6 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
         searchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent searchPendingIntent = PendingIntent.getActivity(context, 0, searchIntent, flags);
         views.setOnClickPendingIntent(R.id.widget_search_bar, searchPendingIntent);
-
-        // AI Assistant Intent
-        Intent aiIntent = new Intent(context, BrowserActivity.class);
-        aiIntent.setAction(ACTION_OPEN_AI);
-        aiIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent aiPendingIntent = PendingIntent.getActivity(context, 1, aiIntent, flags);
-        views.setOnClickPendingIntent(R.id.widget_icon_ai, aiPendingIntent);
 
         // Voice Search Intent
         Intent voiceIntent = new Intent(context, BrowserActivity.class);
