@@ -29,6 +29,12 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+
 /**
  * Shared state for one edge's predictive gesture (back on the left, forward on the right).
  * progress goes 0f (not started) -> 1f (fully committed).
@@ -47,9 +53,9 @@ class PetalEdgeGestureState {
 }
 
 /**
- * Circular bubble - the exact same Surface (CircleShape, same colors/elevation) and the
- * exact same ContainedLoadingIndicator spinner used by RefreshBarLoadingIndicator in
- * ContainedLoadingIndicator.kt, just peeking in from an edge instead of the top.
+ * Circular bubble - the exact same Surface (CircleShape, same colors/elevation) peeking in
+ * from an edge. Displays a thumbnail of the target destination page from PagePreviewCache,
+ * falling back to ContainedLoadingIndicator if no preview is cached yet.
  */
 @OptIn(com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -57,6 +63,7 @@ fun EdgeGestureIndicator(
     isLeftEdge: Boolean,
     isActive: Boolean,
     progress: Float,
+    previewKey: String? = null,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -104,10 +111,22 @@ fun EdgeGestureIndicator(
                         .requiredSize(42.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Same call, same size, as the refresh spinner in ContainedLoadingIndicator.kt.
-                    ContainedLoadingIndicator(
-                        modifier = Modifier.requiredSize(38.dp)
-                    )
+                    val bitmap = com.petal.browser.animation.predictiveback.PagePreviewCache.get(previewKey)
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .requiredSize(38.dp)
+                                .clip(CircleShape)
+                        )
+                    } else {
+                        // Fallback spinner if no bitmap is cached yet for that URL
+                        ContainedLoadingIndicator(
+                            modifier = Modifier.requiredSize(38.dp)
+                        )
+                    }
                 }
             }
         }
@@ -148,7 +167,8 @@ object PetalEdgeIndicatorBridge {
                     EdgeGestureIndicator(
                         isLeftEdge = isLeftEdge,
                         isActive = state.isActive,
-                        progress = state.progress
+                        progress = state.progress,
+                        previewKey = state.previewKey
                     )
                 }
             }

@@ -83,7 +83,7 @@ object PetalSettingsBridge {
                 var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
                 var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 400)) }
                 var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
-                var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT") }
+                var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH") }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
@@ -97,7 +97,7 @@ object PetalSettingsBridge {
                             "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 100f)
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 400)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
-                            "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "DEFAULT") ?: "DEFAULT"
+                            "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH"
                             "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
@@ -814,20 +814,6 @@ fun PetalSettingsScreen(
                                 }
                             }
                         }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        // Dynamic Color Toggle
-                        ToggleRow(
-                            title = "Material You Dynamic Colors",
-                            subtitle = "Extract system accent wallpaper colors on Android 12+",
-                            icon = Icons.Rounded.ColorLens,
-                            checked = isDynamicColor,
-                            onCheckedChange = { newValue ->
-                                isDynamicColor = newValue
-                                sp.edit().putBoolean("useDynamicColor", newValue).apply()
-                            }
-                        )
 
                         // Expressive Colors Toggle
                         ToggleRow(
@@ -1957,8 +1943,6 @@ fun PetalSettingsScreen(
             }
         }
     }
-}
-}
 }
 
 @Composable

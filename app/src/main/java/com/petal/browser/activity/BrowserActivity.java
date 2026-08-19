@@ -1010,6 +1010,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         runOnUiThread(() -> {
             if (webView != ninjaWebView) return;
 
+            // Capture snapshot of current page before navigating away
+            try {
+                android.view.View pageRootView = findViewById(R.id.main);
+                if (pageRootView != null && pageRootView.getWidth() > 0) {
+                    String currentUrl = webView.getUrl();
+                    String urlKey = com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(currentUrl);
+                    if (urlKey != null) {
+                        com.petal.browser.animation.predictiveback.PagePreviewCache.capture(urlKey, pageRootView);
+                    }
+                    if (isHomePage(currentUrl)) {
+                        com.petal.browser.animation.predictiveback.PagePreviewCache.capture(
+                            com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_HOME, pageRootView
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error capturing page preview snapshot before navigation", e);
+            }
+
             // If this WebView is already the one attached and visible (i.e. we're just
             // navigating within the currently-shown tab, not switching tabs or coming
             // from the home screen), do NOT tear down and rebuild the content view.

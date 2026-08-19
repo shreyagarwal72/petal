@@ -247,7 +247,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, isDarkTheme && profileNight);
         }
 
-        String desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+        String desktopUserAgent = getDerivedDesktopUserAgent(context);
         String rawDefaultUa = WebSettings.getDefaultUserAgent(context);
         // Replace custom webview tokens (e.g. wv or custom app signatures) with standard Mobile Chrome user agent for Google login compatibility
         String googleLoginMobileUa = rawDefaultUa != null ? rawDefaultUa.replaceAll("; wv\\)", ")").replaceAll(" Version/\\d+\\.\\d+", "") : "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
@@ -342,11 +342,22 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         profile = profileOriginal;
     }
 
+    public static String getDerivedDesktopUserAgent(Context context) {
+        String rawDefaultUa = WebSettings.getDefaultUserAgent(context);
+        if (rawDefaultUa == null) {
+            return "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+        }
+        String cleaned = rawDefaultUa.replaceAll("; wv\\)", ")").replaceAll(" Version/\\d+\\.\\d+", "");
+        return cleaned.replaceAll("\\(Linux; U; Android[^;)]+;[^)]+\\)|\\(Linux; Android[^)]+\\)", "(X11; Linux x86_64)").replace(" Mobile ", " ");
+    }
+
     public void setDesktopMode(boolean enabled) {
-        String desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
+        String desktopUserAgent = getDerivedDesktopUserAgent(context);
+        String rawDefaultUa = WebSettings.getDefaultUserAgent(context);
+        String googleLoginMobileUa = rawDefaultUa != null ? rawDefaultUa.replaceAll("; wv\\)", ")").replaceAll(" Version/\\d+\\.\\d+", "") : "";
         String mobileUserAgent = sp.getString("sp_userAgent", "");
-        if (mobileUserAgent.isEmpty()) {
-            mobileUserAgent = WebSettings.getDefaultUserAgent(context);
+        if (mobileUserAgent.isEmpty() || !sp.getBoolean("userAgentSwitch", false)) {
+            mobileUserAgent = googleLoginMobileUa;
         }
 
         if (enabled) {

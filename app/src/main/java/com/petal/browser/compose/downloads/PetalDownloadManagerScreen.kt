@@ -944,19 +944,48 @@ private fun copyDownloadLink(context: Context, url: String) {
 
 private fun shareDownloadedFile(context: Context, item: DownloadItem) {
     try {
-        val uri = if (item.localUri != null) Uri.parse(item.localUri) else null
+        var contentUri: Uri? = null
+        val localUriString = item.localUri
+        if (!localUriString.isNullOrEmpty()) {
+            val rawUri = Uri.parse(localUriString)
+            if (rawUri.scheme == "file" || rawUri.scheme == null) {
+                val filePath = rawUri.path ?: localUriString.removePrefix("file://")
+                val file = java.io.File(filePath)
+                if (file.exists()) {
+                    try {
+                        contentUri = androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            context.packageName + ".fileprovider",
+                            file
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            } else {
+                contentUri = rawUri
+            }
+        }
+        if (contentUri == null) {
+            try {
+                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                contentUri = dm.getUriForDownloadedFile(item.id)
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+
         val intent = Intent(Intent.ACTION_SEND).apply {
-            if (uri != null) {
-                putExtra(Intent.EXTRA_STREAM, uri)
-                type = context.contentResolver.getType(uri) ?: "*/*"
+            if (contentUri != null) {
+                putExtra(Intent.EXTRA_STREAM, contentUri)
+                type = context.contentResolver.getType(contentUri) ?: "*/*"
             } else {
                 putExtra(Intent.EXTRA_TEXT, item.fileUrl)
                 type = "text/plain"
             }
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        val chooser = Intent.createChooser(intent, "Share file")
-        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val chooser = Intent.createChooser(intent, "Share file").apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         context.startActivity(chooser)
     } catch (e: Exception) {
         e.printStackTrace()
@@ -972,8 +1001,36 @@ private fun shareMultipleFiles(context: Context, items: List<DownloadItem>) {
     try {
         val uris = ArrayList<Uri>()
         items.forEach { item ->
-            if (item.localUri != null) {
-                uris.add(Uri.parse(item.localUri))
+            var contentUri: Uri? = null
+            val localUriString = item.localUri
+            if (!localUriString.isNullOrEmpty()) {
+                val rawUri = Uri.parse(localUriString)
+                if (rawUri.scheme == "file" || rawUri.scheme == null) {
+                    val filePath = rawUri.path ?: localUriString.removePrefix("file://")
+                    val file = java.io.File(filePath)
+                    if (file.exists()) {
+                        try {
+                            contentUri = androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                context.packageName + ".fileprovider",
+                                file
+                            )
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                } else {
+                    contentUri = rawUri
+                }
+            }
+            if (contentUri == null) {
+                try {
+                    val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                    contentUri = dm.getUriForDownloadedFile(item.id)
+                } catch (e: Exception) { e.printStackTrace() }
+            }
+            if (contentUri != null) {
+                uris.add(contentUri)
             }
         }
         if (uris.isNotEmpty()) {
@@ -982,8 +1039,9 @@ private fun shareMultipleFiles(context: Context, items: List<DownloadItem>) {
                 type = "*/*"
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            val chooser = Intent.createChooser(intent, "Share ${items.size} files")
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val chooser = Intent.createChooser(intent, "Share ${items.size} files").apply {
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
             context.startActivity(chooser)
         } else {
             val linksText = items.joinToString("\n") { it.fileUrl }
@@ -991,8 +1049,9 @@ private fun shareMultipleFiles(context: Context, items: List<DownloadItem>) {
                 putExtra(Intent.EXTRA_TEXT, linksText)
                 type = "text/plain"
             }
-            val chooser = Intent.createChooser(intent, "Share links")
-            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val chooser = Intent.createChooser(intent, "Share links").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
             context.startActivity(chooser)
         }
     } catch (e: Exception) {
