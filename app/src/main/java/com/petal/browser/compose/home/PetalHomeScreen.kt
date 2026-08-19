@@ -535,6 +535,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                         }
                     }
                 }
+            }
         }
 
         Spacer(Modifier.height(10.dp))
