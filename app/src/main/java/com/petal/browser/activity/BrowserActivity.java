@@ -594,6 +594,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             snackbar.show();
         }
         dispatchIntent(getIntent());
+        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+        if (bottomNavContainer != null) {
+            bottomNavContainer.setTranslationY(0f);
+            bottomNavContainer.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
