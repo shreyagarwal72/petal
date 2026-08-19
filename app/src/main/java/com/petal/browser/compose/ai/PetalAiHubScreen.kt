@@ -140,6 +140,7 @@ fun PetalAiHubScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
+                    modifier = Modifier.statusBarsPadding(),
                     title = {
                         Column {
                             Text(

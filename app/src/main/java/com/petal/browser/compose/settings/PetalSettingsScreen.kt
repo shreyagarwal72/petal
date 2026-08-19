@@ -348,7 +348,7 @@ fun PetalSettingsScreen(
     ) {
         Scaffold(
             topBar = {
-                Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                Column(modifier = Modifier.background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
                     TopAppBar(
                         title = {
                             AnimatedContent(

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Petal AI Hub — Open-Source AI Services Directory & Cloud Config API</title>
   <meta name="description" content="Official self-hosted real-time AI tools database, cloud API endpoints, and configuration dataset for Petal Browser and open-source clients.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,7 +39,10 @@
         radial-gradient(circle at 15% 20%, rgba(124, 77, 255, 0.15) 0%, transparent 40%),
         radial-gradient(circle at 85% 80%, rgba(59, 130, 246, 0.12) 0%, transparent 40%);
       background-attachment: fixed;
-      padding: 2rem 1rem;
+      padding-top: max(2rem, env(safe-area-inset-top));
+      padding-right: max(1rem, env(safe-area-inset-right));
+      padding-bottom: max(2rem, env(safe-area-inset-bottom));
+      padding-left: max(1rem, env(safe-area-inset-left));
     }
 
     .container {
