@@ -347,75 +347,6 @@ fun PetalSettingsScreen(
         paletteId = selectedPaletteId
     ) {
         Scaffold(
-            topBar = {
-                Column(modifier = Modifier.background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
-                    TopAppBar(
-                        title = {
-                            AnimatedContent(
-                                targetState = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
-                                transitionSpec = {
-                                    (fadeIn() + scaleIn(initialScale = 0.92f))
-                                        .togetherWith(fadeOut() + scaleOut(targetScale = 0.92f))
-                                },
-                                label = "ZenithHeaderTitleAnimation"
-                            ) { titleText ->
-                                Text(
-                                    text = titleText,
-                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        },
-                        navigationIcon = {
-                            IconButton(
-                                onClick = {
-                                    if (currentCategory != SettingsCategory.OVERVIEW) {
-                                        currentCategory = SettingsCategory.OVERVIEW
-                                    } else {
-                                        onBackPress()
-                                    }
-                                },
-                                modifier = Modifier.bouncyClickable {
-                                    if (currentCategory != SettingsCategory.OVERVIEW) {
-                                        currentCategory = SettingsCategory.OVERVIEW
-                                    } else {
-                                        onBackPress()
-                                    }
-                                }
-                            ) {
-                                Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.background
-                        )
-                    )
-
-                    // 🔍 Settings Search Bar
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 6.dp),
-                        placeholder = { Text("Search settings...") },
-                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Rounded.Close, contentDescription = "Clear")
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
-                        )
-                    )
-                }
-            },
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
             // Reflects whichever Predictive Back Animation style is selected above, so the
@@ -478,9 +409,154 @@ fun PetalSettingsScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
+                        // Top App Bar Header (Mounted inside transitioning route container for Predictive Back & Page Animations)
+                        Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
+                            TopAppBar(
+                                title = {
+                                    AnimatedContent(
+                                        targetState = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
+                                        transitionSpec = {
+                                            (fadeIn() + scaleIn(initialScale = 0.92f))
+                                                .togetherWith(fadeOut() + scaleOut(targetScale = 0.92f))
+                                        },
+                                        label = "ZenithHeaderTitleAnimation"
+                                    ) { titleText ->
+                                        Text(
+                                            text = titleText,
+                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                },
+                                navigationIcon = {
+                                    IconButton(
+                                        onClick = {
+                                            if (currentCategory != SettingsCategory.OVERVIEW) {
+                                                currentCategory = SettingsCategory.OVERVIEW
+                                            } else {
+                                                onBackPress()
+                                            }
+                                        },
+                                        modifier = Modifier.bouncyClickable {
+                                            if (currentCategory != SettingsCategory.OVERVIEW) {
+                                                currentCategory = SettingsCategory.OVERVIEW
+                                            } else {
+                                                onBackPress()
+                                            }
+                                        }
+                                    ) {
+                                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                                    }
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = MaterialTheme.colorScheme.background
+                                )
+                            )
+
+                            // 🔍 Settings Search Bar
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                                placeholder = { Text("Search settings...") },
+                                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                        }
+                                    }
+                                },
+                                singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                                )
+                            )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        // Top App Bar Header (Mounted inside transitioning route container for Predictive Back & Page Animations)
+                        Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
+                            TopAppBar(
+                                title = {
+                                    AnimatedContent(
+                                        targetState = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
+                                        transitionSpec = {
+                                            (fadeIn() + scaleIn(initialScale = 0.92f))
+                                                .togetherWith(fadeOut() + scaleOut(targetScale = 0.92f))
+                                        },
+                                        label = "ZenithHeaderTitleAnimation"
+                                    ) { titleText ->
+                                        Text(
+                                            text = titleText,
+                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                },
+                                navigationIcon = {
+                                    IconButton(
+                                        onClick = {
+                                            if (currentCategory != SettingsCategory.OVERVIEW) {
+                                                currentCategory = SettingsCategory.OVERVIEW
+                                            } else {
+                                                onBackPress()
+                                            }
+                                        },
+                                        modifier = Modifier.bouncyClickable {
+                                            if (currentCategory != SettingsCategory.OVERVIEW) {
+                                                currentCategory = SettingsCategory.OVERVIEW
+                                            } else {
+                                                onBackPress()
+                                            }
+                                        }
+                                    ) {
+                                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                                    }
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = MaterialTheme.colorScheme.background
+                                )
+                            )
+
+                            // 🔍 Settings Search Bar
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                                placeholder = { Text("Search settings...") },
+                                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                        }
+                                    }
+                                },
+                                singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                                )
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
                 if (currentCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
                     Text(
                         "Categories",
