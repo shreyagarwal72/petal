@@ -2156,6 +2156,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     cleanText = cleanText.substring(1, cleanText.length() - 1);
                 }
                 cleanText = cleanText.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+                if (cleanText.length() > 15000) {
+                    cleanText = cleanText.substring(0, 15000);
+                }
 
                 com.petal.browser.ui.components.PetalAiResearchBridge.showAiFeature(
                     BrowserActivity.this,
