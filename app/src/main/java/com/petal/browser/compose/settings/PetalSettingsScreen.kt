@@ -1521,17 +1521,6 @@ fun PetalSettingsScreen(
                     var currentAiKey by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, currentAiProvider)) }
                     var currentAiModel by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, currentAiProvider)) }
 
-                    if (isExpressiveFeatureTiles) {
-                        PetalFeatureTile(
-                            title = "AI Web Research Hub",
-                            subtitle = "Configure OpenRouter, Gemini, Grok, OpenAI & Groq real-time webpage analysis",
-                            icon = Icons.Rounded.AutoAwesome,
-                            container = MaterialTheme.colorScheme.primaryContainer,
-                            onContainer = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = { }
-                        )
-                    }
-
                     SettingsCategoryCard(title = "Real-Time AI Web Research", icon = Icons.Rounded.AutoAwesome) {
                         Text(
                             "Configure AI providers and API keys to enable real-time webpage analysis, summaries, Q&A, and deep research directly from the address bar button.",
