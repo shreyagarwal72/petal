@@ -4146,6 +4146,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 initSearch();
                 if (dialogSearch != null) dialogSearch.show();
             }
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)) {
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            initSearch();
+            if (dialogSearch != null) dialogSearch.show();
+            if (search_input != null) {
+                search_input.setText("");
+                HelperUnit.showSoftKeyboard(search_input);
+            }
         }
     }
     private String readTextFromUri(Context context, Uri uri) {

@@ -153,6 +153,7 @@ object PetalSettingsBridge {
 enum class SettingsCategory(val title: String, val subtitle: String, val icon: ImageVector) {
     OVERVIEW("Settings", "Browse all settings categories", Icons.Rounded.Settings),
     AI_RESEARCH("AI Web Research", "Configure OpenRouter, Gemini, Grok, OpenAI & Groq API keys", Icons.Rounded.AutoAwesome),
+    AI_SEARCH("AI Search", "Configure in-app address bar AI search & home widget", Icons.Rounded.Search),
     API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", Icons.Rounded.Extension),
     APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", Icons.Rounded.Palette),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
@@ -494,6 +495,7 @@ fun PetalSettingsScreen(
 
                     val categories = listOf(
                         SettingsCategory.AI_RESEARCH,
+                        SettingsCategory.AI_SEARCH,
                         SettingsCategory.APPEARANCE,
                         SettingsCategory.PRIVACY,
                         SettingsCategory.SEARCH_HOMEPAGE,
@@ -1348,6 +1350,180 @@ fun PetalSettingsScreen(
                                 label = { Text("Ask Question") },
                                 leadingIcon = { Icon(Icons.Rounded.QuestionAnswer, contentDescription = null, modifier = Modifier.size(16.dp)) }
                             )
+                        }
+                    }
+
+                    // 5.5.5 Dedicated AI Search Settings Section
+                    if ((currentCategory == SettingsCategory.AI_SEARCH || searchQuery.isNotBlank()) && matchesSearch("AI Search", "ai search address bar widget provider model personal context grounding thinking")) {
+                        var isAddressBarEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isAddressBarAiSearchEnabled(context)) }
+                        var isWidgetEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isWidgetAiSearchEnabled(context)) }
+                        var selectedProvider by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedProvider(context)) }
+                        var selectedModel by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, selectedProvider)) }
+                        var personalContext by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.getPersonalContext(context)) }
+                        var isGroundingEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isGroundingEnabled(context)) }
+                        var isThinkingEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isThinkingEnabled(context)) }
+                        var currentApiKey by remember(selectedProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, selectedProvider)) }
+
+                        SettingsCategoryCard(title = "AI Search", icon = Icons.Rounded.Search) {
+                            Text(
+                                "Configure instant AI search answers directly from the address bar or home screen widget. Reuses your existing AI Hub provider and API keys.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Enable Address Bar AI Search", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                    Text("Show AI search icon in the main search bar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                IconSwitch(
+                                    checked = isAddressBarEnabled,
+                                    onCheckedChange = { checked ->
+                                        isAddressBarEnabled = checked
+                                        com.petal.browser.compose.ai.PetalAiSearchManager.setAddressBarAiSearchEnabled(context, checked)
+                                    }
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Enable Home Widget AI Search", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                    Text("Show AI search action in the home screen widget", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                IconSwitch(
+                                    checked = isWidgetEnabled,
+                                    onCheckedChange = { checked ->
+                                        isWidgetEnabled = checked
+                                        com.petal.browser.compose.ai.PetalAiSearchManager.setWidgetAiSearchEnabled(context, checked)
+                                    }
+                                )
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            Text("Active Provider & Model:", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                com.petal.browser.compose.ai.AiProvider.entries.forEach { provider ->
+                                    FilterChip(
+                                        selected = selectedProvider == provider,
+                                        onClick = {
+                                            selectedProvider = provider
+                                            com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedProvider(context, provider)
+                                            selectedModel = com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, provider)
+                                            currentApiKey = com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, provider)
+                                        },
+                                        label = { Text(provider.displayName) },
+                                        leadingIcon = if (selectedProvider == provider) {
+                                            { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                        } else null
+                                    )
+                                }
+                            }
+
+                            Text("Selected Model: ${selectedModel}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                selectedProvider.availableModels.forEach { model ->
+                                    FilterChip(
+                                        selected = selectedModel == model,
+                                        onClick = {
+                                            selectedModel = model
+                                            com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
+                                        },
+                                        label = { Text(model) }
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    if (currentApiKey.isNotBlank()) "API Key Configured ✓ (${selectedProvider.displayName})" else "No API Key Set ⚠️",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = if (currentApiKey.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                )
+                                TextButton(
+                                    onClick = {
+                                        try {
+                                            com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(selectedProvider.keyUrl))
+                                        } catch (e: Exception) { e.printStackTrace() }
+                                    }
+                                ) {
+                                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Get ${selectedProvider.displayName} Key")
+                                }
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            OutlinedTextField(
+                                value = personalContext,
+                                onValueChange = { text ->
+                                    personalContext = text
+                                    com.petal.browser.compose.ai.PetalAiSearchManager.setPersonalContext(context, text)
+                                },
+                                label = { Text("Personal Context (Optional)") },
+                                placeholder = { Text("e.g. Include code snippets, prefer concise summaries, etc.") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp)
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Grounding / Web Search Facts", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                    Text("Instruct AI to cite web facts and sources", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                IconSwitch(
+                                    checked = isGroundingEnabled,
+                                    onCheckedChange = { checked ->
+                                        isGroundingEnabled = checked
+                                        com.petal.browser.compose.ai.PetalAiSearchManager.setGroundingEnabled(context, checked)
+                                    }
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Reasoning / Thinking Mode", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                    Text("Ask AI to show step-by-step reasoning process", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                IconSwitch(
+                                    checked = isThinkingEnabled,
+                                    onCheckedChange = { checked ->
+                                        isThinkingEnabled = checked
+                                        com.petal.browser.compose.ai.PetalAiSearchManager.setThinkingEnabled(context, checked)
+                                    }
+                                )
+                            }
                         }
                     }
 
