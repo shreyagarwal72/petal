@@ -1,0 +1,101 @@
+name: Telegram Topic Notification
+
+on:
+  push:
+    branches: [ "main", "master", "**" ]
+  workflow_run:
+    workflows: ["Android CI/CD Build"]
+    types:
+      - completed
+
+jobs:
+  notify-commit:
+    name: Notify Telegram Topic on Push
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Commit Notification to Telegram Topic
+        if: secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != ''
+        run: |
+          BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
+          CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
+          TOPIC_ID="${{ secrets.TELEGRAM_TOPIC_ID }}"
+          
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          AUTHOR="${{ github.actor }}"
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+          COMMIT_HASH="${{ github.sha }}"
+          SHORT_HASH="${COMMIT_HASH:0:7}"
+          COMMIT_URL="https://github.com/${REPO}/commit/${COMMIT_HASH}"
+          
+          MESSAGE="🔨 <b>New Commit Pushed</b> to <b>${REPO}</b> [<code>${BRANCH}</code>]%0A%0A"
+          MESSAGE="${MESSAGE}👤 <b>Author:</b> ${AUTHOR}%0A"
+          MESSAGE="${MESSAGE}🔗 <b>Commit:</b> <a href=\"${COMMIT_URL}\">${SHORT_HASH}</a>%0A%0A"
+          MESSAGE="${MESSAGE}📝 <b>Message:</b>%0A<code>${COMMIT_MSG}</code>"
+          
+          URL="https://api.telegram.org/bot${BOT_TOKEN}/sendMessage"
+          
+          if [ -n "${TOPIC_ID}" ]; then
+            curl -s -X POST "${URL}" \
+              -d "chat_id=${CHAT_ID}" \
+              -d "message_thread_id=${TOPIC_ID}" \
+              -d "text=${MESSAGE}" \
+              -d "parse_mode=HTML" \
+              -d "disable_web_page_preview=true"
+          else
+            curl -s -X POST "${URL}" \
+              -d "chat_id=${CHAT_ID}" \
+              -d "text=${MESSAGE}" \
+              -d "parse_mode=HTML" \
+              -d "disable_web_page_preview=true"
+          fi
+
+  notify-build:
+    name: Notify Telegram Topic on Workflow Finish
+    if: github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Workflow Build Notification to Telegram Topic
+        if: secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != ''
+        run: |
+          BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
+          CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
+          TOPIC_ID="${{ secrets.TELEGRAM_TOPIC_ID }}"
+          
+          WORKFLOW_NAME="${{ github.event.workflow.name }}"
+          CONCLUSION="${{ github.event.workflow_run.conclusion }}"
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          RUN_URL="${{ github.event.workflow_run.html_url }}"
+          
+          if [ "${CONCLUSION}" = "success" ]; then
+            STATUS_EMOJI="✅"
+            STATUS_TEXT="BUILD SUCCESSFUL"
+          else
+            STATUS_EMOJI="❌"
+            STATUS_TEXT="BUILD FAILED"
+          fi
+          
+          MESSAGE="${STATUS_EMOJI} <b>${WORKFLOW_NAME} - ${STATUS_TEXT}</b>%0A%0A"
+          MESSAGE="${MESSAGE}📦 <b>Repository:</b> ${REPO}%0A"
+          MESSAGE="${MESSAGE}🌿 <b>Branch:</b> <code>${BRANCH}</code>%0A"
+          MESSAGE="${MESSAGE}📊 <b>Status:</b> <b>${CONCLUSION}</b>%0A%0A"
+          MESSAGE="${MESSAGE}🔗 <a href=\"${RUN_URL}\">View Action Workflow Run</a>"
+          
+          URL="https://api.telegram.org/bot${BOT_TOKEN}/sendMessage"
+          
+          if [ -n "${TOPIC_ID}" ]; then
+            curl -s -X POST "${URL}" \
+              -d "chat_id=${CHAT_ID}" \
+              -d "message_thread_id=${TOPIC_ID}" \
+              -d "text=${MESSAGE}" \
+              -d "parse_mode=HTML" \
+              -d "disable_web_page_preview=true"
+          else
+            curl -s -X POST "${URL}" \
+              -d "chat_id=${CHAT_ID}" \
+              -d "text=${MESSAGE}" \
+              -d "parse_mode=HTML" \
+              -d "disable_web_page_preview=true"
+          fi
