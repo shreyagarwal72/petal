@@ -62,64 +62,19 @@ fun interface HistoryActionHandler {
 
 object PetalHistoryBridge {
     @JvmStatic
-    @JvmOverloads
-    fun showHistory(
+    fun createHistoryView(
         activity: ComponentActivity,
         onOpenUrl: HistoryUrlHandler,
         onClearBrowsingData: HistoryActionHandler,
-        onDismiss: Runnable? = null
-    ) {
-        try {
-            val dialog = BottomSheetDialog(activity)
-            dialog.setOnShowListener {
-                try {
-                    val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    bottomSheet?.let { sheet ->
-                        val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
-                        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-                        behavior.skipCollapsed = true
-                        behavior.isDraggable = true
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-            dialog.setOnDismissListener {
-                onDismiss?.run()
-            }
-
-            // BottomSheetDialog is a plain Dialog with its own Window, so it doesn't
-            // automatically inherit the Activity's OnBackPressedDispatcher the way views
-            // added directly into the Activity's own hierarchy (Settings/Downloads/Account)
-            // do. Without this, PredictiveBackHandler inside PetalHistoryScreen would have
-            // no dispatcher to attach to. This wires a small dispatcher of its own - backed
-            // by the dialog's own window on API 33+ for real predictive-back gesture events,
-            // falling back to a plain dismiss() otherwise - and hands it to the ComposeView
-            // via the standard ViewTree owner mechanism.
-            val historyBackDispatcher = androidx.activity.OnBackPressedDispatcher {
-                try { dialog.dismiss() } catch (ignored: Exception) {}
-            }
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                try {
-                    historyBackDispatcher.setOnBackInvokedDispatcher(dialog.window!!.onBackInvokedDispatcher)
-                } catch (ignored: Exception) {
-                }
-            }
-            val historyBackDispatcherOwner = object : androidx.activity.OnBackPressedDispatcherOwner {
-                override val lifecycle: androidx.lifecycle.Lifecycle
-                    get() = activity.lifecycle
-                override val onBackPressedDispatcher: androidx.activity.OnBackPressedDispatcher
-                    get() = historyBackDispatcher
-            }
-
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewTreeOnBackPressedDispatcherOwner(historyBackDispatcherOwner)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-                setContent {
-                    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+        onBackPress: () -> Unit
+    ): android.view.View {
+        return ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
@@ -140,26 +95,13 @@ object PetalHistoryBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                        PetalHistoryScreen(
-                            onOpenUrl = { url ->
-                                try { dialog.dismiss() } catch (ignored: Exception) {}
-                                onOpenUrl.open(url)
-                            },
-                            onClearBrowsingData = {
-                                try { dialog.dismiss() } catch (ignored: Exception) {}
-                                onClearBrowsingData.action()
-                            },
-                            onDismiss = {
-                                try { dialog.dismiss() } catch (ignored: Exception) {}
-                            }
-                        )
-                    }
+                    PetalHistoryScreen(
+                        onOpenUrl = { url -> onOpenUrl.open(url) },
+                        onClearBrowsingData = { onClearBrowsingData.action() },
+                        onDismiss = onBackPress
+                    )
                 }
             }
-            dialog.setContentView(composeView)
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 }

@@ -2744,22 +2744,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 @Override
                 public void onOpenHistory() {
-                    captureBrowserMainPreview();
-                    View bottomNav = findViewById(R.id.bottom_nav_compose);
-                    if (bottomNav != null) bottomNav.setVisibility(GONE);
-                    com.petal.browser.compose.history.PetalHistoryBridge.showHistory(
-                        BrowserActivity.this,
-                        url -> {
-                            if (ninjaWebView != null) {
-                                ninjaWebView.loadUrl(url);
-                                showAlbum(currentAlbumController, url);
-                            }
-                        },
-                        () -> startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class)),
-                        () -> {
-                            if (bottomNav != null) bottomNav.setVisibility(VISIBLE);
-                        }
-                    );
+                    showHistoryScreen();
                 }
 
                 @Override
@@ -2861,6 +2846,39 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return kotlin.Unit.INSTANCE;
             });
             contentFrame.addView(downloadView);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void showHistoryScreen() {
+        try {
+            captureBrowserMainPreview();
+            contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_history = findViewById(R.id.fab_bubble);
+            if (fab_bubble_history != null) fab_bubble_history.setVisibility(GONE);
+            View historyView = com.petal.browser.compose.history.PetalHistoryBridge.createHistoryView(
+                BrowserActivity.this,
+                url -> {
+                    if (ninjaWebView != null) {
+                        ninjaWebView.loadUrl(url);
+                    }
+                    showAlbum(currentAlbumController, url);
+                },
+                () -> startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class)),
+                () -> {
+                    showAlbum(currentAlbumController);
+                    return kotlin.Unit.INSTANCE;
+                }
+            );
+            contentFrame.addView(historyView);
         } catch (Exception e) {
             e.printStackTrace();
         }
