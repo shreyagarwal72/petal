@@ -33,7 +33,7 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_petal_search);
 
-        // Apply theme colors dynamically
+        // Apply theme colors dynamically matching Petal's active theme palette and dark mode
         android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
         String themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM");
         boolean isDark = false;
@@ -45,13 +45,18 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
             int nightModeFlags = context.getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
             isDark = nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES;
         }
+        boolean isAmoled = isDark && sp.getBoolean("sp_amoled", false);
 
-        int textColor = isDark ? 0xFFE2E2E6 : 0xFF5F6368;
-        int iconColor = isDark ? 0xFFC4C6D0 : 0xFF5F6368;
+        int bgColor = isAmoled ? 0xFF000000 : (isDark ? 0xFF1E2623 : 0xFFF3F9F6);
+        int textColor = isDark ? 0xFFE2E6E4 : 0xFF1F2926;
+        int hintColor = isDark ? 0xFF8E9995 : 0xFF5F6B66;
+        int primaryIconColor = isDark ? 0xFF82D5C8 : 0xFF006960;
+        int micIconColor = isDark ? 0xFFFFB877 : 0xFF9A4600;
 
-        views.setTextColor(R.id.widget_search_text, textColor);
-        views.setInt(R.id.widget_icon_search, "setColorFilter", iconColor);
-        views.setInt(R.id.widget_icon_mic, "setColorFilter", iconColor);
+        views.setInt(R.id.widget_search_bar, "setBackgroundColor", bgColor);
+        views.setTextColor(R.id.widget_search_text, hintColor);
+        views.setInt(R.id.widget_icon_search, "setColorFilter", primaryIconColor);
+        views.setInt(R.id.widget_icon_mic, "setColorFilter", micIconColor);
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
