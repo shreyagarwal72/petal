@@ -37,7 +37,7 @@
 
 ### 📦 Integrated Download Manager & Telegram Bot Sync
 - Full Jetpack Compose Download Manager with real-time download speed, progress indicators, pausing, resuming, and file opening.
-- **Telegram Topic Bot Integration**: Automated GitHub Actions workflow for real-time Telegram group topic updates on pushes and build outcomes.
+- **Telegram Topic Bot Integration**: Automated GitHub Actions workflow for real-time Telegram group topic routing on pushes and build outcomes.
 
 ---
 
