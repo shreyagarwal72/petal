@@ -5,7 +5,6 @@ import android.os.Environment;
 import android.util.Log;
 
 import com.tonyodev.fetch2.AbstractFetchListener;
-import com.tonyodev.fetch2.DefaultFetchNotificationManager;
 import com.tonyodev.fetch2.Download;
 import com.tonyodev.fetch2.Error;
 import com.tonyodev.fetch2.Fetch;
@@ -36,13 +35,6 @@ public class PetalDownloadEngine {
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
                 .setDownloadConcurrentLimit(4)
                 .enableLogging(true)
-                .setNotificationManager(new DefaultFetchNotificationManager(appContext) {
-                    @NotNull
-                    @Override
-                    public Fetch getFetchInstanceForNamespace(@NotNull String namespace) {
-                        return fetch;
-                    }
-                })
                 .build();
         fetch = Fetch.Impl.getInstance(fetchConfiguration);
 
