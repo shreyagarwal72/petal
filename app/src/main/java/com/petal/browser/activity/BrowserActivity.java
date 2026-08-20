@@ -4159,14 +4159,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
-            initSearch();
             String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-            if (search_input != null) {
-                search_input.setText(cUrl);
-                search_input.selectAll();
-            }
-            if (dialogSearch != null) dialogSearch.show();
-            HelperUnit.showSoftKeyboard(search_input);
+            if (cUrl == null || cUrl.startsWith("file:///android_asset/")) cUrl = "";
+            com.petal.browser.ui.components.PetalOmniboxBridge.showOmniboxOverlay(this, cUrl, result -> {
+                if (result != null && !result.trim().isEmpty()) {
+                    String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
+                    addAlbum(null, targetUrl, true);
+                }
+                return kotlin.Unit.INSTANCE;
+            });
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
