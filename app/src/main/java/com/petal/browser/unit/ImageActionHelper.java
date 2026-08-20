@@ -123,12 +123,12 @@ public class ImageActionHelper {
 
     private static byte[] getImageBytes(Context context, String imageUrl) throws Exception {
         if (imageUrl.startsWith("data:image")) {
-            String base64Data = imageUrl.substringAfter(",");
+            String base64Data = imageUrl.substring(imageUrl.indexOf(",") + 1);
             return android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT);
         } else if (imageUrl.startsWith("file://") || imageUrl.startsWith("content://")) {
             Uri uri = Uri.parse(imageUrl);
             InputStream is = context.getContentResolver().openInputStream(uri);
-            byte[] bytes = is.readBytes();
+            byte[] bytes = readAllBytesCompat(is);
             is.close();
             return bytes;
         } else {
@@ -139,5 +139,15 @@ public class ImageActionHelper {
             response.close();
             return bytes;
         }
+    }
+
+    private static byte[] readAllBytesCompat(InputStream is) throws java.io.IOException {
+        java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[8192];
+        while ((nRead = is.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+        return buffer.toByteArray();
     }
 }
