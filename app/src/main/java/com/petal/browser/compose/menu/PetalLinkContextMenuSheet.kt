@@ -45,6 +45,7 @@ interface PetalLinkContextMenuHandler {
     fun onDownloadLink()
     fun onAddToReadingList()
     fun onShareLink()
+    fun onScanImage()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,6 +162,10 @@ fun PetalLinkContextMenuSheet(
             ContextMenuItem("Add to reading list", Icons.Rounded.BookmarkAdd) {
                 onDismiss()
                 handler.onAddToReadingList()
+            }
+            ContextMenuItem("Scan Image", Icons.Rounded.DocumentScanner) {
+                onDismiss()
+                handler.onScanImage()
             }
             ContextMenuItem("Share link", Icons.Rounded.Share, trailingIcon = Icons.Rounded.IosShare) {
                 onDismiss()

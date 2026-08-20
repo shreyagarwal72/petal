@@ -4244,60 +4244,91 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             WebView.HitTestResult result = ninjaWebView.getHitTestResult();
             int type = result.getType();
 
-            if (type == WebView.HitTestResult.IMAGE_TYPE) {
-                String imageURL = result.getExtra();
-                // Optimiertes JavaScript: Findet das Bild auch bei relativen Pfaden im HTML
-                String script = "javascript:(function() {" +
-                        "var allImgs = document.getElementsByTagName('img');" +
-                        "var targetImg = null;" +
-                        "var searchUrl = '" + imageURL + "';" +
-                        "for (var i = 0; i < allImgs.length; i++) {" +
-                        "   if (allImgs[i].src === searchUrl || searchUrl.endsWith(allImgs[i].getAttribute('src'))) {" +
-                        "       targetImg = allImgs[i];" +
-                        "       break;" +
-                        "   }" +
-                        "}" +
-                        "if (!targetImg) return 'ERR_NOT_FOUND';" +
-                        "if (!targetImg.hasAttribute('alt')) return 'ERR_NO_ALT_ATTR';" +
-                        "if (targetImg.alt.trim() === '') return 'ERR_ALT_EMPTY';" +
-                        "return targetImg.alt;" +
-                        "})()";
-
-                ninjaWebView.evaluateJavascript(script, value -> {
-                    if (value != null) {
-                        // 1. Äußere JSON-Anführungszeichen entfernen
-                        value = value.replaceAll("^\"|\"$", "").trim();
-                        // 2. Maskierte Anführungszeichen (\") zu normalen (") machen
-                        value = value.replace("\\\"", "\"");
-                        // 3. WICHTIG: Die Textzeichen \n durch einen echten System-Zeilenumbruch ersetzen
-                        value = value.replace("\\n", "\n").replace("\\r", "\r");
-                    }
-                    final String finalValue = value;
-
-                    runOnUiThread(() -> {
-                        String textToShow;
-                        assert finalValue != null;
-                        if (finalValue.isEmpty() || finalValue.equals("null") || finalValue.equals("ERR_NOT_FOUND")) {
-                            textToShow = context.getString(R.string.app_error) + ": ERR_ALT_NOT_FOUND";
-                            NinjaToast.show(this, textToShow);
-                        } else if (finalValue.equals("ERR_NO_ALT_ATTR")) {
-                            textToShow = context.getString(R.string.app_error) + ": ERR_NO_ALT_ATTR";
-                        } else if (finalValue.equals("ERR_ALT_EMPTY")) {
-                            textToShow = context.getString(R.string.app_error) + ": ERR_ALT_EMPTY";
-                        } else {
-                            textToShow = finalValue.replace("\n", " ").replace("\r", " ");
+            if (type == WebView.HitTestResult.IMAGE_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+                final String imageURL = result.getExtra();
+                v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                com.petal.browser.compose.menu.PetalLinkContextMenuBridge.show(
+                    BrowserActivity.this,
+                    HelperUnit.domain(imageURL),
+                    imageURL,
+                    imageURL,
+                    new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
+                        @Override
+                        public void onOpenInNewTab() {
+                            addAlbum(getString(R.string.app_name), imageURL, false);
                         }
-                        HelperUnit.showCustomSnackbarWithTwoActions(
-                                this, ninjaWebView, null,
-                                ninjaWebView.getTitle(), textToShow, imageURL,
-                                R.drawable.icon_share, () -> {
-                                    shareLink(ninjaWebView.getTitle(), textToShow);
-                                    return true;
-                                },
-                                R.drawable.icon_close, () -> true
-                        );
-                    });
-                });
+
+                        @Override
+                        public void onOpenInNewTabInGroup() {
+                            addAlbum(getString(R.string.app_name), imageURL, false);
+                        }
+
+                        @Override
+                        public void onOpenInIncognitoTab() {
+                            addAlbum(getString(R.string.app_name), imageURL, false);
+                        }
+
+                        @Override
+                        public void onOpenInNewWindow() {
+                            addAlbum(getString(R.string.app_name), imageURL, true);
+                        }
+
+                        @Override
+                        public void onPreviewPage() {
+                            addAlbum(getString(R.string.app_name), imageURL, true);
+                        }
+
+                        @Override
+                        public void onCopyLinkAddress() {
+                            HelperUnit.copy(BrowserActivity.this, imageURL);
+                            NinjaToast.show(BrowserActivity.this, "Image URL copied");
+                        }
+
+                        @Override
+                        public void onCopyLinkText() {
+                            HelperUnit.copy(BrowserActivity.this, HelperUnit.domain(imageURL));
+                            NinjaToast.show(BrowserActivity.this, "Domain copied");
+                        }
+
+                        @Override
+                        public void onDownloadLink() {
+                            try {
+                                String fileName = android.webkit.URLUtil.guessFileName(imageURL, null, null);
+                                com.petal.browser.unit.BrowserUnit.download(BrowserActivity.this, imageURL, fileName, null);
+                                NinjaToast.show(BrowserActivity.this, "Download started");
+                            } catch (Exception e) {
+                                NinjaToast.show(BrowserActivity.this, "Failed to start download");
+                            }
+                        }
+
+                        @Override
+                        public void onAddToReadingList() {
+                            try {
+                                RecordAction action = new RecordAction(BrowserActivity.this);
+                                action.open(true);
+                                action.addBookmark(new Record(HelperUnit.domain(imageURL), imageURL, System.currentTimeMillis(), 0));
+                                action.close();
+                                NinjaToast.show(BrowserActivity.this, "Added to reading list");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        @Override
+                        public void onScanImage() {
+                            if (imageURL != null && !imageURL.trim().isEmpty()) {
+                                com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(BrowserActivity.this, imageURL);
+                            } else {
+                                NinjaToast.show(BrowserActivity.this, "No valid image URL found");
+                            }
+                        }
+
+                        @Override
+                        public void onShareLink() {
+                            shareLink(HelperUnit.domain(imageURL), imageURL);
+                        }
+                    }
+                );
                 return true;
             }
             if (type == WebView.HitTestResult.SRC_ANCHOR_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
@@ -4367,6 +4398,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 NinjaToast.show(BrowserActivity.this, "Added to reading list");
                             } catch (Exception e) {
                                 e.printStackTrace();
+                            }
+                        }
+
+                        @Override
+                        public void onScanImage() {
+                            if (urlResult != null && !urlResult.trim().isEmpty()) {
+                                com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(BrowserActivity.this, urlResult);
                             }
                         }
 

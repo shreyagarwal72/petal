@@ -134,4 +134,8 @@ dependencies {
 
     // AndroidX Biometric for hardware biometric & device credential lock
     implementation 'androidx.biometric:biometric:1.2.0-alpha05'
+
+    // Google ML Kit On-Device Recognition APIs
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+    implementation 'com.google.mlkit:barcode-scanning:17.3.0'
 }
