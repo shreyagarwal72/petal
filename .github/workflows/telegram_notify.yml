@@ -54,8 +54,15 @@ jobs:
               "disable_web_page_preview": True
           }
 
-          if topic_id and topic_id.isdigit():
-              payload["message_thread_id"] = int(topic_id)
+          if topic_id:
+              try:
+                  tid = int(topic_id)
+                  payload["message_thread_id"] = tid
+                  print(f"🎯 Target Telegram Chat: {chat_id} | Topic ID: {tid}")
+              except ValueError:
+                  print(f"⚠️ Warning: TELEGRAM_TOPIC_ID '{topic_id}' is not a valid integer. Sending to main chat.")
+          else:
+              print(f"🎯 Target Telegram Chat: {chat_id} | Main Chat / No Topic ID set")
 
           url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
           req = urllib.request.Request(
@@ -121,8 +128,13 @@ jobs:
               "disable_web_page_preview": True
           }
 
-          if topic_id and topic_id.isdigit():
-              payload["message_thread_id"] = int(topic_id)
+          if topic_id:
+              try:
+                  tid = int(topic_id)
+                  payload["message_thread_id"] = tid
+                  print(f"🎯 Target Telegram Chat: {chat_id} | Topic ID: {tid}")
+              except ValueError:
+                  print(f"⚠️ Warning: TELEGRAM_TOPIC_ID '{topic_id}' is not a valid integer.")
 
           url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
           req = urllib.request.Request(
