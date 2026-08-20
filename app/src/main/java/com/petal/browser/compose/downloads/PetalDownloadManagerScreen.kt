@@ -203,7 +203,42 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         kotlinx.coroutines.delay(1000L)
         isLoading = false
     }
-    val downloadList by PetalFetchDownloadBridge.downloadItems.collectAsState()
+    val rawDownloadList by PetalFetchDownloadBridge.downloadItems.collectAsState()
+    var pendingDeletedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    val downloadList = remember(rawDownloadList, pendingDeletedIds) {
+        rawDownloadList.filter { !pendingDeletedIds.contains(it.id) }
+    }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    fun performStagedDelete(items: List<DownloadItem>) {
+        if (items.isEmpty()) return
+        val targetIds = items.map { it.id }.toSet()
+        pendingDeletedIds = pendingDeletedIds + targetIds
+
+        val message = if (items.size == 1) {
+            "Deleted ${items.first().fileName}"
+        } else {
+            "Deleted ${items.size} items"
+        }
+
+        coroutineScope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                // Restore optimistic deletion
+                pendingDeletedIds = pendingDeletedIds - targetIds
+            } else {
+                // Snackbar dismissed / timed out -> Commit permanent deletion from disk & database
+                PetalFetchDownloadBridge.deleteDownloads(context, items)
+                pendingDeletedIds = pendingDeletedIds - targetIds
+            }
+        }
+    }
 
     val groupedDownloads = remember(downloadList) {
         downloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
@@ -257,7 +292,19 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    actionColor = MaterialTheme.colorScheme.inversePrimary,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
     ) { innerPadding ->
         // Reflects whichever Predictive Back Animation style is selected in Settings (AOSP /
         // MIUIX / Scale / Classic / None) instead of a hardcoded shrink - this is the bug fix
@@ -281,7 +328,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
             isLeftEdge = backIsLeftEdge,
         )
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             M3ExpressiveVariableBackground(pageSeed = "downloads_page")
 
             // "Last page" preview: the browser page this screen was opened from, peeking in
@@ -363,7 +410,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                             }
                             IconButton(onClick = {
                                 val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
-                                deleteMultipleFiles(context, itemsToDelete)
+                                performStagedDelete(itemsToDelete)
                                 selectedIds = emptySet()
                             }) {
                                 Icon(Icons.Rounded.Delete, contentDescription = "Delete Selected", tint = MaterialTheme.colorScheme.error)
@@ -439,6 +486,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                                         toggleSelection(item.id)
                                     }
                                 },
+                                onDeleteItem = { performStagedDelete(listOf(item)) },
                                 onOpenFile = { openDownloadedFile(context, item) }
                             )
                         }
@@ -459,6 +507,7 @@ private fun DownloadRowItem(
     isSelectionMode: Boolean,
     onToggleSelect: () -> Unit,
     onLongClick: () -> Unit,
+    onDeleteItem: () -> Unit,
     onOpenFile: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -676,7 +725,7 @@ private fun DownloadRowItem(
                             leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 menuExpanded = false
-                                deleteDownloadedFile(context, item)
+                                onDeleteItem()
                             }
                         )
                     }
