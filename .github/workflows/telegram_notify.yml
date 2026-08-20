@@ -13,89 +13,131 @@ jobs:
     name: Notify Telegram Topic on Push
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
     steps:
       - name: Send Commit Notification to Telegram Topic
-        if: secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != ''
         run: |
-          BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
-          CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
-          TOPIC_ID="${{ secrets.TELEGRAM_TOPIC_ID }}"
-          
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
-          AUTHOR="${{ github.actor }}"
-          REPO="${{ github.repository }}"
-          BRANCH="${{ github.ref_name }}"
-          COMMIT_HASH="${{ github.sha }}"
-          SHORT_HASH="${COMMIT_HASH:0:7}"
-          COMMIT_URL="https://github.com/${REPO}/commit/${COMMIT_HASH}"
-          
-          MESSAGE="🔨 <b>New Commit Pushed</b> to <b>${REPO}</b> [<code>${BRANCH}</code>]%0A%0A"
-          MESSAGE="${MESSAGE}👤 <b>Author:</b> ${AUTHOR}%0A"
-          MESSAGE="${MESSAGE}🔗 <b>Commit:</b> <a href=\"${COMMIT_URL}\">${SHORT_HASH}</a>%0A%0A"
-          MESSAGE="${MESSAGE}📝 <b>Message:</b>%0A<code>${COMMIT_MSG}</code>"
-          
-          URL="https://api.telegram.org/bot${BOT_TOKEN}/sendMessage"
-          
-          if [ -n "${TOPIC_ID}" ]; then
-            curl -s -X POST "${URL}" \
-              -d "chat_id=${CHAT_ID}" \
-              -d "message_thread_id=${TOPIC_ID}" \
-              -d "text=${MESSAGE}" \
-              -d "parse_mode=HTML" \
-              -d "disable_web_page_preview=true"
-          else
-            curl -s -X POST "${URL}" \
-              -d "chat_id=${CHAT_ID}" \
-              -d "text=${MESSAGE}" \
-              -d "parse_mode=HTML" \
-              -d "disable_web_page_preview=true"
-          fi
+          python3 - << 'EOF'
+          import os, json, urllib.request
+
+          bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+          chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+          topic_id = os.environ.get("TELEGRAM_TOPIC_ID", "").strip()
+
+          if not bot_token or not chat_id:
+              print("⚠️ Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID secret in repository.")
+              print("Please configure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in GitHub Repository Settings -> Secrets and variables -> Actions.")
+              exit(0)
+
+          author = "${{ github.actor }}"
+          repo = "${{ github.repository }}"
+          branch = "${{ github.ref_name }}"
+          commit_hash = "${{ github.sha }}"
+          short_hash = commit_hash[:7]
+          commit_url = f"https://github.com/{repo}/commit/{commit_hash}"
+          commit_msg = """${{ github.event.head_commit.message }}"""
+
+          message = (
+              f"🔨 <b>New Commit Pushed</b> to <b>{repo}</b> [<code>{branch}</code>]\n\n"
+              f"👤 <b>Author:</b> {author}\n"
+              f"🔗 <b>Commit:</b> <a href=\"{commit_url}\">{short_hash}</a>\n\n"
+              f"📝 <b>Message:</b>\n<code>{commit_msg}</code>"
+          )
+
+          payload = {
+              "chat_id": chat_id,
+              "text": message,
+              "parse_mode": "HTML",
+              "disable_web_page_preview": True
+          }
+
+          if topic_id and topic_id.isdigit():
+              payload["message_thread_id"] = int(topic_id)
+
+          url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+          req = urllib.request.Request(
+              url,
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json"}
+          )
+
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  result = json.loads(resp.read().decode("utf-8"))
+                  print("✅ Telegram notification sent successfully:", result)
+          except Exception as e:
+              print("❌ Telegram API Error:", e)
+              if hasattr(e, 'read'):
+                  print("Details:", e.read().decode('utf-8'))
+              exit(1)
+          EOF
 
   notify-build:
     name: Notify Telegram Topic on Workflow Finish
     if: github.event_name == 'workflow_run'
     runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_TOPIC_ID: ${{ secrets.TELEGRAM_TOPIC_ID }}
     steps:
       - name: Send Workflow Build Notification to Telegram Topic
-        if: secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != ''
         run: |
-          BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
-          CHAT_ID="${{ secrets.TELEGRAM_CHAT_ID }}"
-          TOPIC_ID="${{ secrets.TELEGRAM_TOPIC_ID }}"
-          
-          WORKFLOW_NAME="${{ github.event.workflow.name }}"
-          CONCLUSION="${{ github.event.workflow_run.conclusion }}"
-          REPO="${{ github.repository }}"
-          BRANCH="${{ github.event.workflow_run.head_branch }}"
-          RUN_URL="${{ github.event.workflow_run.html_url }}"
-          
-          if [ "${CONCLUSION}" = "success" ]; then
-            STATUS_EMOJI="✅"
-            STATUS_TEXT="BUILD SUCCESSFUL"
-          else
-            STATUS_EMOJI="❌"
-            STATUS_TEXT="BUILD FAILED"
-          fi
-          
-          MESSAGE="${STATUS_EMOJI} <b>${WORKFLOW_NAME} - ${STATUS_TEXT}</b>%0A%0A"
-          MESSAGE="${MESSAGE}📦 <b>Repository:</b> ${REPO}%0A"
-          MESSAGE="${MESSAGE}🌿 <b>Branch:</b> <code>${BRANCH}</code>%0A"
-          MESSAGE="${MESSAGE}📊 <b>Status:</b> <b>${CONCLUSION}</b>%0A%0A"
-          MESSAGE="${MESSAGE}🔗 <a href=\"${RUN_URL}\">View Action Workflow Run</a>"
-          
-          URL="https://api.telegram.org/bot${BOT_TOKEN}/sendMessage"
-          
-          if [ -n "${TOPIC_ID}" ]; then
-            curl -s -X POST "${URL}" \
-              -d "chat_id=${CHAT_ID}" \
-              -d "message_thread_id=${TOPIC_ID}" \
-              -d "text=${MESSAGE}" \
-              -d "parse_mode=HTML" \
-              -d "disable_web_page_preview=true"
-          else
-            curl -s -X POST "${URL}" \
-              -d "chat_id=${CHAT_ID}" \
-              -d "text=${MESSAGE}" \
-              -d "parse_mode=HTML" \
-              -d "disable_web_page_preview=true"
-          fi
+          python3 - << 'EOF'
+          import os, json, urllib.request
+
+          bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+          chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+          topic_id = os.environ.get("TELEGRAM_TOPIC_ID", "").strip()
+
+          if not bot_token or not chat_id:
+              print("⚠️ Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID secret in repository.")
+              exit(0)
+
+          workflow_name = "${{ github.event.workflow.name }}"
+          conclusion = "${{ github.event.workflow_run.conclusion }}"
+          repo = "${{ github.repository }}"
+          branch = "${{ github.event.workflow_run.head_branch }}"
+          run_url = "${{ github.event.workflow_run.html_url }}"
+
+          status_emoji = "✅" if conclusion == "success" else "❌"
+          status_text = "BUILD SUCCESSFUL" if conclusion == "success" else "BUILD FAILED"
+
+          message = (
+              f"{status_emoji} <b>{workflow_name} - {status_text}</b>\n\n"
+              f"📦 <b>Repository:</b> {repo}\n"
+              f"🌿 <b>Branch:</b> <code>{branch}</code>\n"
+              f"📊 <b>Status:</b> <b>{conclusion}</b>\n\n"
+              f"🔗 <a href=\"{run_url}\">View Action Workflow Run</a>"
+          )
+
+          payload = {
+              "chat_id": chat_id,
+              "text": message,
+              "parse_mode": "HTML",
+              "disable_web_page_preview": True
+          }
+
+          if topic_id and topic_id.isdigit():
+              payload["message_thread_id"] = int(topic_id)
+
+          url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+          req = urllib.request.Request(
+              url,
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json"}
+          )
+
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  result = json.loads(resp.read().decode("utf-8"))
+                  print("✅ Telegram notification sent successfully:", result)
+          except Exception as e:
+              print("❌ Telegram API Error:", e)
+              if hasattr(e, 'read'):
+                  print("Details:", e.read().decode('utf-8'))
+              exit(1)
+          EOF
