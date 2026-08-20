@@ -29,7 +29,6 @@ jobs:
 
           if not bot_token or not chat_id:
               print("⚠️ Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID secret in repository.")
-              print("Please configure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in GitHub Repository Settings -> Secrets and variables -> Actions.")
               exit(0)
 
           author = "${{ github.actor }}"
@@ -41,7 +40,8 @@ jobs:
           commit_msg = """${{ github.event.head_commit.message }}"""
 
           message = (
-              f"🔨 <b>New Commit Pushed</b> to <b>{repo}</b> [<code>{branch}</code>]\n\n"
+              f"🌸 <b>Petal Browser Update</b>\n"
+              f"🔨 <b>New Commit</b> [<code>{branch}</code>]\n\n"
               f"👤 <b>Author:</b> {author}\n"
               f"🔗 <b>Commit:</b> <a href=\"{commit_url}\">{short_hash}</a>\n\n"
               f"📝 <b>Message:</b>\n<code>{commit_msg}</code>"
@@ -60,9 +60,7 @@ jobs:
                   payload["message_thread_id"] = tid
                   print(f"🎯 Target Telegram Chat: {chat_id} | Topic ID: {tid}")
               except ValueError:
-                  print(f"⚠️ Warning: TELEGRAM_TOPIC_ID '{topic_id}' is not a valid integer. Sending to main chat.")
-          else:
-              print(f"🎯 Target Telegram Chat: {chat_id} | Main Chat / No Topic ID set")
+                  print(f"⚠️ Warning: TELEGRAM_TOPIC_ID '{topic_id}' is not a valid integer.")
 
           url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
           req = urllib.request.Request(
@@ -114,8 +112,8 @@ jobs:
           status_text = "BUILD SUCCESSFUL" if conclusion == "success" else "BUILD FAILED"
 
           message = (
+              f"🌸 <b>Petal Browser CI/CD</b>\n"
               f"{status_emoji} <b>{workflow_name} - {status_text}</b>\n\n"
-              f"📦 <b>Repository:</b> {repo}\n"
               f"🌿 <b>Branch:</b> <code>{branch}</code>\n"
               f"📊 <b>Status:</b> <b>{conclusion}</b>\n\n"
               f"🔗 <a href=\"{run_url}\">View Action Workflow Run</a>"
