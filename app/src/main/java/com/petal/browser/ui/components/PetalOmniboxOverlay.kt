@@ -61,9 +61,11 @@ object PetalOmniboxBridge {
     private var activeDialog: BottomSheetDialog? = null
 
     @JvmStatic
+    @JvmOverloads
     fun showOmniboxOverlay(
         activity: ComponentActivity,
         initialQuery: String = "",
+        onDismissCallback: (() -> Unit)? = null,
         onQuerySubmitted: (String) -> Unit
     ) {
         activity.runOnUiThread {
@@ -124,6 +126,7 @@ object PetalOmniboxBridge {
                 if (activeDialog == dialog) {
                     activeDialog = null
                 }
+                onDismissCallback?.invoke()
             }
             dialog.show()
         }
