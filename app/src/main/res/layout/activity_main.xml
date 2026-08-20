@@ -48,6 +48,14 @@
         android:layout_below="@id/compose_address_bar"
         android:elevation="14dp"/>
 
+    <!-- Top Download Status Banner (Jetpack Compose Material 3 Expressive Banner) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/download_banner_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/compose_address_bar"
+        android:elevation="20dp" />
+
     <!-- Pull to Refresh Bar (ContainedLoadingIndicator) -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/refresh_bar_compose"

@@ -2467,6 +2467,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
 
+        androidx.compose.ui.platform.ComposeView downloadBannerCompose = findViewById(R.id.download_banner_compose);
+        if (downloadBannerCompose != null) {
+            com.petal.browser.compose.downloads.PetalDownloadBannerBridge.bindDownloadBanner(
+                downloadBannerCompose,
+                this,
+                this::showDownloadsScreen
+            );
+        }
+
         if (contentFrame == null) return;
 
         // Works the same for every page hosted in main_content: a normal web
