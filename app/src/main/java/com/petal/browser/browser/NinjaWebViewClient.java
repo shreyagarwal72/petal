@@ -48,6 +48,7 @@ public class NinjaWebViewClient extends WebViewClient {
     private final Context context;
     private final SharedPreferences sp;
     private final AdBlock adBlock;
+    private volatile String currentUrl = "";
 
     public NinjaWebViewClient(NinjaWebView ninjaWebView) {
         super();
@@ -70,6 +71,9 @@ public class NinjaWebViewClient extends WebViewClient {
 
     @Override
     public void onPageFinished(WebView view, String url) {
+        if (url != null) {
+            this.currentUrl = url;
+        }
         super.onPageFinished(view, url);
 
 
@@ -152,6 +156,9 @@ public class NinjaWebViewClient extends WebViewClient {
     @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
         if (view == null || ninjaWebView == null) return;
+        if (url != null) {
+            this.currentUrl = url;
+        }
         try {
             ninjaWebView.setStopped(false);
             ninjaWebView.resetFavicon();
@@ -553,11 +560,19 @@ public class NinjaWebViewClient extends WebViewClient {
     }
 
     @Override
+    public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+        if (url != null) {
+            this.currentUrl = url;
+        }
+        super.doUpdateVisitedHistory(view, url, isReload);
+    }
+
+    @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         if (request != null && !request.isForMainFrame() && ninjaWebView.isAdBlock()) {
             PetalAdBlockEngine.ensureInitialized(context);
             String reqUrl = request.getUrl().toString();
-            String pageUrl = view != null ? view.getUrl() : null;
+            String pageUrl = currentUrl;
             if (PetalAdBlockEngine.shouldBlockUrl(context, reqUrl, pageUrl) || adBlock.isAd(reqUrl)) {
                 return PetalAdBlockEngine.createEmpty204Response();
             }
