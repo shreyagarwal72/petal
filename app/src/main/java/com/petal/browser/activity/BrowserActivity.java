@@ -2472,7 +2472,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.compose.downloads.PetalDownloadBannerBridge.bindDownloadBanner(
                 downloadBannerCompose,
                 this,
-                this::showDownloadsScreen
+                this::showDownloads
             );
         }
 
