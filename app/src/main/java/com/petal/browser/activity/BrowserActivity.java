@@ -4138,10 +4138,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             try {
-                Intent voiceIntent = new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                voiceIntent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                voiceIntent.putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak to search...");
-                startActivityForResult(voiceIntent, VOICE_SEARCH_REQUEST_CODE);
+                com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(this, result -> {
+                    if (result != null && !result.trim().isEmpty()) {
+                        String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
+                        addAlbum(null, targetUrl, true);
+                    }
+                    return kotlin.Unit.INSTANCE;
+                });
             } catch (Exception e) {
                 initSearch();
                 if (dialogSearch != null) dialogSearch.show();

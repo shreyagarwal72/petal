@@ -33,14 +33,6 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_petal_search);
 
-        android.os.Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
-        int minWidth = options != null ? options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180) : 180;
-
-        boolean isWidgetAiEnabled = com.petal.browser.compose.ai.PetalAiSearchManager.INSTANCE.isWidgetAiSearchEnabled(context);
-        boolean showAiIcon = isWidgetAiEnabled && minWidth >= 220;
-
-        views.setViewVisibility(R.id.widget_icon_ai, showAiIcon ? android.view.View.VISIBLE : android.view.View.GONE);
-
         // Apply theme colors dynamically
         android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
         String themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM");
@@ -56,12 +48,10 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
 
         int textColor = isDark ? 0xFFE2E2E6 : 0xFF5F6368;
         int iconColor = isDark ? 0xFFC4C6D0 : 0xFF5F6368;
-        int aiIconColor = isDark ? 0xFFD0BCFF : 0xFF6750A4;
 
         views.setTextColor(R.id.widget_search_text, textColor);
         views.setInt(R.id.widget_icon_search, "setColorFilter", iconColor);
         views.setInt(R.id.widget_icon_mic, "setColorFilter", iconColor);
-        views.setInt(R.id.widget_icon_ai, "setColorFilter", aiIconColor);
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
