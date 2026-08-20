@@ -47,15 +47,19 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
         }
         boolean isAmoled = isDark && sp.getBoolean("sp_amoled", false);
 
-        int bgColor = isAmoled ? 0xFF000000 : (isDark ? 0xFF1E2623 : 0xFFF3F9F6);
-        int textColor = isDark ? 0xFFE2E6E4 : 0xFF1F2926;
-        int hintColor = isDark ? 0xFF8E9995 : 0xFF5F6B66;
+        // Apply background shape resource without calling setBackgroundColor (which destroys 28dp pill corners)
+        int bgResId = isAmoled ? R.drawable.bg_petal_widget_amoled : (isDark ? R.drawable.bg_petal_widget_dark : R.drawable.bg_petal_widget_light);
+        views.setInt(R.id.widget_search_bar, "setBackgroundResource", bgResId);
+
+        // Material You theme colors for text and icons
+        int hintColor = isDark ? 0xFFA1ACA7 : 0xFF404945;
         int primaryIconColor = isDark ? 0xFF82D5C8 : 0xFF006960;
+        int aiIconColor = isDark ? 0xFFA2C9FF : 0xFF005AC1;
         int micIconColor = isDark ? 0xFFFFB877 : 0xFF9A4600;
 
-        views.setInt(R.id.widget_search_bar, "setBackgroundColor", bgColor);
         views.setTextColor(R.id.widget_search_text, hintColor);
         views.setInt(R.id.widget_icon_search, "setColorFilter", primaryIconColor);
+        views.setInt(R.id.widget_icon_ai, "setColorFilter", aiIconColor);
         views.setInt(R.id.widget_icon_mic, "setColorFilter", micIconColor);
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
@@ -63,12 +67,19 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
             flags |= PendingIntent.FLAG_IMMUTABLE;
         }
 
-        // Search Bar Intent
+        // Search Bar Intent (opens main browser search)
         Intent searchIntent = new Intent(context, BrowserActivity.class);
         searchIntent.setAction(ACTION_OPEN_SEARCH);
         searchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent searchPendingIntent = PendingIntent.getActivity(context, 0, searchIntent, flags);
         views.setOnClickPendingIntent(R.id.widget_search_bar, searchPendingIntent);
+
+        // AI Search Intent (opens AI Search sheet directly)
+        Intent aiSearchIntent = new Intent(context, BrowserActivity.class);
+        aiSearchIntent.setAction(ACTION_OPEN_AI_SEARCH);
+        aiSearchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent aiSearchPendingIntent = PendingIntent.getActivity(context, 1, aiSearchIntent, flags);
+        views.setOnClickPendingIntent(R.id.widget_icon_ai, aiSearchPendingIntent);
 
         // Voice Search Intent
         Intent voiceIntent = new Intent(context, BrowserActivity.class);
