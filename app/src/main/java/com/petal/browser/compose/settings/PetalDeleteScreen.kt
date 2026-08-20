@@ -398,6 +398,7 @@ private fun DeleteOptionItem(
             trailing = {
                 IconSwitch(
                     checked = checked,
+                    icon = icon,
                     onCheckedChange = onCheckedChange
                 )
             }
@@ -442,6 +443,7 @@ private fun DeleteOptionItem(
                 }
                 IconSwitch(
                     checked = checked,
+                    icon = icon,
                     onCheckedChange = onCheckedChange
                 )
             }
