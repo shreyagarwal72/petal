@@ -200,7 +200,13 @@ object PetalFetchDownloadBridge {
     private fun publish() {
         val items = synchronized(downloadsMap) { downloadsMap.values.toList() }
             .map { toDownloadItem(it) }
-            .sortedByDescending { it.timestampMs }
+            .sortedWith(
+                compareByDescending<DownloadItem> { item ->
+                    item.status == DownloadManager.STATUS_RUNNING ||
+                    item.status == DownloadManager.STATUS_PAUSED ||
+                    item.status == DownloadManager.STATUS_PENDING
+                }.thenByDescending { it.timestampMs }
+            )
         _downloadItems.value = items
     }
 
