@@ -63,8 +63,6 @@ import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.PetalSearchEngineSheetContent
 import com.petal.browser.ui.components.StrideSlider
 import com.petal.browser.ui.components.bouncyClickable
-import com.petal.browser.ui.components.ExpressiveButtonGroup
-import com.petal.browser.ui.components.ExpressiveSegmentItem
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.*
 
@@ -1616,19 +1614,34 @@ fun PetalSettingsScreen(
                         )
 
                         if (isExpressiveFeatureTiles) {
-                            ExpressiveButtonGroup(
-                                items = listOf(
-                                    ExpressiveSegmentItem("", "Always Ask", Icons.Rounded.HelpOutline),
-                                    ExpressiveSegmentItem("SUMMARIZE", "Summarise", Icons.Rounded.Subject),
-                                    ExpressiveSegmentItem("ASK_QUESTION", "Ask Question", Icons.Rounded.QuestionAnswer)
-                                ),
-                                selectedId = currentDefaultAiAction,
-                                onItemSelected = { action ->
-                                    currentDefaultAiAction = action
-                                    sp.edit().putString("sp_ai_default_action", action).apply()
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                            val options = listOf(
+                                Triple("", "Always Ask", Icons.Rounded.HelpOutline),
+                                Triple("SUMMARIZE", "Summarise", Icons.Rounded.Subject),
+                                Triple("ASK_QUESTION", "Ask Question", Icons.Rounded.QuestionAnswer)
                             )
+                            SingleChoiceSegmentedButtonRow(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                options.forEachIndexed { index, (actionKey, actionLabel, actionIcon) ->
+                                    SegmentedButton(
+                                        selected = currentDefaultAiAction == actionKey,
+                                        onClick = {
+                                            currentDefaultAiAction = actionKey
+                                            sp.edit().putString("sp_ai_default_action", actionKey).apply()
+                                        },
+                                        shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                                        icon = {
+                                            Icon(
+                                                imageVector = actionIcon,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    ) {
+                                        Text(actionLabel)
+                                    }
+                                }
+                            }
                         } else {
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
