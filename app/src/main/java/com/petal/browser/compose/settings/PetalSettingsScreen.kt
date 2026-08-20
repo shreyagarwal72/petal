@@ -1518,6 +1518,17 @@ fun PetalSettingsScreen(
                     var currentAiKey by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, currentAiProvider)) }
                     var currentAiModel by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, currentAiProvider)) }
 
+                    if (isExpressiveFeatureTiles) {
+                        PetalFeatureTile(
+                            title = "AI Web Research Hub",
+                            subtitle = "Configure OpenRouter, Gemini, Grok, OpenAI & Groq real-time webpage analysis",
+                            icon = Icons.Rounded.AutoAwesome,
+                            container = MaterialTheme.colorScheme.primaryContainer,
+                            onContainer = MaterialTheme.colorScheme.onPrimaryContainer,
+                            onClick = { }
+                        )
+                    }
+
                     SettingsCategoryCard(title = "Real-Time AI Web Research", icon = Icons.Rounded.AutoAwesome) {
                         Text(
                             "Configure AI providers and API keys to enable real-time webpage analysis, summaries, Q&A, and deep research directly from the address bar button.",
@@ -1600,37 +1611,54 @@ fun PetalSettingsScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            FilterChip(
-                                selected = currentDefaultAiAction.isEmpty(),
-                                onClick = {
-                                    currentDefaultAiAction = ""
-                                    sp.edit().putString("sp_ai_default_action", "").apply()
+                        if (isExpressiveFeatureTiles) {
+                            ExpressiveButtonGroup(
+                                items = listOf(
+                                    ExpressiveSegmentItem("", "Always Ask", Icons.Rounded.HelpOutline),
+                                    ExpressiveSegmentItem("SUMMARIZE", "Summarise", Icons.Rounded.Subject),
+                                    ExpressiveSegmentItem("ASK_QUESTION", "Ask Question", Icons.Rounded.QuestionAnswer)
+                                ),
+                                selectedId = currentDefaultAiAction,
+                                onItemSelected = { action ->
+                                    currentDefaultAiAction = action
+                                    sp.edit().putString("sp_ai_default_action", action).apply()
                                 },
-                                label = { Text("Always Ask") },
-                                leadingIcon = { Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                modifier = Modifier.fillMaxWidth()
                             )
-                            FilterChip(
-                                selected = currentDefaultAiAction == "SUMMARIZE",
-                                onClick = {
-                                    currentDefaultAiAction = "SUMMARIZE"
-                                    sp.edit().putString("sp_ai_default_action", "SUMMARIZE").apply()
-                                },
-                                label = { Text("Summarise") },
-                                leadingIcon = { Icon(Icons.Rounded.Subject, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                            )
-                            FilterChip(
-                                selected = currentDefaultAiAction == "ASK_QUESTION",
-                                onClick = {
-                                    currentDefaultAiAction = "ASK_QUESTION"
-                                    sp.edit().putString("sp_ai_default_action", "ASK_QUESTION").apply()
-                                },
-                                label = { Text("Ask Question") },
-                                leadingIcon = { Icon(Icons.Rounded.QuestionAnswer, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                            )
+                        } else {
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                FilterChip(
+                                    selected = currentDefaultAiAction.isEmpty(),
+                                    onClick = {
+                                        currentDefaultAiAction = ""
+                                        sp.edit().putString("sp_ai_default_action", "").apply()
+                                    },
+                                    label = { Text("Always Ask") },
+                                    leadingIcon = { Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                )
+                                FilterChip(
+                                    selected = currentDefaultAiAction == "SUMMARIZE",
+                                    onClick = {
+                                        currentDefaultAiAction = "SUMMARIZE"
+                                        sp.edit().putString("sp_ai_default_action", "SUMMARIZE").apply()
+                                    },
+                                    label = { Text("Summarise") },
+                                    leadingIcon = { Icon(Icons.Rounded.Subject, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                )
+                                FilterChip(
+                                    selected = currentDefaultAiAction == "ASK_QUESTION",
+                                    onClick = {
+                                        currentDefaultAiAction = "ASK_QUESTION"
+                                        sp.edit().putString("sp_ai_default_action", "ASK_QUESTION").apply()
+                                    },
+                                    label = { Text("Ask Question") },
+                                    leadingIcon = { Icon(Icons.Rounded.QuestionAnswer, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                )
+                            }
                         }
                     }
 
