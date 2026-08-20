@@ -27,7 +27,7 @@ public class Settings_Delete extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         HelperUnit.initTheme(this);
         EdgeToEdge.enable(this);
-        setContentView(com.petal.browser.compose.settings.PetalDeleteBridge.createDeleteView(this, this::finish));
+        setContentView(com.petal.browser.compose.settings.PetalDeleteBridge.createDeleteView(this, () -> finish()));
     }
 
     @Override
