@@ -232,6 +232,17 @@ object PetalEdgeIndicatorBridge {
     }
 }
 
+private fun findWebView(view: android.view.View?): android.webkit.WebView? {
+    if (view is android.webkit.WebView) return view
+    if (view is android.view.ViewGroup) {
+        for (i in 0 until view.childCount) {
+            val found = findWebView(view.getChildAt(i))
+            if (found != null) return found
+        }
+    }
+    return null
+}
+
 @Composable
 fun PredictiveContentTransformer(
     pageView: android.view.View,
@@ -252,7 +263,7 @@ fun PredictiveContentTransformer(
         val progress = rawProgress.coerceIn(0f, 1f)
 
         val isWebsite = try {
-            val webView = pageView.findViewById<android.webkit.WebView>(com.petal.browser.R.id.ninjaWebView)
+            val webView = findWebView(pageView)
             val url = webView?.url
             url != null && url.isNotEmpty() && url != "about:blank" && !url.startsWith("file:///android_asset/")
         } catch (e: Exception) { false }

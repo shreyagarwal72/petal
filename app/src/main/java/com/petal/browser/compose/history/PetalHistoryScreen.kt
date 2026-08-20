@@ -531,6 +531,7 @@ fun PetalHistoryScreen(
         }
     }
     }
+    }
 }
 
 @Composable
