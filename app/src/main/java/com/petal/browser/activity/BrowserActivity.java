@@ -1147,9 +1147,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 this,
                 () -> {
                     try {
-                        initSearch();
-                        if (dialogSearch != null) dialogSearch.show();
-                        if (search_input != null) HelperUnit.showSoftKeyboard(search_input);
+                        showOmniboxPage("");
                     } catch (Exception ignored) {}
                 },
                 () -> closeAllIncognitoTabs()
@@ -1168,9 +1166,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
                     } else {
                         try {
-                            initSearch();
-                            if (dialogSearch != null) dialogSearch.show();
-                            if (search_input != null) HelperUnit.showSoftKeyboard(search_input);
+                            showOmniboxPage("");
                         } catch (Exception ignored) {}
                     }
                 }
@@ -2188,14 +2184,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                 },
                 () -> {
-                    initSearch();
                     String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-                    if (search_input != null) {
-                        search_input.setText(cUrl);
-                        search_input.selectAll();
-                    }
-                    if (dialogSearch != null) dialogSearch.show();
-                    HelperUnit.showSoftKeyboard(search_input);
+                    showOmniboxPage(isHomePage(cUrl) ? "" : cUrl);
                 },
                 () -> {
                     com.petal.browser.ui.components.PetalSiteInfoBridge.showSiteInfoBottomSheet(
@@ -2880,6 +2870,55 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             }
         );
+    }
+
+    /**
+     * Chrome-style full-screen Omnibox search page, replacing both the legacy
+     * AlertDialog-based dialogSearch and the old bottom-sheet PetalOmniboxOverlay.
+     * Mounts into contentFrame exactly like showDownloads()/showHistoryScreen(), so it
+     * gets the same predictive-back gesture handling and "last page" underlay preview
+     * as every other full-screen surface instead of living in a separate dialog window.
+     */
+    public void showOmniboxPage(String initialQuery) {
+        try {
+            if (BrowserContainer.size() == 0) {
+                addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
+            }
+            captureBrowserMainPreview();
+            contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_omnibox = findViewById(R.id.fab_bubble);
+            if (fab_bubble_omnibox != null) fab_bubble_omnibox.setVisibility(GONE);
+            View omniboxView = com.petal.browser.ui.components.PetalOmniboxBridge.createOmniboxView(
+                BrowserActivity.this,
+                initialQuery != null ? initialQuery : "",
+                () -> {
+                    showAlbum(currentAlbumController);
+                    return kotlin.Unit.INSTANCE;
+                },
+                result -> {
+                    if (result != null && !result.trim().isEmpty()) {
+                        String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
+                        if (ninjaWebView != null) {
+                            ninjaWebView.loadUrl(targetUrl);
+                            showAlbum(currentAlbumController, targetUrl);
+                        } else {
+                            addAlbum(null, targetUrl, true);
+                        }
+                    }
+                    return kotlin.Unit.INSTANCE;
+                }
+            );
+            contentFrame.addView(omniboxView);
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing omnibox page", e);
+        }
     }
 
     public void showDownloads() {
@@ -4205,25 +4244,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             sp.edit().putBoolean("show_overview", false).apply();
             String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
             if (cUrl == null || cUrl.startsWith("file:///android_asset/")) cUrl = "";
-            final boolean[] submitted = new boolean[]{false};
-            com.petal.browser.ui.components.PetalOmniboxBridge.showOmniboxOverlay(
-                this,
-                cUrl,
-                () -> {
-                    if (!submitted[0]) {
-                        finish();
-                    }
-                    return kotlin.Unit.INSTANCE;
-                },
-                result -> {
-                    if (result != null && !result.trim().isEmpty()) {
-                        submitted[0] = true;
-                        String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
-                        addAlbum(null, targetUrl, true);
-                    }
-                    return kotlin.Unit.INSTANCE;
-                }
-            );
+            showOmniboxPage(cUrl);
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
@@ -4236,18 +4257,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 });
             } catch (Exception e) {
-                initSearch();
-                if (dialogSearch != null) dialogSearch.show();
+                showOmniboxPage("");
             }
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
-            initSearch();
-            if (dialogSearch != null) dialogSearch.show();
-            if (search_input != null) {
-                search_input.setText("");
-                HelperUnit.showSoftKeyboard(search_input);
-            }
+            showOmniboxPage("");
         }
     }
     private String readTextFromUri(Context context, Uri uri) {
