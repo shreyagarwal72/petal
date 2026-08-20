@@ -89,36 +89,36 @@ fun PetalExpressiveTheme(
     if (expressiveColors) {
         colorScheme = if (darkTheme) {
             if (useAmoled) {
-                // When AMOLED is active, expressive surfaces use dark grey (#121212 / #1A1A1A) contrast instead of pitch pure black
+                // When AMOLED is active with expressive colors, surface containers use high contrast dark ladder
                 colorScheme.copy(
-                    background = Color(0xFF121212),
-                    surface = Color(0xFF121212),
+                    background = Color(0xFF0F0F0F),
+                    surface = Color(0xFF0F0F0F),
+                    surfaceContainerLowest = Color(0xFF0A0A0A),
+                    surfaceContainerLow = Color(0xFF141414),
                     surfaceContainer = Color(0xFF1E1E1E),
-                    surfaceContainerLow = Color(0xFF1A1A1A),
-                    surfaceContainerHigh = Color(0xFF242424),
-                    surfaceContainerHighest = Color(0xFF2C2C2C),
-                    surfaceContainerLowest = Color(0xFF161616)
+                    surfaceContainerHigh = Color(0xFF262626),
+                    surfaceContainerHighest = Color(0xFF303030)
                 )
             } else {
                 colorScheme.copy(
-                    background = colorScheme.surfaceContainerLow,
-                    surface = colorScheme.surfaceContainerLow,
-                    surfaceContainer = colorScheme.surfaceContainerHigh,
-                    surfaceContainerLow = colorScheme.surfaceContainerHigh,
+                    background = colorScheme.surfaceContainerLowest,
+                    surface = colorScheme.surfaceContainerLowest,
+                    surfaceContainerLowest = colorScheme.surfaceContainerLowest,
+                    surfaceContainerLow = colorScheme.surfaceContainerLow,
+                    surfaceContainer = colorScheme.surfaceContainer,
                     surfaceContainerHigh = colorScheme.surfaceContainerHigh,
-                    surfaceContainerHighest = colorScheme.surfaceContainerHigh,
-                    surfaceContainerLowest = colorScheme.surfaceContainerHigh
+                    surfaceContainerHighest = colorScheme.surfaceContainerHighest
                 )
             }
         } else {
             colorScheme.copy(
-                background = colorScheme.surfaceContainerLow,
-                surface = colorScheme.surfaceContainerLow,
-                surfaceContainer = Color.White,
-                surfaceContainerLow = Color.White,
-                surfaceContainerHigh = Color.White,
-                surfaceContainerHighest = Color.White,
-                surfaceContainerLowest = Color.White
+                background = Color(0xFFF6F8FC),
+                surface = Color(0xFFF6F8FC),
+                surfaceContainerLowest = Color(0xFFFFFFFF),
+                surfaceContainerLow = Color(0xFFF1F4F9),
+                surfaceContainer = Color(0xFFEBEFF5),
+                surfaceContainerHigh = Color(0xFFE3E8F0),
+                surfaceContainerHighest = Color(0xFFDAE1EC)
             )
         }
     }
