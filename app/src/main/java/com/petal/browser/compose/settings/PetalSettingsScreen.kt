@@ -63,7 +63,9 @@ import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.PetalSearchEngineSheetContent
 import com.petal.browser.ui.components.StrideSlider
 import com.petal.browser.ui.components.bouncyClickable
-import com.petal.browser.ui.components.availableSearchEngines
+import com.petal.browser.ui.components.ExpressiveButtonGroup
+import com.petal.browser.ui.components.ExpressiveSegmentItem
+import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.*
 
 object PetalSettingsBridge {
