@@ -360,31 +360,136 @@ fun PetalSettingsScreen(
             )
 
             Box(modifier = Modifier.fillMaxSize()) {
-                val previewBitmap = remember(animatedBackProgress > 0f) {
+                val isSubCategory = currentCategory != SettingsCategory.OVERVIEW
+                val mainBrowserBitmap = remember(animatedBackProgress > 0f) {
                     com.petal.browser.animation.predictiveback.PagePreviewCache.get(
                         com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN
                     )
                 }
-                if (previewBitmap != null && animatedBackProgress > 0.001f) {
+
+                if (animatedBackProgress > 0.001f) {
                     val underlay = com.petal.browser.animation.predictiveback.PredictiveBackStyle.underlayFrameFor(
                         animation = predictiveBackAnim,
                         exitDirection = predictiveBackExitDir,
                         progress = animatedBackProgress,
                         isLeftEdge = backIsLeftEdge,
                     )
-                    androidx.compose.foundation.Image(
-                        bitmap = previewBitmap.asImageBitmap(),
-                        contentDescription = null,
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = underlay.scale
-                                scaleY = underlay.scale
-                                this.alpha = underlay.alpha
-                                translationX = underlay.translationXDp.dp.toPx()
+
+                    if (isSubCategory) {
+                        // Render Main Settings Overview Page as underlay preview when backing out of any subsection
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                                .graphicsLayer {
+                                    scaleX = underlay.scale
+                                    scaleY = underlay.scale
+                                    this.alpha = underlay.alpha
+                                    translationX = underlay.translationXDp.dp.toPx()
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
+                                    TopAppBar(
+                                        title = {
+                                            Text(
+                                                text = SettingsCategory.OVERVIEW.title,
+                                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        },
+                                        navigationIcon = {
+                                            IconButton(onClick = {}) {
+                                                Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                                            }
+                                        },
+                                        colors = TopAppBarDefaults.topAppBarColors(
+                                            containerColor = MaterialTheme.colorScheme.background
+                                        )
+                                    )
+                                    OutlinedTextField(
+                                        value = "",
+                                        onValueChange = {},
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
+                                        placeholder = { Text("Search settings...") },
+                                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                                        singleLine = true,
+                                        enabled = false,
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                                        )
+                                    )
+                                }
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                                ) {
+                                    Text(
+                                        "Categories",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    val categories = listOf(
+                                        SettingsCategory.AI_RESEARCH,
+                                        SettingsCategory.APPEARANCE,
+                                        SettingsCategory.PRIVACY,
+                                        SettingsCategory.SEARCH_HOMEPAGE,
+                                        SettingsCategory.DISPLAY_ZOOM,
+                                        SettingsCategory.DATA_STORAGE,
+                                        SettingsCategory.UPDATER,
+                                        SettingsCategory.ABOUT
+                                    )
+                                    val tileColorway = listOf(
+                                        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
+                                        MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
+                                        MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
+                                    )
+                                    categories.forEachIndexed { index, cat ->
+                                        if (isExpressiveFeatureTiles) {
+                                            val (container, onContainer) = tileColorway[index % tileColorway.size]
+                                            PetalFeatureTile(
+                                                title = cat.title,
+                                                subtitle = cat.subtitle,
+                                                icon = cat.icon,
+                                                container = container,
+                                                onContainer = onContainer,
+                                                onClick = {},
+                                            )
+                                        } else {
+                                            SettingsCategoryRow(
+                                                title = cat.title,
+                                                subtitle = cat.subtitle,
+                                                icon = cat.icon,
+                                                onClick = {}
+                                            )
+                                        }
+                                    }
+                                }
                             }
-                    )
+                        }
+                    } else if (mainBrowserBitmap != null) {
+                        // Render main browser page as underlay preview when backing out of main Settings Overview
+                        androidx.compose.foundation.Image(
+                            bitmap = mainBrowserBitmap.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    scaleX = underlay.scale
+                                    scaleY = underlay.scale
+                                    this.alpha = underlay.alpha
+                                    translationX = underlay.translationXDp.dp.toPx()
+                                }
+                        )
+                    }
                 }
 
                 Box(
