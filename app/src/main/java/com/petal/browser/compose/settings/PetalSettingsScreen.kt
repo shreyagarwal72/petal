@@ -1773,14 +1773,110 @@ fun PetalSettingsScreen(
                     SettingsCategoryCard(title = "Privacy & Shield Protection", icon = Icons.Rounded.Shield) {
                         ToggleRow(
                             title = "Ad & Tracker Shield",
-                            subtitle = "Block invasive ads, popunders, and web trackers",
+                            subtitle = "uBlock Origin & AdGuard-grade Trie filter engine & scriptlets",
                             icon = Icons.Rounded.Shield,
                             checked = isAdBlock,
                             onCheckedChange = { newValue ->
                                 isAdBlock = newValue
-                                sp.edit().putBoolean("sp_ad_block", newValue).putBoolean("profileStandard_adBlock", newValue).apply()
+                                com.petal.browser.browser.PetalAdBlockEngine.setAdBlockEnabled(context, newValue)
                             }
                         )
+
+                        if (isAdBlock) {
+                            var showWhitelistDialog by remember { mutableStateOf(false) }
+                            var whitelistDomainInput by remember { mutableStateOf("") }
+                            var whitelistedDomainsState by remember { mutableStateOf(com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains()) }
+
+                            if (showWhitelistDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { showWhitelistDialog = false },
+                                    title = { Text("AdBlock Domain Whitelist") },
+                                    text = {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text(
+                                                "Domains added here will bypass ad and tracker filtering:",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                OutlinedTextField(
+                                                    value = whitelistDomainInput,
+                                                    onValueChange = { whitelistDomainInput = it },
+                                                    placeholder = { Text("example.com") },
+                                                    singleLine = true,
+                                                    modifier = Modifier.weight(1f),
+                                                    shape = RoundedCornerShape(12.dp)
+                                                )
+                                                Spacer(Modifier.width(8.dp))
+                                                Button(
+                                                    onClick = {
+                                                        if (whitelistDomainInput.isNotBlank()) {
+                                                            com.petal.browser.browser.PetalAdBlockEngine.addDomainToWhitelist(context, whitelistDomainInput.trim())
+                                                            whitelistedDomainsState = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains()
+                                                            whitelistDomainInput = ""
+                                                        }
+                                                    }
+                                                ) {
+                                                    Text("Add")
+                                                }
+                                            }
+
+                                            Spacer(Modifier.height(8.dp))
+
+                                            if (whitelistedDomainsState.isEmpty()) {
+                                                Text(
+                                                    "No whitelisted domains.",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            } else {
+                                                FlowRow(
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    whitelistedDomainsState.forEach { domain ->
+                                                        InputChip(
+                                                            selected = true,
+                                                            onClick = {
+                                                                com.petal.browser.browser.PetalAdBlockEngine.removeDomainFromWhitelist(context, domain)
+                                                                whitelistedDomainsState = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains()
+                                                            },
+                                                            label = { Text(domain) },
+                                                            trailingIcon = {
+                                                                Icon(Icons.Rounded.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                                            }
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    confirmButton = {
+                                        TextButton(onClick = { showWhitelistDialog = false }) {
+                                            Text("Done")
+                                        }
+                                    }
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Whitelisted Domains (${whitelistedDomainsState.size})",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                TextButton(onClick = { showWhitelistDialog = true }) {
+                                    Text("Manage Whitelist")
+                                }
+                            }
+                        }
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 

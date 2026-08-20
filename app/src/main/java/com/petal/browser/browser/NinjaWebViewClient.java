@@ -131,7 +131,9 @@ public class NinjaWebViewClient extends WebViewClient {
         }
 
         if (ninjaWebView.isAdBlock()) {
-            view.evaluateJavascript(AdBlock.getAdHidingScript(), null);
+            PetalAdBlockEngine.ensureInitialized(context);
+            String currentUrl = ninjaWebView.getUrl();
+            view.evaluateJavascript(PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload(currentUrl), null);
         }
 
         String profile = NinjaWebView.getProfile();
@@ -552,12 +554,14 @@ public class NinjaWebViewClient extends WebViewClient {
 
     @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-        if (request != null && !request.isForMainFrame() && ninjaWebView.isAdBlock() && adBlock.isAd(request.getUrl().toString()))
-            return new WebResourceResponse(
-                    BrowserUnit.MIME_TYPE_TEXT_PLAIN,
-                    BrowserUnit.URL_ENCODING,
-                    new ByteArrayInputStream("".getBytes())
-            );
+        if (request != null && !request.isForMainFrame() && ninjaWebView.isAdBlock()) {
+            PetalAdBlockEngine.ensureInitialized(context);
+            String reqUrl = request.getUrl().toString();
+            String pageUrl = view != null ? view.getUrl() : null;
+            if (PetalAdBlockEngine.shouldBlockUrl(context, reqUrl, pageUrl) || adBlock.isAd(reqUrl)) {
+                return PetalAdBlockEngine.createEmpty204Response();
+            }
+        }
         return super.shouldInterceptRequest(view, request);
     }
     @Override
