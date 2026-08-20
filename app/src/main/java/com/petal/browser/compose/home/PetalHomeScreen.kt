@@ -111,7 +111,66 @@ fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
             if (list.isNotEmpty()) return list
         } catch (_: Throwable) { }
     }
+
+    // Auto-populate from top visited sites in local history database
+    val visitedShortcuts = fetchTopVisitedShortcuts(context)
+    if (visitedShortcuts.isNotEmpty()) {
+        val merged = (visitedShortcuts + defaultPetalShortcuts).distinctBy { it.url }.take(5)
+        saveHomeShortcuts(context, merged)
+        return merged
+    }
+
     return defaultPetalShortcuts
+}
+
+fun fetchTopVisitedShortcuts(context: Context): List<PetalShortcut> {
+    val list = mutableListOf<PetalShortcut>()
+    try {
+        val action = com.petal.browser.database.RecordAction(context)
+        action.open(false)
+        val records = action.listHistory(context)
+        action.close()
+
+        val paletteColors = listOf(
+            Color(0xFF4285F4), Color(0xFF34A853), Color(0xFFEA4335),
+            Color(0xFFFBBC05), Color(0xFF9C27B0), Color(0xFF00BCD4)
+        )
+
+        // Group history records by domain host to find top visited sites
+        val topSites = records
+            .filter { !it.url.isNullOrBlank() && !it.url.startsWith("about:") && !it.url.startsWith("petal://") }
+            .groupBy {
+                try { Uri.parse(it.url).host ?: it.url } catch (e: Exception) { it.url }
+            }
+            .entries
+            .sortedByDescending { it.value.size }
+            .take(10)
+
+        topSites.forEachIndexed { idx, entry ->
+            val host = entry.key
+            val firstRecord = entry.value.first()
+            var rawLabel = firstRecord.title
+            if (rawLabel.isNullOrBlank() || rawLabel.length > 25 || rawLabel.contains("http")) {
+                rawLabel = host.removePrefix("www.").substringBefore(".")
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+            }
+
+            val siteId = when {
+                host.contains("youtube") -> "youtube"
+                host.contains("github") -> "github"
+                host.contains("wikipedia") -> "wikipedia"
+                host.contains("duckduckgo") -> "duckduckgo"
+                host.contains("google") -> "google"
+                else -> "globe"
+            }
+
+            val color = paletteColors[idx % paletteColors.size]
+            list.add(PetalShortcut(label = rawLabel, url = firstRecord.url, siteId = siteId, containerColor = color))
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    return list
 }
 
 fun saveHomeShortcuts(context: Context, list: List<PetalShortcut>) {
@@ -440,6 +499,56 @@ fun PetalHomeScreen(
                         onAddShortcutClick = { editingSlotIndex = 0 },
                         onEditShortcutSlot = { index -> editingSlotIndex = index }
                     )
+                }
+
+                val autoVisitedSites = remember { fetchTopVisitedShortcuts(context).take(8) }
+                if (autoVisitedSites.isNotEmpty()) {
+                    Spacer(Modifier.height(28.dp))
+
+                    Text(
+                        text = "Frequently Visited",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 8.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        autoVisitedSites.forEachIndexed { idx, site ->
+                            val m3Shape = petalShapes[idx % petalShapes.size]
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .width(68.dp)
+                                    .clickable { onOpenShortcutUrl(site.url) }
+                            ) {
+                                Surface(
+                                    shape = m3Shape,
+                                    color = site.containerColor,
+                                    modifier = Modifier.size(54.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        SiteBrandIcon(siteId = site.siteId, label = site.label)
+                                    }
+                                }
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    text = site.label,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(96.dp))
