@@ -693,10 +693,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ninjaWebView.goBack();
         } else {
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-            String homeUrl = sp.getString("favoriteURL", "about:blank");
-            if (currentUrl != null && !isHomePage(currentUrl) && !currentUrl.equals(homeUrl)) {
-                ninjaWebView.loadUrl(homeUrl);
-                showAlbum(currentAlbumController, homeUrl);
+            if (currentUrl != null && !isHomePage(currentUrl)) {
+                ninjaWebView.loadUrl("about:blank");
+                showAlbum(currentAlbumController, "about:blank");
             } else {
                 boolean requireDoubleBack = sp.getBoolean("sp_double_back_exit", true);
                 if (!requireDoubleBack) {
@@ -799,14 +798,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@androidx.annotation.NonNull androidx.activity.BackEventCompat backEvent) {
-                backGestureState.setActive(true);
-                backGestureState.setProgress(0f);
-                backGestureState.setPreviewKey(computeBackPreviewKey());
+                String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+                if (isHomePage(currentUrl) || (dialogOverview != null && dialogOverview.isShowing())) {
+                    backGestureState.setActive(true);
+                    backGestureState.setProgress(0f);
+                    backGestureState.setPreviewKey(computeBackPreviewKey());
+                }
             }
 
             @Override
             public void handleOnBackProgressed(@androidx.annotation.NonNull androidx.activity.BackEventCompat backEvent) {
-                backGestureState.setProgress(backEvent.getProgress());
+                String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+                if (isHomePage(currentUrl) || (dialogOverview != null && dialogOverview.isShowing())) {
+                    backGestureState.setProgress(backEvent.getProgress());
+                }
             }
 
             @Override

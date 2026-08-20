@@ -390,9 +390,7 @@ fun PetalSettingsScreen(
                                 }
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(rememberScrollState())
+                                modifier = Modifier.fillMaxSize()
                             ) {
                                 Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
                                     TopAppBar(
@@ -429,7 +427,11 @@ fun PetalSettingsScreen(
                                     )
                                 }
                                 Column(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f)
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(horizontal = 20.dp, vertical = 12.dp),
                                     verticalArrangement = Arrangement.spacedBy(20.dp)
                                 ) {
                                     Text(
@@ -514,9 +516,7 @@ fun PetalSettingsScreen(
                     )
                 } else {
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         // Top App Bar Header (Mounted inside transitioning route container for Predictive Back & Page Animations)
                         Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
@@ -590,6 +590,8 @@ fun PetalSettingsScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
                                 .padding(horizontal = 20.dp, vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(20.dp)
                         ) {

@@ -251,7 +251,13 @@ fun PredictiveContentTransformer(
         val rawProgress = if (isLeft) backProgress else forwardProgress
         val progress = rawProgress.coerceIn(0f, 1f)
 
-        if (!active && progress == 0f) {
+        val isWebsite = try {
+            val webView = pageView.findViewById<android.webkit.WebView>(com.petal.browser.R.id.ninjaWebView)
+            val url = webView?.url
+            url != null && url.isNotEmpty() && url != "about:blank" && !url.startsWith("file:///android_asset/")
+        } catch (e: Exception) { false }
+
+        if (isWebsite || (!active && progress == 0f)) {
             pageView.animate().cancel()
             pageView.scaleX = 1.0f
             pageView.scaleY = 1.0f

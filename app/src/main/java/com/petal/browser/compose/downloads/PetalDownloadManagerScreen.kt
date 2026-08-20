@@ -256,72 +256,6 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     }
 
     Scaffold(
-        topBar = {
-            if (isSelectionMode) {
-                TopAppBar(
-                    modifier = Modifier.statusBarsPadding(),
-                    title = {
-                        Text(
-                            "${selectedIds.size} Selected",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { selectedIds = emptySet() }) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Cancel Selection")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { toggleSelectAll() }) {
-                            Icon(
-                                if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                contentDescription = "Select All"
-                            )
-                        }
-                        IconButton(onClick = {
-                            val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
-                            shareMultipleFiles(context, itemsToShare)
-                            selectedIds = emptySet()
-                        }) {
-                            Icon(Icons.Rounded.Share, contentDescription = "Share Selected")
-                        }
-                        IconButton(onClick = {
-                            val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
-                            deleteMultipleFiles(context, itemsToDelete)
-                            selectedIds = emptySet()
-                        }) {
-                            Icon(Icons.Rounded.Delete, contentDescription = "Delete Selected", tint = MaterialTheme.colorScheme.error)
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                    )
-                )
-            } else {
-                TopAppBar(
-                    modifier = Modifier.statusBarsPadding(),
-                    title = {
-                        Text(
-                            "Downloads",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBackPress) {
-                            Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { PetalFetchDownloadBridge.refresh(context) }) {
-                            Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background
-                    )
-                )
-            }
-        },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         // Reflects whichever Predictive Back Animation style is selected in Settings (AOSP /
@@ -385,10 +319,9 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         val cornerRadius = backFrame.cornerRadiusDp.dp
         val alpha = backFrame.alpha
 
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
@@ -398,6 +331,73 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                     shape = RoundedCornerShape(cornerRadius)
                 }
         ) {
+            // Header inside graphicsLayer for complete predictive back animation consistency!
+            Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
+                if (isSelectionMode) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                "${selectedIds.size} Selected",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { selectedIds = emptySet() }) {
+                                Icon(Icons.Rounded.Close, contentDescription = "Cancel Selection")
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = { toggleSelectAll() }) {
+                                Icon(
+                                    if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                                    contentDescription = "Select All"
+                                )
+                            }
+                            IconButton(onClick = {
+                                val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
+                                shareMultipleFiles(context, itemsToShare)
+                                selectedIds = emptySet()
+                            }) {
+                                Icon(Icons.Rounded.Share, contentDescription = "Share Selected")
+                            }
+                            IconButton(onClick = {
+                                val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
+                                deleteMultipleFiles(context, itemsToDelete)
+                                selectedIds = emptySet()
+                            }) {
+                                Icon(Icons.Rounded.Delete, contentDescription = "Delete Selected", tint = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
+                    )
+                } else {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                "Downloads",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onBackPress) {
+                                Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = { PetalFetchDownloadBridge.refresh(context) }) {
+                                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.background
+                        )
+                    )
+                }
+            }
+
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             if (isLoading) {
                 com.petal.browser.compose.composable.ContainedLoadingIndicator(
                     modifier = Modifier.fillMaxSize()

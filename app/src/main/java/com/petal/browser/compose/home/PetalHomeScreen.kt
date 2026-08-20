@@ -478,12 +478,15 @@ private fun getTimeGreeting(): String {
 
 @Composable
 private fun PetalSearchBar(onSearch: (String) -> Unit) {
+    val context = LocalContext.current
+    val activity = context as? ComponentActivity
     var searchText by remember { mutableStateOf("") }
+    var isAiMode by remember { mutableStateOf(false) }
     var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     var isFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(searchText) {
-        if (searchText.trim().length >= 2) {
+        if (searchText.trim().length >= 2 && !isAiMode) {
             com.petal.browser.unit.SearchSuggestionsManager.fetchSuggestions(searchText.trim()) { results ->
                 suggestions = results.take(6)
             }
@@ -502,7 +505,8 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Surface(
             shape = RoundedCornerShape(searchShapeCorner.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = if (isAiMode) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = if (isAiMode) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
             tonalElevation = if (isSearching) 6.dp else 2.dp,
             modifier = Modifier
                 .fillMaxWidth()
@@ -513,9 +517,9 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
                 Icon(
-                    Icons.Rounded.Search,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    imageVector = if (isAiMode) Icons.Rounded.AutoAwesome else Icons.Rounded.Search,
+                    contentDescription = if (isAiMode) "AI Search Mode" else "Search",
+                    tint = if (isAiMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.width(8.dp))
                 TextField(
@@ -523,9 +527,9 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                     onValueChange = { searchText = it },
                     placeholder = {
                         Text(
-                            "Search or type web address",
+                            if (isAiMode) "Search web with AI..." else "Search or type web address",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isAiMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     singleLine = true,
@@ -533,7 +537,11 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                     keyboardActions = KeyboardActions(
                         onSearch = {
                             if (searchText.isNotBlank()) {
-                                onSearch(searchText.trim())
+                                if (isAiMode && activity != null) {
+                                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, searchText.trim())
+                                } else {
+                                    onSearch(searchText.trim())
+                                }
                             }
                         }
                     ),
@@ -545,6 +553,23 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                     ),
                     modifier = Modifier.weight(1f)
                 )
+
+                IconButton(
+                    onClick = {
+                        if (isAiMode && searchText.isNotBlank() && activity != null) {
+                            com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, searchText.trim())
+                        } else {
+                            isAiMode = !isAiMode
+                        }
+                    }
+                ) {
+                    Icon(
+                        Icons.Rounded.AutoAwesome,
+                        contentDescription = "AI Web Search",
+                        tint = if (isAiMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 if (searchText.isNotBlank()) {
                     IconButton(onClick = {
                         searchText = ""
@@ -556,7 +581,13 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    IconButton(onClick = { onSearch(searchText.trim()) }) {
+                    IconButton(onClick = {
+                        if (isAiMode && activity != null) {
+                            com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, searchText.trim())
+                        } else {
+                            onSearch(searchText.trim())
+                        }
+                    }) {
                         Icon(
                             Icons.Rounded.ArrowForward,
                             contentDescription = "Search",
@@ -564,7 +595,6 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                         )
                     }
                 } else {
-                    val context = LocalContext.current
                     val voiceLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
                         contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
                     ) { result ->
@@ -572,7 +602,11 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                             val spokenText = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
                             if (!spokenText.isNullOrBlank()) {
                                 searchText = spokenText
-                                onSearch(spokenText)
+                                if (isAiMode && activity != null) {
+                                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, spokenText)
+                                } else {
+                                    onSearch(spokenText)
+                                }
                             }
                         }
                     }

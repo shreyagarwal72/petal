@@ -265,35 +265,6 @@ fun PetalHistoryScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "History",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Close")
-                    }
-                },
-                actions = {
-                    if (rawHistory?.isNotEmpty() == true) {
-                        IconButton(onClick = { showClearConfirm = true }) {
-                            Icon(
-                                Icons.Rounded.DeleteSweep,
-                                contentDescription = "Clear History",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                )
-            )
-        },
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) { innerPadding ->
         // Reflects the selected Predictive Back Animation style, with the browser page this
@@ -353,8 +324,6 @@ fun PetalHistoryScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp, vertical = 8.dp)
                 .graphicsLayer {
                     scaleX = backFrame.scale
                     scaleY = backFrame.scale
@@ -362,9 +331,68 @@ fun PetalHistoryScreen(
                     translationX = backFrame.translationXDp.dp.toPx()
                     clip = animatedBackProgress > 0.01f
                     shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
-                },
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                }
         ) {
+            Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh).statusBarsPadding()) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "History",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Rounded.ArrowBack, contentDescription = "Close")
+                        }
+                    },
+                    actions = {
+                        if (rawHistory?.isNotEmpty() == true) {
+                            IconButton(onClick = { showClearConfirm = true }) {
+                                Icon(
+                                    Icons.Rounded.DeleteSweep,
+                                    contentDescription = "Clear History",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    )
+                )
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 6.dp),
+                    placeholder = { Text("Search history...") },
+                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             if (rawHistory == null) {
                 ContainedLoadingIndicator(
                     modifier = Modifier
