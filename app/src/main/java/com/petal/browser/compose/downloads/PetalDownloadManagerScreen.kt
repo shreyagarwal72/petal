@@ -63,6 +63,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.components.LinearRipplingWavyProgressIndicator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.cos

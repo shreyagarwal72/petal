@@ -9,6 +9,8 @@
 package com.petal.browser.compose.home
 
 import android.content.Context
+import android.net.Uri
+import java.util.Locale
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState

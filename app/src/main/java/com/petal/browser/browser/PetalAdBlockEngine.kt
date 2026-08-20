@@ -99,13 +99,13 @@ object PetalAdBlockEngine {
 
     @JvmStatic
     fun isAdBlockEnabled(context: Context): Boolean {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp(context))
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
         return sp.getBoolean("sp_ad_block", true)
     }
 
     @JvmStatic
     fun setAdBlockEnabled(context: Context, enabled: Boolean) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp(context))
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
         sp.edit()
             .putBoolean("sp_ad_block", enabled)
             .putBoolean("profileStandard_adBlock", enabled)
@@ -125,7 +125,7 @@ object PetalAdBlockEngine {
         val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
         whitelistedDomains.add(cleanDomain)
 
-        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp(context))
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
         sp.edit().putStringSet("sp_adblock_whitelisted_domains", whitelistedDomains.toSet()).apply()
     }
 
@@ -134,7 +134,7 @@ object PetalAdBlockEngine {
         val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
         whitelistedDomains.remove(cleanDomain)
 
-        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp(context))
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
         sp.edit().putStringSet("sp_adblock_whitelisted_domains", whitelistedDomains.toSet()).apply()
     }
 

@@ -102,11 +102,13 @@ object PetalDownloadBannerBridge {
                 val downloadItems by PetalFetchDownloadBridge.downloadItems.collectAsState()
 
                 LaunchedEffect(downloadItems) {
-                    val activeItem = downloadItems.maxByOrNull { it.createdAt }
+                    val activeItem: DownloadItem? = downloadItems.maxByOrNull { it.timestampMs }
                     if (activeItem != null) {
                         val host = try {
-                            if (activeItem.url.isNotBlank()) URI(activeItem.url).host ?: "" else ""
+                            if (!activeItem.fileUrl.isNullOrBlank()) URI(activeItem.fileUrl).host ?: "" else ""
                         } catch (e: Exception) { "" }
+
+                        val safeLocalUri = activeItem.localUri ?: ""
 
                         when (activeItem.status) {
                             DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
@@ -115,7 +117,7 @@ object PetalDownloadBannerBridge {
                                     fileName = activeItem.fileName,
                                     fileSize = activeItem.totalSize,
                                     sourceHost = host,
-                                    localUri = activeItem.localUri,
+                                    localUri = safeLocalUri,
                                     downloadId = activeItem.id
                                 )
                             }
@@ -125,7 +127,7 @@ object PetalDownloadBannerBridge {
                                     fileName = activeItem.fileName,
                                     fileSize = activeItem.totalSize,
                                     sourceHost = host,
-                                    localUri = activeItem.localUri,
+                                    localUri = safeLocalUri,
                                     downloadId = activeItem.id
                                 )
                             }
@@ -135,7 +137,7 @@ object PetalDownloadBannerBridge {
                                     fileName = activeItem.fileName,
                                     fileSize = activeItem.totalSize,
                                     sourceHost = host,
-                                    localUri = activeItem.localUri,
+                                    localUri = safeLocalUri,
                                     downloadId = activeItem.id
                                 )
                             }
