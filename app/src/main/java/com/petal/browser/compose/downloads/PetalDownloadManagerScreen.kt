@@ -259,6 +259,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         topBar = {
             if (isSelectionMode) {
                 TopAppBar(
+                    modifier = Modifier.statusBarsPadding(),
                     title = {
                         Text(
                             "${selectedIds.size} Selected",
@@ -298,6 +299,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                 )
             } else {
                 TopAppBar(
+                    modifier = Modifier.statusBarsPadding(),
                     title = {
                         Text(
                             "Downloads",
@@ -756,8 +758,19 @@ private fun DownloadProgressRing(
         label = "RingPulse"
     )
 
+    val avatarShape = remember(item.id) {
+        val shapes = listOf(
+            com.petal.browser.ui.components.ScallopedShape(lobes = 8, depth = 0.16f),
+            com.petal.browser.compose.home.CloverShape,
+            com.petal.browser.compose.home.StarburstShape,
+            com.petal.browser.compose.home.ArchShape,
+            com.petal.browser.compose.home.FlowerShape
+        )
+        shapes[(item.id.toInt() and 0x7FFFFFFF) % shapes.size]
+    }
+
     Surface(
-        shape = CircleShape,
+        shape = if (showRing) CircleShape else avatarShape,
         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
         modifier = Modifier
             .size(44.dp)
