@@ -27,24 +27,7 @@ public class Settings_Delete extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         HelperUnit.initTheme(this);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_settings_delete);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.content_frame, new Fragment_settings_Delete())
-                .commit();
-
-        Button button = findViewById(R.id.profileListAdd);
-        HelperUnit.applyBouncyTouchFeedback(button, 0.88f);
-        button.setOnClickListener(v -> {
-            LinearLayout root = findViewById(R.id.root);
-            Snackbar snackbarBottom = Snackbar.make(root, R.string.hint_database, Snackbar.LENGTH_SHORT);
-            HelperUnit.makeSnackbarRound(snackbarBottom);
-            snackbarBottom.setAction(this.getString(R.string.app_ok), (r -> BrowserUnit.clearBrowserData(this)));
-            snackbarBottom.show();
-        });
+        setContentView(com.petal.browser.compose.settings.PetalDeleteBridge.createDeleteView(this, this::finish));
     }
 
     @Override

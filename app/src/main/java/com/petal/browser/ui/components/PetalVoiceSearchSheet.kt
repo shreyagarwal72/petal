@@ -37,13 +37,20 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 object PetalVoiceSearchBridge {
+    private var activeDialog: BottomSheetDialog? = null
+
     @JvmStatic
     fun showVoiceSearchSheet(
         activity: ComponentActivity,
         onResult: (String) -> Unit
     ) {
         activity.runOnUiThread {
+            activeDialog?.dismiss()
+            activeDialog = null
+
             val dialog = BottomSheetDialog(activity)
+            activeDialog = dialog
+
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
@@ -53,15 +60,32 @@ object PetalVoiceSearchBridge {
                     PetalExpressiveTheme {
                         PetalVoiceSearchSheet(
                             onResult = { result ->
-                                dialog.dismiss()
+                                try {
+                                    if (dialog.isShowing) {
+                                        dialog.dismiss()
+                                    }
+                                } catch (e: Exception) {}
+                                activeDialog = null
                                 onResult(result)
                             },
-                            onDismiss = { dialog.dismiss() }
+                            onDismiss = {
+                                try {
+                                    if (dialog.isShowing) {
+                                        dialog.dismiss()
+                                    }
+                                } catch (e: Exception) {}
+                                activeDialog = null
+                            }
                         )
                     }
                 }
             }
             dialog.setContentView(composeView)
+            dialog.setOnDismissListener {
+                if (activeDialog == dialog) {
+                    activeDialog = null
+                }
+            }
             dialog.show()
         }
     }
@@ -78,6 +102,8 @@ fun PetalVoiceSearchSheet(
     var statusText by remember { mutableStateOf("Listening...") }
     var isListening by remember { mutableStateOf(true) }
     var rmsValue by remember { mutableFloatStateOf(0f) }
+    var recognizerRef by remember { mutableStateOf<SpeechRecognizer?>(null) }
+    var hasDeliveredResult by remember { mutableStateOf(false) }
 
     val pulseScale by animateFloatAsState(
         targetValue = if (isListening) 1.0f + (rmsValue / 10f).coerceIn(0f, 0.4f) else 1.0f,
@@ -85,17 +111,21 @@ fun PetalVoiceSearchSheet(
         label = "MicPulse"
     )
 
-    DisposableEffect(Unit) {
-        var speechRecognizer: SpeechRecognizer? = null
+    fun startOrRestartListening() {
         try {
+            recognizerRef?.destroy()
+            recognizerRef = null
+
             if (SpeechRecognizer.isRecognitionAvailable(context)) {
-                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+                val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
+                recognizerRef = recognizer
+
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 }
 
-                speechRecognizer.setRecognitionListener(object : RecognitionListener {
+                recognizer.setRecognitionListener(object : RecognitionListener {
                     override fun onReadyForSpeech(params: Bundle?) {
                         statusText = "Listening..."
                         isListening = true
@@ -119,17 +149,21 @@ fun PetalVoiceSearchSheet(
                         isListening = false
                         statusText = when (error) {
                             SpeechRecognizer.ERROR_NO_MATCH -> "No speech recognized. Tap mic to retry."
-                            SpeechRecognizer.ERROR_AUDIO -> "Audio recording error."
+                            SpeechRecognizer.ERROR_AUDIO -> "Audio recording error. Tap mic to retry."
                             else -> "Voice recognition error. Tap mic to retry."
                         }
                     }
 
                     override fun onResults(results: Bundle?) {
                         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                        if (!matches.isNullOrEmpty()) {
-                            val text = matches[0]
-                            spokenText = text
-                            onResult(text)
+                        if (!matches.isNullOrEmpty() && !hasDeliveredResult) {
+                            val text = matches[0].trim()
+                            if (text.isNotEmpty()) {
+                                hasDeliveredResult = true
+                                spokenText = text
+                                isListening = false
+                                onResult(text)
+                            }
                         }
                     }
 
@@ -143,7 +177,7 @@ fun PetalVoiceSearchSheet(
                     override fun onEvent(eventType: Int, params: Bundle?) {}
                 })
 
-                speechRecognizer.startListening(intent)
+                recognizer.startListening(intent)
             } else {
                 statusText = "Speech recognition unavailable on device."
                 isListening = false
@@ -152,11 +186,16 @@ fun PetalVoiceSearchSheet(
             statusText = "Voice search unavailable."
             isListening = false
         }
+    }
+
+    DisposableEffect(Unit) {
+        startOrRestartListening()
 
         onDispose {
             try {
-                speechRecognizer?.stopListening()
-                speechRecognizer?.destroy()
+                recognizerRef?.cancel()
+                recognizerRef?.destroy()
+                recognizerRef = null
             } catch (e: Exception) {}
         }
     }
@@ -196,6 +235,11 @@ fun PetalVoiceSearchSheet(
                         if (isListening) MaterialTheme.colorScheme.primaryContainer
                         else MaterialTheme.colorScheme.surfaceContainer
                     )
+                    .clickable {
+                        if (!isListening) {
+                            startOrRestartListening()
+                        }
+                    }
             ) {
                 Icon(
                     imageVector = if (isListening) Icons.Rounded.Mic else Icons.Rounded.MicOff,

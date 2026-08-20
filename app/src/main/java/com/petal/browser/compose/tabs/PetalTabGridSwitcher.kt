@@ -59,6 +59,7 @@ data class PetalTabItem(
     val title: String,
     val url: String,
     val faviconBitmap: Bitmap? = null,
+    val previewBitmap: Bitmap? = null,
     val isIncognito: Boolean = false,
     val isSelected: Boolean = false
 )
@@ -561,24 +562,33 @@ private fun PetalTabCard(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = if (tab.isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Language,
-                        contentDescription = null,
-                        tint = accentColor.copy(alpha = 0.6f),
-                        modifier = Modifier.size(32.dp)
+                if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
+                    Image(
+                        bitmap = tab.previewBitmap.asImageBitmap(),
+                        contentDescription = "Tab Live Preview",
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    Text(
-                        text = tab.url.ifBlank { "about:blank" },
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 12.dp)
-                    )
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (tab.isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Language,
+                            contentDescription = null,
+                            tint = accentColor.copy(alpha = 0.6f),
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(
+                            text = tab.url.ifBlank { "about:blank" },
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
+                    }
                 }
             }
         }

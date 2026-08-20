@@ -2475,6 +2475,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // intercepts the drag regardless of what's currently inside it.
         contentFrame.setPullDistanceDp(300f);
         contentFrame.setCanPull(() -> {
+            // If internal native Compose views (Settings, History, Downloads, Account) are swapped into contentFrame, disable pull to refresh
+            if (contentFrame != null && contentFrame.getChildCount() > 0) {
+                for (int i = 0; i < contentFrame.getChildCount(); i++) {
+                    View child = contentFrame.getChildAt(i);
+                    if (child != ninjaWebView) {
+                        return false;
+                    }
+                }
+            }
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : null;
             if (currentUrl == null) currentUrl = "";
             boolean isInternalPage = isHomePage(currentUrl) ||
@@ -2559,6 +2568,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void showOverview() {
         try {
+            captureBrowserMainPreview();
             View bottomNav = findViewById(R.id.bottom_nav_compose);
             if (bottomNav != null) bottomNav.setVisibility(GONE);
             com.petal.browser.ui.components.PetalTabSwitcherBridge.showTabSwitcherSheet(
