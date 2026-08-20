@@ -35,8 +35,9 @@
 - **Chrome Account & Sync Integration**: Integrated Google account profile sync state management.
 - **Zero Data Telemetry**: Absolutely no data tracking, analytics, or background telemetry.
 
-### 📦 Integrated Download Manager
+### 📦 Integrated Download Manager & Telegram Bot Sync
 - Full Jetpack Compose Download Manager with real-time download speed, progress indicators, pausing, resuming, and file opening.
+- **Telegram Topic Bot Integration**: Automated GitHub Actions workflow for real-time Telegram group topic updates on pushes and build outcomes.
 
 ---
 
