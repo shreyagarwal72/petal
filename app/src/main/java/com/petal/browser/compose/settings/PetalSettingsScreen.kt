@@ -1382,6 +1382,7 @@ fun PetalSettingsScreen(
                                 }
                                 IconSwitch(
                                     checked = isAddressBarEnabled,
+                                    icon = Icons.Rounded.Search,
                                     onCheckedChange = { checked ->
                                         isAddressBarEnabled = checked
                                         com.petal.browser.compose.ai.PetalAiSearchManager.setAddressBarAiSearchEnabled(context, checked)
@@ -1400,6 +1401,7 @@ fun PetalSettingsScreen(
                                 }
                                 IconSwitch(
                                     checked = isWidgetEnabled,
+                                    icon = Icons.Rounded.Widgets,
                                     onCheckedChange = { checked ->
                                         isWidgetEnabled = checked
                                         com.petal.browser.compose.ai.PetalAiSearchManager.setWidgetAiSearchEnabled(context, checked)
@@ -1500,6 +1502,7 @@ fun PetalSettingsScreen(
                                 }
                                 IconSwitch(
                                     checked = isGroundingEnabled,
+                                    icon = Icons.Rounded.FactCheck,
                                     onCheckedChange = { checked ->
                                         isGroundingEnabled = checked
                                         com.petal.browser.compose.ai.PetalAiSearchManager.setGroundingEnabled(context, checked)
@@ -1518,6 +1521,7 @@ fun PetalSettingsScreen(
                                 }
                                 IconSwitch(
                                     checked = isThinkingEnabled,
+                                    icon = Icons.Rounded.Psychology,
                                     onCheckedChange = { checked ->
                                         isThinkingEnabled = checked
                                         com.petal.browser.compose.ai.PetalAiSearchManager.setThinkingEnabled(context, checked)
