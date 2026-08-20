@@ -151,8 +151,11 @@ public class NinjaWebChromeClient extends WebChromeClient {
     }
     @Override
     public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
-        NinjaWebView.getBrowserController().showFileChooser(filePathCallback);
-        return true;
+        if (NinjaWebView.getBrowserController() != null) {
+            NinjaWebView.getBrowserController().showFileChooser(filePathCallback, fileChooserParams);
+            return true;
+        }
+        return false;
     }
     @Override
     public void onGeolocationPermissionsShowPrompt(final String origin, final GeolocationPermissions.Callback callback) {

@@ -17,7 +17,7 @@ public interface BrowserController {
     void updateProgress(int progress);
     void showAlbum(AlbumController albumController);
     void removeAlbum(AlbumController albumController);
-    void showFileChooser(ValueCallback<Uri[]> filePathCallback);
+    void showFileChooser(ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams);
     void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback);
     void showOverview();
     void hideOverview();

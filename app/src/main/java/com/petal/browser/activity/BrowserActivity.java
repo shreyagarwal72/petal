@@ -583,7 +583,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 String dataString = data.getDataString();
-                if (dataString != null) results = new Uri[]{Uri.parse(dataString)};
+                if (dataString != null) {
+                    results = new Uri[]{Uri.parse(dataString)};
+                } else if (data.getClipData() != null) {
+                    final int count = data.getClipData().getItemCount();
+                    results = new Uri[count];
+                    for (int i = 0; i < count; i++) {
+                        results[i] = data.getClipData().getItemAt(i).getUri();
+                    }
+                }
             }
         }
         mFilePathCallback.onReceiveValue(results);
@@ -1617,22 +1625,49 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    public void showFileChooser(ValueCallback<Uri[]> filePathCallback) {
-        if (mFilePathCallback != null) mFilePathCallback.onReceiveValue(null);
+    public void showFileChooser(ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
+        if (mFilePathCallback != null) {
+            mFilePathCallback.onReceiveValue(null);
+        }
         mFilePathCallback = filePathCallback;
 
-        Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
-        contentSelectionIntent.setType("*/*");
-        Intent[] intentArray;
-        intentArray = new Intent[0];
+        Intent chooserIntent = null;
+        if (fileChooserParams != null) {
+            try {
+                chooserIntent = fileChooserParams.createIntent();
+            } catch (Exception ignored) {}
+        }
 
-        Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
-        chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
-        chooserIntent.putExtra(Intent.EXTRA_TITLE, "Image Chooser");
-        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
-        //noinspection deprecation
-        startActivityForResult(chooserIntent, INPUT_FILE_REQUEST_CODE);
+        if (chooserIntent == null) {
+            Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
+            contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            contentSelectionIntent.setType("*/*");
+            if (fileChooserParams != null && fileChooserParams.getAcceptTypes() != null && fileChooserParams.getAcceptTypes().length > 0) {
+                String[] acceptTypes = fileChooserParams.getAcceptTypes();
+                if (acceptTypes.length == 1 && !acceptTypes[0].trim().isEmpty()) {
+                    contentSelectionIntent.setType(acceptTypes[0]);
+                } else if (acceptTypes.length > 1) {
+                    contentSelectionIntent.setType("*/*");
+                    contentSelectionIntent.putExtra(Intent.EXTRA_MIME_TYPES, acceptTypes);
+                }
+            }
+            if (fileChooserParams != null && fileChooserParams.getMode() == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
+                contentSelectionIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            }
+
+            chooserIntent = new Intent(Intent.ACTION_CHOOSER);
+            chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
+            chooserIntent.putExtra(Intent.EXTRA_TITLE, "File Chooser");
+        }
+
+        try {
+            startActivityForResult(chooserIntent, INPUT_FILE_REQUEST_CODE);
+        } catch (Exception e) {
+            if (mFilePathCallback != null) {
+                mFilePathCallback.onReceiveValue(null);
+                mFilePathCallback = null;
+            }
+        }
     }
 
     @Override
