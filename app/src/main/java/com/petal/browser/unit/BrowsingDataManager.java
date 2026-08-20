@@ -103,15 +103,11 @@ public class BrowsingDataManager {
                     Profile defaultProfile = ProfileStore.getInstance().getOrCreateProfile(Profile.DEFAULT_PROFILE_NAME);
                     if (defaultProfile != null) {
                         defaultProfile.getWebStorage().deleteAllData();
-                        defaultProfile.getCookieManager().removeAllCookies(null);
-                        defaultProfile.getCookieManager().flush();
                         defaultProfile.getGeolocationPermissions().clearAll();
                     }
                     Profile incognitoProfile = ProfileStore.getInstance().getProfile(INCOGNITO_PROFILE_NAME);
                     if (incognitoProfile != null) {
                         incognitoProfile.getWebStorage().deleteAllData();
-                        incognitoProfile.getCookieManager().removeAllCookies(null);
-                        incognitoProfile.getCookieManager().flush();
                         incognitoProfile.getGeolocationPermissions().clearAll();
                     }
                 }
