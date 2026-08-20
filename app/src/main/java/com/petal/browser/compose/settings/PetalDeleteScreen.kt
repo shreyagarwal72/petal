@@ -47,7 +47,7 @@ import com.petal.browser.unit.BrowserUnit
 
 object PetalDeleteBridge {
     @JvmStatic
-    fun createDeleteView(activity: ComponentActivity, onBackPress: () -> Unit): ComposeView {
+    fun createDeleteView(activity: ComponentActivity, onBackPress: Runnable): ComposeView {
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
@@ -78,7 +78,7 @@ object PetalDeleteBridge {
                     paletteId = paletteId
                 ) {
                     PetalDeleteScreen(
-                        onBackPress = onBackPress
+                        onBackPress = { onBackPress.run() }
                     )
                 }
             }
