@@ -55,9 +55,19 @@ public class NinjaDownloadListener implements DownloadListener {
         return "bin";
     }
 
+    private static String lastHandledUrl = null;
+    private static long lastHandledTime = 0L;
+
     @Override
     public void onDownloadStart(final String url, String userAgent, final String contentDisposition, final String mimeType, long contentLength) {
         final String downloadUrl = (url != null) ? url : "";
+        long currentTime = System.currentTimeMillis();
+        if (downloadUrl.equals(lastHandledUrl) && (currentTime - lastHandledTime) < 1500L) {
+            return;
+        }
+        lastHandledUrl = downloadUrl;
+        lastHandledTime = currentTime;
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
         String timestamp = LocalDateTime.now().format(formatter);
         String generatedFileName = HelperUnit.domain(webView.getUrl()) + "_" + timestamp + "." + getExtension(mimeType);

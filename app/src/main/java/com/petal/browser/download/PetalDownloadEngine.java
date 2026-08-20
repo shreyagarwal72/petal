@@ -82,12 +82,23 @@ public class PetalDownloadEngine {
         enqueueDownload(context, url, fileName, userAgent, cookie, extraHeaders, null);
     }
 
+    private final Map<String, Long> recentEnqueues = new java.util.concurrent.ConcurrentHashMap<>();
+
     /**
      * Enqueues a download request and reports the Fetch2-assigned download ID back once
      * queued, so callers (e.g. BrowserUnit) can start live-tracking/notifications for the
      * exact download that was created instead of guessing an ID.
      */
     public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders, java.util.function.BiConsumer<Integer, String> onEnqueued) {
+        if (url == null || url.isEmpty()) return;
+
+        long now = System.currentTimeMillis();
+        Long lastTime = recentEnqueues.get(url);
+        if (lastTime != null && (now - lastTime) < 2000L) {
+            Log.d(TAG, "Bypassing duplicate download enqueue for URL: " + url);
+            return;
+        }
+        recentEnqueues.put(url, now);
         File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         if (!downloadsDir.exists()) {
             downloadsDir.mkdirs();
