@@ -77,13 +77,6 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
         PendingIntent voicePendingIntent = PendingIntent.getActivity(context, 2, voiceIntent, flags);
         views.setOnClickPendingIntent(R.id.widget_icon_mic, voicePendingIntent);
 
-        // AI Search Intent
-        Intent aiIntent = new Intent(context, BrowserActivity.class);
-        aiIntent.setAction(ACTION_OPEN_AI_SEARCH);
-        aiIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent aiPendingIntent = PendingIntent.getActivity(context, 3, aiIntent, flags);
-        views.setOnClickPendingIntent(R.id.widget_icon_ai, aiPendingIntent);
-
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 }
