@@ -1,115 +1,120 @@
-package com.petal.browser.ui.components;
+package com.petal.browser.ui.components
 
-import androidx.compose.animation.core.Spring;
-import androidx.compose.animation.core.animateFloatAsState;
-import androidx.compose.animation.core.spring;
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
+data class FabWheelAction(
+    val id: String,
+    val label: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit
+)
+
 /**
- * ExpressiveFabWheel is a radial floating action menu for quick browser shortcuts.
+ * M3 Expressive Morphing FAB Wheel component.
+ * Morphs shape from circular FAB to extended rounded-rect with radial spring actions.
  */
 @Composable
 fun ExpressiveFabWheel(
-    onNewTab: () -> Unit,
-    onBookmark: () -> Unit,
-    onVoiceSearch: () -> Unit,
-    onReaderMode: () -> Unit,
+    actions: List<FabWheelAction>,
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
-    val rotationAngle by animateFloatAsState(
+    val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 135f else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "fabRotation"
+        animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+        label = "FabWheelRotation"
     )
 
-    val fanScale by animateFloatAsState(
+    val scaleProgress by animateFloatAsState(
         targetValue = if (isExpanded) 1f else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "fanScale"
+        animationSpec = spring(
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy
+        ),
+        label = "FabWheelExpansion"
     )
 
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.BottomEnd
+    Column(
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier
     ) {
-        if (isExpanded || fanScale > 0.01f) {
+        if (scaleProgress > 0.01f) {
             Column(
                 horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
-                    .padding(bottom = 70.dp, end = 6.dp)
-                    .graphicsLayer {
-                        scaleX = fanScale
-                        scaleY = fanScale
-                        alpha = fanScale
-                    }
+                    .scale(scaleProgress)
+                    .padding(bottom = 4.dp)
             ) {
-                SmallFloatingActionButton(
-                    onClick = {
-                        isExpanded = false
-                        onNewTab()
-                    },
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Icon(Icons.Rounded.Add, contentDescription = "New Tab")
-                }
-
-                SmallFloatingActionButton(
-                    onClick = {
-                        isExpanded = false
-                        onBookmark()
-                    },
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                ) {
-                    Icon(Icons.Rounded.BookmarkBorder, contentDescription = "Bookmark")
-                }
-
-                SmallFloatingActionButton(
-                    onClick = {
-                        isExpanded = false
-                        onVoiceSearch()
-                    },
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                ) {
-                    Icon(Icons.Rounded.Mic, contentDescription = "Voice Search")
-                }
-
-                SmallFloatingActionButton(
-                    onClick = {
-                        isExpanded = false
-                        onReaderMode()
-                    },
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                ) {
-                    Icon(Icons.Rounded.Article, contentDescription = "Reader Mode")
+                actions.forEach { action ->
+                    Surface(
+                        onClick = {
+                            isExpanded = false
+                            action.onClick()
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shadowElevation = 6.dp
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                text = action.label,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Icon(
+                                imageVector = action.icon,
+                                contentDescription = action.label,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
 
+        // Primary FAB Trigger
         FloatingActionButton(
             onClick = { isExpanded = !isExpanded },
-            shape = CircleShape,
-            containerColor = MaterialTheme.colorScheme.primary
+            shape = if (isExpanded) RoundedCornerShape(20.dp) else CircleShape,
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
+            modifier = Modifier.size(56.dp)
         ) {
             Icon(
                 imageVector = Icons.Rounded.Add,
-                contentDescription = "Expand Menu",
-                modifier = Modifier.graphicsLayer { rotationZ = rotationAngle }
+                contentDescription = if (isExpanded) "Close actions" else "Quick actions",
+                modifier = Modifier.rotate(rotation)
             )
         }
     }
