@@ -277,6 +277,8 @@ fun PetalUserProfileScreen(
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
+            com.petal.browser.ui.components.M3ExpressiveVariableBackground(pageSeed = "account_page")
+
             val previewBitmap = remember(animatedBackProgress > 0f) {
                 com.petal.browser.animation.predictiveback.PagePreviewCache.get(
                     com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN

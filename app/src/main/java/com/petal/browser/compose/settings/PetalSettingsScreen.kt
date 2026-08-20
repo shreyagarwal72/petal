@@ -505,6 +505,8 @@ fun PetalSettingsScreen(
                             shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
                         }
                 ) {
+                    M3ExpressiveVariableBackground(pageSeed = "settings_page")
+
                 if (isLoading) {
                     com.petal.browser.compose.composable.ContainedLoadingIndicator(
                         modifier = Modifier.fillMaxSize()

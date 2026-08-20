@@ -344,6 +344,8 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
+            M3ExpressiveVariableBackground(pageSeed = "downloads_page")
+
             // "Last page" preview: the browser page this screen was opened from, peeking in
             // from behind as the Downloads screen shrinks out of the way - InstallerX-Revived
             // style two-screen choreography instead of a flat shrink-on-scrim.

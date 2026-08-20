@@ -318,6 +318,8 @@ fun PetalHistoryScreen(
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
+            M3ExpressiveVariableBackground(pageSeed = "history_page")
+
             val previewBitmap = remember(animatedBackProgress > 0f) {
                 com.petal.browser.animation.predictiveback.PagePreviewCache.get(
                     com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN
