@@ -4302,6 +4302,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
 
                         @Override
+                        public void onDownloadImage() {
+                            if (imageURL != null && !imageURL.trim().isEmpty()) {
+                                com.petal.browser.unit.ImageActionHelper.downloadImage(BrowserActivity.this, imageURL);
+                            } else {
+                                NinjaToast.show(BrowserActivity.this, "No valid image URL found");
+                            }
+                        }
+
+                        @Override
                         public void onAddToReadingList() {
                             try {
                                 RecordAction action = new RecordAction(BrowserActivity.this);
@@ -4318,6 +4327,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         public void onScanImage() {
                             if (imageURL != null && !imageURL.trim().isEmpty()) {
                                 com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(BrowserActivity.this, imageURL);
+                            } else {
+                                NinjaToast.show(BrowserActivity.this, "No valid image URL found");
+                            }
+                        }
+
+                        @Override
+                        public void onShareImage() {
+                            if (imageURL != null && !imageURL.trim().isEmpty()) {
+                                com.petal.browser.unit.ImageActionHelper.shareImage(BrowserActivity.this, imageURL);
                             } else {
                                 NinjaToast.show(BrowserActivity.this, "No valid image URL found");
                             }
@@ -4389,6 +4407,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
 
                         @Override
+                        public void onDownloadImage() {
+                            if (urlResult != null && !urlResult.trim().isEmpty()) {
+                                com.petal.browser.unit.ImageActionHelper.downloadImage(BrowserActivity.this, urlResult);
+                            }
+                        }
+
+                        @Override
                         public void onAddToReadingList() {
                             try {
                                 RecordAction action = new RecordAction(BrowserActivity.this);
@@ -4405,6 +4430,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         public void onScanImage() {
                             if (urlResult != null && !urlResult.trim().isEmpty()) {
                                 com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(BrowserActivity.this, urlResult);
+                            }
+                        }
+
+                        @Override
+                        public void onShareImage() {
+                            if (urlResult != null && !urlResult.trim().isEmpty()) {
+                                com.petal.browser.unit.ImageActionHelper.shareImage(BrowserActivity.this, urlResult);
                             }
                         }
 

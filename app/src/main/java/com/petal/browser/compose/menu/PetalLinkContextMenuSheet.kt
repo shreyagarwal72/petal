@@ -43,8 +43,10 @@ interface PetalLinkContextMenuHandler {
     fun onCopyLinkAddress()
     fun onCopyLinkText()
     fun onDownloadLink()
+    fun onDownloadImage()
     fun onAddToReadingList()
     fun onShareLink()
+    fun onShareImage()
     fun onScanImage()
 }
 
@@ -155,9 +157,9 @@ fun PetalLinkContextMenuSheet(
                 onDismiss()
                 handler.onCopyLinkText()
             }
-            ContextMenuItem("Download link", Icons.Rounded.FileDownload) {
+            ContextMenuItem("Download image", Icons.Rounded.ImageSearch) {
                 onDismiss()
-                handler.onDownloadLink()
+                handler.onDownloadImage()
             }
             ContextMenuItem("Add to reading list", Icons.Rounded.BookmarkAdd) {
                 onDismiss()
@@ -166,6 +168,10 @@ fun PetalLinkContextMenuSheet(
             ContextMenuItem("Scan Image", Icons.Rounded.DocumentScanner) {
                 onDismiss()
                 handler.onScanImage()
+            }
+            ContextMenuItem("Share image", Icons.Rounded.Share) {
+                onDismiss()
+                handler.onShareImage()
             }
             ContextMenuItem("Share link", Icons.Rounded.Share, trailingIcon = Icons.Rounded.IosShare) {
                 onDismiss()
