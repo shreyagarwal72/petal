@@ -30,6 +30,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -170,25 +172,32 @@ fun PetalScreenWrapper(
     val predictiveEnabled = PetalPredictiveJunction.isPredictiveBackEnabled.value
     val blurEnabled = PetalPredictiveJunction.isDepthBlurEnabled.value
 
-    val effectiveProgress = if (progress > 0f) progress else if (isBehind) 1f else 0f
+    // Two independent progress signals, matching PixelPlayer's ScreenWrapper:
+    // - foregroundProgress drives the screen actively being dragged away (scale + corner
+    //   morph only — it must stay sharp and legible while the user is looking at it).
+    // - behindProgress drives whatever sits underneath it (corner + dim + blur), and is only
+    //   ever non-zero for a screen explicitly marked isBehind. Previously both scale/corner
+    //   AND dim/blur were driven off the same `progress`, so the screen being dragged blurred
+    //   and dimmed itself into illegibility mid-gesture instead of the destination behind it.
+    val foregroundProgress = if (predictiveEnabled) progress else 0f
+    val behindProgress = if (predictiveEnabled && isBehind) 1f else 0f
 
     // PixelPlayer predictive back motion curves:
     // Scale ranges from 1.0 down to 0.92 (8% scale reduction at max gesture)
-    val scale = if (predictiveEnabled && effectiveProgress > 0f) 1f - (0.08f * effectiveProgress) else 1f
-    // Corner radius morphs up to 28dp
-    val targetRadius = if (predictiveEnabled && effectiveProgress > 0f) 28f * effectiveProgress else 0f
-    // Subtle backdrop dimming overlay
-    val targetDim = if (predictiveEnabled && effectiveProgress > 0f) {
-        (if (!blurEnabled) 0.5f else 0.25f) * effectiveProgress
-    } else 0f
-    // Depth blur (up to 16dp on supported devices)
-    val targetBlur = if (predictiveEnabled && effectiveProgress > 0f && blurEnabled) 16f * effectiveProgress else 0f
+    val scale = 1f - (0.08f * foregroundProgress)
+    // Corner radius morphs up to 28dp (applies to whichever layer is animating, front or behind)
+    val activeProgress = if (isBehind) behindProgress else foregroundProgress
+    val targetRadius = 28f * activeProgress
+    // Subtle backdrop dimming overlay — behind screen only
+    val targetDim = (if (!blurEnabled) 0.5f else 0.25f) * behindProgress
+    // Depth blur (up to 16dp on supported devices) — behind screen only
+    val targetBlur = if (blurEnabled) 16f * behindProgress else 0f
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .graphicsLayer {
-                compositingStrategy = if (predictiveEnabled && effectiveProgress > 0f) {
+                compositingStrategy = if (predictiveEnabled && (foregroundProgress > 0f || isBehind)) {
                     CompositingStrategy.Offscreen
                 } else {
                     CompositingStrategy.Auto
