@@ -456,16 +456,6 @@ fun PetalTabGridSwitcher(
                                     dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd
                                 ) {
                                     onTabClose(tab)
-                                    coroutineScope.launch {
-                                        val result = snackbarHostState.showSnackbar(
-                                            message = "Closed ${tab.title.ifBlank { "Tab" }}",
-                                            actionLabel = "Undo",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            onNewTab(tab.isIncognito)
-                                        }
-                                    }
                                 }
                             }
 
