@@ -53,13 +53,10 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
 
         // Material You / Theme Palette colors for text and icons
         String paletteId = sp.getString("sp_palette_id", "tide");
-        com.petal.browser.ui.theme.PetalPalette palette = com.petal.browser.ui.theme.ColorStylesKt.paletteById(paletteId);
-        androidx.compose.material3.ColorScheme scheme = isDark ? palette.getDark() : palette.getLight();
-
-        int primaryIconColor = androidx.compose.ui.graphics.ColorKt.toArgb(scheme.getPrimary());
-        int aiIconColor = androidx.compose.ui.graphics.ColorKt.toArgb(scheme.getSecondary());
-        int micIconColor = androidx.compose.ui.graphics.ColorKt.toArgb(scheme.getTertiary());
-        int hintColor = androidx.compose.ui.graphics.ColorKt.toArgb(scheme.getOnSurfaceVariant());
+        int primaryIconColor = com.petal.browser.ui.theme.WidgetColors.primaryArgb(paletteId, isDark);
+        int aiIconColor = com.petal.browser.ui.theme.WidgetColors.secondaryArgb(paletteId, isDark);
+        int micIconColor = com.petal.browser.ui.theme.WidgetColors.tertiaryArgb(paletteId, isDark);
+        int hintColor = com.petal.browser.ui.theme.WidgetColors.onSurfaceVariantArgb(paletteId, isDark);
 
         views.setTextColor(R.id.widget_search_text, hintColor);
         views.setInt(R.id.widget_icon_search, "setColorFilter", primaryIconColor);
