@@ -413,12 +413,22 @@ fun PetalHomeScreen(
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Top Bar Profile / Sync Action Button
+                // Top Bar: Petal Title on Left + Profile / Sync Action Button on Right
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(
+                        text = "Petal",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
                     IconButton(
                         onClick = onOpenAccountSync,
                         modifier = Modifier.size(44.dp)
