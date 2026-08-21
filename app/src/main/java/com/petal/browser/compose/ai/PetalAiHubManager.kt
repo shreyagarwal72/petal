@@ -24,25 +24,35 @@ object PetalAiHubManager {
     const val DEFAULT_AIS_JSON = """
     {
       "chatbot": [
-        {"name": "Duck AI", "website": "https://duck.ai", "pricing": "freemium", "privacy": "friendly", "login_required": false, "best_for": ["private chat", "image gen", "pdf chat"]},
-        {"name": "Venice AI", "website": "https://venice.ai/chat", "pricing": "freemium", "privacy": "friendly", "login_required": false, "best_for": ["uncensored chat", "creative writing", "privacy"]},
-        {"name": "Grok AI", "website": "https://grok.com", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["coding", "research", "brainstorming"]},
-        {"name": "Lumo AI", "website": "https://lumo.proton.me", "pricing": "freemium", "privacy": "friendly", "login_required": true, "best_for": ["private chat", "secure AI", "assistance"]},
-        {"name": "Deepseek", "website": "https://chat.deepseek.com", "pricing": "free", "privacy": "avoid", "login_required": true, "best_for": ["coding", "reasoning", "technical"]},
-        {"name": "ChatGPT", "website": "https://chatgpt.com", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["writing", "coding", "research"]},
-        {"name": "Gemini", "website": "https://gemini.google.com", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["multimodal", "writing", "research"]},
-        {"name": "Google AI Studio", "website": "https://aistudio.google.com", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["prompt engineering", "app building"]},
-        {"name": "Claude AI", "website": "https://claude.ai/chat", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["writing", "coding", "analysis"]},
-        {"name": "Perplexity AI", "website": "https://www.perplexity.ai", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["research", "fact-checking", "summarization"]},
-        {"name": "Mistral AI", "website": "https://chat.mistral.ai", "pricing": "freemium", "privacy": "friendly", "login_required": true, "best_for": ["coding", "research", "writing"]}
+        {"name": "Duck AI", "website": "https://duck.ai", "pricing": "freemium", "privacy": "friendly", "login_required": false, "best_for": ["private chat", "image gen", "pdf chat", "anonymous AI"]},
+        {"name": "Venice AI", "website": "https://venice.ai/chat", "pricing": "freemium", "privacy": "friendly", "login_required": false, "best_for": ["uncensored chat", "creative writing", "privacy", "open models"]},
+        {"name": "Grok AI", "website": "https://grok.com", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["coding", "realtime search", "xAI", "reasoning"]},
+        {"name": "Lumo AI", "website": "https://lumo.proton.me", "pricing": "freemium", "privacy": "friendly", "login_required": true, "best_for": ["private chat", "secure AI", "proton privacy", "assistance"]},
+        {"name": "DeepSeek", "website": "https://chat.deepseek.com", "pricing": "free", "privacy": "avoid", "login_required": true, "best_for": ["coding", "deep reasoning", "r1 model", "technical"]},
+        {"name": "ChatGPT", "website": "https://chatgpt.com", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["writing", "coding", "general AI", "voice chat"]},
+        {"name": "Gemini", "website": "https://gemini.google.com", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["multimodal", "google ecosystem", "research", "summarization"]},
+        {"name": "Google AI Studio", "website": "https://aistudio.google.com", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["prompt engineering", "gemini flash 2.0", "long context", "app building"]},
+        {"name": "Claude AI", "website": "https://claude.ai/chat", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["coding", "long documents", "sonnet 3.5", "writing"]},
+        {"name": "Mistral Le Chat", "website": "https://chat.mistral.ai", "pricing": "freemium", "privacy": "friendly", "login_required": true, "best_for": ["open weights", "coding", "fast chat", "european privacy"]},
+        {"name": "Blackbox AI", "website": "https://www.blackbox.ai", "pricing": "freemium", "privacy": "avoid", "login_required": false, "best_for": ["code generation", "repo search", "debugging"]}
       ],
       "search & research": [
-        {"name": "Kagi Search", "website": "https://kagi.com", "pricing": "paid", "privacy": "friendly", "login_required": true, "best_for": ["ad-free search", "lenses"]},
-        {"name": "Brave Leo", "website": "https://search.brave.com/search", "pricing": "free", "privacy": "friendly", "login_required": false, "best_for": ["private search", "summaries"]}
+        {"name": "Perplexity AI", "website": "https://www.perplexity.ai", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["web research", "cited answers", "pro search", "deep dive"]},
+        {"name": "Kagi Search", "website": "https://kagi.com", "pricing": "paid", "privacy": "friendly", "login_required": true, "best_for": ["ad-free search", "lenses", "custom ranking", "fast Results"]},
+        {"name": "Brave Leo", "website": "https://search.brave.com/search", "pricing": "free", "privacy": "friendly", "login_required": false, "best_for": ["private search", "summaries", "brave search", "leo assistant"]},
+        {"name": "Exa AI", "website": "https://exa.ai", "pricing": "freemium", "privacy": "friendly", "login_required": false, "best_for": ["neural search", "developer search", "semantic web"]}
       ],
       "creative & image": [
-        {"name": "Midjourney", "website": "https://www.midjourney.com", "pricing": "paid", "privacy": "avoid", "login_required": true, "best_for": ["art", "photorealism"]},
-        {"name": "Ideogram", "website": "https://ideogram.ai", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["typography", "logo design"]}
+        {"name": "Midjourney", "website": "https://www.midjourney.com", "pricing": "paid", "privacy": "avoid", "login_required": true, "best_for": ["art", "photorealism", "v6 generation", "design"]},
+        {"name": "Ideogram", "website": "https://ideogram.ai", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["typography", "logo design", "text in image", "2.0 model"]},
+        {"name": "Recraft AI", "website": "https://www.recraft.ai", "pricing": "freemium", "privacy": "friendly", "login_required": true, "best_for": ["vector art", "brand design", "3D art", "svg export"]},
+        {"name": "Flux AI (BFL)", "website": "https://blackforestlabs.ai", "pricing": "freemium", "privacy": "friendly", "login_required": false, "best_for": ["flux1.dev", "state-of-the-art art", "photorealism"]}
+      ],
+      "coding & dev": [
+        {"name": "v0 by Vercel", "website": "https://v0.dev", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["ui generation", "react", "tailwind", "next.js"]},
+        {"name": "Bolt.new", "website": "https://bolt.new", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["fullstack web apps", "webcontainers", "in-browser dev"]},
+        {"name": "Lovable AI", "website": "https://lovable.dev", "pricing": "freemium", "privacy": "avoid", "login_required": true, "best_for": ["web app builder", "gpt-4o coding", "supabase integration"]},
+        {"name": "Cursor Directory", "website": "https://cursor.directory", "pricing": "free", "privacy": "friendly", "login_required": false, "best_for": ["system prompts", "rules for AI", "cursor config"]}
       ]
     }
     """
