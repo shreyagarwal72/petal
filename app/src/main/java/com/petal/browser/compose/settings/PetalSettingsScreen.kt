@@ -83,9 +83,9 @@ object PetalSettingsBridge {
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
                 var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
-                var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
-                var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 400)) }
-                var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
+                var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
+                var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
+                var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
                 var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH") }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
@@ -97,9 +97,9 @@ object PetalSettingsBridge {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                         when (key) {
                             "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
-                            "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 100f)
-                            "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 400)
-                            "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
+                            "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
+                            "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
+                            "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
                             "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH"
                             "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
@@ -211,9 +211,9 @@ fun PetalSettingsScreen(
     var selectedPreset by remember {
         mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH") } catch (e: Exception) { GSFlexPreset.ZENITH })
     }
-    var fontWidth by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
-    var fontWeight by remember { mutableFloatStateOf(sp.getInt("sp_font_weight", 400).toFloat()) }
-    var fontRoundness by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
+    var fontWidth by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
+    var fontWeight by remember { mutableFloatStateOf(sp.getInt("sp_font_weight", 750).toFloat()) }
+    var fontRoundness by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
     var selectedColorStyle by remember {
         mutableStateOf(try { ColorStyle.valueOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") } catch (e: Exception) { ColorStyle.TONAL_SPOT })
     }
