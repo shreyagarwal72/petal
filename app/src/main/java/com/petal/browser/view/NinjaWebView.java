@@ -3,11 +3,13 @@ package com.petal.browser.view;
 import static android.content.ContentValues.TAG;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,6 +17,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.PixelCopy;
 import android.view.View;
+import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.CookieManager;
 import android.webkit.WebBackForwardList;
@@ -669,13 +672,25 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        // PixelCopy has no overload that accepts an arbitrary View (only SurfaceView, Surface,
+        // or Window), so a hardware-accurate capture requires going through this WebView's
+        // containing Window and cropping to the WebView's on-screen bounds. That only works
+        // when we actually have an Activity Window to copy from and the view is attached and
+        // visible; otherwise fall back to the software draw() capture below.
+        Window window = getHostWindow();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && window != null && isAttachedToWindow()
+                && getVisibility() == View.VISIBLE) {
             try {
+                int[] location = new int[2];
+                getLocationInWindow(location);
+                Rect srcRect = new Rect(location[0], location[1], location[0] + w, location[1] + h);
+
                 int targetWidth = Math.min(w, 480);
                 int targetHeight = Math.max(1, (int) ((float) h * targetWidth / w));
                 final Bitmap bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888);
                 PixelCopy.request(
-                        this,
+                        window,
+                        srcRect,
                         bitmap,
                         copyResult -> {
                             if (copyResult == PixelCopy.SUCCESS) {
@@ -693,11 +708,28 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                 callback.accept(capturePreviewBitmap());
             }
         } else {
-            // Pre-API 31: PixelCopy cannot target an arbitrary View (only Surface/Window),
-            // so use the software draw() capture, which is still a faithful "live" snapshot
-            // for the vast majority of WebView content.
+            // Pre-API 31, no reachable Window, or the view isn't currently on-screen: PixelCopy
+            // can't be used, so fall back to the software draw() capture, which is still a
+            // faithful "live" snapshot for the vast majority of WebView content.
             callback.accept(capturePreviewBitmap());
         }
+    }
+
+    /**
+     * Walks up the Context chain to find the {@link Window} of the hosting {@link Activity},
+     * unwrapping any {@code ContextWrapper} layers (e.g. from theming libraries). Returns
+     * {@code null} if this view isn't hosted in an Activity (e.g. a detached or preview context).
+     */
+    @Nullable
+    private Window getHostWindow() {
+        Context context = getContext();
+        while (context instanceof android.content.ContextWrapper) {
+            if (context instanceof Activity) {
+                return ((Activity) context).getWindow();
+            }
+            context = ((android.content.ContextWrapper) context).getBaseContext();
+        }
+        return null;
     }
 
     public void setStopped(boolean stopped) {
