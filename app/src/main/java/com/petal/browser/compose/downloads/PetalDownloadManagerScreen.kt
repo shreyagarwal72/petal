@@ -250,28 +250,8 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     // straight through to the Activity-level browser back logic, which knows nothing
     // about the download manager being open and can exit the app directly instead of
     // first returning to the home/current site screen (Chrome-style back chain).
-    var backProgress by remember { mutableFloatStateOf(0f) }
-    var backIsLeftEdge by remember { mutableStateOf(true) }
-    val animatedBackProgress by animateFloatAsState(
-        targetValue = backProgress,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "DownloadsBackProgress"
-    )
-    val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-    androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
-        try {
-            progress.collect { backEvent ->
-                backProgress = backEvent.progress
-                backIsLeftEdge = backEvent.swipeEdge == androidx.activity.BackEventCompat.EDGE_LEFT
-            }
-            // collect completes normally only when the back gesture is committed;
-            // a cancelled swipe throws instead and is caught below without firing this.
-            backProgress = 0f
-            onBackPress()
-        } catch (e: Exception) {
-            // gesture cancelled - stay on the download manager screen
-            backProgress = 0f
-        }
+    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(enabled = true) {
+        onBackPress()
     }
 
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -308,80 +288,11 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
             }
         }
     ) { innerPadding ->
-        // Reflects whichever Predictive Back Animation style is selected in Settings (AOSP /
-        // MIUIX / Scale / Classic / None) instead of a hardcoded shrink - this is the bug fix
-        // for Downloads always looking the same regardless of that setting.
-        val animation = remember(sp) {
-            com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value
-            )
-        }
-        val exitDirection = remember(sp) {
-            com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
-                sp.getString("sp_predictive_back_exit_dir", com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value
-            )
-        }
-        val backFrame = com.petal.browser.animation.predictiveback.PredictiveBackStyle.frameFor(
-            animation = animation,
-            exitDirection = exitDirection,
-            progress = animatedBackProgress,
-            isLeftEdge = backIsLeftEdge,
-        )
-
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             M3ExpressiveVariableBackground(pageSeed = "downloads_page")
 
-            // "Last page" preview: the browser page this screen was opened from, peeking in
-            // from behind as the Downloads screen shrinks out of the way - InstallerX-Revived
-            // style two-screen choreography instead of a flat shrink-on-scrim.
-            val previewBitmap = remember(animatedBackProgress > 0f) {
-                com.petal.browser.animation.predictiveback.PagePreviewCache.get(
-                    com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN
-                )
-            }
-            if (previewBitmap != null && animatedBackProgress > 0.001f) {
-                val underlay = com.petal.browser.animation.predictiveback.PredictiveBackStyle.underlayFrameFor(
-                    animation = animation,
-                    exitDirection = exitDirection,
-                    progress = animatedBackProgress,
-                    isLeftEdge = backIsLeftEdge,
-                )
-                androidx.compose.foundation.Image(
-                    bitmap = previewBitmap.asImageBitmap(),
-                    contentDescription = null,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = underlay.scale
-                            scaleY = underlay.scale
-                            alpha = underlay.alpha
-                            translationX = underlay.translationXDp.dp.toPx()
-                            clip = underlay.cornerRadiusDp > 0.01f
-                            shape = RoundedCornerShape(underlay.cornerRadiusDp.dp)
-                        }
-                        .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) underlay.blurRadiusDp.dp else 0.dp)
-                )
-            }
-
-        val scale = backFrame.scale
-        val cornerRadius = backFrame.cornerRadiusDp.dp
-        val alpha = backFrame.alpha
-
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    this.alpha = alpha
-                    translationX = backFrame.translationXDp.dp.toPx()
-                    clip = animatedBackProgress > 0.01f
-                    shape = RoundedCornerShape(cornerRadius)
-                }
-                .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) backFrame.blurRadiusDp.dp else 0.dp)
+            modifier = Modifier.fillMaxSize()
         ) {
             // Header inside graphicsLayer for complete predictive back animation consistency!
             Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {

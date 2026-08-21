@@ -61,11 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.animation.predictiveback.PagePreviewCache
-import com.petal.browser.animation.predictiveback.PredictiveBackAnimation
-import com.petal.browser.animation.predictiveback.PredictiveBackExitDirection
-import com.petal.browser.animation.predictiveback.PredictiveBackStyle
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.ui.theme.*
@@ -222,97 +217,16 @@ fun PetalOmniboxPage(
         focusRequester.requestFocus()
     }
 
-    // Predictive-back state, mirroring PetalDownloadManagerScreen/PetalHistoryScreen so this
-    // page participates in the same gesture handling and per-style animation settings
-    // (AOSP/MIUIX/Scale/Classic/None) as every other full-screen surface in Petal.
-    var backProgress by remember { mutableFloatStateOf(0f) }
-    var backIsLeftEdge by remember { mutableStateOf(true) }
-    val animatedBackProgress by animateFloatAsState(
-        targetValue = backProgress,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "OmniboxBackProgress"
-    )
-    androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
-        try {
-            progress.collect { backEvent ->
-                backProgress = backEvent.progress
-                backIsLeftEdge = backEvent.swipeEdge == androidx.activity.BackEventCompat.EDGE_LEFT
-            }
-            backProgress = 0f
-            onBackPress()
-        } catch (e: Exception) {
-            backProgress = 0f
-        }
+    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(enabled = true) {
+        onBackPress()
     }
-
-    val animation = remember(sp) {
-        PredictiveBackAnimation.fromValueOrDefault(
-            sp.getString("sp_predictive_back_anim", PredictiveBackAnimation.MONITOR.value)
-                ?: PredictiveBackAnimation.MONITOR.value
-        )
-    }
-    val exitDirection = remember(sp) {
-        PredictiveBackExitDirection.fromValueOrDefault(
-            sp.getString("sp_predictive_back_exit_dir", PredictiveBackExitDirection.ALWAYS_RIGHT.value)
-                ?: PredictiveBackExitDirection.ALWAYS_RIGHT.value
-        )
-    }
-    val backFrame = PredictiveBackStyle.frameFor(
-        animation = animation,
-        exitDirection = exitDirection,
-        progress = animatedBackProgress,
-        isLeftEdge = backIsLeftEdge,
-    )
 
     Box(modifier = Modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "omnibox_page")
 
-        // "Last page" preview peeking in from behind as this page shrinks/slides away -
-        // same InstallerX-Revived-style two-screen choreography as Downloads/History/Account.
-        val previewBitmap = remember(animatedBackProgress > 0f) {
-            PagePreviewCache.get(PagePreviewCache.KEY_BROWSER_MAIN)
-        }
-        if (previewBitmap != null && animatedBackProgress > 0.001f) {
-            val underlay = PredictiveBackStyle.underlayFrameFor(
-                animation = animation,
-                exitDirection = exitDirection,
-                progress = animatedBackProgress,
-                isLeftEdge = backIsLeftEdge,
-            )
-            androidx.compose.foundation.Image(
-                bitmap = previewBitmap.asImageBitmap(),
-                contentDescription = null,
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        scaleX = underlay.scale
-                        scaleY = underlay.scale
-                        alpha = underlay.alpha
-                        translationX = underlay.translationXDp.dp.toPx()
-                        clip = underlay.cornerRadiusDp > 0.01f
-                        shape = RoundedCornerShape(underlay.cornerRadiusDp.dp)
-                    }
-                    .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) underlay.blurRadiusDp.dp else 0.dp)
-            )
-        }
-
-        val scale = backFrame.scale
-        val cornerRadius = backFrame.cornerRadiusDp.dp
-        val alpha = backFrame.alpha
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    this.alpha = alpha
-                    translationX = backFrame.translationXDp.dp.toPx()
-                    clip = animatedBackProgress > 0.01f
-                    shape = RoundedCornerShape(cornerRadius)
-                }
-                .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) backFrame.blurRadiusDp.dp else 0.dp)
                 .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
         ) {

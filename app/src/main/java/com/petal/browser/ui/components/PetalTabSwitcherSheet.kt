@@ -101,13 +101,7 @@ object PetalTabSwitcherBridge {
                                         val rawUrl = try { album.getUrl() } catch (_: Exception) { null }
                                         val isIncognitoTab = (album is com.petal.browser.view.NinjaWebView) && album.isIncognito()
                                         val faviconBitmap = if (album is com.petal.browser.view.NinjaWebView) album.getFavicon() else null
-                                        val previewKey = com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(rawUrl)
-                                        var previewBitmap = com.petal.browser.animation.predictiveback.PagePreviewCache.get(previewKey)
-                                        if (previewBitmap == null) {
-                                            previewBitmap = com.petal.browser.animation.predictiveback.PagePreviewCache.get(
-                                                com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN
-                                            )
-                                        }
+                                        val previewBitmap: android.graphics.Bitmap? = null
 
                                         val displayTitle = when {
                                             !rawTitle.isNullOrBlank() -> rawTitle

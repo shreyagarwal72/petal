@@ -207,25 +207,8 @@ fun PetalUserProfileScreen(
     // Same predictive-back wiring as Settings/Downloads: without this, a back-swipe here
     // falls straight through to the Activity-level browser back logic, which knows nothing
     // about the account screen being open.
-    var backProgress by remember { mutableFloatStateOf(0f) }
-    var backIsLeftEdge by remember { mutableStateOf(true) }
-    val animatedBackProgress by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = backProgress,
-        animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
-        label = "AccountBackProgress"
-    )
-    androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
-        try {
-            progress.collect { backEvent ->
-                backProgress = backEvent.progress
-                backIsLeftEdge = backEvent.swipeEdge == androidx.activity.BackEventCompat.EDGE_LEFT
-            }
-            backProgress = 0f
-            onBack()
-        } catch (e: Exception) {
-            // gesture cancelled - stay on the account screen
-            backProgress = 0f
-        }
+    androidx.activity.compose.BackHandler(enabled = true) {
+        onBack()
     }
 
     Scaffold(
@@ -247,73 +230,12 @@ fun PetalUserProfileScreen(
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
-        // Reflects whichever Predictive Back Animation style is selected in Settings, and
-        // shows the browser page this screen was opened from peeking in from behind as it
-        // shrinks away - the same InstallerX-Revived-style two-screen choreography used by
-        // Settings/Downloads, applied here for the account page too.
-        val animation = remember(sp) {
-            com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value
-            )
-        }
-        val exitDirection = remember(sp) {
-            com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
-                sp.getString("sp_predictive_back_exit_dir", com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value
-            )
-        }
-        val backFrame = com.petal.browser.animation.predictiveback.PredictiveBackStyle.frameFor(
-            animation = animation,
-            exitDirection = exitDirection,
-            progress = animatedBackProgress,
-            isLeftEdge = backIsLeftEdge,
-        )
-
-        Box(modifier = Modifier.fillMaxSize()) {
-            val previewBitmap = remember(animatedBackProgress > 0f) {
-                com.petal.browser.animation.predictiveback.PagePreviewCache.get(
-                    com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN
-                )
-            }
-            if (previewBitmap != null && animatedBackProgress > 0.001f) {
-                val underlay = com.petal.browser.animation.predictiveback.PredictiveBackStyle.underlayFrameFor(
-                    animation = animation,
-                    exitDirection = exitDirection,
-                    progress = animatedBackProgress,
-                    isLeftEdge = backIsLeftEdge,
-                )
-                androidx.compose.foundation.Image(
-                    bitmap = previewBitmap.asImageBitmap(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = underlay.scale
-                            scaleY = underlay.scale
-                            alpha = underlay.alpha
-                            translationX = underlay.translationXDp.dp.toPx()
-                            clip = underlay.cornerRadiusDp > 0.01f
-                            shape = RoundedCornerShape(underlay.cornerRadiusDp.dp)
-                        }
-                )
-            }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-                .graphicsLayer {
-                    scaleX = backFrame.scale
-                    scaleY = backFrame.scale
-                    alpha = backFrame.alpha
-                    translationX = backFrame.translationXDp.dp.toPx()
-                    clip = animatedBackProgress > 0.01f
-                    shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
-                },
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             // Main User Profile Hero Card

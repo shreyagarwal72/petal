@@ -20,7 +20,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 /**
- * Whether the Monitor-style blur effect (predictive-back depth blur, scrim blur behind sheets)
+ * Whether the Monitor-style blur effect (scrim blur behind sheets)
  * is enabled. Ported from RV System Monitor's `LocalBlurEffectEnabled`. Backed by the
  * "sp_blur_effect_enabled" preference, defaulting to on.
  */

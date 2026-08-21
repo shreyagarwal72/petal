@@ -16,7 +16,10 @@ public class PetalApplication extends Application {
         super.onCreate();
         try {
             ChromiumNativeEngineCore.initialize(this);
-            Log.i(TAG, "Early Chromium Native Engine initialization complete");
+            com.petal.browser.predictive.PetalPredictiveJunction.INSTANCE.init(
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+            );
+            Log.i(TAG, "Early Chromium Native Engine & Predictive Junction initialization complete");
         } catch (Exception e) {
             Log.e(TAG, "Failed early Chromium Native Engine init", e);
         }

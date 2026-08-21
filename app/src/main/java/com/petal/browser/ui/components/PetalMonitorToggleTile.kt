@@ -123,7 +123,7 @@ fun PetalMonitorToggleTile(
 private fun PetalMonitorToggleTilePreview() {
     PetalMonitorToggleTile(
         title = "Blur Effect",
-        subtitle = "Blur background content behind sheets and predictive back",
+        subtitle = "Blur background content behind modal sheets",
         icon = Icons.Rounded.Check,
         checked = true,
         onCheckedChange = {},

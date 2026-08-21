@@ -182,101 +182,18 @@ fun PetalHistoryScreen(
         )
     }
 
-    // Same predictive-back wiring as Settings/Downloads/Account - see the dispatcher set up
-    // in PetalHistoryBridge.showHistory above, which is what makes this usable at all inside
-    // a BottomSheetDialog's own window.
-    var backProgress by remember { mutableFloatStateOf(0f) }
-    var backIsLeftEdge by remember { mutableStateOf(true) }
-    val animatedBackProgress by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = backProgress,
-        animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
-        label = "HistoryBackProgress"
-    )
-    val historySp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-    androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
-        try {
-            progress.collect { backEvent ->
-                backProgress = backEvent.progress
-                backIsLeftEdge = backEvent.swipeEdge == androidx.activity.BackEventCompat.EDGE_LEFT
-            }
-            backProgress = 0f
-            onDismiss()
-        } catch (e: Exception) {
-            // gesture cancelled - stay on the history screen
-            backProgress = 0f
-        }
+    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(enabled = true) {
+        onDismiss()
     }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) { innerPadding ->
-        // Reflects the selected Predictive Back Animation style, with the browser page this
-        // was opened from peeking in from behind - same InstallerX-Revived-style choreography
-        // as Settings/Downloads/Account.
-        val animation = remember(historySp) {
-            com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                historySp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value
-            )
-        }
-        val exitDirection = remember(historySp) {
-            com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
-                historySp.getString("sp_predictive_back_exit_dir", com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value
-            )
-        }
-        val backFrame = com.petal.browser.animation.predictiveback.PredictiveBackStyle.frameFor(
-            animation = animation,
-            exitDirection = exitDirection,
-            progress = animatedBackProgress,
-            isLeftEdge = backIsLeftEdge,
-        )
-
         Box(modifier = Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(pageSeed = "history_page")
 
-            val previewBitmap = remember(animatedBackProgress > 0f) {
-                com.petal.browser.animation.predictiveback.PagePreviewCache.get(
-                    com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN
-                )
-            }
-            if (previewBitmap != null && animatedBackProgress > 0.001f) {
-                val underlay = com.petal.browser.animation.predictiveback.PredictiveBackStyle.underlayFrameFor(
-                    animation = animation,
-                    exitDirection = exitDirection,
-                    progress = animatedBackProgress,
-                    isLeftEdge = backIsLeftEdge,
-                )
-                androidx.compose.foundation.Image(
-                    bitmap = previewBitmap.asImageBitmap(),
-                    contentDescription = null,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = underlay.scale
-                            scaleY = underlay.scale
-                            alpha = underlay.alpha
-                            translationX = underlay.translationXDp.dp.toPx()
-                            clip = underlay.cornerRadiusDp > 0.01f
-                            shape = RoundedCornerShape(underlay.cornerRadiusDp.dp)
-                        }
-                        .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) underlay.blurRadiusDp.dp else 0.dp)
-                )
-            }
-
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = backFrame.scale
-                    scaleY = backFrame.scale
-                    alpha = backFrame.alpha
-                    translationX = backFrame.translationXDp.dp.toPx()
-                    clip = animatedBackProgress > 0.01f
-                    shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
-                }
-                .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) backFrame.blurRadiusDp.dp else 0.dp)
+            modifier = Modifier.fillMaxSize()
         ) {
             Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
                 TopAppBar(

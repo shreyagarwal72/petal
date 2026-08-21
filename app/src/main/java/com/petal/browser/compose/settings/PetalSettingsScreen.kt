@@ -246,20 +246,6 @@ fun PetalSettingsScreen(
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
     var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
     var isDoubleBackExit by remember { mutableStateOf(sp.getBoolean("sp_double_back_exit", true)) }
-    var predictiveBackAnim by remember {
-        mutableStateOf(
-            com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value) ?: "monitor_depth"
-            )
-        )
-    }
-    var predictiveBackExitDir by remember {
-        mutableStateOf(
-            com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.fromValueOrDefault(
-                sp.getString("sp_predictive_back_exit_dir", com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.ALWAYS_RIGHT.value) ?: "always_right"
-            )
-        )
-    }
     var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
@@ -294,34 +280,11 @@ fun PetalSettingsScreen(
         }
     }
 
-    var backProgress by remember { mutableFloatStateOf(0f) }
-    var backIsLeftEdge by remember { mutableStateOf(true) }
-    val animatedBackProgress by animateFloatAsState(
-        targetValue = backProgress,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "SettingsBackProgress"
-    )
-
-    // Always keep this handler active - including on the Overview screen - so that a
-    // back-swipe from Settings is never left for the Activity-level browser back logic
-    // to handle. That logic knows nothing about Settings being open and would otherwise
-    // fall straight through to "press back again to exit", skipping the home/current
-    // site screen entirely. Chrome-style behavior: sub-page -> Overview -> browser
-    // (home/current site) -> exit, one destination at a time.
-    androidx.activity.compose.PredictiveBackHandler(enabled = true) { progress ->
-        try {
-            progress.collect { backEvent ->
-                backProgress = backEvent.progress
-                backIsLeftEdge = backEvent.swipeEdge == androidx.activity.BackEventCompat.EDGE_LEFT
-            }
-            backProgress = 0f
-            if (currentCategory != SettingsCategory.OVERVIEW) {
-                currentCategory = SettingsCategory.OVERVIEW
-            } else {
-                onBackPress()
-            }
-        } catch (e: Exception) {
-            backProgress = 0f
+    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(enabled = true) {
+        if (currentCategory != SettingsCategory.OVERVIEW) {
+            currentCategory = SettingsCategory.OVERVIEW
+        } else {
+            onBackPress()
         }
     }
 
@@ -356,168 +319,12 @@ fun PetalSettingsScreen(
             modifier = Modifier.nestedScroll(petalHeaderScrollBehavior.nestedScrollConnection),
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
-            // Reflects whichever Predictive Back Animation style is selected above, so the
-            // Settings screen itself previews the same AOSP / MIUIX / Scale / Classic / None
-            // feel that's applied to the browser's own back gesture.
-            val backFrame = com.petal.browser.animation.predictiveback.PredictiveBackStyle.frameFor(
-                animation = predictiveBackAnim,
-                exitDirection = predictiveBackExitDir,
-                progress = animatedBackProgress,
-                isLeftEdge = backIsLeftEdge,
-            )
-            val blurEffectEnabled = com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current
-
-            Box(modifier = Modifier.fillMaxSize()) {
-                val isSubCategory = currentCategory != SettingsCategory.OVERVIEW
-                val mainBrowserBitmap = remember(animatedBackProgress > 0f) {
-                    com.petal.browser.animation.predictiveback.PagePreviewCache.get(
-                        com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN
-                    )
-                }
-
-                if (animatedBackProgress > 0.001f) {
-                    val underlay = com.petal.browser.animation.predictiveback.PredictiveBackStyle.underlayFrameFor(
-                        animation = predictiveBackAnim,
-                        exitDirection = predictiveBackExitDir,
-                        progress = animatedBackProgress,
-                        isLeftEdge = backIsLeftEdge,
-                    )
-
-                    if (isSubCategory) {
-                        // Render Main Settings Overview Page as underlay preview when backing out of any subsection
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding)
-                                .graphicsLayer {
-                                    scaleX = underlay.scale
-                                    scaleY = underlay.scale
-                                    this.alpha = underlay.alpha
-                                    translationX = underlay.translationXDp.dp.toPx()
-                                }
-                                .blur(if (blurEffectEnabled) underlay.blurRadiusDp.dp else 0.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
-                                    TopAppBar(
-                                        title = {
-                                            Text(
-                                                text = SettingsCategory.OVERVIEW.title,
-                                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        },
-                                        navigationIcon = {
-                                            IconButton(onClick = {}) {
-                                                Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                                            }
-                                        },
-                                        colors = TopAppBarDefaults.topAppBarColors(
-                                            containerColor = MaterialTheme.colorScheme.background
-                                        )
-                                    )
-                                    OutlinedTextField(
-                                        value = "",
-                                        onValueChange = {},
-                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
-                                        placeholder = { Text("Search settings...") },
-                                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                                        singleLine = true,
-                                        enabled = false,
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer
-                                        )
-                                    )
-                                }
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .weight(1f)
-                                        .verticalScroll(rememberScrollState())
-                                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                                ) {
-                                    Text(
-                                        "Categories",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    val categories = listOf(
-                                        SettingsCategory.AI_RESEARCH,
-                                        SettingsCategory.APPEARANCE,
-                                        SettingsCategory.PRIVACY,
-                                        SettingsCategory.SEARCH_HOMEPAGE,
-                                        SettingsCategory.DISPLAY_ZOOM,
-                                        SettingsCategory.DATA_STORAGE,
-                                        SettingsCategory.UPDATER,
-                                        SettingsCategory.ABOUT
-                                    )
-                                    val tileColorway = listOf(
-                                        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
-                                        MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
-                                        MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
-                                    )
-                                    categories.forEachIndexed { index, cat ->
-                                        if (isExpressiveFeatureTiles) {
-                                            val (container, onContainer) = tileColorway[index % tileColorway.size]
-                                            PetalFeatureTile(
-                                                title = cat.title,
-                                                subtitle = cat.subtitle,
-                                                icon = cat.icon,
-                                                container = container,
-                                                onContainer = onContainer,
-                                                onClick = {},
-                                            )
-                                        } else {
-                                            SettingsCategoryRow(
-                                                title = cat.title,
-                                                subtitle = cat.subtitle,
-                                                icon = cat.icon,
-                                                onClick = {}
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else if (mainBrowserBitmap != null) {
-                        // Render main browser page as underlay preview when backing out of main Settings Overview
-                        androidx.compose.foundation.Image(
-                            bitmap = mainBrowserBitmap.asImageBitmap(),
-                            contentDescription = null,
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer {
-                                    scaleX = underlay.scale
-                                    scaleY = underlay.scale
-                                    this.alpha = underlay.alpha
-                                    translationX = underlay.translationXDp.dp.toPx()
-                                }
-                        )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .graphicsLayer {
-                            scaleX = backFrame.scale
-                            scaleY = backFrame.scale
-                            this.alpha = backFrame.alpha
-                            translationX = backFrame.translationXDp.dp.toPx()
-                            clip = animatedBackProgress > 0.01f
-                            shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
-                        }
-                        .blur(if (blurEffectEnabled) backFrame.blurRadiusDp.dp else 0.dp)
-                ) {
-                    M3ExpressiveVariableBackground(pageSeed = "settings_page")
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                M3ExpressiveVariableBackground(pageSeed = "settings_page")
 
                 if (isLoading) {
                     com.petal.browser.compose.composable.ContainedLoadingIndicator(
@@ -1988,49 +1795,35 @@ fun PetalSettingsScreen(
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                        val isPredictiveAnimEnabled = predictiveBackAnim != com.petal.browser.animation.predictiveback.PredictiveBackAnimation.NONE
+
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        var junctionPredictive by remember { mutableStateOf(com.petal.browser.predictive.PetalPredictiveJunction.INSTANCE.isPredictiveBackEnabled().getValue()) }
+                        var junctionBlur by remember { mutableStateOf(com.petal.browser.predictive.PetalPredictiveJunction.INSTANCE.isDepthBlurEnabled().getValue()) }
+
                         ToggleRow(
-                            title = "Predictive Back Animation",
-                            subtitle = if (isPredictiveAnimEnabled) "Enabled predictive gesture animations" else "Disabled predictive gesture animations",
+                            title = "Predictive Back Animations (Junction)",
+                            subtitle = if (junctionPredictive) "Enabled app-wide PixelPlayer predictive gesture animations" else "Disabled predictive gesture animations app-wide",
                             icon = Icons.Rounded.Gesture,
-                            checked = isPredictiveAnimEnabled,
+                            checked = junctionPredictive,
                             onCheckedChange = { enabled ->
-                                val targetAnim = if (enabled) {
-                                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR
-                                } else {
-                                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.NONE
-                                }
-                                predictiveBackAnim = targetAnim
-                                sp.edit().putString("sp_predictive_back_anim", targetAnim.value).apply()
+                                junctionPredictive = enabled
+                                com.petal.browser.predictive.PetalPredictiveJunction.INSTANCE.setPredictiveBackEnabled(sp, enabled)
                             }
                         )
 
-                        if (predictiveBackAnim == com.petal.browser.animation.predictiveback.PredictiveBackAnimation.SCALE) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "Predictive Exit Direction:",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                com.petal.browser.animation.predictiveback.PredictiveBackExitDirection.entries.forEach { dir ->
-                                    FilterChip(
-                                        selected = predictiveBackExitDir == dir,
-                                        onClick = {
-                                            predictiveBackExitDir = dir
-                                            sp.edit().putString("sp_predictive_back_exit_dir", dir.value).apply()
-                                        },
-                                        label = { Text(dir.label) },
-                                        leadingIcon = if (predictiveBackExitDir == dir) {
-                                            { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                        } else null
-                                    )
+                        if (junctionPredictive) {
+                            ToggleRow(
+                                title = "Depth Blur Effect (Junction)",
+                                subtitle = if (junctionBlur) "Background page receives 24dp blur & corner morphing during back navigation" else "Disabled depth blur; uses solid dim overlay",
+                                icon = Icons.Rounded.Animation,
+                                checked = junctionBlur,
+                                onCheckedChange = { enabled ->
+                                    junctionBlur = enabled
+                                    com.petal.browser.predictive.PetalPredictiveJunction.INSTANCE.setDepthBlurEnabled(sp, enabled)
                                 }
-                            }
+                            )
                         }
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))

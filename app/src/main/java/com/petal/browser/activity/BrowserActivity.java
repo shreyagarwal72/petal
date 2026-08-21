@@ -450,7 +450,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         initOmniBox();
         initSearchOnSite();
         initPullToRefresh();
-        initPredictiveEdgeGestures();
         initOverview();
         hideSearch();
         dispatchIntent(getIntent());
@@ -721,253 +720,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    /**
-     * Leaves a snapshot of "what the main browser page currently looks like" behind for
-     * PagePreviewCache, right before a full-screen surface (Settings/Downloads/Account) is
-     * about to replace it in contentFrame. When the user later predictive-back-swipes out of
-     * that surface, this is what peeks in from behind it instead of a flat scrim.
-     */
-    private void captureBrowserMainPreview() {
-        try {
-            android.view.View pageRootView = findViewById(R.id.main);
-            if (pageRootView != null && pageRootView.getWidth() > 0) {
-                com.petal.browser.animation.predictiveback.PagePreviewCache.capture(
-                    com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_BROWSER_MAIN, pageRootView
-                );
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error capturing browser main preview", e);
-        }
-    }
-
-    /**
-     * Mirrors {@link #performBackNavigation()}'s own decision tree (without any side effects)
-     * to figure out, the instant a back gesture starts, which page/screen it's actually
-     * heading towards - so the "last page" preview layer (see PagePreviewCache) can show the
-     * right snapshot the whole time the gesture is in progress, InstallerX-Revived style.
-     */
-    private String computeBackPreviewKey() {
-        try {
-            if (fullscreenHolder != null || customView != null || videoView != null) {
-                return null;
-            }
-            if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE) {
-                return null;
-            }
-            if (ninjaWebView != null) {
-                android.webkit.WebBackForwardList list = ninjaWebView.copyBackForwardList();
-                if (list != null) {
-                    int currentIndex = list.getCurrentIndex();
-                    if (currentIndex > 0) {
-                        String prevUrl = list.getItemAtIndex(currentIndex - 1).getUrl();
-                        return com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(prevUrl);
-                    }
-                }
-            }
-            String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-            String homeUrl = sp.getString("favoriteURL", "about:blank");
-            if (currentUrl != null && !isHomePage(currentUrl) && !currentUrl.equals(homeUrl)) {
-                return com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_HOME;
-            }
-            // Nothing left to go back to (exit chain) - no meaningful preview.
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    /** Same idea as {@link #computeBackPreviewKey()}, but for the hand-rolled forward gesture. */
-    private String computeForwardPreviewKey() {
-        try {
-            if (ninjaWebView == null || !ninjaWebView.canGoForward()) return null;
-            android.webkit.WebBackForwardList list = ninjaWebView.copyBackForwardList();
-            int currentIndex = list.getCurrentIndex();
-            if (currentIndex >= 0 && currentIndex + 1 < list.getSize()) {
-                String nextUrl = list.getItemAtIndex(currentIndex + 1).getUrl();
-                return com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(nextUrl);
-            }
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    // State driving the left (back) and right (forward) edge bubbles.
-    private final com.petal.browser.compose.composable.PetalEdgeGestureState backGestureState = new com.petal.browser.compose.composable.PetalEdgeGestureState();
-    private final com.petal.browser.compose.composable.PetalEdgeGestureState forwardGestureState = new com.petal.browser.compose.composable.PetalEdgeGestureState();
-
-    /**
-     * Registers the predictive-back callback (drives the left-edge bubble on gesture-nav
-     * devices, API 33+) and adds the two edge indicator ComposeViews as window overlays -
-     * same addContentView approach used for the refresh spinner, so the WebView can never
-     * draw over them.
-     */
-    private void initPredictiveEdgeGestures() {
-        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackStarted(@androidx.annotation.NonNull androidx.activity.BackEventCompat backEvent) {
-                String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-                if (isHomePage(currentUrl) || (dialogOverview != null && dialogOverview.isShowing())) {
-                    backGestureState.setActive(true);
-                    backGestureState.setProgress(0f);
-                    backGestureState.setPreviewKey(computeBackPreviewKey());
-                }
-            }
-
-            @Override
-            public void handleOnBackProgressed(@androidx.annotation.NonNull androidx.activity.BackEventCompat backEvent) {
-                String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-                if (isHomePage(currentUrl) || (dialogOverview != null && dialogOverview.isShowing())) {
-                    backGestureState.setProgress(backEvent.getProgress());
-                }
-            }
-
-            @Override
-            public void handleOnBackPressed() {
-                backGestureState.setActive(false);
-                backGestureState.setProgress(0f);
-                performBackNavigation();
-            }
-
-            @Override
-            public void handleOnBackCancelled() {
-                backGestureState.setActive(false);
-                backGestureState.setProgress(0f);
-            }
-        });
-
-        android.widget.FrameLayout.LayoutParams leftParams = new android.widget.FrameLayout.LayoutParams(
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT
-        );
-        leftParams.gravity = android.view.Gravity.START;
-        androidx.compose.ui.platform.ComposeView leftEdgeCompose = new androidx.compose.ui.platform.ComposeView(this);
-        addContentView(leftEdgeCompose, leftParams);
-        com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bind(leftEdgeCompose, this, backGestureState, true);
-        leftEdgeCompose.bringToFront();
-
-        android.widget.FrameLayout.LayoutParams rightParams = new android.widget.FrameLayout.LayoutParams(
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT
-        );
-        rightParams.gravity = android.view.Gravity.END;
-        androidx.compose.ui.platform.ComposeView rightEdgeCompose = new androidx.compose.ui.platform.ComposeView(this);
-        addContentView(rightEdgeCompose, rightParams);
-        com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bind(rightEdgeCompose, this, forwardGestureState, false);
-        rightEdgeCompose.bringToFront();
-
-        // Animate the *whole* page - header (address bar) + content + bottom nav together -
-        // rather than just the WebView container, so predictive back feels like the entire
-        // screen is being swiped away instead of only the middle of it moving.
-        android.view.View pageRootView = findViewById(R.id.main);
-        if (pageRootView != null) {
-            com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bindContentTransform(
-                this, pageRootView, backGestureState, forwardGestureState
-            );
-        } else if (contentFrame != null) {
-            com.petal.browser.compose.composable.PetalEdgeIndicatorBridge.bindContentTransform(
-                this, contentFrame, backGestureState, forwardGestureState
-            );
-        }
-
-        // Gesture-nav Android reserves BOTH screen edges for the system back gesture by
-        // default, not just the left. Without this, a right-edge swipe never reaches
-        // dispatchTouchEvent below at all - the system claims it as a back gesture first.
-        // This carves out a thin strip on the right edge so those touches are delivered
-        // to the app instead, letting the forward gesture actually receive them.
-        final View decorView = getWindow().getDecorView();
-        decorView.post(() -> {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                int screenWidth = decorView.getWidth();
-                int screenHeight = decorView.getHeight();
-                if (screenWidth > 0 && screenHeight > 0) {
-                    int marginPx = (int) HelperUnit.convertDpToPixel(FORWARD_EDGE_MARGIN_DP, this);
-                    android.graphics.Rect exclusionRect = new android.graphics.Rect(
-                        screenWidth - marginPx, 0, screenWidth, screenHeight
-                    );
-                    decorView.setSystemGestureExclusionRects(
-                        java.util.Collections.singletonList(exclusionRect)
-                    );
-                }
-            }
-        });
-    }
-
-    // Right-edge swipe-to-forward: there is no OS predictive-back-style API for forward
-    // navigation, so this is a hand-rolled gesture, deliberately scoped to only claim
-    // touches that START within EDGE_MARGIN_DP of the right edge - everything else
-    // (page scrolling, horizontal carousels, etc.) passes through untouched.
-    private static final float FORWARD_EDGE_MARGIN_DP = 24f;
-    private static final float FORWARD_COMMIT_THRESHOLD = 0.4f;
-    private boolean forwardGestureTracking = false;
-    private boolean forwardGestureClaimed = false;
-    private float forwardGestureStartX = 0f;
-
-    @Override
-    public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
-        if (handleForwardEdgeGesture(ev)) {
-            return true;
-        }
-        return super.dispatchTouchEvent(ev);
-    }
-
-    private boolean handleForwardEdgeGesture(android.view.MotionEvent ev) {
-        float edgeMarginPx = HelperUnit.convertDpToPixel(FORWARD_EDGE_MARGIN_DP, this);
-        float screenWidth = getResources().getDisplayMetrics().widthPixels;
-        float triggerDistancePx = HelperUnit.convertDpToPixel(120f, this);
-
-        switch (ev.getActionMasked()) {
-            case android.view.MotionEvent.ACTION_DOWN:
-                boolean canGoForward = ninjaWebView != null && ninjaWebView.canGoForward();
-                if (canGoForward && ev.getRawX() >= screenWidth - edgeMarginPx) {
-                    forwardGestureTracking = true;
-                    forwardGestureClaimed = false;
-                    forwardGestureStartX = ev.getRawX();
-                }
-                return false;
-
-            case android.view.MotionEvent.ACTION_MOVE:
-                if (!forwardGestureTracking) return false;
-                float dragDistance = forwardGestureStartX - ev.getRawX();
-                if (!forwardGestureClaimed) {
-                    if (dragDistance > HelperUnit.convertDpToPixel(8f, this)) {
-                        forwardGestureClaimed = true;
-                        forwardGestureState.setActive(true);
-                        forwardGestureState.setPreviewKey(computeForwardPreviewKey());
-                        if (ninjaWebView != null) {
-                            ninjaWebView.dispatchTouchEvent(android.view.MotionEvent.obtain(
-                                ev.getDownTime(), ev.getEventTime(), android.view.MotionEvent.ACTION_CANCEL,
-                                ev.getX(), ev.getY(), 0));
-                        }
-                    } else {
-                        return false;
-                    }
-                }
-                float progress = Math.min(1f, Math.max(0f, dragDistance / triggerDistancePx));
-                forwardGestureState.setProgress(progress);
-                return true;
-
-            case android.view.MotionEvent.ACTION_UP:
-            case android.view.MotionEvent.ACTION_CANCEL:
-                if (forwardGestureClaimed) {
-                    if (forwardGestureState.getProgress() >= FORWARD_COMMIT_THRESHOLD && ninjaWebView != null && ninjaWebView.canGoForward()) {
-                        ninjaWebView.goForward();
-                    }
-                    forwardGestureState.setActive(false);
-                    forwardGestureState.setProgress(0f);
-                    forwardGestureTracking = false;
-                    forwardGestureClaimed = false;
-                    return true;
-                }
-                forwardGestureTracking = false;
-                forwardGestureClaimed = false;
-                return false;
-
-            default:
-                return forwardGestureClaimed;
-        }
-    }
-
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
@@ -975,9 +727,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showOverflow(null, null, 0, ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "", null, null, 0);
                 return true;
             case KeyEvent.KEYCODE_BACK:
-                // Fallback path for 3-button navigation / hardware back key. Gesture-nav
-                // devices are handled by the OnBackPressedCallback registered in
-                // initPredictiveEdgeGestures() instead, which is predictive-back aware.
                 performBackNavigation();
                 return true;
         }
@@ -1078,25 +827,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onTabUrlStarted(NinjaWebView webView, String url) {
         runOnUiThread(() -> {
             if (webView != ninjaWebView) return;
-
-            // Capture snapshot of current page before navigating away
-            try {
-                android.view.View pageRootView = findViewById(R.id.main);
-                if (pageRootView != null && pageRootView.getWidth() > 0) {
-                    String currentUrl = webView.getUrl();
-                    String urlKey = com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(currentUrl);
-                    if (urlKey != null) {
-                        com.petal.browser.animation.predictiveback.PagePreviewCache.capture(urlKey, pageRootView);
-                    }
-                    if (isHomePage(currentUrl)) {
-                        com.petal.browser.animation.predictiveback.PagePreviewCache.capture(
-                            com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_HOME, pageRootView
-                        );
-                    }
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error capturing page preview snapshot before navigation", e);
-            }
 
             // If this WebView is already the one attached and visible (i.e. we're just
             // navigating within the currently-shown tab, not switching tabs or coming
@@ -1592,30 +1322,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken);
                 final Handler handler = new Handler();
                 handler.postDelayed(() -> FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken), 500);
-
-                // Leave a "last page" snapshot behind for the predictive-back preview layer
-                // (see PagePreviewCache) - captured after a short delay so the page has had
-                // a chance to actually render before we screenshot it. Keyed by URL so a
-                // later back/forward gesture into this exact history entry can find it again.
-                final String snapshotUrl = ninjaWebView.getUrl();
-                final boolean snapshotIsHome = isHomePage(snapshotUrl);
-                handler.postDelayed(() -> {
-                    try {
-                        android.view.View pageRootView = findViewById(R.id.main);
-                        if (pageRootView == null || pageRootView.getWidth() <= 0) return;
-                        String urlKey = com.petal.browser.animation.predictiveback.PagePreviewCache.keyForUrl(snapshotUrl);
-                        if (urlKey != null) {
-                            com.petal.browser.animation.predictiveback.PagePreviewCache.capture(urlKey, pageRootView);
-                        }
-                        if (snapshotIsHome) {
-                            com.petal.browser.animation.predictiveback.PagePreviewCache.capture(
-                                com.petal.browser.animation.predictiveback.PagePreviewCache.KEY_HOME, pageRootView
-                            );
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error capturing page preview snapshot", e);
-                    }
-                }, 350);
             }
         }
     }
