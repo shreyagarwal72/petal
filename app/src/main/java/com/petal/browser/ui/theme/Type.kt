@@ -13,10 +13,11 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 
 enum class AppFont(val label: String) {
-    SYSTEM("System Default"),
+    PETAL("Petal Signature (Expressive Variable)"),
     GS_FLEX("GS FLEX"),
+    GS_ROUND("Google Sans Round"),
     NUNITO("Nunito"),
-    GS_ROUND("Google Sans Round")
+    SYSTEM("System Default")
 }
 
 @OptIn(ExperimentalTextApi::class)
@@ -220,6 +221,14 @@ fun petalTypography(
         buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
     } else {
         when (appFont) {
+            AppFont.PETAL -> {
+                val displayFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 400).coerceAtMost(950), width = fontWidth.coerceIn(85f, 125f), roundness = fontRoundness.coerceIn(80f, 100f))
+                val headlineFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 300).coerceAtMost(900), width = fontWidth.coerceIn(90f, 120f), roundness = fontRoundness.coerceIn(60f, 100f))
+                val titleFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 200).coerceAtMost(850), width = fontWidth.coerceIn(95f, 115f), roundness = fontRoundness.coerceIn(50f, 100f))
+                val bodyFont = variableFont(R.font.google_sans_flex, weight = fontWeight.coerceIn(300, 700), width = fontWidth.coerceIn(95f, 110f), roundness = fontRoundness.coerceIn(30f, 100f))
+                val labelFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 150).coerceAtMost(800), width = fontWidth.coerceIn(95f, 115f), roundness = fontRoundness.coerceIn(40f, 100f))
+                buildTypography(Tiers(displayFont, headlineFont, titleFont, bodyFont, labelFont))
+            }
             AppFont.SYSTEM -> systemTypography(fontWeight)
             AppFont.GS_FLEX -> systemTypography(fontWeight)
             AppFont.GS_ROUND -> buildTypography(

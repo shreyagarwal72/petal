@@ -206,7 +206,7 @@ fun PetalSettingsScreen(
 
     // Saved Preference States
     var selectedFont by remember {
-        mutableStateOf(try { AppFont.valueOf(sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX") } catch (e: Exception) { AppFont.GS_FLEX })
+        mutableStateOf(try { AppFont.valueOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") } catch (e: Exception) { AppFont.PETAL })
     }
     var selectedPreset by remember {
         mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH") } catch (e: Exception) { GSFlexPreset.ZENITH })
