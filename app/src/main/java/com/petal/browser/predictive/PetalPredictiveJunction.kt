@@ -100,13 +100,12 @@ val LocalPetalPredictiveJunctionState = compositionLocalOf { true }
 val LocalPetalDepthBlurJunctionState = compositionLocalOf { true }
 
 /**
- * PixelPlayer-inspired predictive back handler for overlay surfaces (dialogs, sheets, sub-pages).
- * Smoothly interpolates gesture progress and handles release/cancellation with spring physics.
+ * PixelPlayer predictive back handler for overlay surfaces (dialogs, sheets, sub-pages).
+ * Smoothly tracks gesture progress and swipe edge with spring physics for release and cancellation.
  */
 @Composable
 fun PetalPredictiveBackJunctionHandler(
     enabled: Boolean = true,
-    animationDurationMs: Int = 350,
     onProgressChanged: (Float) -> Unit = {},
     onBack: () -> Unit
 ) {
@@ -119,24 +118,34 @@ fun PetalPredictiveBackJunctionHandler(
         PredictiveBackHandler(enabled = true) { progressFlow ->
             try {
                 progressFlow.collect { backEvent ->
-                    progressAnim.snapTo(backEvent.progress)
-                    onProgressChanged(backEvent.progress)
+                    // Apply PixelPlayer smooth gesture easing curve: FastOutSlowInEasing
+                    val easedProgress = FastOutSlowInEasing.transform(backEvent.progress)
+                    progressAnim.snapTo(easedProgress)
+                    onProgressChanged(easedProgress)
                 }
 
+                // Gesture completed: animate to 1f with snappy spring before triggering back action
                 scope.launch {
                     progressAnim.animateTo(
                         targetValue = 1f,
-                        animationSpec = tween(animationDurationMs / 2)
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
                     ) { onProgressChanged(value) }
                     onBack()
                     progressAnim.snapTo(0f)
                     onProgressChanged(0f)
                 }
             } catch (_: CancellationException) {
+                // Gesture cancelled: spring smoothly back to rest (0f)
                 scope.launch {
                     progressAnim.animateTo(
                         targetValue = 0f,
-                        animationSpec = tween(animationDurationMs)
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioNoBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
                     ) { onProgressChanged(value) }
                 }
             }
@@ -147,9 +156,9 @@ fun PetalPredictiveBackJunctionHandler(
 }
 
 /**
- * PixelPlayer ScreenWrapper implementation ported for Petal.
- * Wraps page surfaces with offscreen compositing strategy, scale/translation transformations,
- * corner radius morphing, background depth blur, and dim overlay layers during navigation transitions.
+ * PixelPlayer ScreenWrapper implementation.
+ * Applies offscreen compositing, subtle scale down, rounded corner morphing, depth blur,
+ * and dim overlay layers to match native Pixel predictive back motion design.
  */
 @Composable
 fun PetalScreenWrapper(
@@ -158,20 +167,22 @@ fun PetalScreenWrapper(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
-    
-    // Auto-sync with Junction global state
     val predictiveEnabled = PetalPredictiveJunction.isPredictiveBackEnabled.value
     val blurEnabled = PetalPredictiveJunction.isDepthBlurEnabled.value
 
     val effectiveProgress = if (progress > 0f) progress else if (isBehind) 1f else 0f
 
-    val targetRadius = if (predictiveEnabled && effectiveProgress > 0f) 32f * effectiveProgress else 0f
+    // PixelPlayer predictive back motion curves:
+    // Scale ranges from 1.0 down to 0.92 (8% scale reduction at max gesture)
     val scale = if (predictiveEnabled && effectiveProgress > 0f) 1f - (0.08f * effectiveProgress) else 1f
+    // Corner radius morphs up to 28dp
+    val targetRadius = if (predictiveEnabled && effectiveProgress > 0f) 28f * effectiveProgress else 0f
+    // Subtle backdrop dimming overlay
     val targetDim = if (predictiveEnabled && effectiveProgress > 0f) {
-        (if (!blurEnabled) 0.75f else 0.4f) * effectiveProgress
+        (if (!blurEnabled) 0.5f else 0.25f) * effectiveProgress
     } else 0f
-    val targetBlur = if (predictiveEnabled && effectiveProgress > 0f && blurEnabled) 24f * effectiveProgress else 0f
+    // Depth blur (up to 16dp on supported devices)
+    val targetBlur = if (predictiveEnabled && effectiveProgress > 0f && blurEnabled) 16f * effectiveProgress else 0f
 
     Box(
         modifier = modifier
@@ -196,7 +207,7 @@ fun PetalScreenWrapper(
     ) {
         content()
 
-        // Dim Layer Overlay from PixelPlayer
+        // PixelPlayer Dim Layer Overlay
         if (targetDim > 0.001f) {
             Box(
                 modifier = Modifier
