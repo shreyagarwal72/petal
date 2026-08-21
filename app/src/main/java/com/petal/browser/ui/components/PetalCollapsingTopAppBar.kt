@@ -3,6 +3,7 @@ package com.petal.browser.ui.components
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -12,7 +13,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+
 
 /**
  * A collapsing Medium Top App Bar leveraging PixelPlayer's ExpressiveTopBarContent
@@ -66,8 +69,9 @@ private fun ExpressiveTopBarTitle(
         text = title,
         maxLines = 1,
         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-        modifier = androidx.compose.ui.Modifier.padding(start = startPadding),
+        modifier = Modifier.padding(start = startPadding),
         style = androidx.compose.material3.MaterialTheme.typography.titleLarge
     )
 }
+
 
