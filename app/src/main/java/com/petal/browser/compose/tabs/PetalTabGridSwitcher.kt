@@ -522,6 +522,7 @@ fun PetalTabGridSwitcher(
             }
         }
     }
+    }
 }
 
 @Composable
