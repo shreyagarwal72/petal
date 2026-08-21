@@ -93,7 +93,7 @@ fun PetalDeleteScreen(
 ) {
     val context = LocalContext.current
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    val isExpressiveFeatureTiles = remember { sp.getBoolean("sp_expressive_feature_tiles", true) }
+    var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
 
     var clearHistory by remember { mutableStateOf(sp.getBoolean("sp_clear_history", false)) }
     var clearCache by remember { mutableStateOf(sp.getBoolean("sp_clear_cache", true)) }

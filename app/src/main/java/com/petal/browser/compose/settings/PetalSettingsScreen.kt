@@ -246,6 +246,7 @@ fun PetalSettingsScreen(
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
     var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
     var isDoubleBackExit by remember { mutableStateOf(sp.getBoolean("sp_double_back_exit", true)) }
+    var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
     var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
@@ -1790,6 +1791,17 @@ fun PetalSettingsScreen(
                             onCheckedChange = { newValue ->
                                 isDoubleBackExit = newValue
                                 sp.edit().putBoolean("sp_double_back_exit", newValue).apply()
+                            }
+                        )
+
+                        ToggleRow(
+                            title = "Expressive Feature Tiles",
+                            subtitle = "Display Material 3 Expressive rich colorful cards with pill icons on Clear Browsing Data & Settings screens",
+                            icon = Icons.Rounded.GridStyle,
+                            checked = isExpressiveFeatureTiles,
+                            onCheckedChange = { newValue ->
+                                isExpressiveFeatureTiles = newValue
+                                sp.edit().putBoolean("sp_expressive_feature_tiles", newValue).apply()
                             }
                         )
 
