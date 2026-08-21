@@ -145,9 +145,16 @@ fun PetalOmniboxPage(
     onBackPress: () -> Unit
 ) {
     val context = LocalContext.current
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    val cleanedInitialQuery = remember(initialQuery) {
+        val trimmed = initialQuery.trim()
+        if (trimmed.equals("about:blank", ignoreCase = true) || trimmed.startsWith("about:", ignoreCase = true)) {
+            ""
+        } else {
+            initialQuery
+        }
+    }
     var queryState by remember {
-        mutableStateOf(TextFieldValue(initialQuery, androidx.compose.ui.text.TextRange(initialQuery.length)))
+        mutableStateOf(TextFieldValue(cleanedInitialQuery, androidx.compose.ui.text.TextRange(cleanedInitialQuery.length)))
     }
     var suggestions by remember { mutableStateOf<List<OmniboxSuggestion>>(emptyList()) }
     val focusRequester = remember { FocusRequester() }

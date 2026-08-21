@@ -113,11 +113,19 @@ public class SearchSuggestionsManager {
                     }
                     reader.close();
 
-                    JSONArray jsonArray = new JSONArray(builder.toString());
-                    if (jsonArray.length() >= 2) {
-                        JSONArray suggestionsArray = jsonArray.getJSONArray(1);
-                        for (int i = 0; i < suggestionsArray.length(); i++) {
-                            results.add(suggestionsArray.getString(i));
+                    String jsonStr = builder.toString().trim();
+                    if (jsonStr.startsWith("[")) {
+                        JSONArray jsonArray = new JSONArray(jsonStr);
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            Object obj = jsonArray.get(i);
+                            if (obj instanceof org.json.JSONObject) {
+                                org.json.JSONObject itemObj = (org.json.JSONObject) obj;
+                                if (itemObj.has("phrase")) {
+                                    results.add(itemObj.getString("phrase"));
+                                }
+                            } else if (obj instanceof String) {
+                                results.add((String) obj);
+                            }
                         }
                     }
                 }

@@ -2185,7 +2185,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 () -> {
                     String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-                    showOmniboxPage(isHomePage(cUrl) ? "" : cUrl);
+                    if (cUrl == null || cUrl.equalsIgnoreCase("about:blank") || cUrl.startsWith("about:") || isHomePage(cUrl)) {
+                        cUrl = "";
+                    }
+                    showOmniboxPage(cUrl);
                 },
                 () -> {
                     com.petal.browser.ui.components.PetalSiteInfoBridge.showSiteInfoBottomSheet(
@@ -4243,7 +4246,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-            if (cUrl == null || cUrl.startsWith("file:///android_asset/")) cUrl = "";
+            if (cUrl == null || cUrl.startsWith("file:///android_asset/") || cUrl.equalsIgnoreCase("about:blank") || cUrl.startsWith("about:")) cUrl = "";
             showOmniboxPage(cUrl);
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)) {
             getIntent().setAction("");
