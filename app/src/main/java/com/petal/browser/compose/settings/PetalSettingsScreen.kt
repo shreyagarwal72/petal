@@ -616,14 +616,15 @@ fun PetalSettingsScreen(
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                         }
-                                        Slider(
+                                        Spacer(Modifier.height(4.dp))
+                                        StrideSlider(
                                             value = fontWeight,
                                             onValueChange = {
                                                 fontWeight = it
                                                 sp.edit().putInt("sp_font_weight", it.toInt()).apply()
                                             },
                                             valueRange = 100f..900f,
-                                            steps = 15
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                     }
 
@@ -644,13 +645,15 @@ fun PetalSettingsScreen(
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                         }
-                                        Slider(
+                                        Spacer(Modifier.height(4.dp))
+                                        StrideSlider(
                                             value = fontWidth,
                                             onValueChange = {
                                                 fontWidth = it
                                                 sp.edit().putFloat("sp_font_width", it).apply()
                                             },
-                                            valueRange = 75f..125f
+                                            valueRange = 75f..125f,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                     }
 
@@ -671,13 +674,15 @@ fun PetalSettingsScreen(
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                         }
-                                        Slider(
+                                        Spacer(Modifier.height(4.dp))
+                                        StrideSlider(
                                             value = fontRoundness,
                                             onValueChange = {
                                                 fontRoundness = it
                                                 sp.edit().putFloat("sp_font_roundness", it).apply()
                                             },
-                                            valueRange = 0f..100f
+                                            valueRange = 0f..100f,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                     }
                                 }
