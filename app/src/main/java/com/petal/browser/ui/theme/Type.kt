@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTextApi::class)
+
 package com.petal.browser.ui.theme
 
 import androidx.compose.material3.Typography
@@ -64,6 +66,7 @@ private fun nunitoFont(weight: Int, width: Float, roundness: Float): FontFamily 
  */
 private val MonitorRoundVariationSetting = FontVariation.Setting("ROND", 100.0f)
 
+@OptIn(ExperimentalTextApi::class)
 private fun googleSansRoundFontFamily(weight: Int, width: Float = 100f): FontFamily = FontFamily(
     Font(
         resId = R.font.google_sans_flex,
