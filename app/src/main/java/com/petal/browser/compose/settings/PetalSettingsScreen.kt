@@ -82,7 +82,7 @@ object PetalSettingsBridge {
                 val context = LocalContext.current
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX") }
+                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
                 var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 100f)) }
                 var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 400)) }
                 var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 0f)) }
@@ -96,7 +96,7 @@ object PetalSettingsBridge {
                 DisposableEffect(sp) {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                         when (key) {
-                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                             "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 100f)
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 400)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
@@ -115,7 +115,7 @@ object PetalSettingsBridge {
                 }
 
                 val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.GS_FLEX }
+                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.PETAL }
                 }
                 val gsFlexPreset = remember(presetName) {
                     try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.ZENITH }
