@@ -618,6 +618,31 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         faviconHelper.addFavicon(this.context, getUrl(), getFavicon());
     }
 
+    @Nullable
+    public Bitmap capturePreviewBitmap() {
+        try {
+            int w = getWidth();
+            int h = getHeight();
+            if (w <= 0 || h <= 0) {
+                w = getMeasuredWidth();
+                h = getMeasuredHeight();
+            }
+            if (w <= 0 || h <= 0) return null;
+            // Downscale capture for memory-efficient tab grid thumbnail previewing
+            int targetWidth = Math.min(w, 480);
+            int targetHeight = Math.max(1, (int) ((float) h * targetWidth / w));
+            Bitmap bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas canvas = new android.graphics.Canvas(bitmap);
+            float scaleX = (float) targetWidth / w;
+            float scaleY = (float) targetHeight / h;
+            canvas.scale(scaleX, scaleY);
+            draw(canvas);
+            return bitmap;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public void setStopped(boolean stopped) {
         this.stopped = stopped;
     }
