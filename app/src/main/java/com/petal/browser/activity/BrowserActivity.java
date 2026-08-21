@@ -2719,6 +2719,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public void captureBrowserMainPreview() {
+        // No-op preview snapshot placeholder for screen transition previews
+    }
+
     public void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final AdapterRecord adapterRecord, List<Record> recordList, int location) {
         showOverflowMenu(view != null ? view : findViewById(R.id.bottom_nav_compose));
     }

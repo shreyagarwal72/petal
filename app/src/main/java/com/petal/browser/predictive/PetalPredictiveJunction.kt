@@ -77,16 +77,19 @@ object PetalPredictiveJunction {
     private val _isDepthBlurEnabled = MutableStateFlow(true)
     val isDepthBlurEnabled: StateFlow<Boolean> = _isDepthBlurEnabled.asStateFlow()
 
+    @JvmStatic
     fun init(prefs: SharedPreferences) {
         _isPredictiveBackEnabled.value = prefs.getBoolean(KEY_PREDICTIVE_BACK_ENABLED, true)
         _isDepthBlurEnabled.value = prefs.getBoolean(KEY_DEPTH_BLUR_ENABLED, true)
     }
 
+    @JvmStatic
     fun setPredictiveBackEnabled(prefs: SharedPreferences, enabled: Boolean) {
         _isPredictiveBackEnabled.value = enabled
         prefs.edit().putBoolean(KEY_PREDICTIVE_BACK_ENABLED, enabled).apply()
     }
 
+    @JvmStatic
     fun setDepthBlurEnabled(prefs: SharedPreferences, enabled: Boolean) {
         _isDepthBlurEnabled.value = enabled
         prefs.edit().putBoolean(KEY_DEPTH_BLUR_ENABLED, enabled).apply()
