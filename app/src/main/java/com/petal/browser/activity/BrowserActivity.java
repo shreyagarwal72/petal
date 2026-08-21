@@ -3813,6 +3813,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     View bottomNav = findViewById(R.id.bottom_nav_compose);
                     if (composeAddr != null) composeAddr.setVisibility(GONE);
                     if (bottomNav != null) bottomNav.setVisibility(GONE);
+                } else if (currentAlbumController != null) {
+                    showAlbum(currentAlbumController, dataUri.toString());
                 }
                 return;
             }

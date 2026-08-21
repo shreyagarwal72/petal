@@ -102,264 +102,291 @@ fun PetalTabGridSwitcher(
     val accentColor = if (isIncognitoMode) Color(0xFFA8C7FA) else MaterialTheme.colorScheme.primary
     val textColor = if (isIncognitoMode) Color(0xFFE2E2E9) else MaterialTheme.colorScheme.onSurface
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    var lastClosedTab by remember { mutableStateOf<PetalTabItem?>(null) }
+    var lastClosedIndex by remember { mutableIntStateOf(-1) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    // BackHandler guard: Lock browser viewport access when no tabs remain until + is tapped
+    androidx.activity.compose.BackHandler(enabled = tabs.isEmpty()) {
+        // Do nothing: lock back navigation when no tabs exist
+    }
+
     Surface(
         color = backgroundColor,
         modifier = modifier.fillMaxSize()
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // 1. Top Action Bar with Stealth Theme for Incognito Mode
-            Surface(
-                color = topBarColor,
-                tonalElevation = 2.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // Left: Standard vs Incognito Dual-Mode Switcher
-                        SingleChoiceSegmentedButtonRow(
-                            modifier = Modifier.height(38.dp)
-                        ) {
-                            SegmentedButton(
-                                selected = !isIncognitoMode,
-                                onClick = { isIncognitoMode = false },
-                                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = if (isIncognitoMode) Color(0xFF2B2C36) else MaterialTheme.colorScheme.primaryContainer,
-                                    activeContentColor = if (isIncognitoMode) Color(0xFFE2E2E9) else MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(Icons.Rounded.Tab, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Text("$standardCount", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                }
-                            }
-
-                            SegmentedButton(
-                                selected = isIncognitoMode,
-                                onClick = { isIncognitoMode = true },
-                                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = Color(0xFF333542),
-                                    activeContentColor = Color(0xFFA8C7FA)
-                                )
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(Icons.Rounded.VisibilityOff, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Text("$incognitoCount", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                }
-                            }
-                        }
-
-                        // Right: Primary Add Button (+), View Switcher, 3-Dots Menu
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // 1. Top Action Bar with Stealth Theme for Incognito Mode
+                Surface(
+                    color = topBarColor,
+                    tonalElevation = 2.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                         Row(
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            // Primary (+) Add Tab Button
-                            IconButton(
-                                onClick = { onNewTab(isIncognitoMode) },
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(accentColor)
+                            // Left: Standard vs Incognito Dual-Mode Switcher
+                            SingleChoiceSegmentedButtonRow(
+                                modifier = Modifier.height(38.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Add,
-                                    contentDescription = "New Tab",
-                                    tint = if (isIncognitoMode) Color(0xFF121318) else MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-
-                            // View Switcher (Grid vs List)
-                            IconButton(
-                                onClick = {
-                                    displayMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
+                                SegmentedButton(
+                                    selected = !isIncognitoMode,
+                                    onClick = { isIncognitoMode = false },
+                                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = if (isIncognitoMode) Color(0xFF2B2C36) else MaterialTheme.colorScheme.primaryContainer,
+                                        activeContentColor = if (isIncognitoMode) Color(0xFFE2E2E9) else MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.Tab, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Text("$standardCount", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    }
                                 }
-                            ) {
-                                Icon(
-                                    imageVector = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
-                                    contentDescription = "Toggle Grid/List",
-                                    tint = textColor
-                                )
+
+                                SegmentedButton(
+                                    selected = isIncognitoMode,
+                                    onClick = { isIncognitoMode = true },
+                                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = Color(0xFF333542),
+                                        activeContentColor = Color(0xFFA8C7FA)
+                                    )
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.VisibilityOff, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Text("$incognitoCount", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    }
+                                }
                             }
 
-                            // 3-Dots Overflow Menu
-                            Box {
-                                IconButton(onClick = { isOverflowMenuExpanded = true }) {
+                            // Right: Primary Add Button (+), View Switcher, 3-Dots Menu
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                // Primary (+) Add Tab Button (rounded square style)
+                                Surface(
+                                    onClick = { onNewTab(isIncognitoMode) },
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = accentColor,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Add,
+                                            contentDescription = "New Tab",
+                                            tint = if (isIncognitoMode) Color(0xFF121318) else MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+
+                                // View Switcher (Grid vs List)
+                                IconButton(
+                                    onClick = {
+                                        displayMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
+                                    }
+                                ) {
                                     Icon(
-                                        imageVector = Icons.Rounded.MoreVert,
-                                        contentDescription = "Options",
+                                        imageVector = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
+                                        contentDescription = "Toggle Grid/List",
                                         tint = textColor
                                     )
                                 }
 
-                                DropdownMenu(
-                                    expanded = isOverflowMenuExpanded,
-                                    onDismissRequest = { isOverflowMenuExpanded = false },
-                                    shape = RoundedCornerShape(16.dp),
-                                    containerColor = if (isIncognitoMode) Color(0xFF24252E) else MaterialTheme.colorScheme.surfaceContainerHigh
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("New Tab", color = if (isIncognitoMode) Color.White else MaterialTheme.colorScheme.onSurface) },
-                                        leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
-                                        onClick = {
-                                            isOverflowMenuExpanded = false
-                                            onNewTab(false)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("New Incognito Tab", color = if (isIncognitoMode) Color.White else MaterialTheme.colorScheme.onSurface) },
-                                        leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
-                                        onClick = {
-                                            isOverflowMenuExpanded = false
-                                            onNewTab(true)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Settings", color = if (isIncognitoMode) Color.White else MaterialTheme.colorScheme.onSurface) },
-                                        leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
-                                        onClick = {
-                                            isOverflowMenuExpanded = false
-                                            onOpenSettings()
-                                        }
-                                    )
-                                    HorizontalDivider(color = if (isIncognitoMode) Color(0xFF383944) else MaterialTheme.colorScheme.outlineVariant)
-                                    DropdownMenuItem(
-                                        text = { Text("Close All Tabs", color = MaterialTheme.colorScheme.error) },
-                                        leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                        onClick = {
-                                            isOverflowMenuExpanded = false
-                                            onCloseAllTabs()
-                                        }
-                                    )
+                                // 3-Dots Overflow Menu
+                                Box {
+                                    IconButton(onClick = { isOverflowMenuExpanded = true }) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.MoreVert,
+                                            contentDescription = "Options",
+                                            tint = textColor
+                                        )
+                                    }
+
+                                    DropdownMenu(
+                                        expanded = isOverflowMenuExpanded,
+                                        onDismissRequest = { isOverflowMenuExpanded = false },
+                                        shape = RoundedCornerShape(16.dp),
+                                        containerColor = if (isIncognitoMode) Color(0xFF24252E) else MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("New Tab", color = if (isIncognitoMode) Color.White else MaterialTheme.colorScheme.onSurface) },
+                                            leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
+                                            onClick = {
+                                                isOverflowMenuExpanded = false
+                                                onNewTab(false)
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("New Incognito Tab", color = if (isIncognitoMode) Color.White else MaterialTheme.colorScheme.onSurface) },
+                                            leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
+                                            onClick = {
+                                                isOverflowMenuExpanded = false
+                                                onNewTab(true)
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Settings", color = if (isIncognitoMode) Color.White else MaterialTheme.colorScheme.onSurface) },
+                                            leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
+                                            onClick = {
+                                                isOverflowMenuExpanded = false
+                                                onOpenSettings()
+                                            }
+                                        )
+                                        HorizontalDivider(color = if (isIncognitoMode) Color(0xFF383944) else MaterialTheme.colorScheme.outlineVariant)
+                                        DropdownMenuItem(
+                                            text = { Text("Close All Tabs", color = MaterialTheme.colorScheme.error) },
+                                            leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                            onClick = {
+                                                isOverflowMenuExpanded = false
+                                                onCloseAllTabs()
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(10.dp))
 
-                    // Real-Time Search Bar
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = {
-                            Text(
-                                text = if (isIncognitoMode) "Search incognito tabs..." else "Search open tabs...",
-                                color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Rounded.Search,
-                                contentDescription = "Search",
-                                tint = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(
-                                        Icons.Rounded.Close,
-                                        contentDescription = "Clear",
-                                        tint = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(24.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = if (isIncognitoMode) Color(0xFF24252E) else MaterialTheme.colorScheme.surfaceContainer,
-                            unfocusedContainerColor = if (isIncognitoMode) Color(0xFF1E1F26) else MaterialTheme.colorScheme.surfaceContainerLow,
-                            focusedBorderColor = accentColor,
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedTextColor = textColor,
-                            unfocusedTextColor = textColor
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-
-            // 2. Responsive Two-Column LazyVerticalGrid with Empty State Handling
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 14.dp, vertical = 12.dp)
-            ) {
-                if (filteredTabs.isEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = if (isIncognitoMode) Color(0xFF24252E) else MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.size(80.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = if (isIncognitoMode) Icons.Rounded.VisibilityOff else Icons.Rounded.TabUnselected,
-                                    contentDescription = null,
-                                    tint = accentColor,
-                                    modifier = Modifier.size(40.dp)
+                        // Real-Time Search Bar
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = {
+                                Text(
+                                    text = if (isIncognitoMode) "Search incognito tabs..." else "Search open tabs...",
+                                    color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Search,
+                                    contentDescription = "Search",
+                                    tint = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(
+                                            Icons.Rounded.Close,
+                                            contentDescription = "Clear",
+                                            tint = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(24.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = if (isIncognitoMode) Color(0xFF24252E) else MaterialTheme.colorScheme.surfaceContainer,
+                                unfocusedContainerColor = if (isIncognitoMode) Color(0xFF1E1F26) else MaterialTheme.colorScheme.surfaceContainerLow,
+                                focusedBorderColor = accentColor,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = textColor,
+                                unfocusedTextColor = textColor
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                // 2. Responsive Two-Column LazyVerticalGrid with Dual-Device Empty State
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp, vertical = 12.dp)
+                ) {
+                    if (filteredTabs.isEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            // Centered dual-device badge illustration
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.size(100.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = if (isIncognitoMode) Color(0xFF24252E) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    modifier = Modifier.size(88.dp)
+                                ) {}
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy((-8).dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Phonelink,
+                                        contentDescription = null,
+                                        tint = accentColor,
+                                        modifier = Modifier.size(44.dp)
+                                    )
+                                    Icon(
+                                        imageVector = if (isIncognitoMode) Icons.Rounded.VisibilityOff else Icons.Rounded.TabUnselected,
+                                        contentDescription = null,
+                                        tint = accentColor.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(20.dp))
+                            Text(
+                                text = when {
+                                    searchQuery.isNotEmpty() -> "No matching tabs"
+                                    isIncognitoMode -> "No Incognito tabs open"
+                                    else -> "You'll find your tabs here"
+                                },
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
+                                color = textColor,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = when {
+                                    searchQuery.isNotEmpty() -> "Try a different search"
+                                    isIncognitoMode -> "Pages you view in incognito won't leave a local trace"
+                                    else -> "Open tabs to visit different pages at the same time"
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(24.dp))
+                            Button(
+                                onClick = { onNewTab(isIncognitoMode) },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = accentColor,
+                                    contentColor = if (isIncognitoMode) Color(0xFF121318) else MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Open New Tab", fontWeight = FontWeight.Bold)
                             }
                         }
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = when {
-                                searchQuery.isNotEmpty() -> "No matching tabs"
-                                isIncognitoMode -> "No Incognito tabs open"
-                                else -> "You'll find your tabs here"
-                            },
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = textColor,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            text = when {
-                                searchQuery.isNotEmpty() -> "Try a different search"
-                                isIncognitoMode -> "Pages you view in incognito won't leave a local trace"
-                                else -> "Open tabs to visit different pages at the same time"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(20.dp))
-                        Button(
-                            onClick = { onNewTab(isIncognitoMode) },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = accentColor,
-                                contentColor = if (isIncognitoMode) Color(0xFF121318) else MaterialTheme.colorScheme.onPrimary
-                            )
-                        ) {
-                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Open New Tab", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                } else if (displayMode == TabDisplayMode.GRID) {
+                    } else if (displayMode == TabDisplayMode.GRID) {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -400,7 +427,19 @@ fun PetalTabGridSwitcher(
                                     isIncognitoMode = isIncognitoMode,
                                     accentColor = accentColor,
                                     onTabSelect = { onTabSelect(tab) },
-                                    onTabClose = { onTabClose(tab) }
+                                    onTabClose = {
+                                        onTabClose(tab)
+                                        coroutineScope.launch {
+                                            val result = snackbarHostState.showSnackbar(
+                                                message = "Closed ${tab.title.ifBlank { "Tab" }}",
+                                                actionLabel = "Undo",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                onNewTab(tab.isIncognito)
+                                            }
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -417,6 +456,16 @@ fun PetalTabGridSwitcher(
                                     dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd
                                 ) {
                                     onTabClose(tab)
+                                    coroutineScope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Closed ${tab.title.ifBlank { "Tab" }}",
+                                            actionLabel = "Undo",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            onNewTab(tab.isIncognito)
+                                        }
+                                    }
                                 }
                             }
 
@@ -445,12 +494,40 @@ fun PetalTabGridSwitcher(
                                     isIncognitoMode = isIncognitoMode,
                                     accentColor = accentColor,
                                     onTabSelect = { onTabSelect(tab) },
-                                    onTabClose = { onTabClose(tab) }
+                                    onTabClose = {
+                                        onTabClose(tab)
+                                        coroutineScope.launch {
+                                            val result = snackbarHostState.showSnackbar(
+                                                message = "Closed ${tab.title.ifBlank { "Tab" }}",
+                                                actionLabel = "Undo",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                onNewTab(tab.isIncognito)
+                                            }
+                                        }
+                                    }
                                 )
                             }
                         }
                     }
                 }
+            }
+
+            // Floating M3 Undo SnackbarHost positioned at the bottom of the container
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            ) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = if (isIncognitoMode) Color(0xFF2B2C36) else MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = if (isIncognitoMode) Color(0xFFE2E2E9) else MaterialTheme.colorScheme.inverseOnSurface,
+                    actionColor = accentColor
+                )
             }
         }
     }

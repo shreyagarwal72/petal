@@ -227,14 +227,5 @@ fun PetalScreenWrapper(
             .background(MaterialTheme.colorScheme.background)
     ) {
         content()
-
-        // Dim overlay — always present in the tree to avoid recomposition on show/hide.
-        // Opacity is 0 when not active, so no visual cost.
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = dimAlpha }
-                .background(Color.Black)
-        )
     }
 }

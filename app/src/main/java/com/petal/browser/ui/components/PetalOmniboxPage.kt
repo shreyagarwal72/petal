@@ -230,152 +230,160 @@ fun PetalOmniboxPage(
     }
 
     com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            M3ExpressiveVariableBackground(pageSeed = "omnibox_page")
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-        ) {
-            // Chrome-style search field row pinned to the top of the page, edge-to-edge.
-            Row(
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            contentWindowInsets = WindowInsets.statusBars
+        ) { innerPadding ->
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .padding(innerPadding)
             ) {
-                IconButton(onClick = onBackPress) {
-                    Icon(
-                        imageVector = Icons.Rounded.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                M3ExpressiveVariableBackground(pageSeed = "omnibox_page")
 
-                OutlinedTextField(
-                    value = queryState,
-                    onValueChange = { queryState = it },
-                    placeholder = {
-                        Text(
-                            text = "Search Google or type URL",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    trailingIcon = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (queryState.text.isNotEmpty()) {
-                                IconButton(onClick = { queryState = TextFieldValue("") }) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Close,
-                                        contentDescription = "Clear text",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            } else {
-                                IconButton(onClick = {
-                                    PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
-                                        if (result.isNotBlank()) onQuerySubmitted(result.trim())
-                                    }
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Mic,
-                                        contentDescription = "Voice search",
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = {
-                        if (queryState.text.isNotBlank()) {
-                            onQuerySubmitted(queryState.text.trim())
-                        }
-                    }),
-                    shape = RoundedCornerShape(50),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .focusRequester(focusRequester)
-                )
-            }
-
-            // Suggestions List - fills the rest of the page, resizing with the keyboard.
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .imePadding(),
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
-            ) {
-                items(
-                    items = suggestions,
-                    key = { item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
-                ) { item ->
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color.Transparent,
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // Chrome-style search field row pinned to the top of the page, edge-to-edge.
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable {
-                                val trimmed = item.query.trim()
-                                if (trimmed.isNotEmpty()) {
-                                    onQuerySubmitted(trimmed)
-                                }
-                            }
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // History clock icon vs Search magnifying glass icon
+                        IconButton(onClick = onBackPress) {
                             Icon(
-                                imageVector = if (item.isHistory) Icons.Rounded.History else Icons.Rounded.Search,
-                                contentDescription = null,
-                                tint = if (item.isHistory) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
+                                imageVector = Icons.Rounded.ArrowBack,
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
 
-                            Spacer(Modifier.width(20.dp))
-
-                            Text(
-                                text = item.query,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            // Clickable diagonal NorthWest insert arrow button
-                            IconButton(
-                                onClick = {
-                                    queryState = TextFieldValue(
-                                        text = item.query,
-                                        selection = androidx.compose.ui.text.TextRange(item.query.length)
-                                    )
-                                },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.NorthWest,
-                                    contentDescription = "Insert query into omnibox",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(18.dp)
+                        OutlinedTextField(
+                            value = queryState,
+                            onValueChange = { queryState = it },
+                            placeholder = {
+                                Text(
+                                    text = "Search Google or type URL",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
+                            },
+                            trailingIcon = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (queryState.text.isNotEmpty()) {
+                                        IconButton(onClick = { queryState = TextFieldValue("") }) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Close,
+                                                contentDescription = "Clear text",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    } else {
+                                        IconButton(onClick = {
+                                            PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
+                                                if (result.isNotBlank()) onQuerySubmitted(result.trim())
+                                            }
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Mic,
+                                                contentDescription = "Voice search",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = {
+                                if (queryState.text.isNotBlank()) {
+                                    onQuerySubmitted(queryState.text.trim())
+                                }
+                            }),
+                            shape = RoundedCornerShape(50),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(focusRequester)
+                        )
+                    }
+
+                    // Suggestions List - fills the rest of the page, resizing with the keyboard.
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .windowInsetsPadding(WindowInsets.ime),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
+                    ) {
+                        items(
+                            items = suggestions,
+                            key = { item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
+                        ) { item ->
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color.Transparent,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .clickable {
+                                        val trimmed = item.query.trim()
+                                        if (trimmed.isNotEmpty()) {
+                                            onQuerySubmitted(trimmed)
+                                        }
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // History clock icon vs Search magnifying glass icon
+                                    Icon(
+                                        imageVector = if (item.isHistory) Icons.Rounded.History else Icons.Rounded.Search,
+                                        contentDescription = null,
+                                        tint = if (item.isHistory) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+
+                                    Spacer(Modifier.width(20.dp))
+
+                                    Text(
+                                        text = item.query,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    // Clickable diagonal NorthWest insert arrow button
+                                    IconButton(
+                                        onClick = {
+                                            queryState = TextFieldValue(
+                                                text = item.query,
+                                                selection = androidx.compose.ui.text.TextRange(item.query.length)
+                                            )
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.NorthWest,
+                                            contentDescription = "Insert query into omnibox",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -383,5 +391,4 @@ fun PetalOmniboxPage(
             }
         }
     }
-}
 }
