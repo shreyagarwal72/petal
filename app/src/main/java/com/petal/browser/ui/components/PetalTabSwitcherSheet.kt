@@ -11,6 +11,8 @@
 
 package com.petal.browser.ui.components
 
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -66,6 +68,15 @@ object PetalTabSwitcherBridge {
     ) {
         try {
             val dialog = BottomSheetDialog(activity)
+            // Full-screen, non-swipeable presentation: this is a dedicated tab-manager
+            // screen, not a peekable/collapsible sheet, so the drag-to-dismiss gesture is
+            // disabled and the sheet is forced to occupy the entire window the moment it's
+            // shown (rather than the default "expanded to content height" bottom sheet).
+            dialog.behavior.isDraggable = false
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            dialog.setCancelable(true)
+            dialog.setCanceledOnTouchOutside(false)
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
@@ -158,12 +169,50 @@ object PetalTabSwitcherBridge {
                             onOpenSettings = {
                                 try { dialog.dismiss() } catch (ignored: Exception) {}
                                 (activity as? com.petal.browser.activity.BrowserActivity)?.showOverflow(null, null, 0, "", "", null, null, 0)
+                            },
+                            onTabVisible = { tabItem ->
+                                // Live PixelCopy thumbnail refresh: the tabItems list is
+                                // seeded above with a cheap synchronous snapshot so cards
+                                // never render blank, then upgraded here - per card, the
+                                // first time it's actually shown in the grid - with a
+                                // GPU-accurate PixelCopy capture (falls back to the same
+                                // software snapshot on pre-API 31 devices). The callback
+                                // always lands on the main thread, so mutating the
+                                // Compose-observed tabItems list directly is safe.
+                                val targetAlbum = BrowserContainer.list()
+                                    .find { it.hashCode().toString() == tabItem.id }
+                                if (targetAlbum is com.petal.browser.view.NinjaWebView) {
+                                    targetAlbum.capturePreviewBitmapAsync { bitmap ->
+                                        if (bitmap != null) {
+                                            val index = tabItems.indexOfFirst { it.id == tabItem.id }
+                                            if (index >= 0) {
+                                                tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         )
                     }
                 }
             }
             dialog.setContentView(composeView)
+            dialog.setOnShowListener {
+                // Force the sheet's internal container to fill the entire window so the
+                // tab manager truly occupies the full screen rather than the default
+                // wrap-content bottom sheet.
+                val sheetView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+                if (sheetView != null) {
+                    val params = sheetView.layoutParams
+                    params.height = ViewGroup.LayoutParams.MATCH_PARENT
+                    sheetView.layoutParams = params
+                    com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheetView).apply {
+                        isDraggable = false
+                        skipCollapsed = true
+                        state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                    }
+                }
+            }
             dialog.setOnDismissListener {
                 (activity as? com.petal.browser.activity.BrowserActivity)?.apply {
                     runOnUiThread { updatePersistentBottomNav() }
