@@ -3,7 +3,6 @@ package com.petal.browser.compose.tabs
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
@@ -358,7 +357,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }
-                                AnimatedVisibility(
+                                androidx.compose.animation.AnimatedVisibility(
                                     visible = tab.id !in pendingRemovalIds,
                                     exit = fadeOut() + scaleOut(targetScale = 0.85f),
                                     modifier = Modifier.animateItem()
@@ -379,7 +378,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }
-                                AnimatedVisibility(
+                                androidx.compose.animation.AnimatedVisibility(
                                     visible = tab.id !in pendingRemovalIds,
                                     exit = fadeOut() + scaleOut(targetScale = 0.9f),
                                     modifier = Modifier.animateItem()
