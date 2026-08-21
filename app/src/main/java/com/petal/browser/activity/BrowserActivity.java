@@ -2614,9 +2614,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 result -> {
                     if (result != null && !result.trim().isEmpty()) {
                         String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
-                        if (ninjaWebView != null) {
+                        if (currentAlbumController != null && ninjaWebView != null) {
                             ninjaWebView.loadUrl(targetUrl);
                             showAlbum(currentAlbumController, targetUrl);
+                        } else if (BrowserContainer.size() > 0) {
+                            AlbumController controller = BrowserContainer.get(0);
+                            if (controller instanceof NinjaWebView) {
+                                ((NinjaWebView) controller).loadUrl(targetUrl);
+                            }
+                            showAlbum(controller, targetUrl);
                         } else {
                             addAlbum(null, targetUrl, true);
                         }

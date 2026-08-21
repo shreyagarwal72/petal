@@ -198,8 +198,8 @@ fun PetalOmniboxPage(
                 val searchEngine = sp.getString("sp_search_engine", "0")
                 val fetch: (String, SearchSuggestionsManager.SuggestionCallback) -> Unit = when (searchEngine) {
                     "1" -> SearchSuggestionsManager::fetchDuckDuckGoSuggestions
-                    "2" -> SearchSuggestionsManager::fetchBingSuggestions
-                    else -> SearchSuggestionsManager::fetchSuggestions
+                    "3" -> SearchSuggestionsManager::fetchBingSuggestions
+                    else -> SearchSuggestionsManager::fetchSuggestions // 0: Google, 2: Brave, 4: Ecosia
                 }
                 fetch(currentText) { engineResults ->
                     val combined = mutableListOf<OmniboxSuggestion>()
@@ -318,14 +318,22 @@ fun PetalOmniboxPage(
                     .imePadding(),
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
             ) {
-                items(suggestions, key = { it.query }) { item ->
+                items(
+                    items = suggestions,
+                    key = { item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
+                ) { item ->
                     Surface(
                         shape = RoundedCornerShape(14.dp),
                         color = Color.Transparent,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
-                            .clickable { onQuerySubmitted(item.query) }
+                            .clickable {
+                                val trimmed = item.query.trim()
+                                if (trimmed.isNotEmpty()) {
+                                    onQuerySubmitted(trimmed)
+                                }
+                            }
                     ) {
                         Row(
                             modifier = Modifier
