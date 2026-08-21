@@ -51,11 +51,15 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
         int bgResId = isAmoled ? R.drawable.bg_petal_widget_amoled : (isDark ? R.drawable.bg_petal_widget_dark : R.drawable.bg_petal_widget_light);
         views.setInt(R.id.widget_search_bar, "setBackgroundResource", bgResId);
 
-        // Material You theme colors for text and icons
-        int hintColor = isDark ? 0xFFA1ACA7 : 0xFF404945;
-        int primaryIconColor = isDark ? 0xFF82D5C8 : 0xFF006960;
-        int aiIconColor = isDark ? 0xFFA2C9FF : 0xFF005AC1;
-        int micIconColor = isDark ? 0xFFFFB877 : 0xFF9A4600;
+        // Material You / Theme Palette colors for text and icons
+        String paletteId = sp.getString("sp_palette_id", "tide");
+        com.petal.browser.ui.theme.PetalPalette palette = com.petal.browser.ui.theme.ColorStylesKt.paletteById(paletteId);
+        androidx.compose.material3.ColorScheme scheme = isDark ? palette.getDark() : palette.getLight();
+
+        int primaryIconColor = androidx.compose.ui.graphics.ColorKt.toArgb(scheme.getPrimary());
+        int aiIconColor = androidx.compose.ui.graphics.ColorKt.toArgb(scheme.getSecondary());
+        int micIconColor = androidx.compose.ui.graphics.ColorKt.toArgb(scheme.getTertiary());
+        int hintColor = androidx.compose.ui.graphics.ColorKt.toArgb(scheme.getOnSurfaceVariant());
 
         views.setTextColor(R.id.widget_search_text, hintColor);
         views.setInt(R.id.widget_icon_search, "setColorFilter", primaryIconColor);
@@ -89,5 +93,22 @@ public class PetalSearchWidgetProvider extends AppWidgetProvider {
         views.setOnClickPendingIntent(R.id.widget_icon_mic, voicePendingIntent);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+
+    public static void updateAllWidgets(Context context) {
+        try {
+            AppWidgetManager manager = AppWidgetManager.getInstance(context);
+            if (manager != null) {
+                android.content.ComponentName componentName = new android.content.ComponentName(context, PetalSearchWidgetProvider.class);
+                int[] appWidgetIds = manager.getAppWidgetIds(componentName);
+                if (appWidgetIds != null) {
+                    for (int id : appWidgetIds) {
+                        updateAppWidget(context, manager, id);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.e("PetalSearchWidget", "Error updating search widgets", e);
+        }
     }
 }

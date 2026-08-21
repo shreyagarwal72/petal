@@ -381,24 +381,77 @@ fun PetalUserProfileScreen(
             }
 
             // Tappable-only Google Web Accounts SSO tile
-            PetalFeatureTile(
-                title = "Open Google Accounts Web SSO",
-                subtitle = "Launch Google Accounts login page to sign in to Google Web Services (YouTube, Gmail, Drive, Maps)",
-                icon = Icons.Rounded.Language,
-                container = MaterialTheme.colorScheme.secondaryContainer,
-                onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
-                pillLabel = "Open SSO",
-                onClick = {
-                    onOpenOAuth(
-                        PetalShortcut(
-                            "Google Accounts SSO",
-                            "https://accounts.google.com/ServiceLogin?hl=en",
-                            "https://accounts.google.com/ServiceLogin?hl=en",
-                            Color(0xFF4285F4)
+            if (isExpressiveFeatureTiles) {
+                PetalFeatureTile(
+                    title = "Open Google Accounts Web SSO",
+                    subtitle = "Launch Google Accounts login page to sign in to Google Web Services (YouTube, Gmail, Drive, Maps)",
+                    icon = Icons.Rounded.Language,
+                    container = MaterialTheme.colorScheme.secondaryContainer,
+                    onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
+                    pillLabel = "Open SSO",
+                    onClick = {
+                        onOpenOAuth(
+                            PetalShortcut(
+                                "Google Accounts SSO",
+                                "https://accounts.google.com/ServiceLogin?hl=en",
+                                "https://accounts.google.com/ServiceLogin?hl=en",
+                                Color(0xFF4285F4)
+                            )
+                        )
+                    }
+                )
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    tonalElevation = 2.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onOpenOAuth(
+                                PetalShortcut(
+                                    "Google Accounts SSO",
+                                    "https://accounts.google.com/ServiceLogin?hl=en",
+                                    "https://accounts.google.com/ServiceLogin?hl=en",
+                                    Color(0xFF4285F4)
+                                )
+                            )
+                        }
+                ) {
+                    ListItem(
+                        headlineContent = {
+                            Text(
+                                "Open Google Accounts Web SSO",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                "Launch Google Accounts login page to sign in to Google Web Services (YouTube, Gmail, Drive, Maps)",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Rounded.Language,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        trailingContent = {
+                            Icon(
+                                Icons.Rounded.ArrowForward,
+                                contentDescription = "Open SSO",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        colors = ListItemDefaults.colors(
+                            containerColor = Color.Transparent
                         )
                     )
                 }
-            )
+            }
 
             // Section 1: 🛡️ Security & Privacy Center
             Surface(

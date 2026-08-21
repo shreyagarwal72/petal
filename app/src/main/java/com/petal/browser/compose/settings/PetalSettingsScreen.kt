@@ -636,6 +636,7 @@ fun PetalSettingsScreen(
                                             selectedPaletteId = pal.id
                                             isDynamicColor = false
                                             sp.edit().putString("sp_palette_id", pal.id).putBoolean("useDynamicColor", false).apply()
+                                            com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -657,6 +658,7 @@ fun PetalSettingsScreen(
                             onCheckedChange = { newValue ->
                                 isDynamicColor = newValue
                                 sp.edit().putBoolean("useDynamicColor", newValue).apply()
+                                com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
                             }
                         )
 
@@ -671,6 +673,7 @@ fun PetalSettingsScreen(
                             onCheckedChange = { newValue ->
                                 isAmoled = newValue
                                 sp.edit().putBoolean("sp_amoled", newValue).apply()
+                                com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
                             }
                         )
 
