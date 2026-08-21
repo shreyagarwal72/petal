@@ -10,7 +10,7 @@
  * 6. Private DNS Options (CleanBrowsing Family Filter, Cloudflare 1.1.1.1, Google Public DNS, OpenDNS)
  * 7. Popular Languages Selector (English, Spanish, Hindi, French, German, Chinese, Arabic, Portuguese, Russian, Japanese)
  * 8. Privacy & AdBlock Protection Settings
- * 9. Font & Page Zoom Scaling Sliders (StrideSlider)
+ * 9. Font & Page Zoom Scaling Sliders (PetalSlider)
  * 10. About App & About Developer Sections
  */
 
@@ -63,7 +63,7 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.PetalSearchEngineSheetContent
-import com.petal.browser.ui.components.StrideSlider
+import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.availableSearchEngines
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
@@ -617,7 +617,7 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                         Spacer(Modifier.height(4.dp))
-                                        StrideSlider(
+                                        PetalSlider(
                                             value = fontWeight,
                                             onValueChange = {
                                                 fontWeight = it
@@ -646,7 +646,7 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                         Spacer(Modifier.height(4.dp))
-                                        StrideSlider(
+                                        PetalSlider(
                                             value = fontWidth,
                                             onValueChange = {
                                                 fontWidth = it
@@ -675,7 +675,7 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                         Spacer(Modifier.height(4.dp))
-                                        StrideSlider(
+                                        PetalSlider(
                                             value = fontRoundness,
                                             onValueChange = {
                                                 fontRoundness = it
@@ -1832,7 +1832,7 @@ fun PetalSettingsScreen(
                     }
                 }
 
-                // 7. Accessibility & Scaling (using StrideSlider)
+                // 7. Accessibility & Scaling (using PetalSlider)
                 if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom")) {
                     SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
                         ToggleRow(
@@ -2008,7 +2008,7 @@ fun PetalSettingsScreen(
                                 Text("${(fontSize * 100f).toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
                             }
                             Spacer(Modifier.height(10.dp))
-                            StrideSlider(
+                            PetalSlider(
                                 value = fontSize,
                                 onValueChange = { newValue ->
                                     fontSize = newValue
@@ -2059,7 +2059,7 @@ fun PetalSettingsScreen(
                                 Text("${(zoomLevel * 100f).toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
                             }
                             Spacer(Modifier.height(10.dp))
-                            StrideSlider(
+                            PetalSlider(
                                 value = zoomLevel,
                                 onValueChange = { newValue ->
                                     zoomLevel = newValue

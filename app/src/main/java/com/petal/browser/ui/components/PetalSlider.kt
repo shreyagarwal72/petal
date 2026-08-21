@@ -38,7 +38,7 @@ private val ThumbInset = 8.dp
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun StrideSlider(
+fun PetalSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
