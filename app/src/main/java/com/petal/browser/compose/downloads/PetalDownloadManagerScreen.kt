@@ -246,11 +246,12 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         downloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
     }
 
-    // Without this, a back-swipe here is never caught by Compose at all - it falls
-    // straight through to the Activity-level browser back logic, which knows nothing
-    // about the download manager being open and can exit the app directly instead of
-    // first returning to the home/current site screen (Chrome-style back chain).
-    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(enabled = true) {
+    var backGestureProgress by remember { mutableFloatStateOf(0f) }
+
+    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(
+        enabled = true,
+        onProgressChanged = { backGestureProgress = it }
+    ) {
         onBackPress()
     }
 
@@ -273,21 +274,22 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData = data,
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = MaterialTheme.colorScheme.inverseSurface,
-                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                    actionColor = MaterialTheme.colorScheme.inversePrimary,
-                    modifier = Modifier.padding(16.dp)
-                )
+    com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState) { data ->
+                    Snackbar(
+                        snackbarData = data,
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = MaterialTheme.colorScheme.inverseSurface,
+                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                        actionColor = MaterialTheme.colorScheme.inversePrimary,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
-        }
-    ) { innerPadding ->
+        ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             M3ExpressiveVariableBackground(pageSeed = "downloads_page")
 

@@ -220,12 +220,18 @@ fun PetalOmniboxPage(
         focusRequester.requestFocus()
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(enabled = true) {
+    var backGestureProgress by remember { mutableFloatStateOf(0f) }
+
+    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(
+        enabled = true,
+        onProgressChanged = { backGestureProgress = it }
+    ) {
         onBackPress()
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        M3ExpressiveVariableBackground(pageSeed = "omnibox_page")
+    com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            M3ExpressiveVariableBackground(pageSeed = "omnibox_page")
 
         Column(
             modifier = Modifier
@@ -370,4 +376,5 @@ fun PetalOmniboxPage(
             }
         }
     }
+}
 }

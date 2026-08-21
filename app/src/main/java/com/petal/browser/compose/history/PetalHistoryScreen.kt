@@ -182,13 +182,19 @@ fun PetalHistoryScreen(
         )
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(enabled = true) {
+    var backGestureProgress by remember { mutableFloatStateOf(0f) }
+
+    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(
+        enabled = true,
+        onProgressChanged = { backGestureProgress = it }
+    ) {
         onDismiss()
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    ) { innerPadding ->
+    com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(pageSeed = "history_page")
 

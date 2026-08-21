@@ -211,11 +211,17 @@ fun PetalUserProfileScreen(
         }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(enabled = true) {
+    var backGestureProgress by remember { mutableFloatStateOf(0f) }
+
+    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(
+        enabled = true,
+        onProgressChanged = { backGestureProgress = it }
+    ) {
         onBack()
     }
 
-    Scaffold(
+    com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
+        Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("User Profile & Accounts", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
@@ -787,6 +793,7 @@ fun PetalUserProfileScreen(
             )
         }
     }
+}
 }
 }
 

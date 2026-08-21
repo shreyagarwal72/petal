@@ -115,7 +115,7 @@ fun PetalPredictiveBackJunctionHandler(
     val scope = rememberCoroutineScope()
     val progressAnim = remember { Animatable(0f) }
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && isFullyEnabled) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && isFullyEnabled) {
         PredictiveBackHandler(enabled = true) { progressFlow ->
             try {
                 progressFlow.collect { backEvent ->
@@ -129,6 +129,8 @@ fun PetalPredictiveBackJunctionHandler(
                         animationSpec = tween(animationDurationMs / 2)
                     ) { onProgressChanged(value) }
                     onBack()
+                    progressAnim.snapTo(0f)
+                    onProgressChanged(0f)
                 }
             } catch (_: CancellationException) {
                 scope.launch {
@@ -146,73 +148,62 @@ fun PetalPredictiveBackJunctionHandler(
 
 /**
  * PixelPlayer ScreenWrapper implementation ported for Petal.
- * Wraps page surfaces with offscreen compositing strategy, corner radius morphing,
- * background depth blur, and dim overlay layers during navigation transitions.
+ * Wraps page surfaces with offscreen compositing strategy, scale/translation transformations,
+ * corner radius morphing, background depth blur, and dim overlay layers during navigation transitions.
  */
 @Composable
 fun PetalScreenWrapper(
+    progress: Float = 0f,
     isBehind: Boolean = false,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     
     // Auto-sync with Junction global state
     val predictiveEnabled = PetalPredictiveJunction.isPredictiveBackEnabled.value
     val blurEnabled = PetalPredictiveJunction.isDepthBlurEnabled.value
 
-    val targetRadius = if (predictiveEnabled && isBehind) 32f else 0f
-    val fallbackCornerRadius = remember { Animatable(targetRadius) }
-    LaunchedEffect(targetRadius) {
-        fallbackCornerRadius.animateTo(targetRadius, animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing))
-    }
-    val animatedCornerRadius = fallbackCornerRadius.value
+    val effectiveProgress = if (progress > 0f) progress else if (isBehind) 1f else 0f
 
-    val targetDim = if (predictiveEnabled && isBehind) {
-        if (!blurEnabled) 0.75f else 0.4f
+    val targetRadius = if (predictiveEnabled && effectiveProgress > 0f) 32f * effectiveProgress else 0f
+    val scale = if (predictiveEnabled && effectiveProgress > 0f) 1f - (0.08f * effectiveProgress) else 1f
+    val targetDim = if (predictiveEnabled && effectiveProgress > 0f) {
+        (if (!blurEnabled) 0.75f else 0.4f) * effectiveProgress
     } else 0f
-
-    val fallbackDimAlpha = remember { Animatable(targetDim) }
-    LaunchedEffect(targetDim) {
-        fallbackDimAlpha.animateTo(targetDim, animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing))
-    }
-    val animatedDimAlpha = fallbackDimAlpha.value
-
-    val targetBlur = if (predictiveEnabled && isBehind && blurEnabled) 24f else 0f
-    val fallbackBlurRadius = remember { Animatable(targetBlur) }
-    LaunchedEffect(targetBlur) {
-        fallbackBlurRadius.animateTo(targetBlur, animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing))
-    }
-    val animatedBlurRadius = fallbackBlurRadius.value.dp
+    val targetBlur = if (predictiveEnabled && effectiveProgress > 0f && blurEnabled) 24f * effectiveProgress else 0f
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .graphicsLayer {
-                compositingStrategy = if (predictiveEnabled) {
+                compositingStrategy = if (predictiveEnabled && effectiveProgress > 0f) {
                     CompositingStrategy.Offscreen
                 } else {
                     CompositingStrategy.Auto
                 }
-                if (predictiveEnabled && animatedCornerRadius > 0.5f) {
-                    this.shape = RoundedCornerShape(animatedCornerRadius.dp)
+                scaleX = scale
+                scaleY = scale
+                if (predictiveEnabled && targetRadius > 0.5f) {
+                    this.shape = RoundedCornerShape(targetRadius.dp)
                     this.clip = true
                 } else {
                     this.clip = false
                 }
             }
-            .blur(radius = if (predictiveEnabled && blurEnabled) animatedBlurRadius else 0.dp)
+            .blur(radius = targetBlur.dp)
             .background(MaterialTheme.colorScheme.background)
     ) {
         content()
 
         // Dim Layer Overlay from PixelPlayer
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = animatedDimAlpha }
-                .background(Color.Black)
-        )
+        if (targetDim > 0.001f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = targetDim }
+                    .background(Color.Black)
+            )
+        }
     }
 }
