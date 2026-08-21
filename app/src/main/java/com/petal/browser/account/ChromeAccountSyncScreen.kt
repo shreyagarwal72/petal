@@ -249,16 +249,7 @@ fun PetalUserProfileScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
-                    .graphicsLayer {
-                        scaleX = backFrame.scale
-                        scaleY = backFrame.scale
-                        alpha = backFrame.alpha
-                        translationX = backFrame.translationXDp.dp.toPx()
-                        clip = animatedBackProgress > 0.01f
-                        shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
-                    }
-                    .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) backFrame.blurRadiusDp.dp else 0.dp),
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
             // Main User Profile Hero Card

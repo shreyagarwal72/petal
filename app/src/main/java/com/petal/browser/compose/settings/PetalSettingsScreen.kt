@@ -1799,29 +1799,27 @@ fun PetalSettingsScreen(
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                        var junctionPredictive by remember { mutableStateOf(com.petal.browser.predictive.PetalPredictiveJunction.INSTANCE.isPredictiveBackEnabled().getValue()) }
-                        var junctionBlur by remember { mutableStateOf(com.petal.browser.predictive.PetalPredictiveJunction.INSTANCE.isDepthBlurEnabled().getValue()) }
+                        val predictiveFlow by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+                        val blurFlow by com.petal.browser.predictive.PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
 
                         ToggleRow(
                             title = "Predictive Back Animations (Junction)",
-                            subtitle = if (junctionPredictive) "Enabled app-wide PixelPlayer predictive gesture animations" else "Disabled predictive gesture animations app-wide",
+                            subtitle = if (predictiveFlow) "Enabled app-wide PixelPlayer predictive gesture animations" else "Disabled predictive gesture animations app-wide",
                             icon = Icons.Rounded.Gesture,
-                            checked = junctionPredictive,
+                            checked = predictiveFlow,
                             onCheckedChange = { enabled ->
-                                junctionPredictive = enabled
-                                com.petal.browser.predictive.PetalPredictiveJunction.INSTANCE.setPredictiveBackEnabled(sp, enabled)
+                                com.petal.browser.predictive.PetalPredictiveJunction.setPredictiveBackEnabled(sp, enabled)
                             }
                         )
 
-                        if (junctionPredictive) {
+                        if (predictiveFlow) {
                             ToggleRow(
                                 title = "Depth Blur Effect (Junction)",
-                                subtitle = if (junctionBlur) "Background page receives 24dp blur & corner morphing during back navigation" else "Disabled depth blur; uses solid dim overlay",
+                                subtitle = if (blurFlow) "Background page receives 24dp blur & corner morphing during back navigation" else "Disabled depth blur; uses solid dim overlay",
                                 icon = Icons.Rounded.Animation,
-                                checked = junctionBlur,
+                                checked = blurFlow,
                                 onCheckedChange = { enabled ->
-                                    junctionBlur = enabled
-                                    com.petal.browser.predictive.PetalPredictiveJunction.INSTANCE.setDepthBlurEnabled(sp, enabled)
+                                    com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(sp, enabled)
                                 }
                             )
                         }
@@ -2345,21 +2343,20 @@ fun PetalSettingsScreen(
                                             Spacer(Modifier.width(3.dp))
                                             Text("Feedback", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                                         }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
+
+                            Spacer(Modifier.height(32.dp))
                         }
                     }
                 }
-
-                Spacer(Modifier.height(32.dp))
             }
         }
     }
-}
-}
-}
-}
 }
 
 @Composable
