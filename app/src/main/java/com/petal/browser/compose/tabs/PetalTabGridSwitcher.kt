@@ -504,6 +504,7 @@ fun PetalTabGridSwitcher(
                     }
                 }
             }
+            } // closes Column — SnackbarHost below must sit in Box's scope, not Column's, for .align() to work
 
             // Floating M3 Undo SnackbarHost positioned at the bottom of the container
             SnackbarHost(
@@ -520,7 +521,6 @@ fun PetalTabGridSwitcher(
                     actionColor = accentColor
                 )
             }
-        }
     }
     }
 }
