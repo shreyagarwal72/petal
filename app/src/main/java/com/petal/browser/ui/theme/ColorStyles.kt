@@ -433,3 +433,34 @@ val PetalPalettes: List<PetalPalette> = listOf(
 
 fun paletteById(id: String): PetalPalette = PetalPalettes.firstOrNull { it.id == id } ?: PetalPalettes.first()
 
+/**
+ * Plain-Int ARGB accessors for non-Compose Java callers (e.g. AppWidgetProvider).
+ * ColorScheme's properties and Color.toArgb() are Kotlin-only APIs that aren't safe
+ * to call directly from Java, so this does the conversion here and hands back an Int.
+ */
+object WidgetColors {
+    @JvmStatic
+    fun primaryArgb(paletteId: String, isDark: Boolean): Int {
+        val scheme = paletteById(paletteId).let { if (isDark) it.dark else it.light }
+        return scheme.primary.toArgb()
+    }
+
+    @JvmStatic
+    fun secondaryArgb(paletteId: String, isDark: Boolean): Int {
+        val scheme = paletteById(paletteId).let { if (isDark) it.dark else it.light }
+        return scheme.secondary.toArgb()
+    }
+
+    @JvmStatic
+    fun tertiaryArgb(paletteId: String, isDark: Boolean): Int {
+        val scheme = paletteById(paletteId).let { if (isDark) it.dark else it.light }
+        return scheme.tertiary.toArgb()
+    }
+
+    @JvmStatic
+    fun onSurfaceVariantArgb(paletteId: String, isDark: Boolean): Int {
+        val scheme = paletteById(paletteId).let { if (isDark) it.dark else it.light }
+        return scheme.onSurfaceVariant.toArgb()
+    }
+}
+
