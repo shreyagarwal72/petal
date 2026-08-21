@@ -805,6 +805,14 @@ private fun DownloadProgressRing(
         ),
         label = "RingRotation"
     )
+    val wavePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 2f * Math.PI.toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(1100, easing = LinearEasing)
+        ),
+        label = "RingWavePhase"
+    )
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.55f,
         targetValue = 1f,
@@ -860,18 +868,37 @@ private fun DownloadProgressRing(
                     )
 
                     if (item.progress != null) {
-                        // Determinate sweep starting at 12 o'clock, Play Store-style.
                         val alpha = if (isPaused) pulseAlpha else 1f
-                        drawArc(
+                        val waveAmplitudePx = 1.6.dp.toPx()
+                        val waveCount = 10
+                        val sweepDeg = 360f * animatedProgress
+                        val startAngleDeg = -90f
+                        val center = Offset(topLeft.x + arcSize.width / 2f, topLeft.y + arcSize.height / 2f)
+                        val baseRadius = arcSize.width / 2f
+                        val path = Path()
+                        var first = true
+                        var t = 0f
+                        while (t <= sweepDeg) {
+                            val angleRad = Math.toRadians((startAngleDeg + t).toDouble()).toFloat()
+                            val waveOffset = if (isPaused) 0f else sin((t / 360f) * waveCount * 2f * Math.PI.toFloat() + wavePhase) * waveAmplitudePx
+                            val r = baseRadius + waveOffset
+                            val x = center.x + r * cos(angleRad)
+                            val y = center.y + r * sin(angleRad)
+                            if (first) {
+                                path.moveTo(x, y)
+                                first = false
+                            } else {
+                                path.lineTo(x, y)
+                            }
+                            t += 2f
+                        }
+                        drawPath(
+                            path = path,
                             color = ringColor.copy(alpha = ringColor.alpha * alpha),
-                            startAngle = -90f,
-                            sweepAngle = 360f * animatedProgress,
-                            useCenter = false,
-                            topLeft = topLeft,
-                            size = arcSize,
                             style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
                         )
                     } else {
+
                         // Unknown total size: an indeterminate spinning arc instead of a sweep.
                         rotate(indeterminateRotation) {
                             drawArc(
