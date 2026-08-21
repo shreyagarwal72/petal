@@ -2,18 +2,13 @@ package com.petal.browser.compose.tabs
 
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -42,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.components.AnimatedCounterBadge
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -49,12 +45,24 @@ import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import kotlinx.coroutines.launch
 
+/**
+ * Layout mode for the tab grid. Toggled from the top bar's layout-toggle icon button.
+ * The grid (2-column) is the primary, spec-driven presentation; list is a secondary,
+ * denser alternative for users with many open tabs.
+ */
 enum class TabDisplayMode {
     GRID,
-    CAROUSEL,
     LIST
 }
 
+/**
+ * A single tab as rendered by [PetalTabGridSwitcher]. [previewBitmap] is expected to be a
+ * *live* capture of the tab's current WebView frame - callers should source it via
+ * `NinjaWebView.capturePreviewBitmapAsync(...)`, which uses `PixelCopy` on API 31+ for a
+ * GPU-accurate snapshot (falling back to a software draw on older devices). Passing a stale
+ * or null bitmap simply falls back to a favicon/placeholder card, so this composable never
+ * needs to know anything about WebView or PixelCopy itself.
+ */
 data class PetalTabItem(
     val id: String,
     val title: String,
@@ -65,6 +73,26 @@ data class PetalTabItem(
     val isSelected: Boolean = false
 )
 
+/**
+ * Full-screen, non-swipeable, Chrome-style tab manager.
+ *
+ * - Top bar: rounded `+` new-tab button, a dynamic animated tab-count badge, a grid/list
+ *   layout toggle, and a 3-dot overflow menu, sitting above a real-time search field that
+ *   filters the open tabs as the user types.
+ * - Body: a 2-column grid of rounded cards showing each tab's live preview thumbnail,
+ *   favicon, and title, with an accent border/elevation on the active tab. Cards are closed
+ *   only via their explicit close (X) affordance - there is no swipe-to-dismiss gesture
+ *   anywhere in this screen.
+ * - Closing a tab is optimistic: the card disappears from the grid immediately, while the
+ *   actual close is only committed to [onTabClose] after a floating Material 3 snackbar
+ *   ("Closed <title>") times out without the user tapping "Undo". Tapping Undo simply
+ *   un-hides the card - the underlying tab (and its WebView/session) was never touched.
+ * - Empty state: once [tabs] is empty, the grid is replaced with a centered dual-device
+ *   badge illustration, "You'll find your tabs here" / "Open tabs to visit different pages
+ *   at the same time" copy, and a [BackHandler] that swallows system-back so the user can't
+ *   navigate back into a browser viewport with no tab to show - the only way out is the `+`
+ *   button, which creates a fresh tab.
+ */
 @Composable
 fun PetalTabGridSwitcher(
     tabs: List<PetalTabItem>,
@@ -73,54 +101,67 @@ fun PetalTabGridSwitcher(
     onNewTab: (Boolean) -> Unit,
     onCloseAllTabs: () -> Unit,
     onOpenSettings: () -> Unit = {},
+    onTabVisible: (PetalTabItem) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var displayMode by remember { mutableStateOf(TabDisplayMode.GRID) }
-    var isIncognitoMode by remember { mutableStateOf(tabs.any { it.isSelected && it.isIncognito }) }
     var isOverflowMenuExpanded by remember { mutableStateOf(false) }
 
-    // NOTE: `tabs` is the same SnapshotStateList instance across recompositions -
-    // only its *contents* change when a tab is added/removed. Wrapping these
-    // derived values in remember(tabs) {...} used the list's identity as the key,
-    // which never changes, so the memoized block never re-ran and the switcher
-    // kept showing stale counts/grid contents after adding or closing tabs.
-    // Computing them directly on every recomposition keeps them reading (and
-    // therefore observing) the live list contents, so the UI updates immediately.
-    val standardCount = tabs.count { !it.isIncognito }
-    val incognitoCount = tabs.count { it.isIncognito }
-
-    val currentModeTabs = tabs.filter { it.isIncognito == isIncognitoMode }
-
-    val filteredTabs = currentModeTabs.filter { tab ->
-        searchQuery.isBlank() ||
-        tab.title.contains(searchQuery, ignoreCase = true) ||
-        tab.url.contains(searchQuery, ignoreCase = true)
-    }
-
-    val backgroundColor = if (isIncognitoMode) Color(0xFF121318) else MaterialTheme.colorScheme.background
-    val topBarColor = if (isIncognitoMode) Color(0xFF1C1D24) else MaterialTheme.colorScheme.surfaceContainerHigh
-    val accentColor = if (isIncognitoMode) Color(0xFFA8C7FA) else MaterialTheme.colorScheme.primary
-    val textColor = if (isIncognitoMode) Color(0xFFE2E2E9) else MaterialTheme.colorScheme.onSurface
+    // Optimistic-close bookkeeping: ids in here are hidden from the grid immediately, but
+    // `tabs` (the source of truth from the caller) hasn't been touched yet. The id is only
+    // removed from `tabs` for real - via onTabClose - once the undo snackbar times out.
+    val pendingRemovalIds = remember { mutableStateListOf<String>() }
 
     val snackbarHostState = remember { SnackbarHostState() }
-    var lastClosedTab by remember { mutableStateOf<PetalTabItem?>(null) }
-    var lastClosedIndex by remember { mutableIntStateOf(-1) }
-
     val coroutineScope = rememberCoroutineScope()
 
-    // BackHandler guard: Lock browser viewport access when no tabs remain until + is tapped
-    androidx.activity.compose.BackHandler(enabled = tabs.isEmpty()) {
-        // Do nothing: lock back navigation when no tabs exist
+    fun requestOptimisticClose(tab: PetalTabItem) {
+        if (tab.id in pendingRemovalIds) return
+        pendingRemovalIds.add(tab.id)
+        coroutineScope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "Closed ${tab.title.ifBlank { "Tab" }}",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                // Undo: the tab was never actually closed, just visually hidden - restore it.
+                pendingRemovalIds.remove(tab.id)
+            } else {
+                // Snackbar timed out without Undo: commit the close for real.
+                onTabClose(tab)
+                pendingRemovalIds.remove(tab.id)
+            }
+        }
     }
 
-    Surface(
-        color = backgroundColor,
-        modifier = modifier.fillMaxSize()
-    ) {
+    // `tabs` is the caller's live source of truth (e.g. a SnapshotStateList mirroring
+    // BrowserContainer). We derive visible/filtered lists directly from it on every
+    // recomposition so closing/opening tabs elsewhere is reflected immediately.
+    val visibleTabs = tabs.filter { it.id !in pendingRemovalIds }
+    val filteredTabs = visibleTabs.filter { tab ->
+        searchQuery.isBlank() ||
+            tab.title.contains(searchQuery, ignoreCase = true) ||
+            tab.url.contains(searchQuery, ignoreCase = true)
+    }
+
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val topBarColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val accentColor = MaterialTheme.colorScheme.primary
+    val textColor = MaterialTheme.colorScheme.onSurface
+
+    // Strict navigation guard: with zero tabs there is no browser viewport to go back to,
+    // so system-back is swallowed entirely. The only way forward is the `+` button.
+    BackHandler(enabled = tabs.isEmpty()) {
+        // Intentionally does nothing: locks the user out of back-navigation until a new
+        // tab exists.
+    }
+
+    Surface(color = backgroundColor, modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // 1. Top Action Bar with Stealth Theme for Incognito Mode
+                // ── Top bar ──────────────────────────────────────────────────────────
                 Surface(
                     color = topBarColor,
                     tonalElevation = 2.dp,
@@ -132,55 +173,41 @@ fun PetalTabGridSwitcher(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            // Left: Standard vs Incognito Dual-Mode Switcher
-                            SingleChoiceSegmentedButtonRow(
-                                modifier = Modifier.height(38.dp)
+                            // Left: title + dynamic tab-count badge
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                SegmentedButton(
-                                    selected = !isIncognitoMode,
-                                    onClick = { isIncognitoMode = false },
-                                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeContainerColor = if (isIncognitoMode) Color(0xFF2B2C36) else MaterialTheme.colorScheme.primaryContainer,
-                                        activeContentColor = if (isIncognitoMode) Color(0xFFE2E2E9) else MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
+                                Text(
+                                    text = "Tabs",
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = textColor
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = accentColor.copy(alpha = 0.15f),
+                                    contentColor = accentColor,
+                                    modifier = Modifier.height(22.dp)
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.padding(horizontal = 9.dp)
                                     ) {
-                                        Icon(Icons.Rounded.Tab, contentDescription = null, modifier = Modifier.size(16.dp))
-                                        Text("$standardCount", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    }
-                                }
-
-                                SegmentedButton(
-                                    selected = isIncognitoMode,
-                                    onClick = { isIncognitoMode = true },
-                                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeContainerColor = Color(0xFF333542),
-                                        activeContentColor = Color(0xFFA8C7FA)
-                                    )
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Icon(Icons.Rounded.VisibilityOff, contentDescription = null, modifier = Modifier.size(16.dp))
-                                        Text("$incognitoCount", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        AnimatedCounterBadge(
+                                            count = tabs.size,
+                                            modifier = Modifier
+                                        )
                                     }
                                 }
                             }
 
-                            // Right: Primary Add Button (+), View Switcher, 3-Dots Menu
+                            // Right: rounded (+) new-tab button, layout toggle, 3-dot menu
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                // Primary (+) Add Tab Button (rounded square style)
                                 Surface(
-                                    onClick = { onNewTab(isIncognitoMode) },
+                                    onClick = { onNewTab(false) },
                                     shape = RoundedCornerShape(12.dp),
                                     color = accentColor,
                                     modifier = Modifier.size(40.dp)
@@ -189,13 +216,12 @@ fun PetalTabGridSwitcher(
                                         Icon(
                                             imageVector = Icons.Rounded.Add,
                                             contentDescription = "New Tab",
-                                            tint = if (isIncognitoMode) Color(0xFF121318) else MaterialTheme.colorScheme.onPrimary,
+                                            tint = MaterialTheme.colorScheme.onPrimary,
                                             modifier = Modifier.size(22.dp)
                                         )
                                     }
                                 }
 
-                                // View Switcher (Grid vs List)
                                 IconButton(
                                     onClick = {
                                         displayMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
@@ -203,17 +229,16 @@ fun PetalTabGridSwitcher(
                                 ) {
                                     Icon(
                                         imageVector = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
-                                        contentDescription = "Toggle Grid/List",
+                                        contentDescription = "Toggle layout",
                                         tint = textColor
                                     )
                                 }
 
-                                // 3-Dots Overflow Menu
                                 Box {
                                     IconButton(onClick = { isOverflowMenuExpanded = true }) {
                                         Icon(
                                             imageVector = Icons.Rounded.MoreVert,
-                                            contentDescription = "Options",
+                                            contentDescription = "More options",
                                             tint = textColor
                                         )
                                     }
@@ -222,10 +247,10 @@ fun PetalTabGridSwitcher(
                                         expanded = isOverflowMenuExpanded,
                                         onDismissRequest = { isOverflowMenuExpanded = false },
                                         shape = RoundedCornerShape(16.dp),
-                                        containerColor = if (isIncognitoMode) Color(0xFF24252E) else MaterialTheme.colorScheme.surfaceContainerHigh
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                                     ) {
                                         DropdownMenuItem(
-                                            text = { Text("New Tab", color = if (isIncognitoMode) Color.White else MaterialTheme.colorScheme.onSurface) },
+                                            text = { Text("New Tab") },
                                             leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
                                             onClick = {
                                                 isOverflowMenuExpanded = false
@@ -233,7 +258,7 @@ fun PetalTabGridSwitcher(
                                             }
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("New Incognito Tab", color = if (isIncognitoMode) Color.White else MaterialTheme.colorScheme.onSurface) },
+                                            text = { Text("New Incognito Tab") },
                                             leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
                                             onClick = {
                                                 isOverflowMenuExpanded = false
@@ -241,14 +266,14 @@ fun PetalTabGridSwitcher(
                                             }
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Settings", color = if (isIncognitoMode) Color.White else MaterialTheme.colorScheme.onSurface) },
+                                            text = { Text("Settings") },
                                             leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
                                             onClick = {
                                                 isOverflowMenuExpanded = false
                                                 onOpenSettings()
                                             }
                                         )
-                                        HorizontalDivider(color = if (isIncognitoMode) Color(0xFF383944) else MaterialTheme.colorScheme.outlineVariant)
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                         DropdownMenuItem(
                                             text = { Text("Close All Tabs", color = MaterialTheme.colorScheme.error) },
                                             leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
@@ -264,21 +289,16 @@ fun PetalTabGridSwitcher(
 
                         Spacer(Modifier.height(10.dp))
 
-                        // Real-Time Search Bar
+                        // ── Real-time tab search ────────────────────────────────────
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = {
-                                Text(
-                                    text = if (isIncognitoMode) "Search incognito tabs..." else "Search open tabs...",
-                                    color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
+                            placeholder = { Text("Search open tabs...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Search,
                                     contentDescription = "Search",
-                                    tint = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
                                 )
                             },
@@ -287,8 +307,8 @@ fun PetalTabGridSwitcher(
                                     IconButton(onClick = { searchQuery = "" }) {
                                         Icon(
                                             Icons.Rounded.Close,
-                                            contentDescription = "Clear",
-                                            tint = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            contentDescription = "Clear search",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -297,216 +317,87 @@ fun PetalTabGridSwitcher(
                             singleLine = true,
                             shape = RoundedCornerShape(24.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = if (isIncognitoMode) Color(0xFF24252E) else MaterialTheme.colorScheme.surfaceContainer,
-                                unfocusedContainerColor = if (isIncognitoMode) Color(0xFF1E1F26) else MaterialTheme.colorScheme.surfaceContainerLow,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                 focusedBorderColor = accentColor,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedTextColor = textColor,
-                                unfocusedTextColor = textColor
+                                unfocusedBorderColor = Color.Transparent
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
 
-                // 2. Responsive Two-Column LazyVerticalGrid with Dual-Device Empty State
+                // ── Body: 2-column grid / list / empty states ───────────────────────
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 14.dp, vertical = 12.dp)
                 ) {
-                    if (filteredTabs.isEmpty()) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                    when {
+                        tabs.isEmpty() -> TabManagerEmptyState(
+                            accentColor = accentColor,
+                            textColor = textColor,
+                            title = "You'll find your tabs here",
+                            subtitle = "Open tabs to visit different pages at the same time",
+                            onNewTab = { onNewTab(false) }
+                        )
+
+                        filteredTabs.isEmpty() -> TabManagerEmptyState(
+                            accentColor = accentColor,
+                            textColor = textColor,
+                            title = "No matching tabs",
+                            subtitle = "Try a different search",
+                            onNewTab = null
+                        )
+
+                        displayMode == TabDisplayMode.GRID -> LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            // Centered dual-device badge illustration
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.size(100.dp)
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (isIncognitoMode) Color(0xFF24252E) else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    modifier = Modifier.size(88.dp)
-                                ) {}
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy((-8).dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            items(filteredTabs, key = { it.id }) { tab ->
+                                LaunchedEffect(tab.id) { onTabVisible(tab) }
+                                AnimatedVisibility(
+                                    visible = tab.id !in pendingRemovalIds,
+                                    exit = fadeOut() + scaleOut(targetScale = 0.85f),
+                                    modifier = Modifier.animateItem()
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Phonelink,
-                                        contentDescription = null,
-                                        tint = accentColor,
-                                        modifier = Modifier.size(44.dp)
-                                    )
-                                    Icon(
-                                        imageVector = if (isIncognitoMode) Icons.Rounded.VisibilityOff else Icons.Rounded.TabUnselected,
-                                        contentDescription = null,
-                                        tint = accentColor.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(36.dp)
+                                    PetalTabCard(
+                                        tab = tab,
+                                        accentColor = accentColor,
+                                        onTabSelect = { onTabSelect(tab) },
+                                        onTabClose = { requestOptimisticClose(tab) }
                                     )
                                 }
                             }
-                            Spacer(Modifier.height(20.dp))
-                            Text(
-                                text = when {
-                                    searchQuery.isNotEmpty() -> "No matching tabs"
-                                    isIncognitoMode -> "No Incognito tabs open"
-                                    else -> "You'll find your tabs here"
-                                },
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
-                                color = textColor,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                text = when {
-                                    searchQuery.isNotEmpty() -> "Try a different search"
-                                    isIncognitoMode -> "Pages you view in incognito won't leave a local trace"
-                                    else -> "Open tabs to visit different pages at the same time"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(Modifier.height(24.dp))
-                            Button(
-                                onClick = { onNewTab(isIncognitoMode) },
-                                shape = RoundedCornerShape(20.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = accentColor,
-                                    contentColor = if (isIncognitoMode) Color(0xFF121318) else MaterialTheme.colorScheme.onPrimary
-                                )
-                            ) {
-                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Open New Tab", fontWeight = FontWeight.Bold)
-                            }
                         }
-                    } else if (displayMode == TabDisplayMode.GRID) {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(filteredTabs, key = { it.id }) { tab ->
-                            val dismissState = rememberSwipeToDismissBoxState()
-                            LaunchedEffect(dismissState.currentValue) {
-                                if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
-                                    dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd
-                                ) {
-                                    onTabClose(tab)
-                                }
-                            }
 
-                            SwipeToDismissBox(
-                                state = dismissState,
-                                backgroundContent = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(RoundedCornerShape(18.dp))
-                                            .background(MaterialTheme.colorScheme.errorContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Close,
-                                            contentDescription = "Close",
-                                            tint = MaterialTheme.colorScheme.onErrorContainer
-                                        )
-                                    }
-                                },
-                                modifier = Modifier.animateItem()
-                            ) {
-                                PetalTabCard(
-                                    tab = tab,
-                                    isIncognitoMode = isIncognitoMode,
-                                    accentColor = accentColor,
-                                    onTabSelect = { onTabSelect(tab) },
-                                    onTabClose = {
-                                        onTabClose(tab)
-                                        coroutineScope.launch {
-                                            val result = snackbarHostState.showSnackbar(
-                                                message = "Closed ${tab.title.ifBlank { "Tab" }}",
-                                                actionLabel = "Undo",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                onNewTab(tab.isIncognito)
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(filteredTabs, key = { it.id }) { tab ->
-                            val dismissState = rememberSwipeToDismissBoxState()
-                            LaunchedEffect(dismissState.currentValue) {
-                                if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
-                                    dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd
+                        else -> LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(filteredTabs, key = { it.id }) { tab ->
+                                LaunchedEffect(tab.id) { onTabVisible(tab) }
+                                AnimatedVisibility(
+                                    visible = tab.id !in pendingRemovalIds,
+                                    exit = fadeOut() + scaleOut(targetScale = 0.9f),
+                                    modifier = Modifier.animateItem()
                                 ) {
-                                    onTabClose(tab)
+                                    PetalTabListItem(
+                                        tab = tab,
+                                        accentColor = accentColor,
+                                        onTabSelect = { onTabSelect(tab) },
+                                        onTabClose = { requestOptimisticClose(tab) }
+                                    )
                                 }
-                            }
-
-                            SwipeToDismissBox(
-                                state = dismissState,
-                                backgroundContent = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(MaterialTheme.colorScheme.errorContainer),
-                                        contentAlignment = Alignment.CenterEnd
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Close,
-                                            contentDescription = "Close",
-                                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.padding(end = 16.dp)
-                                        )
-                                    }
-                                },
-                                modifier = Modifier.animateItem()
-                            ) {
-                                PetalTabListItem(
-                                    tab = tab,
-                                    isIncognitoMode = isIncognitoMode,
-                                    accentColor = accentColor,
-                                    onTabSelect = { onTabSelect(tab) },
-                                    onTabClose = {
-                                        onTabClose(tab)
-                                        coroutineScope.launch {
-                                            val result = snackbarHostState.showSnackbar(
-                                                message = "Closed ${tab.title.ifBlank { "Tab" }}",
-                                                actionLabel = "Undo",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                onNewTab(tab.isIncognito)
-                                            }
-                                        }
-                                    }
-                                )
                             }
                         }
                     }
                 }
             }
-            } // closes Column — SnackbarHost below must sit in Box's scope, not Column's, for .align() to work
 
-            // Floating M3 Undo SnackbarHost positioned at the bottom of the container
+            // Floating Material 3 Undo snackbar, anchored to the bottom of the screen.
             SnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier
@@ -516,31 +407,106 @@ fun PetalTabGridSwitcher(
                 Snackbar(
                     snackbarData = data,
                     shape = RoundedCornerShape(16.dp),
-                    containerColor = if (isIncognitoMode) Color(0xFF2B2C36) else MaterialTheme.colorScheme.inverseSurface,
-                    contentColor = if (isIncognitoMode) Color(0xFFE2E2E9) else MaterialTheme.colorScheme.inverseOnSurface,
+                    containerColor = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
                     actionColor = accentColor
                 )
             }
+        }
     }
+}
+
+@Composable
+private fun TabManagerEmptyState(
+    accentColor: Color,
+    textColor: Color,
+    title: String,
+    subtitle: String,
+    onNewTab: (() -> Unit)?
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Centered dual-device badge illustration
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(100.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.size(88.dp)
+            ) {}
+            Row(
+                horizontalArrangement = Arrangement.spacedBy((-8).dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Phonelink,
+                    contentDescription = null,
+                    tint = accentColor,
+                    modifier = Modifier.size(44.dp)
+                )
+                Icon(
+                    imageVector = Icons.Rounded.TabUnselected,
+                    contentDescription = null,
+                    tint = accentColor.copy(alpha = 0.7f),
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
+            color = textColor,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        if (onNewTab != null) {
+            Spacer(Modifier.height(24.dp))
+            Button(
+                onClick = onNewTab,
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = accentColor,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Open New Tab", fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 
 @Composable
 private fun PetalTabCard(
     tab: PetalTabItem,
-    isIncognitoMode: Boolean,
     accentColor: Color,
     onTabSelect: () -> Unit,
     onTabClose: () -> Unit
 ) {
-    val cardBg = if (isIncognitoMode) Color(0xFF1E1F26) else MaterialTheme.colorScheme.surfaceContainerHigh
-    val headerBg = if (isIncognitoMode) Color(0xFF2B2C36) else MaterialTheme.colorScheme.surfaceContainer
-    val textColor = if (isIncognitoMode) Color(0xFFE2E2E9) else MaterialTheme.colorScheme.onSurface
+    val cardBg = MaterialTheme.colorScheme.surfaceContainerHigh
+    val headerBg = MaterialTheme.colorScheme.surfaceContainer
+    val textColor = MaterialTheme.colorScheme.onSurface
 
+    // Active-tab accent highlight
     val borderStroke = if (tab.isSelected) {
         BorderStroke(2.dp, accentColor)
     } else {
-        BorderStroke(1.dp, if (isIncognitoMode) Color(0xFF383944) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     }
 
     val expressiveShape = RoundedCornerShape(topStart = 24.dp, topEnd = 10.dp, bottomEnd = 24.dp, bottomStart = 10.dp)
@@ -554,6 +520,8 @@ private fun PetalTabCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(180.dp)
+            // Tap-to-select only - there is deliberately no drag/swipe handling on this
+            // card; the only way to close a tab is the explicit (X) button below.
             .bouncyClickable(onClick = onTabSelect)
             .entrance()
     ) {
@@ -571,30 +539,7 @@ private fun PetalTabCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (tab.faviconBitmap != null) {
-                        Image(
-                            bitmap = tab.faviconBitmap.asImageBitmap(),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(18.dp)
-                                .clip(CircleShape)
-                        )
-                    } else {
-                        Surface(
-                            shape = CircleShape,
-                            color = accentColor.copy(alpha = 0.2f),
-                            modifier = Modifier.size(18.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = tab.title.take(1).uppercase(),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = accentColor
-                                )
-                            }
-                        }
-                    }
-
+                    TabFavicon(tab = tab, accentColor = accentColor, size = 18.dp)
                     Text(
                         text = if (tab.title.isBlank()) "New Tab" else tab.title,
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -611,22 +556,23 @@ private fun PetalTabCard(
                     Icon(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = "Close tab",
-                        tint = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                 }
             }
 
+            // Live PixelCopy WebView preview thumbnail (falls back to a placeholder while
+            // the caller's async capture is still in flight, or if it failed).
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            colors = if (isIncognitoMode) {
-                                listOf(Color(0xFF1E1F26), Color(0xFF16171D))
-                            } else {
-                                listOf(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.colorScheme.surfaceContainer)
-                            }
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surfaceContainerHigh,
+                                MaterialTheme.colorScheme.surfaceContainer
+                            )
                         )
                     ),
                 contentAlignment = Alignment.Center
@@ -634,7 +580,7 @@ private fun PetalTabCard(
                 if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
                     Image(
                         bitmap = tab.previewBitmap.asImageBitmap(),
-                        contentDescription = "Tab Live Preview",
+                        contentDescription = "Live preview of ${tab.title}",
                         contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -652,7 +598,7 @@ private fun PetalTabCard(
                         Text(
                             text = tab.url.ifBlank { "about:blank" },
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(horizontal = 12.dp)
@@ -667,18 +613,17 @@ private fun PetalTabCard(
 @Composable
 private fun PetalTabListItem(
     tab: PetalTabItem,
-    isIncognitoMode: Boolean,
     accentColor: Color,
     onTabSelect: () -> Unit,
     onTabClose: () -> Unit
 ) {
-    val cardBg = if (isIncognitoMode) Color(0xFF1E1F26) else MaterialTheme.colorScheme.surfaceContainerHigh
-    val textColor = if (isIncognitoMode) Color(0xFFE2E2E9) else MaterialTheme.colorScheme.onSurface
+    val cardBg = MaterialTheme.colorScheme.surfaceContainerHigh
+    val textColor = MaterialTheme.colorScheme.onSurface
 
     val borderStroke = if (tab.isSelected) {
         BorderStroke(2.dp, accentColor)
     } else {
-        BorderStroke(1.dp, if (isIncognitoMode) Color(0xFF383944) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     }
 
     Surface(
@@ -703,29 +648,7 @@ private fun PetalTabListItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (tab.faviconBitmap != null) {
-                    Image(
-                        bitmap = tab.faviconBitmap.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                    )
-                } else {
-                    Surface(
-                        shape = CircleShape,
-                        color = accentColor.copy(alpha = 0.2f),
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = tab.title.take(1).uppercase(),
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = accentColor
-                            )
-                        }
-                    }
-                }
+                TabFavicon(tab = tab, accentColor = accentColor, size = 24.dp)
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -738,7 +661,7 @@ private fun PetalTabListItem(
                     Text(
                         text = tab.url.ifBlank { "about:blank" },
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -752,8 +675,36 @@ private fun PetalTabListItem(
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = "Close tab",
-                    tint = if (isIncognitoMode) Color(0xFF8E909F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+/** Favicon badge shared by the grid card and list row, with a lettered fallback. */
+@Composable
+private fun TabFavicon(tab: PetalTabItem, accentColor: Color, size: androidx.compose.ui.unit.Dp) {
+    if (tab.faviconBitmap != null) {
+        Image(
+            bitmap = tab.faviconBitmap.asImageBitmap(),
+            contentDescription = null,
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape)
+        )
+    } else {
+        Surface(
+            shape = CircleShape,
+            color = accentColor.copy(alpha = 0.2f),
+            modifier = Modifier.size(size)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = tab.title.take(1).uppercase().ifBlank { "?" },
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = accentColor
                 )
             }
         }
