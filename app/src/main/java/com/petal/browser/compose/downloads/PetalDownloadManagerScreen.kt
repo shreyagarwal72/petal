@@ -851,7 +851,8 @@ private fun DownloadProgressRing(
         Box(contentAlignment = Alignment.Center) {
             if (showRing) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val strokeWidthPx = 2.6.dp.toPx()
+                    val waveAmplitudePx = 2.0.dp.toPx()
+                    val strokeWidthPx = waveAmplitudePx * 2f + 2.6.dp.toPx()
                     val diameter = size.minDimension - strokeWidthPx
                     val topLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f)
                     val arcSize = Size(diameter, diameter)
@@ -864,16 +865,15 @@ private fun DownloadProgressRing(
                         useCenter = false,
                         topLeft = topLeft,
                         size = arcSize,
-                        style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+                        style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round)
                     )
 
                     if (item.progress != null) {
                         val alpha = if (isPaused) pulseAlpha else 1f
-                        val waveAmplitudePx = 1.6.dp.toPx()
                         val waveCount = 10
                         val sweepDeg = 360f * animatedProgress
                         val startAngleDeg = -90f
-                        val center = Offset(topLeft.x + arcSize.width / 2f, topLeft.y + arcSize.height / 2f)
+                        val center = Offset(size.width / 2f, size.height / 2f)
                         val baseRadius = arcSize.width / 2f
                         val path = Path()
                         var first = true
@@ -890,13 +890,14 @@ private fun DownloadProgressRing(
                             } else {
                                 path.lineTo(x, y)
                             }
-                            t += 2f
+                            t += 1f
                         }
                         drawPath(
                             path = path,
                             color = ringColor.copy(alpha = ringColor.alpha * alpha),
-                            style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+                            style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round)
                         )
+
                     } else {
 
                         // Unknown total size: an indeterminate spinning arc instead of a sweep.
