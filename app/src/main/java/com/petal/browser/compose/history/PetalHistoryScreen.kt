@@ -349,14 +349,13 @@ fun PetalHistoryScreen(
                                     }
                                 }
                             )
-                    }
+                        }
                     }
                 }
             }
         }
     }
-    }
-    }
+}
 }
 
 @Composable
