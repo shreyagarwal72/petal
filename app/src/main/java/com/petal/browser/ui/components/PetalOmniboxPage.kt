@@ -142,6 +142,7 @@ fun PetalOmniboxPage(
     onBackPress: () -> Unit
 ) {
     val context = LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val cleanedInitialQuery = remember(initialQuery) {
         val trimmed = initialQuery.trim()
         if (trimmed.equals("about:blank", ignoreCase = true) || trimmed.startsWith("about:", ignoreCase = true)) {
