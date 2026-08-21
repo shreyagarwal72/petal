@@ -589,202 +589,83 @@ private fun getTimeGreeting(): String {
 
 @Composable
 private fun PetalSearchBar(onSearch: (String) -> Unit) {
+    // This is a decoy bar, matching Chrome's home-screen search box behavior.
+    // It never accepts typed input itself - tapping anywhere on it (including
+    // the placeholder text area) hands off immediately to the real full-screen
+    // omnibox (PetalOmniboxPage, opened via onSearch("") -> showOmniboxPage("")
+    // in BrowserActivity), which is where live suggestions/history/voice/engine
+    // preference all actually live. Do not reintroduce a local TextField or
+    // local suggestion-fetching here - that previously duplicated and shadowed
+    // the omnibox page instead of opening it.
     val context = LocalContext.current
     val activity = context as? ComponentActivity
-    var searchText by remember { mutableStateOf("") }
-    var isAiMode by remember { mutableStateOf(false) }
-    var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
-    var isFocused by remember { mutableStateOf(false) }
 
-    LaunchedEffect(searchText) {
-        if (searchText.trim().length >= 2 && !isAiMode) {
-            com.petal.browser.unit.SearchSuggestionsManager.fetchSuggestions(searchText.trim()) { results ->
-                suggestions = results.take(6)
-            }
-        } else {
-            suggestions = emptyList()
-        }
-    }
-
-    val isSearching = searchText.isNotBlank()
-    val searchShapeCorner by animateFloatAsState(
-        targetValue = if (isSearching) 16f else 28f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
-        label = "M3ESearchShape"
-    )
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Surface(
-            shape = RoundedCornerShape(searchShapeCorner.dp),
-            color = if (isAiMode) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceContainerHigh,
-            border = if (isAiMode) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
-            tonalElevation = if (isSearching) 6.dp else 2.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 56.dp),
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 2.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clickable { onSearch("") },
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            ) {
-                Icon(
-                    imageVector = if (isAiMode) Icons.Rounded.AutoAwesome else Icons.Rounded.Search,
-                    contentDescription = if (isAiMode) "AI Search Mode" else "Search",
-                    tint = if (isAiMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.width(8.dp))
-                TextField(
-                    value = searchText,
-                    onValueChange = { searchText = it },
-                    placeholder = {
-                        Text(
-                            if (isAiMode) "Search web with AI..." else "Search or type web address",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = if (isAiMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(
-                        onSearch = {
-                            if (searchText.isNotBlank()) {
-                                if (isAiMode && activity != null) {
-                                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, searchText.trim())
-                                } else {
-                                    onSearch(searchText.trim())
-                                }
-                            }
-                        }
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
+            Icon(
+                imageVector = Icons.Rounded.Search,
+                contentDescription = "Search",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Search or type web address",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
 
-                IconButton(
-                    onClick = {
-                        if (isAiMode && searchText.isNotBlank() && activity != null) {
-                            com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, searchText.trim())
-                        } else {
-                            isAiMode = !isAiMode
-                        }
-                    }
-                ) {
-                    Icon(
-                        Icons.Rounded.AutoAwesome,
-                        contentDescription = "AI Web Search",
-                        tint = if (isAiMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            IconButton(onClick = {
+                if (activity != null) {
+                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, "")
                 }
+            }) {
+                Icon(
+                    Icons.Rounded.AutoAwesome,
+                    contentDescription = "AI Web Search",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-                if (searchText.isNotBlank()) {
-                    IconButton(onClick = {
-                        searchText = ""
-                        suggestions = emptyList()
-                    }) {
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = "Clear",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    IconButton(onClick = {
-                        if (isAiMode && activity != null) {
-                            com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, searchText.trim())
-                        } else {
-                            onSearch(searchText.trim())
-                        }
-                    }) {
-                        Icon(
-                            Icons.Rounded.ArrowForward,
-                            contentDescription = "Search",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                } else {
-                    val voiceLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
-                    ) { result ->
-                        if (result.resultCode == android.app.Activity.RESULT_OK && result.data != null) {
-                            val spokenText = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-                            if (!spokenText.isNullOrBlank()) {
-                                searchText = spokenText
-                                if (isAiMode && activity != null) {
-                                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, spokenText)
-                                } else {
-                                    onSearch(spokenText)
-                                }
-                            }
-                        }
-                    }
-                    IconButton(onClick = {
-                        try {
-                            val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak to search...")
-                            }
-                            voiceLauncher.launch(intent)
-                        } catch (e: Exception) {
-                            android.widget.Toast.makeText(context, "Voice search is not supported on this device", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }) {
-                        Icon(
-                            Icons.Rounded.Mic,
-                            contentDescription = "Voice Search",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+            val voiceLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                if (result.resultCode == android.app.Activity.RESULT_OK && result.data != null) {
+                    val spokenText = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+                    if (!spokenText.isNullOrBlank()) {
+                        onSearch(spokenText)
                     }
                 }
             }
-        }
-
-        if (suggestions.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                    suggestions.forEach { suggestion ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onSearch(suggestion)
-                                }
-                                .padding(horizontal = 18.dp, vertical = 12.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.TrendingUp,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(14.dp))
-                            Text(
-                                text = suggestion,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Icon(
-                                Icons.Rounded.NorthWest,
-                                contentDescription = "Insert",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+            IconButton(onClick = {
+                try {
+                    val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak to search...")
                     }
+                    voiceLauncher.launch(intent)
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(context, "Voice search is not supported on this device", android.widget.Toast.LENGTH_SHORT).show()
                 }
+            }) {
+                Icon(
+                    Icons.Rounded.Mic,
+                    contentDescription = "Voice Search",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
