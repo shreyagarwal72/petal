@@ -38,10 +38,7 @@ private fun variableFont(
                 variationSettings = FontVariation.Settings(
                     FontVariation.weight(clampedWeight),
                     FontVariation.width(clampedWidth),
-                    FontVariation.Setting("RNDS", clampedRoundness),
-                    FontVariation.Setting("SOFT", clampedRoundness),
-                    FontVariation.Setting("ROUND", clampedRoundness),
-                    FontVariation.Setting("rnd ", clampedRoundness),
+                    FontVariation.Setting("ROND", clampedRoundness),
                     FontVariation.Setting("wght", clampedWeight.toFloat()),
                     FontVariation.Setting("wdth", clampedWidth)
                 ),
@@ -74,10 +71,7 @@ private fun googleSansRoundFontFamily(weight: Int, width: Float = 92f): FontFami
         variationSettings = FontVariation.Settings(
             FontVariation.weight(weight.coerceIn(1, 1000)),
             FontVariation.width(width.coerceIn(75f, 125f)),
-            MonitorRoundVariationSetting,
-            FontVariation.Setting("RNDS", 100.0f),
-            FontVariation.Setting("SOFT", 100.0f),
-            FontVariation.Setting("ROUND", 100.0f)
+            MonitorRoundVariationSetting
         ),
         weight = FontWeight(weight.coerceIn(100, 900))
     ),
@@ -155,10 +149,7 @@ data class FontAxes(
         FontVariation.Setting("opsz", opsz.coerceIn(6f, 72f)),
         FontVariation.grade(grade.toInt().coerceIn(-200, 200)),
         FontVariation.slant(slant.coerceIn(-10f, 0f)),
-        FontVariation.Setting("RNDS", 100f),
-        FontVariation.Setting("ROND", 100f),
-        FontVariation.Setting("SOFT", 100f),
-        FontVariation.Setting("ROUND", 100f)
+        FontVariation.Setting("ROND", roundness.coerceIn(0f, 100f))
     )
 }
 
