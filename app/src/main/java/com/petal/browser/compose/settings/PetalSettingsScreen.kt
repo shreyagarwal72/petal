@@ -581,6 +581,109 @@ fun PetalSettingsScreen(
                             }
                         }
 
+                        if (selectedFont == AppFont.PETAL) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Text(
+                                        "Petal's Signature Customization",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+
+                                    // Font Weight Slider (100 - 900)
+                                    Column {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                "Font Weight",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                "${fontWeight.toInt()}",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        Slider(
+                                            value = fontWeight,
+                                            onValueChange = {
+                                                fontWeight = it
+                                                sp.edit().putInt("sp_font_weight", it.toInt()).apply()
+                                            },
+                                            valueRange = 100f..900f,
+                                            steps = 15
+                                        )
+                                    }
+
+                                    // Font Width Slider (75 - 125)
+                                    Column {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                "Font Width",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                "${fontWidth.toInt()}%",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        Slider(
+                                            value = fontWidth,
+                                            onValueChange = {
+                                                fontWidth = it
+                                                sp.edit().putFloat("sp_font_width", it).apply()
+                                            },
+                                            valueRange = 75f..125f
+                                        )
+                                    }
+
+                                    // Font Roundness Slider (0 - 100)
+                                    Column {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                "Corner Roundness",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                "${fontRoundness.toInt()}%",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        Slider(
+                                            value = fontRoundness,
+                                            onValueChange = {
+                                                fontRoundness = it
+                                                sp.edit().putFloat("sp_font_roundness", it).apply()
+                                            },
+                                            valueRange = 0f..100f
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         // --- Accent Style Chips ---
                         Text(
                             "Select Accent Color Style:",
