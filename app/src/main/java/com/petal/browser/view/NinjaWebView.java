@@ -9,8 +9,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.PixelCopy;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.CookieManager;
@@ -640,6 +643,60 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             return bitmap;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    /**
+     * Captures a live, GPU-accurate thumbnail of this tab's current rendered frame using
+     * {@link PixelCopy}, which (unlike a software {@code Canvas.draw()}) faithfully reflects
+     * hardware-accelerated WebView content. {@code PixelCopy.request(View, ...)} is only
+     * available from API 31 (Android 12); on older devices this falls back to the software
+     * {@link #capturePreviewBitmap()} snapshot, delivered on the same callback so callers don't
+     * need to branch on SDK level.
+     * <p>
+     * The callback always runs on the main thread. It may be invoked synchronously (older
+     * devices) or asynchronously (API 31+, once the compositor delivers the copied frame).
+     */
+    public void capturePreviewBitmapAsync(@NonNull java.util.function.Consumer<Bitmap> callback) {
+        int w = getWidth();
+        int h = getHeight();
+        if (w <= 0 || h <= 0) {
+            w = getMeasuredWidth();
+            h = getMeasuredHeight();
+        }
+        if (w <= 0 || h <= 0) {
+            callback.accept(null);
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                int targetWidth = Math.min(w, 480);
+                int targetHeight = Math.max(1, (int) ((float) h * targetWidth / w));
+                final Bitmap bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888);
+                PixelCopy.request(
+                        this,
+                        bitmap,
+                        copyResult -> {
+                            if (copyResult == PixelCopy.SUCCESS) {
+                                callback.accept(bitmap);
+                            } else {
+                                // Compositor couldn't service the copy (e.g. view detached
+                                // mid-request) - fall back to the software snapshot instead
+                                // of dropping the preview entirely.
+                                callback.accept(capturePreviewBitmap());
+                            }
+                        },
+                        new Handler(Looper.getMainLooper())
+                );
+            } catch (Exception e) {
+                callback.accept(capturePreviewBitmap());
+            }
+        } else {
+            // Pre-API 31: PixelCopy cannot target an arbitrary View (only Surface/Window),
+            // so use the software draw() capture, which is still a faithful "live" snapshot
+            // for the vast majority of WebView content.
+            callback.accept(capturePreviewBitmap());
         }
     }
 
