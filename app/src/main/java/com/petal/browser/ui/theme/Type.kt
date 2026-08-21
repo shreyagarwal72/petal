@@ -178,29 +178,29 @@ data class GSFlexSettings(
 fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes> {
     return when (preset) {
         GSFlexPreset.ZENITH -> Triple(
-            FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
-            FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
-            FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
+            FontAxes(950f, 90f, 30f, 0f, 0f, 100f),
+            FontAxes(800f, 110f, 32f, 0f, 0f, 100f),
+            FontAxes(600f, 100f, 16f, 20f, 0f, 100f)
         )
         GSFlexPreset.EXPRESSIVE -> Triple(
-            FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
-            FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
-            FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
+            FontAxes(950f, 90f, 30f, 0f, 0f, 100f),
+            FontAxes(850f, 110f, 32f, 0f, 0f, 100f),
+            FontAxes(650f, 100f, 16f, 20f, 0f, 100f)
         )
         GSFlexPreset.NEO -> Triple(
-            FontAxes(800f, 125f, 72f, 0f, 0f, 0f),
-            FontAxes(600f, 100f, 32f, 0f, 0f, 0f),
-            FontAxes(400f, 95f, 16f, 10f, 0f, 0f)
+            FontAxes(850f, 125f, 72f, 0f, 0f, 100f),
+            FontAxes(700f, 100f, 32f, 0f, 0f, 100f),
+            FontAxes(550f, 95f, 16f, 10f, 0f, 100f)
         )
         GSFlexPreset.COMPACT -> Triple(
-            FontAxes(900f, 75f, 30f, 0f, 0f, 30f),
-            FontAxes(800f, 85f, 32f, 50f, 0f, 20f),
-            FontAxes(500f, 90f, 16f, 30f, 0f, 10f)
+            FontAxes(950f, 75f, 30f, 0f, 0f, 100f),
+            FontAxes(850f, 85f, 32f, 50f, 0f, 100f),
+            FontAxes(600f, 90f, 16f, 30f, 0f, 100f)
         )
         GSFlexPreset.AIRY -> Triple(
-            FontAxes(300f, 130f, 72f, 0f, 0f, 100f),
-            FontAxes(500f, 120f, 32f, 0f, 0f, 100f),
-            FontAxes(400f, 110f, 16f, 0f, 0f, 50f)
+            FontAxes(600f, 130f, 72f, 0f, 0f, 100f),
+            FontAxes(650f, 120f, 32f, 0f, 0f, 100f),
+            FontAxes(550f, 110f, 16f, 0f, 0f, 100f)
         )
     }
 }
@@ -222,22 +222,22 @@ fun petalTypography(
     } else {
         when (appFont) {
             AppFont.PETAL -> {
-                val displayFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 400).coerceAtMost(950), width = fontWidth.coerceIn(85f, 125f), roundness = fontRoundness.coerceIn(80f, 100f))
-                val headlineFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 300).coerceAtMost(900), width = fontWidth.coerceIn(90f, 120f), roundness = fontRoundness.coerceIn(60f, 100f))
-                val titleFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 200).coerceAtMost(850), width = fontWidth.coerceIn(95f, 115f), roundness = fontRoundness.coerceIn(50f, 100f))
-                val bodyFont = variableFont(R.font.google_sans_flex, weight = fontWeight.coerceIn(300, 700), width = fontWidth.coerceIn(95f, 110f), roundness = fontRoundness.coerceIn(30f, 100f))
-                val labelFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 150).coerceAtMost(800), width = fontWidth.coerceIn(95f, 115f), roundness = fontRoundness.coerceIn(40f, 100f))
+                val displayFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 450).coerceAtMost(950), width = fontWidth.coerceIn(85f, 125f), roundness = 100f)
+                val headlineFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 350).coerceAtMost(900), width = fontWidth.coerceIn(90f, 120f), roundness = 100f)
+                val titleFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 250).coerceAtMost(850), width = fontWidth.coerceIn(95f, 115f), roundness = 100f)
+                val bodyFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 150).coerceIn(450, 750), width = fontWidth.coerceIn(95f, 110f), roundness = 100f)
+                val labelFont = variableFont(R.font.google_sans_flex, weight = (fontWeight + 200).coerceAtMost(850), width = fontWidth.coerceIn(95f, 115f), roundness = 100f)
                 buildTypography(Tiers(displayFont, headlineFont, titleFont, bodyFont, labelFont))
             }
             AppFont.SYSTEM -> systemTypography(fontWeight)
             AppFont.GS_FLEX -> systemTypography(fontWeight)
             AppFont.GS_ROUND -> buildTypography(
                 Tiers(
-                    display = googleSansRoundFontFamily(FontWeight.Bold.weight),
-                    headline = googleSansRoundFontFamily(FontWeight.SemiBold.weight),
-                    title = googleSansRoundFontFamily(FontWeight.Medium.weight),
-                    body = googleSansRoundFontFamily(FontWeight.Normal.weight),
-                    label = googleSansRoundFontFamily(FontWeight.Medium.weight)
+                    display = googleSansRoundFontFamily(950),
+                    headline = googleSansRoundFontFamily(800),
+                    title = googleSansRoundFontFamily(700),
+                    body = googleSansRoundFontFamily(600),
+                    label = googleSansRoundFontFamily(700)
                 )
             )
             AppFont.NUNITO -> buildTypography(

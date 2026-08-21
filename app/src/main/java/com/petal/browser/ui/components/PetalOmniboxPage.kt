@@ -236,7 +236,6 @@ fun PetalOmniboxPage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
         ) {
             // Chrome-style search field row pinned to the top of the page, edge-to-edge.
