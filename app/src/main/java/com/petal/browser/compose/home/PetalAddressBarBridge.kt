@@ -7,6 +7,13 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.petal.browser.ui.components.PetalAddressBar
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
