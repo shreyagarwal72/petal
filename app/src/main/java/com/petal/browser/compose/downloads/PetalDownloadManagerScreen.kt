@@ -414,6 +414,8 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     }
 }
 }
+    }
+}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable

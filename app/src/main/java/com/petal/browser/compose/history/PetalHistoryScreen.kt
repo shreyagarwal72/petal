@@ -357,6 +357,8 @@ fun PetalHistoryScreen(
     }
 }
 }
+    }
+}
 
 @Composable
 private fun HistoryCardItem(
