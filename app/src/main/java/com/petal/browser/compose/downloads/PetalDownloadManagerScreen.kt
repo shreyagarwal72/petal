@@ -37,6 +37,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -312,8 +313,8 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         // for Downloads always looking the same regardless of that setting.
         val animation = remember(sp) {
             com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value
+                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value)
+                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value
             )
         }
         val exitDirection = remember(sp) {
@@ -361,6 +362,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                             clip = underlay.cornerRadiusDp > 0.01f
                             shape = RoundedCornerShape(underlay.cornerRadiusDp.dp)
                         }
+                        .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) underlay.blurRadiusDp.dp else 0.dp)
                 )
             }
 
@@ -379,6 +381,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                     clip = animatedBackProgress > 0.01f
                     shape = RoundedCornerShape(cornerRadius)
                 }
+                .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) backFrame.blurRadiusDp.dp else 0.dp)
         ) {
             // Header inside graphicsLayer for complete predictive back animation consistency!
             Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {

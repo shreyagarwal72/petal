@@ -43,7 +43,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
@@ -245,7 +247,7 @@ fun PetalSettingsScreen(
     var predictiveBackAnim by remember {
         mutableStateOf(
             com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value) ?: "ksu_classic"
+                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value) ?: "monitor_depth"
             )
         )
     }
@@ -347,7 +349,9 @@ fun PetalSettingsScreen(
         colorStyle = selectedColorStyle,
         paletteId = selectedPaletteId
     ) {
+        val petalHeaderScrollBehavior = androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
         Scaffold(
+            modifier = Modifier.nestedScroll(petalHeaderScrollBehavior.nestedScrollConnection),
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
             // Reflects whichever Predictive Back Animation style is selected above, so the
@@ -359,6 +363,7 @@ fun PetalSettingsScreen(
                 progress = animatedBackProgress,
                 isLeftEdge = backIsLeftEdge,
             )
+            val blurEffectEnabled = com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current
 
             Box(modifier = Modifier.fillMaxSize()) {
                 val isSubCategory = currentCategory != SettingsCategory.OVERVIEW
@@ -388,6 +393,7 @@ fun PetalSettingsScreen(
                                     this.alpha = underlay.alpha
                                     translationX = underlay.translationXDp.dp.toPx()
                                 }
+                                .blur(if (blurEffectEnabled) underlay.blurRadiusDp.dp else 0.dp)
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxSize()
@@ -507,6 +513,7 @@ fun PetalSettingsScreen(
                             clip = animatedBackProgress > 0.01f
                             shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
                         }
+                        .blur(if (blurEffectEnabled) backFrame.blurRadiusDp.dp else 0.dp)
                 ) {
                     M3ExpressiveVariableBackground(pageSeed = "settings_page")
 
@@ -520,46 +527,16 @@ fun PetalSettingsScreen(
                     ) {
                         // Top App Bar Header (Mounted inside transitioning route container for Predictive Back & Page Animations)
                         Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
-                            TopAppBar(
-                                title = {
-                                    AnimatedContent(
-                                        targetState = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
-                                        transitionSpec = {
-                                            (fadeIn() + scaleIn(initialScale = 0.92f))
-                                                .togetherWith(fadeOut() + scaleOut(targetScale = 0.92f))
-                                        },
-                                        label = "ZenithHeaderTitleAnimation"
-                                    ) { titleText ->
-                                        Text(
-                                            text = titleText,
-                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
+                            com.petal.browser.ui.components.PetalCollapsingTopAppBar(
+                                title = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
+                                onNavigateBack = {
+                                    if (currentCategory != SettingsCategory.OVERVIEW) {
+                                        currentCategory = SettingsCategory.OVERVIEW
+                                    } else {
+                                        onBackPress()
                                     }
                                 },
-                                navigationIcon = {
-                                    IconButton(
-                                        onClick = {
-                                            if (currentCategory != SettingsCategory.OVERVIEW) {
-                                                currentCategory = SettingsCategory.OVERVIEW
-                                            } else {
-                                                onBackPress()
-                                            }
-                                        },
-                                        modifier = Modifier.bouncyClickable {
-                                            if (currentCategory != SettingsCategory.OVERVIEW) {
-                                                currentCategory = SettingsCategory.OVERVIEW
-                                            } else {
-                                                onBackPress()
-                                            }
-                                        }
-                                    ) {
-                                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                                    }
-                                },
-                                colors = TopAppBarDefaults.topAppBarColors(
-                                    containerColor = MaterialTheme.colorScheme.background
-                                )
+                                scrollBehavior = petalHeaderScrollBehavior,
                             )
 
                             // 🔍 Settings Search Bar
@@ -2017,7 +1994,7 @@ fun PetalSettingsScreen(
                             checked = isPredictiveAnimEnabled,
                             onCheckedChange = { enabled ->
                                 val targetAnim = if (enabled) {
-                                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC
+                                    com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR
                                 } else {
                                     com.petal.browser.animation.predictiveback.PredictiveBackAnimation.NONE
                                 }

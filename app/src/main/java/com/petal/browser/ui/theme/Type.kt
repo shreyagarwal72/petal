@@ -13,7 +13,8 @@ import com.petal.browser.R
 enum class AppFont(val label: String) {
     SYSTEM("System Default"),
     GS_FLEX("GS FLEX"),
-    NUNITO("Nunito")
+    NUNITO("Nunito"),
+    GS_ROUND("Google Sans Round")
 }
 
 @OptIn(ExperimentalTextApi::class)
@@ -55,6 +56,24 @@ private fun variableFont(
 
 private fun nunitoFont(weight: Int, width: Float, roundness: Float): FontFamily =
     variableFont(R.font.nunito_variable, weight, width, roundness)
+
+/**
+ * Ported from RV System Monitor's `googleSansFlexFontFamily`: Google Sans Flex pinned to a
+ * fixed ROND=100 "always rounded" look, instead of Petal's tunable width/roundness sliders.
+ * Simpler and more consistent than the GS_FLEX preset system - just weight varies per tier.
+ */
+private val MonitorRoundVariationSetting = FontVariation.Setting("ROND", 100.0f)
+
+private fun googleSansRoundFontFamily(weight: Int, width: Float = 100f): FontFamily = FontFamily(
+    Font(
+        resId = R.font.google_sans_flex,
+        variationSettings = FontVariation.Settings(
+            FontVariation.weight(weight.coerceIn(1, 1000)),
+            FontVariation.width(width),
+            MonitorRoundVariationSetting,
+        ),
+    ),
+)
 
 private data class Tiers(
     val display: FontFamily,
@@ -200,6 +219,15 @@ fun petalTypography(
         when (appFont) {
             AppFont.SYSTEM -> systemTypography(fontWeight)
             AppFont.GS_FLEX -> systemTypography(fontWeight)
+            AppFont.GS_ROUND -> buildTypography(
+                Tiers(
+                    display = googleSansRoundFontFamily(FontWeight.Bold.weight),
+                    headline = googleSansRoundFontFamily(FontWeight.SemiBold.weight),
+                    title = googleSansRoundFontFamily(FontWeight.Medium.weight),
+                    body = googleSansRoundFontFamily(FontWeight.Normal.weight),
+                    label = googleSansRoundFontFamily(FontWeight.Medium.weight)
+                )
+            )
             AppFont.NUNITO -> buildTypography(
                 Tiers(
                     nunitoFont(fontWeight + 500, fontWidth, fontRoundness),

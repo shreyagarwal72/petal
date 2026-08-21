@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -259,8 +260,8 @@ fun PetalUserProfileScreen(
         // Settings/Downloads, applied here for the account page too.
         val animation = remember(sp) {
             com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value
+                sp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value)
+                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value
             )
         }
         val exitDirection = remember(sp) {
@@ -305,6 +306,7 @@ fun PetalUserProfileScreen(
                             clip = underlay.cornerRadiusDp > 0.01f
                             shape = RoundedCornerShape(underlay.cornerRadiusDp.dp)
                         }
+                        .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) underlay.blurRadiusDp.dp else 0.dp)
                 )
             }
 
@@ -328,7 +330,8 @@ fun PetalUserProfileScreen(
                         translationX = backFrame.translationXDp.dp.toPx()
                         clip = animatedBackProgress > 0.01f
                         shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
-                    },
+                    }
+                    .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) backFrame.blurRadiusDp.dp else 0.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
             // Main User Profile Hero Card

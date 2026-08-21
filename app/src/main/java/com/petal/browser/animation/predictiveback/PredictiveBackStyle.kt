@@ -13,6 +13,8 @@ data class PredictiveBackFrame(
     val translationXDp: Float = 0f,
     val alpha: Float = 1f,
     val cornerRadiusDp: Float = 0f,
+    /** Blur radius (dp) applied to the page as it recedes; ported from Monitor Depth. Ignored by styles that don't blur. */
+    val blurRadiusDp: Float = 0f,
 )
 
 /**
@@ -43,6 +45,7 @@ object PredictiveBackStyle {
             PredictiveBackAnimation.MIUIX -> miuixFrame(eased, isLeftEdge)
             PredictiveBackAnimation.SCALE -> scaleFrame(eased, isLeftEdge, exitDirection)
             PredictiveBackAnimation.CLASSIC -> classicFrame(eased, isLeftEdge)
+            PredictiveBackAnimation.MONITOR -> monitorFrame(eased)
         }
     }
 
@@ -92,6 +95,20 @@ object PredictiveBackStyle {
     )
 
     /**
+     * Depth-style "recede and blur" ported from RV System Monitor's ScreenWrapper: the page
+     * doesn't drift sideways at all, it settles straight back - corners rounding up to 32dp,
+     * a soft dim, and a growing gaussian blur (up to 24dp) as it goes fully behind the new page.
+     * This is the new default predictive-back style.
+     */
+    private fun monitorFrame(eased: Float) = PredictiveBackFrame(
+        scale = 1f - eased * 0.06f,
+        translationXDp = 0f,
+        alpha = 1f - eased * 0.4f,
+        cornerRadiusDp = eased * 32f,
+        blurRadiusDp = eased * 24f,
+    )
+
+    /**
      * Computes the transform for the "last page" preview layer that sits *underneath* the
      * page being swiped away - the InstallerX-style two-screen choreography where the
      * previous/destination screen is visibly growing into place as the gesture progresses,
@@ -116,6 +133,7 @@ object PredictiveBackStyle {
             PredictiveBackAnimation.MIUIX -> underlayMiuixFrame(eased, isLeftEdge)
             PredictiveBackAnimation.SCALE -> underlayScaleFrame(eased, isLeftEdge, exitDirection)
             PredictiveBackAnimation.CLASSIC -> underlayClassicFrame(eased, isLeftEdge)
+            PredictiveBackAnimation.MONITOR -> underlayMonitorFrame(eased)
         }
     }
 
@@ -149,5 +167,14 @@ object PredictiveBackStyle {
         translationXDp = -driftSign(isLeftEdge) * (1f - eased) * 30f,
         alpha = (0.35f + eased * eased * 0.65f).coerceAtMost(1f),
         cornerRadiusDp = 0f,
+    )
+
+    /** Incoming page settles straight in from a soft blur/dim - no sideways drift, matching [monitorFrame]. */
+    private fun underlayMonitorFrame(eased: Float) = PredictiveBackFrame(
+        scale = 0.94f + eased * 0.06f,
+        translationXDp = 0f,
+        alpha = 0.6f + eased * 0.4f,
+        cornerRadiusDp = (1f - eased) * 32f,
+        blurRadiusDp = (1f - eased) * 24f,
     )
 }

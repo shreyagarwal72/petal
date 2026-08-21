@@ -43,6 +43,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -239,8 +240,8 @@ fun PetalOmniboxPage(
 
     val animation = remember(sp) {
         PredictiveBackAnimation.fromValueOrDefault(
-            sp.getString("sp_predictive_back_anim", PredictiveBackAnimation.CLASSIC.value)
-                ?: PredictiveBackAnimation.CLASSIC.value
+            sp.getString("sp_predictive_back_anim", PredictiveBackAnimation.MONITOR.value)
+                ?: PredictiveBackAnimation.MONITOR.value
         )
     }
     val exitDirection = remember(sp) {
@@ -285,6 +286,7 @@ fun PetalOmniboxPage(
                         clip = underlay.cornerRadiusDp > 0.01f
                         shape = RoundedCornerShape(underlay.cornerRadiusDp.dp)
                     }
+                    .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) underlay.blurRadiusDp.dp else 0.dp)
             )
         }
 
@@ -303,6 +305,7 @@ fun PetalOmniboxPage(
                     clip = animatedBackProgress > 0.01f
                     shape = RoundedCornerShape(cornerRadius)
                 }
+                .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) backFrame.blurRadiusDp.dp else 0.dp)
                 .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
         ) {

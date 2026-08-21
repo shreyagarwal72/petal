@@ -24,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -214,8 +215,8 @@ fun PetalHistoryScreen(
         // as Settings/Downloads/Account.
         val animation = remember(historySp) {
             com.petal.browser.animation.predictiveback.PredictiveBackAnimation.fromValueOrDefault(
-                historySp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value)
-                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.CLASSIC.value
+                historySp.getString("sp_predictive_back_anim", com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value)
+                    ?: com.petal.browser.animation.predictiveback.PredictiveBackAnimation.MONITOR.value
             )
         }
         val exitDirection = remember(historySp) {
@@ -260,6 +261,7 @@ fun PetalHistoryScreen(
                             clip = underlay.cornerRadiusDp > 0.01f
                             shape = RoundedCornerShape(underlay.cornerRadiusDp.dp)
                         }
+                        .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) underlay.blurRadiusDp.dp else 0.dp)
                 )
             }
 
@@ -274,6 +276,7 @@ fun PetalHistoryScreen(
                     clip = animatedBackProgress > 0.01f
                     shape = RoundedCornerShape(backFrame.cornerRadiusDp.dp)
                 }
+                .blur(if (com.petal.browser.ui.theme.LocalPetalBlurEffectEnabled.current) backFrame.blurRadiusDp.dp else 0.dp)
         ) {
             Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
                 TopAppBar(

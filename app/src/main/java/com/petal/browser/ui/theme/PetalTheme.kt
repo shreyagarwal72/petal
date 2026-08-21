@@ -11,11 +11,20 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+
+/**
+ * Whether the Monitor-style blur effect (predictive-back depth blur, scrim blur behind sheets)
+ * is enabled. Ported from RV System Monitor's `LocalBlurEffectEnabled`. Backed by the
+ * "sp_blur_effect_enabled" preference, defaulting to on.
+ */
+val LocalPetalBlurEffectEnabled = compositionLocalOf { true }
 
 @RequiresOptIn(message = "This API is experimental and subject to change.")
 @Retention(AnnotationRetention.BINARY)
@@ -70,6 +79,10 @@ fun PetalExpressiveTheme(
     gsFlexPreset: GSFlexPreset = GSFlexPreset.ZENITH,
     colorStyle: ColorStyle = ColorStyle.TONAL_SPOT,
     paletteId: String = defaultPaletteId,
+    blurEffectEnabled: Boolean = run {
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+            .getBoolean("sp_blur_effect_enabled", true)
+    },
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -140,9 +153,11 @@ fun PetalExpressiveTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexPreset),
-        content = content
-    )
+    CompositionLocalProvider(LocalPetalBlurEffectEnabled provides blurEffectEnabled) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexPreset),
+            content = content
+        )
+    }
 }
