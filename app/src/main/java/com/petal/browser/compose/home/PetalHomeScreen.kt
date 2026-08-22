@@ -223,6 +223,73 @@ val availableIcons = listOf(
     "lock" to "Lock"
 )
 
+// ── Shapes kept as public API — referenced by other screens (e.g. PetalDownloadManagerScreen) ──
+
+val FlowerShape: Shape = GenericShape { size, _ ->
+    val cx = size.width / 2f
+    val cy = size.height / 2f
+    val maxR = Math.min(cx, cy)
+    val petals = 5
+    var first = true
+    for (i in 0..360 step 2) {
+        val rad = Math.toRadians(i.toDouble())
+        val r = maxR * (0.81f + 0.19f * Math.cos(petals * rad - Math.PI / 2).toFloat())
+        val x = (cx + r * Math.cos(rad)).toFloat()
+        val y = (cy + r * Math.sin(rad)).toFloat()
+        if (first) { moveTo(x, y); first = false } else lineTo(x, y)
+    }
+    close()
+}
+
+val CloverShape: Shape = GenericShape { size, _ ->
+    val cx = size.width / 2f
+    val cy = size.height / 2f
+    val maxR = Math.min(cx, cy)
+    val lobes = 4
+    var first = true
+    for (i in 0..360 step 2) {
+        val rad = Math.toRadians(i.toDouble())
+        val r = maxR * (0.72f + 0.28f * Math.sin(lobes * rad).toFloat())
+        val x = (cx + r * Math.cos(rad)).toFloat()
+        val y = (cy + r * Math.sin(rad)).toFloat()
+        if (first) { moveTo(x, y); first = false } else lineTo(x, y)
+    }
+    close()
+}
+
+val StarburstShape: Shape = GenericShape { size, _ ->
+    val cx = size.width / 2f
+    val cy = size.height / 2f
+    val maxR = Math.min(cx, cy)
+    val innerR = maxR * 0.68f
+    val points = 8
+    var first = true
+    for (i in 0 until points * 2) {
+        val rad = Math.toRadians((i * 360.0 / (points * 2)))
+        val r = if (i % 2 == 0) maxR else innerR
+        val x = (cx + r * Math.cos(rad)).toFloat()
+        val y = (cy + r * Math.sin(rad)).toFloat()
+        if (first) { moveTo(x, y); first = false } else lineTo(x, y)
+    }
+    close()
+}
+
+val ArchShape: Shape = GenericShape { size, _ ->
+    val w = size.width
+    val h = size.height
+    val r = w / 2f
+    moveTo(0f, h)
+    lineTo(0f, r)
+    arcTo(
+        rect = androidx.compose.ui.geometry.Rect(0f, 0f, w, w),
+        startAngleDegrees = 180f,
+        sweepAngleDegrees = 180f,
+        forceMoveTo = false
+    )
+    lineTo(w, h)
+    close()
+}
+
 // Kept for EditShortcutDialog live preview — shape preserved but bloom ring removed from screen.
 val PetalContainerShape: Shape = GenericShape { size, _ ->
     val w = size.width
