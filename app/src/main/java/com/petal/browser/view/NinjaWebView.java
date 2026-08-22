@@ -28,6 +28,8 @@ import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.petal.browser.unit.TabThumbnailCache;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -616,7 +618,15 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     public void setFavicon(Bitmap favicon) {
+        // Always keep the in-memory favicon so it still renders in the tab UI during an
+        // incognito session - only the disk write below is a privacy concern.
         this.favicon = favicon;
+        if (isIncognito) {
+            // Zero disk logging for incognito: persisting favicons here would leave a
+            // trace of every site visited in a private tab, the same class of leak the
+            // history-write path already guards against in NinjaWebViewClient.
+            return;
+        }
         FaviconHelper faviconHelper = new FaviconHelper(context);
         RecordAction action = new RecordAction(context);
         action.open(false);
@@ -661,6 +671,19 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
      * devices) or asynchronously (API 31+, once the compositor delivers the copied frame).
      */
     public void capturePreviewBitmapAsync(@NonNull java.util.function.Consumer<Bitmap> callback) {
+        // Wrap the caller's callback so every capture path - PixelCopy success, PixelCopy
+        // failure fallback, and the pre-API-31/detached-view software fallback - writes
+        // into the bounded LRU cache before the bitmap reaches the caller. This is what
+        // makes "on page load and tab switch" (see updatePreviewCache() below) actually
+        // populate the cache, not just the grid's own onTabVisible capture.
+        final String tabId = String.valueOf(hashCode());
+        java.util.function.Consumer<Bitmap> cachingCallback = bitmap -> {
+            if (bitmap != null) {
+                TabThumbnailCache.put(tabId, bitmap);
+            }
+            callback.accept(bitmap);
+        };
+
         int w = getWidth();
         int h = getHeight();
         if (w <= 0 || h <= 0) {
@@ -668,7 +691,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             h = getMeasuredHeight();
         }
         if (w <= 0 || h <= 0) {
-            callback.accept(null);
+            cachingCallback.accept(null);
             return;
         }
 
@@ -694,25 +717,41 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                         bitmap,
                         copyResult -> {
                             if (copyResult == PixelCopy.SUCCESS) {
-                                callback.accept(bitmap);
+                                cachingCallback.accept(bitmap);
                             } else {
                                 // Compositor couldn't service the copy (e.g. view detached
                                 // mid-request) - fall back to the software snapshot instead
                                 // of dropping the preview entirely.
-                                callback.accept(capturePreviewBitmap());
+                                cachingCallback.accept(capturePreviewBitmap());
                             }
                         },
                         new Handler(Looper.getMainLooper())
                 );
             } catch (Exception e) {
-                callback.accept(capturePreviewBitmap());
+                cachingCallback.accept(capturePreviewBitmap());
             }
         } else {
             // Pre-API 31, no reachable Window, or the view isn't currently on-screen: PixelCopy
             // can't be used, so fall back to the software draw() capture, which is still a
             // faithful "live" snapshot for the vast majority of WebView content.
-            callback.accept(capturePreviewBitmap());
+            cachingCallback.accept(capturePreviewBitmap());
         }
+    }
+
+    /**
+     * Fire-and-forget capture used purely to keep {@link TabThumbnailCache} warm - called
+     * from page-load-finished and tab-switch hook points so the tab manager's grid always
+     * has a recent thumbnail ready without the switcher itself needing to trigger a capture
+     * the moment it opens.
+     */
+    public void updatePreviewCache() {
+        capturePreviewBitmapAsync(bitmap -> { /* cache write already happened above */ });
+    }
+
+    /** Returns the most recently cached preview thumbnail for this tab, if any. */
+    @Nullable
+    public Bitmap getCachedPreviewBitmap() {
+        return TabThumbnailCache.get(String.valueOf(hashCode()));
     }
 
     /**
