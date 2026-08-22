@@ -725,7 +725,10 @@ public class HelperUnit {
         TextView actionView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_action);
         if (actionView != null) {
             TypedValue primaryValue = new TypedValue();
-            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorPrimary, primaryValue, true);
+            context.getTheme().resolveAttribute(android.R.attr.colorPrimary, primaryValue, true);
+            if (primaryValue.data == 0) {
+                context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSecondary, primaryValue, true);
+            }
             if (primaryValue.data != 0) {
                 actionView.setTextColor(primaryValue.data);
             }

@@ -14,8 +14,8 @@ public class Settings_Profile extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(PetalAccountSyncBridge.createAccountSyncView(
             this,
-            this::finish,
-            shortcut -> {}
+            () -> { finish(); return kotlin.Unit.INSTANCE; },
+            shortcut -> kotlin.Unit.INSTANCE
         ));
     }
 }
