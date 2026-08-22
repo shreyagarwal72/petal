@@ -279,8 +279,8 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             this.setInitialScale(100);
         } else {
             webSettings.setUserAgentString(mobileUserAgent);
-            getSettings().setUseWideViewPort(false);
-            getSettings().setLoadWithOverviewMode(false);
+            getSettings().setUseWideViewPort(true);
+            getSettings().setLoadWithOverviewMode(true);
             this.setInitialScale(0);
         }
 
@@ -375,8 +375,8 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             setInitialScale(100);
         } else {
             getSettings().setUserAgentString(mobileUserAgent);
-            getSettings().setUseWideViewPort(false);
-            getSettings().setLoadWithOverviewMode(false);
+            getSettings().setUseWideViewPort(true);
+            getSettings().setLoadWithOverviewMode(true);
             setInitialScale(0);
         }
         reload();
