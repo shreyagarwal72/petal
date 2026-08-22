@@ -59,8 +59,16 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
     }
 
     private void initSmoothScrolling(Context context) {
-        // Force Hardware Acceleration for 120Hz fluid rendering
-        setLayerType(LAYER_TYPE_HARDWARE, null);
+        // NOTE: do NOT force LAYER_TYPE_HARDWARE here. NinjaWebView.initPreferences()
+        // deliberately sets LAYER_TYPE_NONE right after this view is constructed, so this
+        // just created a hardware layer/surface for a brief moment and then abandoned it.
+        // On several OEM builds (ColorOS/OnePlus/Oppo/Realme included) that hand-off leaves
+        // a stale cached layer behind: page overlays (menus, dropdowns, sheets) can stop
+        // getting repainted/removed from the screen after their DOM state changes, because
+        // the compositor is still presenting the old cached frame instead of asking the
+        // WebView to redraw. Chrome never hits this because it never toggles a view-level
+        // hardware layer on and off like this. Leaving layer type untouched here (its
+        // default) avoids creating that stale layer in the first place.
 
         ViewConfiguration configuration = ViewConfiguration.get(context);
         touchSlop = configuration.getScaledTouchSlop();
@@ -164,6 +172,12 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
                     } else {
                         startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL, ViewCompat.TYPE_NON_TOUCH);
                     }
+                } else {
+                    // This was a tap, not a drag. Force a redraw request after the page has
+                    // had a chance to process the click (e.g. closing a menu/dropdown), as a
+                    // safety net against the stale-frame compositor issue described above -
+                    // this is a no-op if the page already redrew correctly on its own.
+                    ViewCompat.postInvalidateOnAnimation(this);
                 }
                 endTouch();
                 break;
