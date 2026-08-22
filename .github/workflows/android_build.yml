@@ -57,8 +57,13 @@ jobs:
             KEY_PASS="$KEY_PASSWORD"
             ALIAS_NAME="$ALIAS"
           else
-            echo "SIGNING_KEY secret is not configured. Generating temporary signing key..."
-            keytool -genkey -v -keystore app/release.keystore -storepass android -alias releasekey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Release, O=Android, C=US"
+            echo "SIGNING_KEY secret is not configured."
+            if [ -f app/release.keystore ]; then
+              echo "Using existing repository app/release.keystore..."
+            else
+              echo "Generating temporary release signing key..."
+              keytool -genkey -v -keystore app/release.keystore -storepass android -alias releasekey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Release, O=Android, C=US"
+            fi
             STORE_PASS="android"
             KEY_PASS="android"
             ALIAS_NAME="releasekey"
