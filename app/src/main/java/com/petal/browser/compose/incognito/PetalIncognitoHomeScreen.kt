@@ -220,34 +220,13 @@ fun PetalIncognitoHomeScreen(
                                 )
                             }
                             Spacer(Modifier.width(12.dp))
-                            Switch(
+                            com.petal.browser.ui.components.IconSwitch(
                                 checked = blockThirdPartyCookies,
-                                onCheckedChange = { blockThirdPartyCookies = it },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                    checkedTrackColor = IncognitoPrimary
-                                )
+                                icon = Icons.Rounded.Cookie,
+                                onCheckedChange = { blockThirdPartyCookies = it }
                             )
                         }
                     }
-                }
-
-                Spacer(Modifier.height(36.dp))
-
-                // Exit Incognito Button
-                OutlinedButton(
-                    onClick = onCloseIncognito,
-                    shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = IncognitoPrimary),
-                    modifier = Modifier.entrance(index = 7)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(text = "Close all Incognito tabs")
                 }
 
                 Spacer(Modifier.height(24.dp))

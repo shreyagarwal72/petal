@@ -120,11 +120,11 @@ object PetalTabSwitcherBridge {
                                         } else null
 
                                         val displayTitle = when {
-                                            !rawTitle.isNullOrBlank() && !rawTitle.equalsIgnoreCase("about:blank") && !rawTitle.equalsIgnoreCase("Petal Start") -> rawTitle
-                                            !rawUrl.isNullOrBlank() && !rawUrl.equalsIgnoreCase("about:blank") && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
+                                            !rawTitle.isNullOrBlank() && !rawTitle.equals("about:blank", ignoreCase = true) && !rawTitle.equals("Petal Start", ignoreCase = true) -> rawTitle
+                                            !rawUrl.isNullOrBlank() && !rawUrl.equals("about:blank", ignoreCase = true) && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
                                             else -> "Petal Home"
                                         }
-                                        val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equalsIgnoreCase("about:blank") || rawUrl.startsWith("file:///android_asset/")) "Petal Home" else rawUrl
+                                        val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equals("about:blank", ignoreCase = true) || rawUrl.startsWith("file:///android_asset/")) "Petal Home" else rawUrl
                                         com.petal.browser.compose.tabs.PetalTabItem(
                                             id = album.hashCode().toString(),
                                             title = displayTitle,
