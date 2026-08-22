@@ -65,6 +65,11 @@ fun PetalChromeFlagsScreen(
         }
     }
 
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onDismiss,
+    ) {
+    com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -298,6 +303,8 @@ fun PetalChromeFlagsScreen(
             }
         }
     }
+}
+}
 }
 }
 
