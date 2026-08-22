@@ -36,6 +36,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.petal.browser.predictive.LocalPredictiveBackState
+import com.petal.browser.predictive.PetalPredictiveJunction
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -76,6 +78,27 @@ fun ScreenWrapper(
 
     val disableBlurAllOver = false
 
+    // Live predictive-back gesture state: published by PetalPredictiveBackSurface
+    // (or any ancestor that provides LocalPredictiveBackState).
+    val predictiveBack = LocalPredictiveBackState.current
+    val predictiveEnabled = PetalPredictiveJunction.isPredictiveBackEnabled.value
+    val blurEnabled = PetalPredictiveJunction.isDepthBlurEnabled.value
+
+    // This ScreenWrapper is being revealed underneath the swiped-away top screen when
+    // shouldDim is true, so gate live gesture tracking on the same condition.
+    val isPredictiveBackTarget = shouldRunDepthEffects && shouldDim && predictiveBack.isActive
+    // Quadratic ease: blur/dim clear noticeably ahead of the finger.
+    val backProgressEased =
+        if (predictiveBack.isActive) 1f - (1f - predictiveBack.progress).let { it * it }
+        else 0f
+
+    // Subtle scale-up on the revealed screen as it comes forward.
+    val revealScale = if (predictiveEnabled && isPredictiveBackTarget) {
+        0.96f + 0.04f * backProgressEased
+    } else {
+        1f
+    }
+
     val transition = animatedVisibilityScope?.transition
 
     // Declarative Animations
@@ -101,7 +124,7 @@ fun ScreenWrapper(
     }
 
     // Dim: If strictly behind Top -> 0.4f (or 0.75f if blur is disabled). Else -> 0f.
-    val targetDim = if (shouldRunDepthEffects && shouldDim) {
+    val settledTargetDim = if (shouldRunDepthEffects && shouldDim) {
         if (disableBlurAllOver) 0.75f else 0.4f
     } else {
         0f
@@ -119,15 +142,21 @@ fun ScreenWrapper(
         }
         animatedValue
     } else {
-        val fallbackDimAlpha = remember { Animatable(targetDim) }
-        LaunchedEffect(targetDim) {
-            fallbackDimAlpha.animateTo(targetDim, animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing))
+        val fallbackDimAlpha = remember { Animatable(settledTargetDim) }
+        LaunchedEffect(settledTargetDim) {
+            fallbackDimAlpha.animateTo(settledTargetDim, animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing))
         }
-        fallbackDimAlpha.value
+        // While a predictive back gesture is live, dim clears in step with the finger
+        // instead of waiting for the settled tween — makes the reveal feel attached to the swipe.
+        if (predictiveEnabled && isPredictiveBackTarget) {
+            settledTargetDim * (1f - backProgressEased)
+        } else {
+            fallbackDimAlpha.value
+        }
     }
 
     // Blur: If strictly behind Top -> 24dp. Else -> 0dp. Disabled if disableBlurAllOver is true.
-    val targetBlur = if (shouldRunDepthEffects && shouldDim && !disableBlurAllOver) 24f else 0f
+    val settledTargetBlur = if (shouldRunDepthEffects && shouldDim && !disableBlurAllOver) 24f else 0f
     val animatedBlurRadius = if (transition != null) {
         val animatedValue by transition.animateDp(
             transitionSpec = { tween(durationMillis = 350, easing = CubicBezierEasing(0.5f, 0f, 0.8f, 0.2f)) },
@@ -141,11 +170,16 @@ fun ScreenWrapper(
         }
         animatedValue
     } else {
-        val fallbackBlurRadius = remember { Animatable(targetBlur) }
-        LaunchedEffect(targetBlur) {
-            fallbackBlurRadius.animateTo(targetBlur, animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing))
+        val fallbackBlurRadius = remember { Animatable(settledTargetBlur) }
+        LaunchedEffect(settledTargetBlur) {
+            fallbackBlurRadius.animateTo(settledTargetBlur, animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing))
         }
-        fallbackBlurRadius.value.dp
+        // Same live-tracking treatment for blur.
+        if (predictiveEnabled && isPredictiveBackTarget && blurEnabled) {
+            (settledTargetBlur * (1f - backProgressEased)).dp
+        } else {
+            fallbackBlurRadius.value.dp
+        }
     }
 
     Box(
@@ -157,6 +191,8 @@ fun ScreenWrapper(
                 } else {
                     CompositingStrategy.Auto
                 }
+                scaleX = revealScale
+                scaleY = revealScale
                 if (shouldRunDepthEffects && animatedCornerRadius > 0.5f) {
                     this.shape = RoundedCornerShape(animatedCornerRadius.dp)
                     this.clip = true

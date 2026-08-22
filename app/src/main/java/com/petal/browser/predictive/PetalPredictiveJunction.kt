@@ -16,19 +16,18 @@
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN CONTRACT/TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT/TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package com.petal.browser.predictive
 
 import android.content.SharedPreferences
-import android.os.Build
-import androidx.activity.compose.BackHandler
+import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -36,23 +35,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Global settings & state junction for Predictive Back and Depth Blur effects across the Petal App.
@@ -90,117 +90,186 @@ object PetalPredictiveJunction {
 val LocalPetalPredictiveJunctionState = compositionLocalOf { true }
 val LocalPetalDepthBlurJunctionState = compositionLocalOf { true }
 
+// ---------------------------------------------------------------------------
+// Predictive back gesture state — published downward via CompositionLocal so
+// any descendant (ScreenWrapper, PetalScreenWrapper) can track the live finger
+// position instead of waiting for the settled navigation event.
+// ---------------------------------------------------------------------------
+
 /**
- * Predictive back handler for Petal full-screen surfaces (Settings, History, Downloads, etc.).
+ * Live state of an in-flight predictive back gesture.
  *
- * Matches PixelPlayer's LyricsPredictiveBackHandler pattern exactly:
- * - Requires API 34 (UPSIDE_DOWN_CAKE) — PredictiveBackHandler was unreliable on API 33.
- * - Does NOT re-ease backEvent.progress: Android already delivers eased values. Double-easing
- *   makes the animation feel sluggish and mismatched with the system chrome.
- * - On gesture commit: calls onBack() directly. The system chrome handles the dismissal
- *   animation. Applying an extra spring-to-1f before onBack() makes the screen fight the
- *   system animation and looks broken (oscillates past dismissed state).
- * - On gesture cancel: spring-animates back to 0f with a crisp no-bounce spring so the
- *   screen snaps back responsively without feeling elastic or over-damped.
+ * [progress] is 0f (finger at edge) → 1f (fully committed). It updates every frame
+ * while the thumb is moving, which lets the revealed screen's blur/dim/scale track
+ * the finger instead of snapping at commit time.
  */
-@Composable
-fun PetalPredictiveBackJunctionHandler(
-    enabled: Boolean = true,
-    onProgressChanged: (Float) -> Unit = {},
-    onBack: () -> Unit
+data class PredictiveBackState(
+    val isActive: Boolean = false,
+    val progress: Float = 0f,
+    val swipeEdge: Int = BackEventCompat.EDGE_LEFT,
 ) {
-    val junctionPredictiveEnabled by remember { derivedStateOf { PetalPredictiveJunction.isPredictiveBackEnabled.value } }
-    val isFullyEnabled = enabled && junctionPredictiveEnabled
-    val scope = rememberCoroutineScope()
-    val progressAnim = remember { Animatable(0f) }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && isFullyEnabled) {
-        PredictiveBackHandler(enabled = true) { progressFlow ->
-            try {
-                progressFlow.collect { backEvent ->
-                    // Use backEvent.progress directly — the system already applies easing.
-                    // Applying FastOutSlowInEasing on top causes double-easing / sluggish feel.
-                    progressAnim.snapTo(backEvent.progress)
-                    onProgressChanged(backEvent.progress)
-                }
-
-                // Gesture committed: call onBack immediately. The system handles the
-                // dismiss animation. Do NOT animate to 1f here — it fights the system chrome.
-                scope.launch {
-                    onBack()
-                    progressAnim.snapTo(0f)
-                    onProgressChanged(0f)
-                }
-            } catch (_: CancellationException) {
-                // Gesture cancelled: spring smoothly back to 0f with no bounce.
-                // NoBouncy + StiffnessMedium gives a crisp, responsive snap-back that
-                // matches the system's cancel animation speed.
-                scope.launch {
-                    progressAnim.animateTo(
-                        targetValue = 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        )
-                    ) { onProgressChanged(value) }
-                }
-            }
-        }
-    } else {
-        BackHandler(enabled = isFullyEnabled, onBack = onBack)
+    companion object {
+        val Idle = PredictiveBackState()
     }
 }
+
+/** CompositionLocal that carries the current [PredictiveBackState] down the tree. */
+val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
+
+// ---------------------------------------------------------------------------
+// PetalPredictiveBackSurface — replaces the old PetalPredictiveBackJunctionHandler
+// ---------------------------------------------------------------------------
+
+/**
+ * Wraps [content] with a [PredictiveBackHandler] and republishes gesture progress
+ * through [LocalPredictiveBackState] so any descendant can react to it live.
+ *
+ * - Only intercepts back when [enabled] is true AND the junction setting is on.
+ * - On cancel: animates progress smoothly back to 0 (220 ms tween) so blur/scale
+ *   relax instead of snapping — matches system back-cancel feel.
+ * - On commit: resets state immediately and calls [onBack]. The system chrome
+ *   handles the dismissal animation; do NOT spring-to-1f first.
+ */
+@Composable
+fun PetalPredictiveBackSurface(
+    enabled: Boolean = true,
+    onBack: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val junctionEnabled = PetalPredictiveJunction.isPredictiveBackEnabled.value
+    val isFullyEnabled = enabled && junctionEnabled
+
+    var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
+    // Used only during cancel settling so the smooth relaxation has something to follow.
+    val settleProgress = remember { Animatable(0f) }
+
+    PredictiveBackHandler(enabled = isFullyEnabled) { progressFlow ->
+        try {
+            progressFlow.collectLatest { backEvent ->
+                backState = PredictiveBackState(
+                    isActive = true,
+                    progress = backEvent.progress,
+                    swipeEdge = backEvent.swipeEdge,
+                )
+            }
+            // Gesture committed — let the system drive the dismissal.
+            // Reset immediately so the revealed screen doesn't hold a stale dim/blur.
+            backState = PredictiveBackState.Idle
+            onBack()
+        } catch (e: CancellationException) {
+            // Gesture cancelled: animate progress back to 0 so blur/scale relax smoothly
+            // instead of snapping clear. 220 ms matches the system's cancel spring duration.
+            settleProgress.snapTo(backState.progress)
+            settleProgress.animateTo(0f, animationSpec = tween(durationMillis = 220))
+            backState = PredictiveBackState.Idle
+            throw e
+        }
+    }
+
+    CompositionLocalProvider(LocalPredictiveBackState provides backState) {
+        content()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// PetalScreenWrapper — visual layer driven by LocalPredictiveBackState
+// ---------------------------------------------------------------------------
 
 /**
  * Screen wrapper that applies predictive back visual effects to full-screen Petal surfaces.
  *
- * Visual effects match PixelPlayer's ScreenWrapper:
- * - Scale: foreground screen scales from 1.0 → 0.92 during the gesture (same 8% reduction).
- * - Corner radius: morphs from 0 → 28dp as gesture progresses.
- * - CompositingStrategy stays STABLE (always Offscreen when predictive is on) to avoid
- *   a one-frame flash when the strategy toggles mid-transition.
- * - Dim + blur: only applied to a screen marked `isBehind = true` (the underlying screen
- *   being revealed). The foreground screen stays sharp and legible throughout.
- * - All values are driven through [Animatable] so they animate smoothly even when
- *   the raw progress Float changes discontinuously (e.g., on a fast gesture cancel).
+ * Reads [LocalPredictiveBackState] directly instead of requiring a manually threaded
+ * `progress` float parameter. Wrap with [PetalPredictiveBackSurface] at the call site
+ * to publish gesture state into the composition tree.
+ *
+ * Visual effects:
+ * - Scale: 1.0 at rest → 0.92 at full gesture (foreground screen shrinking).
+ * - Corner radius: 0 dp → 28 dp as gesture progresses (foreground only).
+ * - Dim + blur on [isBehind] screens — clears live with the finger so the reveal
+ *   feels attached to the swipe, not triggered by the commit.
+ * - Revealed-screen scale: 0.96 → 1.0 as gesture progresses (subtle grow-to-meet).
+ * - Ease: quadratic (1-(1-p)²) applied to the raw progress so blur/dim clear
+ *   noticeably ahead of the finger — matches the system's own back-reveal feel.
  */
 @Composable
 fun PetalScreenWrapper(
-    progress: Float = 0f,
     isBehind: Boolean = false,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val predictiveEnabled = PetalPredictiveJunction.isPredictiveBackEnabled.value
     val blurEnabled = PetalPredictiveJunction.isDepthBlurEnabled.value
 
-    // Animatable that tracks the gesture progress. LaunchedEffect keeps it in sync with
-    // the incoming `progress` Float. Using an Animatable (rather than using `progress`
-    // directly in graphicsLayer) means cancel snap-backs animate smoothly instead of
-    // snapping — the cancel spring in PetalPredictiveBackJunctionHandler drives progress
-    // from its current value to 0f, and this animatable follows frame-by-frame.
-    val progressAnim = remember { Animatable(0f) }
-    LaunchedEffect(progress) {
-        progressAnim.snapTo(progress)
-    }
+    val predictiveBack = LocalPredictiveBackState.current
 
-    // foregroundProgress: drives scale + corner radius of the active (front) screen.
-    // behindProgress: drives dim + blur of whatever sits underneath (isBehind screens only).
-    val foregroundProgress = if (predictiveEnabled) progressAnim.value else 0f
-    val behindProgress = if (predictiveEnabled && isBehind) 1f else 0f
+    // Gate active reveal tracking: only the second-from-top screen should react to the
+    // live finger position. When not behind, only the foreground effects (scale, corner)
+    // apply, and they are driven purely by predictiveBack.progress.
+    val isPredictiveBackTarget = isBehind && predictiveBack.isActive
 
-    // Scale: 1.0 at rest → 0.92 at full gesture (8% reduction matching Pixel system chrome).
+    // Quadratic ease: blur/dim clear noticeably faster than the raw swipe progress.
+    val backProgressEased =
+        if (predictiveBack.isActive) 1f - (1f - predictiveBack.progress).let { it * it }
+        else 0f
+
+    // -----------------------------------------------------------------------
+    // Foreground effects — active screen shrinks + grows rounded corners
+    // -----------------------------------------------------------------------
+
+    // Scale: 1.0 → 0.92 during gesture (8 % matching Pixel system chrome).
+    val foregroundProgress = if (predictiveEnabled && !isBehind) predictiveBack.progress else 0f
     val scale = 1f - (0.08f * foregroundProgress)
 
-    // Corner radius: morphs 0dp → 28dp as gesture progresses.
-    val activeProgress = if (isBehind) behindProgress else foregroundProgress
-    val cornerRadius = 28f * activeProgress
+    // Corner radius: 0 dp → 28 dp as gesture progresses.
+    val cornerRadius = if (!isBehind) 28f * foregroundProgress else 0f
 
-    // Dim overlay: behind screen only — stronger when blur is disabled.
-    val dimAlpha = (if (!blurEnabled) 0.5f else 0.25f) * behindProgress
+    // -----------------------------------------------------------------------
+    // Behind-screen effects — dim + blur clear live with the finger
+    // -----------------------------------------------------------------------
 
-    // Depth blur: behind screen only, up to 16dp.
-    val blurRadius = if (blurEnabled) 16f * behindProgress else 0f
+    // Settled target dim (what the dim animates to when no gesture is in flight).
+    val settledTargetDim = if (isBehind) {
+        if (!blurEnabled) 0.5f else 0.25f
+    } else {
+        0f
+    }
+    // Fallback tween: animates dim on screen push/pop lifecycle events.
+    val fallbackDimAlpha = remember { Animatable(settledTargetDim) }
+    LaunchedEffect(settledTargetDim) {
+        fallbackDimAlpha.animateTo(
+            settledTargetDim,
+            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        )
+    }
+    // Live tracking overrides the tween while a gesture is in flight.
+    val animatedDimAlpha = if (predictiveEnabled && isPredictiveBackTarget) {
+        settledTargetDim * (1f - backProgressEased)
+    } else {
+        fallbackDimAlpha.value
+    }
+
+    // Settled target blur.
+    val settledTargetBlur = if (isBehind && blurEnabled) 16f else 0f
+    val fallbackBlurRadius = remember { Animatable(settledTargetBlur) }
+    LaunchedEffect(settledTargetBlur) {
+        fallbackBlurRadius.animateTo(
+            settledTargetBlur,
+            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        )
+    }
+    val animatedBlurRadius = if (predictiveEnabled && isPredictiveBackTarget && blurEnabled) {
+        (settledTargetBlur * (1f - backProgressEased)).dp
+    } else {
+        fallbackBlurRadius.value.dp
+    }
+
+    // Subtle scale-up on the revealed screen — mirrors the system back-to-home animation
+    // where the destination grows slightly to meet the finger.
+    val revealScale = if (predictiveEnabled && isPredictiveBackTarget) {
+        0.96f + 0.04f * backProgressEased
+    } else {
+        1f
+    }
 
     Box(
         modifier = modifier
@@ -214,8 +283,8 @@ fun PetalScreenWrapper(
                 } else {
                     CompositingStrategy.Auto
                 }
-                scaleX = scale
-                scaleY = scale
+                scaleX = if (isBehind) revealScale else scale
+                scaleY = if (isBehind) revealScale else scale
                 if (predictiveEnabled && cornerRadius > 0.5f) {
                     this.shape = RoundedCornerShape(cornerRadius.dp)
                     this.clip = true
@@ -223,9 +292,19 @@ fun PetalScreenWrapper(
                     this.clip = false
                 }
             }
-            .blur(radius = blurRadius.dp)
+            .blur(radius = animatedBlurRadius)
             .background(MaterialTheme.colorScheme.background)
     ) {
         content()
+
+        // Dim overlay — only visible on the revealed (behind) screen.
+        if (isBehind) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = animatedDimAlpha }
+                    .background(Color.Black),
+            )
+        }
     }
 }

@@ -220,16 +220,11 @@ fun PetalOmniboxPage(
         focusRequester.requestFocus()
     }
 
-    var backGestureProgress by remember { mutableFloatStateOf(0f) }
-
-    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
-        onProgressChanged = { backGestureProgress = it }
+        onBack = { onBackPress() },
     ) {
-        onBackPress()
-    }
-
-    com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
+    com.petal.browser.predictive.PetalScreenWrapper {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0)
@@ -395,4 +390,5 @@ fun PetalOmniboxPage(
             }
         }
     }
+}
 }
