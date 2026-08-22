@@ -295,7 +295,7 @@ object PetalAiResearchBridge {
                                     onOpenSettings = {
                                         isVisible = false
                                         (composeView?.parent as? ViewGroup)?.removeView(composeView)
-                                        showAiSettingsSheet(activity)
+                                        (activity as? com.petal.browser.activity.BrowserActivity)?.openApiIntegrationsHub()
                                     },
                                     onDismiss = {
                                         isVisible = false
