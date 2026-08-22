@@ -60,6 +60,11 @@ fun PetalIncognitoHomeScreen(
     var blockThirdPartyCookies by remember { mutableStateOf(true) }
 
     PetalIncognitoTheme(useAmoled = isAmoled) {
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = true,
+            onBack = onCloseIncognito,
+        ) {
+        com.petal.browser.predictive.PetalScreenWrapper {
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -231,6 +236,8 @@ fun PetalIncognitoHomeScreen(
 
                 Spacer(Modifier.height(24.dp))
             }
+        }
+        }
         }
     }
 }
