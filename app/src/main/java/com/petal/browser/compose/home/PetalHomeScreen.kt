@@ -413,6 +413,10 @@ fun PetalHomeScreen(
         shortcuts.map { it to true } + extraVisited.map { it to false }
     }
 
+    // Home sits at the base of the stack, so it's the screen "revealed" underneath every
+    // other predictive-back-enabled screen — isBehind = true lets it dim/blur/scale-in
+    // live with the swipe instead of only the foreground screen animating.
+    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -488,6 +492,7 @@ fun PetalHomeScreen(
                 }
             )
         }
+    }
     }
 }
 
