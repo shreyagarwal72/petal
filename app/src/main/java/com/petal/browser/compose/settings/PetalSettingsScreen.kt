@@ -1346,9 +1346,6 @@ fun PetalSettingsScreen(
                                 }
                             }
 
-
-                            }
-
                             // 6. Privacy & Shield Section
                             if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Privacy Shield", "adblock tracker popups https javascript external apps protection")) {
                                 SettingsCategoryCard(title = "Privacy & Shield Protection", icon = Icons.Rounded.Shield) {
@@ -2157,6 +2154,7 @@ fun PetalSettingsScreen(
                                     Spacer(Modifier.height(32.dp))
                                         }
                                     }
+                            }
                     }
                 }
             }
