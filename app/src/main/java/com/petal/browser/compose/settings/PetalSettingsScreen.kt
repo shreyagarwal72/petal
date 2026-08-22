@@ -512,9 +512,9 @@ fun PetalSettingsScreen(
 
                             // 0. Dedicated API & Integrations Hub Sub-Screen Page
                             if ((currentCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "api webkit credential manager palette oauth incognito profile multi profile predictive back integration hub search suggestions reader wayback translation google bing duckduckgo")) {
-                                SettingsCategoryCard(title = "API Integrations & Web Services Hub", icon = Icons.Rounded.Extension) {
+                                SettingsCategoryCard(title = "API & Integrations Hub", icon = Icons.Rounded.Extension) {
                                     Text(
-                                        "Essential options for web services and Chrome extensions. Core security and system APIs are automatically optimized for performance.",
+                                        "Essential options for Chrome extensions and browser APIs. Core security and system APIs are automatically optimized for performance.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1347,104 +1347,6 @@ fun PetalSettingsScreen(
                             }
 
 
-
-
-
-
-
-                                // 5.6 AI Hub Services & Directory Configuration (from AIHub)
-                                var hubSettings by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiHubManager.getSettings(context)) }
-
-                                SettingsCategoryCard(title = "AI Hub & Web Services", icon = Icons.Rounded.Hub) {
-                                    Text(
-                                        "Manage AI services directory, desktop mode, custom script injections, proxy, and web viewing options for AI tools.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-
-                                    ToggleRow(
-                                        title = "Desktop Mode for AI Services",
-                                        subtitle = "Force desktop user-agent when loading AI web tools",
-                                        icon = Icons.Rounded.DesktopWindows,
-                                        checked = hubSettings.desktopView,
-                                        onCheckedChange = { checked ->
-                                            hubSettings = hubSettings.copy(desktopView = checked)
-                                            com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                                        }
-                                    )
-
-                                    ToggleRow(
-                                        title = "Third-Party Cookies",
-                                        subtitle = "Allow third-party cookies for seamless AI account login",
-                                        icon = Icons.Rounded.Cookie,
-                                        checked = hubSettings.thirdPartyCookies,
-                                        onCheckedChange = { checked ->
-                                            hubSettings = hubSettings.copy(thirdPartyCookies = checked)
-                                            com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                                        }
-                                    )
-
-                                    ToggleRow(
-                                        title = "Page Zooming",
-                                        subtitle = "Enable pinch-to-zoom on AI service web pages",
-                                        icon = Icons.Rounded.ZoomIn,
-                                        checked = hubSettings.enableZoom,
-                                        onCheckedChange = { checked ->
-                                            hubSettings = hubSettings.copy(enableZoom = checked)
-                                            com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    Text(
-                                        "AI Web Proxy Settings:",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-
-                                    ToggleRow(
-                                        title = "Enable Custom Proxy for AI",
-                                        subtitle = "Route AI service web traffic through HTTP/SOCKS proxy",
-                                        icon = Icons.Rounded.VpnKey,
-                                        checked = hubSettings.isProxy,
-                                        onCheckedChange = { checked ->
-                                            hubSettings = hubSettings.copy(isProxy = checked)
-                                            com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                                        }
-                                    )
-
-                                    if (hubSettings.isProxy) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            OutlinedTextField(
-                                                value = hubSettings.proxyHost,
-                                                onValueChange = { host ->
-                                                    hubSettings = hubSettings.copy(proxyHost = host)
-                                                    com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                                                },
-                                                label = { Text("Proxy Host") },
-                                                singleLine = true,
-                                                modifier = Modifier.weight(1.5f),
-                                                shape = RoundedCornerShape(12.dp)
-                                            )
-
-                                            OutlinedTextField(
-                                                value = hubSettings.proxyPort,
-                                                onValueChange = { port ->
-                                                    hubSettings = hubSettings.copy(proxyPort = port)
-                                                    com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                                                },
-                                                label = { Text("Port") },
-                                                singleLine = true,
-                                                modifier = Modifier.weight(1f),
-                                                shape = RoundedCornerShape(12.dp)
-                                            )
-                                        }
-                                    }
-                                }
                             }
 
                             // 6. Privacy & Shield Section
