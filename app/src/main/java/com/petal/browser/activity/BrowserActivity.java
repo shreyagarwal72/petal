@@ -2393,6 +2393,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 () -> {
                     BrowserContainer.clear();
                     addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
+                    saveOpenedTabs();
                     return kotlin.Unit.INSTANCE;
                 },
                 () -> {
@@ -3432,8 +3433,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         for (int i = 0; i < BrowserContainer.size(); i++) {
             if (currentAlbumController == BrowserContainer.get(i))
                 openTabs.add(0, ((NinjaWebView) (BrowserContainer.get(i))).getUrl());
-            else openTabs.add(((NinjaWebView) (BrowserContainer.get(i))).getUrl()); }
+            else openTabs.add(((NinjaWebView) (BrowserContainer.get(i))).getUrl());
+        }
         sp.edit().putString("openTabs", TextUtils.join("‚‗‚", openTabs)).apply();
+        com.petal.browser.unit.TabSessionManager.saveSession(this);
     }
     private void setCustomFullscreen(boolean fullscreen) {
         if (fullscreen) {

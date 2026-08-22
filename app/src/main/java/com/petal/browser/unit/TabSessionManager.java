@@ -109,6 +109,7 @@ public class TabSessionManager {
 
         List<AlbumController> albumList = BrowserContainer.list();
         if (albumList == null || albumList.isEmpty()) {
+            clearSession(context);
             return;
         }
 
@@ -144,7 +145,10 @@ public class TabSessionManager {
             }
         }
 
-        if (records.isEmpty()) return;
+        if (records.isEmpty()) {
+            clearSession(context);
+            return;
+        }
 
         try {
             Gson gson = new Gson();
