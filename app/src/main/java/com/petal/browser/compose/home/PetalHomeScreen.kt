@@ -1,9 +1,11 @@
 /*
  * PetalHomeScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Material 3 Expressive home screen for Petal Browser with customizable 5-shortcut
- * bloom ring, interactive shortcut editor dialog, custom icon & color selection,
- * search bar, and top actions.
+ * Material 3 professional home screen for Petal Browser — Chrome/Edge-style
+ * squircle shortcut grid with merged frequently-visited sites, slim top bar,
+ * and existing search bar / edit dialog / persistence intact.
+ *
+ * MIT License — Copyright (c) 2026
  */
 
 package com.petal.browser.compose.home
@@ -23,9 +25,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -219,93 +223,7 @@ val availableIcons = listOf(
     "lock" to "Lock"
 )
 
-val FlowerShape: Shape = GenericShape { size, _ ->
-    val cx = size.width / 2f
-    val cy = size.height / 2f
-    val maxR = Math.min(cx, cy)
-    val petals = 5
-    var first = true
-    for (i in 0..360 step 2) {
-        val rad = Math.toRadians(i.toDouble())
-        val r = maxR * (0.81f + 0.19f * Math.cos(petals * rad - Math.PI / 2).toFloat())
-        val x = (cx + r * Math.cos(rad)).toFloat()
-        val y = (cy + r * Math.sin(rad)).toFloat()
-        if (first) {
-            moveTo(x, y)
-            first = false
-        } else {
-            lineTo(x, y)
-        }
-    }
-    close()
-}
-
-val ScallopShape: Shape = com.petal.browser.ui.components.ScallopedShape(lobes = 8, depth = 0.16f)
-
-val CloverShape: Shape = GenericShape { size, _ ->
-    val cx = size.width / 2f
-    val cy = size.height / 2f
-    val maxR = Math.min(cx, cy)
-    val lobes = 4
-    var first = true
-    for (i in 0..360 step 2) {
-        val rad = Math.toRadians(i.toDouble())
-        val r = maxR * (0.72f + 0.28f * Math.sin(lobes * rad).toFloat())
-        val x = (cx + r * Math.cos(rad)).toFloat()
-        val y = (cy + r * Math.sin(rad)).toFloat()
-        if (first) { moveTo(x, y); first = false } else lineTo(x, y)
-    }
-    close()
-}
-
-val StarburstShape: Shape = GenericShape { size, _ ->
-    val cx = size.width / 2f
-    val cy = size.height / 2f
-    val maxR = Math.min(cx, cy)
-    val innerR = maxR * 0.68f
-    val points = 8
-    var first = true
-    for (i in 0 until points * 2) {
-        val rad = Math.toRadians((i * 360.0 / (points * 2)))
-        val r = if (i % 2 == 0) maxR else innerR
-        val x = (cx + r * Math.cos(rad)).toFloat()
-        val y = (cy + r * Math.sin(rad)).toFloat()
-        if (first) { moveTo(x, y); first = false } else lineTo(x, y)
-    }
-    close()
-}
-
-val ArchShape: Shape = GenericShape { size, _ ->
-    val w = size.width
-    val h = size.height
-    val r = w / 2f
-    moveTo(0f, h)
-    lineTo(0f, r)
-    arcTo(
-        rect = androidx.compose.ui.geometry.Rect(0f, 0f, w, w),
-        startAngleDegrees = 180f,
-        sweepAngleDegrees = 180f,
-        forceMoveTo = false
-    )
-    lineTo(w, h)
-    close()
-}
-
-val petalShapes: List<Shape> = listOf(
-    FlowerShape,
-    ScallopShape,
-    CloverShape,
-    StarburstShape,
-    ArchShape
-)
-
-/**
- * The single organic petal silhouette used for every shortcut container in the bloom ring
- * around the center Petal logo - a narrow, gently rounded base (the end that faces the hub
- * once the container is rotated into place by [PetalBloom]) widening into a soft, rounded
- * tip, so every shortcut reads as one petal of the same flower rather than five unrelated
- * Material silhouettes.
- */
+// Kept for EditShortcutDialog live preview — shape preserved but bloom ring removed from screen.
 val PetalContainerShape: Shape = GenericShape { size, _ ->
     val w = size.width
     val h = size.height
@@ -403,8 +321,9 @@ fun ComposeView.setupExpressiveHomeScreen(
     }
 }
 
-// ── 3. Main Petal Home Screen Composable ──────────────────────────────────
+// ── 4. Main Petal Home Screen Composable ──────────────────────────────────
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PetalHomeScreen(
     accountViewModel: AccountViewModel,
@@ -417,11 +336,14 @@ fun PetalHomeScreen(
     var editingSlotIndex by remember { mutableStateOf<Int?>(null) }
 
     val profile = accountViewModel.profileState
-    val isSignedIn = profile.isSignedIn
-    val greetingName = profile.displayName
 
-    val onOpenShortcut: (PetalShortcut) -> Unit = { shortcut ->
-        onOpenShortcutUrl(shortcut.url)
+    // Merge saved shortcuts + auto-visited, deduplicated by URL
+    val autoVisitedSites = remember { fetchTopVisitedShortcuts(context).take(8) }
+    val mergedItems: List<Pair<PetalShortcut, Boolean>> = remember(shortcuts, autoVisitedSites) {
+        val savedUrls = shortcuts.map { it.url }.toSet()
+        val extraVisited = autoVisitedSites.filter { it.url !in savedUrls }
+        // true = user-editable saved shortcut; false = auto-visited (read-only)
+        shortcuts.map { it to true } + extraVisited.map { it to false }
     }
 
     Surface(
@@ -437,7 +359,7 @@ fun PetalHomeScreen(
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Top Bar: Petal Title on Left + Profile / Sync Action Button on Right
+                // ── Slim Top Bar: wordmark left, profile right ──────────────
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -461,137 +383,26 @@ fun PetalHomeScreen(
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // Centered App Logo & Greeting Container
-                val nameDisplay = remember(greetingName) {
-                    val name = greetingName?.trim()?.take(15) ?: ""
-                    if (name.isNotEmpty()) name else "Explorer"
-                }
-
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier
-                                .size(76.dp)
-                                .padding(4.dp)
-                                .combinedClickable(
-                                    onClick = {},
-                                    onLongClick = {
-                                        onOpenShortcutUrl("petal://settings?category=api_integrations")
-                                    }
-                                )
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                com.petal.browser.ui.components.PetalLoadingLottie(modifier = Modifier.size(56.dp))
-                            }
-                        }
-
-                        Spacer(Modifier.height(14.dp))
-
-                        val fullGreetingText = "${getTimeGreeting()}, $nameDisplay"
-                        val fontSize = when {
-                            fullGreetingText.length > 24 -> 20.sp
-                            fullGreetingText.length > 18 -> 24.sp
-                            else -> 28.sp
-                        }
-
-                        Text(
-                            text = fullGreetingText,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = fontSize,
-                                letterSpacing = (-0.4).sp
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(20.dp))
-
+                // ── Search Bar ─────────────────────────────────────────────
                 PetalSearchBar(onSearch = onSearch)
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(28.dp))
 
-                // 5-Petal Bloom Shortcuts Ring (No animations, clean static layout)
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    PetalBloom(
-                        shortcuts = shortcuts,
-                        onOpenShortcut = onOpenShortcut,
-                        onAddShortcutClick = { editingSlotIndex = 0 },
-                        onEditShortcutSlot = { index -> editingSlotIndex = index }
-                    )
-                }
-
-                val autoVisitedSites = remember { fetchTopVisitedShortcuts(context).take(8) }
-                if (autoVisitedSites.isNotEmpty()) {
-                    Spacer(Modifier.height(28.dp))
-
-                    Text(
-                        text = "Frequently Visited",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp, vertical = 8.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        autoVisitedSites.forEachIndexed { idx, site ->
-                            val m3Shape = petalShapes[idx % petalShapes.size]
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .width(68.dp)
-                                    .clickable { onOpenShortcutUrl(site.url) }
-                            ) {
-                                Surface(
-                                    shape = m3Shape,
-                                    color = site.containerColor,
-                                    modifier = Modifier.size(54.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        SiteBrandIcon(siteId = site.siteId, label = site.label)
-                                    }
-                                }
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    text = site.label,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    }
-                }
+                // ── Shortcuts Grid (4 columns, squircle tiles) ─────────────
+                PetalShortcutGrid(
+                    items = mergedItems,
+                    onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
+                    onEditShortcutSlot = { index -> editingSlotIndex = index },
+                    onAddShortcutClick = { editingSlotIndex = 0 }
+                )
 
                 Spacer(Modifier.height(96.dp))
             }
         }
 
-        // Edit Shortcut Dialog
+        // ── Edit Shortcut Dialog ───────────────────────────────────────────
         editingSlotIndex?.let { slotIndex ->
             EditShortcutDialog(
                 slotIndex = slotIndex,
@@ -613,13 +424,138 @@ fun PetalHomeScreen(
     }
 }
 
-private fun getTimeGreeting(): String {
-    return when (java.time.LocalTime.now().hour) {
-        in 5..11 -> "Good morning"
-        in 12..17 -> "Good afternoon"
-        else -> "Good evening"
+// ── 5. Shortcut Grid ──────────────────────────────────────────────────────
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PetalShortcutGrid(
+    items: List<Pair<PetalShortcut, Boolean>>, // shortcut to isEditable
+    onOpenShortcut: (PetalShortcut) -> Unit,
+    onEditShortcutSlot: (Int) -> Unit,
+    onAddShortcutClick: () -> Unit
+) {
+    // Calculate number of rows so we can give the non-scrollable grid a fixed height.
+    // Grid is 4 columns: items + 1 "add" tile.
+    val totalCells = items.size + 1
+    val rows = (totalCells + 3) / 4 // ceiling division
+    val tileSize = 60.dp
+    val labelHeight = 32.dp
+    val verticalSpacing = 16.dp
+    val gridHeight = (tileSize + labelHeight + verticalSpacing) * rows + verticalSpacing
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(4),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(gridHeight),
+        userScrollEnabled = false, // parent Column handles scrolling
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(verticalSpacing)
+    ) {
+        itemsIndexed(items) { index, (shortcut, isEditable) ->
+            ShortcutTile(
+                shortcut = shortcut,
+                isEditable = isEditable,
+                onClick = { onOpenShortcut(shortcut) },
+                onLongClick = { if (isEditable) onEditShortcutSlot(index) }
+            )
+        }
+
+        // "+" Add tile at end
+        item {
+            AddShortcutTile(onClick = onAddShortcutClick)
+        }
     }
 }
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ShortcutTile(
+    shortcut: PetalShortcut,
+    isEditable: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(60.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+        ) {
+            // Small tinted badge circle behind icon
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(shortcut.containerColor.copy(alpha = 0.18f))
+            ) {
+                SiteBrandIconTinted(
+                    siteId = shortcut.siteId,
+                    label = shortcut.label,
+                    tint = shortcut.containerColor
+                )
+            }
+        }
+        Spacer(Modifier.height(5.dp))
+        Text(
+            text = shortcut.label,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun AddShortcutTile(onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(60.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .border(
+                    width = 1.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    shape = RoundedCornerShape(20.dp)
+                )
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Add,
+                contentDescription = "Add shortcut",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(26.dp)
+            )
+        }
+        Spacer(Modifier.height(5.dp))
+        Text(
+            text = "Add",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+// ── 6. Search Bar ─────────────────────────────────────────────────────────
 
 @Composable
 private fun PetalSearchBar(onSearch: (String) -> Unit) {
@@ -705,94 +641,74 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+// ── 7. Site Brand Icons ────────────────────────────────────────────────────
+
+/**
+ * Tinted variant used inside the grid tiles — icon uses the brand color as tint
+ * rather than white, so it reads well on the neutral surfaceContainerHigh tile bg.
+ */
 @Composable
-private fun PetalBloom(
-    shortcuts: List<PetalShortcut>,
-    onOpenShortcut: (PetalShortcut) -> Unit,
-    onAddShortcutClick: () -> Unit,
-    onEditShortcutSlot: (Int) -> Unit
-) {
-    val petalSize = 64.dp
-    val budSize = 56.dp
-    val ringRadius = 112.dp
-
-    RadialLayout(
-        radius = ringRadius,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(ringRadius * 2 + petalSize + 32.dp),
-    ) {
-        // Center 5-Petal Flower App Icon (Non-clickable)
-        Surface(
-            shape = FlowerShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 4.dp,
-            shadowElevation = 2.dp,
-            modifier = Modifier.size(budSize),
-        ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(6.dp)) {
-                AsyncImage(
-                    model = com.petal.browser.R.mipmap.ic_launcher_round,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize().clip(FlowerShape)
-                )
-            }
+private fun SiteBrandIconTinted(siteId: String, label: String, tint: Color) {
+    when (siteId) {
+        "youtube" -> {
+            Icon(Icons.Rounded.PlayArrow, contentDescription = "YouTube", tint = tint, modifier = Modifier.size(26.dp))
         }
-
-        // 5 Customizable Bloom Ring Shortcuts - all sharing PetalContainerShape, each one
-        // rotated to point outward from the hub so the ring reads as a single blooming
-        // flower rather than five mismatched Material silhouettes.
-        val angleStep = 360f / shortcuts.take(5).size.coerceAtLeast(1)
-        shortcuts.take(5).forEachIndexed { index, shortcut ->
-            // Matches RadialLayout's own placement angle (angleDeg = -90 + step * index);
-            // rotating the petal by (step * index) turns its default down-facing base to
-            // face the hub at every position around the ring - see PetalContainerShape's
-            // doc comment for why that's the base orientation to rotate from.
-            val petalRotation = angleStep * index
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.width(72.dp)
-            ) {
-                Surface(
-                    shape = PetalContainerShape,
-                    color = shortcut.containerColor,
-                    contentColor = shortcut.contentColor,
-                    modifier = Modifier
-                        .size(petalSize)
-                        .graphicsLayer { rotationZ = petalRotation }
-                        .combinedClickable(
-                            onClick = { onOpenShortcut(shortcut) },
-                            onLongClick = { onEditShortcutSlot(index) }
-                        )
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        // Counter-rotate the icon back to upright - only the petal
-                        // container itself should point outward, the favicon inside must
-                        // stay level and centered for contrast/legibility.
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer { rotationZ = -petalRotation },
-                    ) {
-                        SiteBrandIcon(siteId = shortcut.siteId, label = shortcut.label)
-                    }
-                }
-                Text(
-                    text = shortcut.label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
-            }
+        "google", "search" -> {
+            Icon(Icons.Rounded.Search, contentDescription = "Google", tint = tint, modifier = Modifier.size(24.dp))
+        }
+        "github" -> {
+            androidx.compose.foundation.Image(
+                painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_github),
+                contentDescription = "GitHub",
+                modifier = Modifier.size(26.dp)
+            )
+        }
+        "wikipedia" -> {
+            androidx.compose.foundation.Image(
+                painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_wikipedia),
+                contentDescription = "Wikipedia",
+                modifier = Modifier.size(26.dp)
+            )
+        }
+        "duckduckgo" -> {
+            androidx.compose.foundation.Image(
+                painter = painterResource(com.petal.browser.R.drawable.ic_shortcut_duckduckgo),
+                contentDescription = "DuckDuckGo",
+                modifier = Modifier.size(26.dp)
+            )
+        }
+        "weather" -> {
+            Icon(Icons.Rounded.WbSunny, contentDescription = "Google Weather", tint = Color(0xFFFFD54F), modifier = Modifier.size(24.dp))
+        }
+        "globe" -> {
+            Icon(Icons.Rounded.Public, contentDescription = "Web", tint = tint, modifier = Modifier.size(24.dp))
+        }
+        "star" -> {
+            Icon(Icons.Rounded.Star, contentDescription = "Star", tint = tint, modifier = Modifier.size(24.dp))
+        }
+        "heart" -> {
+            Icon(Icons.Rounded.Favorite, contentDescription = "Heart", tint = tint, modifier = Modifier.size(24.dp))
+        }
+        "bookmark" -> {
+            Icon(Icons.Rounded.Bookmark, contentDescription = "Bookmark", tint = tint, modifier = Modifier.size(24.dp))
+        }
+        "lock" -> {
+            Icon(Icons.Rounded.Lock, contentDescription = "Lock", tint = tint, modifier = Modifier.size(24.dp))
+        }
+        else -> {
+            Text(
+                label.take(1).uppercase(),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = tint
+            )
         }
     }
 }
 
+/**
+ * White-icon variant preserved for the EditShortcutDialog live preview surface
+ * which still uses PetalContainerShape with a solid brand-color background.
+ */
 @Composable
 private fun SiteBrandIcon(siteId: String, label: String) {
     when (siteId) {
@@ -850,6 +766,8 @@ private fun SiteBrandIcon(siteId: String, label: String) {
         }
     }
 }
+
+// ── 8. Edit Shortcut Dialog ───────────────────────────────────────────────
 
 @Composable
 private fun EditShortcutDialog(
@@ -1004,34 +922,4 @@ private fun EditShortcutDialog(
             }
         }
     )
-}
-
-@Composable
-private fun RadialLayout(
-    radius: Dp,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Layout(content = content, modifier = modifier) { measurables, constraints ->
-        val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0)) }
-        val width = constraints.maxWidth
-        val height = radius.roundToPx() * 2 + (placeables.firstOrNull()?.height ?: 0)
-        layout(width, height) {
-            if (placeables.isEmpty()) return@layout
-            val centerX = width / 2
-            val centerY = height / 2
-            val center = placeables.first()
-            center.placeRelative(centerX - center.width / 2, centerY - center.height / 2)
-
-            val petals = placeables.drop(1)
-            val step = 360f / petals.size.coerceAtLeast(1)
-            petals.forEachIndexed { i, placeable ->
-                val angleDeg = -90f + step * i
-                val angleRad = Math.toRadians(angleDeg.toDouble())
-                val x = centerX + (radius.roundToPx() * cos(angleRad)).roundToInt() - placeable.width / 2
-                val y = centerY + (radius.roundToPx() * sin(angleRad)).roundToInt() - placeable.height / 2
-                placeable.placeRelative(x, y)
-            }
-        }
-    }
 }
