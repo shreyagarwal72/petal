@@ -55,6 +55,16 @@ enum class TabDisplayMode {
 }
 
 /**
+ * Which set of tabs the top segmented pill switcher currently shows. Regular and Incognito
+ * tabs are always kept in fully separate views - switching segments changes which subset of
+ * [PetalTabItem.isIncognito] feeds the grid/list/empty-state below, it never merges them.
+ */
+enum class TabCategory {
+    REGULAR,
+    INCOGNITO
+}
+
+/**
  * A single tab as rendered by [PetalTabGridSwitcher]. [previewBitmap] is expected to be a
  * *live* capture of the tab's current WebView frame - callers should source it via
  * `NinjaWebView.capturePreviewBitmapAsync(...)`, which uses `PixelCopy` on API 31+ for a
@@ -106,6 +116,7 @@ fun PetalTabGridSwitcher(
     var searchQuery by remember { mutableStateOf("") }
     var displayMode by remember { mutableStateOf(TabDisplayMode.GRID) }
     var isOverflowMenuExpanded by remember { mutableStateOf(false) }
+    var selectedCategory by remember { mutableStateOf(TabCategory.REGULAR) }
 
     // Optimistic-close bookkeeping: ids in here are hidden from the grid immediately, but
     // `tabs` (the source of truth from the caller) hasn't been touched yet. The id is only
@@ -138,12 +149,17 @@ fun PetalTabGridSwitcher(
     // `tabs` is the caller's live source of truth (e.g. a SnapshotStateList mirroring
     // BrowserContainer). We derive visible/filtered lists directly from it on every
     // recomposition so closing/opening tabs elsewhere is reflected immediately.
-    val visibleTabs = tabs.filter { it.id !in pendingRemovalIds }
+    // Regular and Incognito tabs are strictly partitioned by the segmented switcher above -
+    // the grid/list/empty-state below only ever sees the selected category's tabs.
+    val categoryTabs = tabs.filter { it.isIncognito == (selectedCategory == TabCategory.INCOGNITO) }
+    val visibleTabs = categoryTabs.filter { it.id !in pendingRemovalIds }
     val filteredTabs = visibleTabs.filter { tab ->
         searchQuery.isBlank() ||
             tab.title.contains(searchQuery, ignoreCase = true) ||
             tab.url.contains(searchQuery, ignoreCase = true)
     }
+    val regularTabCount = tabs.count { !it.isIncognito }
+    val incognitoTabCount = tabs.count { it.isIncognito }
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val topBarColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -206,7 +222,9 @@ fun PetalTabGridSwitcher(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Surface(
-                                    onClick = { onNewTab(false) },
+                                    // Respects whichever segment (Regular/Incognito) is active,
+                                    // so + always creates a tab of the kind currently being viewed.
+                                    onClick = { onNewTab(selectedCategory == TabCategory.INCOGNITO) },
                                     shape = RoundedCornerShape(12.dp),
                                     color = accentColor,
                                     modifier = Modifier.size(40.dp)
@@ -253,6 +271,7 @@ fun PetalTabGridSwitcher(
                                             leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
                                             onClick = {
                                                 isOverflowMenuExpanded = false
+                                                selectedCategory = TabCategory.REGULAR
                                                 onNewTab(false)
                                             }
                                         )
@@ -261,6 +280,7 @@ fun PetalTabGridSwitcher(
                                             leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
                                             onClick = {
                                                 isOverflowMenuExpanded = false
+                                                selectedCategory = TabCategory.INCOGNITO
                                                 onNewTab(true)
                                             }
                                         )
@@ -285,6 +305,17 @@ fun PetalTabGridSwitcher(
                                 }
                             }
                         }
+
+                        Spacer(Modifier.height(10.dp))
+
+                        // ── Regular / Incognito segmented pill switcher ─────────────
+                        TabCategorySwitcher(
+                            selected = selectedCategory,
+                            regularCount = regularTabCount,
+                            incognitoCount = incognitoTabCount,
+                            accentColor = accentColor,
+                            onSelect = { selectedCategory = it }
+                        )
 
                         Spacer(Modifier.height(10.dp))
 
@@ -333,12 +364,19 @@ fun PetalTabGridSwitcher(
                         .padding(horizontal = 14.dp, vertical = 12.dp)
                 ) {
                     when {
-                        tabs.isEmpty() -> TabManagerEmptyState(
+                        categoryTabs.isEmpty() -> TabManagerEmptyState(
                             accentColor = accentColor,
                             textColor = textColor,
-                            title = "You'll find your tabs here",
-                            subtitle = "Open tabs to visit different pages at the same time",
-                            onNewTab = { onNewTab(false) }
+                            isIncognito = selectedCategory == TabCategory.INCOGNITO,
+                            title = if (selectedCategory == TabCategory.INCOGNITO)
+                                "You've gone Incognito"
+                            else
+                                "You'll find your tabs here",
+                            subtitle = if (selectedCategory == TabCategory.INCOGNITO)
+                                "Pages you view here won't be saved to your history, cache, or search suggestions"
+                            else
+                                "Open tabs to visit different pages at the same time",
+                            onNewTab = { onNewTab(selectedCategory == TabCategory.INCOGNITO) }
                         )
 
                         filteredTabs.isEmpty() -> TabManagerEmptyState(
@@ -362,12 +400,32 @@ fun PetalTabGridSwitcher(
                                     exit = fadeOut() + scaleOut(targetScale = 0.85f),
                                     modifier = Modifier.animateItem()
                                 ) {
-                                    PetalTabCard(
-                                        tab = tab,
-                                        accentColor = accentColor,
-                                        onTabSelect = { onTabSelect(tab) },
-                                        onTabClose = { requestOptimisticClose(tab) }
+                                    // Horizontal swipe-to-close, in either direction, alongside
+                                    // the card's own explicit close button - both routes land on
+                                    // the same optimistic-close + Undo-snackbar flow.
+                                    val dismissState = rememberSwipeToDismissBoxState(
+                                        confirmValueChange = { value ->
+                                            if (value == SwipeToDismissBoxValue.StartToEnd ||
+                                                value == SwipeToDismissBoxValue.EndToStart
+                                            ) {
+                                                requestOptimisticClose(tab)
+                                                true
+                                            } else {
+                                                false
+                                            }
+                                        }
                                     )
+                                    SwipeToDismissBox(
+                                        state = dismissState,
+                                        backgroundContent = { SwipeToCloseBackground(dismissState) }
+                                    ) {
+                                        PetalTabCard(
+                                            tab = tab,
+                                            accentColor = accentColor,
+                                            onTabSelect = { onTabSelect(tab) },
+                                            onTabClose = { requestOptimisticClose(tab) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -415,13 +473,123 @@ fun PetalTabGridSwitcher(
     }
 }
 
+/** Top segmented pill switcher: Regular [N] vs Incognito [N] (mask icon), full-width. */
+@Composable
+private fun TabCategorySwitcher(
+    selected: TabCategory,
+    regularCount: Int,
+    incognitoCount: Int,
+    accentColor: Color,
+    onSelect: (TabCategory) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            TabCategoryPill(
+                label = "Regular",
+                count = regularCount,
+                icon = Icons.Rounded.Public,
+                selected = selected == TabCategory.REGULAR,
+                accentColor = accentColor,
+                onClick = { onSelect(TabCategory.REGULAR) },
+                modifier = Modifier.weight(1f)
+            )
+            TabCategoryPill(
+                label = "Incognito",
+                count = incognitoCount,
+                icon = Icons.Rounded.VisibilityOff,
+                selected = selected == TabCategory.INCOGNITO,
+                accentColor = accentColor,
+                onClick = { onSelect(TabCategory.INCOGNITO) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun TabCategoryPill(
+    label: String,
+    count: Int,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selected: Boolean,
+    accentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        color = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
+        contentColor = if (selected) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
+        tonalElevation = if (selected) 2.dp else 0.dp,
+        modifier = modifier.height(36.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = "$label [$count]",
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/**
+ * Delete-intent background revealed as a grid card is swiped. Only tints/shows the close
+ * icon once the swipe has actually crossed into a settle-triggering state - a partial,
+ * released swipe shows nothing so it doesn't look committed when it isn't.
+ */
+@Composable
+private fun SwipeToCloseBackground(dismissState: SwipeToDismissBoxState) {
+    val isActive = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd ||
+        dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+    val alignment = when (dismissState.dismissDirection) {
+        SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+        SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+        else -> Alignment.Center
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 10.dp, bottomEnd = 24.dp, bottomStart = 10.dp))
+            .background(if (isActive) MaterialTheme.colorScheme.errorContainer else Color.Transparent)
+            .padding(horizontal = 20.dp),
+        contentAlignment = alignment
+    ) {
+        if (isActive) {
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = "Swipe to close tab",
+                tint = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
+    }
+}
+
 @Composable
 private fun TabManagerEmptyState(
     accentColor: Color,
     textColor: Color,
     title: String,
     subtitle: String,
-    onNewTab: (() -> Unit)?
+    onNewTab: (() -> Unit)?,
+    isIncognito: Boolean = false
 ) {
     Column(
         modifier = Modifier
@@ -430,7 +598,9 @@ private fun TabManagerEmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Centered dual-device badge illustration
+        // Centered illustration - a single mask/visibility-off badge for the Incognito
+        // empty state (distinct enough not to be mistaken for the regular one at a glance),
+        // the existing dual-device badge for the Regular empty state.
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(100.dp)
@@ -440,22 +610,31 @@ private fun TabManagerEmptyState(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 modifier = Modifier.size(88.dp)
             ) {}
-            Row(
-                horizontalArrangement = Arrangement.spacedBy((-8).dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            if (isIncognito) {
                 Icon(
-                    imageVector = Icons.Rounded.Phonelink,
+                    imageVector = Icons.Rounded.VisibilityOff,
                     contentDescription = null,
                     tint = accentColor,
                     modifier = Modifier.size(44.dp)
                 )
-                Icon(
-                    imageVector = Icons.Rounded.TabUnselected,
-                    contentDescription = null,
-                    tint = accentColor.copy(alpha = 0.7f),
-                    modifier = Modifier.size(36.dp)
-                )
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy((-8).dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Phonelink,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(44.dp)
+                    )
+                    Icon(
+                        imageVector = Icons.Rounded.TabUnselected,
+                        contentDescription = null,
+                        tint = accentColor.copy(alpha = 0.7f),
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
             }
         }
         Spacer(Modifier.height(20.dp))
