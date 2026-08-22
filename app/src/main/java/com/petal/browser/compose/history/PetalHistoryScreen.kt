@@ -96,13 +96,11 @@ object PetalHistoryBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    com.petal.browser.predictive.PetalDepthScreenWrapper {
-                        PetalHistoryScreen(
-                            onOpenUrl = { url -> onOpenUrl.open(url) },
-                            onClearBrowsingData = { onClearBrowsingData.action() },
-                            onDismiss = onBackPress
-                        )
-                    }
+                    PetalHistoryScreen(
+                        onOpenUrl = { url -> onOpenUrl.open(url) },
+                        onClearBrowsingData = { onClearBrowsingData.action() },
+                        onDismiss = onBackPress
+                    )
                 }
             }
         }
