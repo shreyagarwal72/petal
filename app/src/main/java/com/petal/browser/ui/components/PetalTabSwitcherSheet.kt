@@ -112,7 +112,12 @@ object PetalTabSwitcherBridge {
                                         val rawUrl = try { album.getUrl() } catch (_: Exception) { null }
                                         val isIncognitoTab = (album is com.petal.browser.view.NinjaWebView) && album.isIncognito()
                                         val faviconBitmap = if (album is com.petal.browser.view.NinjaWebView) album.getFavicon() else null
-                                        val previewBitmap = if (album is com.petal.browser.view.NinjaWebView) album.capturePreviewBitmap() else null
+                                        // Prefer the LRU-cached thumbnail (kept warm by page-load and
+                                        // tab-switch hooks) so opening the switcher doesn't need a fresh
+                                        // synchronous draw; only fall back to that draw on a cache miss.
+                                        val previewBitmap = if (album is com.petal.browser.view.NinjaWebView) {
+                                            album.getCachedPreviewBitmap() ?: album.capturePreviewBitmap()
+                                        } else null
 
                                         val displayTitle = when {
                                             !rawTitle.isNullOrBlank() -> rawTitle
@@ -147,6 +152,7 @@ object PetalTabSwitcherBridge {
                                 val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
                                 if (targetAlbum != null) {
                                     tabItems.removeAll { it.id == tabItem.id }
+                                    com.petal.browser.unit.TabThumbnailCache.remove(tabItem.id)
                                     onCloseTab(targetAlbum)
                                     // Don't auto-dismiss when the last tab closes - like Chrome,
                                     // stay open and let PetalTabGridSwitcher show its empty-state
