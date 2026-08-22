@@ -273,7 +273,7 @@ fun PetalUpdateSheetContent(
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        PetalMarkdownRenderer(
+                        PetalMarkdownText(
                             markdown = notesToDisplay,
                             modifier = Modifier.fillMaxWidth().padding(16.dp)
                         )
