@@ -232,7 +232,7 @@ fun PetalOmniboxPage(
     com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
-            contentWindowInsets = WindowInsets.Zero
+            contentWindowInsets = WindowInsets(0)
         ) { innerPadding ->
             Box(
                 modifier = Modifier
