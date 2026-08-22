@@ -116,20 +116,57 @@ public class UpdateUnit {
                         if (activity.isFinishing()) return;
 
                         if (isNextUpdateAvailable && !isSkipped) {
-                            showMaterial3ExpressiveUpdateDialog(activity, currentVersion, latestTag, releaseNotes, finalDownloadUrl, isLaunchCheck);
+                            com.petal.browser.ui.components.PetalUpdateSheetBridge.showUpdateSheet(
+                                (androidx.activity.ComponentActivity) activity,
+                                new com.petal.browser.ui.components.PetalUpdateInfo(
+                                    latestTag,
+                                    releaseNotes,
+                                    finalDownloadUrl,
+                                    GITHUB_RELEASES_PAGE,
+                                    true
+                                )
+                            );
                         } else if (!isLaunchCheck) {
-                            // User manually triggered check and is already on latest version
-                            showUpToDateToast(activity, currentVersion);
+                            com.petal.browser.ui.components.PetalUpdateSheetBridge.showUpdateSheet(
+                                (androidx.activity.ComponentActivity) activity,
+                                new com.petal.browser.ui.components.PetalUpdateInfo(
+                                    currentVersion,
+                                    releaseNotes,
+                                    finalDownloadUrl,
+                                    GITHUB_RELEASES_PAGE,
+                                    false
+                                )
+                            );
                         }
                     });
                 } else if (!isLaunchCheck) {
-                    activity.runOnUiThread(() -> showUpToDateToast(activity, getAppVersion(activity)));
+                    activity.runOnUiThread(() ->
+                        com.petal.browser.ui.components.PetalUpdateSheetBridge.showUpdateSheet(
+                            (androidx.activity.ComponentActivity) activity,
+                            new com.petal.browser.ui.components.PetalUpdateInfo(
+                                getAppVersion(activity),
+                                "You are currently running the latest build of Petal Browser.",
+                                "",
+                                GITHUB_RELEASES_PAGE,
+                                false
+                            )
+                        )
+                    );
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error checking for updates", e);
                 if (!isLaunchCheck) {
                     activity.runOnUiThread(() ->
-                        Toast.makeText(activity, "Petal is up to date (" + getAppVersion(activity) + ")", Toast.LENGTH_SHORT).show()
+                        com.petal.browser.ui.components.PetalUpdateSheetBridge.showUpdateSheet(
+                            (androidx.activity.ComponentActivity) activity,
+                            new com.petal.browser.ui.components.PetalUpdateInfo(
+                                getAppVersion(activity),
+                                "You are currently running the latest build of Petal Browser.",
+                                "",
+                                GITHUB_RELEASES_PAGE,
+                                false
+                            )
+                        )
                     );
                 }
             }
