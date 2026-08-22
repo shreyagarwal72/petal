@@ -246,9 +246,8 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         downloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
     }
 
-    androidx.activity.compose.BackHandler(enabled = true) {
-        onBackPress()
-    }
+    // Predictive back gesture (swipe-to-go-back) replaces the plain BackHandler so this
+    // screen participates in the shared shrink/dim/blur animation across the app.
 
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     val isSelectionMode = selectedIds.isNotEmpty()
@@ -269,6 +268,11 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         }
     }
 
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onBackPress,
+    ) {
+    com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             snackbarHost = {
@@ -406,6 +410,8 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
             }
         }
     }
+}
+}
 }
 }
 }
