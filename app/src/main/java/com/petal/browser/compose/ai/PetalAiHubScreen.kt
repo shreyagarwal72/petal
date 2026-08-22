@@ -137,6 +137,11 @@ fun PetalAiHubScreen(
             }
         }
 
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = true,
+            onBack = onBack,
+        ) {
+        com.petal.browser.predictive.PetalScreenWrapper {
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -442,6 +447,8 @@ fun PetalAiHubScreen(
             )
         }
     }
+}
+}
 }
 
 @OptIn(ExperimentalLayoutApi::class)
