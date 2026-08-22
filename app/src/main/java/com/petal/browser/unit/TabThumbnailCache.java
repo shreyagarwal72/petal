@@ -1,28 +1,27 @@
 package com.petal.browser.unit;
 
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.util.LruCache;
 
 import androidx.annotation.Nullable;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.concurrent.Executors;
+
 /**
- * Bounded in-memory cache for the tab manager's live PixelCopy/software-draw preview
- * thumbnails, keyed by tab id (the same {@code hashCode().toString()} id used throughout
- * the Compose tab switcher).
- * <p>
- * Without this, every capture (on page load, tab switch, and tab-visible-in-grid) simply
- * handed a fresh {@link Bitmap} to the caller with nothing bounding how many stayed alive
- * at once - on a tab-heavy session that grows without limit. This cache fixes that: it
- * holds at most {@link #MAX_ENTRIES} thumbnails, and recycles whichever one it evicts so
- * the native bitmap memory backing it is actually freed rather than just dropped from the
- * map and left for the GC to eventually notice.
+ * Bounded memory & disk cache for tab preview thumbnails.
+ * Keyed by tab identifier (or URL/tab ID). Thumbnails persist across app restarts on disk
+ * and are only deleted when explicit removal/tab closure occurs.
  */
 public final class TabThumbnailCache {
 
-    // Thumbnails are downscaled to ~480px wide before they ever reach this cache (see
-    // NinjaWebView#capturePreviewBitmap), so a fixed entry-count bound is cheap and simple
-    // rather than needing a byte-size-aware LruCache.
-    private static final int MAX_ENTRIES = 18;
+    private static final String TAG = "TabThumbnailCache";
+    private static final int MAX_ENTRIES = 24;
+    private static File diskCacheDir = null;
 
     private static final LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(MAX_ENTRIES) {
         @Override
@@ -35,32 +34,117 @@ public final class TabThumbnailCache {
 
     private TabThumbnailCache() {}
 
+    public static void initDiskCache(Context context) {
+        if (diskCacheDir != null) return;
+        try {
+            File baseDir = context.getApplicationContext().getCacheDir();
+            diskCacheDir = new File(baseDir, "petal_tab_thumbnails");
+            if (!diskCacheDir.exists()) {
+                diskCacheDir.mkdirs();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to init disk cache dir", e);
+        }
+    }
+
     public static void put(@Nullable String tabId, @Nullable Bitmap bitmap) {
         if (tabId == null || tabId.isEmpty() || bitmap == null || bitmap.isRecycled()) return;
-        cache.put(tabId, bitmap);
+        String safeKey = getSafeKey(tabId);
+        cache.put(safeKey, bitmap);
+        saveToDiskAsync(safeKey, bitmap);
     }
 
     @Nullable
     public static Bitmap get(@Nullable String tabId) {
         if (tabId == null || tabId.isEmpty()) return null;
-        Bitmap bitmap = cache.get(tabId);
-        if (bitmap != null && bitmap.isRecycled()) {
-            // Stale entry (recycled out from under us elsewhere) - drop it rather than
-            // hand back a bitmap that will crash on draw.
-            cache.remove(tabId);
-            return null;
+        String safeKey = getSafeKey(tabId);
+        Bitmap bitmap = cache.get(safeKey);
+        if (bitmap != null && !bitmap.isRecycled()) {
+            return bitmap;
         }
-        return bitmap;
+
+        // Memory miss - try loading from disk cache
+        Bitmap diskBitmap = loadFromDisk(safeKey);
+        if (diskBitmap != null) {
+            cache.put(safeKey, diskBitmap);
+            return diskBitmap;
+        }
+
+        cache.remove(safeKey);
+        return null;
     }
 
-    /** Call when a tab is actually closed (not on optimistic/pending close) to free its slot. */
+    /** Call when a tab is explicitly closed to clear both memory and disk caches. */
     public static void remove(@Nullable String tabId) {
         if (tabId == null || tabId.isEmpty()) return;
-        cache.remove(tabId);
+        String safeKey = getSafeKey(tabId);
+        cache.remove(safeKey);
+        deleteFromDiskAsync(safeKey);
     }
 
-    /** Call on incognito session teardown so private-tab thumbnails don't linger in memory. */
+    /** Call on incognito session teardown so private-tab thumbnails don't linger in memory/disk. */
     public static void evictAll() {
         cache.evictAll();
+        if (diskCacheDir != null && diskCacheDir.exists()) {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                try {
+                    File[] files = diskCacheDir.listFiles();
+                    if (files != null) {
+                        for (File file : files) {
+                            file.delete();
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error evicting disk thumbnails", e);
+                }
+            });
+        }
+    }
+
+    private static String getSafeKey(String key) {
+        return key.replaceAll("[^a-zA-Z0-9_-]", "_");
+    }
+
+    private static void deleteFromDiskAsync(String key) {
+        if (diskCacheDir == null) return;
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                File file = new File(diskCacheDir, key + ".png");
+                if (file.exists()) {
+                    file.delete();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error deleting thumbnail from disk", e);
+            }
+        });
+    }
+
+    private static void saveToDiskAsync(String key, Bitmap bitmap) {
+        if (diskCacheDir == null) return;
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                if (diskCacheDir == null || bitmap == null || bitmap.isRecycled()) return;
+                File file = new File(diskCacheDir, key + ".png");
+                try (FileOutputStream out = new FileOutputStream(file)) {
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
+                    out.flush();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving thumbnail to disk", e);
+            }
+        });
+    }
+
+    private static Bitmap loadFromDisk(String key) {
+        if (diskCacheDir == null) return null;
+        try {
+            File file = new File(diskCacheDir, key + ".png");
+            if (file.exists() && file.length() > 0) {
+                return BitmapFactory.decodeFile(file.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading thumbnail from disk", e);
+        }
+        return null;
     }
 }

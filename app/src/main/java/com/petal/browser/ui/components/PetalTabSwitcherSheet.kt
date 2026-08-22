@@ -120,11 +120,11 @@ object PetalTabSwitcherBridge {
                                         } else null
 
                                         val displayTitle = when {
-                                            !rawTitle.isNullOrBlank() -> rawTitle
-                                            !rawUrl.isNullOrBlank() && rawUrl != "about:blank" && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
-                                            else -> "New Tab"
+                                            !rawTitle.isNullOrBlank() && !rawTitle.equalsIgnoreCase("about:blank") && !rawTitle.equalsIgnoreCase("Petal Start") -> rawTitle
+                                            !rawUrl.isNullOrBlank() && !rawUrl.equalsIgnoreCase("about:blank") && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
+                                            else -> "Petal Home"
                                         }
-                                        val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl == "about:blank" || rawUrl.startsWith("file:///android_asset/")) "about:blank" else rawUrl
+                                        val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equalsIgnoreCase("about:blank") || rawUrl.startsWith("file:///android_asset/")) "Petal Home" else rawUrl
                                         com.petal.browser.compose.tabs.PetalTabItem(
                                             id = album.hashCode().toString(),
                                             title = displayTitle,
@@ -154,6 +154,7 @@ object PetalTabSwitcherBridge {
                                     tabItems.removeAll { it.id == tabItem.id }
                                     com.petal.browser.unit.TabThumbnailCache.remove(tabItem.id)
                                     onCloseTab(targetAlbum)
+                                    com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
                                     // Don't auto-dismiss when the last tab closes - like Chrome,
                                     // stay open and let PetalTabGridSwitcher show its empty-state
                                     // fallback ("You'll find your tabs here") instead of kicking

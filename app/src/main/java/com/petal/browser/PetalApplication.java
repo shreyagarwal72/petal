@@ -19,6 +19,7 @@ public class PetalApplication extends Application {
             com.petal.browser.predictive.PetalPredictiveJunction.init(
                 androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
             );
+            com.petal.browser.unit.TabThumbnailCache.initDiskCache(this);
             Log.i(TAG, "Early Chromium Native Engine & Predictive Junction initialization complete");
         } catch (Exception e) {
             Log.e(TAG, "Failed early Chromium Native Engine init", e);

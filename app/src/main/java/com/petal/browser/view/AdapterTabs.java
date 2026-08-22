@@ -42,9 +42,11 @@ public class AdapterTabs {
     }
 
     void setAlbumTitle(String title, String url) {
-        albumTitle.setText(title);
-        albumUrl.setText(url);
-        HelperUnit.setHighLightedText(context, albumUrl, url, HelperUnit.domain(url));
+        String displayTitle = (title == null || title.isEmpty() || title.equalsIgnoreCase("about:blank") || title.equalsIgnoreCase("Petal Start")) ? "Petal Home" : title;
+        String displayUrl = (url == null || url.isEmpty() || url.equalsIgnoreCase("about:blank")) ? "Petal Home" : url;
+        albumTitle.setText(displayTitle);
+        albumUrl.setText(displayUrl);
+        HelperUnit.setHighLightedText(context, albumUrl, displayUrl, HelperUnit.domain(displayUrl));
     }
 
     void setBrowserController(BrowserController browserController) {

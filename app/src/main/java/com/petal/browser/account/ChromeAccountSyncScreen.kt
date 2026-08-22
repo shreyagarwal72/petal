@@ -487,8 +487,9 @@ fun PetalUserProfileScreen(
                         subtitle = "Require biometric / device lock when launching Petal Browser",
                         icon = Icons.Rounded.Lock,
                         trailing = {
-                            Switch(
+                            IconSwitch(
                                 checked = isBiometricEnabled,
+                                icon = Icons.Rounded.Lock,
                                 onCheckedChange = { checked ->
                                     val activity = context as? androidx.appcompat.app.AppCompatActivity
                                     if (checked && activity != null) {
@@ -581,8 +582,9 @@ fun PetalUserProfileScreen(
                         subtitle = "Automatically purge cache, history, and cookies on close",
                         icon = Icons.Rounded.CleaningServices,
                         trailing = {
-                            Switch(
+                            IconSwitch(
                                 checked = isClearOnExit,
+                                icon = Icons.Rounded.CleaningServices,
                                 onCheckedChange = { checked ->
                                     isClearOnExit = checked
                                     sp.edit().putBoolean("sp_clear_on_exit", checked).apply()
@@ -612,8 +614,9 @@ fun PetalUserProfileScreen(
                         subtitle = "Automatically upgrade HTTP requests to secure HTTPS connection",
                         icon = Icons.Rounded.VerifiedUser,
                         trailing = {
-                            Switch(
+                            IconSwitch(
                                 checked = isHttpsOnly,
+                                icon = Icons.Rounded.VerifiedUser,
                                 onCheckedChange = { checked ->
                                     isHttpsOnly = checked
                                     sp.edit().putBoolean("sp_https_only", checked).apply()
@@ -912,6 +915,11 @@ object PetalAccountSyncBridge {
                 var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
                 var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+                var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
+                var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
+                var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
+                var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
 
                 DisposableEffect(sp) {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -919,16 +927,33 @@ object PetalAccountSyncBridge {
                             "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
                             "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                            "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                            "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
+                            "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
+                            "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
                         }
                     }
                     sp.registerOnSharedPreferenceChangeListener(listener)
                     onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
                 }
 
+                val appFont = remember(fontName) {
+                    try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.PETAL }
+                }
+                val colorStyle = remember(styleName) {
+                    try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                }
+
                 PetalExpressiveTheme(
                     paletteId = currentPaletteId,
                     useAmoled = isAmoled,
-                    dynamicColor = useDynamic
+                    dynamicColor = useDynamic,
+                    appFont = appFont,
+                    colorStyle = colorStyle,
+                    fontWidth = fontWidthVal,
+                    fontWeight = fontWeightVal,
+                    fontRoundness = fontRoundnessVal
                 ) {
                     PetalUserProfileScreen(
                         onBack = onBack,

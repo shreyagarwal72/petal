@@ -41,17 +41,35 @@ object PetalIncognitoSessionManager {
     }
 
     @JvmStatic
-    fun isIncognitoActive(): Boolean = activeIncognitoTabCount > 0
+    fun isIncognitoActive(): Boolean = com.petal.browser.browser.BrowserContainer.getIncognitoCount() > 0
 
     @JvmStatic
     fun updateIncognitoState(activity: Activity) {
-        if (activeIncognitoTabCount > 0) {
+        val incognitoCount = com.petal.browser.browser.BrowserContainer.getIncognitoCount()
+        if (incognitoCount > 0) {
             enableIncognitoSecurity(activity)
             showIncognitoNotification(activity)
         } else {
             disableIncognitoSecurity(activity)
             dismissIncognitoNotification(activity)
             flushSessionData(activity)
+        }
+    }
+
+    @JvmStatic
+    fun syncIncognitoState(context: Context) {
+        val incognitoCount = com.petal.browser.browser.BrowserContainer.getIncognitoCount()
+        if (incognitoCount > 0) {
+            if (context is Activity) {
+                enableIncognitoSecurity(context)
+            }
+            showIncognitoNotification(context)
+        } else {
+            if (context is Activity) {
+                disableIncognitoSecurity(context)
+            }
+            dismissIncognitoNotification(context)
+            flushSessionData(context)
         }
     }
 
@@ -95,7 +113,7 @@ object PetalIncognitoSessionManager {
                     "Incognito Session",
                     NotificationManager.IMPORTANCE_LOW
                 ).apply {
-                    description = "Persistent status notification when Incognito tabs are open"
+                    description = "Status notification when Incognito tabs are active"
                 }
                 nm.createNotificationChannel(channel)
             }
@@ -116,7 +134,7 @@ object PetalIncognitoSessionManager {
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.icon_incognito)
                 .setContentTitle("Close all Incognito tabs")
-                .setContentText("$activeIncognitoTabCount private tab${if (activeIncognitoTabCount > 1) "s" else ""} active. Tap to close all.")
+                .setContentText("Tap to close all active Incognito tabs")
                 .setOngoing(true)
                 .setAutoCancel(false)
                 .setContentIntent(pendingIntent)

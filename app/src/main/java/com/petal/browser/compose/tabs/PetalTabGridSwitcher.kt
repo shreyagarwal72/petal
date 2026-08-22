@@ -800,7 +800,7 @@ private fun PetalTabCard(
                             modifier = Modifier.size(32.dp)
                         )
                         Text(
-                            text = tab.url.ifBlank { "about:blank" },
+                            text = if (tab.url.isBlank() || tab.url.equalsIgnoreCase("about:blank")) "Petal Home" else tab.url,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             maxLines = 1,
@@ -856,14 +856,14 @@ private fun PetalTabListItem(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (tab.title.isBlank()) "New Tab" else tab.title,
+                        text = if (tab.title.isBlank() || tab.title.equalsIgnoreCase("about:blank") || tab.title.equalsIgnoreCase("Petal Start")) "Petal Home" else tab.title,
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = textColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = tab.url.ifBlank { "about:blank" },
+                        text = if (tab.url.isBlank() || tab.url.equalsIgnoreCase("about:blank")) "Petal Home" else tab.url,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

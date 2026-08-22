@@ -69,16 +69,46 @@ fun PetalExpressiveTheme(
             ThemeConfig.DARK -> true
         }
     },
-    dynamicColor: Boolean = isDynamicColorSupported,
-    useAmoled: Boolean = false,
+    dynamicColor: Boolean = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+    },
+    useAmoled: Boolean = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        sp.getBoolean("sp_amoled", false)
+    },
     expressiveColors: Boolean = false,
-    appFont: AppFont = AppFont.PETAL,
-    fontWidth: Float = 92f,
-    fontWeight: Int = 750,
-    fontRoundness: Float = 100f,
-    gsFlexPreset: GSFlexPreset = GSFlexPreset.ZENITH,
-    colorStyle: ColorStyle = ColorStyle.TONAL_SPOT,
-    paletteId: String = defaultPaletteId,
+    appFont: AppFont = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+        try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.PETAL }
+    },
+    fontWidth: Float = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        sp.getFloat("sp_font_width", 92f)
+    },
+    fontWeight: Int = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        sp.getInt("sp_font_weight", 750)
+    },
+    fontRoundness: Float = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        sp.getFloat("sp_font_roundness", 100f)
+    },
+    gsFlexPreset: GSFlexPreset = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val presetName = sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH"
+        try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.ZENITH }
+    },
+    colorStyle: ColorStyle = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+        try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
+    },
+    paletteId: String = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+    },
     blurEffectEnabled: Boolean = run {
         androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
             .getBoolean("sp_blur_effect_enabled", true)

@@ -867,10 +867,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         boolean isIncognitoTab = ninjaWebView != null && ninjaWebView.isIncognito();
         if (isIncognitoTab) {
             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.enableIncognitoSecurity(this);
-            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.onIncognitoTabOpened(this);
         } else {
             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.disableIncognitoSecurity(this);
         }
+        com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(this);
 
         if (isIncognitoTab && (isHomePage(url) || "petal://incognito".equalsIgnoreCase(url))) {
             View incognitoHome = com.petal.browser.compose.incognito.PetalIncognitoBridge.createIncognitoHomeView(
@@ -1268,6 +1268,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 updateOmniBox();
                 updatePersistentBottomNav();
                 saveOpenedTabs();
+                com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(BrowserActivity.this);
             });
         }
     }
