@@ -1978,8 +1978,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    private boolean isAiResearchExtracting = false;
+    private final android.os.Handler aiResearchTimeoutHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable aiResearchTimeoutRunnable;
+
     public void showAiResearchSheet() {
         if (ninjaWebView == null) return;
+
+        // Guard against rapid repeated taps queuing up multiple evaluateJavascript
+        // calls on the WebView - this is what made the browser appear to hang.
+        if (isAiResearchExtracting) return;
+
         final String currentUrl = ninjaWebView.getUrl();
         final String currentTitle = ninjaWebView.getTitle() != null ? ninjaWebView.getTitle() : "";
 
@@ -1987,14 +1996,38 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
+        isAiResearchExtracting = true;
+        NinjaToast.show(BrowserActivity.this, "Analyzing page\u2026");
+
+        // Safety timeout: if the page's JS engine is busy or the callback never
+        // fires (huge/complex DOM, stalled page, cross-origin edge cases), don't
+        // leave the UI stuck with no feedback - bail out after a few seconds.
+        aiResearchTimeoutRunnable = () -> {
+            if (isAiResearchExtracting) {
+                isAiResearchExtracting = false;
+                NinjaToast.show(BrowserActivity.this, "Petal AI timed out reading this page. Please try again.");
+            }
+        };
+        aiResearchTimeoutHandler.postDelayed(aiResearchTimeoutRunnable, 6000);
+
+        // Truncate inside the page's own JS (before crossing the JS bridge) so
+        // very large pages don't serialize megabytes of text back to Java -
+        // that marshalling cost was the main cause of the perceived freeze.
         ninjaWebView.evaluateJavascript(
             "(function() { " +
-            "  var title = document.title || ''; " +
-            "  var metaDesc = (document.querySelector('meta[name=\"description\"]') || {}).content || ''; " +
-            "  var bodyText = document.body ? document.body.innerText : ''; " +
-            "  return title + '\\n' + metaDesc + '\\n' + bodyText; " +
+            "  try { " +
+            "    var title = document.title || ''; " +
+            "    var metaDesc = (document.querySelector('meta[name=\"description\"]') || {}).content || ''; " +
+            "    var bodyText = document.body ? document.body.innerText : ''; " +
+            "    if (bodyText && bodyText.length > 16000) { bodyText = bodyText.substring(0, 16000); } " +
+            "    return title + '\\n' + metaDesc + '\\n' + bodyText; " +
+            "  } catch (e) { return title || ''; } " +
             "})();",
             value -> {
+                aiResearchTimeoutHandler.removeCallbacks(aiResearchTimeoutRunnable);
+                if (!isAiResearchExtracting) return; // already timed out, ignore late callback
+                isAiResearchExtracting = false;
+
                 String cleanText = value != null ? value : "";
                 if (cleanText.startsWith("\"") && cleanText.endsWith("\"") && cleanText.length() >= 2) {
                     cleanText = cleanText.substring(1, cleanText.length() - 1);
