@@ -191,6 +191,7 @@ object PetalAiResearchEngine {
 
         val systemPrompt = "You are Petal AI Research, an elite real-time Web & Research Assistant embedded in Petal Browser. Analyze the provided webpage content accurately, objectively, and concisely using Markdown formatting."
 
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
         Thread {
             try {
                 val responseText = when (provider) {
@@ -200,9 +201,9 @@ object PetalAiResearchEngine {
                     AiProvider.OPENAI -> callOpenAiCompatibleApi("https://api.openai.com/v1/chat/completions", apiKey, model, systemPrompt, userPrompt)
                     AiProvider.GROQ -> callOpenAiCompatibleApi("https://api.groq.com/openai/v1/chat/completions", apiKey, model, systemPrompt, userPrompt)
                 }
-                onResult(Result.success(responseText))
+                mainHandler.post { onResult(Result.success(responseText)) }
             } catch (e: Exception) {
-                onResult(Result.failure(e))
+                mainHandler.post { onResult(Result.failure(e)) }
             }
         }.start()
     }
