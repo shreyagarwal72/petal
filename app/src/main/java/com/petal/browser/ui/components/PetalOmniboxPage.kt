@@ -230,10 +230,7 @@ fun PetalOmniboxPage(
             contentWindowInsets = WindowInsets(0)
         ) { innerPadding ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .imePadding()
+                modifier = Modifier.fillMaxSize()
             ) {
                 // Background drawn first with matchParentSize so it never intercepts touches
                 M3ExpressiveVariableBackground(
@@ -242,12 +239,15 @@ fun PetalOmniboxPage(
                 )
 
                 Column(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .imePadding()
                 ) {
-                    // Chrome-style search field row pinned to the top of the page, edge-to-edge.
+                    // Chrome-style search field row pinned to top with status bar padding
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .statusBarsPadding()
                             .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
