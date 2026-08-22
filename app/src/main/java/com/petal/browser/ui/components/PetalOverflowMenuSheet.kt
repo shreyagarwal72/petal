@@ -569,13 +569,6 @@ fun PetalOverflowMenuSheet(
                 }
 
                 MenuRowItem(
-                    icon = Icons.Rounded.AutoAwesome,
-                    title = "Petal AI",
-                    subtitle = "Ask AI, web research & assistant",
-                    onClick = onOpenPetalAi
-                )
-
-                MenuRowItem(
                     icon = Icons.Rounded.Settings,
                     title = "Settings",
                     onClick = onOpenSettings

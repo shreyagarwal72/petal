@@ -35,6 +35,7 @@ fun PetalSummaryBoxDialog(
     pageUrl: String,
     pageContent: String,
     onAskQuestion: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -133,8 +134,13 @@ fun PetalSummaryBoxDialog(
                         }
                     }
 
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(Icons.Rounded.Settings, contentDescription = "AI Settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Rounded.Close, contentDescription = "Close")
+                        }
                     }
                 }
 

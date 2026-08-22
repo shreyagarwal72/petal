@@ -10,6 +10,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Compress
 import androidx.compose.material.icons.rounded.HelpOutline
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Subject
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -98,6 +99,16 @@ fun PetalAiActionDialog(
                     icon = Icons.Rounded.HelpOutline,
                     onClick = {
                         onSelectAction("ASK_QUESTION", rememberAsDefault)
+                    }
+                )
+
+                // Option 3: Petal AI Search Tile
+                AiActionTile(
+                    title = "Petal AI Search",
+                    subtitle = "Real-time AI web search, grounding and instant answers",
+                    icon = Icons.Rounded.Search,
+                    onClick = {
+                        onSelectAction("AI_SEARCH", rememberAsDefault)
                     }
                 )
 

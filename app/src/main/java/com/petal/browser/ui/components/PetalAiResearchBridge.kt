@@ -36,6 +36,9 @@ object PetalAiResearchBridge {
                         pageContent = pageContent
                     )
                 }
+                "AI_SEARCH" -> {
+                    PetalAiSearchBridge.showAiSearchResult(activity, "")
+                }
                 "ASK_QUESTION" -> {
                     showAiResearchSheet(
                         activity = activity,
@@ -116,6 +119,8 @@ object PetalAiResearchBridge {
                                             pageUrl = pageUrl,
                                             pageContent = pageContent
                                         )
+                                    } else if (action == "AI_SEARCH") {
+                                        PetalAiSearchBridge.showAiSearchResult(activity, "")
                                     } else {
                                         showAiResearchSheet(
                                             activity = activity,
@@ -286,6 +291,11 @@ object PetalAiResearchBridge {
                                             initialMode = ResearchMode.CUSTOM,
                                             autoStart = false
                                         )
+                                    },
+                                    onOpenSettings = {
+                                        isVisible = false
+                                        (composeView?.parent as? ViewGroup)?.removeView(composeView)
+                                        showAiSettingsSheet(activity)
                                     },
                                     onDismiss = {
                                         isVisible = false

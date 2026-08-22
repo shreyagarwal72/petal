@@ -197,7 +197,6 @@ object PetalSettingsBridge {
 
 enum class SettingsCategory(val title: String, val subtitle: String, val icon: ImageVector) {
     OVERVIEW("Settings", "Browse all settings categories", Icons.Rounded.Settings),
-    AI_RESEARCH("AI Web Research", "Configure OpenRouter, Gemini, Grok, OpenAI & Groq API keys", Icons.Rounded.AutoAwesome),
     API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", Icons.Rounded.Extension),
     APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", Icons.Rounded.Palette),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
@@ -474,7 +473,6 @@ fun PetalSettingsScreen(
                                 )
 
                                 val categories = listOf(
-                                    SettingsCategory.AI_RESEARCH,
                                     SettingsCategory.APPEARANCE,
                                     SettingsCategory.PRIVACY,
                                     SettingsCategory.SEARCH_HOMEPAGE,
@@ -1350,159 +1348,7 @@ fun PetalSettingsScreen(
 
 
 
-                            // 5.5 Real-Time AI Web Research Section
-                            if ((currentCategory == SettingsCategory.AI_RESEARCH || searchQuery.isNotBlank()) && matchesSearch("AI Web Research", "ai openrouter gemini grok openai groq api key model research web analysis")) {
-                                var currentAiProvider by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedProvider(context)) }
-                                var currentAiKey by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, currentAiProvider)) }
-                                var currentAiModel by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, currentAiProvider)) }
 
-                                SettingsCategoryCard(title = "Real-Time AI Web Research", icon = Icons.Rounded.AutoAwesome) {
-                                    Text(
-                                        "Configure AI providers and API keys to enable real-time webpage analysis, summaries, Q&A, and deep research directly from the address bar button.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-
-                                    Text(
-                                        "Select Default Provider:",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-
-                                    FlowRow(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        com.petal.browser.compose.ai.AiProvider.entries.forEach { provider ->
-                                            FilterChip(
-                                                selected = currentAiProvider == provider,
-                                                onClick = {
-                                                    currentAiProvider = provider
-                                                    com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedProvider(context, provider)
-                                                    currentAiKey = com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, provider)
-                                                    currentAiModel = com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, provider)
-                                                },
-                                                label = { Text(provider.displayName) },
-                                                leadingIcon = if (currentAiProvider == provider) {
-                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                                } else null
-                                            )
-                                        }
-                                    }
-
-                                    OutlinedTextField(
-                                        value = currentAiKey,
-                                        onValueChange = { newKey ->
-                                            currentAiKey = newKey
-                                            com.petal.browser.compose.ai.PetalAiResearchEngine.setApiKey(context, currentAiProvider, newKey)
-                                        },
-                                        label = { Text("${currentAiProvider.displayName} API Key") },
-                                        placeholder = { Text("Enter your ${currentAiProvider.displayName} API Key...") },
-                                        singleLine = true,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(14.dp)
-                                    )
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        TextButton(
-                                            onClick = {
-                                                try {
-                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(currentAiProvider.keyUrl))
-                                                } catch (e: Exception) { e.printStackTrace() }
-                                            }
-                                        ) {
-                                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Get ${currentAiProvider.displayName} Key")
-                                        }
-
-                                        Text(
-                                            if (currentAiKey.isNotBlank()) "Key Configured ✓" else "Key Required ⚠️",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = if (currentAiKey.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                                        )
-                                    }
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    var currentDefaultAiAction by remember { mutableStateOf(sp.getString("sp_ai_default_action", "") ?: "") }
-
-                                    Text(
-                                        "Default Action when Tapping AI Button:",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-
-                                    if (isExpressiveFeatureTiles) {
-                                        val options = listOf(
-                                            Triple("", "Always Ask", Icons.Rounded.HelpOutline),
-                                            Triple("SUMMARIZE", "Summarise", Icons.Rounded.Subject),
-                                            Triple("ASK_QUESTION", "Ask Question", Icons.Rounded.QuestionAnswer)
-                                        )
-                                        SingleChoiceSegmentedButtonRow(
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            options.forEachIndexed { index, (actionKey, actionLabel, actionIcon) ->
-                                                SegmentedButton(
-                                                    selected = currentDefaultAiAction == actionKey,
-                                                    onClick = {
-                                                        currentDefaultAiAction = actionKey
-                                                        sp.edit().putString("sp_ai_default_action", actionKey).apply()
-                                                    },
-                                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                                                    icon = {
-                                                        Icon(
-                                                            imageVector = actionIcon,
-                                                            contentDescription = null,
-                                                            modifier = Modifier.size(16.dp)
-                                                        )
-                                                    }
-                                                ) {
-                                                    Text(actionLabel)
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        FlowRow(
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            FilterChip(
-                                                selected = currentDefaultAiAction.isEmpty(),
-                                                onClick = {
-                                                    currentDefaultAiAction = ""
-                                                    sp.edit().putString("sp_ai_default_action", "").apply()
-                                                },
-                                                label = { Text("Always Ask") },
-                                                leadingIcon = { Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                            )
-                                            FilterChip(
-                                                selected = currentDefaultAiAction == "SUMMARIZE",
-                                                onClick = {
-                                                    currentDefaultAiAction = "SUMMARIZE"
-                                                    sp.edit().putString("sp_ai_default_action", "SUMMARIZE").apply()
-                                                },
-                                                label = { Text("Summarise") },
-                                                leadingIcon = { Icon(Icons.Rounded.Subject, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                            )
-                                            FilterChip(
-                                                selected = currentDefaultAiAction == "ASK_QUESTION",
-                                                onClick = {
-                                                    currentDefaultAiAction = "ASK_QUESTION"
-                                                    sp.edit().putString("sp_ai_default_action", "ASK_QUESTION").apply()
-                                                },
-                                                label = { Text("Ask Question") },
-                                                leadingIcon = { Icon(Icons.Rounded.QuestionAnswer, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                            )
-                                        }
-                                    }
-                                }
 
 
 
