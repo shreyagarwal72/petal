@@ -280,12 +280,7 @@ fun PetalSettingsScreen(
         }
     }
 
-    var backGestureProgress by remember { mutableFloatStateOf(0f) }
-
-    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(
-        enabled = true,
-        onProgressChanged = { backGestureProgress = it }
-    ) {
+    androidx.activity.compose.BackHandler(enabled = true) {
         if (currentCategory != SettingsCategory.OVERVIEW) {
             currentCategory = SettingsCategory.OVERVIEW
         } else {
@@ -319,12 +314,11 @@ fun PetalSettingsScreen(
         colorStyle = selectedColorStyle,
         paletteId = selectedPaletteId
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
-            val petalHeaderScrollBehavior = androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-            Scaffold(
-                modifier = Modifier.nestedScroll(petalHeaderScrollBehavior.nestedScrollConnection),
-                containerColor = MaterialTheme.colorScheme.background
-            ) { innerPadding ->
+        val petalHeaderScrollBehavior = androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+        Scaffold(
+            modifier = Modifier.nestedScroll(petalHeaderScrollBehavior.nestedScrollConnection),
+            containerColor = MaterialTheme.colorScheme.background
+        ) { innerPadding ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -2379,7 +2373,6 @@ fun PetalSettingsScreen(
                 }
             }
         }
-    }
 
 @Composable
 private fun SettingsCategoryCard(

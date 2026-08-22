@@ -246,12 +246,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         downloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
     }
 
-    var backGestureProgress by remember { mutableFloatStateOf(0f) }
-
-    com.petal.browser.predictive.PetalPredictiveBackJunctionHandler(
-        enabled = true,
-        onProgressChanged = { backGestureProgress = it }
-    ) {
+    androidx.activity.compose.BackHandler(enabled = true) {
         onBackPress()
     }
 
@@ -274,8 +269,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         }
     }
 
-    com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
-        Scaffold(
+    Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState) { data ->
@@ -411,9 +405,6 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                 }
             }
         }
-    }
-}
-}
     }
 }
 
