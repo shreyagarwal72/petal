@@ -1027,6 +1027,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             contentFrame.addView(av);
             if (appBar != null) appBar.setVisibility(VISIBLE);
             if (ninjaWebView != null) {
+                // Refresh this tab's thumbnail cache entry on switch, so cards that were
+                // last captured a while ago (e.g. after background JS updated the page)
+                // don't show a stale preview when the tab manager is next opened.
+                ninjaWebView.updatePreviewCache();
                 ninjaWebView.setOnScrollChangeListener(new NinjaWebView.OnScrollChangeListener() {
                     @Override
                     public void onScrollDown() {
