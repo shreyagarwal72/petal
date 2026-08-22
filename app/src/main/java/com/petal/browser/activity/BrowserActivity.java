@@ -210,13 +210,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * or, worse, a no-op because setAction("") already cleared the intent action.
      */
     private boolean suppressResumeDispatch = false;
-    /**
-     * Widget action deferred from a cold-start dispatchIntent() call so that
-     * showOmniboxPage() runs AFTER onResume() has finished settling the UI
-     * (address bar, bottom nav, etc.), not before — otherwise onResume()
-     * re-shows the address bar on top of the freshly-added omnibox view.
-     */
-    private String pendingWidgetAction = null;
     private final ServiceConnection mediaConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -654,38 +647,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // Skip the first post-onCreate resume — dispatchIntent() already ran at the
         // end of onCreate() once all tabs were ready. Every subsequent resume (coming
         // back from another app, screen-off, etc.) should still dispatch normally.
+        // (Widget actions no longer need special handling here — dispatchIntent()
+        // now defers them itself via contentFrame.post(), regardless of whether it
+        // was called from onCreate() or onNewIntent().)
         if (suppressResumeDispatch) {
             suppressResumeDispatch = false;
-            // Consume any widget action that was deferred from the cold-start
-            // dispatchIntent() call. We post() to the end of the looper queue so all
-            // view layout passes triggered by onResume() finish before the omnibox
-            // view is added — preventing the address bar from re-appearing on top.
-            final String deferred = pendingWidgetAction;
-            pendingWidgetAction = null;
-            if (deferred != null) {
-                final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
-                handler.post(() -> {
-                    if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(deferred)) {
-                        String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-                        if (cUrl == null || cUrl.startsWith("file:///android_asset/") || cUrl.equalsIgnoreCase("about:blank") || cUrl.startsWith("about:")) cUrl = "";
-                        showOmniboxPage(cUrl);
-                    } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(deferred)) {
-                        try {
-                            com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(BrowserActivity.this, result -> {
-                                if (result != null && !result.trim().isEmpty()) {
-                                    String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
-                                    addAlbum(null, targetUrl, true);
-                                }
-                                return kotlin.Unit.INSTANCE;
-                            });
-                        } catch (Exception e) {
-                            showOmniboxPage("");
-                        }
-                    } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(deferred)) {
-                        showOmniboxPage("");
-                    }
-                });
-            }
         } else {
             dispatchIntent(getIntent());
         }
@@ -4069,21 +4035,31 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
-            if (suppressResumeDispatch) {
-                // Cold start: defer until after onResume() settles the UI.
-                pendingWidgetAction = com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH;
-            } else {
+            // Always post to the content frame's own message queue instead of gating
+            // on suppressResumeDispatch/onResume(): that flag is only reliably true
+            // for the very first onResume() after onCreate(), so on an uncached
+            // (cold-start) launch any intervening lifecycle event (permission
+            // prompts, dialogs, etc.) could consume it before the widget action
+            // ever got a chance to run, silently dropping the omnibox open. Posting
+            // here works identically whether dispatchIntent() was called from
+            // onCreate() (cold start) or onNewIntent() (already cached), and still
+            // runs after the current layout pass settles.
+            Runnable openSearch = () -> {
                 String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                 if (cUrl == null || cUrl.startsWith("file:///android_asset/") || cUrl.equalsIgnoreCase("about:blank") || cUrl.startsWith("about:")) cUrl = "";
                 showOmniboxPage(cUrl);
+            };
+            if (contentFrame != null) {
+                contentFrame.post(openSearch);
+            } else {
+                openSearch.run();
             }
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
-            if (suppressResumeDispatch) {
-                // Cold start: defer until after onResume() settles the UI.
-                pendingWidgetAction = com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE;
-            } else {
+            // See ACTION_OPEN_SEARCH above: post unconditionally rather than
+            // deferring only on a cold-start-specific onResume() flag.
+            Runnable openVoice = () -> {
                 try {
                     com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(this, result -> {
                         if (result != null && !result.trim().isEmpty()) {
@@ -4095,13 +4071,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } catch (Exception e) {
                     showOmniboxPage("");
                 }
+            };
+            if (contentFrame != null) {
+                contentFrame.post(openVoice);
+            } else {
+                openVoice.run();
             }
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
-            if (suppressResumeDispatch) {
-                // Cold start: defer until after onResume() settles the UI.
-                pendingWidgetAction = com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH;
+            // See ACTION_OPEN_SEARCH above: post unconditionally rather than
+            // deferring only on a cold-start-specific onResume() flag.
+            if (contentFrame != null) {
+                contentFrame.post(() -> showOmniboxPage(""));
             } else {
                 showOmniboxPage("");
             }
