@@ -385,1997 +385,1996 @@ fun PetalSettingsScreen(
                                     .padding(horizontal = 20.dp, vertical = 12.dp),
                                 verticalArrangement = Arrangement.spacedBy(20.dp)
                             ) {
-                if (currentCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
-                    Text(
-                        "Categories",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                            if (currentCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
+                                Text(
+                                    "Categories",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
 
-                    val categories = listOf(
-                        SettingsCategory.AI_RESEARCH,
-                        SettingsCategory.APPEARANCE,
-                        SettingsCategory.PRIVACY,
-                        SettingsCategory.SEARCH_HOMEPAGE,
-                        SettingsCategory.DISPLAY_ZOOM,
-                        SettingsCategory.DATA_STORAGE,
-                        SettingsCategory.UPDATER,
-                        SettingsCategory.ABOUT
-                    )
+                                val categories = listOf(
+                                    SettingsCategory.AI_RESEARCH,
+                                    SettingsCategory.APPEARANCE,
+                                    SettingsCategory.PRIVACY,
+                                    SettingsCategory.SEARCH_HOMEPAGE,
+                                    SettingsCategory.DISPLAY_ZOOM,
+                                    SettingsCategory.DATA_STORAGE,
+                                    SettingsCategory.UPDATER,
+                                    SettingsCategory.ABOUT
+                                )
 
-                    val tileColorway = listOf(
-                        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
-                        MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
-                        MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
-                    )
+                                val tileColorway = listOf(
+                                    MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
+                                    MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
+                                    MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
+                                )
 
-                    categories.forEachIndexed { index, cat ->
-                        if (isExpressiveFeatureTiles) {
-                            val (container, onContainer) = tileColorway[index % tileColorway.size]
-                            PetalFeatureTile(
-                                title = cat.title,
-                                subtitle = cat.subtitle,
-                                icon = cat.icon,
-                                container = container,
-                                onContainer = onContainer,
-                                onClick = { currentCategory = cat },
-                            )
-                        } else {
-                            SettingsCategoryRow(
-                                title = cat.title,
-                                subtitle = cat.subtitle,
-                                icon = cat.icon,
-                                onClick = { currentCategory = cat }
-                            )
-                        }
-                    }
-                }
-
-                // 0. Dedicated API & Integrations Hub Sub-Screen Page
-                if ((currentCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "api webkit credential manager palette oauth incognito profile multi profile predictive back integration hub search suggestions reader wayback translation google bing duckduckgo")) {
-                    SettingsCategoryCard(title = "API Integrations & Web Services Hub", icon = Icons.Rounded.Extension) {
-                        Text(
-                            "Essential options for web services and Chrome extensions. Core security and system APIs are automatically optimized for performance.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        var enableLiveSuggestions by remember { mutableStateOf(sp.getBoolean("sp_enable_live_suggestions", true)) }
-                        ToggleRow(
-                            title = "Live Search Recommendations",
-                            subtitle = "Fetch live autocomplete suggestions from Google, DuckDuckGo, or Bing while typing",
-                            icon = Icons.Rounded.Search,
-                            checked = enableLiveSuggestions,
-                            onCheckedChange = {
-                                enableLiveSuggestions = it
-                                sp.edit().putBoolean("sp_enable_live_suggestions", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var enableHackerNewsApi by remember { mutableStateOf(sp.getBoolean("sp_enable_hackernews", true)) }
-                        ToggleRow(
-                            title = "Tech News Feed on Home Screen",
-                            subtitle = "Show trending technology stories and news articles on the home screen",
-                            icon = Icons.Rounded.RssFeed,
-                            checked = enableHackerNewsApi,
-                            onCheckedChange = {
-                                enableHackerNewsApi = it
-                                sp.edit().putBoolean("sp_enable_hackernews", it).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Surface(
-                            onClick = {
-                                if (context is androidx.activity.ComponentActivity) {
-                                    com.petal.browser.extensions.PetalExtensionsBridge.showExtensions(context)
+                                categories.forEachIndexed { index, cat ->
+                                    if (isExpressiveFeatureTiles) {
+                                        val (container, onContainer) = tileColorway[index % tileColorway.size]
+                                        PetalFeatureTile(
+                                            title = cat.title,
+                                            subtitle = cat.subtitle,
+                                            icon = cat.icon,
+                                            container = container,
+                                            onContainer = onContainer,
+                                            onClick = { currentCategory = cat },
+                                        )
+                                    } else {
+                                        SettingsCategoryRow(
+                                            title = cat.title,
+                                            subtitle = cat.subtitle,
+                                            icon = cat.icon,
+                                            onClick = { currentCategory = cat }
+                                        )
+                                    }
                                 }
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                            }
+
+                            // 0. Dedicated API & Integrations Hub Sub-Screen Page
+                            if ((currentCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "api webkit credential manager palette oauth incognito profile multi profile predictive back integration hub search suggestions reader wayback translation google bing duckduckgo")) {
+                                SettingsCategoryCard(title = "API Integrations & Web Services Hub", icon = Icons.Rounded.Extension) {
                                     Text(
-                                        "Chrome Extensions (petal://extensions)",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                    Text(
-                                        "Manage active extensions, install .CRX / .ZIP files, or configure UserScript engine",
+                                        "Essential options for web services and Chrome extensions. Core security and system APIs are automatically optimized for performance.",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                }
-                                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                            }
-                        }
-                    }
-                }
 
-                // 1. Live Interactive Font & Accent Customization
-                if ((currentCategory == SettingsCategory.APPEARANCE || searchQuery.isNotBlank()) && matchesSearch("Appearance", "fonts accent theme palette amoled")) {
-                    SettingsCategoryCard(title = "Custom Fonts & Accent Themes", icon = Icons.Rounded.Palette) {
-                        Text(
-                            "Customize app typography and accent style",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        // --- Theme Mode Chips (Light, Dark, System) ---
-                        Text(
-                            "App Theme Mode:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            ThemeConfig.values().forEach { config ->
-                                val label = when (config) {
-                                    ThemeConfig.FOLLOW_SYSTEM -> "System Default"
-                                    ThemeConfig.LIGHT -> "Light Mode"
-                                    ThemeConfig.DARK -> "Dark Mode"
-                                }
-                                val icon = when (config) {
-                                    ThemeConfig.FOLLOW_SYSTEM -> Icons.Rounded.BrightnessAuto
-                                    ThemeConfig.LIGHT -> Icons.Rounded.LightMode
-                                    ThemeConfig.DARK -> Icons.Rounded.DarkMode
-                                }
-                                FilterChip(
-                                    selected = selectedThemeConfig == config,
-                                    onClick = {
-                                        selectedThemeConfig = config
-                                        sp.edit().putString("sp_theme_config", config.name).apply()
-                                        when (config) {
-                                            ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                                            ThemeConfig.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                                            ThemeConfig.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                                    var enableLiveSuggestions by remember { mutableStateOf(sp.getBoolean("sp_enable_live_suggestions", true)) }
+                                    ToggleRow(
+                                        title = "Live Search Recommendations",
+                                        subtitle = "Fetch live autocomplete suggestions from Google, DuckDuckGo, or Bing while typing",
+                                        icon = Icons.Rounded.Search,
+                                        checked = enableLiveSuggestions,
+                                        onCheckedChange = {
+                                            enableLiveSuggestions = it
+                                            sp.edit().putBoolean("sp_enable_live_suggestions", it).apply()
                                         }
-                                    },
-                                    label = { Text(label) },
-                                    leadingIcon = {
-                                        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    }
-                                )
-                            }
-                        }
+                                    )
 
-                        // --- Font Choice Chips ---
-                        Text(
-                            "Select Font Family:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            AppFont.values().forEach { font ->
-                                FilterChip(
-                                    selected = selectedFont == font,
-                                    onClick = {
-                                        selectedFont = font
-                                        sp.edit().putString("sp_app_font", font.name).apply()
-                                    },
-                                    label = { Text(font.label) },
-                                    leadingIcon = if (selectedFont == font) {
-                                        @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
-                            }
-                        }
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                        }
+                                    var enableHackerNewsApi by remember { mutableStateOf(sp.getBoolean("sp_enable_hackernews", true)) }
+                                    ToggleRow(
+                                        title = "Tech News Feed on Home Screen",
+                                        subtitle = "Show trending technology stories and news articles on the home screen",
+                                        icon = Icons.Rounded.RssFeed,
+                                        checked = enableHackerNewsApi,
+                                        onCheckedChange = {
+                                            enableHackerNewsApi = it
+                                            sp.edit().putBoolean("sp_enable_hackernews", it).apply()
+                                        }
+                                    )
 
-                        // --- Accent Style Chips ---
-                        Text(
-                            "Select Accent Color Style:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            ColorStyle.values().forEach { style ->
-                                FilterChip(
-                                    selected = selectedColorStyle == style,
-                                    onClick = {
-                                        selectedColorStyle = style
-                                        sp.edit().putString("sp_color_style", style.name).apply()
-                                    },
-                                    label = { Text(style.label) },
-                                    leadingIcon = if (selectedColorStyle == style) {
-                                        @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
-                            }
-                        }
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                        // --- Preset Palette Seeds ---
-                        Text(
-                            "Preset Color Palettes:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            PetalPalettes.forEach { pal ->
-                                val isSelected = selectedPaletteId == pal.id && !isDynamicColor
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(CircleShape)
-                                        .background(pal.seed)
-                                        .border(
-                                            width = if (isSelected) 3.dp else 0.dp,
-                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                            shape = CircleShape
-                                        )
-                                        .clickable {
-                                            selectedPaletteId = pal.id
-                                            isDynamicColor = false
-                                            sp.edit().putString("sp_palette_id", pal.id).putBoolean("useDynamicColor", false).apply()
-                                            com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
+                                    Surface(
+                                        onClick = {
+                                            if (context is androidx.activity.ComponentActivity) {
+                                                com.petal.browser.extensions.PetalExtensionsBridge.showExtensions(context)
+                                            }
                                         },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (isSelected) {
-                                        Icon(Icons.Rounded.Check, contentDescription = pal.label, tint = Color.White, modifier = Modifier.size(20.dp))
-                                    }
-                                }
-                            }
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        // Material You Dynamic Color Toggle
-                        ToggleRow(
-                            title = "Material You Dynamic Color",
-                            subtitle = "Adapt accent colors from your system wallpaper (Android 12+)",
-                            icon = Icons.Rounded.ColorLens,
-                            checked = isDynamicColor,
-                            onCheckedChange = { newValue ->
-                                isDynamicColor = newValue
-                                sp.edit().putBoolean("useDynamicColor", newValue).apply()
-                                com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        // AMOLED Black Toggle
-                        ToggleRow(
-                            title = "AMOLED Black Dark Mode",
-                            subtitle = "Pure black background ladder for OLED displays",
-                            icon = Icons.Rounded.DarkMode,
-                            checked = isAmoled,
-                            onCheckedChange = { newValue ->
-                                isAmoled = newValue
-                                sp.edit().putBoolean("sp_amoled", newValue).apply()
-                                com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        // API Features Hub Toggle Row & Direct Action
-                        var isApiFeaturesEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
-
-                        ToggleRow(
-                            title = "New API Integration Features Hub",
-                            subtitle = "Enable AndroidX WebKit multi-profile, Google OAuth Credential Manager & Monet color extraction",
-                            icon = Icons.Rounded.Extension,
-                            checked = isApiFeaturesEnabled,
-                            onCheckedChange = { newValue ->
-                                isApiFeaturesEnabled = newValue
-                                sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
-                            }
-                        )
-
-                        if (isApiFeaturesEnabled) {
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Icon(
-                                            Icons.Rounded.AutoAwesome,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Text(
-                                            "API Integrations Active",
-                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
+                                        Row(
+                                            modifier = Modifier.padding(14.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    "Chrome Extensions (petal://extensions)",
+                                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                )
+                                                Text(
+                                                    "Manage active extensions, install .CRX / .ZIP files, or configure UserScript engine",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                                )
+                                            }
+                                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                        }
                                     }
-                                    Spacer(Modifier.height(4.dp))
+                                }
+                            }
+
+                            // 1. Live Interactive Font & Accent Customization
+                            if ((currentCategory == SettingsCategory.APPEARANCE || searchQuery.isNotBlank()) && matchesSearch("Appearance", "fonts accent theme palette amoled")) {
+                                SettingsCategoryCard(title = "Custom Fonts & Accent Themes", icon = Icons.Rounded.Palette) {
                                     Text(
-                                        "• Palette Favicon Accent Color Extraction\n• AndroidX WebKit Private Incognito Multi-Profile\n• Google Credential Manager OAuth Sync\n• Predictive Back Gesture System Integration",
+                                        "Customize app typography and accent style",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                }
-                            }
-                        }
 
-                        // Expressive Colors Toggle
-                        ToggleRow(
-                            title = "Expressive Container Colors",
-                            subtitle = "Use vibrant container tint contrast for background and surfaces",
-                            icon = Icons.Rounded.Palette,
-                            checked = isExpressiveColors,
-                            onCheckedChange = { newValue ->
-                                isExpressiveColors = newValue
-                                sp.edit().putBoolean("sp_expressive_colors", newValue).apply()
-                            }
-                        )
-
-                        // Expressive Feature Tiles Toggle
-                        ToggleRow(
-                            title = "Expressive Feature Tiles",
-                            subtitle = "Use scalloped icon cards for settings and account actions instead of plain rows",
-                            icon = Icons.Rounded.GridView,
-                            checked = isExpressiveFeatureTiles,
-                            onCheckedChange = { newValue ->
-                                isExpressiveFeatureTiles = newValue
-                                sp.edit().putBoolean("sp_expressive_feature_tiles", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var isWaterRipplePull by remember { mutableStateOf(sp.getBoolean("sp_water_ripple_pull", true)) }
-
-                        // Expressive Water Ripple Pull-to-Refresh Toggle
-                        ToggleRow(
-                            title = "Expressive Water Ripple Pull-to-Refresh",
-                            subtitle = "Elastic M3 water-ripple wave animation when pulling down web pages",
-                            icon = Icons.Rounded.Waves,
-                            checked = isWaterRipplePull,
-                            onCheckedChange = { newValue ->
-                                isWaterRipplePull = newValue
-                                sp.edit().putBoolean("sp_water_ripple_pull", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var isWallpaperBlur by remember { mutableStateOf(sp.getBoolean("sp_wallpaper_blur", true)) }
-                        var isExpressiveToast by remember { mutableStateOf(sp.getBoolean("sp_expressive_toast", true)) }
-
-                        ToggleRow(
-                            title = "Dynamic Wallpaper Blur Backdrop Engine",
-                            subtitle = "Real-time frosted glass backdrop blur behind browser toolbars",
-                            icon = Icons.Rounded.BlurOn,
-                            checked = isWallpaperBlur,
-                            onCheckedChange = { newValue ->
-                                isWallpaperBlur = newValue
-                                sp.edit().putBoolean("sp_wallpaper_blur", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        ToggleRow(
-                            title = "Floating Expressive Toast Pills",
-                            subtitle = "Slide-up spring animated toast notification pills for actions",
-                            icon = Icons.Rounded.NotificationsActive,
-                            checked = isExpressiveToast,
-                            onCheckedChange = { newValue ->
-                                isExpressiveToast = newValue
-                                sp.edit().putBoolean("sp_expressive_toast", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var isFloatingDock by remember { mutableStateOf(sp.getBoolean("sp_floating_dock_bar", true)) }
-
-                        ToggleRow(
-                            title = "Expressive Floating Bottom Dock Bar",
-                            subtitle = "Floating glassmorphic bottom navigation dock with spring press haptics",
-                            icon = Icons.Rounded.Dock,
-                            checked = isFloatingDock,
-                            onCheckedChange = { newValue ->
-                                isFloatingDock = newValue
-                                sp.edit().putBoolean("sp_floating_dock_bar", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var isReadingProgressPill by remember { mutableStateOf(sp.getBoolean("sp_reading_progress_pill", true)) }
-
-                        ToggleRow(
-                            title = "Floating Expressive Reading Progress Pill",
-                            subtitle = "Slim animated reading progress bar at top of browser while scrolling web pages",
-                            icon = Icons.Rounded.LinearScale,
-                            checked = isReadingProgressPill,
-                            onCheckedChange = { newValue ->
-                                isReadingProgressPill = newValue
-                                sp.edit().putBoolean("sp_reading_progress_pill", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var isQuickActionsPill by remember { mutableStateOf(sp.getBoolean("sp_quick_actions_pill", true)) }
-
-                        ToggleRow(
-                            title = "Expressive Floating Quick Actions Pill",
-                            subtitle = "Floating quick-settings bottom pill bar for Desktop, AdBlock, and Dark Mode",
-                            icon = Icons.Rounded.Tune,
-                            checked = isQuickActionsPill,
-                            onCheckedChange = { newValue ->
-                                isQuickActionsPill = newValue
-                                sp.edit().putBoolean("sp_quick_actions_pill", newValue).apply()
-                            }
-                        )
-                    }
-                }
-
-                // 2. Custom Homepage & Background Play
-                if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Homepage", "custom home start page background play video audio media")) {
-                    SettingsCategoryCard(title = "Homepage & Media Playback", icon = Icons.Rounded.Home) {
-                        Text(
-                            "Custom Homepage:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(
-                                selected = homepageType == "0",
-                                onClick = {
-                                    homepageType = "0"
-                                    sp.edit().putString("sp_home_type", "0").apply()
-                                },
-                                label = { Text("Petal Start Page") }
-                            )
-                            FilterChip(
-                                selected = homepageType == "1",
-                                onClick = {
-                                    homepageType = "1"
-                                    sp.edit().putString("sp_home_type", "1").apply()
-                                },
-                                label = { Text("Custom URL") }
-                            )
-                        }
-
-                        if (homepageType == "1") {
-                            OutlinedTextField(
-                                value = customHomeUrl,
-                                onValueChange = {
-                                    customHomeUrl = it
-                                    sp.edit().putString("sp_custom_homepage_url", it).apply()
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Enter Homepage URL") },
-                                singleLine = true,
-                                shape = RoundedCornerShape(14.dp)
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        // Background Video & Audio Playback Toggle
-                        ToggleRow(
-                            title = "Background Audio & Video Playback",
-                            subtitle = "Keep YouTube & web media playing when switching tabs or backgrounding app",
-                            icon = Icons.Rounded.PlayCircle,
-                            checked = isBackgroundPlay,
-                            onCheckedChange = { newValue ->
-                                isBackgroundPlay = newValue
-                                sp.edit().putBoolean("sp_background_play", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        // Auto Picture-in-Picture Toggle
-                        val isPipSupported = remember {
-                            context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
-                        }
-                        ToggleRow(
-                            title = if (isPipSupported) "Auto Picture-in-Picture (PiP)" else "Auto Picture-in-Picture (Not Supported)",
-                            subtitle = if (isPipSupported) "Automatically enter floating PiP window when leaving app during video playback" else "Picture-in-Picture mode is not supported on this device",
-                            icon = Icons.Rounded.PictureInPicture,
-                            checked = isAutoPip && isPipSupported,
-                            onCheckedChange = { newValue ->
-                                if (isPipSupported) {
-                                    isAutoPip = newValue
-                                    sp.edit().putBoolean("sp_auto_pip", newValue).apply()
-                                }
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        // Force Dark Mode for Web Content Toggle
-                        ToggleRow(
-                            title = "Force Dark Web Content",
-                            subtitle = "Automatically apply dark themes to websites that do not natively support dark mode",
-                            icon = Icons.Rounded.DarkMode,
-                            checked = isForceDarkMode,
-                            onCheckedChange = { newValue ->
-                                isForceDarkMode = newValue
-                                sp.edit().putBoolean("sp_force_dark_mode", newValue).apply()
-                            }
-                        )
-                    }
-                }
-
-                // 3. Private DNS & Chrome Flags
-                if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Chrome Flags", "chrome://flags petal://flags flags experimental webgpu features force dark safe browsing")) {
-                    SettingsCategoryCard(title = "Experimental Petal & Chrome Flags", icon = Icons.Rounded.Science) {
-                        Surface(
-                            onClick = {
-                                if (context is androidx.activity.ComponentActivity) {
-                                    com.petal.browser.flags.PetalChromeFlagsBridge.showFlags(context, null)
-                                }
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.tertiaryContainer,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                                    // --- Theme Mode Chips (Light, Dark, System) ---
                                     Text(
-                                        "Petal & Chrome Experimental Flags (petal://flags)",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                    Text(
-                                        "Enable or disable WebGPU, hardware acceleration, force dark mode, HTTP/3 QUIC, and experimental Web APIs",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
-                                    )
-                                }
-                                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
-                            }
-                        }
-                    }
-                }
-
-                if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Private DNS", "dns cleanbrowsing cloudflare 1.1.1.1 google opendns security filter")) {
-                    SettingsCategoryCard(title = "Private DNS Protection", icon = Icons.Rounded.Dns) {
-                        Text(
-                            "Encrypt DNS queries to prevent tracking & block malicious content:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        val dnsOptions = listOf(
-                            Triple("OFF", "System Default (Off)", "Use default network DNS"),
-                            Triple("CLOUDFLARE", "Cloudflare (1.1.1.1)", "Fast & private 1.1.1.1 DNS over HTTPS"),
-                            Triple("GOOGLE", "Google Public DNS", "8.8.8.8 high performance resolution"),
-                            Triple("CLEANBROWSING", "CleanBrowsing Family Filter", "Blocks adult & malicious sites"),
-                            Triple("OPENDNS", "OpenDNS Home", "Cisco OpenDNS security protection")
-                        )
-
-                        dnsOptions.forEach { (mode, name, desc) ->
-                            Surface(
-                                onClick = {
-                                    privateDnsMode = mode
-                                    sp.edit().putString("sp_private_dns_mode", mode).apply()
-                                },
-                                shape = RoundedCornerShape(14.dp),
-                                color = if (privateDnsMode == mode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = name,
-                                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                            color = if (privateDnsMode == mode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            text = desc,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = if (privateDnsMode == mode) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    if (privateDnsMode == mode) {
-                                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
-                            }
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                val intents = listOf(
-                                    Intent("android.settings.PRIVATE_DNS_SETTINGS"),
-                                    Intent(Settings.ACTION_WIRELESS_SETTINGS),
-                                    Intent(Settings.ACTION_SETTINGS)
-                                )
-                                for (intent in intents) {
-                                    try {
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        context.startActivity(intent)
-                                        break
-                                    } catch (e: Exception) {
-                                        // continue to next fallback
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp)
-                        ) {
-                            Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Configure Android System Private DNS")
-                        }
-                    }
-                }
-
-                // 4. Popular Languages Selector
-                if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english spanish hindi french german chinese arabic portuguese russian japanese")) {
-                    SettingsCategoryCard(title = "App Language", icon = Icons.Rounded.Language) {
-                        Text(
-                            "Choose your preferred display language:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        val languages = listOf(
-                            Pair("system", "System Default"),
-                            Pair("en", "English"),
-                            Pair("es", "Español (Spanish)"),
-                            Pair("hi", "हिन्दी (Hindi)"),
-                            Pair("fr", "Français (French)"),
-                            Pair("de", "Deutsch (German)"),
-                            Pair("zh", "中文 (Chinese)"),
-                            Pair("ar", "العربية (Arabic)"),
-                            Pair("pt", "Português (Portuguese)"),
-                            Pair("ru", "Русский (Russian)"),
-                            Pair("ja", "日本語 (Japanese)")
-                        )
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            languages.forEach { (tag, label) ->
-                                FilterChip(
-                                    selected = appLanguage == tag,
-                                    onClick = {
-                                        appLanguage = tag
-                                        sp.edit().putString("sp_app_language", tag).apply()
-                                        val localeList = if (tag == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
-                                        AppCompatDelegate.setApplicationLocales(localeList)
-                                    },
-                                    label = { Text(label) },
-                                    leadingIcon = if (appLanguage == tag) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // 5. Default Search Engine Section
-                if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Search Engine", "google duckduckgo bing brave startpage ecosia search provider")) {
-                    SettingsCategoryCard(title = "Default Search Engine", icon = Icons.Rounded.Search) {
-                        val currentEngineName = remember(searchEngineIndex) {
-                            val idx = searchEngineIndex.toIntOrNull() ?: 0
-                            availableSearchEngines.find { it.index == idx }?.name ?: "Google"
-                        }
-                        Surface(
-                            onClick = { showEngineSheet = true },
-                            shape = RoundedCornerShape(18.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Default Search Provider",
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        "App Theme Mode:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    Text(
-                                        text = currentEngineName,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                Icon(
-                                    Icons.Rounded.ChevronRight,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // 5.1 AI Search Settings Section (Merged under Search Engine & Home)
-                if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("AI Search", "ai search address bar widget provider model personal context grounding thinking")) {
-                    var isAddressBarEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isAddressBarAiSearchEnabled(context)) }
-                    var isWidgetEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isWidgetAiSearchEnabled(context)) }
-                    var selectedProvider by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedProvider(context)) }
-                    var selectedModel by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, selectedProvider)) }
-                    var personalContext by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.getPersonalContext(context)) }
-                    var isGroundingEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isGroundingEnabled(context)) }
-                    var isThinkingEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isThinkingEnabled(context)) }
-                    var currentApiKey by remember(selectedProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, selectedProvider)) }
-
-                    SettingsCategoryCard(title = "AI Search Settings", icon = Icons.Rounded.AutoAwesome) {
-                        Text(
-                            "Configure instant AI search answers directly from the address bar or home screen widget. Reuses your existing AI Hub provider and API keys.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Enable Address Bar AI Search", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text("Show AI search icon in the main search bar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            IconSwitch(
-                                checked = isAddressBarEnabled,
-                                icon = Icons.Rounded.Search,
-                                onCheckedChange = { checked ->
-                                    isAddressBarEnabled = checked
-                                    com.petal.browser.compose.ai.PetalAiSearchManager.setAddressBarAiSearchEnabled(context, checked)
-                                }
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Enable Home Widget AI Search", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text("Show AI search action in the home screen widget", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            IconSwitch(
-                                checked = isWidgetEnabled,
-                                icon = Icons.Rounded.Widgets,
-                                onCheckedChange = { checked ->
-                                    isWidgetEnabled = checked
-                                    com.petal.browser.compose.ai.PetalAiSearchManager.setWidgetAiSearchEnabled(context, checked)
-                                }
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Text("Active Provider & Model:", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            com.petal.browser.compose.ai.AiProvider.entries.forEach { provider ->
-                                FilterChip(
-                                    selected = selectedProvider == provider,
-                                    onClick = {
-                                        selectedProvider = provider
-                                        com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedProvider(context, provider)
-                                        selectedModel = com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, provider)
-                                        currentApiKey = com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, provider)
-                                    },
-                                    label = { Text(provider.displayName) },
-                                    leadingIcon = if (selectedProvider == provider) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
-                            }
-                        }
-
-                        Text("Selected Model: ${selectedModel}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            selectedProvider.availableModels.forEach { model ->
-                                FilterChip(
-                                    selected = selectedModel == model,
-                                    onClick = {
-                                        selectedModel = model
-                                        com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
-                                    },
-                                    label = { Text(model) }
-                                )
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                if (currentApiKey.isNotBlank()) "API Key Configured ✓ (${selectedProvider.displayName})" else "No API Key Set ⚠️",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (currentApiKey.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                            )
-                            TextButton(
-                                onClick = {
-                                    try {
-                                        com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(selectedProvider.keyUrl))
-                                    } catch (e: Exception) { e.printStackTrace() }
-                                }
-                            ) {
-                                Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Get ${selectedProvider.displayName} Key")
-                            }
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        OutlinedTextField(
-                            value = personalContext,
-                            onValueChange = { text ->
-                                personalContext = text
-                                com.petal.browser.compose.ai.PetalAiSearchManager.setPersonalContext(context, text)
-                            },
-                            label = { Text("Personal Context (Optional)") },
-                            placeholder = { Text("e.g. Include code snippets, prefer concise summaries, etc.") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp)
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Grounding / Web Search Facts", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text("Instruct AI to cite web facts and sources", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            IconSwitch(
-                                checked = isGroundingEnabled,
-                                icon = Icons.Rounded.FactCheck,
-                                onCheckedChange = { checked ->
-                                    isGroundingEnabled = checked
-                                    com.petal.browser.compose.ai.PetalAiSearchManager.setGroundingEnabled(context, checked)
-                                }
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Reasoning / Thinking Mode", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text("Ask AI to show step-by-step reasoning process", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            IconSwitch(
-                                checked = isThinkingEnabled,
-                                icon = Icons.Rounded.Psychology,
-                                onCheckedChange = { checked ->
-                                    isThinkingEnabled = checked
-                                    com.petal.browser.compose.ai.PetalAiSearchManager.setThinkingEnabled(context, checked)
-                                }
-                            )
-                        }
-                    }
-                }
-
-                // 5.5 Real-Time AI Web Research Section
-                if ((currentCategory == SettingsCategory.AI_RESEARCH || searchQuery.isNotBlank()) && matchesSearch("AI Web Research", "ai openrouter gemini grok openai groq api key model research web analysis")) {
-                    var currentAiProvider by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedProvider(context)) }
-                    var currentAiKey by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, currentAiProvider)) }
-                    var currentAiModel by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, currentAiProvider)) }
-
-                    SettingsCategoryCard(title = "Real-Time AI Web Research", icon = Icons.Rounded.AutoAwesome) {
-                        Text(
-                            "Configure AI providers and API keys to enable real-time webpage analysis, summaries, Q&A, and deep research directly from the address bar button.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Text(
-                            "Select Default Provider:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            com.petal.browser.compose.ai.AiProvider.entries.forEach { provider ->
-                                FilterChip(
-                                    selected = currentAiProvider == provider,
-                                    onClick = {
-                                        currentAiProvider = provider
-                                        com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedProvider(context, provider)
-                                        currentAiKey = com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, provider)
-                                        currentAiModel = com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, provider)
-                                    },
-                                    label = { Text(provider.displayName) },
-                                    leadingIcon = if (currentAiProvider == provider) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
-                            }
-                        }
-
-                        OutlinedTextField(
-                            value = currentAiKey,
-                            onValueChange = { newKey ->
-                                currentAiKey = newKey
-                                com.petal.browser.compose.ai.PetalAiResearchEngine.setApiKey(context, currentAiProvider, newKey)
-                            },
-                            label = { Text("${currentAiProvider.displayName} API Key") },
-                            placeholder = { Text("Enter your ${currentAiProvider.displayName} API Key...") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp)
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            TextButton(
-                                onClick = {
-                                    try {
-                                        com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(currentAiProvider.keyUrl))
-                                    } catch (e: Exception) { e.printStackTrace() }
-                                }
-                            ) {
-                                Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Get ${currentAiProvider.displayName} Key")
-                            }
-
-                            Text(
-                                if (currentAiKey.isNotBlank()) "Key Configured ✓" else "Key Required ⚠️",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (currentAiKey.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var currentDefaultAiAction by remember { mutableStateOf(sp.getString("sp_ai_default_action", "") ?: "") }
-
-                        Text(
-                            "Default Action when Tapping AI Button:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        if (isExpressiveFeatureTiles) {
-                            val options = listOf(
-                                Triple("", "Always Ask", Icons.Rounded.HelpOutline),
-                                Triple("SUMMARIZE", "Summarise", Icons.Rounded.Subject),
-                                Triple("ASK_QUESTION", "Ask Question", Icons.Rounded.QuestionAnswer)
-                            )
-                            SingleChoiceSegmentedButtonRow(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                options.forEachIndexed { index, (actionKey, actionLabel, actionIcon) ->
-                                    SegmentedButton(
-                                        selected = currentDefaultAiAction == actionKey,
-                                        onClick = {
-                                            currentDefaultAiAction = actionKey
-                                            sp.edit().putString("sp_ai_default_action", actionKey).apply()
-                                        },
-                                        shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                                        icon = {
-                                            Icon(
-                                                imageVector = actionIcon,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        ThemeConfig.values().forEach { config ->
+                                            val label = when (config) {
+                                                ThemeConfig.FOLLOW_SYSTEM -> "System Default"
+                                                ThemeConfig.LIGHT -> "Light Mode"
+                                                ThemeConfig.DARK -> "Dark Mode"
+                                            }
+                                            val icon = when (config) {
+                                                ThemeConfig.FOLLOW_SYSTEM -> Icons.Rounded.BrightnessAuto
+                                                ThemeConfig.LIGHT -> Icons.Rounded.LightMode
+                                                ThemeConfig.DARK -> Icons.Rounded.DarkMode
+                                            }
+                                            FilterChip(
+                                                selected = selectedThemeConfig == config,
+                                                onClick = {
+                                                    selectedThemeConfig = config
+                                                    sp.edit().putString("sp_theme_config", config.name).apply()
+                                                    when (config) {
+                                                        ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                                                        ThemeConfig.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                                                        ThemeConfig.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                                                    }
+                                                },
+                                                label = { Text(label) },
+                                                leadingIcon = {
+                                                    Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                }
                                             )
                                         }
+                                    }
+
+                                    // --- Font Choice Chips ---
+                                    Text(
+                                        "Select Font Family:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Text(actionLabel)
+                                        AppFont.values().forEach { font ->
+                                            FilterChip(
+                                                selected = selectedFont == font,
+                                                onClick = {
+                                                    selectedFont = font
+                                                    sp.edit().putString("sp_app_font", font.name).apply()
+                                                },
+                                                label = { Text(font.label) },
+                                                leadingIcon = if (selectedFont == font) {
+                                                    @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
+                                    }
+
+                                    // --- Accent Style Chips ---
+                                    Text(
+                                        "Select Accent Color Style:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        ColorStyle.values().forEach { style ->
+                                            FilterChip(
+                                                selected = selectedColorStyle == style,
+                                                onClick = {
+                                                    selectedColorStyle = style
+                                                    sp.edit().putString("sp_color_style", style.name).apply()
+                                                },
+                                                label = { Text(style.label) },
+                                                leadingIcon = if (selectedColorStyle == style) {
+                                                    @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
+                                    }
+
+                                    // --- Preset Palette Seeds ---
+                                    Text(
+                                        "Preset Color Palettes:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        PetalPalettes.forEach { pal ->
+                                            val isSelected = selectedPaletteId == pal.id && !isDynamicColor
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(38.dp)
+                                                    .clip(CircleShape)
+                                                    .background(pal.seed)
+                                                    .border(
+                                                        width = if (isSelected) 3.dp else 0.dp,
+                                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                                        shape = CircleShape
+                                                    )
+                                                    .clickable {
+                                                        selectedPaletteId = pal.id
+                                                        isDynamicColor = false
+                                                        sp.edit().putString("sp_palette_id", pal.id).putBoolean("useDynamicColor", false).apply()
+                                                        com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (isSelected) {
+                                                    Icon(Icons.Rounded.Check, contentDescription = pal.label, tint = Color.White, modifier = Modifier.size(20.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // Material You Dynamic Color Toggle
+                                    ToggleRow(
+                                        title = "Material You Dynamic Color",
+                                        subtitle = "Adapt accent colors from your system wallpaper (Android 12+)",
+                                        icon = Icons.Rounded.ColorLens,
+                                        checked = isDynamicColor,
+                                        onCheckedChange = { newValue ->
+                                            isDynamicColor = newValue
+                                            sp.edit().putBoolean("useDynamicColor", newValue).apply()
+                                            com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // AMOLED Black Toggle
+                                    ToggleRow(
+                                        title = "AMOLED Black Dark Mode",
+                                        subtitle = "Pure black background ladder for OLED displays",
+                                        icon = Icons.Rounded.DarkMode,
+                                        checked = isAmoled,
+                                        onCheckedChange = { newValue ->
+                                            isAmoled = newValue
+                                            sp.edit().putBoolean("sp_amoled", newValue).apply()
+                                            com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // API Features Hub Toggle Row & Direct Action
+                                    var isApiFeaturesEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
+
+                                    ToggleRow(
+                                        title = "New API Integration Features Hub",
+                                        subtitle = "Enable AndroidX WebKit multi-profile, Google OAuth Credential Manager & Monet color extraction",
+                                        icon = Icons.Rounded.Extension,
+                                        checked = isApiFeaturesEnabled,
+                                        onCheckedChange = { newValue ->
+                                            isApiFeaturesEnabled = newValue
+                                            sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
+                                        }
+                                    )
+
+                                    if (isApiFeaturesEnabled) {
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 4.dp)
+                                        ) {
+                                            Column(modifier = Modifier.padding(14.dp)) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.AutoAwesome,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                    Text(
+                                                        "API Integrations Active",
+                                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                    )
+                                                }
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(
+                                                    "• Palette Favicon Accent Color Extraction\n• AndroidX WebKit Private Incognito Multi-Profile\n• Google Credential Manager OAuth Sync\n• Predictive Back Gesture System Integration",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    // Expressive Colors Toggle
+                                    ToggleRow(
+                                        title = "Expressive Container Colors",
+                                        subtitle = "Use vibrant container tint contrast for background and surfaces",
+                                        icon = Icons.Rounded.Palette,
+                                        checked = isExpressiveColors,
+                                        onCheckedChange = { newValue ->
+                                            isExpressiveColors = newValue
+                                            sp.edit().putBoolean("sp_expressive_colors", newValue).apply()
+                                        }
+                                    )
+
+                                    // Expressive Feature Tiles Toggle
+                                    ToggleRow(
+                                        title = "Expressive Feature Tiles",
+                                        subtitle = "Use scalloped icon cards for settings and account actions instead of plain rows",
+                                        icon = Icons.Rounded.GridView,
+                                        checked = isExpressiveFeatureTiles,
+                                        onCheckedChange = { newValue ->
+                                            isExpressiveFeatureTiles = newValue
+                                            sp.edit().putBoolean("sp_expressive_feature_tiles", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    var isWaterRipplePull by remember { mutableStateOf(sp.getBoolean("sp_water_ripple_pull", true)) }
+
+                                    // Expressive Water Ripple Pull-to-Refresh Toggle
+                                    ToggleRow(
+                                        title = "Expressive Water Ripple Pull-to-Refresh",
+                                        subtitle = "Elastic M3 water-ripple wave animation when pulling down web pages",
+                                        icon = Icons.Rounded.Waves,
+                                        checked = isWaterRipplePull,
+                                        onCheckedChange = { newValue ->
+                                            isWaterRipplePull = newValue
+                                            sp.edit().putBoolean("sp_water_ripple_pull", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    var isWallpaperBlur by remember { mutableStateOf(sp.getBoolean("sp_wallpaper_blur", true)) }
+                                    var isExpressiveToast by remember { mutableStateOf(sp.getBoolean("sp_expressive_toast", true)) }
+
+                                    ToggleRow(
+                                        title = "Dynamic Wallpaper Blur Backdrop Engine",
+                                        subtitle = "Real-time frosted glass backdrop blur behind browser toolbars",
+                                        icon = Icons.Rounded.BlurOn,
+                                        checked = isWallpaperBlur,
+                                        onCheckedChange = { newValue ->
+                                            isWallpaperBlur = newValue
+                                            sp.edit().putBoolean("sp_wallpaper_blur", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Floating Expressive Toast Pills",
+                                        subtitle = "Slide-up spring animated toast notification pills for actions",
+                                        icon = Icons.Rounded.NotificationsActive,
+                                        checked = isExpressiveToast,
+                                        onCheckedChange = { newValue ->
+                                            isExpressiveToast = newValue
+                                            sp.edit().putBoolean("sp_expressive_toast", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    var isFloatingDock by remember { mutableStateOf(sp.getBoolean("sp_floating_dock_bar", true)) }
+
+                                    ToggleRow(
+                                        title = "Expressive Floating Bottom Dock Bar",
+                                        subtitle = "Floating glassmorphic bottom navigation dock with spring press haptics",
+                                        icon = Icons.Rounded.Dock,
+                                        checked = isFloatingDock,
+                                        onCheckedChange = { newValue ->
+                                            isFloatingDock = newValue
+                                            sp.edit().putBoolean("sp_floating_dock_bar", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    var isReadingProgressPill by remember { mutableStateOf(sp.getBoolean("sp_reading_progress_pill", true)) }
+
+                                    ToggleRow(
+                                        title = "Floating Expressive Reading Progress Pill",
+                                        subtitle = "Slim animated reading progress bar at top of browser while scrolling web pages",
+                                        icon = Icons.Rounded.LinearScale,
+                                        checked = isReadingProgressPill,
+                                        onCheckedChange = { newValue ->
+                                            isReadingProgressPill = newValue
+                                            sp.edit().putBoolean("sp_reading_progress_pill", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    var isQuickActionsPill by remember { mutableStateOf(sp.getBoolean("sp_quick_actions_pill", true)) }
+
+                                    ToggleRow(
+                                        title = "Expressive Floating Quick Actions Pill",
+                                        subtitle = "Floating quick-settings bottom pill bar for Desktop, AdBlock, and Dark Mode",
+                                        icon = Icons.Rounded.Tune,
+                                        checked = isQuickActionsPill,
+                                        onCheckedChange = { newValue ->
+                                            isQuickActionsPill = newValue
+                                            sp.edit().putBoolean("sp_quick_actions_pill", newValue).apply()
+                                        }
+                                    )
+                                }
+                            }
+
+                            // 2. Custom Homepage & Background Play
+                            if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Homepage", "custom home start page background play video audio media")) {
+                                SettingsCategoryCard(title = "Homepage & Media Playback", icon = Icons.Rounded.Home) {
+                                    Text(
+                                        "Custom Homepage:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        FilterChip(
+                                            selected = homepageType == "0",
+                                            onClick = {
+                                                homepageType = "0"
+                                                sp.edit().putString("sp_home_type", "0").apply()
+                                            },
+                                            label = { Text("Petal Start Page") }
+                                        )
+                                        FilterChip(
+                                            selected = homepageType == "1",
+                                            onClick = {
+                                                homepageType = "1"
+                                                sp.edit().putString("sp_home_type", "1").apply()
+                                            },
+                                            label = { Text("Custom URL") }
+                                        )
+                                    }
+
+                                    if (homepageType == "1") {
+                                        OutlinedTextField(
+                                            value = customHomeUrl,
+                                            onValueChange = {
+                                                customHomeUrl = it
+                                                sp.edit().putString("sp_custom_homepage_url", it).apply()
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            label = { Text("Enter Homepage URL") },
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(14.dp)
+                                        )
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // Background Video & Audio Playback Toggle
+                                    ToggleRow(
+                                        title = "Background Audio & Video Playback",
+                                        subtitle = "Keep YouTube & web media playing when switching tabs or backgrounding app",
+                                        icon = Icons.Rounded.PlayCircle,
+                                        checked = isBackgroundPlay,
+                                        onCheckedChange = { newValue ->
+                                            isBackgroundPlay = newValue
+                                            sp.edit().putBoolean("sp_background_play", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // Auto Picture-in-Picture Toggle
+                                    val isPipSupported = remember {
+                                        context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
+                                    }
+                                    ToggleRow(
+                                        title = if (isPipSupported) "Auto Picture-in-Picture (PiP)" else "Auto Picture-in-Picture (Not Supported)",
+                                        subtitle = if (isPipSupported) "Automatically enter floating PiP window when leaving app during video playback" else "Picture-in-Picture mode is not supported on this device",
+                                        icon = Icons.Rounded.PictureInPicture,
+                                        checked = isAutoPip && isPipSupported,
+                                        onCheckedChange = { newValue ->
+                                            if (isPipSupported) {
+                                                isAutoPip = newValue
+                                                sp.edit().putBoolean("sp_auto_pip", newValue).apply()
+                                            }
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // Force Dark Mode for Web Content Toggle
+                                    ToggleRow(
+                                        title = "Force Dark Web Content",
+                                        subtitle = "Automatically apply dark themes to websites that do not natively support dark mode",
+                                        icon = Icons.Rounded.DarkMode,
+                                        checked = isForceDarkMode,
+                                        onCheckedChange = { newValue ->
+                                            isForceDarkMode = newValue
+                                            sp.edit().putBoolean("sp_force_dark_mode", newValue).apply()
+                                        }
+                                    )
+                                }
+                            }
+
+                            // 3. Private DNS & Chrome Flags
+                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Chrome Flags", "chrome://flags petal://flags flags experimental webgpu features force dark safe browsing")) {
+                                SettingsCategoryCard(title = "Experimental Petal & Chrome Flags", icon = Icons.Rounded.Science) {
+                                    Surface(
+                                        onClick = {
+                                            if (context is androidx.activity.ComponentActivity) {
+                                                com.petal.browser.flags.PetalChromeFlagsBridge.showFlags(context, null)
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(14.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    "Petal & Chrome Experimental Flags (petal://flags)",
+                                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                                )
+                                                Text(
+                                                    "Enable or disable WebGPU, hardware acceleration, force dark mode, HTTP/3 QUIC, and experimental Web APIs",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                                                )
+                                            }
+                                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                                        }
                                     }
                                 }
                             }
-                        } else {
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                FilterChip(
-                                    selected = currentDefaultAiAction.isEmpty(),
-                                    onClick = {
-                                        currentDefaultAiAction = ""
-                                        sp.edit().putString("sp_ai_default_action", "").apply()
-                                    },
-                                    label = { Text("Always Ask") },
-                                    leadingIcon = { Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                )
-                                FilterChip(
-                                    selected = currentDefaultAiAction == "SUMMARIZE",
-                                    onClick = {
-                                        currentDefaultAiAction = "SUMMARIZE"
-                                        sp.edit().putString("sp_ai_default_action", "SUMMARIZE").apply()
-                                    },
-                                    label = { Text("Summarise") },
-                                    leadingIcon = { Icon(Icons.Rounded.Subject, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                )
-                                FilterChip(
-                                    selected = currentDefaultAiAction == "ASK_QUESTION",
-                                    onClick = {
-                                        currentDefaultAiAction = "ASK_QUESTION"
-                                        sp.edit().putString("sp_ai_default_action", "ASK_QUESTION").apply()
-                                    },
-                                    label = { Text("Ask Question") },
-                                    leadingIcon = { Icon(Icons.Rounded.QuestionAnswer, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                )
-                            }
-                        }
-                    }
 
+                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Private DNS", "dns cleanbrowsing cloudflare 1.1.1.1 google opendns security filter")) {
+                                SettingsCategoryCard(title = "Private DNS Protection", icon = Icons.Rounded.Dns) {
+                                    Text(
+                                        "Encrypt DNS queries to prevent tracking & block malicious content:",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
 
+                                    val dnsOptions = listOf(
+                                        Triple("OFF", "System Default (Off)", "Use default network DNS"),
+                                        Triple("CLOUDFLARE", "Cloudflare (1.1.1.1)", "Fast & private 1.1.1.1 DNS over HTTPS"),
+                                        Triple("GOOGLE", "Google Public DNS", "8.8.8.8 high performance resolution"),
+                                        Triple("CLEANBROWSING", "CleanBrowsing Family Filter", "Blocks adult & malicious sites"),
+                                        Triple("OPENDNS", "OpenDNS Home", "Cisco OpenDNS security protection")
+                                    )
 
-                    // 5.6 AI Hub Services & Directory Configuration (from AIHub)
-                    var hubSettings by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiHubManager.getSettings(context)) }
-
-                    SettingsCategoryCard(title = "AI Hub & Web Services", icon = Icons.Rounded.Hub) {
-                        Text(
-                            "Manage AI services directory, desktop mode, custom script injections, proxy, and web viewing options for AI tools.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        ToggleRow(
-                            title = "Desktop Mode for AI Services",
-                            subtitle = "Force desktop user-agent when loading AI web tools",
-                            icon = Icons.Rounded.DesktopWindows,
-                            checked = hubSettings.desktopView,
-                            onCheckedChange = { checked ->
-                                hubSettings = hubSettings.copy(desktopView = checked)
-                                com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                            }
-                        )
-
-                        ToggleRow(
-                            title = "Third-Party Cookies",
-                            subtitle = "Allow third-party cookies for seamless AI account login",
-                            icon = Icons.Rounded.Cookie,
-                            checked = hubSettings.thirdPartyCookies,
-                            onCheckedChange = { checked ->
-                                hubSettings = hubSettings.copy(thirdPartyCookies = checked)
-                                com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                            }
-                        )
-
-                        ToggleRow(
-                            title = "Page Zooming",
-                            subtitle = "Enable pinch-to-zoom on AI service web pages",
-                            icon = Icons.Rounded.ZoomIn,
-                            checked = hubSettings.enableZoom,
-                            onCheckedChange = { checked ->
-                                hubSettings = hubSettings.copy(enableZoom = checked)
-                                com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Text(
-                            "AI Web Proxy Settings:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        ToggleRow(
-                            title = "Enable Custom Proxy for AI",
-                            subtitle = "Route AI service web traffic through HTTP/SOCKS proxy",
-                            icon = Icons.Rounded.VpnKey,
-                            checked = hubSettings.isProxy,
-                            onCheckedChange = { checked ->
-                                hubSettings = hubSettings.copy(isProxy = checked)
-                                com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                            }
-                        )
-
-                        if (hubSettings.isProxy) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = hubSettings.proxyHost,
-                                    onValueChange = { host ->
-                                        hubSettings = hubSettings.copy(proxyHost = host)
-                                        com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                                    },
-                                    label = { Text("Proxy Host") },
-                                    singleLine = true,
-                                    modifier = Modifier.weight(1.5f),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-
-                                OutlinedTextField(
-                                    value = hubSettings.proxyPort,
-                                    onValueChange = { port ->
-                                        hubSettings = hubSettings.copy(proxyPort = port)
-                                        com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
-                                    },
-                                    label = { Text("Port") },
-                                    singleLine = true,
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // 6. Privacy & Shield Section
-                if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Privacy Shield", "adblock tracker popups https javascript external apps protection")) {
-                    SettingsCategoryCard(title = "Privacy & Shield Protection", icon = Icons.Rounded.Shield) {
-                        ToggleRow(
-                            title = "Ad & Tracker Shield",
-                            subtitle = "uBlock Origin & AdGuard-grade Trie filter engine & scriptlets",
-                            icon = Icons.Rounded.Shield,
-                            checked = isAdBlock,
-                            onCheckedChange = { newValue ->
-                                isAdBlock = newValue
-                                com.petal.browser.browser.PetalAdBlockEngine.setAdBlockEnabled(context, newValue)
-                            }
-                        )
-
-                        if (isAdBlock) {
-                            var showWhitelistDialog by remember { mutableStateOf(false) }
-                            var whitelistDomainInput by remember { mutableStateOf("") }
-                            var whitelistedDomainsState by remember { mutableStateOf(com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains()) }
-
-                            if (showWhitelistDialog) {
-                                AlertDialog(
-                                    onDismissRequest = { showWhitelistDialog = false },
-                                    title = { Text("AdBlock Domain Whitelist") },
-                                    text = {
-                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text(
-                                                "Domains added here will bypass ad and tracker filtering:",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                OutlinedTextField(
-                                                    value = whitelistDomainInput,
-                                                    onValueChange = { whitelistDomainInput = it },
-                                                    placeholder = { Text("example.com") },
-                                                    singleLine = true,
-                                                    modifier = Modifier.weight(1f),
-                                                    shape = RoundedCornerShape(12.dp)
-                                                )
-                                                Spacer(Modifier.width(8.dp))
-                                                Button(
-                                                    onClick = {
-                                                        if (whitelistDomainInput.isNotBlank()) {
-                                                            com.petal.browser.browser.PetalAdBlockEngine.addDomainToWhitelist(context, whitelistDomainInput.trim())
-                                                            whitelistedDomainsState = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains()
-                                                            whitelistDomainInput = ""
-                                                        }
-                                                    }
-                                                ) {
-                                                    Text("Add")
+                                    dnsOptions.forEach { (mode, name, desc) ->
+                                        Surface(
+                                            onClick = {
+                                                privateDnsMode = mode
+                                                sp.edit().putString("sp_private_dns_mode", mode).apply()
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            color = if (privateDnsMode == mode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(12.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = name,
+                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                        color = if (privateDnsMode == mode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Text(
+                                                        text = desc,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = if (privateDnsMode == mode) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                                if (privateDnsMode == mode) {
+                                                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                                 }
                                             }
+                                        }
+                                    }
 
-                                            Spacer(Modifier.height(8.dp))
+                                    OutlinedButton(
+                                        onClick = {
+                                            val intents = listOf(
+                                                Intent("android.settings.PRIVATE_DNS_SETTINGS"),
+                                                Intent(Settings.ACTION_WIRELESS_SETTINGS),
+                                                Intent(Settings.ACTION_SETTINGS)
+                                            )
+                                            for (intent in intents) {
+                                                try {
+                                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                    context.startActivity(intent)
+                                                    break
+                                                } catch (e: Exception) {
+                                                    // continue to next fallback
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Configure Android System Private DNS")
+                                    }
+                                }
+                            }
 
-                                            if (whitelistedDomainsState.isEmpty()) {
+                            // 4. Popular Languages Selector
+                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english spanish hindi french german chinese arabic portuguese russian japanese")) {
+                                SettingsCategoryCard(title = "App Language", icon = Icons.Rounded.Language) {
+                                    Text(
+                                        "Choose your preferred display language:",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    val languages = listOf(
+                                        Pair("system", "System Default"),
+                                        Pair("en", "English"),
+                                        Pair("es", "Español (Spanish)"),
+                                        Pair("hi", "हिन्दी (Hindi)"),
+                                        Pair("fr", "Français (French)"),
+                                        Pair("de", "Deutsch (German)"),
+                                        Pair("zh", "中文 (Chinese)"),
+                                        Pair("ar", "العربية (Arabic)"),
+                                        Pair("pt", "Português (Portuguese)"),
+                                        Pair("ru", "Русский (Russian)"),
+                                        Pair("ja", "日本語 (Japanese)")
+                                    )
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        languages.forEach { (tag, label) ->
+                                            FilterChip(
+                                                selected = appLanguage == tag,
+                                                onClick = {
+                                                    appLanguage = tag
+                                                    sp.edit().putString("sp_app_language", tag).apply()
+                                                    val localeList = if (tag == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
+                                                    AppCompatDelegate.setApplicationLocales(localeList)
+                                                },
+                                                label = { Text(label) },
+                                                leadingIcon = if (appLanguage == tag) {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 5. Default Search Engine Section
+                            if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Search Engine", "google duckduckgo bing brave startpage ecosia search provider")) {
+                                SettingsCategoryCard(title = "Default Search Engine", icon = Icons.Rounded.Search) {
+                                    val currentEngineName = remember(searchEngineIndex) {
+                                        val idx = searchEngineIndex.toIntOrNull() ?: 0
+                                        availableSearchEngines.find { it.index == idx }?.name ?: "Google"
+                                    }
+                                    Surface(
+                                        onClick = { showEngineSheet = true },
+                                        shape = RoundedCornerShape(18.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(14.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
                                                 Text(
-                                                    "No whitelisted domains.",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    text = "Default Search Provider",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                    color = MaterialTheme.colorScheme.onSurface
                                                 )
-                                            } else {
-                                                FlowRow(
-                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                Text(
+                                                    text = currentEngineName,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                            Icon(
+                                                Icons.Rounded.ChevronRight,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 5.1 AI Search Settings Section (Merged under Search Engine & Home)
+                            if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("AI Search", "ai search address bar widget provider model personal context grounding thinking")) {
+                                var isAddressBarEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isAddressBarAiSearchEnabled(context)) }
+                                var isWidgetEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isWidgetAiSearchEnabled(context)) }
+                                var selectedProvider by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedProvider(context)) }
+                                var selectedModel by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, selectedProvider)) }
+                                var personalContext by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.getPersonalContext(context)) }
+                                var isGroundingEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isGroundingEnabled(context)) }
+                                var isThinkingEnabled by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiSearchManager.isThinkingEnabled(context)) }
+                                var currentApiKey by remember(selectedProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, selectedProvider)) }
+
+                                SettingsCategoryCard(title = "AI Search Settings", icon = Icons.Rounded.AutoAwesome) {
+                                    Text(
+                                        "Configure instant AI search answers directly from the address bar or home screen widget. Reuses your existing AI Hub provider and API keys.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Enable Address Bar AI Search", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                            Text("Show AI search icon in the main search bar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        IconSwitch(
+                                            checked = isAddressBarEnabled,
+                                            icon = Icons.Rounded.Search,
+                                            onCheckedChange = { checked ->
+                                                isAddressBarEnabled = checked
+                                                com.petal.browser.compose.ai.PetalAiSearchManager.setAddressBarAiSearchEnabled(context, checked)
+                                            }
+                                        )
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Enable Home Widget AI Search", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                            Text("Show AI search action in the home screen widget", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        IconSwitch(
+                                            checked = isWidgetEnabled,
+                                            icon = Icons.Rounded.Widgets,
+                                            onCheckedChange = { checked ->
+                                                isWidgetEnabled = checked
+                                                com.petal.browser.compose.ai.PetalAiSearchManager.setWidgetAiSearchEnabled(context, checked)
+                                            }
+                                        )
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    Text("Active Provider & Model:", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        com.petal.browser.compose.ai.AiProvider.entries.forEach { provider ->
+                                            FilterChip(
+                                                selected = selectedProvider == provider,
+                                                onClick = {
+                                                    selectedProvider = provider
+                                                    com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedProvider(context, provider)
+                                                    selectedModel = com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, provider)
+                                                    currentApiKey = com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, provider)
+                                                },
+                                                label = { Text(provider.displayName) },
+                                                leadingIcon = if (selectedProvider == provider) {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
+                                    }
+
+                                    Text("Selected Model: ${selectedModel}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        selectedProvider.availableModels.forEach { model ->
+                                            FilterChip(
+                                                selected = selectedModel == model,
+                                                onClick = {
+                                                    selectedModel = model
+                                                    com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
+                                                },
+                                                label = { Text(model) }
+                                            )
+                                        }
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            if (currentApiKey.isNotBlank()) "API Key Configured ✓ (${selectedProvider.displayName})" else "No API Key Set ⚠️",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = if (currentApiKey.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                        )
+                                        TextButton(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(selectedProvider.keyUrl))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            }
+                                        ) {
+                                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Get ${selectedProvider.displayName} Key")
+                                        }
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    OutlinedTextField(
+                                        value = personalContext,
+                                        onValueChange = { text ->
+                                            personalContext = text
+                                            com.petal.browser.compose.ai.PetalAiSearchManager.setPersonalContext(context, text)
+                                        },
+                                        label = { Text("Personal Context (Optional)") },
+                                        placeholder = { Text("e.g. Include code snippets, prefer concise summaries, etc.") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp)
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Grounding / Web Search Facts", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                            Text("Instruct AI to cite web facts and sources", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        IconSwitch(
+                                            checked = isGroundingEnabled,
+                                            icon = Icons.Rounded.FactCheck,
+                                            onCheckedChange = { checked ->
+                                                isGroundingEnabled = checked
+                                                com.petal.browser.compose.ai.PetalAiSearchManager.setGroundingEnabled(context, checked)
+                                            }
+                                        )
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Reasoning / Thinking Mode", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                            Text("Ask AI to show step-by-step reasoning process", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        IconSwitch(
+                                            checked = isThinkingEnabled,
+                                            icon = Icons.Rounded.Psychology,
+                                            onCheckedChange = { checked ->
+                                                isThinkingEnabled = checked
+                                                com.petal.browser.compose.ai.PetalAiSearchManager.setThinkingEnabled(context, checked)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            // 5.5 Real-Time AI Web Research Section
+                            if ((currentCategory == SettingsCategory.AI_RESEARCH || searchQuery.isNotBlank()) && matchesSearch("AI Web Research", "ai openrouter gemini grok openai groq api key model research web analysis")) {
+                                var currentAiProvider by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedProvider(context)) }
+                                var currentAiKey by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, currentAiProvider)) }
+                                var currentAiModel by remember(currentAiProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, currentAiProvider)) }
+
+                                SettingsCategoryCard(title = "Real-Time AI Web Research", icon = Icons.Rounded.AutoAwesome) {
+                                    Text(
+                                        "Configure AI providers and API keys to enable real-time webpage analysis, summaries, Q&A, and deep research directly from the address bar button.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Text(
+                                        "Select Default Provider:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        com.petal.browser.compose.ai.AiProvider.entries.forEach { provider ->
+                                            FilterChip(
+                                                selected = currentAiProvider == provider,
+                                                onClick = {
+                                                    currentAiProvider = provider
+                                                    com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedProvider(context, provider)
+                                                    currentAiKey = com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, provider)
+                                                    currentAiModel = com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, provider)
+                                                },
+                                                label = { Text(provider.displayName) },
+                                                leadingIcon = if (currentAiProvider == provider) {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
+                                    }
+
+                                    OutlinedTextField(
+                                        value = currentAiKey,
+                                        onValueChange = { newKey ->
+                                            currentAiKey = newKey
+                                            com.petal.browser.compose.ai.PetalAiResearchEngine.setApiKey(context, currentAiProvider, newKey)
+                                        },
+                                        label = { Text("${currentAiProvider.displayName} API Key") },
+                                        placeholder = { Text("Enter your ${currentAiProvider.displayName} API Key...") },
+                                        singleLine = true,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp)
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        TextButton(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(currentAiProvider.keyUrl))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            }
+                                        ) {
+                                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Get ${currentAiProvider.displayName} Key")
+                                        }
+
+                                        Text(
+                                            if (currentAiKey.isNotBlank()) "Key Configured ✓" else "Key Required ⚠️",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = if (currentAiKey.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                        )
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    var currentDefaultAiAction by remember { mutableStateOf(sp.getString("sp_ai_default_action", "") ?: "") }
+
+                                    Text(
+                                        "Default Action when Tapping AI Button:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    if (isExpressiveFeatureTiles) {
+                                        val options = listOf(
+                                            Triple("", "Always Ask", Icons.Rounded.HelpOutline),
+                                            Triple("SUMMARIZE", "Summarise", Icons.Rounded.Subject),
+                                            Triple("ASK_QUESTION", "Ask Question", Icons.Rounded.QuestionAnswer)
+                                        )
+                                        SingleChoiceSegmentedButtonRow(
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            options.forEachIndexed { index, (actionKey, actionLabel, actionIcon) ->
+                                                SegmentedButton(
+                                                    selected = currentDefaultAiAction == actionKey,
+                                                    onClick = {
+                                                        currentDefaultAiAction = actionKey
+                                                        sp.edit().putString("sp_ai_default_action", actionKey).apply()
+                                                    },
+                                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                                                    icon = {
+                                                        Icon(
+                                                            imageVector = actionIcon,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                    }
                                                 ) {
-                                                    whitelistedDomainsState.forEach { domain ->
-                                                        InputChip(
-                                                            selected = true,
-                                                            onClick = {
-                                                                com.petal.browser.browser.PetalAdBlockEngine.removeDomainFromWhitelist(context, domain)
-                                                                whitelistedDomainsState = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains()
-                                                            },
-                                                            label = { Text(domain) },
-                                                            trailingIcon = {
-                                                                Icon(Icons.Rounded.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                                    Text(actionLabel)
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        FlowRow(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            FilterChip(
+                                                selected = currentDefaultAiAction.isEmpty(),
+                                                onClick = {
+                                                    currentDefaultAiAction = ""
+                                                    sp.edit().putString("sp_ai_default_action", "").apply()
+                                                },
+                                                label = { Text("Always Ask") },
+                                                leadingIcon = { Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            )
+                                            FilterChip(
+                                                selected = currentDefaultAiAction == "SUMMARIZE",
+                                                onClick = {
+                                                    currentDefaultAiAction = "SUMMARIZE"
+                                                    sp.edit().putString("sp_ai_default_action", "SUMMARIZE").apply()
+                                                },
+                                                label = { Text("Summarise") },
+                                                leadingIcon = { Icon(Icons.Rounded.Subject, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            )
+                                            FilterChip(
+                                                selected = currentDefaultAiAction == "ASK_QUESTION",
+                                                onClick = {
+                                                    currentDefaultAiAction = "ASK_QUESTION"
+                                                    sp.edit().putString("sp_ai_default_action", "ASK_QUESTION").apply()
+                                                },
+                                                label = { Text("Ask Question") },
+                                                leadingIcon = { Icon(Icons.Rounded.QuestionAnswer, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            )
+                                        }
+                                    }
+                                }
+
+
+
+                                // 5.6 AI Hub Services & Directory Configuration (from AIHub)
+                                var hubSettings by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiHubManager.getSettings(context)) }
+
+                                SettingsCategoryCard(title = "AI Hub & Web Services", icon = Icons.Rounded.Hub) {
+                                    Text(
+                                        "Manage AI services directory, desktop mode, custom script injections, proxy, and web viewing options for AI tools.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    ToggleRow(
+                                        title = "Desktop Mode for AI Services",
+                                        subtitle = "Force desktop user-agent when loading AI web tools",
+                                        icon = Icons.Rounded.DesktopWindows,
+                                        checked = hubSettings.desktopView,
+                                        onCheckedChange = { checked ->
+                                            hubSettings = hubSettings.copy(desktopView = checked)
+                                            com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
+                                        }
+                                    )
+
+                                    ToggleRow(
+                                        title = "Third-Party Cookies",
+                                        subtitle = "Allow third-party cookies for seamless AI account login",
+                                        icon = Icons.Rounded.Cookie,
+                                        checked = hubSettings.thirdPartyCookies,
+                                        onCheckedChange = { checked ->
+                                            hubSettings = hubSettings.copy(thirdPartyCookies = checked)
+                                            com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
+                                        }
+                                    )
+
+                                    ToggleRow(
+                                        title = "Page Zooming",
+                                        subtitle = "Enable pinch-to-zoom on AI service web pages",
+                                        icon = Icons.Rounded.ZoomIn,
+                                        checked = hubSettings.enableZoom,
+                                        onCheckedChange = { checked ->
+                                            hubSettings = hubSettings.copy(enableZoom = checked)
+                                            com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    Text(
+                                        "AI Web Proxy Settings:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    ToggleRow(
+                                        title = "Enable Custom Proxy for AI",
+                                        subtitle = "Route AI service web traffic through HTTP/SOCKS proxy",
+                                        icon = Icons.Rounded.VpnKey,
+                                        checked = hubSettings.isProxy,
+                                        onCheckedChange = { checked ->
+                                            hubSettings = hubSettings.copy(isProxy = checked)
+                                            com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
+                                        }
+                                    )
+
+                                    if (hubSettings.isProxy) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            OutlinedTextField(
+                                                value = hubSettings.proxyHost,
+                                                onValueChange = { host ->
+                                                    hubSettings = hubSettings.copy(proxyHost = host)
+                                                    com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
+                                                },
+                                                label = { Text("Proxy Host") },
+                                                singleLine = true,
+                                                modifier = Modifier.weight(1.5f),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+
+                                            OutlinedTextField(
+                                                value = hubSettings.proxyPort,
+                                                onValueChange = { port ->
+                                                    hubSettings = hubSettings.copy(proxyPort = port)
+                                                    com.petal.browser.compose.ai.PetalAiHubManager.saveSettings(context, hubSettings)
+                                                },
+                                                label = { Text("Port") },
+                                                singleLine = true,
+                                                modifier = Modifier.weight(1f),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 6. Privacy & Shield Section
+                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Privacy Shield", "adblock tracker popups https javascript external apps protection")) {
+                                SettingsCategoryCard(title = "Privacy & Shield Protection", icon = Icons.Rounded.Shield) {
+                                    ToggleRow(
+                                        title = "Ad & Tracker Shield",
+                                        subtitle = "uBlock Origin & AdGuard-grade Trie filter engine & scriptlets",
+                                        icon = Icons.Rounded.Shield,
+                                        checked = isAdBlock,
+                                        onCheckedChange = { newValue ->
+                                            isAdBlock = newValue
+                                            com.petal.browser.browser.PetalAdBlockEngine.setAdBlockEnabled(context, newValue)
+                                        }
+                                    )
+
+                                    if (isAdBlock) {
+                                        var showWhitelistDialog by remember { mutableStateOf(false) }
+                                        var whitelistDomainInput by remember { mutableStateOf("") }
+                                        var whitelistedDomainsState by remember { mutableStateOf(com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains()) }
+
+                                        if (showWhitelistDialog) {
+                                            AlertDialog(
+                                                onDismissRequest = { showWhitelistDialog = false },
+                                                title = { Text("AdBlock Domain Whitelist") },
+                                                text = {
+                                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                        Text(
+                                                            "Domains added here will bypass ad and tracker filtering:",
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            OutlinedTextField(
+                                                                value = whitelistDomainInput,
+                                                                onValueChange = { whitelistDomainInput = it },
+                                                                placeholder = { Text("example.com") },
+                                                                singleLine = true,
+                                                                modifier = Modifier.weight(1f),
+                                                                shape = RoundedCornerShape(12.dp)
+                                                            )
+                                                            Spacer(Modifier.width(8.dp))
+                                                            Button(
+                                                                onClick = {
+                                                                    if (whitelistDomainInput.isNotBlank()) {
+                                                                        com.petal.browser.browser.PetalAdBlockEngine.addDomainToWhitelist(context, whitelistDomainInput.trim())
+                                                                        whitelistedDomainsState = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains()
+                                                                        whitelistDomainInput = ""
+                                                                    }
+                                                                }
+                                                            ) {
+                                                                Text("Add")
                                                             }
+                                                        }
+
+                                                        Spacer(Modifier.height(8.dp))
+
+                                                        if (whitelistedDomainsState.isEmpty()) {
+                                                            Text(
+                                                                "No whitelisted domains.",
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                        } else {
+                                                            FlowRow(
+                                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                            ) {
+                                                                whitelistedDomainsState.forEach { domain ->
+                                                                    InputChip(
+                                                                        selected = true,
+                                                                        onClick = {
+                                                                            com.petal.browser.browser.PetalAdBlockEngine.removeDomainFromWhitelist(context, domain)
+                                                                            whitelistedDomainsState = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains()
+                                                                        },
+                                                                        label = { Text(domain) },
+                                                                        trailingIcon = {
+                                                                            Icon(Icons.Rounded.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                                                                        }
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                confirmButton = {
+                                                    TextButton(onClick = { showWhitelistDialog = false }) {
+                                                        Text("Done")
+                                                    }
+                                                }
+                                            )
+                                        }
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "Whitelisted Domains (${whitelistedDomainsState.size})",
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            TextButton(onClick = { showWhitelistDialog = true }) {
+                                                Text("Manage Whitelist")
+                                            }
+                                        }
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Block Popup Windows",
+                                        subtitle = "Prevent unwanted popups and redirect windows",
+                                        icon = Icons.Rounded.OpenInNew,
+                                        checked = isBlockPopups,
+                                        onCheckedChange = { newValue ->
+                                            isBlockPopups = newValue
+                                            sp.edit().putBoolean("sp_block_popups", newValue).putBoolean("profileStandard_javascriptPopUp", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Auto Open External Apps",
+                                        subtitle = "Open YouTube, Maps & Play Store links in native apps",
+                                        icon = Icons.Rounded.Launch,
+                                        checked = isAutoOpenApps,
+                                        onCheckedChange = { newValue ->
+                                            isAutoOpenApps = newValue
+                                            sp.edit().putBoolean("sp_auto_open_apps", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "HTTPS Security Enforcer",
+                                        subtitle = "Automatically upgrade connections to HTTPS",
+                                        icon = Icons.Rounded.Lock,
+                                        checked = isHttpsOnly,
+                                        onCheckedChange = { newValue ->
+                                            isHttpsOnly = newValue
+                                            sp.edit().putBoolean("sp_https_only", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Enable JavaScript",
+                                        subtitle = "Required for modern web features",
+                                        icon = Icons.Rounded.Code,
+                                        checked = isJavaScript,
+                                        onCheckedChange = { newValue ->
+                                            isJavaScript = newValue
+                                            sp.edit().putBoolean("sp_javascript", newValue).putBoolean("profileStandard_javascript", newValue).apply()
+                                        }
+                                    )
+                                }
+                            }
+
+                            // 7. Accessibility & Scaling (using PetalSlider)
+                            if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom")) {
+                                SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
+                                    ToggleRow(
+                                        title = "Touch Haptics",
+                                        subtitle = "Vibrate with tactile feedback on button presses throughout the app",
+                                        icon = Icons.Rounded.Vibration,
+                                        checked = isTouchHaptics,
+                                        onCheckedChange = { newValue ->
+                                            isTouchHaptics = newValue
+                                            sp.edit().putBoolean("sp_touch_haptics", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    var isApiFeaturesAccessibility by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
+
+                                    ToggleRow(
+                                        title = "New API Integration Features Hub",
+                                        subtitle = "Consolidated switch to enable/disable new WebKit, Credential Manager & Palette API integrations",
+                                        icon = Icons.Rounded.Extension,
+                                        checked = isApiFeaturesAccessibility,
+                                        onCheckedChange = { newValue ->
+                                            isApiFeaturesAccessibility = newValue
+                                            sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
+                                        }
+                                    )
+
+                                    if (isApiFeaturesAccessibility) {
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                                        ) {
+                                            Column(modifier = Modifier.padding(14.dp)) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.TouchApp,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.tertiary,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                    Text(
+                                                        "Accessibility & System Integrations Enabled",
+                                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                                    )
+                                                }
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(
+                                                    "Unified API suite providing enhanced touch feedback, predictive back gesture animations, and dynamic high-contrast palette extraction across all screens.",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Press Back Again to Exit",
+                                        subtitle = "Require confirmation back press before closing Petal (works with both gesture and 3-button navigation)",
+                                        icon = Icons.Rounded.ExitToApp,
+                                        checked = isDoubleBackExit,
+                                        onCheckedChange = { newValue ->
+                                            isDoubleBackExit = newValue
+                                            sp.edit().putBoolean("sp_double_back_exit", newValue).apply()
+                                        }
+                                    )
+
+                                    ToggleRow(
+                                        title = "Expressive Feature Tiles",
+                                        subtitle = "Display Material 3 Expressive rich colorful cards with pill icons on Clear Browsing Data & Settings screens",
+                                        icon = Icons.Rounded.GridView,
+                                        checked = isExpressiveFeatureTiles,
+                                        onCheckedChange = { newValue ->
+                                            isExpressiveFeatureTiles = newValue
+                                            sp.edit().putBoolean("sp_expressive_feature_tiles", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    val predictiveFlow by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+                                    val blurFlow by com.petal.browser.predictive.PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
+
+                                    ToggleRow(
+                                        title = "Predictive Back Animations (Junction)",
+                                        subtitle = if (predictiveFlow) "Enabled app-wide PixelPlayer predictive gesture animations" else "Disabled predictive gesture animations app-wide",
+                                        icon = Icons.Rounded.Gesture,
+                                        checked = predictiveFlow,
+                                        onCheckedChange = { enabled ->
+                                            com.petal.browser.predictive.PetalPredictiveJunction.setPredictiveBackEnabled(sp, enabled)
+                                        }
+                                    )
+
+                                    if (predictiveFlow) {
+                                        ToggleRow(
+                                            title = "Depth Blur Effect (Junction)",
+                                            subtitle = if (blurFlow) "Background page receives 24dp blur & corner morphing during back navigation" else "Disabled depth blur; uses solid dim overlay",
+                                            icon = Icons.Rounded.Animation,
+                                            checked = blurFlow,
+                                            onCheckedChange = { enabled ->
+                                                com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(sp, enabled)
+                                            }
+                                        )
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    Text(
+                                        "Address Bar Location:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        FilterChip(
+                                            selected = addressBarPosition == "TOP",
+                                            onClick = {
+                                                addressBarPosition = "TOP"
+                                                sp.edit().putString("sp_address_bar_position", "TOP").apply()
+                                                if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
+                                                    (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
+                                                }
+                                            },
+                                            label = { Text("Top (Default)") },
+                                            leadingIcon = if (addressBarPosition == "TOP") {
+                                                { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            } else null
+                                        )
+                                        FilterChip(
+                                            selected = addressBarPosition == "BOTTOM",
+                                            onClick = {
+                                                addressBarPosition = "BOTTOM"
+                                                sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
+                                                if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
+                                                    (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
+                                                }
+                                            },
+                                            label = { Text("Bottom") },
+                                            leadingIcon = if (addressBarPosition == "BOTTOM") {
+                                                { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            } else null
+                                        )
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 6.dp)
+                                            .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
+                                            .padding(14.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("Text Font Scale", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                            Text("${(fontSize * 100f).toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                        }
+                                        Spacer(Modifier.height(10.dp))
+                                        PetalSlider(
+                                            value = fontSize,
+                                            onValueChange = { newValue ->
+                                                fontSize = newValue
+                                                sp.edit().putFloat("sp_font_size_scale", newValue).apply()
+                                            },
+                                            valueRange = 0.7f..1.5f,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                        Spacer(Modifier.height(12.dp))
+                                        // LIVE TEXT SCALE PREVIEW BOX
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Column(modifier = Modifier.padding(12.dp)) {
+                                                Text(
+                                                    "LIVE FONT PREVIEW (${(fontSize * 100).toInt()}%)",
+                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(
+                                                    "The quick brown fox jumps over the lazy dog.",
+                                                    fontSize = (15 * fontSize).sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                        }
+                                    }
+
+
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 6.dp)
+                                            .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
+                                            .padding(14.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("Default Page Zoom", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                            Text("${(zoomLevel * 100f).toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                        }
+                                        Spacer(Modifier.height(10.dp))
+                                        PetalSlider(
+                                            value = zoomLevel,
+                                            onValueChange = { newValue ->
+                                                zoomLevel = newValue
+                                                sp.edit().putFloat("sp_zoom_level_scale", newValue).apply()
+                                            },
+                                            valueRange = 0.8f..2.0f,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                        Spacer(Modifier.height(12.dp))
+                                        // LIVE PAGE ZOOM PREVIEW BOX
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Column(modifier = Modifier.padding(12.dp)) {
+                                                Text(
+                                                    "LIVE ZOOM PREVIEW (${(zoomLevel * 100).toInt()}%)",
+                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                                Spacer(Modifier.height(6.dp))
+                                                Surface(
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = MaterialTheme.colorScheme.surface,
+                                                    modifier = Modifier.fillMaxWidth().height((75 * zoomLevel).dp)
+                                                ) {
+                                                    Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size((12 * zoomLevel).dp)) {}
+                                                            Text(
+                                                                "Sample Web Page Article",
+                                                                fontSize = (12 * zoomLevel).sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.onSurface
+                                                            )
+                                                        }
+                                                        Text(
+                                                            "Rendering responsive web content at ${(zoomLevel * 100).toInt()}% zoom scale.",
+                                                            fontSize = (10 * zoomLevel).sp,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                                         )
                                                     }
                                                 }
                                             }
                                         }
+                                    }
+                                }
+                            }
+
+                            // 8. Full Backup & Sync Section
+                            var showBackupDialog by remember { mutableStateOf(false) }
+                            var showRestoreDialog by remember { mutableStateOf(false) }
+
+                            var backupBookmarks by remember { mutableStateOf(true) }
+                            var backupHistory by remember { mutableStateOf(true) }
+                            var backupSavedSites by remember { mutableStateOf(true) }
+                            var backupSettings by remember { mutableStateOf(true) }
+
+                            var restoreBookmarks by remember { mutableStateOf(true) }
+                            var restoreHistory by remember { mutableStateOf(true) }
+                            var restoreSavedSites by remember { mutableStateOf(true) }
+                            var restoreSettings by remember { mutableStateOf(true) }
+
+                            val createBackupLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                                contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
+                            ) { uri: android.net.Uri? ->
+                                if (uri != null) {
+                                    com.petal.browser.unit.BackupUnit.backupToUri(
+                                        context,
+                                        uri,
+                                        backupBookmarks,
+                                        backupHistory,
+                                        backupSavedSites,
+                                        backupSettings
+                                    )
+                                }
+                            }
+
+                            val openRestoreLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                                contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+                            ) { uri: android.net.Uri? ->
+                                if (uri != null) {
+                                    com.petal.browser.unit.BackupUnit.restoreFromUri(
+                                        context,
+                                        uri,
+                                        restoreBookmarks,
+                                        restoreHistory,
+                                        restoreSavedSites,
+                                        restoreSettings
+                                    )
+                                }
+                            }
+
+                            if (showBackupDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { showBackupDialog = false },
+                                    title = { Text("Backup Options (JSON)") },
+                                    text = {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text("Select items to include in backup file:")
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupBookmarks = !backupBookmarks }) {
+                                                Checkbox(checked = backupBookmarks, onCheckedChange = { backupBookmarks = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Bookmarks")
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupHistory = !backupHistory }) {
+                                                Checkbox(checked = backupHistory, onCheckedChange = { backupHistory = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Browsing History")
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSavedSites = !backupSavedSites }) {
+                                                Checkbox(checked = backupSavedSites, onCheckedChange = { backupSavedSites = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Saved Startsite Webpages")
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSettings = !backupSettings }) {
+                                                Checkbox(checked = backupSettings, onCheckedChange = { backupSettings = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Browser & Theme Settings")
+                                            }
+                                        }
                                     },
                                     confirmButton = {
-                                        TextButton(onClick = { showWhitelistDialog = false }) {
-                                            Text("Done")
+                                        Button(onClick = {
+                                            showBackupDialog = false
+                                            createBackupLauncher.launch("petal_browser_backup.json")
+                                        }) {
+                                            Text("Choose Save Folder")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showBackupDialog = false }) {
+                                            Text("Cancel")
                                         }
                                     }
                                 )
                             }
 
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Whitelisted Domains (${whitelistedDomainsState.size})",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                TextButton(onClick = { showWhitelistDialog = true }) {
-                                    Text("Manage Whitelist")
-                                }
-                            }
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        ToggleRow(
-                            title = "Block Popup Windows",
-                            subtitle = "Prevent unwanted popups and redirect windows",
-                            icon = Icons.Rounded.OpenInNew,
-                            checked = isBlockPopups,
-                            onCheckedChange = { newValue ->
-                                isBlockPopups = newValue
-                                sp.edit().putBoolean("sp_block_popups", newValue).putBoolean("profileStandard_javascriptPopUp", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        ToggleRow(
-                            title = "Auto Open External Apps",
-                            subtitle = "Open YouTube, Maps & Play Store links in native apps",
-                            icon = Icons.Rounded.Launch,
-                            checked = isAutoOpenApps,
-                            onCheckedChange = { newValue ->
-                                isAutoOpenApps = newValue
-                                sp.edit().putBoolean("sp_auto_open_apps", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        ToggleRow(
-                            title = "HTTPS Security Enforcer",
-                            subtitle = "Automatically upgrade connections to HTTPS",
-                            icon = Icons.Rounded.Lock,
-                            checked = isHttpsOnly,
-                            onCheckedChange = { newValue ->
-                                isHttpsOnly = newValue
-                                sp.edit().putBoolean("sp_https_only", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        ToggleRow(
-                            title = "Enable JavaScript",
-                            subtitle = "Required for modern web features",
-                            icon = Icons.Rounded.Code,
-                            checked = isJavaScript,
-                            onCheckedChange = { newValue ->
-                                isJavaScript = newValue
-                                sp.edit().putBoolean("sp_javascript", newValue).putBoolean("profileStandard_javascript", newValue).apply()
-                            }
-                        )
-                    }
-                }
-
-                // 7. Accessibility & Scaling (using PetalSlider)
-                if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom")) {
-                    SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
-                        ToggleRow(
-                            title = "Touch Haptics",
-                            subtitle = "Vibrate with tactile feedback on button presses throughout the app",
-                            icon = Icons.Rounded.Vibration,
-                            checked = isTouchHaptics,
-                            onCheckedChange = { newValue ->
-                                isTouchHaptics = newValue
-                                sp.edit().putBoolean("sp_touch_haptics", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        var isApiFeaturesAccessibility by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
-
-                        ToggleRow(
-                            title = "New API Integration Features Hub",
-                            subtitle = "Consolidated switch to enable/disable new WebKit, Credential Manager & Palette API integrations",
-                            icon = Icons.Rounded.Extension,
-                            checked = isApiFeaturesAccessibility,
-                            onCheckedChange = { newValue ->
-                                isApiFeaturesAccessibility = newValue
-                                sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
-                            }
-                        )
-
-                        if (isApiFeaturesAccessibility) {
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.TouchApp,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.tertiary,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Text(
-                                            "Accessibility & System Integrations Enabled",
-                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                    }
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        "Unified API suite providing enhanced touch feedback, predictive back gesture animations, and dynamic high-contrast palette extraction across all screens.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
-                                    )
-                                }
-                            }
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        ToggleRow(
-                            title = "Press Back Again to Exit",
-                            subtitle = "Require confirmation back press before closing Petal (works with both gesture and 3-button navigation)",
-                            icon = Icons.Rounded.ExitToApp,
-                            checked = isDoubleBackExit,
-                            onCheckedChange = { newValue ->
-                                isDoubleBackExit = newValue
-                                sp.edit().putBoolean("sp_double_back_exit", newValue).apply()
-                            }
-                        )
-
-                        ToggleRow(
-                            title = "Expressive Feature Tiles",
-                            subtitle = "Display Material 3 Expressive rich colorful cards with pill icons on Clear Browsing Data & Settings screens",
-                            icon = Icons.Rounded.GridView,
-                            checked = isExpressiveFeatureTiles,
-                            onCheckedChange = { newValue ->
-                                isExpressiveFeatureTiles = newValue
-                                sp.edit().putBoolean("sp_expressive_feature_tiles", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        val predictiveFlow by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
-                        val blurFlow by com.petal.browser.predictive.PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
-
-                        ToggleRow(
-                            title = "Predictive Back Animations (Junction)",
-                            subtitle = if (predictiveFlow) "Enabled app-wide PixelPlayer predictive gesture animations" else "Disabled predictive gesture animations app-wide",
-                            icon = Icons.Rounded.Gesture,
-                            checked = predictiveFlow,
-                            onCheckedChange = { enabled ->
-                                com.petal.browser.predictive.PetalPredictiveJunction.setPredictiveBackEnabled(sp, enabled)
-                            }
-                        )
-
-                        if (predictiveFlow) {
-                            ToggleRow(
-                                title = "Depth Blur Effect (Junction)",
-                                subtitle = if (blurFlow) "Background page receives 24dp blur & corner morphing during back navigation" else "Disabled depth blur; uses solid dim overlay",
-                                icon = Icons.Rounded.Animation,
-                                checked = blurFlow,
-                                onCheckedChange = { enabled ->
-                                    com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(sp, enabled)
-                                }
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Text(
-                            "Address Bar Location:",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            FilterChip(
-                                selected = addressBarPosition == "TOP",
-                                onClick = {
-                                    addressBarPosition = "TOP"
-                                    sp.edit().putString("sp_address_bar_position", "TOP").apply()
-                                    if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
-                                        (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
-                                    }
-                                },
-                                label = { Text("Top (Default)") },
-                                leadingIcon = if (addressBarPosition == "TOP") {
-                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null
-                            )
-                            FilterChip(
-                                selected = addressBarPosition == "BOTTOM",
-                                onClick = {
-                                    addressBarPosition = "BOTTOM"
-                                    sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
-                                    if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
-                                        (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
-                                    }
-                                },
-                                label = { Text("Bottom") },
-                                leadingIcon = if (addressBarPosition == "BOTTOM") {
-                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
-                                .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
-                                .padding(14.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Text Font Scale", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text("${(fontSize * 100f).toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            PetalSlider(
-                                value = fontSize,
-                                onValueChange = { newValue ->
-                                    fontSize = newValue
-                                    sp.edit().putFloat("sp_font_size_scale", newValue).apply()
-                                },
-                                valueRange = 0.7f..1.5f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            // LIVE TEXT SCALE PREVIEW BOX
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        "LIVE FONT PREVIEW (${(fontSize * 100).toInt()}%)",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        "The quick brown fox jumps over the lazy dog.",
-                                        fontSize = (15 * fontSize).sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                            }
-                        }
-
-
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
-                                .background(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(18.dp))
-                                .padding(14.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Default Page Zoom", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                                Text("${(zoomLevel * 100f).toInt()}%", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            PetalSlider(
-                                value = zoomLevel,
-                                onValueChange = { newValue ->
-                                    zoomLevel = newValue
-                                    sp.edit().putFloat("sp_zoom_level_scale", newValue).apply()
-                                },
-                                valueRange = 0.8f..2.0f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            // LIVE PAGE ZOOM PREVIEW BOX
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        "LIVE ZOOM PREVIEW (${(zoomLevel * 100).toInt()}%)",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(Modifier.height(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.surface,
-                                        modifier = Modifier.fillMaxWidth().height((75 * zoomLevel).dp)
-                                    ) {
-                                        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size((12 * zoomLevel).dp)) {}
-                                                Text(
-                                                    "Sample Web Page Article",
-                                                    fontSize = (12 * zoomLevel).sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.onSurface
-                                                )
+                            if (showRestoreDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { showRestoreDialog = false },
+                                    title = { Text("Restore Options (JSON)") },
+                                    text = {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text("Select items to restore from JSON file:")
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreBookmarks = !restoreBookmarks }) {
+                                                Checkbox(checked = restoreBookmarks, onCheckedChange = { restoreBookmarks = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Bookmarks")
                                             }
-                                            Text(
-                                                "Rendering responsive web content at ${(zoomLevel * 100).toInt()}% zoom scale.",
-                                                fontSize = (10 * zoomLevel).sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreHistory = !restoreHistory }) {
+                                                Checkbox(checked = restoreHistory, onCheckedChange = { restoreHistory = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Browsing History")
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSavedSites = !restoreSavedSites }) {
+                                                Checkbox(checked = restoreSavedSites, onCheckedChange = { restoreSavedSites = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Saved Startsite Webpages")
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSettings = !restoreSettings }) {
+                                                Checkbox(checked = restoreSettings, onCheckedChange = { restoreSettings = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Browser & Theme Settings")
+                                            }
+                                        }
+                                    },
+                                    confirmButton = {
+                                        Button(onClick = {
+                                            showRestoreDialog = false
+                                            openRestoreLauncher.launch(arrayOf("application/json", "*/*"))
+                                        }) {
+                                            Text("Choose Backup File")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showRestoreDialog = false }) {
+                                            Text("Cancel")
                                         }
                                     }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 8. Full Backup & Sync Section
-                var showBackupDialog by remember { mutableStateOf(false) }
-                var showRestoreDialog by remember { mutableStateOf(false) }
-
-                var backupBookmarks by remember { mutableStateOf(true) }
-                var backupHistory by remember { mutableStateOf(true) }
-                var backupSavedSites by remember { mutableStateOf(true) }
-                var backupSettings by remember { mutableStateOf(true) }
-
-                var restoreBookmarks by remember { mutableStateOf(true) }
-                var restoreHistory by remember { mutableStateOf(true) }
-                var restoreSavedSites by remember { mutableStateOf(true) }
-                var restoreSettings by remember { mutableStateOf(true) }
-
-                val createBackupLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                    contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
-                ) { uri: android.net.Uri? ->
-                    if (uri != null) {
-                        com.petal.browser.unit.BackupUnit.backupToUri(
-                            context,
-                            uri,
-                            backupBookmarks,
-                            backupHistory,
-                            backupSavedSites,
-                            backupSettings
-                        )
-                    }
-                }
-
-                val openRestoreLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                    contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
-                ) { uri: android.net.Uri? ->
-                    if (uri != null) {
-                        com.petal.browser.unit.BackupUnit.restoreFromUri(
-                            context,
-                            uri,
-                            restoreBookmarks,
-                            restoreHistory,
-                            restoreSavedSites,
-                            restoreSettings
-                        )
-                    }
-                }
-
-                if (showBackupDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showBackupDialog = false },
-                        title = { Text("Backup Options (JSON)") },
-                        text = {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Select items to include in backup file:")
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupBookmarks = !backupBookmarks }) {
-                                    Checkbox(checked = backupBookmarks, onCheckedChange = { backupBookmarks = it })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Bookmarks")
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupHistory = !backupHistory }) {
-                                    Checkbox(checked = backupHistory, onCheckedChange = { backupHistory = it })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Browsing History")
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSavedSites = !backupSavedSites }) {
-                                    Checkbox(checked = backupSavedSites, onCheckedChange = { backupSavedSites = it })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Saved Startsite Webpages")
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSettings = !backupSettings }) {
-                                    Checkbox(checked = backupSettings, onCheckedChange = { backupSettings = it })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Browser & Theme Settings")
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            Button(onClick = {
-                                showBackupDialog = false
-                                createBackupLauncher.launch("petal_browser_backup.json")
-                            }) {
-                                Text("Choose Save Folder")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showBackupDialog = false }) {
-                                Text("Cancel")
-                            }
-                        }
-                    )
-                }
-
-                if (showRestoreDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showRestoreDialog = false },
-                        title = { Text("Restore Options (JSON)") },
-                        text = {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Select items to restore from JSON file:")
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreBookmarks = !restoreBookmarks }) {
-                                    Checkbox(checked = restoreBookmarks, onCheckedChange = { restoreBookmarks = it })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Bookmarks")
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreHistory = !restoreHistory }) {
-                                    Checkbox(checked = restoreHistory, onCheckedChange = { restoreHistory = it })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Browsing History")
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSavedSites = !restoreSavedSites }) {
-                                    Checkbox(checked = restoreSavedSites, onCheckedChange = { restoreSavedSites = it })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Saved Startsite Webpages")
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSettings = !restoreSettings }) {
-                                    Checkbox(checked = restoreSettings, onCheckedChange = { restoreSettings = it })
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Browser & Theme Settings")
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            Button(onClick = {
-                                showRestoreDialog = false
-                                openRestoreLauncher.launch(arrayOf("application/json", "*/*"))
-                            }) {
-                                Text("Choose Backup File")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showRestoreDialog = false }) {
-                                Text("Cancel")
-                            }
-                        }
-                    )
-                }
-
-                if ((currentCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Backup Sync", "backup restore sync history bookmarks settings database export import json")) {
-                    SettingsCategoryCard(title = "Backup & Restore (JSON)", icon = Icons.Rounded.Backup) {
-                        Text(
-                            "Export or restore specific items to/from a single JSON file (Documents/browser_backup/petal_browser_backup.json):",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Button(
-                                onClick = { showBackupDialog = true },
-                                shape = RoundedCornerShape(14.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Backup", maxLines = 1)
-                                }
+                                )
                             }
 
-                            OutlinedButton(
-                                onClick = { showRestoreDialog = true },
-                                shape = RoundedCornerShape(14.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Restore", maxLines = 1)
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Downgrade Data Protection: Automatic snapshots are saved to Documents/browser_backup/petal_downgrade_snapshot.json whenever app version updates, allowing seamless data restoration if downgrading to older versions.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-
-
-                // 9. App Updates & Inbuilt Updater Section
-                if ((currentCategory == SettingsCategory.UPDATER || searchQuery.isNotBlank()) && matchesSearch("App Updates", "update updater version check launch github download upgrade")) {
-                    SettingsCategoryCard(title = "App Updates & Inbuilt Updater", icon = Icons.Rounded.SystemUpdate) {
-                        ToggleRow(
-                            title = "Check for Updates on Launch",
-                            subtitle = "Automatically check for new browser releases when app starts",
-                            icon = Icons.Rounded.SystemUpdate,
-                            checked = isCheckUpdateOnLaunch,
-                            onCheckedChange = { newValue ->
-                                isCheckUpdateOnLaunch = newValue
-                                sp.edit().putBoolean("sp_check_update_on_launch", newValue).apply()
-                            }
-                        )
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                            if ((currentCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Backup Sync", "backup restore sync history bookmarks settings database export import json")) {
+                                SettingsCategoryCard(title = "Backup & Restore (JSON)", icon = Icons.Rounded.Backup) {
                                     Text(
-                                        text = "Check for Updates Now",
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        "Export or restore specific items to/from a single JSON file (Documents/browser_backup/petal_browser_backup.json):",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Button(
+                                            onClick = { showBackupDialog = true },
+                                            shape = RoundedCornerShape(14.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Center
+                                            ) {
+                                                Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text("Backup", maxLines = 1)
+                                            }
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = { showRestoreDialog = true },
+                                            shape = RoundedCornerShape(14.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Center
+                                            ) {
+                                                Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text("Restore", maxLines = 1)
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
                                     Text(
-                                        text = "Current Version: v$appVersionName",
+                                        "Downgrade Data Protection: Automatic snapshots are saved to Documents/browser_backup/petal_downgrade_snapshot.json whenever app version updates, allowing seamless data restoration if downgrading to older versions.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                Button(
-                                    onClick = {
-                                        if (context is ComponentActivity) {
-                                            com.petal.browser.unit.UpdateUnit.checkForUpdates(context, false)
+                            }
+
+
+
+                            // 9. App Updates & Inbuilt Updater Section
+                            if ((currentCategory == SettingsCategory.UPDATER || searchQuery.isNotBlank()) && matchesSearch("App Updates", "update updater version check launch github download upgrade")) {
+                                SettingsCategoryCard(title = "App Updates & Inbuilt Updater", icon = Icons.Rounded.SystemUpdate) {
+                                    ToggleRow(
+                                        title = "Check for Updates on Launch",
+                                        subtitle = "Automatically check for new browser releases when app starts",
+                                        icon = Icons.Rounded.SystemUpdate,
+                                        checked = isCheckUpdateOnLaunch,
+                                        onCheckedChange = { newValue ->
+                                            isCheckUpdateOnLaunch = newValue
+                                            sp.edit().putBoolean("sp_check_update_on_launch", newValue).apply()
                                         }
-                                    },
-                                    shape = RoundedCornerShape(14.dp)
-                                ) {
-                                    Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Check Now")
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = "Check for Updates Now",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = "Current Version: v$appVersionName",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            Button(
+                                                onClick = {
+                                                    if (context is ComponentActivity) {
+                                                        com.petal.browser.unit.UpdateUnit.checkForUpdates(context, false)
+                                                    }
+                                                },
+                                                shape = RoundedCornerShape(14.dp)
+                                            ) {
+                                                Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text("Check Now")
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    }
-                }
 
-                // 9. About App & About Developer Sections
-                if ((currentCategory == SettingsCategory.ABOUT || searchQuery.isNotBlank()) && matchesSearch("About", "app developer version github licenses terms open source")) {
-                    SettingsCategoryCard(title = "About App & Developer", icon = Icons.Rounded.Info) {
-                        // About App Subcard
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(44.dp)) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Rounded.Eco, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
-                                        }
-                                    }
-                                    Column {
-                                        Text("Petal Browser", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                                        Text("v$appVersionName (Build $appVersionCode)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
+                            // 9. About App & About Developer Sections
+                            if ((currentCategory == SettingsCategory.ABOUT || searchQuery.isNotBlank()) && matchesSearch("About", "app developer version github licenses terms open source")) {
+                                SettingsCategoryCard(title = "About App & Developer", icon = Icons.Rounded.Info) {
+                                    // About App Subcard
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(44.dp)) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(Icons.Rounded.Eco, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
+                                                    }
+                                                }
+                                                Column {
+                                                    Text("Petal Browser", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                                    Text("v$appVersionName (Build $appVersionCode)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                                }
+                                            }
 
-                                Text(
-                                    "A modern, lightning fast, privacy-focused Android Web Browser built with Jetpack Compose & Material 3 Expressive UI. Includes Stride typography, Private DNS, Real AdBlock engine, and fluid motion physics.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        // About Developer Subcard
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Icon(Icons.Rounded.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                                    Column {
-                                        Text("About Developer", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                                        Text("Crafted with ❤ for Android & Termux", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                                        OutlinedButton(
-                                            onClick = {
-                                                try {
-                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/"))
-                                                } catch (e: Exception) { e.printStackTrace() }
-                                            },
-                                            shape = RoundedCornerShape(12.dp),
-                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(15.dp))
-                                            Spacer(Modifier.width(3.dp))
-                                            Text("GitHub", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                                        }
-
-                                        OutlinedButton(
-                                            onClick = {
-                                                try {
-                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/"))
-                                                } catch (e: Exception) { e.printStackTrace() }
-                                            },
-                                            shape = RoundedCornerShape(12.dp),
-                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(15.dp))
-                                            Spacer(Modifier.width(3.dp))
-                                            Text("Source", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                                        }
-                                    }
-
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                                        OutlinedButton(
-                                            onClick = {
-                                                try {
-                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://t.me/championworkspace"))
-                                                } catch (e: Exception) { e.printStackTrace() }
-                                            },
-                                            shape = RoundedCornerShape(12.dp),
-                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(15.dp))
-                                            Spacer(Modifier.width(3.dp))
-                                            Text("Telegram", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                                        }
-
-                                        Button(
-                                            onClick = {
-                                                try {
-                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/issues"))
-                                                } catch (e: Exception) { e.printStackTrace() }
-                                            },
-                                            shape = RoundedCornerShape(12.dp),
-                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
-                                            modifier = Modifier.weight(1f),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                            Text(
+                                                "A modern, lightning fast, privacy-focused Android Web Browser built with Jetpack Compose & Material 3 Expressive UI. Includes Stride typography, Private DNS, Real AdBlock engine, and fluid motion physics.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
-                                        ) {
-                                            Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(15.dp))
-                                            Spacer(Modifier.width(3.dp))
-                                            Text("Feedback", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                                         }
                                     }
-                                }
-                            }
-                        }
 
-                        Spacer(Modifier.height(32.dp))
-                            }
-                        }
+                                    // About Developer Subcard
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                                Icon(Icons.Rounded.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                                                Column {
+                                                    Text("About Developer", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                                    Text("Crafted with ❤ for Android & Termux", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                            }
+
+                                            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            try {
+                                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/"))
+                                                            } catch (e: Exception) { e.printStackTrace() }
+                                                        },
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+                                                        modifier = Modifier.weight(1f)
+                                                    ) {
+                                                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(15.dp))
+                                                        Spacer(Modifier.width(3.dp))
+                                                        Text("GitHub", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                                    }
+
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            try {
+                                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/"))
+                                                            } catch (e: Exception) { e.printStackTrace() }
+                                                        },
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+                                                        modifier = Modifier.weight(1f)
+                                                    ) {
+                                                        Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(15.dp))
+                                                        Spacer(Modifier.width(3.dp))
+                                                        Text("Source", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                                    }
+                                                }
+
+                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            try {
+                                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://t.me/championworkspace"))
+                                                            } catch (e: Exception) { e.printStackTrace() }
+                                                        },
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+                                                        modifier = Modifier.weight(1f)
+                                                    ) {
+                                                        Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(15.dp))
+                                                        Spacer(Modifier.width(3.dp))
+                                                        Text("Telegram", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                                    }
+
+                                                    Button(
+                                                        onClick = {
+                                                            try {
+                                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/issues"))
+                                                            } catch (e: Exception) { e.printStackTrace() }
+                                                        },
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+                                                        modifier = Modifier.weight(1f),
+                                                        colors = ButtonDefaults.buttonColors(
+                                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                                        )
+                                                    ) {
+                                                        Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(15.dp))
+                                                        Spacer(Modifier.width(3.dp))
+                                                        Text("Feedback", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(Modifier.height(32.dp))
+                                        }
+                                    }
                     }
                 }
             }
         }
     }
+}
 }
 }
 
