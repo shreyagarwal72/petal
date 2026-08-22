@@ -182,10 +182,11 @@ fun PetalHistoryScreen(
         )
     }
 
-    androidx.activity.compose.BackHandler(enabled = true) {
-        onDismiss()
-    }
-
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onDismiss,
+    ) {
+    com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) { innerPadding ->
@@ -349,6 +350,8 @@ fun PetalHistoryScreen(
             }
         }
     }
+}
+}
 }
 }
 }
