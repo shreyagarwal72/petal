@@ -299,6 +299,30 @@ val petalShapes: List<Shape> = listOf(
     ArchShape
 )
 
+/**
+ * The single organic petal silhouette used for every shortcut container in the bloom ring
+ * around the center Petal logo - a narrow, gently rounded base (the end that faces the hub
+ * once the container is rotated into place by [PetalBloom]) widening into a soft, rounded
+ * tip, so every shortcut reads as one petal of the same flower rather than five unrelated
+ * Material silhouettes.
+ */
+val PetalContainerShape: Shape = GenericShape { size, _ ->
+    val w = size.width
+    val h = size.height
+    moveTo(w * 0.5f, h)
+    cubicTo(
+        w * 0.05f, h * 0.64f,
+        w * 0.10f, h * 0.08f,
+        w * 0.5f, 0f
+    )
+    cubicTo(
+        w * 0.90f, h * 0.08f,
+        w * 0.95f, h * 0.64f,
+        w * 0.5f, h
+    )
+    close()
+}
+
 // ── 2. Java Interop Callback Interface & Bridge ───────────────────────────
 
 interface PetalHomeActionHandler {
@@ -716,9 +740,16 @@ private fun PetalBloom(
             }
         }
 
-        // 5 Customizable Bloom Ring Shortcuts
+        // 5 Customizable Bloom Ring Shortcuts - all sharing PetalContainerShape, each one
+        // rotated to point outward from the hub so the ring reads as a single blooming
+        // flower rather than five mismatched Material silhouettes.
+        val angleStep = 360f / shortcuts.take(5).size.coerceAtLeast(1)
         shortcuts.take(5).forEachIndexed { index, shortcut ->
-            val shape = petalShapes[index % petalShapes.size]
+            // Matches RadialLayout's own placement angle (angleDeg = -90 + step * index);
+            // rotating the petal by (step * index) turns its default down-facing base to
+            // face the hub at every position around the ring - see PetalContainerShape's
+            // doc comment for why that's the base orientation to rotate from.
+            val petalRotation = angleStep * index
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -726,11 +757,12 @@ private fun PetalBloom(
                 modifier = Modifier.width(72.dp)
             ) {
                 Surface(
-                    shape = shape,
+                    shape = PetalContainerShape,
                     color = shortcut.containerColor,
                     contentColor = shortcut.contentColor,
                     modifier = Modifier
                         .size(petalSize)
+                        .graphicsLayer { rotationZ = petalRotation }
                         .combinedClickable(
                             onClick = { onOpenShortcut(shortcut) },
                             onLongClick = { onEditShortcutSlot(index) }
@@ -738,7 +770,12 @@ private fun PetalBloom(
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize(),
+                        // Counter-rotate the icon back to upright - only the petal
+                        // container itself should point outward, the favicon inside must
+                        // stay level and centered for contrast/legibility.
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { rotationZ = -petalRotation },
                     ) {
                         SiteBrandIcon(siteId = shortcut.siteId, label = shortcut.label)
                     }
@@ -864,7 +901,7 @@ private fun EditShortcutDialog(
                         .padding(12.dp)
                 ) {
                     Surface(
-                        shape = petalShapes[slotIndex % petalShapes.size],
+                        shape = PetalContainerShape,
                         color = selectedColor,
                         modifier = Modifier.size(48.dp)
                     ) {
