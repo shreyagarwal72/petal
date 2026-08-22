@@ -151,6 +151,11 @@ public class NinjaWebViewClient extends WebViewClient {
         if (!ninjaWebView.isIncognito()) {
             com.petal.browser.unit.TabSessionManager.saveSession(context);
         }
+
+        // Refresh the tab manager's LRU thumbnail cache so the grid shows an up-to-date
+        // preview for this tab the next time it's opened, without the switcher having to
+        // capture on the spot.
+        ninjaWebView.updatePreviewCache();
     }
 
     @Override
