@@ -232,17 +232,19 @@ fun PetalOmniboxPage(
     com.petal.browser.predictive.PetalScreenWrapper(progress = backGestureProgress) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
-            contentWindowInsets = WindowInsets.statusBars
+            contentWindowInsets = WindowInsets.Zero
         ) { innerPadding ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
+                    .windowInsetsPadding(WindowInsets.statusBars)
             ) {
                 M3ExpressiveVariableBackground(pageSeed = "omnibox_page")
 
                 Column(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .imePadding()
                 ) {
                     // Chrome-style search field row pinned to the top of the page, edge-to-edge.
                     Row(
@@ -320,8 +322,7 @@ fun PetalOmniboxPage(
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f)
-                            .windowInsetsPadding(WindowInsets.ime),
+                            .weight(1f),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
                     ) {
                         items(
