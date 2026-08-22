@@ -138,12 +138,30 @@ fun PetalTabGridSwitcher(
             if (result == SnackbarResult.ActionPerformed) {
                 // Undo: the tab was never actually closed, just visually hidden - restore it.
                 pendingRemovalIds.remove(tab.id)
-            } else {
-                // Snackbar timed out without Undo: commit the close for real.
+            } else if (tab.id in pendingRemovalIds) {
+                // Snackbar timed out without Undo: commit the close for real. The
+                // membership check guards against double-closing a tab that
+                // commitPendingRemovals() already force-closed while this snackbar was
+                // still showing (e.g. the user tapped + before the timeout).
                 onTabClose(tab)
                 pendingRemovalIds.remove(tab.id)
             }
         }
+    }
+
+    // Any tab still sitting in its Undo window gets closed for real, right now, instead of
+    // waiting out the snackbar timeout - so tapping + always starts from a clean, fully
+    // committed tab list rather than one that still has "pending" closes hanging around.
+    fun commitPendingRemovals() {
+        if (pendingRemovalIds.isEmpty()) return
+        val idsToCommit = pendingRemovalIds.toList()
+        pendingRemovalIds.clear()
+        idsToCommit.forEach { id ->
+            tabs.find { it.id == id }?.let { onTabClose(it) }
+        }
+        // Hide the now-stale Undo snackbar rather than let it linger for a tab that's
+        // already permanently gone.
+        snackbarHostState.currentSnackbarData?.dismiss()
     }
 
     // `tabs` is the caller's live source of truth (e.g. a SnapshotStateList mirroring
@@ -224,7 +242,10 @@ fun PetalTabGridSwitcher(
                                 Surface(
                                     // Respects whichever segment (Regular/Incognito) is active,
                                     // so + always creates a tab of the kind currently being viewed.
-                                    onClick = { onNewTab(selectedCategory == TabCategory.INCOGNITO) },
+                                    onClick = {
+                                        commitPendingRemovals()
+                                        onNewTab(selectedCategory == TabCategory.INCOGNITO)
+                                    },
                                     shape = RoundedCornerShape(12.dp),
                                     color = accentColor,
                                     modifier = Modifier.size(40.dp)
@@ -272,6 +293,7 @@ fun PetalTabGridSwitcher(
                                             onClick = {
                                                 isOverflowMenuExpanded = false
                                                 selectedCategory = TabCategory.REGULAR
+                                                commitPendingRemovals()
                                                 onNewTab(false)
                                             }
                                         )
@@ -281,6 +303,7 @@ fun PetalTabGridSwitcher(
                                             onClick = {
                                                 isOverflowMenuExpanded = false
                                                 selectedCategory = TabCategory.INCOGNITO
+                                                commitPendingRemovals()
                                                 onNewTab(true)
                                             }
                                         )
@@ -376,7 +399,10 @@ fun PetalTabGridSwitcher(
                                 "Pages you view here won't be saved to your history, cache, or search suggestions"
                             else
                                 "Open tabs to visit different pages at the same time",
-                            onNewTab = { onNewTab(selectedCategory == TabCategory.INCOGNITO) }
+                            onNewTab = {
+                                commitPendingRemovals()
+                                onNewTab(selectedCategory == TabCategory.INCOGNITO)
+                            }
                         )
 
                         filteredTabs.isEmpty() -> TabManagerEmptyState(
