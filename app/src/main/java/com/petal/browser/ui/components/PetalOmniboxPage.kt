@@ -241,7 +241,13 @@ fun PetalOmniboxPage(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .imePadding()
+                    // NOTE: no .imePadding() here on purpose. BrowserActivity's
+                    // ViewCompat.setOnApplyWindowInsetsListener on R.id.main (the parent
+                    // of this ComposeView's host contentFrame) already applies
+                    // bottom padding equal to the keyboard height whenever the IME is
+                    // visible. Adding .imePadding() again here double-counts that inset,
+                    // squeezing this weighted suggestions LazyColumn down to zero height
+                    // and making the suggestions list disappear behind the keyboard.
                 ) {
                     // Chrome-style search field row pinned to top with status bar padding
                     Row(
