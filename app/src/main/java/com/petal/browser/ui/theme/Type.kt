@@ -83,11 +83,11 @@ private fun buildTypography(t: Tiers): Typography = Typography(
 
 private fun systemTypography(fontWeight: Int): Typography {
     val boldWeight = fontWeight.coerceAtLeast(750)
-    val displayF = variableFont(R.font.google_sans_flex, 950, 92f, 100f)
-    val headlineF = variableFont(R.font.google_sans_flex, 900, 92f, 100f)
-    val titleF = variableFont(R.font.google_sans_flex, 850, 92f, 100f)
-    val bodyF = variableFont(R.font.google_sans_flex, boldWeight, 92f, 100f)
-    val labelF = variableFont(R.font.google_sans_flex, (boldWeight + 50).coerceAtMost(900), 92f, 100f)
+    val displayF = variableFont(R.font.google_sans_flex_variable, 950, 92f, 100f)
+    val headlineF = variableFont(R.font.google_sans_flex_variable, 900, 92f, 100f)
+    val titleF = variableFont(R.font.google_sans_flex_variable, 850, 92f, 100f)
+    val bodyF = variableFont(R.font.google_sans_flex_variable, boldWeight, 92f, 100f)
+    val labelF = variableFont(R.font.google_sans_flex_variable, (boldWeight + 50).coerceAtMost(900), 92f, 100f)
     val t = Tiers(displayF, headlineF, titleF, bodyF, labelF)
     return buildTypography(t)
 }
@@ -97,7 +97,8 @@ enum class GSFlexPreset(val label: String) {
     NEO("Neo (Wide & Clean)"),
     COMPACT("Compact (High Density)"),
     AIRY("Airy (Spacious & Light)"),
-    EXPRESSIVE("Expressive (Ultra Round)")
+    EXPRESSIVE("Expressive (Ultra Round)"),
+    CUSTOM("Custom (Fine-Tuned)")
 }
 
 data class FontAxes(
@@ -152,6 +153,12 @@ fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes
             FontAxes(820f, 92f, 32f, 0f, 0f, 100f),
             FontAxes(730f, 94f, 16f, 0f, 0f, 100f)
         )
+        // CUSTOM preset should never reach here — effectiveAxes handles it before calling this
+        GSFlexPreset.CUSTOM -> Triple(
+            FontAxes(950f, 90f, 30f, 0f, 0f, 100f),
+            FontAxes(850f, 92f, 32f, 0f, 0f, 100f),
+            FontAxes(750f, 94f, 16f, 20f, 0f, 100f)
+        )
     }
 }
 
@@ -161,23 +168,40 @@ fun petalTypography(
     fontWidth: Float = 92f,
     fontWeight: Int = 750,
     fontRoundness: Float = 100f,
-    preset: GSFlexPreset = GSFlexPreset.ZENITH
+    gsFlexSettings: GSFlexSettings = GSFlexSettings()
 ): Typography = try {
-    val presetAxes = getPresetFontAxes(preset)
+    val effectiveAxes = if (gsFlexSettings.preset == GSFlexPreset.CUSTOM) {
+        Triple(gsFlexSettings.display, gsFlexSettings.headline, gsFlexSettings.body)
+    } else {
+        getPresetFontAxes(gsFlexSettings.preset)
+    }
     when (appFont) {
         AppFont.PETAL -> {
             val w = fontWeight.coerceIn(100, 900)
-            val displayFont = variableFont(R.font.google_sans_flex, weight = (w + 200).coerceAtMost(950), width = fontWidth, roundness = fontRoundness)
-            val headlineFont = variableFont(R.font.google_sans_flex, weight = (w + 150).coerceAtMost(900), width = fontWidth, roundness = fontRoundness)
-            val titleFont = variableFont(R.font.google_sans_flex, weight = (w + 100).coerceAtMost(850), width = fontWidth, roundness = fontRoundness)
-            val bodyFont = variableFont(R.font.google_sans_flex, weight = w, width = fontWidth, roundness = fontRoundness)
-            val labelFont = variableFont(R.font.google_sans_flex, weight = (w + 50).coerceAtMost(850), width = fontWidth, roundness = fontRoundness)
+            val displayFont = variableFont(R.font.google_sans_flex_variable, weight = (w + 200).coerceAtMost(950), width = fontWidth, roundness = fontRoundness)
+            val headlineFont = variableFont(R.font.google_sans_flex_variable, weight = (w + 150).coerceAtMost(900), width = fontWidth, roundness = fontRoundness)
+            val titleFont = variableFont(R.font.google_sans_flex_variable, weight = (w + 100).coerceAtMost(850), width = fontWidth, roundness = fontRoundness)
+            val bodyFont = variableFont(R.font.google_sans_flex_variable, weight = w, width = fontWidth, roundness = fontRoundness)
+            val labelFont = variableFont(R.font.google_sans_flex_variable, weight = (w + 50).coerceAtMost(850), width = fontWidth, roundness = fontRoundness)
             buildTypography(Tiers(displayFont, headlineFont, titleFont, bodyFont, labelFont))
         }
         AppFont.GS_FLEX -> {
-            val displayFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = presetAxes.first.toVariationSettings(), weight = FontWeight(950)))
-            val headlineFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = presetAxes.second.toVariationSettings(), weight = FontWeight(850)))
-            val bodyFont = FontFamily(Font(resId = R.font.google_sans_flex, variationSettings = presetAxes.third.toVariationSettings(), weight = FontWeight(750)))
+            // Use google_sans_flex_variable — Zenith's full 6-axis version (weight, width, opsz, GRAD, slant, ROND)
+            val displayFont = FontFamily(Font(
+                resId = R.font.google_sans_flex_variable,
+                variationSettings = effectiveAxes.first.toVariationSettings(),
+                weight = FontWeight(effectiveAxes.first.weight.toInt().coerceIn(1, 1000))
+            ))
+            val headlineFont = FontFamily(Font(
+                resId = R.font.google_sans_flex_variable,
+                variationSettings = effectiveAxes.second.toVariationSettings(),
+                weight = FontWeight(effectiveAxes.second.weight.toInt().coerceIn(1, 1000))
+            ))
+            val bodyFont = FontFamily(Font(
+                resId = R.font.google_sans_flex_variable,
+                variationSettings = effectiveAxes.third.toVariationSettings(),
+                weight = FontWeight(effectiveAxes.third.weight.toInt().coerceIn(1, 1000))
+            ))
             buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
         }
         AppFont.NUNITO -> buildTypography(

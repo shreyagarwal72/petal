@@ -100,7 +100,14 @@ object PetalSettingsBridge {
                             "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
-                            "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH"
+                            "sp_gs_flex_preset",
+                            "sp_gsflex_d_weight", "sp_gsflex_d_width", "sp_gsflex_d_opsz",
+                            "sp_gsflex_d_grade", "sp_gsflex_d_slant", "sp_gsflex_d_roundness",
+                            "sp_gsflex_h_weight", "sp_gsflex_h_width", "sp_gsflex_h_opsz",
+                            "sp_gsflex_h_grade", "sp_gsflex_h_slant", "sp_gsflex_h_roundness",
+                            "sp_gsflex_b_weight", "sp_gsflex_b_width", "sp_gsflex_b_opsz",
+                            "sp_gsflex_b_grade", "sp_gsflex_b_slant", "sp_gsflex_b_roundness" ->
+                                presetName = sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH"
                             "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
@@ -117,8 +124,41 @@ object PetalSettingsBridge {
                 val appFont = remember(fontName) {
                     try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.PETAL }
                 }
-                val gsFlexPreset = remember(presetName) {
+                val resolvedPreset = remember(presetName) {
                     try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.ZENITH }
+                }
+                val gsFlexSettings = remember(presetName) {
+                    if (resolvedPreset == GSFlexPreset.CUSTOM) {
+                        GSFlexSettings(
+                            preset = GSFlexPreset.CUSTOM,
+                            display = FontAxes(
+                                weight = sp.getFloat("sp_gsflex_d_weight", 950f),
+                                width = sp.getFloat("sp_gsflex_d_width", 90f),
+                                opsz = sp.getFloat("sp_gsflex_d_opsz", 30f),
+                                grade = sp.getFloat("sp_gsflex_d_grade", 0f),
+                                slant = sp.getFloat("sp_gsflex_d_slant", 0f),
+                                roundness = sp.getFloat("sp_gsflex_d_roundness", 100f)
+                            ),
+                            headline = FontAxes(
+                                weight = sp.getFloat("sp_gsflex_h_weight", 850f),
+                                width = sp.getFloat("sp_gsflex_h_width", 92f),
+                                opsz = sp.getFloat("sp_gsflex_h_opsz", 32f),
+                                grade = sp.getFloat("sp_gsflex_h_grade", 0f),
+                                slant = sp.getFloat("sp_gsflex_h_slant", 0f),
+                                roundness = sp.getFloat("sp_gsflex_h_roundness", 100f)
+                            ),
+                            body = FontAxes(
+                                weight = sp.getFloat("sp_gsflex_b_weight", 750f),
+                                width = sp.getFloat("sp_gsflex_b_width", 94f),
+                                opsz = sp.getFloat("sp_gsflex_b_opsz", 16f),
+                                grade = sp.getFloat("sp_gsflex_b_grade", 0f),
+                                slant = sp.getFloat("sp_gsflex_b_slant", 0f),
+                                roundness = sp.getFloat("sp_gsflex_b_roundness", 100f)
+                            )
+                        )
+                    } else {
+                        GSFlexSettings(preset = resolvedPreset)
+                    }
                 }
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
@@ -142,7 +182,7 @@ object PetalSettingsBridge {
                     fontWidth = fontWidthVal,
                     fontWeight = fontWeightVal,
                     fontRoundness = fontRoundnessVal,
-                    gsFlexPreset = gsFlexPreset,
+                    gsFlexSettings = gsFlexSettings,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -210,6 +250,47 @@ fun PetalSettingsScreen(
     }
     var selectedPreset by remember {
         mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH") } catch (e: Exception) { GSFlexPreset.ZENITH })
+    }
+    // Custom axes state (only active when selectedPreset == CUSTOM)
+    var customDisplay by remember {
+        mutableStateOf(FontAxes(
+            weight = sp.getFloat("sp_gsflex_d_weight", 950f),
+            width = sp.getFloat("sp_gsflex_d_width", 90f),
+            opsz = sp.getFloat("sp_gsflex_d_opsz", 30f),
+            grade = sp.getFloat("sp_gsflex_d_grade", 0f),
+            slant = sp.getFloat("sp_gsflex_d_slant", 0f),
+            roundness = sp.getFloat("sp_gsflex_d_roundness", 100f)
+        ))
+    }
+    var customHeadline by remember {
+        mutableStateOf(FontAxes(
+            weight = sp.getFloat("sp_gsflex_h_weight", 850f),
+            width = sp.getFloat("sp_gsflex_h_width", 92f),
+            opsz = sp.getFloat("sp_gsflex_h_opsz", 32f),
+            grade = sp.getFloat("sp_gsflex_h_grade", 0f),
+            slant = sp.getFloat("sp_gsflex_h_slant", 0f),
+            roundness = sp.getFloat("sp_gsflex_h_roundness", 100f)
+        ))
+    }
+    var customBody by remember {
+        mutableStateOf(FontAxes(
+            weight = sp.getFloat("sp_gsflex_b_weight", 750f),
+            width = sp.getFloat("sp_gsflex_b_width", 94f),
+            opsz = sp.getFloat("sp_gsflex_b_opsz", 16f),
+            grade = sp.getFloat("sp_gsflex_b_grade", 0f),
+            slant = sp.getFloat("sp_gsflex_b_slant", 0f),
+            roundness = sp.getFloat("sp_gsflex_b_roundness", 100f)
+        ))
+    }
+    var gsFlexCustomizerTab by remember { mutableIntStateOf(0) }
+    val selectedGSFlexSettings by remember(selectedPreset, customDisplay, customHeadline, customBody) {
+        derivedStateOf {
+            if (selectedPreset == GSFlexPreset.CUSTOM) {
+                GSFlexSettings(preset = GSFlexPreset.CUSTOM, display = customDisplay, headline = customHeadline, body = customBody)
+            } else {
+                GSFlexSettings(preset = selectedPreset)
+            }
+        }
     }
     var fontWidth by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
     var fontWeight by remember { mutableFloatStateOf(sp.getInt("sp_font_weight", 750).toFloat()) }
@@ -310,7 +391,7 @@ fun PetalSettingsScreen(
         fontWidth = fontWidth,
         fontWeight = fontWeight.toInt(),
         fontRoundness = fontRoundness,
-        gsFlexPreset = selectedPreset,
+        gsFlexSettings = selectedGSFlexSettings,
         colorStyle = selectedColorStyle,
         paletteId = selectedPaletteId
     ) {
@@ -576,6 +657,141 @@ fun PetalSettingsScreen(
                                                     @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                                 } else null
                                             )
+                                        }
+                                    }
+
+                                    // --- GS Flex Preset Chips ---
+                                    androidx.compose.animation.AnimatedVisibility(visible = selectedFont == AppFont.GS_FLEX) {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text(
+                                                "GS Flex Design Preset:",
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .horizontalScroll(rememberScrollState()),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                GSFlexPreset.values().forEach { preset ->
+                                                    FilterChip(
+                                                        selected = selectedPreset == preset,
+                                                        onClick = {
+                                                            selectedPreset = preset
+                                                            sp.edit().putString("sp_gs_flex_preset", preset.name).apply()
+                                                        },
+                                                        label = { Text(preset.label.substringBefore(" (")) },
+                                                        leadingIcon = if (selectedPreset == preset) {
+                                                            @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                        } else null
+                                                    )
+                                                }
+                                            }
+
+                                            // --- Custom GS Flex Axes (visible when CUSTOM preset selected) ---
+                                            androidx.compose.animation.AnimatedVisibility(
+                                                visible = selectedPreset == GSFlexPreset.CUSTOM,
+                                                enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                                                exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
+                                            ) {
+                                                Surface(
+                                                    shape = RoundedCornerShape(20.dp),
+                                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Column(
+                                                        modifier = Modifier.padding(16.dp),
+                                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                                    ) {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            modifier = Modifier.fillMaxWidth()
+                                                        ) {
+                                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                                Icon(Icons.Rounded.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                                                Text("Fine-tune Variable Axes", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                                            }
+                                                            // Copy from last non-custom preset
+                                                            val lastPreset = remember(selectedPreset) {
+                                                                GSFlexPreset.values().filter { it != GSFlexPreset.CUSTOM }.first()
+                                                            }
+                                                            TextButton(onClick = {
+                                                                val axes = getPresetFontAxes(lastPreset)
+                                                                customDisplay = axes.first
+                                                                customHeadline = axes.second
+                                                                customBody = axes.third
+                                                                sp.edit()
+                                                                    .putFloat("sp_gsflex_d_weight", axes.first.weight)
+                                                                    .putFloat("sp_gsflex_d_width", axes.first.width)
+                                                                    .putFloat("sp_gsflex_d_opsz", axes.first.opsz)
+                                                                    .putFloat("sp_gsflex_d_grade", axes.first.grade)
+                                                                    .putFloat("sp_gsflex_d_slant", axes.first.slant)
+                                                                    .putFloat("sp_gsflex_d_roundness", axes.first.roundness)
+                                                                    .putFloat("sp_gsflex_h_weight", axes.second.weight)
+                                                                    .putFloat("sp_gsflex_h_width", axes.second.width)
+                                                                    .putFloat("sp_gsflex_h_opsz", axes.second.opsz)
+                                                                    .putFloat("sp_gsflex_h_grade", axes.second.grade)
+                                                                    .putFloat("sp_gsflex_h_slant", axes.second.slant)
+                                                                    .putFloat("sp_gsflex_h_roundness", axes.second.roundness)
+                                                                    .putFloat("sp_gsflex_b_weight", axes.third.weight)
+                                                                    .putFloat("sp_gsflex_b_width", axes.third.width)
+                                                                    .putFloat("sp_gsflex_b_opsz", axes.third.opsz)
+                                                                    .putFloat("sp_gsflex_b_grade", axes.third.grade)
+                                                                    .putFloat("sp_gsflex_b_slant", axes.third.slant)
+                                                                    .putFloat("sp_gsflex_b_roundness", axes.third.roundness)
+                                                                    .apply()
+                                                            }) {
+                                                                Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                                Spacer(Modifier.width(4.dp))
+                                                                Text("Reset", style = MaterialTheme.typography.labelSmall)
+                                                            }
+                                                        }
+
+                                                        // Tab row for Display / Headline / Body
+                                                        PrimaryTabRow(
+                                                            selectedTabIndex = gsFlexCustomizerTab,
+                                                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                                            modifier = Modifier.clip(RoundedCornerShape(14.dp))
+                                                        ) {
+                                                            Tab(selected = gsFlexCustomizerTab == 0, onClick = { gsFlexCustomizerTab = 0 }, text = { Text("Display") })
+                                                            Tab(selected = gsFlexCustomizerTab == 1, onClick = { gsFlexCustomizerTab = 1 }, text = { Text("Headline") })
+                                                            Tab(selected = gsFlexCustomizerTab == 2, onClick = { gsFlexCustomizerTab = 2 }, text = { Text("Body") })
+                                                        }
+
+                                                        val currentAxes = when (gsFlexCustomizerTab) { 0 -> customDisplay; 1 -> customHeadline; else -> customBody }
+
+                                                        fun saveAxes(prefix: String, axes: FontAxes) {
+                                                            sp.edit()
+                                                                .putFloat("${prefix}_weight", axes.weight)
+                                                                .putFloat("${prefix}_width", axes.width)
+                                                                .putFloat("${prefix}_opsz", axes.opsz)
+                                                                .putFloat("${prefix}_grade", axes.grade)
+                                                                .putFloat("${prefix}_slant", axes.slant)
+                                                                .putFloat("${prefix}_roundness", axes.roundness)
+                                                                .apply()
+                                                        }
+
+                                                        fun updateCurrentAxes(newAxes: FontAxes) {
+                                                            when (gsFlexCustomizerTab) {
+                                                                0 -> { customDisplay = newAxes; saveAxes("sp_gsflex_d", newAxes) }
+                                                                1 -> { customHeadline = newAxes; saveAxes("sp_gsflex_h", newAxes) }
+                                                                else -> { customBody = newAxes; saveAxes("sp_gsflex_b", newAxes) }
+                                                            }
+                                                        }
+
+                                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            PetalVariableSlider("Weight", currentAxes.weight, 100f..1000f) { updateCurrentAxes(currentAxes.copy(weight = it)) }
+                                                            PetalVariableSlider("Width", currentAxes.width, 25f..150f) { updateCurrentAxes(currentAxes.copy(width = it)) }
+                                                            PetalVariableSlider("Optical Size", currentAxes.opsz, 6f..72f) { updateCurrentAxes(currentAxes.copy(opsz = it)) }
+                                                            PetalVariableSlider("Grade", currentAxes.grade, -200f..200f) { updateCurrentAxes(currentAxes.copy(grade = it)) }
+                                                            PetalVariableSlider("Slant", currentAxes.slant, -10f..0f) { updateCurrentAxes(currentAxes.copy(slant = it)) }
+                                                            PetalVariableSlider("Roundness", currentAxes.roundness, 0f..100f) { updateCurrentAxes(currentAxes.copy(roundness = it)) }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
 
@@ -2490,6 +2706,39 @@ private fun ToggleRow(
             checked = checked,
             icon = icon,
             onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+@Composable
+private fun PetalVariableSlider(
+    label: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    onValueChange: (Float) -> Unit
+) {
+    Column(modifier = Modifier.padding(vertical = 2.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                String.format(java.util.Locale.getDefault(), "%.0f", value),
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        PetalSlider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = range,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
