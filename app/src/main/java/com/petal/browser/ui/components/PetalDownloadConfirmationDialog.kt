@@ -188,6 +188,15 @@ object PetalDownloadDialogBridge {
         activity.runOnUiThread {
             try {
                 lateinit var dialog: androidx.appcompat.app.AlertDialog
+                val handler = android.os.Handler(android.os.Looper.getMainLooper())
+                val autoDismissRunnable = Runnable {
+                    try {
+                        if (dialog.isShowing) {
+                            dialog.dismiss()
+                        }
+                    } catch (_: Exception) {}
+                }
+
                 val composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
                     setViewTreeViewModelStoreOwner(activity)
@@ -200,10 +209,12 @@ object PetalDownloadDialogBridge {
                                 fileSizeFormatted = formattedSize,
                                 isDuplicate = isDuplicate,
                                 onConfirm = {
+                                    handler.removeCallbacks(autoDismissRunnable)
                                     if (dialog.isShowing) dialog.dismiss()
                                     onConfirmDownload(guessedFileName)
                                 },
                                 onDismiss = {
+                                    handler.removeCallbacks(autoDismissRunnable)
                                     if (dialog.isShowing) dialog.dismiss()
                                 }
                             )
@@ -216,8 +227,13 @@ object PetalDownloadDialogBridge {
                     .setCancelable(true)
                     .create()
 
+                dialog.setOnDismissListener {
+                    handler.removeCallbacks(autoDismissRunnable)
+                }
+
                 dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
                 dialog.show()
+                handler.postDelayed(autoDismissRunnable, 3500L)
                 com.petal.browser.unit.HelperUnit.setupDialog(activity, dialog)
             } catch (e: Exception) {
                 e.printStackTrace()

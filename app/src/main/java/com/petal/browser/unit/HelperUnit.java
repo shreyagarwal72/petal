@@ -639,7 +639,7 @@ public class HelperUnit {
             }
         }
 
-        Snackbar snackbar = Snackbar.make(parentView, "", Snackbar.LENGTH_INDEFINITE);
+        Snackbar snackbar = Snackbar.make(parentView, "", Snackbar.LENGTH_LONG);
         if (anchorView != null) {snackbar.setAnchorView(anchorView);}
 
         ViewGroup layout = (ViewGroup) snackbar.getView();
@@ -706,18 +706,35 @@ public class HelperUnit {
     }
     public static void makeSnackbarRound (Snackbar snackbar) {
         View snackbarView = snackbar.getView();
-        TextView textView = snackbarView.findViewById(R.id.snackbar_text);
+        Context context = snackbarView.getContext();
+
+        TypedValue surfaceValue = new TypedValue();
+        context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHigh, surfaceValue, true);
+        int backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : ContextCompat.getColor(context, R.color.colorSurfaceContainerHigh);
+
+        TypedValue onSurfaceValue = new TypedValue();
+        context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, onSurfaceValue, true);
+        int textColor = onSurfaceValue.data != 0 ? onSurfaceValue.data : ContextCompat.getColor(context, R.color.colorOnSurface);
+
+        TextView textView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
         if (textView != null) {
             textView.setMaxLines(30);
+            textView.setTextColor(textColor);
         }
+
+        TextView actionView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_action);
+        if (actionView != null) {
+            TypedValue primaryValue = new TypedValue();
+            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorPrimary, primaryValue, true);
+            if (primaryValue.data != 0) {
+                actionView.setTextColor(primaryValue.data);
+            }
+        }
+
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.RECTANGLE);
         background.setCornerRadius(60f);
-        if (snackbarView.getBackground() instanceof ColorDrawable) {
-            background.setColor(((ColorDrawable) snackbarView.getBackground()).getColor());
-        } else {
-            background.setColor(Color.parseColor("#323232"));
-        }
+        background.setColor(backgroundColor);
         snackbarView.setBackground(background);
         snackbar.setTextMaxLines(100);
     }

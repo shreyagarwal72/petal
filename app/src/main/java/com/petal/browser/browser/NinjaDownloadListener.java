@@ -161,17 +161,23 @@ public class NinjaDownloadListener implements DownloadListener {
                     R.drawable.icon_close, () -> true
             );
         } else {
-            com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
-                context,
-                downloadUrl,
-                contentDisposition,
-                mimeType,
-                contentLength,
-                confirmedFileName -> {
-                    BrowserUnit.download(context, downloadUrl, confirmedFileName, mimeType);
-                    return kotlin.Unit.INSTANCE;
-                }
-            );
+            String guessedFileName = URLUtil.guessFileName(downloadUrl, contentDisposition, mimeType);
+            boolean isDuplicate = com.petal.browser.ui.components.PetalDownloadDialogBridge.isFileExistsInDownloads(guessedFileName);
+            if (isDuplicate) {
+                com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
+                    context,
+                    downloadUrl,
+                    contentDisposition,
+                    mimeType,
+                    contentLength,
+                    confirmedFileName -> {
+                        BrowserUnit.download(context, downloadUrl, confirmedFileName, mimeType);
+                        return kotlin.Unit.INSTANCE;
+                    }
+                );
+            } else {
+                BrowserUnit.download(context, downloadUrl, guessedFileName, mimeType);
+            }
         }
     }
 }
