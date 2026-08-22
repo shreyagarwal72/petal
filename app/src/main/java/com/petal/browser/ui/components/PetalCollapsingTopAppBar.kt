@@ -1,9 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.petal.browser.ui.components
 
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
@@ -20,12 +28,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 /**
- * A collapsing Medium Top App Bar ported from RV System Monitor's
- * `ExitUntilCollapsedMediumTopAppBar`: the title's start padding nudges in and the back button
- * morphs from a tonal to a fully-filled icon button as the bar collapses on scroll.
+ * A collapsing Medium Top App Bar with Zenith-style animated title transitions.
  *
- * Use together with `TopAppBarDefaults.exitUntilCollapsedScrollBehavior()` connected to the
- * scrolling content via `Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)`.
+ * When [title] changes (e.g., switching between the Settings overview and a sub-page),
+ * the outgoing title fades + scales out while the incoming title fades + scales in
+ * (matching Zenith's `AnimatedContent` `HeaderTitleAnimation` pattern).
+ *
+ * Additional scroll-collapse effects:
+ * - The title's start padding nudges in as the bar collapses.
+ * - The back button morphs from a tonal to a fully-filled icon button.
+ *
+ * Use together with `TopAppBarDefaults.exitUntilCollapsedScrollBehavior()` connected
+ * to the scrolling content via `Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)`.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,12 +55,36 @@ fun PetalCollapsingTopAppBar(
                 animationSpec = tween(250),
                 label = "petalHeaderTitleStartPadding",
             )
-            Text(
-                text = title,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            // Zenith-style: fade + scale transition when the title text changes
+            // (e.g., switching from "Settings" overview → a sub-page title).
+            AnimatedContent(
+                targetState = title,
+                transitionSpec = {
+                    (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                            scaleIn(
+                                initialScale = 0.92f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            ))
+                        .togetherWith(
+                            fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                    scaleOut(
+                                        targetScale = 0.92f,
+                                        animationSpec = spring(stiffness = Spring.StiffnessLow)
+                                    )
+                        )
+                },
+                label = "petalHeaderTitleAnimation",
                 modifier = Modifier.padding(start = titleStartPadding.value),
-            )
+            ) { currentTitle ->
+                Text(
+                    text = currentTitle,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         },
         navigationIcon = {
             Crossfade(
@@ -68,6 +106,3 @@ fun PetalCollapsingTopAppBar(
         scrollBehavior = scrollBehavior,
     )
 }
-
-
-
