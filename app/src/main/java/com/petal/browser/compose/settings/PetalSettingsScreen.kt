@@ -317,7 +317,48 @@ fun PetalSettingsScreen(
         val petalHeaderScrollBehavior = androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
         Scaffold(
             modifier = Modifier.nestedScroll(petalHeaderScrollBehavior.nestedScrollConnection),
-            containerColor = MaterialTheme.colorScheme.background
+            containerColor = MaterialTheme.colorScheme.background,
+            topBar = {
+                // Top App Bar Header + Search (hosted in Scaffold's topBar so insets, collapse
+                // offset, and content padding are all resolved consistently by Scaffold).
+                Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+                    com.petal.browser.ui.components.PetalCollapsingTopAppBar(
+                        title = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
+                        onNavigateBack = {
+                            if (currentCategory != SettingsCategory.OVERVIEW) {
+                                currentCategory = SettingsCategory.OVERVIEW
+                            } else {
+                                onBackPress()
+                            }
+                        },
+                        scrollBehavior = petalHeaderScrollBehavior,
+                    )
+
+                    // 🔍 Settings Search Bar
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 6.dp),
+                        placeholder = { Text("Search settings...") },
+                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                        )
+                    )
+                }
+            }
         ) { innerPadding ->
             Box(
                 modifier = Modifier
@@ -334,45 +375,6 @@ fun PetalSettingsScreen(
                     Column(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        // Top App Bar Header (Mounted inside transitioning route container for Predictive Back & Page Animations)
-                        Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
-                            com.petal.browser.ui.components.PetalCollapsingTopAppBar(
-                                title = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
-                                onNavigateBack = {
-                                    if (currentCategory != SettingsCategory.OVERVIEW) {
-                                        currentCategory = SettingsCategory.OVERVIEW
-                                    } else {
-                                        onBackPress()
-                                    }
-                                },
-                                scrollBehavior = petalHeaderScrollBehavior,
-                            )
-
-                            // 🔍 Settings Search Bar
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, vertical = 6.dp),
-                                placeholder = { Text("Search settings...") },
-                                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                                trailingIcon = {
-                                    if (searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { searchQuery = "" }) {
-                                            Icon(Icons.Rounded.Close, contentDescription = "Clear")
-                                        }
-                                    }
-                                },
-                                singleLine = true,
-                                shape = RoundedCornerShape(16.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
-                                )
-                            )
-                        }
-
                         key(currentCategory) {
                             val categoryScrollState = rememberScrollState()
                             Column(
