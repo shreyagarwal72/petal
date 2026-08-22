@@ -379,14 +379,16 @@ fun PetalSettingsScreen(
                             )
                         }
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(20.dp)
-                        ) {
+                        key(currentCategory) {
+                            val categoryScrollState = rememberScrollState()
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .verticalScroll(categoryScrollState)
+                                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(20.dp)
+                            ) {
                 if (currentCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
                     Text(
                         "Categories",
@@ -2376,8 +2378,8 @@ fun PetalSettingsScreen(
             }
         }
     }
-        }
-    }
+}
+}
 }
 }
 
