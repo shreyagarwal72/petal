@@ -710,11 +710,11 @@ public class HelperUnit {
 
         TypedValue surfaceValue = new TypedValue();
         context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHigh, surfaceValue, true);
-        int backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : ContextCompat.getColor(context, R.color.colorSurfaceContainerHigh);
+        int backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : Color.parseColor("#323232");
 
         TypedValue onSurfaceValue = new TypedValue();
         context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, onSurfaceValue, true);
-        int textColor = onSurfaceValue.data != 0 ? onSurfaceValue.data : ContextCompat.getColor(context, R.color.colorOnSurface);
+        int textColor = onSurfaceValue.data != 0 ? onSurfaceValue.data : Color.WHITE;
 
         TextView textView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
         if (textView != null) {
