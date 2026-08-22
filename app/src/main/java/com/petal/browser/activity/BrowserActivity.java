@@ -203,6 +203,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private ValueCallback<Uri[]> mFilePathCallback;
     private com.petal.browser.media.PetalMediaSessionService mediaService;
     private boolean isMediaBound = false;
+    /**
+     * True during the very first onResume() that immediately follows onCreate().
+     * dispatchIntent() is called at the end of onCreate() (after all tabs are ready),
+     * so we must skip the redundant call in onResume() to avoid a double-dispatch
+     * or, worse, a no-op because setAction("") already cleared the intent action.
+     */
+    private boolean suppressResumeDispatch = false;
     private final ServiceConnection mediaConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -452,7 +459,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         initPullToRefresh();
         initOverview();
         hideSearch();
-        dispatchIntent(getIntent());
+        // NOTE: dispatchIntent() is deferred to AFTER tab session restoration below.
+        // Calling it here would run before ninjaWebView / currentAlbumController are
+        // initialized, so ACTION_VIEW would consume the intent (setAction("")) without
+        // actually loading the URL — causing the "only opens on 2nd launch" bug.
 
         if (sp.getBoolean("sp_check_update_on_launch", true)) {
             com.petal.browser.unit.UpdateUnit.checkForUpdates(this, true);
@@ -530,6 +540,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (BrowserContainer.size() < 1) {
             addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
         }
+
+        // Now that ninjaWebView and currentAlbumController are fully initialized,
+        // dispatch any incoming intent (e.g. ACTION_VIEW from an external link).
+        // We flag suppressResumeDispatch so onResume() won't double-dispatch it.
+        suppressResumeDispatch = true;
+        dispatchIntent(getIntent());
 
         // Welcome and Search Engine dialogs are displayed in onStart() to ensure the Activity window and decor view are fully attached.
     }
@@ -628,7 +644,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             snackbar.setAction(context.getString(R.string.app_ok), v -> showDownloads());
             snackbar.show();
         }
-        dispatchIntent(getIntent());
+        // Skip the first post-onCreate resume — dispatchIntent() already ran at the
+        // end of onCreate() once all tabs were ready. Every subsequent resume (coming
+        // back from another app, screen-off, etc.) should still dispatch normally.
+        if (suppressResumeDispatch) {
+            suppressResumeDispatch = false;
+        } else {
+            dispatchIntent(getIntent());
+        }
         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
         if (bottomNavContainer != null) {
             bottomNavContainer.setTranslationY(0f);
