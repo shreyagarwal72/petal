@@ -114,7 +114,9 @@ object PetalDownloadBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    PetalDownloadManagerScreen(onBackPress = onBackPress)
+                    com.petal.browser.predictive.PetalDepthScreenWrapper {
+                        PetalDownloadManagerScreen(onBackPress = onBackPress)
+                    }
                 }
             }
         }
