@@ -273,8 +273,8 @@ fun PetalUpdateSheetContent(
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        PetalSimpleMarkdown(
-                            content = notesToDisplay,
+                        PetalMarkdownRenderer(
+                            markdown = notesToDisplay,
                             modifier = Modifier.fillMaxWidth().padding(16.dp)
                         )
                     }
@@ -322,7 +322,7 @@ fun PetalUpdateSheetContent(
                 } else {
                     Button(
                         onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CONFIRM, 0.9f)
+                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
                             isDownloading = true
                             coroutineScope.launch(Dispatchers.IO) {
                                 downloadAndInstallApk(
