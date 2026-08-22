@@ -169,7 +169,7 @@ fun PetalAiSearchResultSheet(
                     }
                     Column {
                         Text(
-                            text = "AI Web Search",
+                            text = "Petal AI",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -213,7 +213,7 @@ fun PetalAiSearchResultSheet(
                         onValueChange = { searchQuery = it },
                         placeholder = {
                             Text(
-                                "Search web with AI...",
+                                "Search with Petal AI...",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -385,7 +385,7 @@ fun PetalAiSearchResultSheet(
                             )
                             Spacer(Modifier.width(10.dp))
                             Text(
-                                text = "AI Web Search Failed",
+                                text = "Petal AI Request Failed",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )

@@ -2628,6 +2628,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
 
                 @Override
+                public void onOpenPetalAi() {
+                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(BrowserActivity.this, "");
+                }
+
+                @Override
                 public void onTriggerMediaMode() {
                     boolean isPipSupported = getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
                     boolean isAutoPipEnabled = sp.getBoolean("sp_auto_pip", true);

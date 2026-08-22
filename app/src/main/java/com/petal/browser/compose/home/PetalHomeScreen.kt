@@ -672,7 +672,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
             }) {
                 Icon(
                     Icons.Rounded.AutoAwesome,
-                    contentDescription = "AI Web Search",
+                    contentDescription = "Petal AI",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

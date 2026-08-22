@@ -65,6 +65,7 @@ interface PetalOverflowMenuActionHandler {
     fun onViewSource()
     fun onOpenSettings()
     fun onTriggerMediaMode() {}
+    fun onOpenPetalAi() {}
 }
 
 object PetalOverflowBridge {
@@ -215,6 +216,10 @@ object PetalOverflowBridge {
                             onTriggerMediaMode = {
                                 dialog.dismiss()
                                 handler.onTriggerMediaMode()
+                            },
+                            onOpenPetalAi = {
+                                dialog.dismiss()
+                                handler.onOpenPetalAi()
                             }
                         )
                     }
@@ -260,7 +265,8 @@ fun PetalOverflowMenuSheet(
     onShareLink: () -> Unit,
     onViewSource: () -> Unit,
     onOpenSettings: () -> Unit,
-    onTriggerMediaMode: () -> Unit = {}
+    onTriggerMediaMode: () -> Unit = {},
+    onOpenPetalAi: () -> Unit = {}
 ) {
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(false) }
@@ -561,6 +567,13 @@ fun PetalOverflowMenuSheet(
                         )
                     }
                 }
+
+                MenuRowItem(
+                    icon = Icons.Rounded.AutoAwesome,
+                    title = "Petal AI",
+                    subtitle = "Ask AI, web research & assistant",
+                    onClick = onOpenPetalAi
+                )
 
                 MenuRowItem(
                     icon = Icons.Rounded.Settings,

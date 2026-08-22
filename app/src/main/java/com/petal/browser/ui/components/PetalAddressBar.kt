@@ -191,7 +191,7 @@ fun PetalAddressBar(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.AutoAwesome,
-                        contentDescription = "AI Real-Time Web Research",
+                        contentDescription = "Petal AI",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
