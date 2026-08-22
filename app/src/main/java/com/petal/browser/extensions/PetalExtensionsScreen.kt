@@ -68,6 +68,11 @@ fun PetalExtensionsScreen(
         }
     }
 
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onDismiss,
+    ) {
+    com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -226,6 +231,8 @@ fun PetalExtensionsScreen(
             }
         }
     }
+}
+}
 }
 
 /** Java Interop Bridge to open Chrome Extensions sheet */
