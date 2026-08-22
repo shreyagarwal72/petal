@@ -360,12 +360,10 @@ fun PetalSettingsScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = true) {
-        if (currentCategory != SettingsCategory.OVERVIEW) {
-            currentCategory = SettingsCategory.OVERVIEW
-        } else {
-            onBackPress()
-        }
+    // In-category back (drilling back up to the overview list) stays an instant,
+    // non-predictive BackHandler since it's an internal state change, not a screen exit.
+    androidx.activity.compose.BackHandler(enabled = currentCategory != SettingsCategory.OVERVIEW) {
+        currentCategory = SettingsCategory.OVERVIEW
     }
 
     fun matchesSearch(sectionTitle: String, keywords: String): Boolean {
@@ -394,6 +392,13 @@ fun PetalSettingsScreen(
         colorStyle = selectedColorStyle,
         paletteId = selectedPaletteId
     ) {
+      // Predictive back gesture only fires when the OVERVIEW category is showing;
+      // while drilled into a category the BackHandler above intercepts back first.
+      com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = currentCategory == SettingsCategory.OVERVIEW,
+        onBack = onBackPress,
+      ) {
+      com.petal.browser.predictive.PetalScreenWrapper {
         val petalHeaderScrollBehavior = androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
         Scaffold(
             modifier = Modifier.nestedScroll(petalHeaderScrollBehavior.nestedScrollConnection),
@@ -2160,6 +2165,8 @@ fun PetalSettingsScreen(
             }
         }
     }
+}
+}
 }
 }
 

@@ -140,6 +140,11 @@ fun PetalDeleteScreen(
         )
     }
 
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onBackPress,
+    ) {
+    com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) { innerPadding ->
@@ -373,6 +378,8 @@ fun PetalDeleteScreen(
             }
         }
     }
+}
+}
 }
 
 @Composable
