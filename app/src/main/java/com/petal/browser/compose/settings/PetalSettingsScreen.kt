@@ -22,6 +22,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import com.petal.browser.activity.BrowserActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
@@ -1643,10 +1644,7 @@ fun PetalSettingsScreen(
                                             selected = addressBarPosition == "TOP",
                                             onClick = {
                                                 addressBarPosition = "TOP"
-                                                sp.edit().putString("sp_address_bar_position", "TOP").apply()
-                                                if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
-                                                    (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
-                                                }
+                                                (context as? BrowserActivity)?.applyAddressBarPosition()
                                             },
                                             label = { Text("Top (Default)") },
                                             leadingIcon = if (addressBarPosition == "TOP") {
@@ -1658,9 +1656,7 @@ fun PetalSettingsScreen(
                                             onClick = {
                                                 addressBarPosition = "BOTTOM"
                                                 sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
-                                                if (context is ComponentActivity && context is com.petal.browser.activity.BrowserActivity) {
-                                                    (context as com.petal.browser.activity.BrowserActivity).applyAddressBarPosition()
-                                                }
+                                                (context as? BrowserActivity)?.applyAddressBarPosition()
                                             },
                                             label = { Text("Bottom") },
                                             leadingIcon = if (addressBarPosition == "BOTTOM") {

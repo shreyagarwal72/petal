@@ -45,6 +45,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -164,7 +165,7 @@ object PetalTabSwitcherBridge {
                             onNewTab = { isIncognito ->
                                 try { dialog.dismiss() } catch (ignored: Exception) {}
                                 if (isIncognito) {
-                                    (activity as? com.petal.browser.activity.BrowserActivity)?.addAlbum("Incognito Tab", "about:blank", true, true)
+                                    (activity as? BrowserActivity)?.addAlbum("Incognito Tab", "about:blank", true, true)
                                 } else {
                                     onNewTab()
                                 }
@@ -178,7 +179,7 @@ object PetalTabSwitcherBridge {
                             },
                             onOpenSettings = {
                                 try { dialog.dismiss() } catch (ignored: Exception) {}
-                                (activity as? com.petal.browser.activity.BrowserActivity)?.showOverflow(null, null, 0, "", "", null, null, 0)
+                                (activity as? BrowserActivity)?.showOverflow(null, null, 0, "", "", null, null, 0)
                             },
                             onTabVisible = { tabItem ->
                                 // Live PixelCopy thumbnail refresh: the tabItems list is
@@ -224,7 +225,7 @@ object PetalTabSwitcherBridge {
                 }
             }
             dialog.setOnDismissListener {
-                (activity as? com.petal.browser.activity.BrowserActivity)?.apply {
+                (activity as? BrowserActivity)?.apply {
                     runOnUiThread { updatePersistentBottomNav() }
                 }
             }
