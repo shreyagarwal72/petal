@@ -34,7 +34,7 @@ public class PetalDownloadEngine {
         Context appContext = context.getApplicationContext();
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
                 .setDownloadConcurrentLimit(4)
-                .setProgressReportingIntervalMillis(250L)
+                .setProgressReportingInterval(250L)
                 .enableLogging(false)
                 .build();
         fetch = Fetch.Impl.getInstance(fetchConfiguration);
