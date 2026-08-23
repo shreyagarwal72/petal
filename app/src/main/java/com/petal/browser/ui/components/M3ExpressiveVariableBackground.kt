@@ -23,6 +23,12 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.preference.PreferenceManager
+
 enum class M3ExpressiveShapeType {
     SCALLOP, FLOWER, STARBURST, CLOVER, ARCH, POLYGON
 }
@@ -127,6 +133,23 @@ fun M3ExpressiveVariableBackground(
     modifier: Modifier = Modifier,
     pageSeed: String = "expressive_page"
 ) {
+    val context = LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
+
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sp_expressive_bg_shapes") {
+                isShapesEnabled = sp.getBoolean("sp_expressive_bg_shapes", true)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            sp.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+
+    if (!isShapesEnabled) return
     // A fresh random layout each time this screen is entered (matches the
     // "variable" behavior every other screen already has), but stable for
     // the lifetime of this composition so it doesn't jump around mid-visit.

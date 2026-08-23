@@ -306,6 +306,7 @@ fun PetalSettingsScreen(
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
     var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
+    var isExpressiveBgShapes by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
 
     // Private DNS & Language States
     var privateDnsMode by remember { mutableStateOf(sp.getString("sp_private_dns_mode", "OFF") ?: "OFF") }
@@ -341,6 +342,9 @@ fun PetalSettingsScreen(
                 }
                 "sp_floating_tab_bar" -> {
                     isFloatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
+                }
+                "sp_expressive_bg_shapes" -> {
+                    isExpressiveBgShapes = sp.getBoolean("sp_expressive_bg_shapes", true)
                 }
             }
         }
@@ -907,6 +911,20 @@ fun PetalSettingsScreen(
                                         onCheckedChange = { newValue ->
                                             isFloatingTabBar = newValue
                                             sp.edit().putBoolean("sp_floating_tab_bar", newValue).apply()
+                                        }
+                                    )
+                                    
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                    
+                                    // Material 3 Expressive Background Morphing Shapes Toggle
+                                    ToggleRow(
+                                        title = "M3 Expressive Morphing Shapes",
+                                        subtitle = "Display ambient morphing background shapes across all app screens",
+                                        icon = Icons.Rounded.BubbleChart,
+                                        checked = isExpressiveBgShapes,
+                                        onCheckedChange = { newValue ->
+                                            isExpressiveBgShapes = newValue
+                                            sp.edit().putBoolean("sp_expressive_bg_shapes", newValue).apply()
                                         }
                                     )
 
