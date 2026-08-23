@@ -44,6 +44,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -437,11 +438,13 @@ fun PetalHomeScreen(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // ── Layer 0: living Material 3 Expressive background ───────────
-            // Purely decorative, drawn once behind everything else. Never
-            // intercepts touch, never affects the layout below it.
-            ExpressiveMorphingBackground(
+            // Same shared component every other screen already uses
+            // (History, Settings, Downloads, Delete, Account Sync, Omnibox) —
+            // "home_page" gives Home its own random layout, consistent with
+            // how those screens each pass their own pageSeed.
+            com.petal.browser.ui.components.M3ExpressiveVariableBackground(
                 modifier = Modifier.fillMaxSize(),
-                colors = defaultPetalBackgroundColors()
+                pageSeed = "home_page"
             )
 
             Column(
@@ -619,8 +622,9 @@ private fun ShortcutTile(
             modifier = Modifier
                 .size(60.dp)
                 .graphicsLayer { scaleX = scale; scaleY = scale }
+                .shadow(elevation = 3.dp, shape = RoundedCornerShape(20.dp), clip = false)
                 .clip(RoundedCornerShape(20.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
         ) {
             // Small tinted badge circle behind icon
             Box(
@@ -713,9 +717,9 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
 
     Surface(
         shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 3.dp,
-        shadowElevation = 1.dp,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        tonalElevation = 4.dp,
+        shadowElevation = 6.dp,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 64.dp)
@@ -815,8 +819,9 @@ private fun PetalQuickActionsRow(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 1.dp,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        tonalElevation = 2.dp,
+        shadowElevation = 3.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
