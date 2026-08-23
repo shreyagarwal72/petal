@@ -288,14 +288,17 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                 }
             }
         ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Box(modifier = Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(pageSeed = "downloads_page")
 
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Header inside graphicsLayer for complete predictive back animation consistency!
-            Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
+            // Header inside Surface covering status bar seamlessly!
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.fillMaxWidth().statusBarsPadding()
+            ) {
                 if (isSelectionMode) {
                     TopAppBar(
                         title = {
@@ -354,7 +357,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.background
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                         )
                     )
                 }
@@ -370,7 +373,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 24.dp)
+                    contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {
                     groupedDownloads.forEach { (dateHeader, items) ->
                         stickyHeader(key = dateHeader) {
