@@ -148,8 +148,8 @@ object PetalDownloadEngine {
                     randomAccessFile.setLength(0)
                 }
 
-                val inputStream = body.byteStream()
-                val buffer = ByteArray(16384) // 16KB fixed buffer
+                val inputStream = java.io.BufferedInputStream(body.byteStream(), 65536)
+                val buffer = ByteArray(65536) // 64KB optimized I/O buffer
                 var bytesRead: Int
                 var totalRead = if (isPartial) existingLength else 0L
                 var lastEmittedTime = System.currentTimeMillis()

@@ -171,7 +171,7 @@ public class BrowserUnit {
                 java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
                 extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
                 extraHeaders.put("Accept-Language", Locale.getDefault().toLanguageTag());
-                extraHeaders.put("Accept-Encoding", "identity");
+                extraHeaders.put("Accept-Encoding", "gzip, deflate, br, identity");
                 extraHeaders.put("Connection", "keep-alive");
                 extraHeaders.put("Cache-Control", "no-transform");
                 extraHeaders.put("Referer", verifiedUrl);
