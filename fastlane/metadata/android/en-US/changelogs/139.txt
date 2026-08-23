@@ -1,0 +1,4 @@
+v1.3.9 Release Notes
+
+- fix: Resolved Kotlin compilation string comparison syntax in PetalConfirmBottomSheet
+- fix: Build stability fix for CI APK generation

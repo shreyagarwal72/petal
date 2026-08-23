@@ -57,7 +57,7 @@ object PetalUpdateSheetBridge {
 
         executor.execute {
             try {
-                var currentVerName = "v1.3.8"
+                var currentVerName = "v1.3.9"
                 try {
                     val pInfo = activity.packageManager.getPackageInfo(activity.packageName, 0)
                     currentVerName = "v${pInfo.versionName}"
