@@ -760,25 +760,11 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                 )
             }
 
-            val voiceLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
-            ) { result ->
-                if (result.resultCode == android.app.Activity.RESULT_OK && result.data != null) {
-                    val spokenText = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-                    if (!spokenText.isNullOrBlank()) {
-                        onSearch(spokenText)
-                    }
-                }
-            }
             IconButton(onClick = {
-                try {
-                    val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                        putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak to search...")
+                if (activity != null) {
+                    com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
+                        if (result.isNotBlank()) onSearch(result)
                     }
-                    voiceLauncher.launch(intent)
-                } catch (e: Exception) {
-                    android.widget.Toast.makeText(context, "Voice search is not supported on this device", android.widget.Toast.LENGTH_SHORT).show()
                 }
             }) {
                 Icon(
