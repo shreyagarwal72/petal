@@ -86,16 +86,29 @@ public class PetalHapticEngine {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && touchAttrs != null) {
                     vibrator.vibrate(effect, touchAttrs);
+                    return true;
                 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     vibrator.vibrate(effect);
+                    return true;
                 } else {
                     vibrator.vibrate(40);
+                    return true;
                 }
-                return true;
-            } catch (Throwable ignored) {
-                return false;
-            }
+            } catch (Throwable ignored) {}
         }
+
+        // Multi-tiered fallback for devices lacking hardware primitive composition
+        try {
+            long durationMs = (pattern == Pattern.DOUBLE_CLICK || pattern == Pattern.HEAVY_CLICK) ? 45L : 25L;
+            int amplitude = Math.max(1, Math.min(255, (int) (clamped * 255f)));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                VibrationEffect fallbackEffect = VibrationEffect.createOneShot(durationMs, amplitude);
+                vibrator.vibrate(fallbackEffect);
+            } else {
+                vibrator.vibrate(durationMs);
+            }
+            return true;
+        } catch (Throwable ignored) {}
         return false;
     }
 
@@ -172,32 +185,35 @@ public class PetalHapticEngine {
 
     private VibrationEffect buildEffect(Pattern pattern, float intensity) {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                VibrationEffect.Composition composition = VibrationEffect.startComposition();
-                switch (pattern) {
-                    case CLICK:
-                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
-                        break;
-                    case TICK:
-                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity);
-                        break;
-                    case HEAVY_CLICK:
-                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
-                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, Math.max(0f, Math.min(1f, intensity * 0.6f)), 40);
-                        break;
-                    case DOUBLE_CLICK:
-                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
-                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity, 80);
-                        break;
-                    case SOFT_BUMP:
-                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, intensity);
-                        break;
-                    case DOUBLE_TICK:
-                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity);
-                        composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity, 60);
-                        break;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator != null) {
+                int primitive = getPrimitiveForPattern(pattern);
+                if (vibrator.areAllPrimitivesSupported(primitive)) {
+                    VibrationEffect.Composition composition = VibrationEffect.startComposition();
+                    switch (pattern) {
+                        case CLICK:
+                            composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
+                            break;
+                        case TICK:
+                            composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity);
+                            break;
+                        case HEAVY_CLICK:
+                            composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
+                            composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, Math.max(0f, Math.min(1f, intensity * 0.6f)), 40);
+                            break;
+                        case DOUBLE_CLICK:
+                            composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity);
+                            composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, intensity, 80);
+                            break;
+                        case SOFT_BUMP:
+                            composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, intensity);
+                            break;
+                        case DOUBLE_TICK:
+                            composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity);
+                            composition.addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, intensity, 60);
+                            break;
+                    }
+                    return composition.compose();
                 }
-                return composition.compose();
             }
         } catch (Throwable ignored) {}
 
@@ -229,5 +245,23 @@ public class PetalHapticEngine {
         } catch (Throwable ignored) {}
 
         return null;
+    }
+
+    private int getPrimitiveForPattern(Pattern pattern) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            switch (pattern) {
+                case TICK:
+                    return VibrationEffect.Composition.PRIMITIVE_TICK;
+                case SOFT_BUMP:
+                    return VibrationEffect.Composition.PRIMITIVE_LOW_TICK;
+                case CLICK:
+                case HEAVY_CLICK:
+                case DOUBLE_CLICK:
+                case DOUBLE_TICK:
+                default:
+                    return VibrationEffect.Composition.PRIMITIVE_CLICK;
+            }
+        }
+        return 0;
     }
 }

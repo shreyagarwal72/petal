@@ -153,6 +153,23 @@ fun extractDomain(url: String): String {
     }
 }
 
+enum class DownloadSortOption(val label: String) {
+    DATE_DESC("Date (Newest first)"),
+    DATE_ASC("Date (Oldest first)"),
+    NAME_ASC("File Name (A to Z)"),
+    NAME_DESC("File Name (Z to A)"),
+    SIZE_DESC("File Size (Largest first)"),
+    SIZE_ASC("File Size (Smallest first)"),
+    STATUS("Download Status")
+}
+
+fun formatDownloadTime(timestampMs: Long, includeDate: Boolean = false): String {
+    if (timestampMs <= 0) return ""
+    val pattern = if (includeDate) "d MMM yyyy, h:mm a" else "h:mm a"
+    val sdf = SimpleDateFormat(pattern, Locale.getDefault())
+    return sdf.format(Date(timestampMs))
+}
+
 fun formatDateHeader(timestampMs: Long): String {
     if (timestampMs <= 0) return "Downloads"
     val calItem = Calendar.getInstance().apply { timeInMillis = timestampMs }
@@ -211,6 +228,31 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         rawDownloadList.filter { !pendingDeletedIds.contains(it.id) }
     }
 
+    var sortOption by remember { mutableStateOf(DownloadSortOption.DATE_DESC) }
+    var sortMenuExpanded by remember { mutableStateOf(false) }
+
+    val sortedDownloadList = remember(downloadList, sortOption) {
+        when (sortOption) {
+            DownloadSortOption.DATE_DESC -> downloadList.sortedByDescending { it.timestampMs }
+            DownloadSortOption.DATE_ASC -> downloadList.sortedBy { it.timestampMs }
+            DownloadSortOption.NAME_ASC -> downloadList.sortedBy { it.fileName.lowercase(Locale.getDefault()) }
+            DownloadSortOption.NAME_DESC -> downloadList.sortedByDescending { it.fileName.lowercase(Locale.getDefault()) }
+            DownloadSortOption.SIZE_DESC -> downloadList.sortedByDescending { if (it.totalSize > 0) it.totalSize else it.bytesDownloaded }
+            DownloadSortOption.SIZE_ASC -> downloadList.sortedBy { if (it.totalSize > 0) it.totalSize else it.bytesDownloaded }
+            DownloadSortOption.STATUS -> downloadList.sortedWith(
+                compareBy<DownloadItem> {
+                    when (it.status) {
+                        DownloadManager.STATUS_RUNNING -> 0
+                        DownloadManager.STATUS_PAUSED -> 1
+                        DownloadManager.STATUS_PENDING -> 2
+                        DownloadManager.STATUS_SUCCESSFUL -> 3
+                        else -> 4
+                    }
+                }.thenByDescending { it.timestampMs }
+            )
+        }
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -242,8 +284,20 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         }
     }
 
-    val groupedDownloads = remember(downloadList) {
-        downloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
+    val groupedDownloads = remember(sortedDownloadList, sortOption) {
+        if (sortOption == DownloadSortOption.DATE_DESC || sortOption == DownloadSortOption.DATE_ASC) {
+            sortedDownloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
+        } else {
+            val header = when (sortOption) {
+                DownloadSortOption.NAME_ASC -> "Sorted by Name (A-Z)"
+                DownloadSortOption.NAME_DESC -> "Sorted by Name (Z-A)"
+                DownloadSortOption.SIZE_DESC -> "Sorted by Size (Largest)"
+                DownloadSortOption.SIZE_ASC -> "Sorted by Size (Smallest)"
+                DownloadSortOption.STATUS -> "Sorted by Status"
+                else -> "All Downloads"
+            }
+            mapOf(header to sortedDownloadList)
+        }
     }
 
     // Predictive back gesture (swipe-to-go-back) replaces the plain BackHandler so this
@@ -352,6 +406,51 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                             }
                         },
                         actions = {
+                            Box {
+                                IconButton(onClick = { sortMenuExpanded = true }) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Sort,
+                                        contentDescription = "Sort Downloads",
+                                        tint = if (sortOption != DownloadSortOption.DATE_DESC) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = sortMenuExpanded,
+                                    onDismissRequest = { sortMenuExpanded = false }
+                                ) {
+                                    Text(
+                                        text = "Sort By",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                    )
+                                    HorizontalDivider()
+                                    DownloadSortOption.values().forEach { option ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = option.label,
+                                                    fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal,
+                                                    color = if (sortOption == option) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                if (sortOption == option) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Check,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                sortOption = option
+                                                sortMenuExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
                             IconButton(onClick = { PetalFetchDownloadBridge.refresh(context) }) {
                                 Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
                             }
@@ -398,6 +497,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                                 item = item,
                                 isSelected = isSelected,
                                 isSelectionMode = isSelectionMode,
+                                showFullDate = (sortOption != DownloadSortOption.DATE_DESC && sortOption != DownloadSortOption.DATE_ASC),
                                 onToggleSelect = { toggleSelection(item.id) },
                                 onLongClick = {
                                     if (!isSelectionMode) {
@@ -425,6 +525,7 @@ private fun DownloadRowItem(
     item: DownloadItem,
     isSelected: Boolean,
     isSelectionMode: Boolean,
+    showFullDate: Boolean = false,
     onToggleSelect: () -> Unit,
     onLongClick: () -> Unit,
     onDeleteItem: () -> Unit,
@@ -539,25 +640,29 @@ private fun DownloadRowItem(
                     val formattedSize = remember(item.totalSize, item.bytesDownloaded) {
                         if (item.totalSize > 0) formatBytes(item.totalSize) else formatBytes(item.bytesDownloaded)
                     }
+                    val timeStr = remember(item.timestampMs, showFullDate) {
+                        formatDownloadTime(item.timestampMs, includeDate = showFullDate)
+                    }
 
-                    val subtitleText = when {
-                        item.status == DownloadManager.STATUS_RUNNING -> {
-                            val percentStr = if (item.progress != null) "${(item.progress * 100).toInt()}%" else ""
-                            if (domain.isNotEmpty()) {
-                                "${formatBytes(item.bytesDownloaded)} of $formattedSize • $percentStr • $domain"
-                            } else {
-                                "${formatBytes(item.bytesDownloaded)} of $formattedSize • $percentStr"
+                    val subtitleText = remember(item, domain, formattedSize, timeStr) {
+                        val parts = mutableListOf<String>()
+                        when (item.status) {
+                            DownloadManager.STATUS_RUNNING -> {
+                                val percentStr = if (item.progress != null) "${(item.progress * 100).toInt()}%" else ""
+                                parts.add("${formatBytes(item.bytesDownloaded)} of $formattedSize")
+                                if (percentStr.isNotEmpty()) parts.add(percentStr)
                             }
+                            DownloadManager.STATUS_FAILED -> parts.add("Failed • $formattedSize")
+                            DownloadManager.STATUS_PAUSED -> parts.add("Paused • $formattedSize")
+                            else -> parts.add(formattedSize)
                         }
-                        item.status == DownloadManager.STATUS_FAILED -> {
-                            if (domain.isNotEmpty()) "Failed • $formattedSize • $domain" else "Failed • $formattedSize"
+                        if (timeStr.isNotEmpty()) {
+                            parts.add(timeStr)
                         }
-                        item.status == DownloadManager.STATUS_PAUSED -> {
-                            if (domain.isNotEmpty()) "Paused • $formattedSize • $domain" else "Paused • $formattedSize"
+                        if (domain.isNotEmpty()) {
+                            parts.add(domain)
                         }
-                        else -> {
-                            if (domain.isNotEmpty()) "$formattedSize • $domain" else formattedSize
-                        }
+                        parts.joinToString(" • ")
                     }
 
                     Text(
