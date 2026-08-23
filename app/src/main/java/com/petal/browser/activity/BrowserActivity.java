@@ -1213,10 +1213,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                     contentParams.removeRule(RelativeLayout.ABOVE);
                     contentParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    // Same fix as the BOTTOM branch above: content anchors to the address
-                    // bar directly, never to the progress bar's own (changing) height.
+                    contentParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                     contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                    contentParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
 
                     if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                         RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
@@ -1228,13 +1227,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                 }
 
-                // Bottom Nav Bar is ALWAYS anchored at the bottom of the screen above system navigation bar
+                // Bottom Nav Container is ALWAYS anchored at the bottom of the screen
+                View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+                if (bottomNavContainer != null && bottomNavContainer.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                    RelativeLayout.LayoutParams containerParams = (RelativeLayout.LayoutParams) bottomNavContainer.getLayoutParams();
+                    containerParams.removeRule(RelativeLayout.ABOVE);
+                    containerParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    bottomNavContainer.setLayoutParams(containerParams);
+                    bottomNavContainer.bringToFront();
+                }
+
                 if (bottomNav != null && bottomNav.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                     RelativeLayout.LayoutParams navParams = (RelativeLayout.LayoutParams) bottomNav.getLayoutParams();
                     navParams.removeRule(RelativeLayout.ABOVE);
                     navParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                     navParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
-                    navParams.bottomMargin = (int) HelperUnit.convertDpToPixel(16f, context);
+                    boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
+                    navParams.bottomMargin = isFloating ? (int) HelperUnit.convertDpToPixel(6f, context) : 0;
                     bottomNav.setLayoutParams(navParams);
                     bottomNav.bringToFront();
                 }
