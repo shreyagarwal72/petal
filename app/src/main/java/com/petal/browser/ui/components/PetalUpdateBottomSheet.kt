@@ -57,7 +57,7 @@ object PetalUpdateSheetBridge {
 
         executor.execute {
             try {
-                var currentVerName = "v1.4.0"
+                var currentVerName = "v1.4.1"
                 try {
                     val pInfo = activity.packageManager.getPackageInfo(activity.packageName, 0)
                     currentVerName = "v${pInfo.versionName}"
@@ -81,10 +81,11 @@ object PetalUpdateSheetBridge {
                     var body = json.get("body")?.asString?.trim() ?: ""
                     if (body.isBlank()) {
                         body = """
-                            ### Release Keynotes & What's New
-                            * **Ever-Haptics Tactile Engine**: Added high-precision haptic feedback adapted from Ever-Haptics with interactive pattern selector and preview in Accessibility settings.
-                            * **Page Resizing & Floating Navbar Fix**: Pages that do not have a bottom navbar and pages with Floating Navbar mode active no longer undergo unwanted layout resizing or bottom padding.
-                            * **Homepage Rendering Stability**: Resolved blank screen issues when opening new tabs or returning to Petal Home.
+                            ### Release Keynotes & What's New (v1.4.1)
+                            * **Material 3 Expressive Shaped Passcode Input**: Masked password field using `MaterialShapes` (cookie, clover, pentagon, sunny, pill, etc.) with stable character-position seeding, zero-alpha `BasicTextField`, and eye-icon visibility toggle.
+                            * **Download Manager Sorting & Timestamps**: Sort downloads by File Name, Date, File Size, and Download Status with real-time formatted timestamps.
+                            * **Material 3 Expressive Water-Ripple Pull-To-Refresh**: Fluid liquid animation with 180° arrow rotation and high Z-index overlay rendering.
+                            * **Ever-Haptics Tactile Engine**: Multi-tiered hardware fallbacks (`EFFECT_CLICK`, `EFFECT_TICK`, `createOneShot`) for all Android devices.
                         """.trimIndent()
                     }
                     val htmlUrl = json.get("html_url")?.asString ?: "https://github.com/shreyagarwal72/petal/releases"

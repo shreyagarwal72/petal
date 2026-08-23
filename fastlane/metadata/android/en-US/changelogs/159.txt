@@ -1,0 +1,8 @@
+v1.4.1 Release Notes
+
+- new: Material 3 Expressive Shaped-Password & Passcode Input with stable MaterialShapes per character, eye icon toggle, zero-alpha input overlay, and App Lock security integration
+- new: Download Manager Sorting by File Name, Date, Size, and Download Status with formatted timestamps on all items
+- new: Material 3 Expressive Water-Ripple Pull-To-Refresh component with 180° arrow rotation, elevated M3 container, and high Z-index overlay rendering
+- improved: Ever-Haptics Tactile Feedback Engine with device primitive verification and multi-tiered hardware vibration fallbacks across all Android devices
+- improved: Petal Settings App Lock Passcode configuration & Google Account Sync Encryption Password dialogs
+- bug fixes and performance optimizations

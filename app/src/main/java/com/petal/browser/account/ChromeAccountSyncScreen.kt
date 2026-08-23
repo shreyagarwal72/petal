@@ -198,6 +198,7 @@ fun PetalUserProfileScreen(
     var nameInput by remember { mutableStateOf(profile.displayName) }
 
     var isLoading by remember { mutableStateOf(true) }
+    var showSyncPasswordDialog by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(600L)
         isLoading = false
@@ -804,6 +805,15 @@ fun PetalUserProfileScreen(
                     Spacer(Modifier.height(12.dp))
 
                     AccountActionRow(
+                        title = "Sync Encryption Password",
+                        subtitle = "Configure shaped-mask password for end-to-end sync encryption",
+                        icon = Icons.Rounded.Key,
+                        onClick = { showSyncPasswordDialog = true }
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    AccountActionRow(
                         title = "Clear Browsing Data",
                         subtitle = "Select & remove history, cookies, web storage, autofill & permissions",
                         icon = Icons.Rounded.DeleteSweep,
@@ -839,6 +849,40 @@ fun PetalUserProfileScreen(
                 dismissButton = {
                     TextButton(onClick = { showEditNameDialog = false }) {
                         Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        // Sync Password Dialog with PetalShapedPasswordInput
+        if (showSyncPasswordDialog) {
+            var syncPasswordInput by remember { mutableStateOf("") }
+            AlertDialog(
+                onDismissRequest = { showSyncPasswordDialog = false },
+                title = { Text("Set Sync Password") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = "Enter your Google Sync encryption password. Typed characters are masked using Material 3 Expressive shapes.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        com.petal.browser.ui.components.PetalShapedPasswordInput(
+                            value = syncPasswordInput,
+                            onValueChange = { syncPasswordInput = it },
+                            hintText = "Sync Encryption Password",
+                            onUnlock = {
+                                if (syncPasswordInput.isNotEmpty()) {
+                                    showSyncPasswordDialog = false
+                                }
+                            },
+                            unlockButtonText = "Save"
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showSyncPasswordDialog = false }) {
+                        Text("Close")
                     }
                 }
             )
