@@ -57,20 +57,37 @@ object PetalUpdateSheetBridge {
 
         executor.execute {
             try {
+                var currentVerName = "v1.3.5"
+                try {
+                    val pInfo = activity.packageManager.getPackageInfo(activity.packageName, 0)
+                    currentVerName = "v${pInfo.versionName}"
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
                 val url = URL("https://api.github.com/repos/shreyagarwal72/petal/releases/latest")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "GET"
-                conn.connectTimeout = 6000
-                conn.readTimeout = 6000
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
                 conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
-                conn.setRequestProperty("User-Agent", "PetalBrowserApp/1.2.0")
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) PetalBrowserApp/$currentVerName")
 
                 if (conn.responseCode == 200) {
                     val responseText = conn.inputStream.bufferedReader().use { it.readText() }
                     val json = Gson().fromJson(responseText, JsonObject::class.java)
 
-                    val latestTag = json.get("tag_name")?.asString ?: "v1.2.0"
-                    val body = json.get("body")?.asString ?: "Performance polish, predictive gesture fixes, and UI improvements."
+                    val latestTag = json.get("tag_name")?.asString ?: currentVerName
+                    var body = json.get("body")?.asString?.trim() ?: ""
+                    if (body.isBlank()) {
+                        body = """
+                            ### Release Keynotes & What's New
+                            * **Squashed bugs, added magic.** You know what to do.
+                            * **Real Website Favicons**: Frequently visited shortcuts row now displays crisp, real website logos.
+                            * **Appearance & Theme Settings**: Universal switch toggle for Material 3 Expressive background morphing shapes.
+                            * **Downloads & Layout Alignment**: Header extends behind status bar, and non-floating bottom bar is anchored perfectly like Chrome without site content overlap.
+                        """.trimIndent()
+                    }
                     val htmlUrl = json.get("html_url")?.asString ?: "https://github.com/shreyagarwal72/petal/releases"
 
                     var downloadUrl = htmlUrl
@@ -86,13 +103,6 @@ object PetalUpdateSheetBridge {
                         }
                     }
 
-                    var currentVerName = "1.2.0"
-                    try {
-                        currentVerName = activity.packageManager.getPackageInfo(activity.packageName, 0).versionName ?: "1.2.0"
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-
                     val isAvailable = isNewerVersion(latestTag, currentVerName)
 
                     activity.runOnUiThread {
@@ -101,7 +111,7 @@ object PetalUpdateSheetBridge {
                             showUpdateSheet(
                                 activity = activity,
                                 updateInfo = PetalUpdateInfo(
-                                    versionName = latestTag,
+                                    versionName = if (isAvailable) latestTag else currentVerName,
                                     releaseNotes = body,
                                     downloadUrl = downloadUrl,
                                     releaseUrl = htmlUrl,
@@ -112,14 +122,33 @@ object PetalUpdateSheetBridge {
                     }
                 } else if (!isLaunchCheck) {
                     activity.runOnUiThread {
-                        Toast.makeText(activity, "Petal Browser is up to date!", Toast.LENGTH_SHORT).show()
+                        showUpdateSheet(
+                            activity = activity,
+                            updateInfo = PetalUpdateInfo(
+                                versionName = currentVerName,
+                                releaseNotes = "You are currently running the latest build of Petal Browser ($currentVerName).\n\n### Release Keynotes\n* Squashed bugs, added magic.\n* Real website favicons for shortcuts.\n* Material 3 Expressive background morphing shapes toggle.",
+                                downloadUrl = "",
+                                releaseUrl = "https://github.com/shreyagarwal72/petal/releases",
+                                isUpdateAvailable = false
+                            )
+                        )
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 if (!isLaunchCheck) {
                     activity.runOnUiThread {
-                        Toast.makeText(activity, "Unable to reach update server", Toast.LENGTH_SHORT).show()
+                        val currentVerName = try { "v" + activity.packageManager.getPackageInfo(activity.packageName, 0).versionName } catch (ex: Exception) { "v1.3.5" }
+                        showUpdateSheet(
+                            activity = activity,
+                            updateInfo = PetalUpdateInfo(
+                                versionName = currentVerName,
+                                releaseNotes = "Petal Browser is running build $currentVerName.\n\n### Release Keynotes\n* Squashed bugs, added magic.\n* Real website favicons for shortcuts.\n* Material 3 Expressive background morphing shapes toggle.",
+                                downloadUrl = "",
+                                releaseUrl = "https://github.com/shreyagarwal72/petal/releases",
+                                isUpdateAvailable = false
+                            )
+                        )
                     }
                 }
             }
