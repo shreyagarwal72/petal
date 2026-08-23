@@ -69,6 +69,18 @@ data class ActiveBannerData(
 
 object PetalDownloadBannerBridge {
     private val currentBannerData = mutableStateOf(ActiveBannerData())
+    private val dismissedDownloadKeys = mutableSetOf<String>()
+
+    fun dismissCurrentBanner(data: ActiveBannerData) {
+        if (data.downloadId > 0L) {
+            dismissedDownloadKeys.add("${data.downloadId}")
+            dismissedDownloadKeys.add("${data.downloadId}_${data.state.name}")
+        }
+        if (data.fileName.isNotBlank()) {
+            dismissedDownloadKeys.add("${data.fileName}_${data.state.name}")
+        }
+        currentBannerData.value = ActiveBannerData(state = BannerState.IDLE)
+    }
 
     @JvmStatic
     fun bindDownloadBanner(
@@ -109,39 +121,51 @@ object PetalDownloadBannerBridge {
                         } catch (e: Exception) { "" }
 
                         val safeLocalUri = activeItem.localUri ?: ""
+                        val itemKey = "${activeItem.id}_${activeItem.status}"
+                        val idKey = "${activeItem.id}"
+                        val nameKey = "${activeItem.fileName}_${activeItem.status}"
 
-                        when (activeItem.status) {
-                            DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
-                                currentBannerData.value = ActiveBannerData(
-                                    state = BannerState.DOWNLOADING,
-                                    fileName = activeItem.fileName,
-                                    fileSize = activeItem.totalSize,
-                                    sourceHost = host,
-                                    localUri = safeLocalUri,
-                                    downloadId = activeItem.id
-                                )
-                            }
-                            DownloadManager.STATUS_SUCCESSFUL -> {
-                                currentBannerData.value = ActiveBannerData(
-                                    state = BannerState.COMPLETED,
-                                    fileName = activeItem.fileName,
-                                    fileSize = activeItem.totalSize,
-                                    sourceHost = host,
-                                    localUri = safeLocalUri,
-                                    downloadId = activeItem.id
-                                )
-                            }
-                            DownloadManager.STATUS_FAILED -> {
-                                currentBannerData.value = ActiveBannerData(
-                                    state = BannerState.FAILED,
-                                    fileName = activeItem.fileName,
-                                    fileSize = activeItem.totalSize,
-                                    sourceHost = host,
-                                    localUri = safeLocalUri,
-                                    downloadId = activeItem.id
-                                )
+                        if (!dismissedDownloadKeys.contains(itemKey) && 
+                            !dismissedDownloadKeys.contains(idKey) && 
+                            !dismissedDownloadKeys.contains(nameKey)) {
+                            when (activeItem.status) {
+                                DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
+                                    currentBannerData.value = ActiveBannerData(
+                                        state = BannerState.DOWNLOADING,
+                                        fileName = activeItem.fileName,
+                                        fileSize = activeItem.totalSize,
+                                        sourceHost = host,
+                                        localUri = safeLocalUri,
+                                        downloadId = activeItem.id
+                                    )
+                                }
+                                DownloadManager.STATUS_SUCCESSFUL -> {
+                                    currentBannerData.value = ActiveBannerData(
+                                        state = BannerState.COMPLETED,
+                                        fileName = activeItem.fileName,
+                                        fileSize = activeItem.totalSize,
+                                        sourceHost = host,
+                                        localUri = safeLocalUri,
+                                        downloadId = activeItem.id
+                                    )
+                                }
+                                DownloadManager.STATUS_FAILED -> {
+                                    currentBannerData.value = ActiveBannerData(
+                                        state = BannerState.FAILED,
+                                        fileName = activeItem.fileName,
+                                        fileSize = activeItem.totalSize,
+                                        sourceHost = host,
+                                        localUri = safeLocalUri,
+                                        downloadId = activeItem.id
+                                    )
+                                }
+                                else -> {
+                                    currentBannerData.value = ActiveBannerData(state = BannerState.IDLE)
+                                }
                             }
                         }
+                    } else {
+                        currentBannerData.value = ActiveBannerData(state = BannerState.IDLE)
                     }
                 }
 
@@ -156,7 +180,7 @@ object PetalDownloadBannerBridge {
                         bannerData = currentBannerData.value,
                         onOpenDownloads = { onOpenDownloads.run() },
                         onDismiss = {
-                            currentBannerData.value = ActiveBannerData(state = BannerState.IDLE)
+                            dismissCurrentBanner(currentBannerData.value)
                         }
                     )
                 }
@@ -174,10 +198,10 @@ fun PetalDownloadBanner(
     val context = LocalContext.current
     val visible = bannerData.state != BannerState.IDLE
 
-    // Auto-dismiss timeout for 5 seconds on COMPLETED or FAILED state
+    // Auto-dismiss timeout for 3 seconds on COMPLETED or FAILED state
     LaunchedEffect(bannerData.state, bannerData.downloadId) {
         if (bannerData.state == BannerState.COMPLETED || bannerData.state == BannerState.FAILED) {
-            delay(5000L)
+            delay(3000L)
             onDismiss()
         }
     }
