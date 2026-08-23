@@ -2347,7 +2347,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         });
 
         contentFrame.setOnPullListener(progress -> {
+            float prevProgress = refreshState.getPullProgress();
             refreshState.setPullProgress(progress);
+            if (progress >= 0.75f && prevProgress < 0.75f) {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this)
+                    .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.6f);
+            }
             if (ninjaWebView != null) {
                 if (progress > 0f) {
                     if (ninjaWebView.getLayerType() != View.LAYER_TYPE_SOFTWARE) {
@@ -2369,6 +2374,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
                 return;
             }
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this)
+                .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f);
             refreshState.setRefreshing(true);
             refreshState.setPullProgress(1.0f);
             if (ninjaWebView != null) {
