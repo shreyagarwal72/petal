@@ -1213,9 +1213,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                     contentParams.removeRule(RelativeLayout.ABOVE);
                     contentParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    contentParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                     contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
-                    contentParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
 
                     if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                         RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
@@ -1246,6 +1245,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     navParams.bottomMargin = isFloating ? (int) HelperUnit.convertDpToPixel(6f, context) : 0;
                     bottomNav.setLayoutParams(navParams);
                     bottomNav.bringToFront();
+
+                    // Pad mainContent so site content never gets covered by the bottom bar
+                    int paddingBottom = isFloating ? (int) HelperUnit.convertDpToPixel(68f, context) : (int) HelperUnit.convertDpToPixel(80f, context);
+                    mainContent.setPadding(0, 0, 0, paddingBottom);
                 }
 
                 addressBar.setLayoutParams(addrParams);
