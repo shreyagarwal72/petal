@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ContainedLoadingIndicator as M3ContainedLoadingIndicator
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
@@ -59,7 +59,7 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         val description = "Loading..."
-        M3ContainedLoadingIndicator(
+        ContainedLoadingIndicator(
             modifier = Modifier
                 .requiredSize(64.dp)
                 .semantics { stateDescription = description }
@@ -69,9 +69,6 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
 
 /**
  * RefreshBar pull-to-refresh loading indicator utilizing [ContainedLoadingIndicator].
- *
- * When [useWaterRipple] is true (the "Expressive Water Ripple Pull-to-Refresh" setting),
- * this renders [ExpressivePullToRefreshWaterRipple] instead of the plain spinner circle.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +76,6 @@ fun RefreshBarLoadingIndicator(
     isRefreshing: Boolean,
     onRefresh: () -> Unit = {},
     pullProgress: Float = 1.0f,
-    useWaterRipple: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val isVisible = isRefreshing || pullProgress > 0.01f
@@ -110,54 +106,32 @@ fun RefreshBarLoadingIndicator(
                 .padding(top = 12.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            if (useWaterRipple) {
-                val offsetY = if (isRefreshing) 24.dp else if (!isVisible) 0.dp else (pullProgress.coerceIn(0f, 1f) * 64.dp.value).dp
-                com.petal.browser.ui.components.ExpressivePullToRefreshWaterRipple(
-                    isRefreshing = isRefreshing,
-                    pullFraction = pullProgress.coerceIn(0f, 1f),
-                    modifier = Modifier.graphicsLayer {
-                        translationY = if (isVisible) offsetY.toPx() else 0f
-                    }
-                )
-            } else {
-                val offsetY = if (isRefreshing) 24.dp else if (!isVisible) 0.dp else (pullProgress.coerceIn(0f, 1f) * 64.dp.value).dp
-                val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.8f).coerceIn(0f, 1f)
-                val currentScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.3f + (pullProgress * 0.7f)).coerceIn(0.3f, 1.0f)
+            val offsetY = if (isRefreshing) 24.dp else if (!isVisible) 0.dp else (pullProgress.coerceIn(0f, 1f) * 64.dp.value).dp
+            val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.8f).coerceIn(0f, 1f)
+            val currentScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.3f + (pullProgress * 0.7f)).coerceIn(0.3f, 1.0f)
 
-                Surface(
-                    shape = androidx.compose.foundation.shape.CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    tonalElevation = 8.dp,
-                    shadowElevation = 8.dp,
-                    modifier = Modifier
-                        .graphicsLayer {
-                            translationY = if (isVisible) offsetY.toPx() else 0f
-                            alpha = if (isVisible) currentOpacity else 0f
-                            scaleX = if (isVisible) currentScale else 0f
-                            scaleY = if (isVisible) currentScale else 0f
-                        }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(10.dp)
-                            .requiredSize(36.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isRefreshing) {
-                            androidx.compose.material3.CircularProgressIndicator(
-                                modifier = Modifier.requiredSize(28.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                strokeWidth = 3.dp
-                            )
-                        } else {
-                            androidx.compose.material3.CircularProgressIndicator(
-                                progress = { pullProgress.coerceIn(0f, 1f) },
-                                modifier = Modifier.requiredSize(28.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                strokeWidth = 3.dp
-                            )
-                        }
+            Surface(
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                tonalElevation = 12.dp,
+                shadowElevation = 12.dp,
+                modifier = Modifier
+                    .graphicsLayer {
+                        translationY = if (isVisible) offsetY.toPx() else 0f
+                        alpha = if (isVisible) currentOpacity else 0f
+                        scaleX = if (isVisible) currentScale else 0f
+                        scaleY = if (isVisible) currentScale else 0f
                     }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .requiredSize(42.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ContainedLoadingIndicator(
+                        modifier = Modifier.requiredSize(38.dp)
+                    )
                 }
             }
         }
@@ -188,7 +162,6 @@ object PetalRefreshBarBridge {
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val isAmoled = sp.getBoolean("sp_amoled", false)
                 val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                val useWaterRipple = sp.getBoolean("sp_water_ripple_pull", true)
 
                 val appFont = remember(fontName) {
                     try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.GS_FLEX }
@@ -206,8 +179,7 @@ object PetalRefreshBarBridge {
                 ) {
                     RefreshBarLoadingIndicator(
                         isRefreshing = state.isRefreshing,
-                        pullProgress = state.pullProgress,
-                        useWaterRipple = useWaterRipple
+                        pullProgress = state.pullProgress
                     )
                 }
             }

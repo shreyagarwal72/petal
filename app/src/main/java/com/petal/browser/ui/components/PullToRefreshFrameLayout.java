@@ -50,6 +50,19 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     private float downY;
     private boolean dragging;
     private boolean intercepting;
+    private int consecutiveDownwardMoves;
+
+    // A plain tap on this container is expected to reach its child (the WebView) as a
+    // real ACTION_DOWN + ACTION_UP so page JS gets a genuine click event - that's what
+    // lets a site's own "tap outside to close" menu/dropdown logic run. Intercepting a
+    // gesture mid-stream replaces the child's next event with ACTION_CANCEL instead,
+    // which silently drops that click. touchSlop alone is a very small distance (a few
+    // dp) that ordinary finger-pad roll during a stationary tap can cross, so this adds
+    // two guards on top of it: a larger absolute distance requirement, and requiring the
+    // downward motion to be sustained across more than one move sample before we commit
+    // to stealing the gesture.
+    private static final float MIN_PULL_TRIGGER_DP = 24f;
+    private static final int MIN_SUSTAINED_MOVES = 2;
 
     public PullToRefreshFrameLayout(Context context) {
         this(context, null);
@@ -59,10 +72,13 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         this(context, attrs, 0);
     }
 
+    private final float minPullTriggerPx;
+
     public PullToRefreshFrameLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         pullDistancePx = DEFAULT_PULL_DISTANCE_DP * context.getResources().getDisplayMetrics().density;
+        minPullTriggerPx = MIN_PULL_TRIGGER_DP * context.getResources().getDisplayMetrics().density;
     }
 
     public void setCanPull(CanPull canPull) {
@@ -100,17 +116,25 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 downY = ev.getY();
                 dragging = false;
                 intercepting = false;
+                consecutiveDownwardMoves = 0;
                 break;
 
             case MotionEvent.ACTION_MOVE:
                 if (!intercepting && !canChildScrollUp() && canPull.canPull()) {
                     float dx = ev.getX() - downX;
                     float dy = ev.getY() - downY;
-                    // Allow pulling when dragging downward from top of web content
-                    if (dy > touchSlop * 1.5f && dy > Math.abs(dx) * 1.2f) {
-                        intercepting = true;
-                        dragging = true;
-                        return true;
+                    // Allow pulling only once a downward drag is both clearly vertical and
+                    // clearly deliberate - a single small move sample is not enough, since
+                    // that's indistinguishable from a stationary tap.
+                    if (dy > minPullTriggerPx && dy > Math.abs(dx) * 1.2f) {
+                        consecutiveDownwardMoves++;
+                        if (consecutiveDownwardMoves >= MIN_SUSTAINED_MOVES) {
+                            intercepting = true;
+                            dragging = true;
+                            return true;
+                        }
+                    } else {
+                        consecutiveDownwardMoves = 0;
                     }
                 }
                 break;
@@ -118,6 +142,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 intercepting = false;
+                consecutiveDownwardMoves = 0;
                 break;
 
             default:
