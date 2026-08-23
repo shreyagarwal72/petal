@@ -915,6 +915,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             );
             contentFrame.addView(incognitoHome);
             if (appBar != null) appBar.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
         } else if (isHomePage(url)) {
             View composeView = PetalComposeBridge.createComposeHomeView(this, BrowserContainer.size(), new PetalHomeActionHandler() {
                 @Override
@@ -1025,6 +1026,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     try {
                         captureBrowserMainPreview();
                         contentFrame.removeAllViews();
+                        hideRefreshAndProgressOverlays();
                         View downloadView = PetalDownloadBridge.createDownloadView(BrowserActivity.this, () -> {
                             showAlbum(currentAlbumController);
                             return kotlin.Unit.INSTANCE;
@@ -1050,6 +1052,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
             contentFrame.addView(composeView);
             if (appBar != null) appBar.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
         } else {
             av.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1335,10 +1338,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             isHomePage(currentUrl)
         );
 
-        if (progressBarCompose != null && !refreshState.isRefreshing() && !isInternalPage) {
-            com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(progressBarCompose, progress);
-        } else if (progressBarCompose != null) {
-            progressBarCompose.setVisibility(GONE);
+        if (progressBarCompose != null) {
+            // Keep the ComposeView itself permanently VISIBLE and let its internal
+            // AnimatedVisibility state (below) control what's actually drawn. This
+            // used to call setVisibility(GONE) here, which - once set - a ComposeView
+            // never composes again, so the very next real page load had nothing left
+            // to make visible and the progress bar stayed missing for the rest of the
+            // session (root cause of the "progress bar is missing" bug).
+            if (progressBarCompose.getVisibility() != VISIBLE) {
+                progressBarCompose.setVisibility(VISIBLE);
+            }
+            if (!refreshState.isRefreshing() && !isInternalPage) {
+                com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(progressBarCompose, progress);
+            } else {
+                com.petal.browser.ui.components.PetalProgressBarBridge.hide(progressBarCompose);
+            }
         }
 
         if (progressBar != null) {
@@ -2345,6 +2359,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         });
     }
 
+    /**
+     * Hides both the pull-to-refresh spinner and the top page-loading progress bar.
+     * Call this whenever an internal, non-webpage screen (Settings, Downloads,
+     * History, Account Sync, Omnibox, the home screen, etc.) is swapped into
+     * contentFrame, so neither overlay - both of which live outside the normal
+     * view hierarchy so the WebView can never obscure them - can be left showing
+     * (or showing stale progress) on top of a screen that isn't an actual webpage.
+     */
+    private void hideRefreshAndProgressOverlays() {
+        if (refreshState != null) {
+            refreshState.setRefreshing(false);
+            refreshState.setPullProgress(0f);
+        }
+        androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
+        if (progressBarCompose != null) {
+            com.petal.browser.ui.components.PetalProgressBarBridge.hide(progressBarCompose);
+        }
+    }
+
     public void resetRefreshState() {
         runOnUiThread(() -> {
             if (refreshState != null) {
@@ -2679,6 +2712,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble_omnibox = findViewById(R.id.fab_bubble);
             if (fab_bubble_omnibox != null) fab_bubble_omnibox.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
             View omniboxView = com.petal.browser.ui.components.PetalOmniboxBridge.createOmniboxView(
                 BrowserActivity.this,
                 initialQuery != null ? initialQuery : "",
@@ -2724,6 +2758,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble_downloads = findViewById(R.id.fab_bubble);
             if (fab_bubble_downloads != null) fab_bubble_downloads.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
             View downloadView = PetalDownloadBridge.createDownloadView(BrowserActivity.this, () -> {
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
@@ -2747,6 +2782,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble_history = findViewById(R.id.fab_bubble);
             if (fab_bubble_history != null) fab_bubble_history.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
             View historyView = com.petal.browser.compose.history.PetalHistoryBridge.createHistoryView(
                 BrowserActivity.this,
                 url -> {
@@ -2780,6 +2816,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble_account = findViewById(R.id.fab_bubble);
             if (fab_bubble_account != null) fab_bubble_account.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
             View accountSyncView = com.petal.browser.account.PetalAccountSyncBridge.createAccountSyncView(
                 BrowserActivity.this,
                 () -> {
@@ -4545,6 +4582,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
             View fab_bubble_settings = findViewById(R.id.fab_bubble);
             if (fab_bubble_settings != null) fab_bubble_settings.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
             View settingsView = com.petal.browser.compose.settings.PetalSettingsBridge.createSettingsView(BrowserActivity.this, initialCategory, () -> {
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
