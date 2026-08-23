@@ -550,6 +550,10 @@ fun PetalOmniboxPage(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 items(siteShortcuts) { shortcut ->
+                                    val faviconUrl = remember(shortcut.url) {
+                                        com.petal.browser.database.FaviconHelper.getGoogleFaviconUrl(shortcut.url)
+                                    }
+
                                     Surface(
                                         onClick = { onQuerySubmitted(shortcut.url) },
                                         shape = RoundedCornerShape(16.dp),
@@ -563,16 +567,34 @@ fun PetalOmniboxPage(
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(34.dp)
+                                                    .size(36.dp)
                                                     .clip(CircleShape)
                                                     .background(MaterialTheme.colorScheme.primaryContainer),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Icon(
-                                                    imageVector = shortcut.icon,
+                                                coil.compose.SubcomposeAsyncImage(
+                                                    model = faviconUrl,
                                                     contentDescription = shortcut.title,
-                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                    modifier = Modifier.size(18.dp)
+                                                    modifier = Modifier
+                                                        .size(24.dp)
+                                                        .clip(CircleShape),
+                                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                                    loading = {
+                                                        Icon(
+                                                            imageVector = shortcut.icon,
+                                                            contentDescription = shortcut.title,
+                                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    },
+                                                    error = {
+                                                        Icon(
+                                                            imageVector = shortcut.icon,
+                                                            contentDescription = shortcut.title,
+                                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
                                                 )
                                             }
 
