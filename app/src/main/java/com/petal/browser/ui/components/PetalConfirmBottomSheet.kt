@@ -206,7 +206,7 @@ object PetalConfirmSheetBridge {
     @JvmStatic
     fun showTabCloseConfirmation(activity: ComponentActivity, tabTitle: String?, onConfirm: Runnable) {
         val title = "Close Tab?"
-        val displayTitle = if (!tabTitle.isNullOrBlank() && !tabTitle.equalsIgnoreCase("about:blank")) "\"$tabTitle\"" else "this tab"
+        val displayTitle = if (!tabTitle.isNullOrBlank() && !tabTitle.equals("about:blank", ignoreCase = true)) "\"$tabTitle\"" else "this tab"
         val message = "Are you sure you want to close $displayTitle? Unsaved webpage progress will be lost."
 
         showConfirmSheet(
