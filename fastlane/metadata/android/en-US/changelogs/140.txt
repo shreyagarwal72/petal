@@ -1,0 +1,4 @@
+v1.4.0 Release Notes
+
+- fix: Added explicit top-level BrowserActivity imports across PetalSettingsScreen, PetalAiResearchBridge, and PetalTabSwitcherSheet
+- fix: Resolved all Kotlin symbol resolution and cross-file Java method invocation bindings
