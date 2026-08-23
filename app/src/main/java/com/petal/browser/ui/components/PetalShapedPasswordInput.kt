@@ -39,8 +39,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawscope.drawOutline
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -72,13 +74,16 @@ private val ExpressivePasswordShapes = listOf(
 )
 
 /**
- * Deterministically picks a stable shape for character [ch] at string index [index].
+ * Deterministically picks a stable shape index for character [ch] at string index [index].
+ *
+ * Note: this intentionally returns an Int index rather than a Shape. Converting a
+ * MaterialShapes entry to a Shape via `.toShape()` must happen in composable scope,
+ * and `remember { ... }` calculation blocks disallow composable calls — so the actual
+ * `.toShape()` call happens at the composable call site, not in this helper.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-fun getStableCharacterShape(ch: Char, index: Int): Shape {
+private fun getStableShapeIndex(ch: Char, index: Int): Int {
     val seed = (ch.code * 31) + (index * 17) + 7
-    val shapeIndex = (Math.abs(seed) % ExpressivePasswordShapes.size)
-    return ExpressivePasswordShapes[shapeIndex].toShape()
+    return Math.abs(seed) % ExpressivePasswordShapes.size
 }
 
 /**
@@ -168,15 +173,21 @@ fun PetalShapedPasswordInput(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         value.forEachIndexed { index, ch ->
-                            val characterShape = remember(ch, index) {
-                                getStableCharacterShape(ch, index)
+                            val shapeIndex = remember(ch, index) {
+                                getStableShapeIndex(ch, index)
                             }
+                            val characterShape: Shape = ExpressivePasswordShapes[shapeIndex].toShape()
                             Canvas(
                                 modifier = Modifier.size(shapeSize)
                             ) {
                                 val outline = characterShape.createOutline(size, layoutDirection, density)
-                                drawOutline(
-                                    outline = outline,
+                                val path = when (outline) {
+                                    is Outline.Generic -> outline.path
+                                    is Outline.Rounded -> Path().apply { addRoundRect(outline.roundRect) }
+                                    is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
+                                }
+                                drawPath(
+                                    path = path,
                                     color = accentColor
                                 )
                             }
