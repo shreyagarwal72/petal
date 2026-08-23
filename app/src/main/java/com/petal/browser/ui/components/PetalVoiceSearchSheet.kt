@@ -1,11 +1,15 @@
 package com.petal.browser.ui.components
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
@@ -100,10 +105,14 @@ fun PetalVoiceSearchSheet(
     val context = LocalContext.current
     var spokenText by remember { mutableStateOf("") }
     var statusText by remember { mutableStateOf("Listening...") }
-    var isListening by remember { mutableStateOf(true) }
+    var isListening by remember { mutableStateOf(false) }
     var rmsValue by remember { mutableFloatStateOf(0f) }
     var recognizerRef by remember { mutableStateOf<SpeechRecognizer?>(null) }
     var hasDeliveredResult by remember { mutableStateOf(false) }
+
+    fun hasAudioPermission(): Boolean =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
 
     val pulseScale by animateFloatAsState(
         targetValue = if (isListening) 1.0f + (rmsValue / 10f).coerceIn(0f, 0.4f) else 1.0f,
@@ -112,6 +121,14 @@ fun PetalVoiceSearchSheet(
     )
 
     fun startOrRestartListening() {
+        // Guard against ever reaching the system speech service without RECORD_AUDIO
+        // granted - on many OEM builds that call hangs instead of failing fast via
+        // onError, which is what was freezing the browser after this sheet was shown.
+        if (!hasAudioPermission()) {
+            statusText = "Microphone permission is required for voice search."
+            isListening = false
+            return
+        }
         try {
             recognizerRef?.destroy()
             recognizerRef = null
@@ -188,8 +205,24 @@ fun PetalVoiceSearchSheet(
         }
     }
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            startOrRestartListening()
+        } else {
+            statusText = "Microphone permission is required for voice search."
+            isListening = false
+        }
+    }
+
     DisposableEffect(Unit) {
-        startOrRestartListening()
+        if (hasAudioPermission()) {
+            startOrRestartListening()
+        } else {
+            statusText = "Requesting microphone permission..."
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
 
         onDispose {
             try {
@@ -237,7 +270,11 @@ fun PetalVoiceSearchSheet(
                     )
                     .clickable {
                         if (!isListening) {
-                            startOrRestartListening()
+                            if (hasAudioPermission()) {
+                                startOrRestartListening()
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
                         }
                     }
             ) {
