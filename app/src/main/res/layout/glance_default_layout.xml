@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Placeholder layout Android inflates for a split second before Glance's real
      composable content takes over (and the "loading" state on very old launchers).
-     android:initialLayout is a required attribute on appwidget-provider XML, and
-     it must point at a real layout resource -- Glance does not ship one publicly,
-     so each app provides its own minimal one, same as upstream Glance samples. -->
+     android:initialLayout is a required attribute on appwidget-provider XML, and it
+     must point at a real layout resource; Glance does not ship one publicly, so
+     each app provides its own minimal one, same as upstream Glance samples. -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
