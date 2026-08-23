@@ -1,0 +1,7 @@
+v1.3.8 Release Notes
+
+- new: Ever-Haptics Tactile Engine integration with interactive pattern preview under Accessibility Settings
+- new: Material 3 Expressive Contained Loading Indicator with elastic spring physics & haptic feedback for Pull-To-Refresh
+- new: Material 3 Expressive Confirmation Bottom Sheets for tab closing, close all tabs, and browser exit
+- fix: Page content layout resizing issue for floating navbars and non-navbar pages
+- fix: Blank homepage initialization on cold start and new tabs
