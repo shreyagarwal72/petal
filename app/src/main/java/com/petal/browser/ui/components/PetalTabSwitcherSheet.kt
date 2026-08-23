@@ -170,8 +170,11 @@ object PetalTabSwitcherBridge {
                                 }
                             },
                             onCloseAllTabs = {
+                                val count = tabItems.size
                                 try { dialog.dismiss() } catch (ignored: Exception) {}
-                                onCloseAllTabs()
+                                PetalConfirmSheetBridge.showCloseAllTabsConfirmation(activity, count) {
+                                    onCloseAllTabs()
+                                }
                             },
                             onOpenSettings = {
                                 try { dialog.dismiss() } catch (ignored: Exception) {}

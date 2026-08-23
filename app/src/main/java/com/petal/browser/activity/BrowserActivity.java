@@ -1050,7 +1050,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 public void onOpenAccountSync() {
                     showAccountSyncScreen();
                 }
-            });
+            composeView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            ));
             contentFrame.addView(composeView);
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
@@ -1236,20 +1239,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     bottomNavContainer.bringToFront();
                 }
 
+                boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
                 if (bottomNav != null && bottomNav.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                     RelativeLayout.LayoutParams navParams = (RelativeLayout.LayoutParams) bottomNav.getLayoutParams();
                     navParams.removeRule(RelativeLayout.ABOVE);
                     navParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                     navParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
-                    boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
                     navParams.bottomMargin = isFloating ? (int) HelperUnit.convertDpToPixel(6f, context) : 0;
                     bottomNav.setLayoutParams(navParams);
                     bottomNav.bringToFront();
-
-                    // Pad mainContent so site content never gets covered by the bottom bar
-                    int paddingBottom = isFloating ? (int) HelperUnit.convertDpToPixel(68f, context) : (int) HelperUnit.convertDpToPixel(80f, context);
-                    mainContent.setPadding(0, 0, 0, paddingBottom);
                 }
+
+                // Do not resize/pad pages that don't have bottom navbar or when floating navbar is active
+                boolean hasNav = bottomNav != null && bottomNav.getVisibility() == VISIBLE;
+                int paddingBottom = (hasNav && !isFloating) ? (int) HelperUnit.convertDpToPixel(80f, context) : 0;
+                mainContent.setPadding(0, 0, 0, paddingBottom);
 
                 addressBar.setLayoutParams(addrParams);
                 if (progressBarCompose != null) progressBarCompose.setLayoutParams(progComposeParams);
@@ -1901,8 +1905,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     private boolean isHomePage(String url) {
-        if (url == null || url.trim().isEmpty() || url.equals("about:blank")) return true;
-        return url.startsWith("file:///android_asset/");
+        if (url == null || url.trim().isEmpty()) return true;
+        String clean = url.trim().toLowerCase(java.util.Locale.ROOT);
+        if (clean.equals("about:blank") || clean.equals("about:home") || clean.equals("petal://home") || clean.equals("petal://start") || clean.contains("petal_home.html")) {
+            return true;
+        }
+        return clean.startsWith("file:///android_asset/");
     }
 
     private androidx.compose.ui.platform.ComposeView composeAddressBar;
@@ -3487,12 +3495,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         HelperUnit.setupDialog(context, dialogCustomSearches);
     }
     private void doubleTapsQuit() {
-        if (!sp.getBoolean("sp_close_browser_confirm", true)) finishAndRemoveTask();
-        else {
-            Snackbar snackbar = Snackbar.make(ninjaWebView, R.string.toast_quit, Snackbar.LENGTH_SHORT);
-            HelperUnit.makeSnackbarRound(snackbar);
-            snackbar.setAction(context.getString(R.string.app_ok), (v -> finishAndRemoveTask()));
-            snackbar.show();
+        if (!sp.getBoolean("sp_close_browser_confirm", true)) {
+            finishAndRemoveTask();
+        } else {
+            com.petal.browser.ui.components.PetalConfirmSheetBridge.showQuitBrowserConfirmation(this, this::finishAndRemoveTask);
         }
     }
     private void saveOpenedTabs() {
@@ -3860,12 +3866,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     private void closeTabConfirmation(final Runnable okAction) {
-        if (!sp.getBoolean("sp_close_tab_confirm", false)) okAction.run();
-        else {
-            Snackbar snackbar = Snackbar.make(ninjaWebView, R.string.toast_quit_TAB, Snackbar.LENGTH_SHORT);
-            HelperUnit.makeSnackbarRound(snackbar);
-            snackbar.setAction(context.getString(R.string.app_ok), (v -> okAction.run()));
-            snackbar.show();
+        if (!sp.getBoolean("sp_close_tab_confirm", false)) {
+            okAction.run();
+        } else {
+            String tabTitle = ninjaWebView != null ? ninjaWebView.getTitle() : "";
+            com.petal.browser.ui.components.PetalConfirmSheetBridge.showTabCloseConfirmation(this, tabTitle, okAction);
         }
     }
     private File copyHtmlToCache(Context context, Uri uri) {
