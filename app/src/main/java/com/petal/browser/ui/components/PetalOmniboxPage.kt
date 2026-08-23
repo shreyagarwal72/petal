@@ -93,6 +93,8 @@ object PetalOmniboxBridge {
         onQuerySubmitted: (String) -> Unit
     ): ComposeView {
         return ComposeView(activity).apply {
+            isFocusable = true
+            isFocusableInTouchMode = true
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
@@ -142,6 +144,7 @@ fun PetalOmniboxPage(
     onBackPress: () -> Unit
 ) {
     val context = LocalContext.current
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val cleanedInitialQuery = remember(initialQuery) {
         val trimmed = initialQuery.trim()
@@ -216,8 +219,13 @@ fun PetalOmniboxPage(
     }
 
     LaunchedEffect(Unit) {
-        delay(120)
-        focusRequester.requestFocus()
+        delay(100)
+        try {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(

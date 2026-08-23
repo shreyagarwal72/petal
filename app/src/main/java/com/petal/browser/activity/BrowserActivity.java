@@ -4084,10 +4084,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
-            // The widget always opens a brand-new tab (never reuses/reads whatever tab
-            // was already showing) and then shows the omnibox on top of it.
             pendingWidgetAction = () -> {
-                addAlbum(null, "", true);
                 showOmniboxPage("");
             };
             runOrDeferPendingWidgetAction();
