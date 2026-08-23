@@ -2293,6 +2293,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             params.topMargin = (int) HelperUnit.convertDpToPixel(56f, this);
             addContentView(refreshBarCompose, params);
             com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.L) {
+                refreshBarCompose.setElevation(200f);
+                refreshBarCompose.setTranslationZ(200f);
+            }
             refreshBarCompose.bringToFront();
 
             if (addressBarForMargin != null) {
@@ -2347,7 +2351,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return !isInternalPage && isScrolledToTop && !refreshState.isRefreshing();
         });
 
+        final androidx.compose.ui.platform.ComposeView finalRefreshView = refreshBarCompose;
         contentFrame.setOnPullListener(progress -> {
+            if (finalRefreshView != null && progress > 0f) {
+                finalRefreshView.bringToFront();
+            }
             float prevProgress = refreshState.getPullProgress();
             refreshState.setPullProgress(progress);
             if (progress >= 0.75f && prevProgress < 0.75f) {

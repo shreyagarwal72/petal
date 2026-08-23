@@ -328,6 +328,8 @@ fun PetalSettingsScreen(
     var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", false)) }
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
     var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
+    var isAppLockEnabled by remember { mutableStateOf(sp.getBoolean("sp_app_lock_enabled", false)) }
+    var showPasscodeDialog by remember { mutableStateOf(false) }
     var isDoubleBackExit by remember { mutableStateOf(sp.getBoolean("sp_double_back_exit", true)) }
     var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
@@ -1534,6 +1536,22 @@ fun PetalSettingsScreen(
                                             sp.edit().putBoolean("sp_javascript", newValue).putBoolean("profileStandard_javascript", newValue).apply()
                                         }
                                     )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "App Lock Security Passcode",
+                                        subtitle = if (isAppLockEnabled) "Passcode active • Tap to configure shaped-mask passcode" else "Require shaped-mask passcode to access browser",
+                                        icon = Icons.Rounded.Key,
+                                        checked = isAppLockEnabled,
+                                        onCheckedChange = { enabled ->
+                                            isAppLockEnabled = enabled
+                                            sp.edit().putBoolean("sp_app_lock_enabled", enabled).apply()
+                                            if (enabled) {
+                                                showPasscodeDialog = true
+                                            }
+                                        }
+                                    )
                                 }
                             }
 
@@ -2167,7 +2185,62 @@ fun PetalSettingsScreen(
                 }
             }
         }
+        // App Lock Passcode Configuration Dialog using PetalShapedPasswordInput
+    if (showPasscodeDialog) {
+        var tempPasscode by remember { mutableStateOf(sp.getString("sp_app_lock_passcode", "") ?: "") }
+        var dialogError by remember { mutableStateOf<String?>(null) }
+
+        AlertDialog(
+            onDismissRequest = { showPasscodeDialog = false },
+            title = {
+                Text(
+                    text = "Configure Security Passcode",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Enter a security passcode. Typed characters will be masked with Material 3 Expressive shapes.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    com.petal.browser.ui.components.PetalShapedPasswordInput(
+                        value = tempPasscode,
+                        onValueChange = {
+                            tempPasscode = it
+                            if (dialogError != null) dialogError = null
+                        },
+                        hintText = "New Passcode",
+                        isError = dialogError != null,
+                        accentColor = MaterialTheme.colorScheme.primary,
+                        onUnlock = {
+                            if (tempPasscode.trim().length >= 4) {
+                                sp.edit().putString("sp_app_lock_passcode", tempPasscode.trim()).apply()
+                                showPasscodeDialog = false
+                            } else {
+                                dialogError = "Passcode must be at least 4 characters"
+                            }
+                        },
+                        unlockButtonText = "Save"
+                    )
+                    if (dialogError != null) {
+                        Text(
+                            text = dialogError!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPasscodeDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
     }
+}
 }
 }
 }

@@ -68,7 +68,7 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
 }
 
 /**
- * RefreshBar pull-to-refresh loading indicator utilizing [ContainedLoadingIndicator].
+ * RefreshBar pull-to-refresh loading indicator utilizing [ExpressivePullToRefreshWaterRipple].
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -78,64 +78,11 @@ fun RefreshBarLoadingIndicator(
     pullProgress: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
-    val isVisible = isRefreshing || pullProgress > 0.01f
-
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInVertically(
-            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-            initialOffsetY = { -it }
-        ) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
-        exit = slideOutVertically(
-            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
-            targetOffsetY = { -it }
-        ) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
+    com.petal.browser.ui.components.ExpressivePullToRefreshWaterRipple(
+        isRefreshing = isRefreshing,
+        pullFraction = pullProgress,
         modifier = modifier
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                // Fixed height tall enough to contain the circle's full travel range
-                // (its own ~58dp size plus the largest translationY offset used below,
-                // 64dp, plus margin). translationY is a paint-time transform - it never
-                // changes this Box's measured size, so without reserving space for the
-                // worst case up front, the ComposeView hosting this clips the circle
-                // wherever its un-translated resting bounds happened to end.
-                .height(140.dp)
-                .zIndex(500f)
-                .padding(top = 12.dp),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            val offsetY = if (isRefreshing) 24.dp else if (!isVisible) 0.dp else (pullProgress.coerceIn(0f, 1f) * 64.dp.value).dp
-            val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.8f).coerceIn(0f, 1f)
-            val currentScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.3f + (pullProgress * 0.7f)).coerceIn(0.3f, 1.0f)
-
-            Surface(
-                shape = androidx.compose.foundation.shape.CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                tonalElevation = 12.dp,
-                shadowElevation = 12.dp,
-                modifier = Modifier
-                    .graphicsLayer {
-                        translationY = if (isVisible) offsetY.toPx() else 0f
-                        alpha = if (isVisible) currentOpacity else 0f
-                        scaleX = if (isVisible) currentScale else 0f
-                        scaleY = if (isVisible) currentScale else 0f
-                    }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .requiredSize(42.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ContainedLoadingIndicator(
-                        modifier = Modifier.requiredSize(38.dp)
-                    )
-                }
-            }
-        }
-    }
+    )
 }
 
 class PetalRefreshBarState {
