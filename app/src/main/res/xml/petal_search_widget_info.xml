@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Backing layout is Glance's own @layout/glance_default_layout (shipped inside the
-     glance-appwidget AAR); the actual UI is composed at runtime in
+<!-- android:initialLayout points at our own minimal placeholder layout
+     (res/layout/glance_default_layout.xml); the real UI is composed at runtime in
      com.petal.browser.widget.glance.PetalSearchGlanceWidget, not in a static XML layout. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
