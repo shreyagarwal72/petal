@@ -271,15 +271,15 @@ public class UpdateUnit {
                     throw new Exception("HTTP status " + (conn != null ? conn.getResponseCode() : -1));
                 }
 
-                java.io.InputStream is = conn.getInputStream();
-                java.io.FileOutputStream fos = new java.io.FileOutputStream(apkFile);
-                byte[] buffer = new byte[8192];
-                int len;
-                while ((len = is.read(buffer)) != -1) {
-                    fos.write(buffer, 0, len);
+                try (java.io.InputStream is = new java.io.BufferedInputStream(conn.getInputStream(), 65536);
+                     java.io.OutputStream os = new java.io.BufferedOutputStream(new java.io.FileOutputStream(apkFile), 65536)) {
+                    byte[] buffer = new byte[65536];
+                    int len;
+                    while ((len = is.read(buffer)) != -1) {
+                        os.write(buffer, 0, len);
+                    }
+                    os.flush();
                 }
-                fos.close();
-                is.close();
 
                 activity.runOnUiThread(() -> installApk(activity, apkFile));
             } catch (Exception e) {
