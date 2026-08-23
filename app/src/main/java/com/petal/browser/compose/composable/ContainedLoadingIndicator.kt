@@ -126,9 +126,9 @@ fun RefreshBarLoadingIndicator(
 
                 Surface(
                     shape = androidx.compose.foundation.shape.CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    tonalElevation = 12.dp,
-                    shadowElevation = 12.dp,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 8.dp,
                     modifier = Modifier
                         .graphicsLayer {
                             translationY = if (isVisible) offsetY.toPx() else 0f
@@ -139,13 +139,24 @@ fun RefreshBarLoadingIndicator(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(8.dp)
-                            .requiredSize(42.dp),
+                            .padding(10.dp)
+                            .requiredSize(36.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        ContainedLoadingIndicator(
-                            modifier = Modifier.requiredSize(38.dp)
-                        )
+                        if (isRefreshing) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.requiredSize(28.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 3.dp
+                            )
+                        } else {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                progress = { pullProgress.coerceIn(0f, 1f) },
+                                modifier = Modifier.requiredSize(28.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 3.dp
+                            )
+                        }
                     }
                 }
             }
