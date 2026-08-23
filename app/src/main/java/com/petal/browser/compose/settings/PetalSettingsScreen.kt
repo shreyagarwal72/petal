@@ -1032,21 +1032,6 @@ fun PetalSettingsScreen(
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                                    var isFloatingDock by remember { mutableStateOf(sp.getBoolean("sp_floating_dock_bar", true)) }
-
-                                    ToggleRow(
-                                        title = "Expressive Floating Bottom Dock Bar",
-                                        subtitle = "Floating glassmorphic bottom navigation dock with spring press haptics",
-                                        icon = Icons.Rounded.Dock,
-                                        checked = isFloatingDock,
-                                        onCheckedChange = { newValue ->
-                                            isFloatingDock = newValue
-                                            sp.edit().putBoolean("sp_floating_dock_bar", newValue).apply()
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                                     var isReadingProgressPill by remember { mutableStateOf(sp.getBoolean("sp_reading_progress_pill", true)) }
 
                                     ToggleRow(
@@ -1547,56 +1532,6 @@ fun PetalSettingsScreen(
                                         }
                                     )
 
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    var isApiFeaturesAccessibility by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
-
-                                    ToggleRow(
-                                        title = "New API Integration Features Hub",
-                                        subtitle = "Consolidated switch to enable/disable new WebKit, Credential Manager & Palette API integrations",
-                                        icon = Icons.Rounded.Extension,
-                                        checked = isApiFeaturesAccessibility,
-                                        onCheckedChange = { newValue ->
-                                            isApiFeaturesAccessibility = newValue
-                                            sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
-                                        }
-                                    )
-
-                                    if (isApiFeaturesAccessibility) {
-                                        Surface(
-                                            shape = RoundedCornerShape(16.dp),
-                                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
-                                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                                        ) {
-                                            Column(modifier = Modifier.padding(14.dp)) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    Icon(
-                                                        Icons.Rounded.TouchApp,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.tertiary,
-                                                        modifier = Modifier.size(20.dp)
-                                                    )
-                                                    Text(
-                                                        "Accessibility & System Integrations Enabled",
-                                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                                    )
-                                                }
-                                                Spacer(Modifier.height(4.dp))
-                                                Text(
-                                                    "Unified API suite providing enhanced touch feedback, predictive back gesture animations, and dynamic high-contrast palette extraction across all screens.",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                                     ToggleRow(
                                         title = "Press Back Again to Exit",
                                         subtitle = "Require confirmation back press before closing Petal (works with both gesture and 3-button navigation)",
@@ -1608,20 +1543,7 @@ fun PetalSettingsScreen(
                                         }
                                     )
 
-                                    ToggleRow(
-                                        title = "Expressive Feature Tiles",
-                                        subtitle = "Display Material 3 Expressive rich colorful cards with pill icons on Clear Browsing Data & Settings screens",
-                                        icon = Icons.Rounded.GridView,
-                                        checked = isExpressiveFeatureTiles,
-                                        onCheckedChange = { newValue ->
-                                            isExpressiveFeatureTiles = newValue
-                                            sp.edit().putBoolean("sp_expressive_feature_tiles", newValue).apply()
-                                        }
-                                    )
-
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
