@@ -2107,6 +2107,8 @@ fun PetalSettingsScreen(
     }
 }
 }
+}
+}
 
 
 @Composable
