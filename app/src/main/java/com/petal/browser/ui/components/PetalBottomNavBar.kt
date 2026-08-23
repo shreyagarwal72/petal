@@ -112,7 +112,7 @@ fun PetalBottomNavBar(
                 shape = RoundedCornerShape(100),
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                 colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
-                    toolbarContainerColor = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh
+                    toolbarContainerColor = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.primaryContainer
                 )
             ) {
                 FloatingNavItem(
