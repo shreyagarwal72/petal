@@ -1060,6 +1060,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ));
             contentFrame.addView(av);
             if (appBar != null) appBar.setVisibility(VISIBLE);
+            View downloadBanner = findViewById(R.id.download_banner_compose);
+            if (downloadBanner != null) downloadBanner.setVisibility(VISIBLE);
             if (ninjaWebView != null) {
                 // Refresh this tab's thumbnail cache entry on switch, so cards that were
                 // last captured a while ago (e.g. after background JS updated the page)
@@ -2375,6 +2377,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
         if (progressBarCompose != null) {
             com.petal.browser.ui.components.PetalProgressBarBridge.hide(progressBarCompose);
+        }
+        View downloadBanner = findViewById(R.id.download_banner_compose);
+        if (downloadBanner != null) {
+            downloadBanner.setVisibility(GONE);
         }
     }
 
