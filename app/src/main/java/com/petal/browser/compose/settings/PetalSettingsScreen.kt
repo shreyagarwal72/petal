@@ -302,6 +302,7 @@ fun PetalSettingsScreen(
         mutableStateOf(try { ThemeConfig.valueOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") } catch (e: Exception) { ThemeConfig.FOLLOW_SYSTEM })
     }
     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+    var isFloatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
     var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
@@ -337,6 +338,9 @@ fun PetalSettingsScreen(
             when (key) {
                 "sp_expressive_feature_tiles" -> {
                     isExpressiveFeatureTiles = sp.getBoolean("sp_expressive_feature_tiles", true)
+                }
+                "sp_floating_tab_bar" -> {
+                    isFloatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
                 }
             }
         }
@@ -889,6 +893,20 @@ fun PetalSettingsScreen(
                                             isAmoled = newValue
                                             sp.edit().putBoolean("sp_amoled", newValue).apply()
                                             com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // Floating Tab Bar Toggle
+                                    ToggleRow(
+                                        title = "Floating Tab Bar",
+                                        subtitle = "Show the bottom bar as a floating pill instead of a flat bar",
+                                        icon = Icons.Rounded.SpaceBar,
+                                        checked = isFloatingTabBar,
+                                        onCheckedChange = { newValue ->
+                                            isFloatingTabBar = newValue
+                                            sp.edit().putBoolean("sp_floating_tab_bar", newValue).apply()
                                         }
                                     )
 
