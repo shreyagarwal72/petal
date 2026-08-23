@@ -534,9 +534,9 @@ fun PetalSettingsScreen(
                                         subtitle = "Fetch live autocomplete suggestions from Google, DuckDuckGo, or Bing while typing",
                                         icon = Icons.Rounded.Search,
                                         checked = enableLiveSuggestions,
-                                        onCheckedChange = {
-                                            enableLiveSuggestions = it
-                                            sp.edit().putBoolean("sp_enable_live_suggestions", it).apply()
+                                        onCheckedChange = { newValue ->
+                                            enableLiveSuggestions = newValue
+                                            sp.edit().putBoolean("sp_enable_live_suggestions", newValue).apply()
                                         }
                                     )
 
@@ -548,9 +548,9 @@ fun PetalSettingsScreen(
                                         subtitle = "Show trending technology stories and news articles on the home screen",
                                         icon = Icons.Rounded.RssFeed,
                                         checked = enableHackerNewsApi,
-                                        onCheckedChange = {
-                                            enableHackerNewsApi = it
-                                            sp.edit().putBoolean("sp_enable_hackernews", it).apply()
+                                        onCheckedChange = { newValue ->
+                                            enableHackerNewsApi = newValue
+                                            sp.edit().putBoolean("sp_enable_hackernews", newValue).apply()
                                         }
                                     )
 
