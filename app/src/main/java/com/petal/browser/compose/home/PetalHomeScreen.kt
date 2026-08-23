@@ -24,6 +24,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -335,7 +337,11 @@ object PetalComposeBridge {
                 activity = activity,
                 onSearch = { query -> handler.onSearch(query) },
                 onOpenShortcutUrl = { url -> handler.onOpenUrl(url) },
-                onOpenAccountSync = { handler.onOpenAccountSync() }
+                onOpenAccountSync = { handler.onOpenAccountSync() },
+                onOpenBookmarks = { handler.onOpenBookmarks() },
+                onOpenHistory = { handler.onOpenHistory() },
+                onOpenDownloads = { handler.onOpenDownloads() },
+                onNewTab = { handler.onNewTab() }
             )
         }
     }
@@ -347,7 +353,11 @@ fun ComposeView.setupExpressiveHomeScreen(
     activity: ComponentActivity,
     onSearch: (String) -> Unit,
     onOpenShortcutUrl: (String) -> Unit,
-    onOpenAccountSync: () -> Unit
+    onOpenAccountSync: () -> Unit,
+    onOpenBookmarks: () -> Unit = {},
+    onOpenHistory: () -> Unit = {},
+    onOpenDownloads: () -> Unit = {},
+    onNewTab: () -> Unit = {}
 ) {
     setViewTreeLifecycleOwner(activity)
     setViewTreeViewModelStoreOwner(activity)
@@ -382,7 +392,11 @@ fun ComposeView.setupExpressiveHomeScreen(
                 accountViewModel = accountViewModel,
                 onSearch = onSearch,
                 onOpenShortcutUrl = onOpenShortcutUrl,
-                onOpenAccountSync = onOpenAccountSync
+                onOpenAccountSync = onOpenAccountSync,
+                onOpenBookmarksAction = onOpenBookmarks,
+                onOpenHistoryAction = onOpenHistory,
+                onOpenDownloadsAction = onOpenDownloads,
+                onNewTabAction = onNewTab
             )
         }
     }
@@ -396,7 +410,11 @@ fun PetalHomeScreen(
     accountViewModel: AccountViewModel,
     onSearch: (String) -> Unit,
     onOpenShortcutUrl: (String) -> Unit,
-    onOpenAccountSync: () -> Unit
+    onOpenAccountSync: () -> Unit,
+    onOpenBookmarksAction: () -> Unit = {},
+    onOpenHistoryAction: () -> Unit = {},
+    onOpenDownloadsAction: () -> Unit = {},
+    onNewTabAction: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var shortcuts by remember { mutableStateOf(loadHomeShortcuts(context)) }
@@ -418,6 +436,14 @@ fun PetalHomeScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            // ── Layer 0: living Material 3 Expressive background ───────────
+            // Purely decorative, drawn once behind everything else. Never
+            // intercepts touch, never affects the layout below it.
+            ExpressiveMorphingBackground(
+                modifier = Modifier.fillMaxSize(),
+                colors = defaultPetalBackgroundColors()
+            )
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -426,46 +452,72 @@ fun PetalHomeScreen(
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // ── Slim Top Bar: wordmark left, profile right ──────────────
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Cap the content column width on large screens/tablets so the
+                // hero search bar and grid don't stretch edge-to-edge.
+                Column(
+                    modifier = Modifier.widthIn(max = 640.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Petal",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.primary
+                    // ── Slim Top Bar: petal mark + wordmark left, profile right ──
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(FlowerShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Petal",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 24.sp,
+                                    letterSpacing = (-0.5).sp
+                                ),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onOpenAccountSync,
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            ProfileAvatarDisplay(profile = profile, sizeDp = 36)
+                        }
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // ── Hero Search Bar ──────────────────────────────────────
+                    PetalSearchBar(onSearch = onSearch)
+
+                    Spacer(Modifier.height(18.dp))
+
+                    // ── Quick Actions: existing browser actions only ────────
+                    PetalQuickActionsRow(
+                        onOpenBookmarks = onOpenBookmarksAction,
+                        onOpenHistory = onOpenHistoryAction,
+                        onOpenDownloads = onOpenDownloadsAction,
+                        onNewTab = onNewTabAction
                     )
 
-                    IconButton(
-                        onClick = onOpenAccountSync,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        ProfileAvatarDisplay(profile = profile, sizeDp = 36)
-                    }
+                    Spacer(Modifier.height(26.dp))
+
+                    // ── Shortcuts Grid (4 columns, squircle tiles) ──────────
+                    PetalShortcutGrid(
+                        items = mergedItems,
+                        onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
+                        onEditShortcutSlot = { index -> editingSlotIndex = index },
+                        onAddShortcutClick = { editingSlotIndex = 0 }
+                    )
+
+                    Spacer(Modifier.height(96.dp))
                 }
-
-                Spacer(Modifier.height(16.dp))
-
-                // ── Search Bar ─────────────────────────────────────────────
-                PetalSearchBar(onSearch = onSearch)
-
-                Spacer(Modifier.height(28.dp))
-
-                // ── Shortcuts Grid (4 columns, squircle tiles) ─────────────
-                PetalShortcutGrid(
-                    items = mergedItems,
-                    onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
-                    onEditShortcutSlot = { index -> editingSlotIndex = index },
-                    onAddShortcutClick = { editingSlotIndex = 0 }
-                )
-
-                Spacer(Modifier.height(96.dp))
             }
         }
 
@@ -543,16 +595,30 @@ private fun ShortcutTile(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.92f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "shortcut_press_scale"
+    )
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.foundation.LocalIndication.current,
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(60.dp)
+                .graphicsLayer { scaleX = scale; scaleY = scale }
                 .clip(RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
         ) {
@@ -637,25 +703,38 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
 
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.98f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "search_bar_press_scale"
+    )
+
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(32.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 2.dp,
+        tonalElevation = 3.dp,
+        shadowElevation = 1.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .clickable { onSearch("") },
+            .heightIn(min = 64.dp)
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.foundation.LocalIndication.current
+            ) { onSearch("") },
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 18.dp),
         ) {
             Icon(
                 imageVector = Icons.Rounded.Search,
                 contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.primary,
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(10.dp))
             Text(
                 text = "Search or type web address",
                 style = MaterialTheme.typography.bodyLarge,
@@ -705,6 +784,90 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                 )
             }
         }
+    }
+}
+
+// ── 6b. Quick Actions Row ───────────────────────────────────────────────────
+// Compact row of existing browser actions only (bookmarks, history, downloads,
+// new tab) — no new functionality is introduced here, these all map straight
+// to PetalHomeActionHandler methods that already exist and are wired in
+// BrowserActivity.
+
+private data class QuickAction(
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val onClick: () -> Unit
+)
+
+@Composable
+private fun PetalQuickActionsRow(
+    onOpenBookmarks: () -> Unit,
+    onOpenHistory: () -> Unit,
+    onOpenDownloads: () -> Unit,
+    onNewTab: () -> Unit
+) {
+    val actions = listOf(
+        QuickAction("Bookmarks", Icons.Rounded.Bookmark, onOpenBookmarks),
+        QuickAction("History", Icons.Rounded.History, onOpenHistory),
+        QuickAction("Downloads", Icons.Rounded.Download, onOpenDownloads),
+        QuickAction("New tab", Icons.Rounded.Add, onNewTab)
+    )
+
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            actions.forEach { action ->
+                QuickActionButton(action)
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickActionButton(action: QuickAction) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.90f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "quick_action_press_scale"
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.foundation.LocalIndication.current,
+                onClick = action.onClick
+            )
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+    ) {
+        Icon(
+            imageVector = action.icon,
+            contentDescription = action.label,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = action.label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
