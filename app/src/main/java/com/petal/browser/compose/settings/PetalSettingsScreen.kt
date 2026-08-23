@@ -1964,8 +1964,19 @@ fun PetalSettingsScreen(
                                             }
                                             Button(
                                                 onClick = {
-                                                    if (context is ComponentActivity) {
-                                                        com.petal.browser.unit.UpdateUnit.checkForUpdates(context, false)
+                                                    var act: android.app.Activity? = null
+                                                    var ctx = context
+                                                    while (ctx is android.content.ContextWrapper) {
+                                                        if (ctx is android.app.Activity) {
+                                                            act = ctx
+                                                            break
+                                                        }
+                                                        ctx = ctx.baseContext
+                                                    }
+                                                    if (act != null) {
+                                                        com.petal.browser.unit.UpdateUnit.checkForUpdates(act, false)
+                                                    } else {
+                                                        android.widget.Toast.makeText(context, "Checking for updates...", android.widget.Toast.LENGTH_SHORT).show()
                                                     }
                                                 },
                                                 shape = RoundedCornerShape(14.dp)
