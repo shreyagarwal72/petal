@@ -4,24 +4,32 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.background
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationItemIconPosition
+import androidx.compose.material3.ShortNavigationBarItem
+import androidx.compose.material3.ShortNavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,8 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -43,201 +49,252 @@ enum class PetalNavTab {
 }
 
 /**
- * Expressive Stride Floating Depth Bottom Navigation Bar.
+ * Bottom navigation bar, imported from Zenith's dual-style MainScreen bottom bar
+ * (HorizontalFloatingToolbar + ShortNavigationBarItem for the floating pill style,
+ * plain NavigationBar + NavigationBarItem for the flat style), wired up to Petal's
+ * existing four actions and tab-count badge.
  * Order:
  * 1st: Home Page button
  * 2nd: (+) New Tab button
  * 3rd: Chrome Android Live Tab Counter & Switcher Badge ([1], [2], [3])
  * 4th: Menu / Options button
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PetalBottomNavBar(
     selectedTab: PetalNavTab,
     tabCount: Int,
     isIncognito: Boolean = false,
+    isFloatingStyle: Boolean = true,
     onHomeClick: () -> Unit,
     onNewTabClick: () -> Unit,
     onTabsClick: () -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        shape = RoundedCornerShape(36.dp),
-        color = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = modifier
-            .clip(RoundedCornerShape(36.dp))
-            .background(if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh)
-            .entrance()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            // 1st Item: Home
-            NavItemPill(
-                selected = selectedTab == PetalNavTab.HOME,
-                label = "Home",
-                onClick = onHomeClick
-            ) { color ->
-                Icon(
-                    imageVector = Icons.Rounded.Home,
-                    contentDescription = "Home",
-                    tint = color,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
+    // Chrome Android style live tab counter badge, shared by both bar styles.
+    val animatedCount by animateIntAsState(
+        targetValue = tabCount,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "tabCountAnimation"
+    )
 
-            // 2nd Item: (+) New Tab
-            NavItemPill(
-                selected = selectedTab == PetalNavTab.NEW_TAB,
-                label = if (isIncognito) "Incognito" else "New",
-                onClick = onNewTabClick
-            ) { color ->
-                Icon(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = "New Tab",
-                    tint = color,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            // 3rd Item: Live Tab Switcher (Chrome Android Style Badge with scale spring animation)
-            val animatedCount by androidx.compose.animation.core.animateIntAsState(
-                targetValue = tabCount,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMedium
-                ),
-                label = "tabCountAnimation"
+    val badgeScale = remember { Animatable(1f) }
+    LaunchedEffect(tabCount) {
+        badgeScale.snapTo(1.35f)
+        badgeScale.animateTo(
+            1f,
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
             )
+        )
+    }
 
-            val badgeScale = remember { Animatable(1f) }
-            LaunchedEffect(tabCount) {
-                badgeScale.snapTo(1.35f)
-                badgeScale.animateTo(
-                    1f,
-                    spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    )
+    val tabsLabel = if (isIncognito) "Incognito ($animatedCount)" else "Tabs ($animatedCount)"
+    val newTabLabel = if (isIncognito) "Incognito" else "New"
+
+    if (isFloatingStyle) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(bottom = 36.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            HorizontalFloatingToolbar(
+                expanded = true,
+                modifier = Modifier
+                    .animateContentSize()
+                    .height(68.dp),
+                shape = RoundedCornerShape(100),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
+                    toolbarContainerColor = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerHigh
                 )
-            }
-
-            NavItemPill(
-                selected = selectedTab == PetalNavTab.TABS,
-                label = if (isIncognito) "Incognito ($animatedCount)" else "Tabs ($animatedCount)",
-                onClick = onTabsClick
-            ) { color ->
-                Box(
-                    modifier = Modifier
-                        .size(22.dp)
-                        .graphicsLayer {
-                            scaleX = badgeScale.value
-                            scaleY = badgeScale.value
-                        }
-                        .border(
-                            width = 2.dp,
-                            color = color,
-                            shape = RoundedCornerShape(6.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+            ) {
+                FloatingNavItem(
+                    selected = selectedTab == PetalNavTab.HOME,
+                    label = "Home",
+                    onClick = onHomeClick
                 ) {
-                    Text(
-                        text = if (animatedCount > 99) "99+" else animatedCount.toString(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        ),
-                        color = color,
-                        textAlign = TextAlign.Center
+                    Icon(
+                        imageVector = Icons.Rounded.Home,
+                        contentDescription = "Home",
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+
+                FloatingNavItem(
+                    selected = selectedTab == PetalNavTab.NEW_TAB,
+                    label = newTabLabel,
+                    onClick = onNewTabClick
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "New Tab",
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+
+                FloatingNavItem(
+                    selected = selectedTab == PetalNavTab.TABS,
+                    label = tabsLabel,
+                    onClick = onTabsClick
+                ) { color ->
+                    TabCountBadge(color = color, count = animatedCount, scale = badgeScale.value)
+                }
+
+                FloatingNavItem(
+                    selected = selectedTab == PetalNavTab.MENU,
+                    label = "Menu",
+                    onClick = onMenuClick
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = "Menu",
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
-
-            // 4th Item: Menu / Options
-            NavItemPill(
+        }
+    } else {
+        NavigationBar(
+            containerColor = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surface,
+            modifier = modifier.fillMaxWidth()
+        ) {
+            NavigationBarItem(
+                icon = { Icon(imageVector = Icons.Rounded.Home, contentDescription = "Home") },
+                label = { Text("Home") },
+                selected = selectedTab == PetalNavTab.HOME,
+                onClick = onHomeClick
+            )
+            NavigationBarItem(
+                icon = { Icon(imageVector = Icons.Rounded.Add, contentDescription = "New Tab") },
+                label = { Text(newTabLabel) },
+                selected = selectedTab == PetalNavTab.NEW_TAB,
+                onClick = onNewTabClick
+            )
+            NavigationBarItem(
+                icon = {
+                    TabCountBadge(
+                        color = if (selectedTab == PetalNavTab.TABS) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        count = animatedCount,
+                        scale = badgeScale.value
+                    )
+                },
+                label = { Text(tabsLabel) },
+                selected = selectedTab == PetalNavTab.TABS,
+                onClick = onTabsClick
+            )
+            NavigationBarItem(
+                icon = { Icon(imageVector = Icons.Rounded.MoreVert, contentDescription = "Menu") },
+                label = { Text("Menu") },
                 selected = selectedTab == PetalNavTab.MENU,
-                label = "Menu",
                 onClick = onMenuClick
-            ) { color ->
-                Icon(
-                    imageVector = Icons.Rounded.MoreVert,
-                    contentDescription = "Menu",
-                    tint = color,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
+            )
         }
     }
 }
 
+/**
+ * Chrome Android style live tab counter badge (bordered box with the current tab
+ * count), reused as the icon slot for the Tabs item in both bar styles.
+ */
 @Composable
-private fun NavItemPill(
+private fun TabCountBadge(color: Color, count: Int, scale: Float) {
+    Box(
+        modifier = Modifier
+            .size(22.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .border(
+                width = 2.dp,
+                color = color,
+                shape = RoundedCornerShape(6.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = if (count > 99) "99+" else count.toString(),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold
+            ),
+            color = color,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+/**
+ * Single item inside the floating toolbar, ported from Zenith's ShortNavigationBarItem
+ * usage: icon bumps up 16dp when selected, label slides/fades in next to the icon.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun FloatingNavItem(
     selected: Boolean,
     label: String,
     onClick: () -> Unit,
-    iconContent: @Composable (Color) -> Unit
+    icon: @Composable (Color) -> Unit
 ) {
-    val pop = remember { Animatable(1f) }
-    LaunchedEffect(selected) {
-        if (selected) {
-            pop.snapTo(0.65f)
-            pop.animateTo(
-                1f,
-                spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMedium
-                )
-            )
-        }
-    }
-
-    val contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-    val containerColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
-
-    Surface(
-        shape = CircleShape,
-        color = containerColor,
-        modifier = Modifier
-            .bouncyClickable(scaleDown = 0.88f, onClick = onClick)
-            .clip(CircleShape)
-            .animateContentSize(
+    ShortNavigationBarItem(
+        selected = selected,
+        onClick = onClick,
+        icon = {
+            val extraHeight by animateDpAsState(
+                targetValue = if (selected) 16.dp else 0.dp,
                 animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                )
-            ),
-    ) {
-        Row(
-            modifier = Modifier.padding(
-                horizontal = if (selected) 16.dp else 10.dp,
-                vertical = 10.dp,
-            ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessLow
+                ),
+                label = "indicatorHeight"
+            )
             Box(
-                modifier = Modifier.graphicsLayer {
-                    scaleX = pop.value
-                    scaleY = pop.value
-                }
+                modifier = Modifier.height(26.dp + extraHeight),
+                contentAlignment = Alignment.Center
             ) {
-                iconContent(contentColor)
+                icon(if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer)
             }
-
+        },
+        label = {
             AnimatedVisibility(
                 visible = selected,
-                enter = expandHorizontally() + fadeIn(),
-                exit = shrinkHorizontally() + fadeOut(),
+                enter = fadeIn() + slideInHorizontally(
+                    initialOffsetX = { -15 },
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                ) + expandHorizontally(expandFrom = Alignment.Start),
+                exit = fadeOut() + slideOutHorizontally(
+                    targetOffsetX = { -15 }
+                ) + shrinkHorizontally(shrinkTowards = Alignment.Start)
             ) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = contentColor,
-                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 2.dp, end = 4.dp)
                 )
             }
-        }
-    }
+        },
+        iconPosition = NavigationItemIconPosition.Start,
+        colors = ShortNavigationBarItemDefaults.colors(
+            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+            selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+            selectedIndicatorColor = MaterialTheme.colorScheme.primary,
+            unselectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            unselectedTextColor = Color.Transparent
+        ),
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .fillMaxHeight()
+    )
 }
