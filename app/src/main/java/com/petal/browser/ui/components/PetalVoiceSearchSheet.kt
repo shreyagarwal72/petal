@@ -34,6 +34,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -41,8 +44,32 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
+/**
+ * Minimal standalone [LifecycleOwner] for the voice search [BottomSheetDialog].
+ *
+ * The ComposeView inside the dialog previously had its tree lifecycle owner set
+ * to the hosting Activity. Since the Activity stays RESUMED for as long as the
+ * app is in the foreground, ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+ * never actually disposed the sheet's composition when the dialog was dismissed -
+ * only when the whole Activity was destroyed. That meant the DisposableEffect
+ * inside PetalVoiceSearchSheet (which cancels/destroys the SpeechRecognizer)
+ * never ran on dismiss: every voice search left its SpeechRecognizer instance
+ * alive and still bound to the system speech-recognition service. Repeated use
+ * piled up leaked recognizer instances/binder connections until the app hung
+ * (browser "not responding") the next time it tried to touch the mic.
+ *
+ * Giving the dialog its own short-lived LifecycleOwner - moved to DESTROYED
+ * from the dialog's own onDismissListener - makes the composition (and its
+ * DisposableEffect cleanup) tear down exactly when the sheet closes.
+ */
+private class VoiceSearchDialogLifecycleOwner : LifecycleOwner {
+    val registry = LifecycleRegistry(this)
+    override val lifecycle: Lifecycle get() = registry
+}
+
 object PetalVoiceSearchBridge {
     private var activeDialog: BottomSheetDialog? = null
+    private var activeLifecycleOwner: VoiceSearchDialogLifecycleOwner? = null
 
     @JvmStatic
     fun showVoiceSearchSheet(
@@ -52,12 +79,18 @@ object PetalVoiceSearchBridge {
         activity.runOnUiThread {
             activeDialog?.dismiss()
             activeDialog = null
+            activeLifecycleOwner?.let { it.registry.currentState = Lifecycle.State.DESTROYED }
+            activeLifecycleOwner = null
 
             val dialog = BottomSheetDialog(activity)
             activeDialog = dialog
 
+            val dialogLifecycleOwner = VoiceSearchDialogLifecycleOwner()
+            activeLifecycleOwner = dialogLifecycleOwner
+            dialogLifecycleOwner.registry.currentState = Lifecycle.State.RESUMED
+
             val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
+                setViewTreeLifecycleOwner(dialogLifecycleOwner)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -70,7 +103,6 @@ object PetalVoiceSearchBridge {
                                         dialog.dismiss()
                                     }
                                 } catch (e: Exception) {}
-                                activeDialog = null
                                 onResult(result)
                             },
                             onDismiss = {
@@ -79,7 +111,6 @@ object PetalVoiceSearchBridge {
                                         dialog.dismiss()
                                     }
                                 } catch (e: Exception) {}
-                                activeDialog = null
                             }
                         )
                     }
@@ -87,8 +118,15 @@ object PetalVoiceSearchBridge {
             }
             dialog.setContentView(composeView)
             dialog.setOnDismissListener {
+                // This is what now actually releases the SpeechRecognizer: moving the
+                // lifecycle to DESTROYED disposes the composition, which runs the
+                // DisposableEffect's onDispose in PetalVoiceSearchSheet.
+                dialogLifecycleOwner.registry.currentState = Lifecycle.State.DESTROYED
                 if (activeDialog == dialog) {
                     activeDialog = null
+                }
+                if (activeLifecycleOwner == dialogLifecycleOwner) {
+                    activeLifecycleOwner = null
                 }
             }
             dialog.show()
