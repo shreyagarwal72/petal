@@ -665,5 +665,3 @@ fun PetalOmniboxPage(
         }
     }
 }
-
-}
