@@ -1540,15 +1540,53 @@ fun PetalSettingsScreen(
                             if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom")) {
                                 SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
                                     ToggleRow(
-                                        title = "Touch Haptics",
-                                        subtitle = "Vibrate with tactile feedback on button presses throughout the app",
+                                        title = "Touch Haptics Engine",
+                                        subtitle = "Vibrate with Ever-Haptics tactile feedback on button presses and UI gestures",
                                         icon = Icons.Rounded.Vibration,
                                         checked = isTouchHaptics,
                                         onCheckedChange = { newValue ->
                                             isTouchHaptics = newValue
                                             sp.edit().putBoolean("sp_touch_haptics", newValue).apply()
+                                            if (newValue) {
+                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                                    .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                                            }
                                         }
                                     )
+
+                                    if (isTouchHaptics) {
+                                        var testPattern by remember { mutableStateOf(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK) }
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 4.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "Haptic Pattern Test & Preview:",
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .horizontalScroll(rememberScrollState()),
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                com.petal.browser.haptics.PetalHapticEngine.Pattern.values().forEach { pattern ->
+                                                    FilterChip(
+                                                        selected = testPattern == pattern,
+                                                        onClick = {
+                                                            testPattern = pattern
+                                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                                                .play(pattern, 0.75f)
+                                                        },
+                                                        label = { Text(pattern.name.replace("_", " ")) }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
 
                                     ToggleRow(
                                         title = "Press Back Again to Exit",

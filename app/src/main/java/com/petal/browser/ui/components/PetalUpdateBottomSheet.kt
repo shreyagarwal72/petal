@@ -82,10 +82,9 @@ object PetalUpdateSheetBridge {
                     if (body.isBlank()) {
                         body = """
                             ### Release Keynotes & What's New
-                            * **Squashed bugs, added magic.** You know what to do.
-                            * **Real Website Favicons**: Frequently visited shortcuts row now displays crisp, real website logos.
-                            * **Appearance & Theme Settings**: Universal switch toggle for Material 3 Expressive background morphing shapes.
-                            * **Downloads & Layout Alignment**: Header extends behind status bar, and non-floating bottom bar is anchored perfectly like Chrome without site content overlap.
+                            * **Ever-Haptics Tactile Engine**: Added high-precision haptic feedback adapted from Ever-Haptics with interactive pattern selector and preview in Accessibility settings.
+                            * **Page Resizing & Floating Navbar Fix**: Pages that do not have a bottom navbar and pages with Floating Navbar mode active no longer undergo unwanted layout resizing or bottom padding.
+                            * **Homepage Rendering Stability**: Resolved blank screen issues when opening new tabs or returning to Petal Home.
                         """.trimIndent()
                     }
                     val htmlUrl = json.get("html_url")?.asString ?: "https://github.com/shreyagarwal72/petal/releases"
@@ -126,7 +125,7 @@ object PetalUpdateSheetBridge {
                             activity = activity,
                             updateInfo = PetalUpdateInfo(
                                 versionName = currentVerName,
-                                releaseNotes = "You are currently running the latest build of Petal Browser ($currentVerName).\n\n### Release Keynotes\n* Squashed bugs, added magic.\n* Real website favicons for shortcuts.\n* Material 3 Expressive background morphing shapes toggle.",
+                                releaseNotes = "You are currently running the latest build of Petal Browser ($currentVerName).\n\n### Release Keynotes & What's New\n* **Ever-Haptics Tactile Engine**: Full integration of high-precision haptics with pattern test preview under Accessibility settings.\n* **No Layout Resizing**: Pages without a bottom navbar and floating navbars no longer resize or shrink page content.\n* **Homepage Stability**: Solved blank screen issues on cold start and new tabs.",
                                 downloadUrl = "",
                                 releaseUrl = "https://github.com/shreyagarwal72/petal/releases",
                                 isUpdateAvailable = false
@@ -143,7 +142,7 @@ object PetalUpdateSheetBridge {
                             activity = activity,
                             updateInfo = PetalUpdateInfo(
                                 versionName = currentVerName,
-                                releaseNotes = "Petal Browser is running build $currentVerName.\n\n### Release Keynotes\n* Squashed bugs, added magic.\n* Real website favicons for shortcuts.\n* Material 3 Expressive background morphing shapes toggle.",
+                                releaseNotes = "Petal Browser is running build $currentVerName.\n\n### Release Keynotes & What's New\n* **Ever-Haptics Tactile Engine**: Full integration of high-precision haptics with pattern test preview under Accessibility settings.\n* **No Layout Resizing**: Pages without a bottom navbar and floating navbars no longer resize or shrink page content.\n* **Homepage Stability**: Solved blank screen issues on cold start and new tabs.",
                                 downloadUrl = "",
                                 releaseUrl = "https://github.com/shreyagarwal72/petal/releases",
                                 isUpdateAvailable = false
@@ -284,7 +283,12 @@ fun PetalUpdateSheetContent(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(28.dp))
+                    LinearRipplingWavyProgressIndicator(
+                        progress = null,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        height = 6.dp,
+                        strokeWidth = 3.5.dp
+                    )
                 }
             } else if (notesToDisplay.isNotBlank()) {
                 Column(
@@ -334,18 +338,20 @@ fun PetalUpdateSheetContent(
             if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
                 if (isDownloading) {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        LinearProgressIndicator(
-                            progress = { downloadProgress / 100f },
-                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50))
+                        LinearRipplingWavyProgressIndicator(
+                            progress = downloadProgress / 100f,
+                            modifier = Modifier.fillMaxWidth(),
+                            height = 8.dp,
+                            strokeWidth = 4.dp
                         )
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(10.dp))
                         Text(
                             text = "Downloading update... $downloadProgress%",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 } else {

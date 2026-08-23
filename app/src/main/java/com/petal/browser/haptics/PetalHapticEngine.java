@@ -103,12 +103,56 @@ public class PetalHapticEngine {
         return play(pattern, intensity, 0L);
     }
 
+    public boolean hasVibrator() {
+        return hasVibrator;
+    }
+
+    public boolean hasAmplitudeControl() {
+        return hasAmplitudeControl;
+    }
+
+    public static boolean isHapticsEnabled(Context context) {
+        if (context == null) return true;
+        return androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean("sp_touch_haptics", true);
+    }
+
+    public boolean playIfEnabled(Context context, @NonNull Pattern pattern, float intensity, long throttleMs) {
+        if (!isHapticsEnabled(context)) return false;
+        return play(pattern, intensity, throttleMs);
+    }
+
+    public boolean playIfEnabled(Context context, @NonNull Pattern pattern, float intensity) {
+        return playIfEnabled(context, pattern, intensity, 0L);
+    }
+
+    public void playOneShot(long durationMs, int amplitude) {
+        if (!hasVibrator) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                int amp = Math.max(1, Math.min(255, amplitude));
+                VibrationEffect effect = VibrationEffect.createOneShot(durationMs, amp);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && touchAttrs != null) {
+                    vibrator.vibrate(effect, touchAttrs);
+                } else {
+                    vibrator.vibrate(effect);
+                }
+            } else {
+                vibrator.vibrate(durationMs);
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    public void playStrong(@NonNull Pattern pattern) {
+        play(pattern, 1.0f, 0L);
+    }
+
     public void playClick(Context context) {
-        play(Pattern.CLICK, 0.75f, 0L);
+        playIfEnabled(context, Pattern.CLICK, 0.75f, 0L);
     }
 
     public void playTick(Context context) {
-        play(Pattern.TICK, 0.5f, 0L);
+        playIfEnabled(context, Pattern.TICK, 0.5f, 0L);
     }
 
     private VibrationEffect effectFor(Pattern pattern, float intensity) {
