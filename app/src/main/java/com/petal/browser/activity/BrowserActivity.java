@@ -1050,6 +1050,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 public void onOpenAccountSync() {
                     showAccountSyncScreen();
                 }
+            });
             composeView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
