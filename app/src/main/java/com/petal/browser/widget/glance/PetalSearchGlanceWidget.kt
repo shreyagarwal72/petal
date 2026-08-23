@@ -9,8 +9,11 @@ import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.os.Build
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
@@ -48,6 +51,7 @@ import androidx.graphics.shapes.toPath
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
+import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.ui.theme.paletteById
 import com.petal.browser.widget.PetalSearchWidgetProvider
 
@@ -90,9 +94,18 @@ class PetalSearchGlanceWidget : GlanceAppWidget() {
                 }
             }
             val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
+            // Same "useDynamicColor" preference PetalExpressiveTheme reads in-app — when
+            // it's on (the default on Android 12+), the widget should follow the real
+            // Material You wallpaper-derived palette rather than a fixed Petal palette,
+            // exactly like the rest of the app does.
+            val useDynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
             // Reuse the exact same ColorScheme the rest of the app renders with — the
             // widget always matches the in-app palette/theme choice, on every API level.
-            val scheme = paletteById(paletteId).let { if (isDark) it.dark else it.light }
+            val scheme = if (useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            } else {
+                paletteById(paletteId).let { if (isDark) it.dark else it.light }
+            }
             val uiMode = context.resources.configuration.uiMode
 
             val sparkShape = remember(uiMode, paletteId, isDark) {
