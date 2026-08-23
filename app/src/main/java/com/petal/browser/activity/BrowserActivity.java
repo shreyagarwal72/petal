@@ -210,6 +210,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * or, worse, a no-op because setAction("") already cleared the intent action.
      */
     private boolean suppressResumeDispatch = false;
+    /**
+     * A widget action (ACTION_OPEN_SEARCH / _AI_SEARCH / _VOICE) waiting to run once the
+     * window has genuine input focus. See {@link #runOrDeferPendingWidgetAction()}.
+     */
+    private Runnable pendingWidgetAction = null;
     private final ServiceConnection mediaConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -4032,39 +4037,34 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             sp.edit().putBoolean("show_overview", false).apply();
             getIntent().setAction("");
             addAlbum(null, url, true);
-        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)) {
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
-            // Always post to the content frame's own message queue instead of gating
-            // on suppressResumeDispatch/onResume(): that flag is only reliably true
-            // for the very first onResume() after onCreate(), so on an uncached
-            // (cold-start) launch any intervening lifecycle event (permission
-            // prompts, dialogs, etc.) could consume it before the widget action
-            // ever got a chance to run, silently dropping the omnibox open. Posting
-            // here works identically whether dispatchIntent() was called from
-            // onCreate() (cold start) or onNewIntent() (already cached), and still
-            // runs after the current layout pass settles.
-            Runnable openSearch = () -> {
-                String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-                if (cUrl == null || cUrl.startsWith("file:///android_asset/") || cUrl.equalsIgnoreCase("about:blank") || cUrl.startsWith("about:")) cUrl = "";
-                showOmniboxPage(cUrl);
+            // The widget always opens a brand-new tab (never reuses/reads whatever tab
+            // was already showing) and then shows the omnibox on top of it.
+            pendingWidgetAction = () -> {
+                addAlbum(null, "", true);
+                showOmniboxPage("");
             };
-            if (contentFrame != null) {
-                contentFrame.post(openSearch);
-            } else {
-                openSearch.run();
-            }
+            runOrDeferPendingWidgetAction();
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)) {
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
-            // See ACTION_OPEN_SEARCH above: post unconditionally rather than
-            // deferring only on a cold-start-specific onResume() flag.
-            Runnable openVoice = () -> {
+            pendingWidgetAction = () -> {
+                // Same "always a new tab" rule as the other widget actions: the fresh
+                // tab is opened up front, then the voice result (if any) loads into it.
+                addAlbum(null, "", true);
                 try {
                     com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(this, result -> {
                         if (result != null && !result.trim().isEmpty()) {
                             String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
-                            addAlbum(null, targetUrl, true);
+                            if (ninjaWebView != null) {
+                                ninjaWebView.loadUrl(targetUrl);
+                                showAlbum(currentAlbumController, targetUrl);
+                            } else {
+                                addAlbum(null, targetUrl, true);
+                            }
                         }
                         return kotlin.Unit.INSTANCE;
                     });
@@ -4072,21 +4072,52 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     showOmniboxPage("");
                 }
             };
-            if (contentFrame != null) {
-                contentFrame.post(openVoice);
-            } else {
-                openVoice.run();
-            }
-        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)) {
-            getIntent().setAction("");
-            sp.edit().putBoolean("show_overview", false).apply();
-            // See ACTION_OPEN_SEARCH above: post unconditionally rather than
-            // deferring only on a cold-start-specific onResume() flag.
-            if (contentFrame != null) {
-                contentFrame.post(() -> showOmniboxPage(""));
-            } else {
-                showOmniboxPage("");
-            }
+            runOrDeferPendingWidgetAction();
+        }
+    }
+
+    /**
+     * Runs (or defers) a widget action queued up in {@link #pendingWidgetAction}.
+     * <p>
+     * A plain {@code contentFrame.post(...)} isn't reliable enough on a true cold start:
+     * {@code dispatchIntent()} runs at the end of {@code onCreate()}, but {@code onStart()}
+     * — called right after — can synchronously show the one-time Welcome dialog and/or the
+     * "choose a search engine" dialog (see onStart() above). Those are shown *after* this
+     * method queues the post, so the omnibox can end up added to contentFrame while it's
+     * still visually buried underneath one of those modal dialogs; once the user dismisses
+     * it, nothing re-triggers the omnibox, so they land on the plain home/tab page instead —
+     * exactly the "widget opens the home page on first launch" bug.
+     * <p>
+     * Deferring to {@link #onWindowFocusChanged(boolean)} instead fixes this: the window
+     * only regains real input focus once every startup dialog has actually been dismissed,
+     * cold start or not, so the omnibox reliably shows on top of whatever's current rather
+     * than getting shown-then-hidden underneath a dialog.
+     */
+    private void runOrDeferPendingWidgetAction() {
+        if (contentFrame == null) return;
+        if (hasWindowFocus()) {
+            // Already focused and interactive (e.g. the widget was tapped while Petal was
+            // already in the foreground) — nothing is going to steal focus afterward, so
+            // just run on the next frame instead of waiting for a focus change that may
+            // never come.
+            contentFrame.post(this::consumePendingWidgetAction);
+        }
+        // Otherwise leave it queued; onWindowFocusChanged(true) will run it.
+    }
+
+    private void consumePendingWidgetAction() {
+        Runnable action = pendingWidgetAction;
+        pendingWidgetAction = null;
+        if (action != null) {
+            action.run();
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && pendingWidgetAction != null && contentFrame != null) {
+            contentFrame.post(this::consumePendingWidgetAction);
         }
     }
     private String readTextFromUri(Context context, Uri uri) {
