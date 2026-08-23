@@ -243,7 +243,7 @@ fun PetalUpdateSheetContent(
             )
 
             Text(
-                text = if (updateInfo.isUpdateAvailable) "Version ${updateInfo.versionName} is ready for installation" else "You're running the latest build (${updateInfo.versionName})",
+                text = if (updateInfo.isUpdateAvailable) "Squashed bugs, added magic. You know what to do" else "You're running the latest build (${updateInfo.versionName})",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

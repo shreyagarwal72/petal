@@ -65,10 +65,10 @@ public class UpdateUnit {
                 URL url = new URL(GITHUB_RELEASES_API);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
-                conn.setConnectTimeout(6000);
-                conn.setReadTimeout(6000);
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(10000);
                 conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
-                conn.setRequestProperty("User-Agent", "PetalBrowserApp/1.0.2");
+                conn.setRequestProperty("User-Agent", "PetalBrowserApp/" + getAppVersion(activity));
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode == 200) {
@@ -81,11 +81,11 @@ public class UpdateUnit {
                     reader.close();
 
                     JSONObject json = new JSONObject(sb.toString());
-                    final String latestTag = json.optString("tag_name", "v1.0.2");
+                    final String latestTag = json.optString("tag_name", getAppVersion(activity));
                     final String releaseNotes = json.optString("body", "Performance polish, security enhancements, and stability improvements.");
 
                     // Locate direct APK asset download URL if available, fallback to html_url release page
-                    String apkDownloadUrl = json.optString("html_url", "https://github.com/shreyagarwal72/petal/releases");
+                    String apkDownloadUrl = json.optString("html_url", GITHUB_RELEASES_PAGE);
                     JSONArray assets = json.optJSONArray("assets");
                     if (assets != null && assets.length() > 0) {
                         for (int i = 0; i < assets.length(); i++) {
@@ -99,10 +99,7 @@ public class UpdateUnit {
                     }
                     final String finalDownloadUrl = apkDownloadUrl;
 
-                    String currentVer = "v1.0.2";
-                    try {
-                        currentVer = "v" + activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0).versionName;
-                    } catch (Exception ignored) {}
+                    String currentVer = getAppVersion(activity);
                     final String currentVersion = currentVer;
 
                     // Strictly check if latest release is newer than current version
@@ -111,6 +108,11 @@ public class UpdateUnit {
                     // Check if user previously chose to skip this specific version (only applies to launch checks)
                     String skippedVersion = sp.getString(PREF_KEY_SKIP_VERSION, "");
                     boolean isSkipped = isLaunchCheck && latestTag.equalsIgnoreCase(skippedVersion);
+
+                    if (isNextUpdateAvailable && !isSkipped) {
+                        // Automatically push system update notification with custom taglines
+                        sendUpdateNotification(context, latestTag, finalDownloadUrl);
+                    }
 
                     activity.runOnUiThread(() -> {
                         if (activity.isFinishing()) return;
@@ -174,6 +176,61 @@ public class UpdateUnit {
     }
 
     /**
+     * Automatically pushes a system notification for available app updates with custom user taglines.
+     */
+    public static void sendUpdateNotification(Context context, String latestTag, String downloadUrl) {
+        if (context == null) return;
+        try {
+            android.app.NotificationManager nm = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+
+            String channelId = "petal_updates_channel";
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                android.app.NotificationChannel channel = new android.app.NotificationChannel(
+                        channelId,
+                        "App Updates",
+                        android.app.NotificationManager.IMPORTANCE_HIGH
+                );
+                channel.setDescription("Notifications for new Petal Browser updates and releases");
+                nm.createNotificationChannel(channel);
+            }
+
+            String[] customLines = new String[]{
+                    "Step into the next era. Update now.",
+                    "Something massive just landed. Update to unlock it.",
+                    "Warning: Updating may cause extreme satisfaction"
+            };
+            String body = customLines[new java.util.Random().nextInt(customLines.length)];
+
+            Intent intent = new Intent(context, com.petal.browser.activity.BrowserActivity.class);
+            intent.setAction("com.petal.browser.action.SHOW_UPDATE");
+            intent.putExtra("update_version", latestTag);
+            intent.putExtra("update_url", downloadUrl);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(
+                    context,
+                    9901,
+                    intent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT | (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? android.app.PendingIntent.FLAG_IMMUTABLE : 0)
+            );
+
+            androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("Petal Browser " + latestTag + " Available!")
+                    .setContentText(body)
+                    .setStyle(new androidx.core.app.NotificationCompat.BigTextStyle().bigText(body))
+                    .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent);
+
+            nm.notify(9901, builder.build());
+        } catch (Exception e) {
+            Log.e(TAG, "Error posting update notification", e);
+        }
+    }
+
+    /**
      * Renders a Material 3 Expressive Update Dialog with update metrics, release notes, and action buttons.
      */
     private static void showMaterial3ExpressiveUpdateDialog(
@@ -196,7 +253,7 @@ public class UpdateUnit {
         MaterialButton btnSkipVersion = dialogView.findViewById(R.id.btn_skip_version);
 
         if (tvTitle != null) tvTitle.setText("New Update Available");
-        if (tvSubhead != null) tvSubhead.setText("A new version of Petal Browser is ready");
+        if (tvSubhead != null) tvSubhead.setText("Squashed bugs, added magic. You know what to do");
         if (tvCurrentVersion != null) tvCurrentVersion.setText(currentVersion);
         if (tvLatestVersion != null) tvLatestVersion.setText(latestVersion);
         if (tvReleaseNotes != null) {
