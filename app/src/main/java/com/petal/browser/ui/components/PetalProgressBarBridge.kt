@@ -75,6 +75,23 @@ object PetalProgressBarBridge {
             }
         }
     }
+
+    /**
+     * Hides the bar without touching the ComposeView's own Android visibility -
+     * only the internal Compose state that drives its AnimatedVisibility. Used
+     * whenever a pull-to-refresh reload is in flight or an internal (non-web)
+     * screen - settings, downloads, history, account sync, home - is showing.
+     *
+     * Do NOT call composeView.setVisibility(GONE) for this: a GONE ComposeView
+     * never composes again, so calling updateProgress() later - once a real
+     * page starts loading - has nothing to make visible and the bar stays gone
+     * for the rest of the session.
+     */
+    @JvmStatic
+    fun hide(composeView: ComposeView) {
+        val tag = composeView.getTag(com.petal.browser.R.id.main_progress_bar_compose) as? Pair<MutableState<Float>, MutableState<Boolean>>
+        tag?.second?.value = false
+    }
 }
 
 @Composable
