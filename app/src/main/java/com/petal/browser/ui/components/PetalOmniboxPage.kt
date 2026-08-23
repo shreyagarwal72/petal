@@ -24,14 +24,23 @@
 
 package com.petal.browser.ui.components
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,9 +59,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -68,27 +79,34 @@ import com.petal.browser.database.RecordAction
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.SearchSuggestionsManager
 import kotlinx.coroutines.delay
+import java.net.URI
 
 data class OmniboxSuggestion(
     val query: String,
     val isHistory: Boolean
 )
 
+private data class TopSiteShortcut(
+    val title: String,
+    val url: String,
+    val icon: ImageVector
+)
+
 object PetalOmniboxBridge {
 
     /**
      * Builds the full-screen omnibox page as a plain [ComposeView] meant to be mounted
-     * into BrowserActivity's `contentFrame`, exactly like PetalDownloadBridge /
-     * PetalHistoryBridge / PetalAccountSyncBridge. [onBackPress] is invoked both on the
-     * back button/gesture and after a successful query submission's caller decides to
-     * dismiss - callers are expected to call `showAlbum(currentAlbumController)` there
-     * to return to the underlying page, matching every other full-screen surface.
+     * into BrowserActivity's `contentFrame`, supporting Chrome-style quick-action cards
+     * and site shortcuts.
      */
     @JvmStatic
     @JvmOverloads
     fun createOmniboxView(
         activity: ComponentActivity,
         initialQuery: String = "",
+        pageTitle: String = "",
+        pageUrl: String = "",
+        favicon: Bitmap? = null,
         onBackPress: () -> Unit,
         onQuerySubmitted: (String) -> Unit
     ): ComposeView {
@@ -124,6 +142,9 @@ object PetalOmniboxBridge {
                     PetalOmniboxPage(
                         activity = activity,
                         initialQuery = initialQuery,
+                        pageTitle = pageTitle,
+                        pageUrl = pageUrl,
+                        favicon = favicon,
                         onQuerySubmitted = { query ->
                             onQuerySubmitted(query)
                             onBackPress()
@@ -140,6 +161,9 @@ object PetalOmniboxBridge {
 fun PetalOmniboxPage(
     activity: ComponentActivity,
     initialQuery: String = "",
+    pageTitle: String = "",
+    pageUrl: String = "",
+    favicon: Bitmap? = null,
     onQuerySubmitted: (String) -> Unit,
     onBackPress: () -> Unit
 ) {
@@ -155,10 +179,41 @@ fun PetalOmniboxPage(
         }
     }
     var queryState by remember {
-        mutableStateOf(TextFieldValue(cleanedInitialQuery, androidx.compose.ui.text.TextRange(cleanedInitialQuery.length)))
+        mutableStateOf(TextFieldValue(cleanedInitialQuery, TextRange(cleanedInitialQuery.length)))
     }
     var suggestions by remember { mutableStateOf<List<OmniboxSuggestion>>(emptyList()) }
     val focusRequester = remember { FocusRequester() }
+
+    val cleanPageUrl = remember(pageUrl) {
+        val trimmed = pageUrl.trim()
+        if (trimmed.equals("about:blank", ignoreCase = true) || trimmed.startsWith("about:", ignoreCase = true) || trimmed.startsWith("petal:", ignoreCase = true)) {
+            ""
+        } else {
+            trimmed
+        }
+    }
+
+    val pageDomain = remember(cleanPageUrl) {
+        try {
+            if (cleanPageUrl.isNotBlank()) {
+                val uri = URI(cleanPageUrl)
+                uri.host?.removePrefix("www.") ?: cleanPageUrl
+            } else ""
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    val siteShortcuts = remember {
+        listOf(
+            TopSiteShortcut("Google", "https://www.google.com", Icons.Rounded.Search),
+            TopSiteShortcut("YouTube", "https://www.youtube.com", Icons.Rounded.PlayCircle),
+            TopSiteShortcut("Wikipedia", "https://www.wikipedia.org", Icons.Rounded.MenuBook),
+            TopSiteShortcut("GitHub", "https://github.com", Icons.Rounded.Code),
+            TopSiteShortcut("Reddit", "https://www.reddit.com", Icons.Rounded.Forum),
+            TopSiteShortcut("News", "https://news.google.com", Icons.Rounded.RssFeed)
+        )
+    }
 
     // Fetch local search/browsing history from SQLite database
     val localHistoryList = remember {
@@ -180,9 +235,7 @@ fun PetalOmniboxPage(
         list.distinct()
     }
 
-    // Debounced search query handler - respects the user's chosen suggestion engine,
-    // same as the old dialog_search AdapterSearch flow (sp_search_engine: 0 Google,
-    // 1 DuckDuckGo, 2 Bing), and the sp_enable_live_suggestions master toggle.
+    // Debounced search query handler
     LaunchedEffect(queryState.text) {
         val currentText = queryState.text.trim()
         if (currentText.isEmpty()) {
@@ -197,12 +250,12 @@ fun PetalOmniboxPage(
 
             val liveSuggestionsEnabled = sp.getBoolean("sp_enable_live_suggestions", true)
             if (liveSuggestionsEnabled) {
-                delay(250) // debounce
+                delay(250)
                 val searchEngine = sp.getString("sp_search_engine", "0")
                 val fetch: (String, SearchSuggestionsManager.SuggestionCallback) -> Unit = when (searchEngine) {
                     "1" -> SearchSuggestionsManager::fetchDuckDuckGoSuggestions
                     "3" -> SearchSuggestionsManager::fetchBingSuggestions
-                    else -> SearchSuggestionsManager::fetchSuggestions // 0: Google, 2: Brave, 4: Ecosia
+                    else -> SearchSuggestionsManager::fetchSuggestions
                 }
                 fetch(currentText) { engineResults ->
                     val combined = mutableListOf<OmniboxSuggestion>()
@@ -232,169 +285,376 @@ fun PetalOmniboxPage(
         enabled = true,
         onBack = { onBackPress() },
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            contentWindowInsets = WindowInsets(0)
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Background drawn first with matchParentSize so it never intercepts touches
-                M3ExpressiveVariableBackground(
-                    modifier = Modifier.matchParentSize(),
-                    pageSeed = "omnibox_page"
-                )
-
-                Column(
+        com.petal.browser.predictive.PetalScreenWrapper {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.background,
+                contentWindowInsets = WindowInsets(0)
+            ) { innerPadding ->
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                    // NOTE: no .imePadding() here on purpose. BrowserActivity's
-                    // ViewCompat.setOnApplyWindowInsetsListener on R.id.main (the parent
-                    // of this ComposeView's host contentFrame) already applies
-                    // bottom padding equal to the keyboard height whenever the IME is
-                    // visible. Adding .imePadding() again here double-counts that inset,
-                    // squeezing this weighted suggestions LazyColumn down to zero height
-                    // and making the suggestions list disappear behind the keyboard.
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
+                            onBackPress()
+                        }
                 ) {
-                    // Chrome-style search field row pinned to top with status bar padding
-                    Row(
+                    // Background drawn first
+                    M3ExpressiveVariableBackground(
+                        modifier = Modifier.matchParentSize(),
+                        pageSeed = "omnibox_page"
+                    )
+
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding()
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .fillMaxSize()
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) {} // Absorb clicks inside content area
                     ) {
-                        IconButton(onClick = onBackPress) {
-                            Icon(
-                                imageVector = Icons.Rounded.ArrowBack,
-                                contentDescription = "Back",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        // Chrome-style search field row pinned to top with status bar padding
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .statusBarsPadding()
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = onBackPress) {
+                                Icon(
+                                    imageVector = Icons.Rounded.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            OutlinedTextField(
+                                value = queryState,
+                                onValueChange = { queryState = it },
+                                placeholder = {
+                                    Text(
+                                        text = "Search Google or type URL",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                trailingIcon = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (queryState.text.isNotEmpty()) {
+                                            IconButton(onClick = { queryState = TextFieldValue("") }) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Close,
+                                                    contentDescription = "Clear text",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        } else {
+                                            IconButton(onClick = {
+                                                PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
+                                                    if (result.isNotBlank()) onQuerySubmitted(result.trim())
+                                                }
+                                            }) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Mic,
+                                                    contentDescription = "Voice search",
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                    }
+                                },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                keyboardActions = KeyboardActions(onSearch = {
+                                    if (queryState.text.isNotBlank()) {
+                                        onQuerySubmitted(queryState.text.trim())
+                                    }
+                                }),
+                                shape = RoundedCornerShape(50),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    focusedBorderColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .focusRequester(focusRequester)
                             )
                         }
 
-                        OutlinedTextField(
-                            value = queryState,
-                            onValueChange = { queryState = it },
-                            placeholder = {
-                                Text(
-                                    text = "Search Google or type URL",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            },
-                            trailingIcon = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    if (queryState.text.isNotEmpty()) {
-                                        IconButton(onClick = { queryState = TextFieldValue("") }) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Close,
-                                                contentDescription = "Clear text",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    } else {
-                                        IconButton(onClick = {
-                                            PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
-                                                if (result.isNotBlank()) onQuerySubmitted(result.trim())
-                                            }
-                                        }) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Mic,
-                                                contentDescription = "Voice search",
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    }
-                                }
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = {
-                                if (queryState.text.isNotBlank()) {
-                                    onQuerySubmitted(queryState.text.trim())
-                                }
-                            }),
-                            shape = RoundedCornerShape(50),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .focusRequester(focusRequester)
-                        )
-                    }
-
-                    // Suggestions List - fills the rest of the page, resizing with the keyboard.
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
-                    ) {
-                        items(
-                            items = suggestions,
-                            key = { item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
-                        ) { item ->
+                        // Chrome-style Quick Actions Card when an active webpage is focused
+                        if (cleanPageUrl.isNotBlank()) {
                             Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = Color.Transparent,
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                tonalElevation = 2.dp,
+                                shadowElevation = 1.dp,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .clickable {
-                                        val trimmed = item.query.trim()
-                                        if (trimmed.isNotEmpty()) {
-                                            onQuerySubmitted(trimmed)
-                                        }
-                                    }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // History clock icon vs Search magnifying glass icon
-                                    Icon(
-                                        imageVector = if (item.isHistory) Icons.Rounded.History else Icons.Rounded.Search,
-                                        contentDescription = null,
-                                        tint = if (item.isHistory) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-
-                                    Spacer(Modifier.width(20.dp))
-
-                                    Text(
-                                        text = item.query,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f)
-                                    )
-
-                                    // Clickable diagonal NorthWest insert arrow button
-                                    IconButton(
-                                        onClick = {
-                                            queryState = TextFieldValue(
-                                                text = item.query,
-                                                selection = androidx.compose.ui.text.TextRange(item.query.length)
+                                    // Favicon + Title & Domain
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (favicon != null) {
+                                            Image(
+                                                bitmap = favicon.asImageBitmap(),
+                                                contentDescription = "Page Favicon",
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
                                             )
-                                        },
-                                        modifier = Modifier.size(32.dp)
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Language,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(Modifier.width(12.dp))
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = if (pageTitle.isNotBlank()) pageTitle else (pageDomain.ifBlank { cleanPageUrl }),
+                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = if (pageDomain.isNotBlank()) pageDomain else cleanPageUrl,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(Modifier.width(8.dp))
+
+                                    // 3 Quick Action Icons: Native Share, One-tap Copy, Edit Pencil
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // 1. Native Share
+                                        IconButton(
+                                            onClick = {
+                                                try {
+                                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(Intent.EXTRA_TEXT, cleanPageUrl)
+                                                        if (pageTitle.isNotBlank()) {
+                                                            putExtra(Intent.EXTRA_SUBJECT, pageTitle)
+                                                        }
+                                                    }
+                                                    activity.startActivity(Intent.createChooser(shareIntent, "Share Webpage"))
+                                                } catch (e: Exception) {
+                                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                    clipboard.setPrimaryClip(ClipData.newPlainText("URL", cleanPageUrl))
+                                                    Toast.makeText(context, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+                                                }
+                                            },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Share,
+                                                contentDescription = "Share URL",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+
+                                        // 2. One-tap Copy
+                                        IconButton(
+                                            onClick = {
+                                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                clipboard.setPrimaryClip(ClipData.newPlainText("URL", cleanPageUrl))
+                                                Toast.makeText(context, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+                                            },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.ContentCopy,
+                                                contentDescription = "Copy URL",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+
+                                        // 3. Edit Pencil
+                                        IconButton(
+                                            onClick = {
+                                                queryState = TextFieldValue(
+                                                    text = cleanPageUrl,
+                                                    selection = TextRange(cleanPageUrl.length)
+                                                )
+                                                try {
+                                                    focusRequester.requestFocus()
+                                                    keyboardController?.show()
+                                                } catch (e: Exception) {}
+                                            },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Edit,
+                                                contentDescription = "Edit URL",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Frequently Visited Site Shortcuts Row
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "Frequently Visited",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                            )
+
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                items(siteShortcuts) { shortcut ->
+                                    Surface(
+                                        onClick = { onQuerySubmitted(shortcut.url) },
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainer,
+                                        tonalElevation = 1.dp,
+                                        modifier = Modifier.width(92.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(34.dp)
+                                                    .clip(CircleShape)
+                                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = shortcut.icon,
+                                                    contentDescription = shortcut.title,
+                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+
+                                            Spacer(Modifier.height(4.dp))
+
+                                            Text(
+                                                text = shortcut.title,
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Suggestions List - fills the rest of the page
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
+                        ) {
+                            items(
+                                items = suggestions,
+                                key = { item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
+                            ) { item ->
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = Color.Transparent,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .clickable {
+                                            val trimmed = item.query.trim()
+                                            if (trimmed.isNotEmpty()) {
+                                                onQuerySubmitted(trimmed)
+                                            }
+                                        }
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Rounded.NorthWest,
-                                            contentDescription = "Insert query into omnibox",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                            modifier = Modifier.size(18.dp)
+                                            imageVector = if (item.isHistory) Icons.Rounded.History else Icons.Rounded.Search,
+                                            contentDescription = null,
+                                            tint = if (item.isHistory) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(20.dp)
                                         )
+
+                                        Spacer(Modifier.width(20.dp))
+
+                                        Text(
+                                            text = item.query,
+                                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+
+                                        IconButton(
+                                            onClick = {
+                                                queryState = TextFieldValue(
+                                                    text = item.query,
+                                                    selection = TextRange(item.query.length)
+                                                )
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.NorthWest,
+                                                contentDescription = "Insert query into omnibox",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -405,4 +665,5 @@ fun PetalOmniboxPage(
         }
     }
 }
+
 }

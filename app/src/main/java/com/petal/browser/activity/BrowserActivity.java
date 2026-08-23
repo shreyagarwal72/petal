@@ -2719,9 +2719,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View fab_bubble_omnibox = findViewById(R.id.fab_bubble);
             if (fab_bubble_omnibox != null) fab_bubble_omnibox.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
+            String pageTitle = ninjaWebView != null ? ninjaWebView.getTitle() : "";
+            String pageUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+            Bitmap favicon = ninjaWebView != null ? ninjaWebView.getFavicon() : null;
+
             View omniboxView = com.petal.browser.ui.components.PetalOmniboxBridge.createOmniboxView(
                 BrowserActivity.this,
                 initialQuery != null ? initialQuery : "",
+                pageTitle != null ? pageTitle : "",
+                pageUrl != null ? pageUrl : "",
+                favicon,
                 () -> {
                     showAlbum(currentAlbumController);
                     return kotlin.Unit.INSTANCE;
