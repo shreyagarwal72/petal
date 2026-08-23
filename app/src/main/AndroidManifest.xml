@@ -186,7 +186,7 @@
             android:exported="false" />
 
         <receiver
-            android:name="com.petal.browser.widget.PetalSearchWidgetProvider"
+            android:name="com.petal.browser.widget.glance.PetalSearchGlanceWidgetReceiver"
             android:label="Petal Quick Search"
             android:exported="true">
             <intent-filter>
