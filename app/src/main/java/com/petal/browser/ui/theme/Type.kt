@@ -102,12 +102,12 @@ enum class GSFlexPreset(val label: String) {
 }
 
 data class FontAxes(
-    val weight: Float = 800f,
-    val width: Float = 92f,
+    val weight: Float = 450f,
+    val width: Float = 100f,
     val opsz: Float = 16f,
     val grade: Float = 0f,
     val slant: Float = 0f,
-    val roundness: Float = 100f
+    val roundness: Float = 0f
 ) {
     fun toVariationSettings() = FontVariation.Settings(
         FontVariation.weight(weight.toInt().coerceIn(1, 1000)),
@@ -121,43 +121,42 @@ data class FontAxes(
 
 data class GSFlexSettings(
     val preset: GSFlexPreset = GSFlexPreset.ZENITH,
-    val display: FontAxes = FontAxes(950f, 90f, 72f, 0f, 0f, 100f),
-    val headline: FontAxes = FontAxes(850f, 92f, 32f, 0f, 0f, 100f),
-    val body: FontAxes = FontAxes(750f, 94f, 16f, 0f, 0f, 100f)
+    val display: FontAxes = FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
+    val headline: FontAxes = FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
+    val body: FontAxes = FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
 )
 
 fun getPresetFontAxes(preset: GSFlexPreset): Triple<FontAxes, FontAxes, FontAxes> {
     return when (preset) {
         GSFlexPreset.ZENITH -> Triple(
-            FontAxes(950f, 90f, 30f, 0f, 0f, 100f),
-            FontAxes(850f, 92f, 32f, 0f, 0f, 100f),
-            FontAxes(750f, 94f, 16f, 20f, 0f, 100f)
-        )
-        GSFlexPreset.EXPRESSIVE -> Triple(
-            FontAxes(950f, 90f, 30f, 0f, 0f, 100f),
-            FontAxes(900f, 92f, 32f, 0f, 0f, 100f),
-            FontAxes(780f, 94f, 16f, 20f, 0f, 100f)
+            FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
+            FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
+            FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
         )
         GSFlexPreset.NEO -> Triple(
-            FontAxes(900f, 95f, 72f, 0f, 0f, 100f),
-            FontAxes(800f, 92f, 32f, 0f, 0f, 100f),
-            FontAxes(720f, 94f, 16f, 10f, 0f, 100f)
+            FontAxes(800f, 125f, 72f, 0f, 0f, 0f),
+            FontAxes(600f, 100f, 32f, 0f, 0f, 0f),
+            FontAxes(400f, 95f, 16f, 10f, 0f, 0f)
         )
         GSFlexPreset.COMPACT -> Triple(
-            FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
-            FontAxes(880f, 88f, 32f, 50f, 0f, 100f),
-            FontAxes(760f, 90f, 16f, 30f, 0f, 100f)
+            FontAxes(900f, 75f, 30f, 0f, 0f, 30f),
+            FontAxes(800f, 85f, 32f, 50f, 0f, 20f),
+            FontAxes(500f, 90f, 16f, 30f, 0f, 10f)
         )
         GSFlexPreset.AIRY -> Triple(
-            FontAxes(900f, 95f, 72f, 0f, 0f, 100f),
-            FontAxes(820f, 92f, 32f, 0f, 0f, 100f),
-            FontAxes(730f, 94f, 16f, 0f, 0f, 100f)
+            FontAxes(300f, 130f, 72f, 0f, 0f, 100f),
+            FontAxes(500f, 120f, 32f, 0f, 0f, 100f),
+            FontAxes(400f, 110f, 16f, 0f, 0f, 50f)
         )
-        // CUSTOM preset should never reach here — effectiveAxes handles it before calling this
+        GSFlexPreset.EXPRESSIVE -> Triple(
+            FontAxes(950f, 115f, 30f, 0f, 0f, 100f),
+            FontAxes(850f, 105f, 32f, 0f, 0f, 100f),
+            FontAxes(500f, 100f, 16f, 20f, 0f, 100f)
+        )
         GSFlexPreset.CUSTOM -> Triple(
-            FontAxes(950f, 90f, 30f, 0f, 0f, 100f),
-            FontAxes(850f, 92f, 32f, 0f, 0f, 100f),
-            FontAxes(750f, 94f, 16f, 20f, 0f, 100f)
+            FontAxes(950f, 85f, 30f, 0f, 0f, 100f),
+            FontAxes(700f, 115f, 32f, 0f, 0f, 60f),
+            FontAxes(450f, 100f, 16f, 20f, 0f, 0f)
         )
     }
 }
