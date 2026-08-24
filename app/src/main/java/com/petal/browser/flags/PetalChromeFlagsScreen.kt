@@ -72,25 +72,10 @@ fun PetalChromeFlagsScreen(
     com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            "Experiments",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        Text(
-                            "petal://flags • chrome://flags",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Close")
-                    }
-                },
+            com.petal.browser.ui.components.ExpressiveHeader(
+                title = "Experiments",
+                subtitle = "petal://flags • chrome://flags",
+                onBack = onDismiss,
                 actions = {
                     TextButton(
                         onClick = {
@@ -103,10 +88,7 @@ fun PetalChromeFlagsScreen(
                     ) {
                         Text("Reset all", color = MaterialTheme.colorScheme.error)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                )
+                }
             )
         },
         bottomBar = {

@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.AnimatedCounterBadge
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
@@ -202,157 +204,98 @@ fun PetalTabGridSwitcher(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) { innerPadding ->
-        Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
+        Box(modifier = modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(pageSeed = "tabs_page")
 
             Column(modifier = Modifier.fillMaxSize()) {
-                // ── Top bar ──────────────────────────────────────────────────────────
-                Surface(
-                    color = topBarColor,
-                    tonalElevation = 2.dp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            // Left: title + dynamic tab-count badge
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "Tabs",
-                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = textColor
-                                )
-                                Surface(
-                                    shape = RoundedCornerShape(50),
-                                    color = accentColor.copy(alpha = 0.15f),
-                                    contentColor = accentColor,
-                                    modifier = Modifier.height(22.dp)
-                                ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier.padding(horizontal = 9.dp)
-                                    ) {
-                                        AnimatedCounterBadge(
-                                            count = tabs.size,
-                                            modifier = Modifier
-                                        )
-                                    }
-                                }
+                // ── Top bar Expressive Header ─────────────────────────────────────────
+                ExpressiveHeader(
+                    title = if (selectedCategory == TabCategory.INCOGNITO) "Incognito Tabs" else "Tab Manager",
+                    subtitle = if (selectedCategory == TabCategory.INCOGNITO) "$incognitoTabCount private tabs open" else "$regularTabCount active tabs open",
+                    actions = {
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.Add,
+                            contentDescription = "New Tab",
+                            onClick = {
+                                commitPendingRemovals()
+                                onNewTab(selectedCategory == TabCategory.INCOGNITO)
                             }
-
-                            // Right: rounded (+) new-tab button, layout toggle, 3-dot menu
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Surface(
-                                    // Respects whichever segment (Regular/Incognito) is active,
-                                    // so + always creates a tab of the kind currently being viewed.
-                                    onClick = {
-                                        commitPendingRemovals()
-                                        onNewTab(selectedCategory == TabCategory.INCOGNITO)
-                                    },
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = accentColor,
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Add,
-                                            contentDescription = "New Tab",
-                                            tint = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        displayMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
-                                        contentDescription = "Toggle layout",
-                                        tint = textColor
-                                    )
-                                }
-
-                                Box {
-                                    IconButton(onClick = { isOverflowMenuExpanded = true }) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.MoreVert,
-                                            contentDescription = "More options",
-                                            tint = textColor
-                                        )
-                                    }
-
-                                    DropdownMenu(
-                                        expanded = isOverflowMenuExpanded,
-                                        onDismissRequest = { isOverflowMenuExpanded = false },
-                                        shape = RoundedCornerShape(16.dp),
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text("New Tab") },
-                                            leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
-                                            onClick = {
-                                                isOverflowMenuExpanded = false
-                                                selectedCategory = TabCategory.REGULAR
-                                                commitPendingRemovals()
-                                                onNewTab(false)
-                                            }
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("New Incognito Tab") },
-                                            leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
-                                            onClick = {
-                                                isOverflowMenuExpanded = false
-                                                selectedCategory = TabCategory.INCOGNITO
-                                                commitPendingRemovals()
-                                                onNewTab(true)
-                                            }
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("Settings") },
-                                            leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
-                                            onClick = {
-                                                isOverflowMenuExpanded = false
-                                                onOpenSettings()
-                                            }
-                                        )
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                                        DropdownMenuItem(
-                                            text = { Text("Close All Tabs", color = MaterialTheme.colorScheme.error) },
-                                            leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                            onClick = {
-                                                isOverflowMenuExpanded = false
-                                                onCloseAllTabs()
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(10.dp))
-
-                        // ── Regular / Incognito segmented pill switcher ─────────────
-                        TabCategorySwitcher(
-                            selected = selectedCategory,
-                            regularCount = regularTabCount,
-                            incognitoCount = incognitoTabCount,
-                            accentColor = accentColor,
-                            onSelect = { selectedCategory = it }
                         )
 
-                        Spacer(Modifier.height(10.dp))
+                        HeaderActionIcon(
+                            icon = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
+                            contentDescription = "Toggle layout",
+                            onClick = {
+                                displayMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
+                            }
+                        )
+
+                        Box {
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.MoreVert,
+                                contentDescription = "More options",
+                                onClick = { isOverflowMenuExpanded = true }
+                            )
+
+                            DropdownMenu(
+                                expanded = isOverflowMenuExpanded,
+                                onDismissRequest = { isOverflowMenuExpanded = false },
+                                shape = RoundedCornerShape(16.dp),
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("New Tab") },
+                                    leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        selectedCategory = TabCategory.REGULAR
+                                        commitPendingRemovals()
+                                        onNewTab(false)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("New Incognito Tab") },
+                                    leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        selectedCategory = TabCategory.INCOGNITO
+                                        commitPendingRemovals()
+                                        onNewTab(true)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Settings") },
+                                    leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        onOpenSettings()
+                                    }
+                                )
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                DropdownMenuItem(
+                                    text = { Text("Close All Tabs", color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        onCloseAllTabs()
+                                    }
+                                )
+                            }
+                        }
+                    }
+                )
+
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                    // ── Regular / Incognito segmented pill switcher ─────────────
+                    TabCategorySwitcher(
+                        selected = selectedCategory,
+                        regularCount = regularTabCount,
+                        incognitoCount = incognitoTabCount,
+                        accentColor = accentColor,
+                        onSelect = { selectedCategory = it }
+                    )
+
+                    Spacer(Modifier.height(10.dp))
 
                         // ── Real-time tab search ────────────────────────────────────
                         OutlinedTextField(
