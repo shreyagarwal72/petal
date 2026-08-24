@@ -60,69 +60,75 @@ import com.petal.browser.ui.theme.isDynamicColorSupported
 fun ContainedLoadingIndicator(
     modifier: Modifier = Modifier,
     containerSize: Dp = 64.dp,
-    containerColor: Color = MaterialTheme.colorScheme.primary,
-    indicatorColor: Color = MaterialTheme.colorScheme.onPrimary,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
+    indicatorColor: Color = MaterialTheme.colorScheme.primary,
     animationDurationMillis: Int = 1800
 ) {
-    Surface(
-        shape = CircleShape,
-        color = containerColor,
-        modifier = modifier.size(containerSize),
-        shadowElevation = 4.dp
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        Surface(
+            shape = CircleShape,
+            color = containerColor,
+            modifier = Modifier.size(containerSize),
+            shadowElevation = 6.dp,
+            tonalElevation = 6.dp
         ) {
-            val infiniteTransition = rememberInfiniteTransition(label = "containedLoadingIndicatorTransition")
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                val infiniteTransition = rememberInfiniteTransition(label = "containedLoadingIndicatorTransition")
 
-            val morphProgress by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(animationDurationMillis, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "morphProgress"
-            )
-
-            val rotationAngle by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(animationDurationMillis * 2, easing = LinearEasing)
-                ),
-                label = "rotationAngle"
-            )
-
-            Canvas(modifier = Modifier.fillMaxSize(0.55f)) {
-                val radius = size.minDimension / 2f
-                val center = size.width / 2f
-
-                val pentagon = RoundedPolygon(
-                    numVertices = 5,
-                    radius = radius,
-                    centerX = center,
-                    centerY = center,
-                    rounding = CornerRounding(radius * 0.25f)
+                val morphProgress by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(animationDurationMillis, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "morphProgress"
                 )
 
-                val triangle = RoundedPolygon(
-                    numVertices = 3,
-                    radius = radius,
-                    centerX = center,
-                    centerY = center,
-                    rounding = CornerRounding(radius * 0.35f)
+                val rotationAngle by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 360f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(animationDurationMillis * 2, easing = LinearEasing)
+                    ),
+                    label = "rotationAngle"
                 )
 
-                val morph = Morph(pentagon, triangle)
-                val composePath = morph.toPath(morphProgress).asComposePath()
+                Canvas(modifier = Modifier.fillMaxSize(0.52f)) {
+                    val radius = size.minDimension / 2f
+                    val center = size.width / 2f
 
-                rotate(degrees = rotationAngle) {
-                    drawPath(
-                        path = composePath,
-                        color = indicatorColor
+                    val pentagon = RoundedPolygon(
+                        numVertices = 5,
+                        radius = radius,
+                        centerX = center,
+                        centerY = center,
+                        rounding = CornerRounding(radius * 0.25f)
                     )
+
+                    val triangle = RoundedPolygon(
+                        numVertices = 3,
+                        radius = radius,
+                        centerX = center,
+                        centerY = center,
+                        rounding = CornerRounding(radius * 0.35f)
+                    )
+
+                    val morph = Morph(pentagon, triangle)
+                    val composePath = morph.toPath(morphProgress).asComposePath()
+
+                    rotate(degrees = rotationAngle) {
+                        drawPath(
+                            path = composePath,
+                            color = indicatorColor
+                        )
+                    }
                 }
             }
         }
