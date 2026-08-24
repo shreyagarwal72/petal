@@ -27,7 +27,8 @@ object PetalAiHubBridge {
                             onOpenUrl = { url ->
                                 (activity as? com.petal.browser.activity.BrowserActivity)?.let { b ->
                                     (composeView?.parent as? ViewGroup)?.removeView(composeView)
-                                    b.updateUrlAndLoad(url)
+                                    b.loadUrl(url)
+                                    b.showAlbum(b.currentAlbumController, url)
                                 }
                             },
                             onBack = {

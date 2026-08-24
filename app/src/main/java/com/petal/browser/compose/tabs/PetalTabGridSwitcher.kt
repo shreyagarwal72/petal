@@ -297,42 +297,41 @@ fun PetalTabGridSwitcher(
 
                     Spacer(Modifier.height(10.dp))
 
-                        // ── Real-time tab search ────────────────────────────────────
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = { Text("Search open tabs...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Rounded.Search,
-                                    contentDescription = "Search",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            trailingIcon = {
-                                if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(
-                                            Icons.Rounded.Close,
-                                            contentDescription = "Clear search",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
+                    // ── Real-time tab search ────────────────────────────────────
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search open tabs...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.Search,
+                                contentDescription = "Search",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(
+                                        Icons.Rounded.Close,
+                                        contentDescription = "Clear search",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
-                            },
-                            singleLine = true,
-                            shape = RoundedCornerShape(24.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                focusedBorderColor = accentColor,
-                                unfocusedBorderColor = Color.Transparent
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(24.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            focusedBorderColor = accentColor,
+                            unfocusedBorderColor = Color.Transparent
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
 
                 // ── Body: 2-column grid / list / empty states ───────────────────────
@@ -447,6 +446,7 @@ fun PetalTabGridSwitcher(
     }
     }
     }
+}
 
 /** Top segmented pill switcher: Regular [N] vs Incognito [N] (mask icon), full-width. */
 @Composable

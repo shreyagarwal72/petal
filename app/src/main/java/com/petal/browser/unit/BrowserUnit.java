@@ -176,6 +176,16 @@ public class BrowserUnit {
                 extraHeaders.put("Cache-Control", "no-transform");
                 extraHeaders.put("Referer", verifiedUrl);
 
+                // If 1DM / 1DM+ / 1DM Lite is installed, hand off the download directly to 1DM
+                if (context instanceof Activity && Util1DM.is1DMInstalled(context)) {
+                    try {
+                        Util1DM.downloadFile((Activity) context, verifiedUrl, verifiedUrl, fileName, userAgent, cookie, extraHeaders, false, false);
+                        return;
+                    } catch (Exception e) {
+                        Log.w(TAG, "Util1DM download handoff failed, falling back to PetalDownloadEngine", e);
+                    }
+                }
+
                 // Fetch2 is now the single download engine (it's the only one that actually
                 // supports pause/resume) - the system DownloadManager used to also enqueue the
                 // same file in parallel here, which both wasted bandwidth and left the Downloads
