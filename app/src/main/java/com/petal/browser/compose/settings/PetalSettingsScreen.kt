@@ -1868,6 +1868,33 @@ fun PetalSettingsScreen(
                                             }
                                         }
                                     }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    OutlinedButton(
+                                        onClick = {
+                                            var act: android.app.Activity? = null
+                                            var ctx = context
+                                            while (ctx is android.content.ContextWrapper) {
+                                                if (ctx is android.app.Activity) {
+                                                    act = ctx
+                                                    break
+                                                }
+                                                ctx = ctx.baseContext
+                                            }
+                                            if (act is androidx.activity.ComponentActivity) {
+                                                com.petal.browser.ui.components.PetalUpdateSheetBridge.showChangelogHistorySheet(act)
+                                            } else {
+                                                com.petal.browser.view.NinjaToast.show(context, "Fetching release history...")
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("View All Release Changelogs")
+                                    }
                                 }
                             }
 

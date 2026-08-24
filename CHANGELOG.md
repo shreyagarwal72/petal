@@ -1,3 +1,14 @@
+### v1.5.1
+
+- fix: Solved WebView modal, popup, and carousel black overlay misrendering by explicitly disabling force dark mode & algorithmic darkening.
+- new: Added "View All Changelogs" history sheet in App Updates settings (ported from Zenith).
+- improved: Upgraded UI containment styling across settings screens to pure Material 3 Expressive UI specifications.
+
+### v1.5.0
+
+- imported: Updated PetalTabGridSwitcher with BackHandler context resolution.
+- new: Full Material 3 Expressive UI containment redesign.
+
 ### v 24 (WIP)
 
 - improved: default standard profile settings

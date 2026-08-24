@@ -57,6 +57,79 @@ object PetalUpdateSheetBridge {
     }
 
     @JvmStatic
+    fun showChangelogHistorySheet(activity: ComponentActivity) {
+        executor.execute {
+            try {
+                val url = URL("https://api.github.com/repos/shreyagarwal72/petal/releases")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
+                conn.setRequestProperty("User-Agent", "PetalBrowserApp")
+                conn.connectTimeout = 8000
+                conn.readTimeout = 8000
+                if (conn.responseCode == 200) {
+                    val reader = java.io.BufferedReader(java.io.InputStreamReader(conn.inputStream))
+                    val sb = StringBuilder()
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        sb.append(line)
+                    }
+                    reader.close()
+                    val jsonArray = com.google.gson.JsonParser.parseString(sb.toString()).asJsonArray
+                    val releases = mutableListOf<PetalUpdateInfo>()
+                    for (i in 0 until jsonArray.size()) {
+                        val obj = jsonArray.get(i).asJsonObject
+                        val tag = obj.get("tag_name")?.asString ?: ""
+                        val body = obj.get("body")?.asString ?: ""
+                        val htmlUrl = obj.get("html_url")?.asString ?: "https://github.com/shreyagarwal72/petal/releases"
+                        releases.add(PetalUpdateInfo(versionName = tag, releaseNotes = body, downloadUrl = "", releaseUrl = htmlUrl, isUpdateAvailable = false))
+                    }
+                    activity.runOnUiThread {
+                        if (!activity.isFinishing) {
+                            showChangelogDialog(activity, releases)
+                        }
+                    }
+                } else {
+                    activity.runOnUiThread {
+                        com.petal.browser.view.NinjaToast.show(activity, "Failed to fetch release history")
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                activity.runOnUiThread {
+                    com.petal.browser.view.NinjaToast.show(activity, "Error fetching changelog history")
+                }
+            }
+        }
+    }
+
+    private fun showChangelogDialog(activity: ComponentActivity, releases: List<PetalUpdateInfo>) {
+        try {
+            val dialog = BottomSheetDialog(activity)
+            val composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
+                setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setContent {
+                    PetalExpressiveTheme {
+                        PetalChangelogHistorySheetContent(
+                            releases = releases,
+                            onDismiss = {
+                                try { dialog.dismiss() } catch (ignored: Exception) {}
+                            }
+                        )
+                    }
+                }
+            }
+            dialog.setContentView(composeView)
+            dialog.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    @JvmStatic
     fun showUpdateSheet(activity: ComponentActivity, updateInfo: PetalUpdateInfo) {
         try {
             val dialog = BottomSheetDialog(activity)
@@ -417,5 +490,106 @@ private fun installApk(context: android.content.Context, apkFile: File) {
         context.startActivity(installIntent)
     } catch (e: Exception) {
         e.printStackTrace()
+    }
+}
+
+@Composable
+fun PetalChangelogHistorySheetContent(
+    releases: List<PetalUpdateInfo>,
+    onDismiss: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Drag handle
+            Box(
+                modifier = Modifier
+                    .width(36.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(56.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Rounded.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Changelog History",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            androidx.compose.foundation.lazy.LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 480.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                androidx.compose.foundation.lazy.items(releases) { rel ->
+                    Card(
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = CircleShape
+                                ) {
+                                    Text(
+                                        text = rel.versionName,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
+                            }
+                            if (rel.releaseNotes.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    PetalMarkdownText(
+                                        markdown = rel.releaseNotes,
+                                        modifier = Modifier.padding(12.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
