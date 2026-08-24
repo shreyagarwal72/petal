@@ -204,7 +204,7 @@ fun PetalTabGridSwitcher(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) { innerPadding ->
-        Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
+        Box(modifier = modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding())) {
             M3ExpressiveVariableBackground(pageSeed = "tabs_page")
 
             Column(modifier = Modifier.fillMaxSize()) {
