@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material3.*
@@ -44,6 +45,7 @@ fun PetalAppLockScreen(
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
 
     val savedPasscode = remember { sp.getString("sp_app_lock_passcode", "1234") ?: "1234" }
+    val isBiometricAllowed = remember { sp.getBoolean("sp_biometric_lock", false) }
     var enteredPasscode by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isUnlockedSuccess by remember { mutableStateOf(false) }
@@ -55,8 +57,29 @@ fun PetalAppLockScreen(
             PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
             onUnlocked()
         } else {
-            errorMessage = "Incorrect passcode. Please try again."
+            errorMessage = "Incorrect app password. Please try again."
             PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
+        }
+    }
+
+    fun triggerBiometricUnlock() {
+        val activity = context as? androidx.appcompat.app.AppCompatActivity
+        if (activity != null) {
+            com.petal.browser.security.BiometricLockManager.authenticate(
+                activity,
+                "Petal App Lock",
+                "Authenticate with fingerprint to unlock",
+                Runnable {
+                    errorMessage = null
+                    isUnlockedSuccess = true
+                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
+                    onUnlocked()
+                },
+                java.util.function.Consumer { error ->
+                    errorMessage = "Fingerprint error: $error"
+                    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.HEAVY_CLICK, 1.0f)
+                }
+            )
         }
     }
 
@@ -81,7 +104,7 @@ fun PetalAppLockScreen(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(84.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer)
                 ) {
@@ -89,7 +112,7 @@ fun PetalAppLockScreen(
                         imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(42.dp)
                     )
                 }
 
@@ -105,7 +128,7 @@ fun PetalAppLockScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Enter your passcode to unlock private browser access",
+                    text = "Enter your custom app password or use fingerprint to unlock",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -120,7 +143,7 @@ fun PetalAppLockScreen(
                         enteredPasscode = it
                         if (errorMessage != null) errorMessage = null
                     },
-                    hintText = "Enter Passcode",
+                    hintText = "Enter App Password",
                     isError = errorMessage != null,
                     accentColor = MaterialTheme.colorScheme.primary,
                     onUnlock = { verifyPasscode() },
@@ -143,6 +166,19 @@ fun PetalAppLockScreen(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+
+                if (isBiometricAllowed && com.petal.browser.security.BiometricLockManager.canAuthenticate(context)) {
+                    OutlinedButton(
+                        onClick = { triggerBiometricUnlock() },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Unlock with Fingerprint", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
                 // Passcode Action Helper
                 TextButton(
