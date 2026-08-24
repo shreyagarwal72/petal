@@ -95,7 +95,7 @@ public class PetalPwaManager {
         webSettings.setGeolocationEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
     }
 
@@ -106,7 +106,7 @@ public class PetalPwaManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
                 ServiceWorkerController controller = ServiceWorkerController.getInstance();
-                controller.getServiceWorkerWebSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+                controller.getServiceWorkerWebSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
                 controller.getServiceWorkerWebSettings().setAllowContentAccess(true);
                 controller.setServiceWorkerClient(new ServiceWorkerClient() {
                     @Override
@@ -160,6 +160,7 @@ public class PetalPwaManager {
                 Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
                 shortcutIntent.setComponent(new android.content.ComponentName(activity, BrowserActivity.class));
                 shortcutIntent.putExtra("pwa_mode", true);
+                shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     ShortcutManager shortcutManager = activity.getSystemService(ShortcutManager.class);
@@ -204,6 +205,7 @@ public class PetalPwaManager {
                 shortcutIntent.setComponent(new android.content.ComponentName(activity, BrowserActivity.class));
                 shortcutIntent.putExtra("pwa_mode", true);
                 shortcutIntent.putExtra("pwa_display", currentManifest.display);
+                shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     ShortcutManager shortcutManager = activity.getSystemService(ShortcutManager.class);

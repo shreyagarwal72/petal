@@ -4030,8 +4030,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (isPwaMode) {
             View composeAddr = findViewById(R.id.compose_address_bar);
             View bottomNav = findViewById(R.id.bottom_nav_compose);
+            View fab_bubble = findViewById(R.id.fab_bubble);
             if (composeAddr != null) composeAddr.setVisibility(GONE);
             if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (fab_bubble != null) fab_bubble.setVisibility(GONE);
+
+            if (ninjaWebView != null) {
+                ninjaWebView.getSettings().setCacheMode(android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK);
+            }
         }
 
         String action = intent.getAction();
@@ -4693,6 +4699,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             shortcutIntent.setComponent(new android.content.ComponentName(this, BrowserActivity.class));
+            shortcutIntent.putExtra("pwa_mode", true);
+            shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 android.content.pm.ShortcutManager shortcutManager = getSystemService(android.content.pm.ShortcutManager.class);

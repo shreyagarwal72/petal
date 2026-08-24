@@ -377,9 +377,10 @@ fun PetalOverflowMenuSheet(
                         onClick = onToggleBookmark
                     )
                     CircularIconButton(
-                        icon = Icons.Rounded.DownloadForOffline,
-                        contentDescription = "Download Site",
-                        onClick = onSavePage
+                        icon = Icons.Rounded.OfflinePin,
+                        contentDescription = "Install site offline",
+                        enabled = !isHomePageUrl,
+                        onClick = onInstallPwa
                     )
                     CircularIconButton(
                         icon = Icons.Rounded.Refresh,
