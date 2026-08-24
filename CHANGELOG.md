@@ -1,3 +1,7 @@
+### v1.6.8
+
+- fix: Added `androidx.compose.ui.unit.sp` import to `ExpressiveHeader.kt` for proper `TextUnit` extension resolution.
+
 ### v1.6.7
 
 - fix: Resolved Settings unresponsiveness by removing legacy `nestedScroll` connection from `PetalSettingsScreen.kt`.

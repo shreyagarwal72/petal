@@ -1,0 +1,7 @@
+### What's Changed in v1.6.8 🚀
+
+#### 🧩 ExpressiveHeader Unit Import Fix
+* **Added `androidx.compose.ui.unit.sp` Import**: Added the missing `sp` unit extension import to `ExpressiveHeader.kt` import block alongside `dp`, ensuring proper resolution of TextUnit dimension values across Compose header layouts.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.6.7...v1.6.8
