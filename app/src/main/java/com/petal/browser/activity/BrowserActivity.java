@@ -2371,24 +2371,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.6f);
             }
             if (ninjaWebView != null) {
-                if (progress > 0f) {
-                    if (ninjaWebView.getLayerType() != View.LAYER_TYPE_SOFTWARE) {
-                        ninjaWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-                    }
-                } else if (!refreshState.isRefreshing()) {
-                    if (ninjaWebView.getLayerType() != View.LAYER_TYPE_HARDWARE) {
-                        ninjaWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-                    }
-                }
+                // Do not toggle layer type to SOFTWARE during pull gesture to avoid hardware rendering artifacts and black overlay glitches.
             }
         });
 
         contentFrame.setOnReleaseListener(triggered -> {
             if (!triggered) {
                 refreshState.setPullProgress(0f);
-                if (ninjaWebView != null && ninjaWebView.getLayerType() != View.LAYER_TYPE_HARDWARE) {
-                    ninjaWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-                }
                 return;
             }
             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this)
@@ -2396,9 +2385,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             refreshState.setRefreshing(true);
             refreshState.setPullProgress(1.0f);
             if (ninjaWebView != null) {
-                if (ninjaWebView.getLayerType() != View.LAYER_TYPE_SOFTWARE) {
-                    ninjaWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-                }
                 ninjaWebView.reload();
             } else {
                 resetRefreshState();
@@ -2434,9 +2420,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (refreshState != null) {
                 refreshState.setRefreshing(false);
                 refreshState.setPullProgress(0f);
-            }
-            if (ninjaWebView != null && ninjaWebView.getLayerType() != View.LAYER_TYPE_HARDWARE) {
-                ninjaWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
             }
         });
     }
