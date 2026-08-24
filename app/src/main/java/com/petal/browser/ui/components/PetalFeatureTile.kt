@@ -221,7 +221,7 @@ fun Modifier.expressivePress(
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) pressedScale else 1f,
-        animationSpec = com.petal.browser.ui.theme.PetalMotionPhysics.fastSpatial(),
+        animationSpec = spring(dampingRatio = 0.45f, stiffness = 650f),
         label = "petalFeatureTilePressScale",
     )
     graphicsLayer {
