@@ -449,44 +449,12 @@ fun PetalHomeScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.fillMaxSize()
             ) {
-                // Cap the content column width on large screens/tablets so the
-                // hero search bar and grid don't stretch edge-to-edge.
-                Column(
-                    modifier = Modifier.widthIn(max = 640.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // ── Slim Top Bar: petal mark + wordmark left, profile right ──
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .clip(FlowerShape)
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = "Petal",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 24.sp,
-                                    letterSpacing = (-0.5).sp
-                                ),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
+                com.petal.browser.ui.components.ExpressiveHeader(
+                    title = "Petal",
+                    subtitle = "Personal Window to the Web",
+                    actions = {
                         IconButton(
                             onClick = onOpenAccountSync,
                             modifier = Modifier.size(44.dp)
@@ -494,6 +462,21 @@ fun PetalHomeScreen(
                             ProfileAvatarDisplay(profile = profile, sizeDp = 36)
                         }
                     }
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Cap the content column width on large screens/tablets so the
+                    // hero search bar and grid don't stretch edge-to-edge.
+                    Column(
+                        modifier = Modifier.widthIn(max = 640.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
 
                     Spacer(Modifier.height(20.dp))
 
@@ -518,6 +501,7 @@ fun PetalHomeScreen(
                     Spacer(Modifier.height(96.dp))
                 }
             }
+        }
         }
 
         // ── Create New Shortcut Dialog ────────────────────────────────────
