@@ -1923,6 +1923,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return clean.startsWith("file:///android_asset/");
     }
 
+    private boolean isCurrentTabHomeOrBlank() {
+        if (currentAlbumController == null) return true;
+        String url = currentAlbumController.getUrl();
+        if (url == null || url.trim().isEmpty()) {
+            if (ninjaWebView != null) {
+                url = ninjaWebView.getUrl();
+            }
+        }
+        return isHomePage(url);
+    }
+
     private androidx.compose.ui.platform.ComposeView composeAddressBar;
 
     public void updateAddressBar() {
@@ -4201,7 +4212,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             pendingWidgetAction = () -> {
-                addAlbum(null, "petal://home", true);
+                if (!isCurrentTabHomeOrBlank()) {
+                    addAlbum(null, "petal://home", true);
+                }
                 showOmniboxPage("");
             };
             runOrDeferPendingWidgetAction();
@@ -4210,6 +4223,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             pendingWidgetAction = () -> {
+                if (!isCurrentTabHomeOrBlank()) {
+                    addAlbum(null, "petal://home", true);
+                }
                 com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(BrowserActivity.this, "");
             };
             runOrDeferPendingWidgetAction();
@@ -4218,7 +4234,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             pendingWidgetAction = () -> {
-                addAlbum(null, "", true);
+                if (!isCurrentTabHomeOrBlank()) {
+                    addAlbum(null, "petal://home", true);
+                }
                 try {
                     com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(this, result -> {
                         if (result != null && !result.trim().isEmpty()) {
