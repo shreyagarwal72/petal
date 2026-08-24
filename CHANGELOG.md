@@ -1,3 +1,9 @@
+### v1.5.2
+
+- removed: Removed sync encryption password option from User Profile & Accounts page.
+- new: Added support for dedicated app password lock alongside biometric fingerprint authentication options.
+- new: Integrated Material 3 Expressive masked shape icons and animations (inspired by Monogram Android & Zenith) for custom app password security.
+
 ### v1.5.1
 
 - fix: Solved WebView modal, popup, and carousel black overlay misrendering by explicitly disabling force dark mode & algorithmic darkening.
