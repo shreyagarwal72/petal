@@ -81,6 +81,39 @@ fun Modifier.bouncyClickable(
     )
 }
 
+/**
+ * Material 3 Expressive Button Press Effect (https://m3.material.io/components/buttons/overview).
+ * Applies tactile scale compression (fastSpatial spring), haptic tick feedback on press down,
+ * and release spring recovery.
+ */
+@Composable
+fun Modifier.expressiveButtonPress(
+    scaleDown: Float = 0.94f,
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+): Modifier {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val pressed by interactionSource.collectIsPressedAsState()
+    
+    LaunchedEffect(pressed) {
+        if (pressed && enabled) {
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.45f)
+        }
+    }
+
+    val scale by animateFloatAsState(
+        targetValue = if (pressed && enabled) scaleDown else 1f,
+        animationSpec = PetalMotionPhysics.fastSpatial,
+        label = "m3ButtonPressScale",
+    )
+
+    return graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
+}
+
 /** Gentle infinite breathing scale for active elements. */
 @Composable
 fun Modifier.pulse(from: Float = 1f, to: Float = 1.08f, durationMs: Int = 1800): Modifier {
