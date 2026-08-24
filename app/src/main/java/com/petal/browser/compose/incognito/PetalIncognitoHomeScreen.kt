@@ -276,6 +276,9 @@ fun PetalIncognitoHomeScreen(
         }
     }
 }
+}
+}
+}
 
 @Composable
 private fun IncognitoInfoCard(
