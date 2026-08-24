@@ -1,0 +1,10 @@
+### What's Changed in v1.6.7 🚀
+
+#### ⚙️ Settings Unresponsiveness Fix
+* **Removed Legacy Collapsing TopAppBar Scroll Connection**: Removed the stale `TopAppBarDefaults.exitUntilCollapsedScrollBehavior().nestedScrollConnection` modifier from the `Scaffold` in `PetalSettingsScreen.kt`. The old scroll behavior was capturing touch and scroll events after switching to `ExpressiveHeader`, rendering settings categories unresponsive to taps.
+
+#### 👤 User Accounts Header Auto-Scaling
+* **Single-Line Title Font Scaling**: Added conditional `titleMedium` / `18.sp` font scaling in `ExpressiveHeader.kt` when `maxTitleLines = 1`, and updated the header title in `ChromeAccountSyncScreen.kt` to `"User Accounts & Profile"`, ensuring the full title fits cleanly on a single line across all device screen widths without truncation.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.6.6...v1.6.7
