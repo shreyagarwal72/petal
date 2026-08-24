@@ -109,6 +109,8 @@ object PetalUpdateSheetBridge {
     private fun showChangelogDialog(activity: ComponentActivity, releases: List<PetalUpdateInfo>) {
         try {
             val dialog = BottomSheetDialog(activity)
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
@@ -126,6 +128,15 @@ object PetalUpdateSheetBridge {
                 }
             }
             dialog.setContentView(composeView)
+            dialog.setOnShowListener {
+                val sheetView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+                if (sheetView != null) {
+                    com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheetView).apply {
+                        skipCollapsed = true
+                        state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                    }
+                }
+            }
             dialog.show()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -136,6 +147,8 @@ object PetalUpdateSheetBridge {
     fun showUpdateSheet(activity: ComponentActivity, updateInfo: PetalUpdateInfo) {
         try {
             val dialog = BottomSheetDialog(activity)
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
@@ -153,6 +166,15 @@ object PetalUpdateSheetBridge {
                 }
             }
             dialog.setContentView(composeView)
+            dialog.setOnShowListener {
+                val sheetView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+                if (sheetView != null) {
+                    com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheetView).apply {
+                        skipCollapsed = true
+                        state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                    }
+                }
+            }
             dialog.show()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -206,7 +228,9 @@ fun PetalUpdateSheetContent(
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 560.dp)
     ) {
         Column(
             modifier = Modifier
@@ -504,7 +528,9 @@ fun PetalChangelogHistorySheetContent(
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 560.dp)
     ) {
         Column(
             modifier = Modifier
