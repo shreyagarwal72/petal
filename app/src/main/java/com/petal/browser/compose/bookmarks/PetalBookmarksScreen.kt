@@ -240,25 +240,10 @@ fun PetalBookmarksScreen(
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else if (filteredBookmarks.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Rounded.BookmarkBorder,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            Text(
-                                text = if (searchQuery.isEmpty()) "No bookmarks saved yet" else "No matching bookmarks found",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    com.petal.browser.ui.components.EmptyStateBlob(
+                        icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Rounded.BookmarkBorder),
+                        title = if (searchQuery.isEmpty()) "No bookmarks saved yet" else "No matching bookmarks found"
+                    )
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),

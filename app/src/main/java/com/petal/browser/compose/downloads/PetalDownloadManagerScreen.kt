@@ -1188,35 +1188,10 @@ private fun deleteMultipleFiles(context: Context, items: List<DownloadItem>) {
 
 @Composable
 private fun DownloadsEmptyState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(24.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Download,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(64.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "No Downloads Yet",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Files you download will appear here",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
+    com.petal.browser.ui.components.EmptyStateBlob(
+        icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Rounded.Download),
+        title = "No Downloads Yet",
+        description = "Files you download will appear here"
+    )
 }
 

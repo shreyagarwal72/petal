@@ -612,67 +612,20 @@ private fun TabManagerEmptyState(
     isIncognito: Boolean = false
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Centered illustration - a single mask/visibility-off badge for the Incognito
-        // empty state (distinct enough not to be mistaken for the regular one at a glance),
-        // the existing dual-device badge for the Regular empty state.
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.size(100.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.size(88.dp)
-            ) {}
-            if (isIncognito) {
-                Icon(
-                    imageVector = Icons.Rounded.VisibilityOff,
-                    contentDescription = null,
-                    tint = accentColor,
-                    modifier = Modifier.size(44.dp)
-                )
-            } else {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy((-8).dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Phonelink,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(44.dp)
-                    )
-                    Icon(
-                        imageVector = Icons.Rounded.TabUnselected,
-                        contentDescription = null,
-                        tint = accentColor.copy(alpha = 0.7f),
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(20.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
-            color = textColor,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+        com.petal.browser.ui.components.EmptyStateBlob(
+            icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(
+                if (isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.TabUnselected
+            ),
+            title = title,
+            description = subtitle,
+            fraction = 0.6f
         )
         if (onNewTab != null) {
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
             Button(
                 onClick = onNewTab,
                 shape = RoundedCornerShape(20.dp),
@@ -683,7 +636,7 @@ private fun TabManagerEmptyState(
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Open New Tab", fontWeight = FontWeight.Bold)
+                Text(if (isIncognito) "New Incognito Tab" else "New Tab", fontWeight = FontWeight.Bold)
             }
         }
     }
