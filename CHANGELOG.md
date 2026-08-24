@@ -1,3 +1,8 @@
+### v1.6.7
+
+- fix: Resolved Settings unresponsiveness by removing legacy `nestedScroll` connection from `PetalSettingsScreen.kt`.
+- fix: Fitted User Accounts header title cleanly onto a single line without truncation across all screen widths (`ExpressiveHeader.kt` & `ChromeAccountSyncScreen.kt`).
+
 ### v1.6.6
 
 - fix: Restored synchronous initialization of user profile avatar, name, and preferences on app restart (`BrowserActivity.java` & `AccountViewModel.kt`).

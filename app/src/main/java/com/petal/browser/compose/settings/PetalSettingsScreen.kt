@@ -336,9 +336,7 @@ fun PetalSettingsScreen(
         onBack = onBackPress,
       ) {
       com.petal.browser.predictive.PetalScreenWrapper {
-        val petalHeaderScrollBehavior = androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
         Scaffold(
-            modifier = Modifier.nestedScroll(petalHeaderScrollBehavior.nestedScrollConnection),
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 // Top App Bar Header + Search (hosted in Scaffold's topBar so insets, collapse

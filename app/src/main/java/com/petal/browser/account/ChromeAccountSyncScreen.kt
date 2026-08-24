@@ -224,7 +224,7 @@ fun PetalUserProfileScreen(
         Scaffold(
         topBar = {
             com.petal.browser.ui.components.ExpressiveHeader(
-                title = "User Profile & Accounts",
+                title = "User Accounts & Profile",
                 subtitle = "Manage account, cloud sync & preferences",
                 onBack = { onBack() },
                 maxTitleLines = 1,

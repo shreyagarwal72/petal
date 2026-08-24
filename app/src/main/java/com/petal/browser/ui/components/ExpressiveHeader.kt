@@ -153,7 +153,10 @@ fun ExpressiveHeader(
                     Column(Modifier.weight(1f)) {
                         Text(
                             title,
-                            style = if (onBack != null) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
+                            style = if (onBack != null) {
+                                if (maxTitleLines == 1) MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
+                                else MaterialTheme.typography.titleLarge
+                            } else MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = maxTitleLines,
                             overflow = TextOverflow.Ellipsis,
