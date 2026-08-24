@@ -10,13 +10,13 @@
 
     <CheckBoxPreference
         android:icon="@drawable/icon_refresh"
-        android:defaultValue="true"
+        android:defaultValue="false"
         android:key="sp_clear_cache"
         android:title="@string/clear_title_cache" />
 
     <CheckBoxPreference
         android:icon="@drawable/icon_dom"
-        android:defaultValue="true"
+        android:defaultValue="false"
         android:key="sp_clearIndexedDB"
         android:title="@string/setting_title_dom" />
 
@@ -35,7 +35,7 @@
         android:title="@string/title_appDatabase" />
 
     <CheckBoxPreference
-        android:defaultValue="true"
+        android:defaultValue="false"
         android:key="sp_clear_settings"
         android:title="@string/setting_label"
         android:summary="@string/setting_backup_sumSettings"
@@ -43,7 +43,7 @@
 
     <CheckBoxPreference
         android:icon="@drawable/icon_alert"
-        android:defaultValue="true"
+        android:defaultValue="false"
         android:key="sp_clear_quit"
         android:title="@string/clear_title_quit" />
 

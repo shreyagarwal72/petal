@@ -23,6 +23,10 @@ public final class PetalSearchWidgetProvider {
     public static final String ACTION_OPEN_SEARCH = "com.petal.browser.action.OPEN_SEARCH";
     public static final String ACTION_OPEN_VOICE = "com.petal.browser.action.OPEN_VOICE";
     public static final String ACTION_OPEN_AI_SEARCH = "com.petal.browser.action.OPEN_AI_SEARCH";
+    public static final String ACTION_OPEN_INCOGNITO = "com.petal.browser.action.OPEN_INCOGNITO";
+    public static final String ACTION_OPEN_BOOKMARKS = "com.petal.browser.action.OPEN_BOOKMARKS";
+    public static final String ACTION_OPEN_DOWNLOADS = "com.petal.browser.action.OPEN_DOWNLOADS";
+    public static final String ACTION_OPEN_NEW_TAB = "com.petal.browser.action.OPEN_NEW_TAB";
 
     /** Refreshes every placed instance of the widget, e.g. after a theme/palette change. */
     public static void updateAllWidgets(android.content.Context context) {

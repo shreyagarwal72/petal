@@ -326,4 +326,33 @@ object PetalLiveAlertManager {
 
         nm.notify(downloadId.toInt(), builder.build())
     }
+
+    @JvmStatic
+    fun trackOfflinePage(context: Context, title: String, url: String, filePath: String) {
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+        ensureNotificationChannel(context)
+
+        val intent = Intent(context, BrowserActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            data = Uri.parse("file://$filePath")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            filePath.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.icon_download)
+            .setContentTitle("Website Saved Offline")
+            .setContentText(title.ifBlank { url })
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+
+        nm.notify(filePath.hashCode(), builder.build())
+    }
 }

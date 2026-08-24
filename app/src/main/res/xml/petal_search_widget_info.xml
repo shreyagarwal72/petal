@@ -3,12 +3,14 @@
      (res/layout/glance_default_layout.xml); the real UI is composed at runtime in
      com.petal.browser.widget.glance.PetalSearchGlanceWidget, not in a static XML layout. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="250dp"
-    android:minHeight="64dp"
-    android:minResizeWidth="180dp"
-    android:minResizeHeight="56dp"
+    android:minWidth="200dp"
+    android:minHeight="56dp"
+    android:minResizeWidth="160dp"
+    android:minResizeHeight="48dp"
     android:targetCellWidth="4"
     android:targetCellHeight="1"
+    android:maxResizeWidth="500dp"
+    android:maxResizeHeight="220dp"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/glance_default_layout"
     android:resizeMode="horizontal|vertical"

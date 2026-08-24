@@ -417,9 +417,10 @@ fun PetalHomeScreen(
     onOpenDownloadsAction: () -> Unit = {},
     onNewTabAction: () -> Unit = {}
 ) {
-    val context = LocalContext.current
+    var context = LocalContext.current
     var shortcuts by remember { mutableStateOf(loadHomeShortcuts(context)) }
     var editingSlotIndex by remember { mutableStateOf<Int?>(null) }
+    var isAddingNewShortcut by remember { mutableStateOf(false) }
 
     val profile = accountViewModel.profileState
 
@@ -516,7 +517,7 @@ fun PetalHomeScreen(
                         items = mergedItems,
                         onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
                         onEditShortcutSlot = { index -> editingSlotIndex = index },
-                        onAddShortcutClick = { editingSlotIndex = 0 }
+                        onAddShortcutClick = { isAddingNewShortcut = true }
                     )
 
                     Spacer(Modifier.height(96.dp))
@@ -524,24 +525,55 @@ fun PetalHomeScreen(
             }
         }
 
-        // ── Edit Shortcut Dialog ───────────────────────────────────────────
-        editingSlotIndex?.let { slotIndex ->
+        // ── Create New Shortcut Dialog ────────────────────────────────────
+        if (isAddingNewShortcut) {
             EditShortcutDialog(
-                slotIndex = slotIndex,
-                currentShortcut = shortcuts.getOrElse(slotIndex) { defaultPetalShortcuts[slotIndex % defaultPetalShortcuts.size] },
-                onDismiss = { editingSlotIndex = null },
-                onSave = { updatedShortcut ->
+                dialogTitle = "Add Shortcut",
+                initialName = "",
+                initialUrl = "",
+                initialColor = Color(0xFF4285F4),
+                onDismiss = { isAddingNewShortcut = false },
+                onSave = { newShortcut ->
                     val newList = shortcuts.toMutableList()
-                    if (slotIndex in newList.indices) {
-                        newList[slotIndex] = updatedShortcut
-                    } else {
-                        newList.add(updatedShortcut)
-                    }
+                    newList.add(newShortcut)
                     shortcuts = newList
                     saveHomeShortcuts(context, newList)
-                    editingSlotIndex = null
-                }
+                    isAddingNewShortcut = false
+                },
+                onDelete = null
             )
+        }
+
+        // ── Edit Existing Shortcut Dialog ─────────────────────────────────
+        editingSlotIndex?.let { slotIndex ->
+            val current = shortcuts.getOrNull(slotIndex)
+            if (current != null) {
+                EditShortcutDialog(
+                    dialogTitle = "Edit Shortcut",
+                    initialName = current.label,
+                    initialUrl = current.url,
+                    initialColor = current.containerColor,
+                    onDismiss = { editingSlotIndex = null },
+                    onSave = { updatedShortcut ->
+                        val newList = shortcuts.toMutableList()
+                        if (slotIndex in newList.indices) {
+                            newList[slotIndex] = updatedShortcut
+                        }
+                        shortcuts = newList
+                        saveHomeShortcuts(context, newList)
+                        editingSlotIndex = null
+                    },
+                    onDelete = {
+                        val newList = shortcuts.toMutableList()
+                        if (slotIndex in newList.indices) {
+                            newList.removeAt(slotIndex)
+                        }
+                        shortcuts = newList
+                        saveHomeShortcuts(context, newList)
+                        editingSlotIndex = null
+                    }
+                )
+            }
         }
     }
 }
@@ -590,6 +622,19 @@ private fun PetalShortcutGrid(
     }
 }
 
+fun getFaviconUrl(url: String): String? {
+    if (url.isBlank()) return null
+    val cleanUrl = if (!url.startsWith("http://") && !url.startsWith("https://")) "https://$url" else url
+    return try {
+        val host = Uri.parse(cleanUrl).host
+        if (!host.isNullOrBlank()) {
+            "https://www.google.com/s2/favicons?domain=$host&sz=128"
+        } else null
+    } catch (_: Throwable) {
+        null
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ShortcutTile(
@@ -605,6 +650,9 @@ private fun ShortcutTile(
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "shortcut_press_scale"
     )
+
+    val faviconUrl = remember(shortcut.url) { getFaviconUrl(shortcut.url) }
+    var isImageError by remember(shortcut.url) { mutableStateOf(false) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -626,19 +674,30 @@ private fun ShortcutTile(
                 .clip(RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
         ) {
-            // Small tinted badge circle behind icon
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(shortcut.containerColor.copy(alpha = 0.18f))
-            ) {
-                SiteBrandIconTinted(
-                    siteId = shortcut.siteId,
-                    label = shortcut.label,
-                    tint = shortcut.containerColor
+            if (!faviconUrl.isNullOrEmpty() && !isImageError) {
+                AsyncImage(
+                    model = faviconUrl,
+                    contentDescription = shortcut.label,
+                    contentScale = ContentScale.Fit,
+                    onError = { isImageError = true },
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(8.dp))
                 )
+            } else {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(shortcut.containerColor.copy(alpha = 0.18f))
+                ) {
+                    SiteBrandIconTinted(
+                        siteId = shortcut.siteId,
+                        label = shortcut.label,
+                        tint = shortcut.containerColor
+                    )
+                }
             }
         }
         Spacer(Modifier.height(5.dp))
@@ -992,19 +1051,23 @@ private fun SiteBrandIcon(siteId: String, label: String) {
 
 @Composable
 private fun EditShortcutDialog(
-    slotIndex: Int,
-    currentShortcut: PetalShortcut,
+    dialogTitle: String,
+    initialName: String,
+    initialUrl: String,
+    initialColor: Color,
     onDismiss: () -> Unit,
-    onSave: (PetalShortcut) -> Unit
+    onSave: (PetalShortcut) -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
-    var nameText by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.label) }
-    var urlText by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.url) }
-    var selectedSiteId by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.siteId) }
-    var selectedColor by remember(slotIndex, currentShortcut) { mutableStateOf(currentShortcut.containerColor) }
+    var nameText by remember(initialName) { mutableStateOf(initialName) }
+    var urlText by remember(initialUrl) { mutableStateOf(initialUrl) }
+
+    val currentFaviconUrl = remember(urlText) { getFaviconUrl(urlText) }
+    var isImageError by remember(urlText) { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Shortcut ${slotIndex + 1}") },
+        title = { Text(dialogTitle) },
         text = {
             Column(
                 modifier = Modifier
@@ -1025,9 +1088,11 @@ private fun EditShortcutDialog(
                     onValueChange = { urlText = it },
                     label = { Text("URL") },
                     singleLine = true,
+                    placeholder = { Text("example.com") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Live Preview with automatic thumbnail
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1039,13 +1104,30 @@ private fun EditShortcutDialog(
                         )
                         .padding(12.dp)
                 ) {
-                    Surface(
-                        shape = PetalContainerShape,
-                        color = selectedColor,
-                        modifier = Modifier.size(48.dp)
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            SiteBrandIcon(siteId = selectedSiteId, label = nameText.ifBlank { "S" })
+                        if (!currentFaviconUrl.isNullOrEmpty() && !isImageError) {
+                            AsyncImage(
+                                model = currentFaviconUrl,
+                                contentDescription = nameText,
+                                contentScale = ContentScale.Fit,
+                                onError = { isImageError = true },
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                            )
+                        } else {
+                            Text(
+                                nameText.ifBlank { "S" }.take(1).uppercase(),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                     Column {
@@ -1058,63 +1140,6 @@ private fun EditShortcutDialog(
                         )
                     }
                 }
-
-                // Choose Icon Style
-                Text("Select Icon Style", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    availableIcons.forEach { (id, name) ->
-                        FilterChip(
-                            selected = (selectedSiteId == id),
-                            onClick = { selectedSiteId = id },
-                            label = { Text(name) },
-                            leadingIcon = {
-                                Box(
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .background(selectedColor, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    SiteBrandIcon(siteId = id, label = name)
-                                }
-                            }
-                        )
-                    }
-                }
-
-                // Choose Palette Color
-                Text("Select Container Color", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    availableColors.forEach { (color, colorName) ->
-                        Surface(
-                            onClick = { selectedColor = color },
-                            shape = CircleShape,
-                            color = color,
-                            border = if (selectedColor == color) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            if (selectedColor == color) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Rounded.Check,
-                                        contentDescription = colorName,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
             }
         },
         confirmButton = {
@@ -1124,12 +1149,36 @@ private fun EditShortcutDialog(
                         "https://$urlText"
                     } else urlText.ifBlank { "https://google.com" }
 
+                    val derivedName = if (nameText.isNotBlank()) {
+                        nameText
+                    } else {
+                        try {
+                            Uri.parse(finalUrl).host?.removePrefix("www.")?.substringBefore(".")
+                                ?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+                                ?: "Shortcut"
+                        } catch (_: Throwable) {
+                            "Shortcut"
+                        }
+                    }
+
+                    val siteId = try {
+                        val host = Uri.parse(finalUrl).host ?: ""
+                        when {
+                            host.contains("youtube") -> "youtube"
+                            host.contains("github") -> "github"
+                            host.contains("wikipedia") -> "wikipedia"
+                            host.contains("duckduckgo") -> "duckduckgo"
+                            host.contains("google") -> "google"
+                            else -> "globe"
+                        }
+                    } catch (_: Throwable) { "globe" }
+
                     onSave(
                         PetalShortcut(
-                            label = nameText.ifBlank { "Shortcut ${slotIndex + 1}" },
+                            label = derivedName,
                             url = finalUrl,
-                            siteId = selectedSiteId,
-                            containerColor = selectedColor
+                            siteId = siteId,
+                            containerColor = initialColor
                         )
                     )
                 }
@@ -1138,8 +1187,18 @@ private fun EditShortcutDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (onDelete != null) {
+                    TextButton(
+                        onClick = onDelete,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete")
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
             }
         }
     )
