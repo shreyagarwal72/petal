@@ -38,6 +38,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
+import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalFeatureTile
@@ -154,22 +155,10 @@ fun PetalDeleteScreen(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Top App Bar
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = context.getString(R.string.menu_delete),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBackPress) {
-                            Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent
-                    )
+                ExpressiveHeader(
+                    title = context.getString(R.string.menu_delete),
+                    subtitle = "Clear Browsing Data & History",
+                    onBack = onBackPress
                 )
 
                 Column(

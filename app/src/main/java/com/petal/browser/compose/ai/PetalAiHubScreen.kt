@@ -144,28 +144,14 @@ fun PetalAiHubScreen(
         com.petal.browser.predictive.PetalScreenWrapper {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    modifier = Modifier.statusBarsPadding(),
-                    title = {
-                        Column {
-                            Text(
-                                "Petal AI Hub",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                "${filteredServices.size} AI Tools Available",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                        }
-                    },
+                com.petal.browser.ui.components.ExpressiveHeader(
+                    title = "Petal AI Hub",
+                    subtitle = "${filteredServices.size} AI Tools Available",
+                    onBack = onBack,
                     actions = {
-                        IconButton(
+                        com.petal.browser.ui.components.HeaderActionIcon(
+                            icon = Icons.Rounded.CloudSync,
+                            contentDescription = "Sync Cloud",
                             onClick = {
                                 coroutineScope.launch {
                                     isSyncing = true
@@ -179,21 +165,13 @@ fun PetalAiHubScreen(
                                     isSyncing = false
                                 }
                             }
-                        ) {
-                            if (isSyncing) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Rounded.CloudSync, contentDescription = "Sync Cloud")
-                            }
-                        }
-
-                        IconButton(onClick = { showCustomScriptDialog = true }) {
-                            Icon(Icons.Rounded.Code, contentDescription = "Custom JS/CSS")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
+                        )
+                        com.petal.browser.ui.components.HeaderActionIcon(
+                            icon = Icons.Rounded.Code,
+                            contentDescription = "Custom JS/CSS",
+                            onClick = { showCustomScriptDialog = true }
+                        )
+                    }
                 )
             }
         ) { padding ->

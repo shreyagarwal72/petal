@@ -219,17 +219,10 @@ fun PetalUserProfileScreen(
     com.petal.browser.predictive.PetalScreenWrapper {
         Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("User Profile & Accounts", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
+            com.petal.browser.ui.components.ExpressiveHeader(
+                title = "User Profile & Accounts",
+                subtitle = "Manage account, cloud sync & preferences",
+                onBack = { onBack() }
             )
         },
         snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) },
