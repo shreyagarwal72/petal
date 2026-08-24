@@ -1,3 +1,9 @@
+### v1.6.5
+
+- new: Integrated `ExpressiveHeader` across Settings overview and subpages with dynamic category titles and subtitles.
+- fix: Resolved double-padding layout issue on Clear Browsing Data page (`PetalDeleteScreen.kt`).
+- new: Enforced 1 single line for title and 1 single line for subheading on User Profile & Accounts page.
+
 ### v1.6.4
 
 - new: Uniform Material 3 ExpressiveHeader alignment across History, Bookmarks, and Downloads pages.

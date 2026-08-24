@@ -1,0 +1,11 @@
+### What's Changed in v1.6.5 🚀
+
+#### 🎨 Settings & Subpages ExpressiveHeader Integration
+* **App-Wide Settings Integration**: Updated `PetalSettingsScreen.kt` to dynamically host `ExpressiveHeader` across both main Settings overview and all category subpages (Appearance, Privacy, Search/Homepage, Display & Zoom, Data & Storage, Updater, About).
+* **Clear Browsing Data Layout & Padding Fix**: Fixed double padding issue in `PetalDeleteScreen.kt` by removing redundant outer Scaffold padding wrappers, ensuring `ExpressiveHeader` aligns seamlessly with top status bars.
+
+#### 👤 User Account Header Line Limits
+* **Single Line Title & Subtitle**: Updated `ExpressiveHeader.kt` to support configurable `maxTitleLines` and `maxSubtitleLines` limits, enforcing exactly 1 single line for title ("User Profile & Accounts") and 1 single line for subheading ("Manage account, cloud sync & preferences") in `ChromeAccountSyncScreen.kt`.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.6.4...v1.6.5
