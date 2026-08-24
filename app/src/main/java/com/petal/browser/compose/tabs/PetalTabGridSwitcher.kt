@@ -661,13 +661,13 @@ private fun PetalTabCard(
     onTabSelect: () -> Unit,
     onTabClose: () -> Unit
 ) {
-    val cardBg = MaterialTheme.colorScheme.surfaceContainerHigh
-    val headerBg = MaterialTheme.colorScheme.surfaceContainer
+    val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
+    val headerBg = MaterialTheme.colorScheme.surfaceContainerHigh
     val textColor = MaterialTheme.colorScheme.onSurface
 
     var isSelecting by remember { mutableStateOf(false) }
     val scaleAnim by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isSelecting) 1.15f else 1.0f,
+        targetValue = if (isSelecting) 1.05f else 1.0f,
         animationSpec = androidx.compose.animation.core.spring(
             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
             stiffness = androidx.compose.animation.core.Spring.StiffnessLow
@@ -680,24 +680,24 @@ private fun PetalTabCard(
         label = "tabZoomScale"
     )
 
-    // Active-tab accent highlight
+    // Active-tab accent outline highlight matching Chrome tab switcher specification
     val borderStroke = if (tab.isSelected) {
-        BorderStroke(2.dp, accentColor)
+        BorderStroke(2.5.dp, accentColor)
     } else {
         BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     }
 
-    val expressiveShape = RoundedCornerShape(topStart = 24.dp, topEnd = 10.dp, bottomEnd = 24.dp, bottomStart = 10.dp)
+    val cardShape = RoundedCornerShape(18.dp)
 
     Surface(
-        shape = expressiveShape,
+        shape = cardShape,
         color = cardBg,
         border = borderStroke,
-        tonalElevation = if (tab.isSelected) 10.dp else 2.dp,
-        shadowElevation = if (tab.isSelected) 8.dp else 2.dp,
+        tonalElevation = if (tab.isSelected) 4.dp else 1.dp,
+        shadowElevation = if (tab.isSelected) 6.dp else 1.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .height(125.dp)
+            .aspectRatio(0.68f) // Vertical phone screen aspect ratio for tab preview cards
             .graphicsLayer {
                 scaleX = scaleAnim
                 scaleY = scaleAnim
@@ -713,74 +713,71 @@ private fun PetalTabCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(headerBg)
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                    .padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    TabFavicon(tab = tab, accentColor = accentColor, size = 18.dp)
+                    TabFavicon(tab = tab, accentColor = accentColor, size = 16.dp)
                     Text(
                         text = if (tab.title.isBlank()) "New Tab" else tab.title,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
                         color = textColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                IconButton(
-                    onClick = onTabClose,
-                    modifier = Modifier.size(24.dp)
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable(onClick = onTabClose)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = "Close tab",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Close tab",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
                 }
             }
 
-            // Live PixelCopy WebView preview thumbnail (proportional fit scaling without cropping)
+            // Tab WebView preview thumbnail
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.surfaceContainerHigh,
-                                MaterialTheme.colorScheme.surfaceContainer
-                            )
-                        )
-                    )
-                    .padding(vertical = 4.dp),
+                    .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
                 if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
                     Image(
                         bitmap = tab.previewBitmap.asImageBitmap(),
                         contentDescription = "Live preview of ${tab.title}",
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
                             imageVector = if (tab.isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Language,
                             contentDescription = null,
                             tint = accentColor.copy(alpha = 0.6f),
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                         Text(
                             text = if (tab.url.isBlank() || tab.url.equals("about:blank", ignoreCase = true)) "Petal Home" else tab.url,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
