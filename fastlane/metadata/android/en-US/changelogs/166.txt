@@ -1,0 +1,8 @@
+### What's Changed in v1.6.6 🚀
+
+#### 👤 Profile Picture Persistence Across Restarts Fix
+* **Synchronous App-level Profile Initialization**: Added direct `GoogleAccountManager.init(this)` call in `BrowserActivity.java` `onCreate` to ensure user profile settings (custom avatar URI, Google photo URL, preset avatar ID, display name, email, and sign-in status) are restored synchronously from SharedPreferences before the home screen composes.
+* **ViewModel & Screen State Hydration**: Converted `GoogleAccountManager.init(getApplication())` in `AccountViewModel.kt` to run synchronously during ViewModel creation, and added `LaunchedEffect` initialization in `PetalUserProfileScreen`, preventing profile avatars from defaulting to empty/anonymous initial states after app process restarts.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.6.5...v1.6.6
