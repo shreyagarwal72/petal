@@ -161,7 +161,7 @@ public class NinjaDownloadListener implements DownloadListener {
                     R.drawable.icon_close, () -> true
             );
         } else {
-            String guessedFileName = URLUtil.guessFileName(downloadUrl, contentDisposition, mimeType);
+            String guessedFileName = HelperUnit.resolveFileName(downloadUrl, contentDisposition, mimeType);
             boolean isDuplicate = com.petal.browser.ui.components.PetalDownloadDialogBridge.isFileExistsInDownloads(guessedFileName);
             if (isDuplicate) {
                 com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(

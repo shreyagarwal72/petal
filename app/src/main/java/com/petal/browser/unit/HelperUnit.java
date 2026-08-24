@@ -173,12 +173,13 @@ public class HelperUnit {
                 EditText editTop = dialogView.findViewById(R.id.editTop);
                 EditText editBottom = dialogView.findViewById(R.id.editBottom);
 
-                String filename = name != null ? name : URLUtil.guessFileName(url, null, null);
-                String extension = filename.substring(filename.lastIndexOf("."));
-                String prefix = filename.substring(0, filename.lastIndexOf("."));
+                String filename = name != null ? name : resolveFileName(url, null, null);
+                int lastDot = filename.lastIndexOf(".");
+                String prefix = lastDot > 0 ? filename.substring(0, lastDot) : filename;
+                String extension = lastDot > 0 ? filename.substring(lastDot) : "";
 
                 editTop.setText(prefix);
-                if (extension.length() <= 8) editBottom.setText(extension);
+                editBottom.setText(extension);
 
                 builder.setTitle(R.string.menu_save_as);
                 builder.setIcon(R.drawable.icon_menu_save);
@@ -281,6 +282,45 @@ public class HelperUnit {
         } else System.out.println("failed_to_add");
     }
 
+    public static String resolveFileName(String url, String contentDisposition, String mimeType) {
+        try {
+            if (contentDisposition != null && !contentDisposition.trim().isEmpty()) {
+                String guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
+                if (guessed != null && !guessed.endsWith(".bin")) {
+                    return guessed;
+                }
+            }
+
+            if (url != null && !url.trim().isEmpty() && !url.startsWith("data:") && !url.startsWith("blob:")) {
+                String path = Uri.parse(url).getPath();
+                if (path != null) {
+                    int lastSlash = path.lastIndexOf('/');
+                    String rawName = (lastSlash >= 0) ? path.substring(lastSlash + 1) : path;
+                    if (!rawName.trim().isEmpty()) {
+                        int dotIndex = rawName.lastIndexOf('.');
+                        if (dotIndex > 0 && dotIndex < rawName.length() - 1) {
+                            String ext = rawName.substring(dotIndex + 1);
+                            if (!ext.contains("/") && !ext.contains("?") && !ext.contains("&") && ext.length() <= 10) {
+                                return rawName;
+                            }
+                        }
+                    }
+                }
+            }
+
+            String guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
+            if (guessed != null && guessed.endsWith(".bin") && mimeType != null) {
+                String ext = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
+                if (ext != null && !ext.isEmpty()) {
+                    return guessed.substring(0, guessed.length() - 4) + "." + ext;
+                }
+            }
+            return (guessed != null && !guessed.isEmpty()) ? guessed : "downloadfile";
+        } catch (Exception e) {
+            return URLUtil.guessFileName(url, contentDisposition, mimeType);
+        }
+    }
+
     public static String domain(String url) {
         if (url == null) {
             return "";
@@ -367,11 +407,12 @@ public class HelperUnit {
         editTopLayout.setHint(activity.getString(R.string.dialog_title_hint));
         EditText editTop = dialogView.findViewById(R.id.editTop);
         EditText editBottom = dialogView.findViewById(R.id.editBottom);
-        editTop.setText(filename.substring(0, filename.indexOf(".")));
-        String extension = filename.substring(filename.lastIndexOf("."));
-        if (extension.length() <= 8) {
-            editBottom.setText(extension);
-        }
+        int lastDot = filename != null ? filename.lastIndexOf(".") : -1;
+        String prefix = (filename != null && lastDot > 0) ? filename.substring(0, lastDot) : (filename != null ? filename : "download");
+        String extension = (filename != null && lastDot > 0) ? filename.substring(lastDot) : "";
+
+        editTop.setText(prefix);
+        editBottom.setText(extension);
         builder.setView(dialogView);
         builder.setTitle(R.string.menu_save_as);
         builder.setIcon(R.drawable.icon_menu_save);
