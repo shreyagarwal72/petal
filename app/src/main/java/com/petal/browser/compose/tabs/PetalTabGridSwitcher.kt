@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -699,6 +700,21 @@ private fun PetalTabCard(
     val headerBg = MaterialTheme.colorScheme.surfaceContainer
     val textColor = MaterialTheme.colorScheme.onSurface
 
+    var isSelecting by remember { mutableStateOf(false) }
+    val scaleAnim by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isSelecting) 1.15f else 1.0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        finishedListener = {
+            if (isSelecting) {
+                onTabSelect()
+            }
+        },
+        label = "tabZoomScale"
+    )
+
     // Active-tab accent highlight
     val borderStroke = if (tab.isSelected) {
         BorderStroke(2.dp, accentColor)
@@ -717,9 +733,14 @@ private fun PetalTabCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(180.dp)
-            // Tap-to-select only - there is deliberately no drag/swipe handling on this
-            // card; the only way to close a tab is the explicit (X) button below.
-            .bouncyClickable(onClick = onTabSelect)
+            .graphicsLayer {
+                scaleX = scaleAnim
+                scaleY = scaleAnim
+                alpha = if (isSelecting) 0.95f else 1.0f
+            }
+            .bouncyClickable(onClick = {
+                isSelecting = true
+            })
             .entrance()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -759,8 +780,7 @@ private fun PetalTabCard(
                 }
             }
 
-            // Live PixelCopy WebView preview thumbnail (falls back to a placeholder while
-            // the caller's async capture is still in flight, or if it failed).
+            // Live PixelCopy WebView preview thumbnail (proportional fit scaling without cropping)
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -778,7 +798,7 @@ private fun PetalTabCard(
                     Image(
                         bitmap = tab.previewBitmap.asImageBitmap(),
                         contentDescription = "Live preview of ${tab.title}",
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
