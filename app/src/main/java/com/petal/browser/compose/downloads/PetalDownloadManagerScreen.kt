@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -330,16 +331,10 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             snackbarHost = {
-                SnackbarHost(hostState = snackbarHostState) { data ->
-                    Snackbar(
-                        snackbarData = data,
-                        shape = RoundedCornerShape(16.dp),
-                        containerColor = MaterialTheme.colorScheme.inverseSurface,
-                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                        actionColor = MaterialTheme.colorScheme.inversePrimary,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
+                PetalThemedSnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -1044,7 +1039,7 @@ private fun renameDownloadedFile(context: Context, item: DownloadItem, newName: 
                 val newFile = java.io.File(oldFile.parent, newName)
                 if (oldFile.renameTo(newFile)) {
                     android.media.MediaScannerConnection.scanFile(context, arrayOf(newFile.absolutePath), null, null)
-                    android.widget.Toast.makeText(context, "Renamed to $newName", android.widget.Toast.LENGTH_SHORT).show()
+                    com.petal.browser.view.NinjaToast.show(context, "Renamed to $newName")
                 }
             }
         }
@@ -1058,7 +1053,7 @@ private fun copyDownloadLink(context: Context, url: String) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
         val clip = android.content.ClipData.newPlainText("Download Link", url)
         clipboard.setPrimaryClip(clip)
-        android.widget.Toast.makeText(context, "Link copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+        com.petal.browser.view.NinjaToast.show(context, "Link copied to clipboard")
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -1185,7 +1180,7 @@ private fun deleteMultipleFiles(context: Context, items: List<DownloadItem>) {
     if (items.isEmpty()) return
     try {
         PetalFetchDownloadBridge.deleteDownloads(context, items)
-        android.widget.Toast.makeText(context, "Deleted ${items.size} items", android.widget.Toast.LENGTH_SHORT).show()
+        com.petal.browser.view.NinjaToast.show(context, "Deleted ${items.size} items")
     } catch (e: Exception) {
         e.printStackTrace()
     }

@@ -511,9 +511,9 @@ fun PetalTabSwitcherContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.inverseSurface,
-                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
                     tonalElevation = 6.dp,
                     shadowElevation = 8.dp,
                     modifier = Modifier.fillMaxWidth().entrance()
@@ -528,7 +528,7 @@ fun PetalTabSwitcherContent(
                         Text(
                             text = "Tab closed",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                            color = MaterialTheme.colorScheme.inverseOnSurface
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         TextButton(
                             onClick = {
@@ -543,7 +543,7 @@ fun PetalTabSwitcherContent(
                             Text(
                                 text = "Undo",
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.inversePrimary
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }

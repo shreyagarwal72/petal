@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -117,7 +118,7 @@ data class PredictiveBackState(
 val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
 
 // ---------------------------------------------------------------------------
-// PetalPredictiveBackSurface — replaces the old PetalPredictiveBackJunctionHandler
+// PetalPredictiveBackSurface — predictive back gesture wrapper
 // ---------------------------------------------------------------------------
 
 /**
@@ -136,37 +137,45 @@ fun PetalPredictiveBackSurface(
     onBack: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    val junctionEnabled = PetalPredictiveJunction.isPredictiveBackEnabled.value
-    val isFullyEnabled = enabled && junctionEnabled
+    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
+
+    val isFullyEnabled = enabled && junctionPredictiveEnabled
 
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
     // Used only during cancel settling so the smooth relaxation has something to follow.
     val settleProgress = remember { Animatable(0f) }
 
-    PredictiveBackHandler(enabled = isFullyEnabled) { progressFlow ->
-        try {
-            progressFlow.collectLatest { backEvent ->
-                backState = PredictiveBackState(
-                    isActive = true,
-                    progress = backEvent.progress,
-                    swipeEdge = backEvent.swipeEdge,
-                )
+    if (isFullyEnabled) {
+        PredictiveBackHandler(enabled = true) { progressFlow ->
+            try {
+                progressFlow.collectLatest { backEvent ->
+                    backState = PredictiveBackState(
+                        isActive = true,
+                        progress = backEvent.progress,
+                        swipeEdge = backEvent.swipeEdge,
+                    )
+                }
+                // Gesture committed — let the system drive the dismissal.
+                // Reset immediately so the revealed screen doesn't hold a stale dim/blur.
+                backState = PredictiveBackState.Idle
+                onBack()
+            } catch (e: CancellationException) {
+                // Gesture cancelled: animate progress back to 0 so blur/scale relax smoothly
+                // instead of snapping clear. 220 ms matches the system's cancel spring duration.
+                settleProgress.snapTo(backState.progress)
+                settleProgress.animateTo(0f, animationSpec = tween(durationMillis = 220))
+                backState = PredictiveBackState.Idle
+                throw e
             }
-            // Gesture committed — let the system drive the dismissal.
-            // Reset immediately so the revealed screen doesn't hold a stale dim/blur.
-            backState = PredictiveBackState.Idle
-            onBack()
-        } catch (e: CancellationException) {
-            // Gesture cancelled: animate progress back to 0 so blur/scale relax smoothly
-            // instead of snapping clear. 220 ms matches the system's cancel spring duration.
-            settleProgress.snapTo(backState.progress)
-            settleProgress.animateTo(0f, animationSpec = tween(durationMillis = 220))
-            backState = PredictiveBackState.Idle
-            throw e
         }
     }
 
-    CompositionLocalProvider(LocalPredictiveBackState provides backState) {
+    CompositionLocalProvider(
+        LocalPetalPredictiveJunctionState provides junctionPredictiveEnabled,
+        LocalPetalDepthBlurJunctionState provides junctionBlurEnabled,
+        LocalPredictiveBackState provides backState
+    ) {
         content()
     }
 }
@@ -197,8 +206,12 @@ fun PetalScreenWrapper(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val predictiveEnabled = PetalPredictiveJunction.isPredictiveBackEnabled.value
-    val blurEnabled = PetalPredictiveJunction.isDepthBlurEnabled.value
+    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
+
+    val predictiveEnabled = junctionPredictiveEnabled
+    val blurEnabled = junctionBlurEnabled
+    val disableBlurAllOver = !blurEnabled
 
     val predictiveBack = LocalPredictiveBackState.current
 
@@ -227,9 +240,9 @@ fun PetalScreenWrapper(
     // Behind-screen effects — dim + blur clear live with the finger
     // -----------------------------------------------------------------------
 
-    // Settled target dim (what the dim animates to when no gesture is in flight).
+    // Settled target dim: If strictly behind top -> 0.4f (or 0.75f if blur is disabled). Else -> 0f.
     val settledTargetDim = if (isBehind) {
-        if (!blurEnabled) 0.5f else 0.25f
+        if (disableBlurAllOver) 0.75f else 0.4f
     } else {
         0f
     }
@@ -248,8 +261,8 @@ fun PetalScreenWrapper(
         fallbackDimAlpha.value
     }
 
-    // Settled target blur.
-    val settledTargetBlur = if (isBehind && blurEnabled) 16f else 0f
+    // Settled target blur: If strictly behind top -> 24dp (or 0dp if blur disabled).
+    val settledTargetBlur = if (isBehind && !disableBlurAllOver) 24f else 0f
     val fallbackBlurRadius = remember { Animatable(settledTargetBlur) }
     LaunchedEffect(settledTargetBlur) {
         fallbackBlurRadius.animateTo(
@@ -257,7 +270,7 @@ fun PetalScreenWrapper(
             animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
         )
     }
-    val animatedBlurRadius = if (predictiveEnabled && isPredictiveBackTarget && blurEnabled) {
+    val animatedBlurRadius = if (predictiveEnabled && isPredictiveBackTarget && !disableBlurAllOver) {
         (settledTargetBlur * (1f - backProgressEased)).dp
     } else {
         fallbackBlurRadius.value.dp
@@ -275,8 +288,6 @@ fun PetalScreenWrapper(
         modifier = modifier
             .fillMaxSize()
             // Keep CompositingStrategy STABLE when predictive is enabled.
-            // Toggling between Auto ↔ Offscreen mid-gesture causes a one-frame RenderNode
-            // flash (same bug documented in PixelPlayer's ScreenWrapper comments).
             .graphicsLayer {
                 compositingStrategy = if (predictiveEnabled) {
                     CompositingStrategy.Offscreen
@@ -292,7 +303,7 @@ fun PetalScreenWrapper(
                     this.clip = false
                 }
             }
-            .blur(radius = animatedBlurRadius)
+            .blur(radius = if (!disableBlurAllOver) animatedBlurRadius else 0.dp)
             .background(MaterialTheme.colorScheme.background)
     ) {
         content()
@@ -308,3 +319,4 @@ fun PetalScreenWrapper(
         }
     }
 }
+

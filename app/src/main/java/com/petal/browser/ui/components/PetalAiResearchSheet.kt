@@ -352,7 +352,7 @@ fun PetalAiResearchSheet(
                 onClick = {
                     if (apiKey.isBlank()) {
                         showApiKeyConfig = true
-                        Toast.makeText(context, "Please enter an API Key first", Toast.LENGTH_SHORT).show()
+                        com.petal.browser.view.NinjaToast.show(context, "Please enter an API Key first")
                         return@Button
                     }
                     isLoading = true
@@ -440,7 +440,7 @@ fun PetalAiResearchSheet(
                                     onClick = {
                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                         clipboard.setPrimaryClip(ClipData.newPlainText("AI Research", response))
-                                        Toast.makeText(context, "Research copied to clipboard", Toast.LENGTH_SHORT).show()
+                                        com.petal.browser.view.NinjaToast.show(context, "Research copied to clipboard")
                                     }
                                 ) {
                                     Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(20.dp))

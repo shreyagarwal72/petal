@@ -76,13 +76,14 @@ fun ScreenWrapper(
     val previousEntryId = navController?.previousBackStackEntry?.id.also { _ -> currentBackStackEntryState?.value }
     val shouldDim = myEntry != null && previousEntryId == myEntry.id
 
-    val disableBlurAllOver = false
+    val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
 
-    // Live predictive-back gesture state: published by PetalPredictiveBackSurface
-    // (or any ancestor that provides LocalPredictiveBackState).
+    val predictiveEnabled = junctionPredictiveEnabled
+    val blurEnabled = junctionBlurEnabled
+    val disableBlurAllOver = !blurEnabled
+
     val predictiveBack = LocalPredictiveBackState.current
-    val predictiveEnabled = PetalPredictiveJunction.isPredictiveBackEnabled.value
-    val blurEnabled = PetalPredictiveJunction.isDepthBlurEnabled.value
 
     // This ScreenWrapper is being revealed underneath the swiped-away top screen when
     // shouldDim is true, so gate live gesture tracking on the same condition.
