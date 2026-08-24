@@ -1,0 +1,13 @@
+### What's Changed 🚀
+
+#### 🎨 Material 3 ExpressiveHeader Integration
+* **Header Port from LastWave-native**: Imported the full-bleed `ExpressiveHeader` and `HeaderActionIcon` components from [`duxtami/LastWave-native`](https://github.com/duxtami/LastWave-native).
+* **Dynamic Radial Glow Backgrounds**: Added animated dual radial accent glows that drift smoothly across top headers while foregrounded and pause when backgrounded for efficiency.
+* **Liquid Glass Specular Sheen**: Added optional specular glass sheen and hairline diagonal borders via the `liquidGlassChrome` modifier.
+* **App-wide Screen Integration**: Replaced legacy top bars in Bookmarks (`PetalBookmarksScreen.kt`), History (`PetalHistoryScreen.kt`), and Downloads (`PetalDownloadManagerScreen.kt`) with unified `ExpressiveHeader` implementations featuring item count subtitles, clear actions, sort menus, and multi-selection mode controls.
+
+#### 🐛 WebView Rendering & Overlay Fixes
+* **Hardware Acceleration Stability**: Eliminated dynamic `setLayerType(View.LAYER_TYPE_SOFTWARE)` calls during pull-to-refresh gestures in `BrowserActivity.java`, fixing intermittent black overlay/rectangle glitches behind select dropdowns and popups.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.6.1...v1.6.2
