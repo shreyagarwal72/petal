@@ -838,23 +838,32 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
 // practice means a fresh line each time the app process is (re)started —
 // normal recomposition/navigation within the same session does not reroll it.
 
-private val petalGreetingTaglines = listOf(
-    "The web is your to uncover, %s.",
-    "Where will your curiosity take you today, %s?",
-    "Ready to discover something new %s?",
-    "%s, your window to the world is open.",
-    "Search deeper, explore wider, %s.",
-    "Turn ideas into reality today, %s.",
-    "%s, your next big project starts with a search.",
-    "Built for creation, styled for speed—let's go, %s.",
-    "Create, connect, and stay inspired, %s.",
-    "Welcome back, %s. Let's get to work.",
-    "Clear tabs, clear mind. Ready when you are, %s.",
-    "Fast, focused, and ready, %s.",
-    "Your digital space, tailored for you, %s.",
-    "Good morning, %s. A fresh start for big ideas.",
-    "Good afternoon, %s. Keep the momentum going.",
-    "Good evening, %s. Winding down or diving into something fun?"
+private val generalGreetingTaglines = listOf(
+    "Welcome back, %s—the web is ready whenever you are.",
+    "What are you curious about today, %s?",
+    "Ready to discover something amazing, %s?",
+    "%s, here is your personal window to the entire web.",
+    "Search deeper and expand your world, %s.",
+    "Bring your biggest ideas to life today, %s.",
+    "Your next great breakthrough starts right here, %s.",
+    "Designed for your speed and creativity, %s.",
+    "Stay inspired and keep building, %s.",
+    "Good to see you again, %s; let's make things happen.",
+    "Clear mind and a fresh tab, %s—what's on your agenda?",
+    "Everything is set up and waiting for you, %s.",
+    "Your digital workspace is primed and ready, %s."
+)
+
+private val morningGreetingTaglines = listOf(
+    "Good morning, %s! Start the day with a fresh perspective."
+)
+
+private val afternoonGreetingTaglines = listOf(
+    "Good afternoon, %s—keep that momentum rolling."
+)
+
+private val eveningGreetingTaglines = listOf(
+    "Good evening, %s; time to unwind and explore something fun."
 )
 
 @Composable
@@ -865,7 +874,14 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
     // app process restarts, but it stays stable across recompositions and
     // config changes within the same session.
     val tagline = remember(username) {
-        petalGreetingTaglines.random().format(username)
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val timeSpecificTaglines = when {
+            hour in 4..11 -> morningGreetingTaglines
+            hour in 12..16 -> afternoonGreetingTaglines
+            else -> eveningGreetingTaglines
+        }
+        val pool = generalGreetingTaglines + timeSpecificTaglines
+        pool.random().format(username)
     }
 
     Text(
