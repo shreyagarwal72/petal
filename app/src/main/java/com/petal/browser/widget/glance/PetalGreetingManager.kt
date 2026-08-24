@@ -2,31 +2,41 @@ package com.petal.browser.widget.glance
 
 import android.content.Context
 import androidx.preference.PreferenceManager
+import java.util.Calendar
 import kotlin.random.Random
 
 object PetalGreetingManager {
 
-    private val GREETING_TEMPLATES = listOf(
-        "The web is yours to uncover, {username}.",
-        "Where will your curiosity take you today, {username}?",
-        "Ready to discover something new, {username}?",
-        "{username}, your window to the world is open.",
-        "Search deeper, explore wider, {username}.",
-        "Turn ideas into reality today, {username}.",
-        "{username}, your next big project starts with a search.",
-        "Built for creation, styled for speed—let's go, {username}.",
-        "Create, connect, and stay inspired, {username}.",
-        "Welcome back, {username}. Let's get to work.",
-        "Clear tabs, clear mind. Ready when you are, {username}.",
-        "Fast, focused, and ready, {username}.",
-        "Your digital space, tailored for you, {username}.",
-        "Good morning, {username}. A fresh start for big ideas.",
-        "Good afternoon, {username}. Keep the momentum going.",
-        "Good evening, {username}. Winding down or diving into something fun?"
+    private val GENERAL_TEMPLATES = listOf(
+        "Welcome back, {username}—the web is ready whenever you are.",
+        "What are you curious about today, {username}?",
+        "Ready to discover something amazing, {username}?",
+        "{username}, here is your personal window to the entire web.",
+        "Search deeper and expand your world, {username}.",
+        "Bring your biggest ideas to life today, {username}.",
+        "Your next great breakthrough starts right here, {username}.",
+        "Designed for your speed and creativity, {username}.",
+        "Stay inspired and keep building, {username}.",
+        "Good to see you again, {username}; let's make things happen.",
+        "Clear mind and a fresh tab, {username}—what's on your agenda?",
+        "Everything is set up and waiting for you, {username}.",
+        "Your digital workspace is primed and ready, {username}."
+    )
+
+    private val MORNING_TEMPLATES = listOf(
+        "Good morning, {username}! Start the day with a fresh perspective."
+    )
+
+    private val AFTERNOON_TEMPLATES = listOf(
+        "Good afternoon, {username}—keep that momentum rolling."
+    )
+
+    private val EVENING_TEMPLATES = listOf(
+        "Good evening, {username}; time to unwind and explore something fun."
     )
 
     /**
-     * Returns a random greeting populated with the user's name (or "Petal Explorer" if empty).
+     * Returns a random time-appropriate greeting populated with the user's name (or "Petal Explorer" if empty).
      */
     fun getRandomGreeting(context: Context): String {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -37,7 +47,16 @@ object PetalGreetingManager {
             ?: sp.getString("user_name", null)
 
         val username = if (!rawName.isNullOrBlank()) rawName.trim() else "Petal Explorer"
-        val template = GREETING_TEMPLATES[Random.nextInt(GREETING_TEMPLATES.size)]
+
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val timeTemplates = when {
+            hour in 4..11 -> MORNING_TEMPLATES
+            hour in 12..16 -> AFTERNOON_TEMPLATES
+            else -> EVENING_TEMPLATES
+        }
+
+        val pool = GENERAL_TEMPLATES + timeTemplates
+        val template = pool[Random.nextInt(pool.size)]
         return template.replace("{username}", username)
     }
 }
