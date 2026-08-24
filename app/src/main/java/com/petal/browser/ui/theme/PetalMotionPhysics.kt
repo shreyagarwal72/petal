@@ -1,6 +1,6 @@
 package com.petal.browser.ui.theme
 
-import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -13,44 +13,38 @@ import androidx.compose.runtime.ReadOnlyComposable
  * Philipp Lackner's Material3ExpressiveGuide (https://github.com/philipplackner/Material3ExpressiveGuide).
  *
  * Provides expressive spatial spring physics and motion effect specs across
- * Petal UI components.
+ * Petal UI components for any target type (Float, IntOffset, Dp, etc.).
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 object PetalMotionPhysics {
 
-    /** Fast spatial spring physics for snappy touch feedback, scale transitions, and button presses. */
-    val fastSpatial: AnimationSpec<Float>
-        @Composable
-        @ReadOnlyComposable
-        get() = MaterialTheme.motionScheme.fastSpatialSpec()
+    /** Fast spatial spring physics for snappy touch feedback, scale transitions, button presses, and slide offsets. */
+    @Composable
+    @ReadOnlyComposable
+    fun <T> fastSpatial(): FiniteAnimationSpec<T> = MaterialTheme.motionScheme.fastSpatialSpec()
 
-    /** Slow spatial spring physics for fluid card expansions, sheets, and full-screen transitions. */
-    val slowSpatial: AnimationSpec<Float>
-        @Composable
-        @ReadOnlyComposable
-        get() = MaterialTheme.motionScheme.slowSpatialSpec()
+    /** Slow spatial spring physics for fluid card expansions, sheets, slide transitions, and full-screen morphs. */
+    @Composable
+    @ReadOnlyComposable
+    fun <T> slowSpatial(): FiniteAnimationSpec<T> = MaterialTheme.motionScheme.slowSpatialSpec()
 
     /** Default spatial spring physics for standard container transformations. */
-    val defaultSpatial: AnimationSpec<Float>
-        @Composable
-        @ReadOnlyComposable
-        get() = MaterialTheme.motionScheme.defaultSpatialSpec()
+    @Composable
+    @ReadOnlyComposable
+    fun <T> defaultSpatial(): FiniteAnimationSpec<T> = MaterialTheme.motionScheme.defaultSpatialSpec()
 
     /** Fast effects spec for rapid opacity crossfades and visual feedback. */
-    val fastEffects: AnimationSpec<Float>
-        @Composable
-        @ReadOnlyComposable
-        get() = MaterialTheme.motionScheme.fastEffectsSpec()
+    @Composable
+    @ReadOnlyComposable
+    fun <T> fastEffects(): FiniteAnimationSpec<T> = MaterialTheme.motionScheme.fastEffectsSpec()
 
     /** Slow effects spec for gradual background and color transitions. */
-    val slowEffects: AnimationSpec<Float>
-        @Composable
-        @ReadOnlyComposable
-        get() = MaterialTheme.motionScheme.slowEffectsSpec()
+    @Composable
+    @ReadOnlyComposable
+    fun <T> slowEffects(): FiniteAnimationSpec<T> = MaterialTheme.motionScheme.slowEffectsSpec()
 
     /** Default effects spec for standard effect animations. */
-    val defaultEffects: AnimationSpec<Float>
-        @Composable
-        @ReadOnlyComposable
-        get() = MaterialTheme.motionScheme.defaultEffectsSpec()
+    @Composable
+    @ReadOnlyComposable
+    fun <T> defaultEffects(): FiniteAnimationSpec<T> = MaterialTheme.motionScheme.defaultEffectsSpec()
 }
