@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -542,13 +544,13 @@ fun PetalChangelogHistorySheetContent(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            androidx.compose.foundation.lazy.LazyColumn(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 480.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                androidx.compose.foundation.lazy.items(releases) { rel ->
+                items(releases) { rel ->
                     Card(
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(

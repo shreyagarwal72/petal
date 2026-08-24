@@ -304,27 +304,10 @@ fun PetalHistoryScreen(
 
                     if (filteredHistory.isEmpty()) {
                         item(key = "empty_state") {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 48.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(
-                                        Icons.Rounded.HistoryToggleOff,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                        modifier = Modifier.size(64.dp)
-                                    )
-                                    Spacer(Modifier.height(12.dp))
-                                    Text(
-                                        text = if (searchQuery.isNotEmpty()) "No matching history" else "No browsing history yet",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
+                            com.petal.browser.ui.components.EmptyStateBlob(
+                                icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Rounded.HistoryToggleOff),
+                                title = if (searchQuery.isNotEmpty()) "No matching history" else "No browsing history yet"
+                            )
                         }
                     } else {
                         itemsIndexed(filteredHistory, key = { idx, item -> "${item.url}_$idx" }) { index, record ->

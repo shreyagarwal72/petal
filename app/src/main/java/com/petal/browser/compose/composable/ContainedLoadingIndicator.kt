@@ -2,41 +2,40 @@ package com.petal.browser.compose.composable
 
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asComposePath
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.graphics.shapes.CornerRounding
-import androidx.graphics.shapes.Morph
-import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.toPath
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
@@ -45,93 +44,26 @@ import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 
 /**
- * Reusable Material 3 Expressive "Contained Loading Indicator".
- * Features a circular background container housing an inner shape that continuously
- * morphs between rounded geometric shapes (pentagon and triangle) using
- * [RoundedPolygon] and [Morph] from androidx.graphics.shapes driven by an infiniteTransition loop.
+ * Petal Material 3 Expressive ContainedLoadingIndicator composable.
+ * Displays an indeterminate loading indicator filling available screen bounds.
  *
- * @param modifier Standard composable modifier.
- * @param containerSize Diameter of the outer circular container (default: 64.dp).
- * @param containerColor Background color of the container (default: MaterialTheme.colorScheme.primary).
- * @param indicatorColor Foreground color of the morphing indicator shape (default: MaterialTheme.colorScheme.onPrimary).
- * @param animationDurationMillis Duration in milliseconds for one full morph cycle (default: 1800ms).
+ * @param modifier The modifier to be applied to the composable
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ContainedLoadingIndicator(
-    modifier: Modifier = Modifier,
-    containerSize: Dp = 64.dp,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
-    indicatorColor: Color = MaterialTheme.colorScheme.primary,
-    animationDurationMillis: Int = 1800
-) {
+fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxSize()
+            .padding(8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
-            shape = CircleShape,
-            color = containerColor,
-            modifier = Modifier.size(containerSize),
-            shadowElevation = 6.dp,
-            tonalElevation = 6.dp
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                val infiniteTransition = rememberInfiniteTransition(label = "containedLoadingIndicatorTransition")
-
-                val morphProgress by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(animationDurationMillis, easing = FastOutSlowInEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "morphProgress"
-                )
-
-                val rotationAngle by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(animationDurationMillis * 2, easing = LinearEasing)
-                    ),
-                    label = "rotationAngle"
-                )
-
-                Canvas(modifier = Modifier.fillMaxSize(0.52f)) {
-                    val radius = size.minDimension / 2f
-                    val center = size.width / 2f
-
-                    val pentagon = RoundedPolygon(
-                        numVertices = 5,
-                        radius = radius,
-                        centerX = center,
-                        centerY = center,
-                        rounding = CornerRounding(radius * 0.25f)
-                    )
-
-                    val triangle = RoundedPolygon(
-                        numVertices = 3,
-                        radius = radius,
-                        centerX = center,
-                        centerY = center,
-                        rounding = CornerRounding(radius * 0.35f)
-                    )
-
-                    val morph = Morph(pentagon, triangle)
-                    val composePath = morph.toPath(morphProgress).asComposePath()
-
-                    rotate(degrees = rotationAngle) {
-                        drawPath(
-                            path = composePath,
-                            color = indicatorColor
-                        )
-                    }
-                }
-            }
-        }
+        val description = "Loading..."
+        ContainedLoadingIndicator(
+            modifier = Modifier
+                .requiredSize(64.dp)
+                .semantics { stateDescription = description }
+        )
     }
 }
 
@@ -146,23 +78,62 @@ fun RefreshBarLoadingIndicator(
     pullProgress: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
+    val isVisible = isRefreshing || pullProgress > 0.01f
+
     AnimatedVisibility(
-        visible = isRefreshing || pullProgress > 0.15f,
-        enter = slideInVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium), initialOffsetY = { -it }) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
-        exit = slideOutVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium), targetOffsetY = { -it }) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
+        visible = isVisible,
+        enter = slideInVertically(
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+            initialOffsetY = { -it }
+        ) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
+        exit = slideOutVertically(
+            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+            targetOffsetY = { -it }
+        ) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
         modifier = modifier
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                // Fixed height tall enough to contain the circle's full travel range
+                // (its own ~58dp size plus the largest translationY offset used below,
+                // 64dp, plus margin). translationY is a paint-time transform - it never
+                // changes this Box's measured size, so without reserving space for the
+                // worst case up front, the ComposeView hosting this clips the circle
+                // wherever its un-translated resting bounds happened to end.
+                .height(140.dp)
+                .zIndex(500f)
                 .padding(top = 12.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            ContainedLoadingIndicator(
-                containerSize = 48.dp,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                indicatorColor = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            val offsetY = if (isRefreshing) 24.dp else if (!isVisible) 0.dp else (pullProgress.coerceIn(0f, 1f) * 64.dp.value).dp
+            val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.8f).coerceIn(0f, 1f)
+            val currentScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.3f + (pullProgress * 0.7f)).coerceIn(0.3f, 1.0f)
+
+            Surface(
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                tonalElevation = 12.dp,
+                shadowElevation = 12.dp,
+                modifier = Modifier
+                    .graphicsLayer {
+                        translationY = if (isVisible) offsetY.toPx() else 0f
+                        alpha = if (isVisible) currentOpacity else 0f
+                        scaleX = if (isVisible) currentScale else 0f
+                        scaleY = if (isVisible) currentScale else 0f
+                    }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .requiredSize(42.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ContainedLoadingIndicator(
+                        modifier = Modifier.requiredSize(38.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -181,6 +152,7 @@ object PetalRefreshBarBridge {
     ) {
         composeView.apply {
             setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
@@ -215,17 +187,11 @@ object PetalRefreshBarBridge {
     }
 }
 
-@Preview(name = "Contained Loading Indicator - Dark Theme", showBackground = true, backgroundColor = 0xFF121212)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Preview(name = "Petal Contained Loading Indicator Preview", showBackground = true)
 @Composable
 private fun ContainedLoadingIndicatorPreview() {
     PetalExpressiveTheme(darkTheme = true) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            ContainedLoadingIndicator()
-        }
+        ContainedLoadingIndicator()
     }
 }

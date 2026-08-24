@@ -36,7 +36,7 @@ fun PetalThemedSnackbar(
         shape = shape,
         containerColor = containerColor,
         contentColor = contentColor,
-        actionColor = actionColor,
+        actionContentColor = actionColor,
         dismissActionContentColor = dismissActionColor
     )
 }
