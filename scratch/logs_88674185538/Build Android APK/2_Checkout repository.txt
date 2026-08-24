@@ -1,0 +1,76 @@
+﻿2026-08-24T13:35:05.4123068Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-24T13:35:05.4134349Z ##[group]Run actions/checkout@v4
+2026-08-24T13:35:05.4135607Z with:
+2026-08-24T13:35:05.4136475Z   repository: shreyagarwal72/petal
+2026-08-24T13:35:05.4145182Z   token: ***
+2026-08-24T13:35:05.4146026Z   ssh-strict: true
+2026-08-24T13:35:05.4147101Z   ssh-user: git
+2026-08-24T13:35:05.4147992Z   persist-credentials: true
+2026-08-24T13:35:05.4148958Z   clean: true
+2026-08-24T13:35:05.4149833Z   sparse-checkout-cone-mode: true
+2026-08-24T13:35:05.4150880Z   fetch-depth: 1
+2026-08-24T13:35:05.4151723Z   fetch-tags: false
+2026-08-24T13:35:05.4152597Z   show-progress: true
+2026-08-24T13:35:05.4153513Z   lfs: false
+2026-08-24T13:35:05.4154324Z   submodules: false
+2026-08-24T13:35:05.4155249Z   set-safe-directory: true
+2026-08-24T13:35:05.4156256Z   allow-unsafe-pr-checkout: false
+2026-08-24T13:35:05.4157737Z env:
+2026-08-24T13:35:05.4159416Z   GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -XX:+UseG1GC -Dorg.gradle.daemon=false
+2026-08-24T13:35:05.4161328Z ##[endgroup]
+2026-08-24T13:35:05.5235932Z Syncing repository: shreyagarwal72/petal
+2026-08-24T13:35:05.5240654Z ##[group]Getting Git version info
+2026-08-24T13:35:05.5242755Z Working directory is '/home/runner/work/petal/petal'
+2026-08-24T13:35:05.5245803Z [command]/usr/bin/git version
+2026-08-24T13:35:05.5320929Z git version 2.55.0
+2026-08-24T13:35:05.5338509Z ##[endgroup]
+2026-08-24T13:35:05.5360246Z Temporarily overriding HOME='/home/runner/work/_temp/899348fa-41ce-4d8c-ade0-753ca7b82b0f' before making global git config changes
+2026-08-24T13:35:05.5365352Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-24T13:35:05.5370267Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/petal/petal
+2026-08-24T13:35:05.5426994Z Deleting the contents of '/home/runner/work/petal/petal'
+2026-08-24T13:35:05.5432781Z ##[group]Initializing the repository
+2026-08-24T13:35:05.5436710Z [command]/usr/bin/git init /home/runner/work/petal/petal
+2026-08-24T13:35:05.5566482Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-24T13:35:05.5570438Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-24T13:35:05.5573109Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-24T13:35:05.5575083Z hint: call:
+2026-08-24T13:35:05.5575899Z hint:
+2026-08-24T13:35:05.5577386Z hint: 	git config --global init.defaultBranch <name>
+2026-08-24T13:35:05.5578797Z hint:
+2026-08-24T13:35:05.5579934Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-24T13:35:05.5581983Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-24T13:35:05.5583872Z hint:
+2026-08-24T13:35:05.5584685Z hint: 	git branch -m <name>
+2026-08-24T13:35:05.5585597Z hint:
+2026-08-24T13:35:05.5587169Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-24T13:35:05.5589197Z Initialized empty Git repository in /home/runner/work/petal/petal/.git/
+2026-08-24T13:35:05.5594144Z [command]/usr/bin/git remote add origin https://github.com/shreyagarwal72/petal
+2026-08-24T13:35:05.5638913Z ##[endgroup]
+2026-08-24T13:35:05.5641386Z ##[group]Disabling automatic garbage collection
+2026-08-24T13:35:05.5643615Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-24T13:35:05.5679527Z ##[endgroup]
+2026-08-24T13:35:05.5681856Z ##[group]Setting up auth
+2026-08-24T13:35:05.5685448Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-24T13:35:05.5728816Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-24T13:35:05.6137585Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-24T13:35:05.6183198Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-24T13:35:05.6460780Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-24T13:35:05.6495564Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-24T13:35:05.6757546Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-24T13:35:05.6797630Z ##[endgroup]
+2026-08-24T13:35:05.6800344Z ##[group]Fetching the repository
+2026-08-24T13:35:05.6810860Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +2bc532ba5471aec6219ae18760d05f925c0da1e2:refs/remotes/origin/main
+2026-08-24T13:35:07.0479237Z From https://github.com/shreyagarwal72/petal
+2026-08-24T13:35:07.0481815Z  * [new ref]         2bc532ba5471aec6219ae18760d05f925c0da1e2 -> origin/main
+2026-08-24T13:35:07.0486090Z ##[endgroup]
+2026-08-24T13:35:07.0487462Z ##[group]Determining the checkout info
+2026-08-24T13:35:07.0488601Z ##[endgroup]
+2026-08-24T13:35:07.0495698Z [command]/usr/bin/git sparse-checkout disable
+2026-08-24T13:35:07.0551694Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-24T13:35:07.0586054Z ##[group]Checking out the ref
+2026-08-24T13:35:07.0590923Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-08-24T13:35:07.1818965Z Switched to a new branch 'main'
+2026-08-24T13:35:07.1823128Z branch 'main' set up to track 'origin/main'.
+2026-08-24T13:35:07.1833911Z ##[endgroup]
+2026-08-24T13:35:07.1884817Z [command]/usr/bin/git log -1 --format=%H
+2026-08-24T13:35:07.1911670Z 2bc532ba5471aec6219ae18760d05f925c0da1e2

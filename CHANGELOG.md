@@ -1,3 +1,8 @@
+### v1.7.5
+
+- new: Integrated `Util1DM` utility class to automatically detect 1DM / 1DM+ / 1DM Lite download managers and hand off downloads, headers, cookies, and user-agent without UI changes.
+- fix: Resolved Kotlin build errors in `PetalAiHubBridge.kt`, `PetalAiHubScreen.kt`, and `PetalTabGridSwitcher.kt`.
+
 ### v1.7.4
 
 - fix: Audited and balanced Compose layout braces in `PetalTabGridSwitcher.kt`, resolving outer `BoxScope.align` and syntax parser cascade errors.

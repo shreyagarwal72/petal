@@ -1,0 +1,3 @@
+* **Internal 1DM Downloader Integration**: Integrated `Util1DM` utility class to automatically detect 1DM / 1DM+ / 1DM Lite download managers and seamlessly pass off file downloads, user-agent, cookies, and custom headers without modifying any existing UI elements.
+* **Manifest Package Visibility**: Added `<queries>` declarations for 1DM package IDs (`idm.internet.download.manager`, `.plus`, `.adm.lite`) to ensure Android 11+ package visibility compliance.
+* **Build Failure Fixes**: Resolved Kotlin compilation errors in `PetalAiHubBridge.kt` (`b.loadUrl()`), `PetalAiHubScreen.kt` (ComponentActivity context casting), and `PetalTabGridSwitcher.kt` layout brace alignment.

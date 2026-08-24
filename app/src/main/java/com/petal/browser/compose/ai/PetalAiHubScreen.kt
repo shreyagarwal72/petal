@@ -250,12 +250,14 @@ fun PetalAiHubScreen(
                         ) {
                             Button(
                                 onClick = {
-                                    com.petal.browser.ui.components.PetalAiResearchBridge.showAiFeature(
-                                        context,
-                                        "https://github.com/shreyagarwal72/petal",
-                                        "Petal Browser",
-                                        "DEEP_RESEARCH"
-                                    )
+                                    (context as? androidx.activity.ComponentActivity)?.let { compAct ->
+                                        com.petal.browser.ui.components.PetalAiResearchBridge.showAiFeature(
+                                            compAct,
+                                            "https://github.com/shreyagarwal72/petal",
+                                            "Petal Browser",
+                                            "DEEP_RESEARCH"
+                                        )
+                                    }
                                 },
                                 shape = RoundedCornerShape(14.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
