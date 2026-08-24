@@ -40,7 +40,6 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.defaultWeight
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
@@ -115,10 +114,10 @@ class PetalSearchGlanceWidget : GlanceAppWidget() {
                 shapeBitmap(context, "mic_$paletteId$isDark", 96, MaterialShapes.Pill, scheme.secondaryContainer.toArgb())
             }
             val incognitoShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "incognito_$paletteId$isDark", 96, MaterialShapes.Clover, scheme.tertiaryContainer.toArgb())
+                shapeBitmap(context, "incognito_$paletteId$isDark", 96, MaterialShapes.Clover4Leaf, scheme.tertiaryContainer.toArgb())
             }
             val bookmarkShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "bookmark_$paletteId$isDark", 96, MaterialShapes.Scallop, scheme.secondaryContainer.toArgb())
+                shapeBitmap(context, "bookmark_$paletteId$isDark", 96, MaterialShapes.SoftBurst, scheme.secondaryContainer.toArgb())
             }
             val downloadShape = remember(uiMode, paletteId, isDark) {
                 shapeBitmap(context, "download_$paletteId$isDark", 96, MaterialShapes.Pentagon, scheme.primaryContainer.toArgb())
@@ -290,7 +289,7 @@ private fun WidgetSearchBar(
     Box(
         modifier = modifier
             .cornerRadius(26.dp)
-            .background(GlanceTheme.colors.surfaceContainerHighest)
+            .background(GlanceTheme.colors.surfaceVariant)
             .clickable(searchAction)
     ) {
         Row(
