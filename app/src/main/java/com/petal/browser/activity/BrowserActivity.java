@@ -27,6 +27,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import androidx.activity.OnBackPressedCallback;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -398,6 +399,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         EdgeToEdge.enable(this);
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                performBackNavigation();
+            }
+        });
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
 
@@ -727,7 +735,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             searchOnSiteInput.setText("");
             searchOnSiteLayout.setVisibility(GONE);
             appBar.setVisibility(VISIBLE);
-        } else if (ninjaWebView != null && (ninjaWebView.canGoBack() || (ninjaWebView.copyBackForwardList() != null && ninjaWebView.copyBackForwardList().getCurrentIndex() > 0))){
+        } else if (ninjaWebView != null && ninjaWebView.canGoBack() && (ninjaWebView.getUrl() == null || !isHomePage(ninjaWebView.getUrl()))) {
             sp.edit().putBoolean("backPressed", true).apply();
             ninjaWebView.goBack();
         } else {
@@ -738,11 +746,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else {
                 boolean requireDoubleBack = sp.getBoolean("sp_double_back_exit", true);
                 if (!requireDoubleBack) {
-                    finish();
+                    finishAndRemoveTask();
                 } else {
                     long currentTime = System.currentTimeMillis();
                     if (currentTime - lastBackPressTime < 2000) {
-                        finish();
+                        finishAndRemoveTask();
                     } else {
                         lastBackPressTime = currentTime;
                         NinjaToast.show(BrowserActivity.this, "Press back again to exit Petal");
