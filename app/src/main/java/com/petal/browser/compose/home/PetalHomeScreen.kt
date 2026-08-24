@@ -497,18 +497,13 @@ fun PetalHomeScreen(
 
                     Spacer(Modifier.height(20.dp))
 
-                    // ── Hero Search Bar ──────────────────────────────────────
-                    PetalSearchBar(onSearch = onSearch)
+                    // ── Greeting Tagline (replaces removed quick shortcuts row) ──
+                    PetalGreetingTagline(profile = profile)
 
                     Spacer(Modifier.height(18.dp))
 
-                    // ── Quick Actions: existing browser actions only ────────
-                    PetalQuickActionsRow(
-                        onOpenBookmarks = onOpenBookmarksAction,
-                        onOpenHistory = onOpenHistoryAction,
-                        onOpenDownloads = onOpenDownloadsAction,
-                        onNewTab = onNewTabAction
-                    )
+                    // ── Hero Search Bar (moved down into former quick-actions slot) ──
+                    PetalSearchBar(onSearch = onSearch)
 
                     Spacer(Modifier.height(26.dp))
 
@@ -836,89 +831,54 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
     }
 }
 
-// ── 6b. Quick Actions Row ───────────────────────────────────────────────────
-// Compact row of existing browser actions only (bookmarks, history, downloads,
-// new tab) — no new functionality is introduced here, these all map straight
-// to PetalHomeActionHandler methods that already exist and are wired in
-// BrowserActivity.
+// ── 6b. Greeting Tagline ─────────────────────────────────────────────────────
+// Replaces the old quick-shortcuts row (bookmarks/history/downloads/new tab).
+// Shows a rotating, personalized greeting where the search bar used to sit.
+// A random line is picked once per composition of the home screen, which in
+// practice means a fresh line each time the app process is (re)started —
+// normal recomposition/navigation within the same session does not reroll it.
 
-private data class QuickAction(
-    val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val onClick: () -> Unit
+private val petalGreetingTaglines = listOf(
+    "The web is your to uncover, %s.",
+    "Where will your curiosity take you today, %s?",
+    "Ready to discover something new %s?",
+    "%s, your window to the world is open.",
+    "Search deeper, explore wider, %s.",
+    "Turn ideas into reality today, %s.",
+    "%s, your next big project starts with a search.",
+    "Built for creation, styled for speed—let's go, %s.",
+    "Create, connect, and stay inspired, %s.",
+    "Welcome back, %s. Let's get to work.",
+    "Clear tabs, clear mind. Ready when you are, %s.",
+    "Fast, focused, and ready, %s.",
+    "Your digital space, tailored for you, %s.",
+    "Good morning, %s. A fresh start for big ideas.",
+    "Good afternoon, %s. Keep the momentum going.",
+    "Good evening, %s. Winding down or diving into something fun?"
 )
 
 @Composable
-private fun PetalQuickActionsRow(
-    onOpenBookmarks: () -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenDownloads: () -> Unit,
-    onNewTab: () -> Unit
-) {
-    val actions = listOf(
-        QuickAction("Bookmarks", Icons.Rounded.Bookmark, onOpenBookmarks),
-        QuickAction("History", Icons.Rounded.History, onOpenHistory),
-        QuickAction("Downloads", Icons.Rounded.Download, onOpenDownloads),
-        QuickAction("New tab", Icons.Rounded.Add, onNewTab)
-    )
+private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserProfile) {
+    val username = profile.displayName.ifBlank { "Petal Explorer" }
 
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        tonalElevation = 2.dp,
-        shadowElevation = 3.dp,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            actions.forEach { action ->
-                QuickActionButton(action)
-            }
-        }
+    // remember (not rememberSaveable) so a fresh line is drawn whenever the
+    // app process restarts, but it stays stable across recompositions and
+    // config changes within the same session.
+    val tagline = remember(username) {
+        petalGreetingTaglines.random().format(username)
     }
-}
 
-@Composable
-private fun QuickActionButton(action: QuickAction) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.90f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "quick_action_press_scale"
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Text(
+        text = tagline,
+        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
         modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = androidx.compose.foundation.LocalIndication.current,
-                onClick = action.onClick
-            )
-            .padding(horizontal = 10.dp, vertical = 8.dp)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-    ) {
-        Icon(
-            imageVector = action.icon,
-            contentDescription = action.label,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(22.dp)
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = action.label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+    )
 }
 
 // ── 7. Site Brand Icons ────────────────────────────────────────────────────
