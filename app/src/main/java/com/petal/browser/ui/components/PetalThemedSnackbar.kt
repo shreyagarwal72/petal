@@ -37,10 +37,7 @@ fun PetalThemedSnackbar(
         containerColor = containerColor,
         contentColor = contentColor,
         actionColor = actionColor,
-        dismissActionColor = dismissActionColor,
-        actionTextStyle = MaterialTheme.typography.labelLarge.copy(
-            fontWeight = FontWeight.Bold
-        )
+        dismissActionContentColor = dismissActionColor
     )
 }
 
