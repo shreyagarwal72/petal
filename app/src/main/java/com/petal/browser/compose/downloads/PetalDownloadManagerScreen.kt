@@ -433,10 +433,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                             IconButton(onClick = { PetalFetchDownloadBridge.refresh(context) }) {
                                 Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
                             }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                        )
+                        }
                     )
                 }
             }
