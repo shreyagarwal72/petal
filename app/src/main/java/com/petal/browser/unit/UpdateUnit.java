@@ -52,7 +52,17 @@ public class UpdateUnit {
      * @param isLaunchCheck True if called automatically on app startup; false if user tapped "Check for Updates".
      */
     public static void checkForUpdates(final Activity activity, final boolean isLaunchCheck) {
-        if (activity == null || activity.isFinishing()) return;
+        checkForUpdates(activity, isLaunchCheck, null);
+    }
+
+    /**
+     * Checks for updates from the official GitHub Release channel with completion callback.
+     */
+    public static void checkForUpdates(final Activity activity, final boolean isLaunchCheck, final Runnable onComplete) {
+        if (activity == null || activity.isFinishing()) {
+            if (onComplete != null) onComplete.run();
+            return;
+        }
 
         final Context context = activity.getApplicationContext();
         final SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
@@ -98,6 +108,7 @@ public class UpdateUnit {
                     }
 
                     activity.runOnUiThread(() -> {
+                        if (onComplete != null) onComplete.run();
                         if (activity.isFinishing()) return;
 
                         if (isNextUpdateAvailable && !isSkipped) {
@@ -125,7 +136,8 @@ public class UpdateUnit {
                         }
                     });
                 } else if (!isLaunchCheck) {
-                    activity.runOnUiThread(() ->
+                    activity.runOnUiThread(() -> {
+                        if (onComplete != null) onComplete.run();
                         com.petal.browser.ui.components.PetalUpdateSheetBridge.showUpdateSheet(
                             (androidx.activity.ComponentActivity) activity,
                             new com.petal.browser.ui.components.PetalUpdateInfo(
@@ -135,13 +147,16 @@ public class UpdateUnit {
                                 GITHUB_RELEASES_PAGE,
                                 false
                             )
-                        )
-                    );
+                        );
+                    });
+                } else {
+                    if (onComplete != null) activity.runOnUiThread(onComplete);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error checking for updates", e);
-                if (!isLaunchCheck) {
-                    activity.runOnUiThread(() ->
+                activity.runOnUiThread(() -> {
+                    if (onComplete != null) onComplete.run();
+                    if (!isLaunchCheck) {
                         com.petal.browser.ui.components.PetalUpdateSheetBridge.showUpdateSheet(
                             (androidx.activity.ComponentActivity) activity,
                             new com.petal.browser.ui.components.PetalUpdateInfo(
@@ -151,9 +166,9 @@ public class UpdateUnit {
                                 GITHUB_RELEASES_PAGE,
                                 false
                             )
-                        )
-                    );
-                }
+                        );
+                    }
+                });
             }
         });
     }
