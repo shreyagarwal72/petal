@@ -1,0 +1,9 @@
+### What's Changed in v1.7.2 🚀
+
+#### 🎨 Universal Expressive Header Support & Bookmark Padding Fix
+* **Tab Manager Expressive Header**: Upgraded `PetalTabGridSwitcher.kt` (Tab View) to use `ExpressiveHeader`, adding translucent liquid glass chrome, active tab counters, and seamless navigation.
+* **Bookmarks Header Padding Fix**: Resolved double status-bar inset padding on `PetalBookmarksScreen.kt`, aligning title spacing with History and Downloads pages.
+* **Auxiliary Page Header Parity**: Upgraded Chrome Flags (`PetalChromeFlagsScreen.kt`) and Extensions (`PetalExtensionsScreen.kt`) to support `ExpressiveHeader`.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.7.1...v1.7.2

@@ -153,7 +153,7 @@ fun PetalBookmarksScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Box(modifier = Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(
                 modifier = Modifier.fillMaxSize(),
                 pageSeed = "bookmarks_page"

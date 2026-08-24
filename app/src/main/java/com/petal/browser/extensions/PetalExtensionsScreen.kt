@@ -75,25 +75,10 @@ fun PetalExtensionsScreen(
     com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            "Chrome Extensions",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        Text(
-                            "petal://extensions • chrome://extensions",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Close")
-                    }
-                },
+            com.petal.browser.ui.components.ExpressiveHeader(
+                title = "Chrome Extensions",
+                subtitle = "petal://extensions • chrome://extensions",
+                onBack = onDismiss,
                 actions = {
                     FilledTonalButton(
                         onClick = { crxLauncher.launch("*/*") },

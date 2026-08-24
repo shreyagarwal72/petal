@@ -1,3 +1,8 @@
+### v1.7.2
+
+- new: Upgraded Tab Manager (`PetalTabGridSwitcher.kt`), Chrome Flags (`PetalChromeFlagsScreen.kt`), and Extensions (`PetalExtensionsScreen.kt`) to support Material 3 `ExpressiveHeader`.
+- fix: Fixed double status-bar top padding issue on Bookmarks screen (`PetalBookmarksScreen.kt`).
+
 ### v1.7.1
 
 - fix: Stored user custom profile picture permanently in `context.filesDir` to prevent deletion when clearing app cache or background tasks (`GoogleAccountManager.kt`).
