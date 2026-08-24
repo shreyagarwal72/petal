@@ -285,7 +285,7 @@ fun PetalTabGridSwitcher(
                     }
                 )
 
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)) {
                     // ── Regular / Incognito segmented pill switcher ─────────────
                     TabCategorySwitcher(
                         selected = selectedCategory,
@@ -338,7 +338,7 @@ fun PetalTabGridSwitcher(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 14.dp, vertical = 12.dp)
+                        .padding(top = 4.dp)
                 ) {
                     when {
                         categoryTabs.isEmpty() -> TabManagerEmptyState(
@@ -369,8 +369,9 @@ fun PetalTabGridSwitcher(
 
                         displayMode == TabDisplayMode.GRID -> LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->
@@ -384,19 +385,17 @@ fun PetalTabGridSwitcher(
                                     // the card's own explicit close button - both routes land on
                                     // the same optimistic-close + Undo-snackbar flow.
                                     val dismissState = rememberSwipeToDismissBoxState(
-                                        confirmValueChange = { value ->
-                                            if (value == SwipeToDismissBoxValue.StartToEnd ||
-                                                value == SwipeToDismissBoxValue.EndToStart
-                                            ) {
+                                        confirmValueChange = { dismissValue ->
+                                            if (dismissValue != SwipeToDismissBoxValue.Settled) {
                                                 requestOptimisticClose(tab)
                                                 true
-                                            } else {
-                                                false
-                                            }
+                                            } else false
                                         }
                                     )
                                     SwipeToDismissBox(
                                         state = dismissState,
+                                        enableDismissFromStartToEnd = true,
+                                        enableDismissFromEndToStart = true,
                                         backgroundContent = { SwipeToCloseBackground(dismissState) }
                                     ) {
                                         PetalTabCard(
@@ -412,6 +411,7 @@ fun PetalTabGridSwitcher(
 
                         else -> LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(10.dp),
+                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->

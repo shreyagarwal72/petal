@@ -165,7 +165,10 @@ fun ExpressiveHeader(
                         subtitle?.let {
                             Text(
                                 it,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 13.sp,
+                                    lineHeight = 17.sp
+                                ),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = maxSubtitleLines,
                                 overflow = TextOverflow.Ellipsis,
