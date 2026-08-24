@@ -397,7 +397,7 @@ fun PetalImageScanResultSheet(
                                 IconButton(onClick = {
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     clipboard.setPrimaryClip(ClipData.newPlainText("Barcode Result", barcode.rawValue))
-                                    Toast.makeText(context, "Barcode copied to clipboard", Toast.LENGTH_SHORT).show()
+                                    com.petal.browser.view.NinjaToast.show(context, "Barcode copied to clipboard")
                                 }) {
                                     Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy Barcode", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
@@ -435,7 +435,7 @@ fun PetalImageScanResultSheet(
                                     onClick = {
                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                         clipboard.setPrimaryClip(ClipData.newPlainText("Detected Text", detectedText))
-                                        Toast.makeText(context, "Text copied to clipboard", Toast.LENGTH_SHORT).show()
+                                        com.petal.browser.view.NinjaToast.show(context, "Text copied to clipboard")
                                     }
                                 ) {
                                     Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))

@@ -709,8 +709,11 @@ public class HelperUnit {
         Context context = snackbarView.getContext();
 
         TypedValue surfaceValue = new TypedValue();
-        context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHigh, surfaceValue, true);
-        int backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : Color.parseColor("#323232");
+        context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHighest, surfaceValue, true);
+        if (surfaceValue.data == 0) {
+            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHigh, surfaceValue, true);
+        }
+        int backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : Color.parseColor("#2B2D30");
 
         TypedValue onSurfaceValue = new TypedValue();
         context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, onSurfaceValue, true);
@@ -720,6 +723,7 @@ public class HelperUnit {
         if (textView != null) {
             textView.setMaxLines(30);
             textView.setTextColor(textColor);
+            textView.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         }
 
         TextView actionView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_action);
@@ -731,14 +735,17 @@ public class HelperUnit {
             }
             if (primaryValue.data != 0) {
                 actionView.setTextColor(primaryValue.data);
+                actionView.setTypeface(Typeface.DEFAULT_BOLD);
             }
         }
 
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.RECTANGLE);
-        background.setCornerRadius(60f);
+        float radiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 28, context.getResources().getDisplayMetrics());
+        background.setCornerRadius(radiusPx);
         background.setColor(backgroundColor);
         snackbarView.setBackground(background);
+        snackbarView.setElevation(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6, context.getResources().getDisplayMetrics()));
         snackbar.setTextMaxLines(100);
     }
 

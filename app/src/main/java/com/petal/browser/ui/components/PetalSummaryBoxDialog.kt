@@ -223,7 +223,7 @@ fun PetalSummaryBoxDialog(
                                 summaryResult?.let { text ->
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     clipboard.setPrimaryClip(ClipData.newPlainText("Page Summary", text))
-                                    Toast.makeText(context, "Summary copied to clipboard", Toast.LENGTH_SHORT).show()
+                                    com.petal.browser.view.NinjaToast.show(context, "Summary copied to clipboard")
                                 }
                             }
                         ) {

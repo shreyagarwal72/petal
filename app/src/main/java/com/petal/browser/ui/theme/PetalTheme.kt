@@ -97,39 +97,9 @@ fun PetalExpressiveTheme(
     },
     gsFlexSettings: GSFlexSettings = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        val presetName = sp.getString("sp_gs_flex_preset", "ZENITH") ?: "ZENITH"
-        val preset = try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.ZENITH }
-        if (preset == GSFlexPreset.CUSTOM) {
-            GSFlexSettings(
-                preset = GSFlexPreset.CUSTOM,
-                display = FontAxes(
-                    weight = sp.getFloat("sp_gsflex_d_weight", 950f),
-                    width = sp.getFloat("sp_gsflex_d_width", 90f),
-                    opsz = sp.getFloat("sp_gsflex_d_opsz", 30f),
-                    grade = sp.getFloat("sp_gsflex_d_grade", 0f),
-                    slant = sp.getFloat("sp_gsflex_d_slant", 0f),
-                    roundness = sp.getFloat("sp_gsflex_d_roundness", 100f)
-                ),
-                headline = FontAxes(
-                    weight = sp.getFloat("sp_gsflex_h_weight", 850f),
-                    width = sp.getFloat("sp_gsflex_h_width", 92f),
-                    opsz = sp.getFloat("sp_gsflex_h_opsz", 32f),
-                    grade = sp.getFloat("sp_gsflex_h_grade", 0f),
-                    slant = sp.getFloat("sp_gsflex_h_slant", 0f),
-                    roundness = sp.getFloat("sp_gsflex_h_roundness", 100f)
-                ),
-                body = FontAxes(
-                    weight = sp.getFloat("sp_gsflex_b_weight", 750f),
-                    width = sp.getFloat("sp_gsflex_b_width", 94f),
-                    opsz = sp.getFloat("sp_gsflex_b_opsz", 16f),
-                    grade = sp.getFloat("sp_gsflex_b_grade", 0f),
-                    slant = sp.getFloat("sp_gsflex_b_slant", 0f),
-                    roundness = sp.getFloat("sp_gsflex_b_roundness", 100f)
-                )
-            )
-        } else {
-            GSFlexSettings(preset = preset)
-        }
+        val presetName = sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL"
+        val preset = try { GSFlexPreset.valueOf(presetName) } catch (e: Exception) { GSFlexPreset.PETAL }
+        GSFlexSettings(preset = preset)
     },
     colorStyle: ColorStyle = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)

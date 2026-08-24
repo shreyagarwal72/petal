@@ -172,9 +172,9 @@ fun PetalAiHubScreen(
                                     val success = PetalAiHubManager.syncCloudData(context)
                                     if (success) {
                                         aiServices = PetalAiHubManager.getAiServices(context)
-                                        Toast.makeText(context, "AI Hub updated from Cloud!", Toast.LENGTH_SHORT).show()
+                                        com.petal.browser.view.NinjaToast.show(context, "AI Hub updated from Cloud!")
                                     } else {
-                                        Toast.makeText(context, "Cloud sync check complete", Toast.LENGTH_SHORT).show()
+                                        com.petal.browser.view.NinjaToast.show(context, "Cloud sync check complete")
                                     }
                                     isSyncing = false
                                 }
@@ -432,7 +432,7 @@ fun PetalAiHubScreen(
                         onClick = {
                             val newSettings = settings.copy(customJs = customJs, customCss = customCss)
                             PetalAiHubManager.saveSettings(context, newSettings)
-                            Toast.makeText(context, "Custom script saved", Toast.LENGTH_SHORT).show()
+                            com.petal.browser.view.NinjaToast.show(context, "Custom script saved")
                             showCustomScriptDialog = false
                         }
                     ) {

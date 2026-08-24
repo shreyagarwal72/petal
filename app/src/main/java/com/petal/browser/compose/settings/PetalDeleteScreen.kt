@@ -125,7 +125,7 @@ fun PetalDeleteScreen(
                     onClick = {
                         showConfirmDialog = false
                         BrowserUnit.clearBrowserData(context)
-                        Toast.makeText(context, context.getString(R.string.app_ok), Toast.LENGTH_SHORT).show()
+                        com.petal.browser.view.NinjaToast.show(context, R.string.app_ok)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {

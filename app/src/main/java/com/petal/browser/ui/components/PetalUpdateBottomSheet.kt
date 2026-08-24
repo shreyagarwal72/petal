@@ -498,7 +498,7 @@ private fun installApk(context: android.content.Context, apkFile: File) {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(intent)
-                Toast.makeText(context, "Please grant permission to install updates", Toast.LENGTH_LONG).show()
+                com.petal.browser.view.NinjaToast.show(context, "Please grant permission to install updates")
                 return
             }
         }

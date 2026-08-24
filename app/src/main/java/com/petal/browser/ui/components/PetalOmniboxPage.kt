@@ -476,7 +476,7 @@ fun PetalOmniboxPage(
                                                 } catch (e: Exception) {
                                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                                     clipboard.setPrimaryClip(ClipData.newPlainText("URL", cleanPageUrl))
-                                                    Toast.makeText(context, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+                                                    com.petal.browser.view.NinjaToast.show(context, "Link copied to clipboard")
                                                 }
                                             },
                                             modifier = Modifier.size(36.dp)
@@ -494,7 +494,7 @@ fun PetalOmniboxPage(
                                             onClick = {
                                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                                 clipboard.setPrimaryClip(ClipData.newPlainText("URL", cleanPageUrl))
-                                                Toast.makeText(context, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+                                                com.petal.browser.view.NinjaToast.show(context, "Link copied to clipboard")
                                             },
                                             modifier = Modifier.size(36.dp)
                                         ) {
