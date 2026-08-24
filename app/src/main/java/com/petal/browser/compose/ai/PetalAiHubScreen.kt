@@ -150,6 +150,15 @@ fun PetalAiHubScreen(
                     onBack = onBack,
                     actions = {
                         com.petal.browser.ui.components.HeaderActionIcon(
+                            icon = Icons.Rounded.VpnKey,
+                            contentDescription = "API Keys Settings",
+                            onClick = {
+                                val intent = android.content.Intent(context, com.petal.browser.compose.settings.PetalSettingsActivity::class.java)
+                                intent.putExtra("category", "API_INTEGRATIONS")
+                                context.startActivity(intent)
+                            }
+                        )
+                        com.petal.browser.ui.components.HeaderActionIcon(
                             icon = Icons.Rounded.CloudSync,
                             contentDescription = "Sync Cloud",
                             onClick = {
@@ -180,41 +189,97 @@ fun PetalAiHubScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                // Header Banner Card with Petal Flower Logo
+                // ── Petal Native AI Suite Hero Card ──────────────────────────────────────
                 Surface(
                     shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Surface(
-                            shape = PetalFlowerShape,
-                            color = MaterialTheme.colorScheme.surface,
-                            modifier = Modifier.size(56.dp)
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                PetalLoadingLottie(modifier = Modifier.size(42.dp))
+                            Surface(
+                                shape = PetalFlowerShape,
+                                color = MaterialTheme.colorScheme.surface,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        "Petal Native AI Engine",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    val activeProvider = PetalAiResearchEngine.getSelectedProvider(context)
+                                    val hasKey = PetalAiResearchEngine.getApiKey(context, activeProvider).isNotBlank()
+                                    Surface(
+                                        shape = RoundedCornerShape(50),
+                                        color = if (hasKey) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
+                                        contentColor = Color.White
+                                    ) {
+                                        Text(
+                                            text = if (hasKey) "Ready (${activeProvider.displayName})" else "No Key (${activeProvider.displayName})",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                val activeModel = PetalAiResearchEngine.getSelectedModel(context, PetalAiResearchEngine.getSelectedProvider(context))
+                                Text(
+                                    "Model: $activeModel • Deep Web Research & AI Assistant",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                )
                             }
                         }
 
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "Explore & Master AI Tools",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Spacer(Modifier.height(2.dp))
-                            Text(
-                                "Search, launch, filter, and customize script injections for top-level AI web tools.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                            )
+                        Spacer(Modifier.height(12.dp))
+
+                        // Quick Action Buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    com.petal.browser.ui.components.PetalAiResearchBridge.showAiFeature(
+                                        context,
+                                        "https://github.com/shreyagarwal72/petal",
+                                        "Petal Browser",
+                                        "DEEP_RESEARCH"
+                                    )
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Rounded.Psychology, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Deep Research", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    val intent = android.content.Intent(context, com.petal.browser.compose.settings.PetalSettingsActivity::class.java)
+                                    intent.putExtra("category", "API_INTEGRATIONS")
+                                    context.startActivity(intent)
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Rounded.VpnKey, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Configure Keys", style = MaterialTheme.typography.labelMedium)
+                            }
                         }
                     }
                 }
