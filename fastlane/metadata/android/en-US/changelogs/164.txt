@@ -1,0 +1,16 @@
+### What's Changed in v1.6.4 🚀
+
+#### 🎨 Material 3 ExpressiveHeader Layout & App-wide Alignment
+* **Cleaned Header Alignment in Downloads**: Resolved layout padding and status bar overlap in Downloads (`PetalDownloadManagerScreen.kt`) to match the exact full-bleed `ExpressiveHeader` structure from History and Bookmarks.
+* **M3 Expressive UI for Edit & Rename Dialogs**: Upgraded `dialog_edit.xml` and Compose rename dialogs with 20dp box corner radius, clear text actions, and M3 tonal buttons.
+
+#### 🔀 Chrome-Style Tab Switcher & Disk Persistence
+* **Chrome Mobile Tab Card Proportions**: Updated tab cards in `PetalTabGridSwitcher.kt` to a 0.68 vertical aspect ratio, 18dp rounded corners, circular close (X) button, and 2.5dp active accent border outline.
+* **Disk-Persistent Tab Thumbnails**: WebView screenshots now save to disk (`petal_tab_thumbnails/{tabId}.png`) when tabs lose focus or new tabs open, persisting preview thumbnails across app restarts.
+
+#### ⚡ System Gesture Exclusion & Update Greetings
+* **System Edge Back Gesture Fix**: Overrode WebView default system gesture exclusion rects on API 29+ with 24dp display edge margins, restoring predictive back edge swipes on all websites.
+* **Version Update Greeting**: Added a one-time welcome greeting tagline ("Welcome to Petal v1.6.4! 🎉") displayed on the home screen after updating to a new version.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.6.3...v1.6.4

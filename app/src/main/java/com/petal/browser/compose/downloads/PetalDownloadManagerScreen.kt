@@ -345,14 +345,9 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Header inside Surface covering status bar seamlessly!
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth().statusBarsPadding()
-            ) {
-                if (isSelectionMode) {
-                    ExpressiveHeader(
-                        title = "${selectedIds.size} Selected",
+            if (isSelectionMode) {
+                ExpressiveHeader(
+                    title = "${selectedIds.size} Selected",
                         subtitle = "Selection Mode Active",
                         onBack = { selectedIds = emptySet() },
                         actions = {
@@ -436,7 +431,6 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                         }
                     )
                 }
-            }
 
             Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             if (isLoading) {
