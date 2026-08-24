@@ -1,0 +1,16 @@
+### What's Changed 🚀
+
+#### 🎨 Material 3 Expressive Search Widget & UX Redesign
+* **M3 Expressive Widget Aesthetics**: Upgraded home screen search widget with dynamic Material 3 Expressive shapes (`MaterialShapes.Sunny`, `MaterialShapes.Cookie6Sided`), enhanced color container tokens (`surfaceContainerHigh`), 42dp touch targets, and refined semi-bold typography.
+* **App-Restart Custom Greeting Taglines**: Replaced quick action shortcut tiles with an expressive top-line greeting tagline that rotates on every app restart. Personalizes greetings using the user's name or default `"Petal Explorer"`.
+* **Full Height Search Position**: Shifted search bar with AI sparkle and voice mic chips to the bottom row position for improved ergonomic reachability and cleaner visual hierarchy.
+
+#### 🤖 Petal AI Integration & Direct Launch Fix
+* **Fixed Petal AI Widget Action**: Resolved an issue where tapping the AI sparkle chip on the widget redirected to standard omnibox search. It now directly launches the interactive **Petal AI Search** bottom sheet (`PetalAiSearchBridge.showAiSearchResult`).
+
+#### 🛠️ Core Improvements & Fixes
+* **Clean Code Structure**: Refactored Glance widget layout models and deleted unused tile components.
+* **Stability & Reliability**: Ensures smooth network callback dispatch and prevents UI freezes during AI sheet initialization.
+
+---
+**Full Changelog**: https://github.com/shreyas190906/petal/compare/v1.5.4...v1.6.0
