@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.view.View
 import android.widget.Toast
-import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
