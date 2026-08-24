@@ -1,3 +1,7 @@
+### v1.6.6
+
+- fix: Restored synchronous initialization of user profile avatar, name, and preferences on app restart (`BrowserActivity.java` & `AccountViewModel.kt`).
+
 ### v1.6.5
 
 - new: Integrated `ExpressiveHeader` across Settings overview and subpages with dynamic category titles and subtitles.

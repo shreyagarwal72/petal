@@ -136,6 +136,10 @@ fun PetalUserProfileScreen(
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
 
+    LaunchedEffect(Unit) {
+        GoogleAccountManager.init(context)
+    }
+
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_expressive_feature_tiles") {

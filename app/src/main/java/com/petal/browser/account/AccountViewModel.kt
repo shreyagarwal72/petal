@@ -17,8 +17,6 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
         get() = GoogleAccountManager.currentProfile
 
     init {
-        viewModelScope.launch {
-            GoogleAccountManager.init(getApplication())
-        }
+        GoogleAccountManager.init(getApplication())
     }
 }
