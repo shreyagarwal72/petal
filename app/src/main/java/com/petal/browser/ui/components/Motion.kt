@@ -2,14 +2,11 @@ package com.petal.browser.ui.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,20 +18,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalMotionPhysics
 
 /**
  * Fast, lightweight staggered entrance animation: fade-in + subtle Y translation.
+ * Uses Material 3 Expressive motion physics.
  */
 @Composable
 fun Modifier.entrance(index: Int = 0): Modifier {
     val animProgress = remember { Animatable(0f) }
+    val spatialSpec = PetalMotionPhysics.fastSpatial
     LaunchedEffect(Unit) {
         animProgress.animateTo(
             targetValue = 1f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
+            animationSpec = spatialSpec
         )
     }
     return graphicsLayer {
@@ -45,6 +42,7 @@ fun Modifier.entrance(index: Int = 0): Modifier {
 
 /**
  * Expressive tap feedback: squashes on press and springs back on release.
+ * Uses Material 3 Expressive fast spatial spring physics.
  */
 @Composable
 fun Modifier.bouncyClickable(
@@ -53,7 +51,6 @@ fun Modifier.bouncyClickable(
     onClick: () -> Unit,
 ): Modifier {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     
@@ -66,10 +63,7 @@ fun Modifier.bouncyClickable(
 
     val scale by animateFloatAsState(
         targetValue = if (pressed) scaleDown else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium,
-        ),
+        animationSpec = PetalMotionPhysics.fastSpatial,
         label = "bouncyPress",
     )
     return graphicsLayer {
@@ -106,17 +100,15 @@ fun Modifier.pulse(from: Float = 1f, to: Float = 1.08f, durationMs: Int = 1800):
     }
 }
 
-/** Lightweight slide-in entrance from the side. */
+/** Lightweight slide-in entrance from the side using Material 3 Expressive motion physics. */
 @Composable
 fun Modifier.slideInSpring(fromRight: Boolean = false, index: Int = 0): Modifier {
     val animProgress = remember { Animatable(0f) }
+    val spatialSpec = PetalMotionPhysics.fastSpatial
     LaunchedEffect(Unit) {
         animProgress.animateTo(
             targetValue = 1f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
+            animationSpec = spatialSpec
         )
     }
     val startX = if (fromRight) 30.dp else (-30).dp
@@ -126,17 +118,15 @@ fun Modifier.slideInSpring(fromRight: Boolean = false, index: Int = 0): Modifier
     }
 }
 
-/** Fast pop-in for icons and badges. */
+/** Fast pop-in for icons and badges using Material 3 Expressive motion physics. */
 @Composable
 fun Modifier.popIn(index: Int = 0): Modifier {
     val animProgress = remember { Animatable(0f) }
+    val spatialSpec = PetalMotionPhysics.fastSpatial
     LaunchedEffect(Unit) {
         animProgress.animateTo(
             targetValue = 1f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
+            animationSpec = spatialSpec
         )
     }
     return graphicsLayer {
@@ -146,17 +136,15 @@ fun Modifier.popIn(index: Int = 0): Modifier {
     }
 }
 
-/** Springy reveal container. */
+/** Springy reveal container using Material 3 Expressive motion physics. */
 @Composable
 fun Modifier.springReveal(index: Int = 0): Modifier {
     val animProgress = remember { Animatable(0f) }
+    val spatialSpec = PetalMotionPhysics.slowSpatial
     LaunchedEffect(Unit) {
         animProgress.animateTo(
             targetValue = 1f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
+            animationSpec = spatialSpec
         )
     }
     return graphicsLayer {
