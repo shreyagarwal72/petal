@@ -617,7 +617,7 @@ fun TabCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp)
+            .height(105.dp)
             .border(borderWidth, borderColor, RoundedCornerShape(20.dp))
             .clickable { onSelect() }
             .entrance(index = 0)
@@ -625,7 +625,7 @@ fun TabCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
