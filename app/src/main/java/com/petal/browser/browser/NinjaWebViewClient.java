@@ -156,6 +156,7 @@ public class NinjaWebViewClient extends WebViewClient {
         // preview for this tab the next time it's opened, without the switcher having to
         // capture on the spot.
         ninjaWebView.updatePreviewCache();
+        ninjaWebView.resetGestureExclusionRects();
     }
 
     @Override

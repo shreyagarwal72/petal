@@ -515,29 +515,56 @@ private fun DownloadRowItem(
     if (showRenameDialog) {
         AlertDialog(
             onDismissRequest = { showRenameDialog = false },
-            title = { Text("Rename File") },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            title = {
+                Text(
+                    text = "Rename File",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
             text = {
                 OutlinedTextField(
                     value = renameInput,
                     onValueChange = { renameInput = it },
                     label = { Text("File Name") },
                     singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    showRenameDialog = false
-                    if (renameInput.isNotBlank() && renameInput != item.fileName) {
-                        renameDownloadedFile(context, item, renameInput.trim())
-                    }
-                }) {
-                    Text("Rename")
+                Button(
+                    onClick = {
+                        showRenameDialog = false
+                        if (renameInput.isNotBlank() && renameInput != item.fileName) {
+                            renameDownloadedFile(context, item, renameInput.trim())
+                        }
+                    },
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text(
+                        text = "Rename",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showRenameDialog = false }) {
-                    Text("Cancel")
+                TextButton(
+                    onClick = { showRenameDialog = false },
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text(
+                        text = "Cancel",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                    )
                 }
             }
         )

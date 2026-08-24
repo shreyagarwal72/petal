@@ -190,6 +190,40 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         setWebViewClient(webViewClient);
         setWebChromeClient(webChromeClient);
         setDownloadListener(downloadListener);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> resetGestureExclusionRects());
+            post(this::resetGestureExclusionRects);
+        }
+    }
+
+    /**
+     * Resets system gesture exclusion rects on API 29+ (Android 10+) so Android's system
+     * predictive back edge swipes (left/right display edges) reach OnBackPressedCallback
+     * and trigger back navigation instead of being swallowed by WebView's default auto-exclusion.
+     */
+    public void resetGestureExclusionRects() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                int width = getWidth();
+                int height = getHeight();
+                if (width <= 0 || height <= 0) {
+                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
+                    return;
+                }
+                int marginPx = (int) (24 * getResources().getDisplayMetrics().density);
+                if (width > marginPx * 2) {
+                    Rect centerExclusion = new Rect(marginPx, 0, width - marginPx, height);
+                    setSystemGestureExclusionRects(java.util.Collections.singletonList(centerExclusion));
+                } else {
+                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
+                }
+            } catch (Exception e) {
+                try {
+                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
+                } catch (Exception ignored) {}
+            }
+        }
     }
 
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
@@ -519,6 +553,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         }
 
         initPreferences(targetUrl);
+        resetGestureExclusionRects();
         super.loadUrl(targetUrl, getRequestHeaders());
     }
 
@@ -543,6 +578,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         clearFocus();
         foreground = false;
         album.deactivate();
+        updatePreviewCache();
     }
 
     public synchronized void updateTitle(int progress) {
