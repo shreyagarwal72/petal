@@ -248,7 +248,7 @@ private fun WidgetSearchBar(
     Box(
         modifier = modifier
             .cornerRadius(26.dp)
-            .background(GlanceTheme.colors.surfaceContainerHigh)
+            .background(GlanceTheme.colors.surfaceVariant)
             .clickable(searchAction)
     ) {
         Row(
