@@ -40,6 +40,8 @@ import coil.compose.AsyncImage
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.unit.RecordUnit
+import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -161,51 +163,25 @@ fun PetalBookmarksScreen(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                // Top Navigation Bar
-                Surface(
-                    color = Color.Transparent,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = onDismiss) {
-                            Icon(
-                                Icons.Rounded.ArrowBack,
-                                contentDescription = "Back",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        Text(
-                            text = "Bookmarks",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
+                ExpressiveHeader(
+                    title = "Bookmarks",
+                    subtitle = "${filteredBookmarks.size} saved items",
+                    onBack = onDismiss,
+                    actions = {
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.Add,
+                            contentDescription = "Add Bookmark",
+                            onClick = { showAddDialog = true }
                         )
-
-                        IconButton(onClick = { showAddDialog = true }) {
-                            Icon(
-                                Icons.Rounded.Add,
-                                contentDescription = "Add Bookmark",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
                         if (!rawBookmarks.isNullOrEmpty()) {
-                            IconButton(onClick = { showClearConfirm = true }) {
-                                Icon(
-                                    Icons.Rounded.DeleteSweep,
-                                    contentDescription = "Clear All Bookmarks",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.DeleteSweep,
+                                contentDescription = "Clear All Bookmarks",
+                                onClick = { showClearConfirm = true }
+                            )
                         }
                     }
-                }
+                )
 
                 // Search Filter Bar
                 OutlinedTextField(
