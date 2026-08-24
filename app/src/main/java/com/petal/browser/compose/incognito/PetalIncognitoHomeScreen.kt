@@ -65,65 +65,102 @@ fun PetalIncognitoHomeScreen(
             onBack = onCloseIncognito,
         ) {
         com.petal.browser.predictive.PetalScreenWrapper {
+        val incognitoSubtitles = remember {
+            listOf(
+                "Off the grid. No traces, no history.",
+                "Stealth mode engaged. Browse like a shadow.",
+                "Your secret is safe with this tab.",
+                "Agent mode activated: look around, leave no footprints.",
+                "Going dark. What happens here, stays here.",
+                "Browse in absolute private.",
+                "A clean slate with zero history saved.",
+                "Zero cookies, zero tracks, 100% private.",
+                "Explore freely—your sessions vanish when you close the tab.",
+                "No history, no suggestions, just pure browsing.",
+                "Searching for a gift? We won't spoil the surprise.",
+                "You were never here, and neither were we.",
+                "Don't worry, we won't tell your autofill.",
+                "Your private detour begins now.",
+                "Go ahead, ask the weird questions."
+            )
+        }
+        val randomSubtitle = remember { incognitoSubtitles.random() }
+
         Box(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(Modifier.height(16.dp))
-
-                // Spy Hat & Glasses Circular Badge
-                Surface(
-                    shape = CircleShape,
-                    color = IncognitoSurfaceContainer,
-                    tonalElevation = 4.dp,
-                    modifier = Modifier
-                        .size(88.dp)
-                        .entrance(index = 0)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.VisibilityOff,
-                            contentDescription = "Incognito Mode",
-                            tint = IncognitoPrimary,
-                            modifier = Modifier.size(44.dp)
-                        )
+            Column(modifier = Modifier.fillMaxSize()) {
+                com.petal.browser.ui.components.ExpressiveHeader(
+                    title = "Incognito Mode",
+                    subtitle = randomSubtitle,
+                    maxTitleLines = 1,
+                    maxSubtitleLines = 1,
+                    onBack = onCloseIncognito,
+                    actions = {
+                        IconButton(onClick = onCloseIncognito) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Close Incognito",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                }
-
-                Spacer(Modifier.height(24.dp))
-
-                // Hero Headline
-                Text(
-                    text = "You've gone Incognito",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.2.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.entrance(index = 1)
                 )
 
-                Spacer(Modifier.height(12.dp))
-
-                Text(
-                    text = "Now you can browse privately. Other people who use this device won't see your activity. Downloads, bookmarks and reading list items will be saved.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 20.sp,
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth(0.92f)
-                        .entrance(index = 2)
-                )
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Spy Hat & Glasses Circular Badge
+                    Surface(
+                        shape = CircleShape,
+                        color = IncognitoSurfaceContainer,
+                        tonalElevation = 4.dp,
+                        modifier = Modifier
+                            .size(88.dp)
+                            .entrance(index = 0)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.VisibilityOff,
+                                contentDescription = "Incognito Mode",
+                                tint = IncognitoPrimary,
+                                modifier = Modifier.size(44.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // Hero Headline
+                    Text(
+                        text = "You've gone Incognito",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.2.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.entrance(index = 1)
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    Text(
+                        text = "Now you can browse privately. Other people who use this device won't see your activity. Downloads, bookmarks and reading list items will be saved.",
+                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 16.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth(0.92f)
+                            .entrance(index = 2)
+                    )
 
                 Spacer(Modifier.height(32.dp))
 
