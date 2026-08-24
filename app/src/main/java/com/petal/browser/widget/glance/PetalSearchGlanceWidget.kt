@@ -108,22 +108,10 @@ class PetalSearchGlanceWidget : GlanceAppWidget() {
             val uiMode = context.resources.configuration.uiMode
 
             val sparkShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "spark_$paletteId$isDark", 96, MaterialShapes.Sunny, scheme.primaryContainer.toArgb())
+                shapeBitmap(context, "spark_$paletteId$isDark", 112, MaterialShapes.Sunny, scheme.primaryContainer.toArgb())
             }
             val micShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "mic_$paletteId$isDark", 96, MaterialShapes.Pill, scheme.secondaryContainer.toArgb())
-            }
-            val incognitoShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "incognito_$paletteId$isDark", 96, MaterialShapes.Clover4Leaf, scheme.tertiaryContainer.toArgb())
-            }
-            val bookmarkShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "bookmark_$paletteId$isDark", 96, MaterialShapes.SoftBurst, scheme.secondaryContainer.toArgb())
-            }
-            val downloadShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "download_$paletteId$isDark", 96, MaterialShapes.Pentagon, scheme.primaryContainer.toArgb())
-            }
-            val newTabShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "newtab_$paletteId$isDark", 96, MaterialShapes.Circle, scheme.surfaceContainerHigh.toArgb())
+                shapeBitmap(context, "mic_$paletteId$isDark", 112, MaterialShapes.Cookie6Sided, scheme.secondaryContainer.toArgb())
             }
 
             GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
@@ -132,11 +120,7 @@ class PetalSearchGlanceWidget : GlanceAppWidget() {
                 PetalSearchWidgetContent(
                     isTall = isTall,
                     sparkShape = sparkShape,
-                    micShape = micShape,
-                    incognitoShape = incognitoShape,
-                    bookmarkShape = bookmarkShape,
-                    downloadShape = downloadShape,
-                    newTabShape = newTabShape
+                    micShape = micShape
                 )
             }
         }
@@ -184,34 +168,50 @@ class PetalSearchGlanceWidgetReceiver : GlanceAppWidgetReceiver() {
 private fun PetalSearchWidgetContent(
     isTall: Boolean,
     sparkShape: Bitmap,
-    micShape: Bitmap,
-    incognitoShape: Bitmap,
-    bookmarkShape: Bitmap,
-    downloadShape: Bitmap,
-    newTabShape: Bitmap
+    micShape: Bitmap
 ) {
     val context = LocalContext.current
     val searchAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     val aiAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
     val voiceAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_VOICE))
-    val incognitoAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO))
-    val bookmarkAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_BOOKMARKS))
-    val downloadAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_DOWNLOADS))
-    val newTabAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB))
+
+    val greetingText = remember { PetalGreetingManager.getRandomGreeting(context) }
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
             .background(GlanceTheme.colors.widgetBackground)
-            .padding(8.dp)
+            .padding(12.dp)
     ) {
         if (isTall) {
             Column(
                 modifier = GlanceModifier.fillMaxSize(),
                 verticalAlignment = Alignment.Vertical.CenterVertically
             ) {
-                // Top Search Bar
+                // Greeting tagline occupying the top row
+                Box(
+                    modifier = GlanceModifier
+                        .fillMaxWidth()
+                        .defaultWeight()
+                        .clickable(searchAction)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = greetingText,
+                        maxLines = 2,
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = GlanceTheme.colors.onSurface
+                        )
+                    )
+                }
+
+                Spacer(modifier = GlanceModifier.height(6.dp))
+
+                // Search Bar taking the bottom position
                 WidgetSearchBar(
                     modifier = GlanceModifier.fillMaxWidth().height(52.dp),
                     searchAction = searchAction,
@@ -220,47 +220,6 @@ private fun PetalSearchWidgetContent(
                     sparkShape = sparkShape,
                     micShape = micShape
                 )
-
-                Spacer(modifier = GlanceModifier.height(6.dp))
-
-                // M3 Expressive Quick Action Row
-                Row(
-                    modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
-                    verticalAlignment = Alignment.Vertical.CenterVertically
-                ) {
-                    QuickActionTile(
-                        modifier = GlanceModifier.defaultWeight(),
-                        shapeBitmap = incognitoShape,
-                        iconRes = R.drawable.icon_incognito,
-                        iconTint = GlanceTheme.colors.onTertiaryContainer,
-                        label = "Incognito",
-                        action = incognitoAction
-                    )
-                    QuickActionTile(
-                        modifier = GlanceModifier.defaultWeight(),
-                        shapeBitmap = bookmarkShape,
-                        iconRes = R.drawable.icon_bookmark,
-                        iconTint = GlanceTheme.colors.onSecondaryContainer,
-                        label = "Bookmarks",
-                        action = bookmarkAction
-                    )
-                    QuickActionTile(
-                        modifier = GlanceModifier.defaultWeight(),
-                        shapeBitmap = downloadShape,
-                        iconRes = R.drawable.icon_download,
-                        iconTint = GlanceTheme.colors.onPrimaryContainer,
-                        label = "Downloads",
-                        action = downloadAction
-                    )
-                    QuickActionTile(
-                        modifier = GlanceModifier.defaultWeight(),
-                        shapeBitmap = newTabShape,
-                        iconRes = R.drawable.icon_tab_plus,
-                        iconTint = GlanceTheme.colors.onSurfaceVariant,
-                        label = "New Tab",
-                        action = newTabAction
-                    )
-                }
             }
         } else {
             // Compact 1-row layout
@@ -289,7 +248,7 @@ private fun WidgetSearchBar(
     Box(
         modifier = modifier
             .cornerRadius(26.dp)
-            .background(GlanceTheme.colors.surfaceVariant)
+            .background(GlanceTheme.colors.surfaceContainerHigh)
             .clickable(searchAction)
     ) {
         Row(
@@ -324,9 +283,9 @@ private fun WidgetSearchBar(
 
             Spacer(modifier = GlanceModifier.width(4.dp))
 
-            // AI sparkle chip
+            // AI sparkle chip (Material3 Expressive Sunny Shape)
             Box(
-                modifier = GlanceModifier.size(40.dp).clickable(aiAction),
+                modifier = GlanceModifier.size(42.dp).clickable(aiAction),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -342,11 +301,11 @@ private fun WidgetSearchBar(
                 )
             }
 
-            Spacer(modifier = GlanceModifier.width(2.dp))
+            Spacer(modifier = GlanceModifier.width(4.dp))
 
-            // Voice mic chip
+            // Voice mic chip (Material3 Expressive Cookie6Sided Shape)
             Box(
-                modifier = GlanceModifier.size(40.dp).clickable(voiceAction),
+                modifier = GlanceModifier.size(42.dp).clickable(voiceAction),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -362,49 +321,6 @@ private fun WidgetSearchBar(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun QuickActionTile(
-    modifier: GlanceModifier,
-    shapeBitmap: Bitmap,
-    iconRes: Int,
-    iconTint: ColorProvider,
-    label: String,
-    action: androidx.glance.action.Action
-) {
-    Column(
-        modifier = modifier.clickable(action),
-        horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
-        verticalAlignment = Alignment.Vertical.CenterVertically
-    ) {
-        Box(
-            modifier = GlanceModifier.size(38.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                provider = ImageProvider(shapeBitmap),
-                contentDescription = label,
-                modifier = GlanceModifier.fillMaxSize()
-            )
-            Image(
-                provider = ImageProvider(iconRes),
-                contentDescription = null,
-                modifier = GlanceModifier.size(18.dp),
-                colorFilter = ColorFilter.tint(iconTint)
-            )
-        }
-        Spacer(modifier = GlanceModifier.height(3.dp))
-        Text(
-            text = label,
-            maxLines = 1,
-            style = TextStyle(
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color = GlanceTheme.colors.onSurfaceVariant
-            )
-        )
     }
 }
 

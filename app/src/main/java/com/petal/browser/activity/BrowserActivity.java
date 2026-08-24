@@ -4212,13 +4212,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             sp.edit().putBoolean("show_overview", false).apply();
             getIntent().setAction("");
             addAlbum(null, url, true);
-        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)
-                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)) {
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)) {
             try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             pendingWidgetAction = () -> {
                 showOmniboxPage("");
+            };
+            runOrDeferPendingWidgetAction();
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)) {
+            try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            pendingWidgetAction = () -> {
+                com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(BrowserActivity.this, "");
             };
             runOrDeferPendingWidgetAction();
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)) {
