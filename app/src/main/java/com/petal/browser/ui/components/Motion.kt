@@ -27,7 +27,7 @@ import com.petal.browser.ui.theme.PetalMotionPhysics
 @Composable
 fun Modifier.entrance(index: Int = 0): Modifier {
     val animProgress = remember { Animatable(0f) }
-    val spatialSpec = PetalMotionPhysics.fastSpatial
+    val spatialSpec = PetalMotionPhysics.fastSpatial<Float>()
     LaunchedEffect(Unit) {
         animProgress.animateTo(
             targetValue = 1f,
@@ -63,7 +63,7 @@ fun Modifier.bouncyClickable(
 
     val scale by animateFloatAsState(
         targetValue = if (pressed) scaleDown else 1f,
-        animationSpec = PetalMotionPhysics.fastSpatial,
+        animationSpec = PetalMotionPhysics.fastSpatial(),
         label = "bouncyPress",
     )
     return graphicsLayer {
@@ -104,7 +104,7 @@ fun Modifier.expressiveButtonPress(
 
     val scale by animateFloatAsState(
         targetValue = if (pressed && enabled) scaleDown else 1f,
-        animationSpec = PetalMotionPhysics.fastSpatial,
+        animationSpec = PetalMotionPhysics.fastSpatial(),
         label = "m3ButtonPressScale",
     )
 
@@ -137,7 +137,7 @@ fun Modifier.pulse(from: Float = 1f, to: Float = 1.08f, durationMs: Int = 1800):
 @Composable
 fun Modifier.slideInSpring(fromRight: Boolean = false, index: Int = 0): Modifier {
     val animProgress = remember { Animatable(0f) }
-    val spatialSpec = PetalMotionPhysics.fastSpatial
+    val spatialSpec = PetalMotionPhysics.fastSpatial<Float>()
     LaunchedEffect(Unit) {
         animProgress.animateTo(
             targetValue = 1f,
@@ -155,7 +155,7 @@ fun Modifier.slideInSpring(fromRight: Boolean = false, index: Int = 0): Modifier
 @Composable
 fun Modifier.popIn(index: Int = 0): Modifier {
     val animProgress = remember { Animatable(0f) }
-    val spatialSpec = PetalMotionPhysics.fastSpatial
+    val spatialSpec = PetalMotionPhysics.fastSpatial<Float>()
     LaunchedEffect(Unit) {
         animProgress.animateTo(
             targetValue = 1f,
@@ -173,7 +173,7 @@ fun Modifier.popIn(index: Int = 0): Modifier {
 @Composable
 fun Modifier.springReveal(index: Int = 0): Modifier {
     val animProgress = remember { Animatable(0f) }
-    val spatialSpec = PetalMotionPhysics.slowSpatial
+    val spatialSpec = PetalMotionPhysics.slowSpatial<Float>()
     LaunchedEffect(Unit) {
         animProgress.animateTo(
             targetValue = 1f,

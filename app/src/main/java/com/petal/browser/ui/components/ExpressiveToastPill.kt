@@ -33,11 +33,11 @@ fun ExpressiveToastPill(
         visible = isVisible,
         enter = slideInVertically(
             initialOffsetY = { height -> height },
-            animationSpec = com.petal.browser.ui.theme.PetalMotionPhysics.fastSpatial
+            animationSpec = com.petal.browser.ui.theme.PetalMotionPhysics.fastSpatial()
         ),
         exit = slideOutVertically(
             targetOffsetY = { height -> height },
-            animationSpec = com.petal.browser.ui.theme.PetalMotionPhysics.slowSpatial
+            animationSpec = com.petal.browser.ui.theme.PetalMotionPhysics.slowSpatial()
         ),
         modifier = modifier
     ) {
