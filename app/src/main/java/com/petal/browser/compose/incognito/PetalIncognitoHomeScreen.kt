@@ -96,17 +96,9 @@ fun PetalIncognitoHomeScreen(
                     title = "Incognito Mode",
                     subtitle = randomSubtitle,
                     maxTitleLines = 1,
-                    maxSubtitleLines = 1,
-                    onBack = onCloseIncognito,
-                    actions = {
-                        IconButton(onClick = onCloseIncognito) {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = "Close Incognito",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    maxSubtitleLines = 3,
+                    onBack = null,
+                    actions = {}
                 )
 
                 Column(
