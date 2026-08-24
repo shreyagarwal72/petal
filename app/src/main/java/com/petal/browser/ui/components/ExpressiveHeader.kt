@@ -110,6 +110,8 @@ fun ExpressiveHeader(
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     enableLiquidGlass: Boolean = false,
+    maxTitleLines: Int = 2,
+    maxSubtitleLines: Int = 2,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val glow = MaterialTheme.colorScheme.primary
@@ -153,7 +155,7 @@ fun ExpressiveHeader(
                             title,
                             style = if (onBack != null) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 2,
+                            maxLines = maxTitleLines,
                             overflow = TextOverflow.Ellipsis,
                         )
                         subtitle?.let {
@@ -161,7 +163,7 @@ fun ExpressiveHeader(
                                 it,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
+                                maxLines = maxSubtitleLines,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
