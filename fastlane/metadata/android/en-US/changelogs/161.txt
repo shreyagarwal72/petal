@@ -1,0 +1,13 @@
+### What's Changed 🚀
+
+#### 📋 Chrome-Style Copied Link Suggestion Chip
+* **System Clipboard Integration**: Added automatic system clipboard detection on omnibox search focus (`navigator.clipboard.readText() / ClipboardManager`).
+* **Copied Link Pill Card**: Renders a prominent Chrome-style copied link suggestion card below the active tab chip with a globe icon (`Icons.Rounded.Language`), `"Link that you copied"` title, URL subtitle, and an eye/preview icon (`Icons.Rounded.Visibility`) on the right.
+* **Instant Navigation & Animations**: Tapping the suggestion chip instantly navigates to the copied URL and dismisses the omnibox surface, featuring `AnimatedVisibility` expansion matching Google Chrome.
+
+#### 🎨 Search Widget Fix & Expressive UI Improvements
+* **Widget Color Scheme Fix**: Resolved a Jetpack Glance color palette compilation error by replacing `surfaceContainerHigh` with `GlanceTheme.colors.surfaceVariant`.
+* **Dynamic App-Restart Taglines**: Refined layout for Material 3 Expressive search widget with 16 dynamic tagline greetings.
+
+---
+**Full Changelog**: https://github.com/shreyas190906/petal/compare/v1.6.0...v1.6.1

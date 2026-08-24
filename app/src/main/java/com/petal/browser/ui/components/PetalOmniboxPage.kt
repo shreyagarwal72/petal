@@ -271,6 +271,25 @@ fun PetalOmniboxPage(
         }
     }
 
+    var copiedUrl by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+            if (clipboard != null && clipboard.hasPrimaryClip()) {
+                val clipData = clipboard.primaryClip
+                if (clipData != null && clipData.itemCount > 0) {
+                    val text = clipData.getItemAt(0).text?.toString()?.trim()
+                    if (!text.isNullOrBlank() && com.petal.browser.unit.BrowserUnit.isURL(text)) {
+                        copiedUrl = text
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     LaunchedEffect(Unit) {
         delay(100)
         try {
@@ -523,6 +542,91 @@ fun PetalOmniboxPage(
                                             Icon(
                                                 imageVector = Icons.Rounded.Edit,
                                                 contentDescription = "Edit URL",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Chrome-style "Link that you copied" suggestion chip
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = copiedUrl != null,
+                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+                            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
+                        ) {
+                            copiedUrl?.let { url ->
+                                Surface(
+                                    onClick = {
+                                        onQuerySubmitted(url)
+                                    },
+                                    shape = RoundedCornerShape(24.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    tonalElevation = 3.dp,
+                                    shadowElevation = 2.dp,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // Left: Globe Icon
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.primaryContainer),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Language,
+                                                contentDescription = "Copied Link",
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+
+                                        Spacer(Modifier.width(12.dp))
+
+                                        // Center: "Link that you copied" & URL subtitle
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Link that you copied",
+                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = url,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+
+                                        Spacer(Modifier.width(8.dp))
+
+                                        // Right: Eye/Preview icon
+                                        IconButton(
+                                            onClick = {
+                                                queryState = TextFieldValue(
+                                                    text = url,
+                                                    selection = TextRange(url.length)
+                                                )
+                                            },
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Visibility,
+                                                contentDescription = "Preview link",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
                                             )
