@@ -19,10 +19,12 @@ object PetalIncognitoSessionManager {
     private const val CHANNEL_ID = "petal_incognito_session_channel"
 
     private var activeIncognitoTabCount = 0
+    private var hadIncognitoTabs = false
 
     @JvmStatic
     fun onIncognitoTabOpened(activity: Activity) {
         activeIncognitoTabCount++
+        hadIncognitoTabs = true
         updateIncognitoState(activity)
     }
 
@@ -37,6 +39,9 @@ object PetalIncognitoSessionManager {
     @JvmStatic
     fun setIncognitoTabCount(activity: Activity, count: Int) {
         activeIncognitoTabCount = count.coerceAtLeast(0)
+        if (activeIncognitoTabCount > 0) {
+            hadIncognitoTabs = true
+        }
         updateIncognitoState(activity)
     }
 
@@ -47,12 +52,16 @@ object PetalIncognitoSessionManager {
     fun updateIncognitoState(activity: Activity) {
         val incognitoCount = com.petal.browser.browser.BrowserContainer.getIncognitoCount()
         if (incognitoCount > 0) {
+            hadIncognitoTabs = true
             enableIncognitoSecurity(activity)
             showIncognitoNotification(activity)
         } else {
             disableIncognitoSecurity(activity)
             dismissIncognitoNotification(activity)
-            flushSessionData(activity)
+            if (hadIncognitoTabs) {
+                flushSessionData(activity)
+                hadIncognitoTabs = false
+            }
         }
     }
 
@@ -60,6 +69,7 @@ object PetalIncognitoSessionManager {
     fun syncIncognitoState(context: Context) {
         val incognitoCount = com.petal.browser.browser.BrowserContainer.getIncognitoCount()
         if (incognitoCount > 0) {
+            hadIncognitoTabs = true
             if (context is Activity) {
                 enableIncognitoSecurity(context)
             }
@@ -69,7 +79,10 @@ object PetalIncognitoSessionManager {
                 disableIncognitoSecurity(context)
             }
             dismissIncognitoNotification(context)
-            flushSessionData(context)
+            if (hadIncognitoTabs) {
+                flushSessionData(context)
+                hadIncognitoTabs = false
+            }
         }
     }
 
@@ -94,10 +107,11 @@ object PetalIncognitoSessionManager {
     @JvmStatic
     fun flushSessionData(context: Context) {
         try {
-            WebStorage.getInstance().deleteAllData()
-            val cookieManager = CookieManager.getInstance()
-            cookieManager.removeSessionCookies(null)
-            cookieManager.flush()
+            if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE)) {
+                val incognitoProfile = androidx.webkit.ProfileStore.getInstance().getProfile("PetalIncognitoProfile")
+                incognitoProfile?.webStorage?.deleteAllData()
+                incognitoProfile?.geolocationPermissions?.clearAll()
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

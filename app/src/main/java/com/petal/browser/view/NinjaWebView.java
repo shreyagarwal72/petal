@@ -335,7 +335,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             CookieManager manager = CookieManager.getInstance();
             boolean globalSso = sp.getBoolean("sp_global_google_login", true);
             boolean acceptCookies = globalSso || sp.getBoolean(profile + "_cookies", true);
-            boolean acceptThirdParty = globalSso || sp.getBoolean(profile + "_cookiesThirdParty", false);
+            boolean acceptThirdParty = globalSso || sp.getBoolean(profile + "_cookiesThirdParty", true);
 
             manager.setAcceptCookie(acceptCookies);
             manager.setAcceptThirdPartyCookies(this, acceptThirdParty);

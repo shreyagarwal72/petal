@@ -96,12 +96,12 @@ fun PetalDeleteScreen(
     var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
 
     var clearHistory by remember { mutableStateOf(sp.getBoolean("sp_clear_history", false)) }
-    var clearCache by remember { mutableStateOf(sp.getBoolean("sp_clear_cache", true)) }
-    var clearIndexedDB by remember { mutableStateOf(sp.getBoolean("sp_clearIndexedDB", true)) }
+    var clearCache by remember { mutableStateOf(sp.getBoolean("sp_clear_cache", false)) }
+    var clearIndexedDB by remember { mutableStateOf(sp.getBoolean("sp_clearIndexedDB", false)) }
     var clearCookie by remember { mutableStateOf(sp.getBoolean("sp_clear_cookie", false)) }
     var clearDatabase by remember { mutableStateOf(sp.getBoolean("sp_deleteDatabase", false)) }
-    var clearSettings by remember { mutableStateOf(sp.getBoolean("sp_clear_settings", true)) }
-    var clearQuit by remember { mutableStateOf(sp.getBoolean("sp_clear_quit", true)) }
+    var clearSettings by remember { mutableStateOf(sp.getBoolean("sp_clear_settings", false)) }
+    var clearQuit by remember { mutableStateOf(sp.getBoolean("sp_clear_quit", false)) }
 
     var showConfirmDialog by remember { mutableStateOf(false) }
 

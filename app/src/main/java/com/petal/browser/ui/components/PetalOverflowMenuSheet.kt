@@ -475,9 +475,9 @@ fun PetalOverflowMenuSheet(
                         onClick = onToggleBookmark
                     )
                     MenuRowItem(
-                        icon = Icons.Rounded.AppShortcut,
-                        title = "Install site",
-                        subtitle = "Add Web App shortcut to Home screen",
+                        icon = Icons.Rounded.OfflinePin,
+                        title = "Install site offline",
+                        subtitle = "Save website to view completely offline",
                         onClick = onInstallPwa
                     )
 

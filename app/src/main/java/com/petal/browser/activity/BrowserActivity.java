@@ -682,7 +682,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 notificationManager.cancel(1);
             }
             BrowserContainer.clear();
-            if (sp != null && sp.getBoolean("sp_clear_quit", true)) {
+            if (sp != null && sp.getBoolean("sp_clear_quit", false)) {
                 BrowserUnit.clearBrowserData(this);
             }
             if (sp != null && sp.getBoolean("sp_backup_quit", false)) {
@@ -2658,12 +2658,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 @Override
                 public void onOpenBookmarks() {
-                    showOverview();
+                    showBookmarksPage();
                 }
 
                 @Override
                 public void onInstallPwa() {
-                    installPwaShortcut();
+                    savePageOffline();
                 }
 
                 @Override
@@ -2850,6 +2850,83 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             contentFrame.addView(historyView);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public void showBookmarksPage() {
+        try {
+            captureBrowserMainPreview();
+            contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_bm = findViewById(R.id.fab_bubble);
+            if (fab_bubble_bm != null) fab_bubble_bm.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
+            View bookmarksView = com.petal.browser.compose.bookmarks.PetalBookmarksBridge.createBookmarksView(
+                BrowserActivity.this,
+                url -> {
+                    if (ninjaWebView != null) {
+                        ninjaWebView.loadUrl(url);
+                    }
+                    showAlbum(currentAlbumController, url);
+                },
+                () -> {
+                    showAlbum(currentAlbumController);
+                    return kotlin.Unit.INSTANCE;
+                }
+            );
+            contentFrame.addView(bookmarksView);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void showBookmarksSheet() {
+        showBookmarksPage();
+    }
+
+    public void showBookmarks() {
+        showBookmarksPage();
+    }
+
+    public void savePageOffline() {
+        if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
+        String url = ninjaWebView.getUrl();
+        if (url.startsWith("about:") || url.startsWith("petal://") || url.startsWith("file://")) {
+            NinjaToast.show(this, "Cannot save internal page offline");
+            return;
+        }
+
+        java.io.File offlineDir = new java.io.File(getExternalFilesDir(null), "OfflinePages");
+        if (!offlineDir.exists()) {
+            offlineDir.mkdirs();
+        }
+
+        String rawTitle = (ninjaWebView.getTitle() != null && !ninjaWebView.getTitle().trim().isEmpty())
+                ? ninjaWebView.getTitle()
+                : HelperUnit.domain(url);
+        String sanitizedTitle = rawTitle.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String fileName = sanitizedTitle + "_" + System.currentTimeMillis() + ".mhtml";
+        java.io.File archiveFile = new java.io.File(offlineDir, fileName);
+
+        try {
+            ninjaWebView.saveWebArchive(archiveFile.getAbsolutePath(), false, value -> {
+                if (value != null) {
+                    NinjaToast.show(BrowserActivity.this, "Saved website to view offline!");
+                    com.petal.browser.compose.downloads.PetalLiveAlertManager.trackOfflinePage(
+                            BrowserActivity.this, rawTitle, url, archiveFile.getAbsolutePath());
+                } else {
+                    NinjaToast.show(BrowserActivity.this, "Failed to save page offline");
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving web archive offline", e);
+            NinjaToast.show(BrowserActivity.this, "Failed to save page offline");
         }
     }
 
@@ -4123,6 +4200,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             addAlbum(null, url, true);
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)
                 || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)) {
+            try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             pendingWidgetAction = () -> {
@@ -4130,11 +4208,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             };
             runOrDeferPendingWidgetAction();
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)) {
+            try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             pendingWidgetAction = () -> {
-                // Same "always a new tab" rule as the other widget actions: the fresh
-                // tab is opened up front, then the voice result (if any) loads into it.
                 addAlbum(null, "", true);
                 try {
                     com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(this, result -> {
@@ -4152,6 +4229,38 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } catch (Exception e) {
                     showOmniboxPage("");
                 }
+            };
+            runOrDeferPendingWidgetAction();
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO.equals(action)) {
+            try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            pendingWidgetAction = () -> {
+                addAlbum(null, "petal://home", true, true);
+            };
+            runOrDeferPendingWidgetAction();
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_BOOKMARKS.equals(action)) {
+            try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            pendingWidgetAction = () -> {
+                showBookmarksSheet();
+            };
+            runOrDeferPendingWidgetAction();
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_DOWNLOADS.equals(action)) {
+            try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            pendingWidgetAction = () -> {
+                showDownloadsPage();
+            };
+            runOrDeferPendingWidgetAction();
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB.equals(action)) {
+            try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            pendingWidgetAction = () -> {
+                addAlbum(null, "petal://home", true);
             };
             runOrDeferPendingWidgetAction();
         }
