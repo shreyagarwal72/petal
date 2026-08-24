@@ -1,0 +1,9 @@
+### What's Changed in v1.7.1 🚀
+
+#### 🖼️ Permanent Profile Picture Storage & Interactive Cropping
+* **Permanent Internal Files Storage**: Updated `GoogleAccountManager.kt` to copy custom gallery and cropped profile avatars into permanent internal app storage (`context.filesDir/petal_user_avatar.png`). Clearing app cache or clearing the app from background/memory will never wipe or delete your profile picture.
+* **Interactive Profile Picture Crop Sheet**: Added `PetalAvatarCropSheet.kt` featuring interactive pinch-to-zoom, panning gestures, 90° rotation controls, zoom slider, live circular avatar mask, and 1-tap crop & save.
+* **Automatic Legacy Avatar Migration**: Added automatic startup migration in `GoogleAccountManager.init()` to convert any legacy content or temporary URIs into permanent internal file URIs.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.7.0...v1.7.1
