@@ -235,95 +235,93 @@ fun PetalHistoryScreen(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
                 )
-            }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 20.dp, vertical = 8.dp)
-            ) {
-            if (rawHistory == null) {
-                ContainedLoadingIndicator(
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
                 ) {
-                    item(key = "clear_banner") {
-                        Surface(
-                            onClick = onClearBrowsingData,
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.CleaningServices,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                    Text(
-                                        text = "Clear browsing data...",
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                                Icon(
-                                    Icons.Rounded.ChevronRight,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    if (filteredHistory.isEmpty()) {
-                        item(key = "empty_state") {
-                            com.petal.browser.ui.components.EmptyStateBlob(
-                                icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Rounded.HistoryToggleOff),
-                                title = if (searchQuery.isNotEmpty()) "No matching history" else "No browsing history yet"
-                            )
-                        }
+                    if (rawHistory == null) {
+                        ContainedLoadingIndicator(
+                            modifier = Modifier.fillMaxSize()
+                        )
                     } else {
-                        itemsIndexed(filteredHistory, key = { idx, item -> "${item.url}_$idx" }) { index, record ->
-                            HistoryCardItem(
-                                record = record,
-                                index = index,
-                                onSelect = { record.url?.let(onOpenUrl) },
-                                onDelete = {
-                                    try {
-                                        val action = RecordAction(context)
-                                        action.open(true)
-                                        action.deleteURL(record.url, RecordUnit.TABLE_HISTORY)
-                                        action.close()
-                                        rawHistory = rawHistory?.filter { it.url != record.url } ?: emptyList()
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 24.dp)
+                        ) {
+                            item(key = "clear_banner") {
+                                Surface(
+                                    onClick = onClearBrowsingData,
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.CleaningServices,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(22.dp)
+                                            )
+                                            Text(
+                                                text = "Clear browsing data...",
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                        Icon(
+                                            Icons.Rounded.ChevronRight,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
-                            )
+                            }
+
+                            if (filteredHistory.isEmpty()) {
+                                item(key = "empty_state") {
+                                    com.petal.browser.ui.components.EmptyStateBlob(
+                                        icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Rounded.HistoryToggleOff),
+                                        title = if (searchQuery.isNotEmpty()) "No matching history" else "No browsing history yet"
+                                    )
+                                }
+                            } else {
+                                itemsIndexed(filteredHistory, key = { idx, item -> "${item.url}_$idx" }) { index, record ->
+                                    HistoryCardItem(
+                                        record = record,
+                                        index = index,
+                                        onSelect = { record.url?.let(onOpenUrl) },
+                                        onDelete = {
+                                            try {
+                                                val action = RecordAction(context)
+                                                action.open(true)
+                                                action.deleteURL(record.url, RecordUnit.TABLE_HISTORY)
+                                                action.close()
+                                                rawHistory = rawHistory?.filter { it.url != record.url } ?: emptyList()
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                            }
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
-}
-}
-}
 }
 }
 
