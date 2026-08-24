@@ -4201,6 +4201,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             pendingWidgetAction = () -> {
+                addAlbum(null, "petal://home", true);
                 showOmniboxPage("");
             };
             runOrDeferPendingWidgetAction();
