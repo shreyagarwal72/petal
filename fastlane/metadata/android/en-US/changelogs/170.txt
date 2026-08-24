@@ -1,0 +1,10 @@
+### What's Changed in v1.7.0 🚀
+
+#### 📳 Haptic Engine & Accessibility Overhaul
+* **Universal Compose Tap Integration**: Created `PetalHapticFeedback` bound to `LocalHapticFeedback` in `PetalTheme.kt`, ensuring every standard button, card, chip, switch, and tap across Petal triggers tactile feedback seamlessly on every successful press.
+* **Accessibility Connection**: Linked `PetalHapticEngine` directly to system accessibility Touch Exploration (`TalkBack`) and OS `HAPTIC_FEEDBACK_ENABLED` settings, guaranteeing rich haptic response for visually impaired users.
+* **Instant Pattern Switching in Settings**: Added explicit vibrator cancellation prior to triggering new haptic patterns in `PetalHapticEngine.java`, ensuring pattern test chips in Settings trigger immediately without lag or overlap.
+* **Multi-Tier Hardware Fallbacks**: Built distinct custom waveform and single-shot fallback vibrations for devices lacking API 30+ hardware primitive composition.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.6.9...v1.7.0

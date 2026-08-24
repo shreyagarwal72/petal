@@ -184,11 +184,30 @@ fun PetalExpressiveTheme(
         }
     }
 
-    CompositionLocalProvider(LocalPetalBlurEffectEnabled provides blurEffectEnabled) {
+    val hapticFeedback = androidx.compose.runtime.remember(context) { PetalHapticFeedback(context) }
+
+    CompositionLocalProvider(
+        LocalPetalBlurEffectEnabled provides blurEffectEnabled,
+        androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexSettings),
             content = content
         )
+    }
+}
+
+private class PetalHapticFeedback(private val context: Context) : androidx.compose.ui.hapticfeedback.HapticFeedback {
+    override fun performHapticFeedback(hapticFeedbackType: androidx.compose.ui.hapticfeedback.HapticFeedbackType) {
+        val pattern = when (hapticFeedbackType) {
+            androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress ->
+                com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK
+            androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove ->
+                com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK
+            else ->
+                com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK
+        }
+        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playIfEnabled(context, pattern, 0.75f)
     }
 }

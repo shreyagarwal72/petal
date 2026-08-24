@@ -59,11 +59,8 @@ fun Modifier.bouncyClickable(
     
     LaunchedEffect(pressed) {
         if (pressed) {
-            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            if (sp.getBoolean("sp_touch_haptics", true)) {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                    .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.45f)
-            }
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.45f)
         }
     }
 
@@ -83,11 +80,8 @@ fun Modifier.bouncyClickable(
         indication = null,
         enabled = enabled,
         onClick = {
-            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            if (sp.getBoolean("sp_touch_haptics", true)) {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                    .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
-            }
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
             onClick()
         },
     )

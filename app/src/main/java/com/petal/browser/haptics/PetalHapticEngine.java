@@ -82,6 +82,12 @@ public class PetalHapticEngine {
 
         float clamped = Math.max(0f, Math.min(1f, intensity));
         VibrationEffect effect = effectFor(pattern, clamped);
+
+        // Cancel any active vibration prior to triggering new pattern for immediate feedback
+        try {
+            vibrator.cancel();
+        } catch (Throwable ignored) {}
+
         if (effect != null) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && touchAttrs != null) {
@@ -126,8 +132,32 @@ public class PetalHapticEngine {
 
     public static boolean isHapticsEnabled(Context context) {
         if (context == null) return true;
-        return androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+
+        // 1. User app setting
+        boolean userPref = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean("sp_touch_haptics", true);
+        if (!userPref) return false;
+
+        // 2. System accessibility check: if TalkBack/Touch Exploration is enabled, haptics are essential
+        try {
+            android.view.accessibility.AccessibilityManager am =
+                    (android.view.accessibility.AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
+            if (am != null && am.isEnabled() && am.isTouchExplorationEnabled()) {
+                return true;
+            }
+        } catch (Throwable ignored) {}
+
+        // 3. System OS Haptic Feedback setting (Settings.System.HAPTIC_FEEDBACK_ENABLED)
+        try {
+            int systemHaptics = android.provider.Settings.System.getInt(
+                    context.getContentResolver(),
+                    android.provider.Settings.System.HAPTIC_FEEDBACK_ENABLED, 1);
+            if (systemHaptics == 0) {
+                return false;
+            }
+        } catch (Throwable ignored) {}
+
+        return true;
     }
 
     public boolean playIfEnabled(Context context, @NonNull Pattern pattern, float intensity, long throttleMs) {
@@ -142,6 +172,7 @@ public class PetalHapticEngine {
     public void playOneShot(long durationMs, int amplitude) {
         if (!hasVibrator) return;
         try {
+            vibrator.cancel();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 int amp = Math.max(1, Math.min(255, amplitude));
                 VibrationEffect effect = VibrationEffect.createOneShot(durationMs, amp);
@@ -239,8 +270,23 @@ public class PetalHapticEngine {
                 }
                 return VibrationEffect.createPredefined(effectId);
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                int amplitude = (int) (intensity * 255);
-                return VibrationEffect.createOneShot(30, Math.max(1, amplitude));
+                int amp = Math.max(1, Math.min(255, (int) (intensity * 255f)));
+                switch (pattern) {
+                    case HEAVY_CLICK:
+                        return VibrationEffect.createOneShot(35, Math.min(255, amp + 40));
+                    case TICK:
+                        return VibrationEffect.createOneShot(10, Math.max(1, (int) (amp * 0.7f)));
+                    case SOFT_BUMP:
+                        return VibrationEffect.createOneShot(25, Math.max(1, (int) (amp * 0.5f)));
+                    case DOUBLE_CLICK:
+                        return VibrationEffect.createWaveform(new long[]{0, 20, 40, 20}, new int[]{0, amp, 0, amp}, -1);
+                    case DOUBLE_TICK:
+                        int tickAmp = Math.max(1, (int) (amp * 0.6f));
+                        return VibrationEffect.createWaveform(new long[]{0, 10, 30, 10}, new int[]{0, tickAmp, 0, tickAmp}, -1);
+                    case CLICK:
+                    default:
+                        return VibrationEffect.createOneShot(16, amp);
+                }
             }
         } catch (Throwable ignored) {}
 

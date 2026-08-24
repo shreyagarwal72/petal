@@ -1,3 +1,10 @@
+### v1.7.0
+
+- new: Bound `PetalHapticFeedback` to Compose `LocalHapticFeedback` in `PetalTheme.kt` for universal tap feedback across all components.
+- fix: Connected `PetalHapticEngine` with Android Accessibility (`TalkBack` Touch Exploration) and OS system haptic settings.
+- fix: Added instant vibrator cancellation before triggering new patterns so pattern testing in Settings switches immediately.
+- fix: Expanded multi-tiered waveform fallbacks for all haptic patterns on devices lacking hardware primitive composition.
+
 ### v1.6.9
 
 - fix: Increased homepage greeting tagline `maxLines` to 4, set `fontSize = 15.sp`, and pruned taglines to prevent ellipsis (`...`) truncation on all screen sizes (`PetalHomeScreen.kt`).
