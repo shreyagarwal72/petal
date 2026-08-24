@@ -697,7 +697,7 @@ private fun PetalTabCard(
         shadowElevation = if (tab.isSelected) 8.dp else 2.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(125.dp)
             .graphicsLayer {
                 scaleX = scaleAnim
                 scaleY = scaleAnim
@@ -713,7 +713,7 @@ private fun PetalTabCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(headerBg)
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -756,7 +756,8 @@ private fun PetalTabCard(
                                 MaterialTheme.colorScheme.surfaceContainer
                             )
                         )
-                    ),
+                    )
+                    .padding(vertical = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
                 if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
@@ -769,21 +770,21 @@ private fun PetalTabCard(
                 } else {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Icon(
                             imageVector = if (tab.isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Language,
                             contentDescription = null,
                             tint = accentColor.copy(alpha = 0.6f),
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                         Text(
                             text = if (tab.url.isBlank() || tab.url.equals("about:blank", ignoreCase = true)) "Petal Home" else tab.url,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(horizontal = 12.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
                 }
