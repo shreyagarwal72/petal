@@ -272,8 +272,9 @@ private fun FloatingNavItem(
             ) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
                     maxLines = 1,
                     modifier = Modifier.padding(start = 2.dp, end = 4.dp)
                 )
