@@ -106,7 +106,15 @@ object PetalFetchDownloadBridge {
                 synchronized(downloadsMap) {
                     list.forEach { d ->
                         downloadsMap[d.id] = d
-                        if (!createdAtMap.containsKey(d.id)) createdAtMap[d.id] = System.currentTimeMillis()
+                        if (!createdAtMap.containsKey(d.id)) {
+                            val f = File(d.file)
+                            val t = when {
+                                d.created > 0L -> d.created
+                                f.exists() && f.lastModified() > 0L -> f.lastModified()
+                                else -> System.currentTimeMillis()
+                            }
+                            createdAtMap[d.id] = t
+                        }
                     }
                 }
                 publish()
@@ -127,7 +135,15 @@ object PetalFetchDownloadBridge {
             synchronized(downloadsMap) {
                 list.forEach { d ->
                     downloadsMap[d.id] = d
-                    if (!createdAtMap.containsKey(d.id)) createdAtMap[d.id] = System.currentTimeMillis()
+                    if (!createdAtMap.containsKey(d.id)) {
+                        val f = File(d.file)
+                        val t = when {
+                            d.created > 0L -> d.created
+                            f.exists() && f.lastModified() > 0L -> f.lastModified()
+                            else -> System.currentTimeMillis()
+                        }
+                        createdAtMap[d.id] = t
+                    }
                 }
             }
             publish()
@@ -220,6 +236,13 @@ object PetalFetchDownloadBridge {
         val file = File(d.file)
         val displayName = if (file.name.isNotEmpty()) file.name else d.url
 
+        val timestamp = when {
+            d.created > 0L -> d.created
+            createdAtMap.containsKey(d.id) -> createdAtMap[d.id]!!
+            file.exists() && file.lastModified() > 0L -> file.lastModified()
+            else -> System.currentTimeMillis()
+        }
+
         return DownloadItem(
             id = d.id.toLong(),
             fileName = displayName,
@@ -231,7 +254,7 @@ object PetalFetchDownloadBridge {
             speedBytesPerSec = speed,
             etaSeconds = etaSec,
             localUri = "file://" + d.file,
-            timestampMs = createdAtMap[d.id] ?: System.currentTimeMillis()
+            timestampMs = timestamp
         )
     }
 
