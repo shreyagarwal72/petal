@@ -344,16 +344,16 @@ fun PetalSettingsScreen(
                 // Top App Bar Header + Search (hosted in Scaffold's topBar so insets, collapse
                 // offset, and content padding are all resolved consistently by Scaffold).
                 Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
-                    com.petal.browser.ui.components.PetalCollapsingTopAppBar(
+                    com.petal.browser.ui.components.ExpressiveHeader(
                         title = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
-                        onNavigateBack = {
+                        subtitle = if (searchQuery.isNotBlank()) "Matching Settings" else if (currentCategory == SettingsCategory.OVERVIEW) "Browser Preferences & Customization" else "Settings Category",
+                        onBack = {
                             if (currentCategory != SettingsCategory.OVERVIEW) {
                                 currentCategory = SettingsCategory.OVERVIEW
                             } else {
                                 onBackPress()
                             }
-                        },
-                        scrollBehavior = petalHeaderScrollBehavior,
+                        }
                     )
 
                     // 🔍 Settings Search Bar

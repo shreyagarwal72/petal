@@ -222,7 +222,9 @@ fun PetalUserProfileScreen(
             com.petal.browser.ui.components.ExpressiveHeader(
                 title = "User Profile & Accounts",
                 subtitle = "Manage account, cloud sync & preferences",
-                onBack = { onBack() }
+                onBack = { onBack() },
+                maxTitleLines = 1,
+                maxSubtitleLines = 1
             )
         },
         snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) },
