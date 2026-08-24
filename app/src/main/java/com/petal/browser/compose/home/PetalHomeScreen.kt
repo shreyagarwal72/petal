@@ -826,16 +826,16 @@ private val generalGreetingTaglines = listOf(
     "Welcome back, %s—the web is ready whenever you are.",
     "What are you curious about today, %s?",
     "Ready to discover something amazing, %s?",
-    "%s, here is your personal window to the entire web.",
+    "%s, here is your personal window to the web.",
     "Search deeper and expand your world, %s.",
     "Bring your biggest ideas to life today, %s.",
-    "Your next great breakthrough starts right here, %s.",
+    "Your next breakthrough starts right here, %s.",
     "Designed for your speed and creativity, %s.",
     "Stay inspired and keep building, %s.",
-    "Good to see you again, %s; let's make things happen.",
-    "Clear mind and a fresh tab, %s—what's on your agenda?",
+    "Good to see you again, %s—let's explore.",
+    "Clear mind and a fresh tab, %s.",
     "Everything is set up and waiting for you, %s.",
-    "Your digital workspace is primed and ready, %s."
+    "Your digital workspace is ready, %s."
 )
 
 private val morningGreetingTaglines = listOf(
@@ -847,7 +847,7 @@ private val afternoonGreetingTaglines = listOf(
 )
 
 private val eveningGreetingTaglines = listOf(
-    "Good evening, %s; time to unwind and explore something fun."
+    "Good evening, %s—time to unwind and explore."
 )
 
 @Composable
@@ -888,14 +888,18 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
 
     Text(
         text = tagline,
-        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
+        style = MaterialTheme.typography.titleMedium.copy(
+            fontWeight = FontWeight.Medium,
+            fontSize = 15.sp,
+            lineHeight = 20.sp
+        ),
         color = if (updateWelcomeMessage != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
+        maxLines = 4,
+        overflow = TextOverflow.Clip,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = 12.dp)
     )
 }
 

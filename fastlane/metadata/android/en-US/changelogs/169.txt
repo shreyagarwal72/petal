@@ -1,0 +1,7 @@
+### What's Changed in v1.6.9 🚀
+
+#### 🏠 Homepage Greeting Line Auto-Sizing
+* **Ellipsis Truncation Prevention**: Increased greeting line `maxLines` to `4` with `TextOverflow.Clip` and refined tagline font size (`15.sp` / `20.sp` line-height) in `PetalHomeScreen.kt`. Concise tagline phrasing guarantees full visibility without `...` truncation across all screen sizes and font scales.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.6.8...v1.6.9

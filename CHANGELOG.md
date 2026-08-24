@@ -1,3 +1,7 @@
+### v1.6.9
+
+- fix: Increased homepage greeting tagline `maxLines` to 4, set `fontSize = 15.sp`, and pruned taglines to prevent ellipsis (`...`) truncation on all screen sizes (`PetalHomeScreen.kt`).
+
 ### v1.6.8
 
 - fix: Added `androidx.compose.ui.unit.sp` import to `ExpressiveHeader.kt` for proper `TextUnit` extension resolution.
