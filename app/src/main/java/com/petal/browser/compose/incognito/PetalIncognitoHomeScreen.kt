@@ -274,8 +274,6 @@ fun PetalIncognitoHomeScreen(
                 Spacer(Modifier.height(24.dp))
             }
         }
-        }
-        }
     }
 }
 
