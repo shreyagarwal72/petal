@@ -868,26 +868,44 @@ private val eveningGreetingTaglines = listOf(
 
 @Composable
 private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserProfile) {
+    val context = LocalContext.current
     val username = profile.displayName.ifBlank { "Petal Explorer" }
 
-    // remember (not rememberSaveable) so a fresh line is drawn whenever the
-    // app process restarts, but it stays stable across recompositions and
-    // config changes within the same session.
-    val tagline = remember(username) {
-        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-        val timeSpecificTaglines = when {
-            hour in 4..11 -> morningGreetingTaglines
-            hour in 12..16 -> afternoonGreetingTaglines
-            else -> eveningGreetingTaglines
+    var updateWelcomeMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            val currentVersion = context.packageManager.getPackageInfo(context.getPackageName(), 0).versionName
+            val lastSeenVersion = sp.getString("sp_last_seen_welcome_version", "")
+            if (!currentVersion.isNullOrBlank() && currentVersion != lastSeenVersion) {
+                sp.edit().putString("sp_last_seen_welcome_version", currentVersion).apply()
+                updateWelcomeMessage = "Welcome to Petal v$currentVersion! 🎉 Enjoy the latest updates."
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        val pool = generalGreetingTaglines + timeSpecificTaglines
-        pool.random().format(username)
+    }
+
+    val tagline = remember(username, updateWelcomeMessage) {
+        if (!updateWelcomeMessage.isNullOrBlank()) {
+            updateWelcomeMessage!!
+        } else {
+            val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+            val timeSpecificTaglines = when {
+                hour in 4..11 -> morningGreetingTaglines
+                hour in 12..16 -> afternoonGreetingTaglines
+                else -> eveningGreetingTaglines
+            }
+            val pool = generalGreetingTaglines + timeSpecificTaglines
+            pool.random().format(username)
+        }
     }
 
     Text(
         text = tagline,
         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = if (updateWelcomeMessage != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,

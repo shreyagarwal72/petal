@@ -1,3 +1,11 @@
+### v1.6.4
+
+- new: Uniform Material 3 ExpressiveHeader alignment across History, Bookmarks, and Downloads pages.
+- new: Chrome-style tab card UI (0.68 aspect ratio, 18dp rounded corners, circular close X button, active accent outline).
+- new: Disk-persistent tab preview thumbnails (`petal_tab_thumbnails/{tabId}.png`) that restore on app relaunch.
+- fix: Restored OS predictive back edge swipe navigation on web pages via 24dp system gesture exclusion margins.
+- new: One-time version update welcome greeting tagline ("Welcome to Petal v1.6.4! 🎉") on home screen after updating.
+
 ### v1.5.3
 
 - fix: Improved tab preview thumbnail cache management with safe memory recycling and disk persistence.
