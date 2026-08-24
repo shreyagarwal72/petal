@@ -1,10 +1,20 @@
 package com.petal.browser.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -151,28 +161,57 @@ fun ExpressiveHeader(
                         Spacer(Modifier.width(12.dp))
                     }
 
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            title,
-                            style = if (onBack != null) {
-                                if (maxTitleLines == 1) MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
-                                else MaterialTheme.typography.titleLarge
-                            } else MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = maxTitleLines,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        subtitle?.let {
+                    AnimatedContent(
+                        targetState = title to (subtitle ?: ""),
+                        transitionSpec = {
+                            (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                             slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { it / 3 } +
+                             scaleIn(initialScale = 0.95f))
+                                .togetherWith(
+                                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
+                                    slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { -it / 3 } +
+                                    scaleOut(targetScale = 0.95f)
+                                )
+                        },
+                        label = "ExpressiveHeaderTransition",
+                        modifier = Modifier.weight(1f)
+                    ) { (currentTitle, currentSubtitle) ->
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            val titleFontSize = remember(currentTitle, onBack) {
+                                when {
+                                    onBack != null && currentTitle.length > 20 -> 15.5.sp
+                                    onBack != null && currentTitle.length > 14 -> 17.sp
+                                    onBack != null -> 18.5.sp
+                                    currentTitle.length > 20 -> 19.sp
+                                    currentTitle.length > 14 -> 21.sp
+                                    else -> 23.sp
+                                }
+                            }
+
                             Text(
-                                it,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 13.sp,
-                                    lineHeight = 17.sp
+                                text = currentTitle,
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontSize = titleFontSize,
+                                    lineHeight = (titleFontSize.value + 4).sp
                                 ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = maxSubtitleLines,
-                                overflow = TextOverflow.Ellipsis,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
+
+                            if (currentSubtitle.isNotBlank()) {
+                                Text(
+                                    text = currentSubtitle,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontSize = 13.sp,
+                                        lineHeight = 17.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = maxSubtitleLines,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
 
