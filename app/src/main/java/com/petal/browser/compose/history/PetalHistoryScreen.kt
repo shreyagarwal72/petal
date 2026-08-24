@@ -46,6 +46,8 @@ import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.compose.composable.ContainedLoadingIndicator
 import com.petal.browser.ui.components.entrance
+import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -196,33 +198,19 @@ fun PetalHistoryScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "History",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Rounded.ArrowBack, contentDescription = "Close")
-                        }
-                    },
+                ExpressiveHeader(
+                    title = "History",
+                    subtitle = "${filteredHistory.size} items",
+                    onBack = onDismiss,
                     actions = {
                         if (rawHistory?.isNotEmpty() == true) {
-                            IconButton(onClick = { showClearConfirm = true }) {
-                                Icon(
-                                    Icons.Rounded.DeleteSweep,
-                                    contentDescription = "Clear History",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.DeleteSweep,
+                                contentDescription = "Clear History",
+                                onClick = { showClearConfirm = true }
+                            )
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background
-                    )
+                    }
                 )
 
                 OutlinedTextField(

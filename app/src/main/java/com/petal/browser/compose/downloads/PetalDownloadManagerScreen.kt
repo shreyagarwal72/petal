@@ -34,6 +34,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -349,66 +351,48 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
                 modifier = Modifier.fillMaxWidth().statusBarsPadding()
             ) {
                 if (isSelectionMode) {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                "${selectedIds.size} Selected",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = { selectedIds = emptySet() }) {
-                                Icon(Icons.Rounded.Close, contentDescription = "Cancel Selection")
-                            }
-                        },
+                    ExpressiveHeader(
+                        title = "${selectedIds.size} Selected",
+                        subtitle = "Selection Mode Active",
+                        onBack = { selectedIds = emptySet() },
                         actions = {
-                            IconButton(onClick = { toggleSelectAll() }) {
-                                Icon(
-                                    if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                                    contentDescription = "Select All"
-                                )
-                            }
-                            IconButton(onClick = {
-                                val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
-                                shareMultipleFiles(context, itemsToShare)
-                                selectedIds = emptySet()
-                            }) {
-                                Icon(Icons.Rounded.Share, contentDescription = "Share Selected")
-                            }
-                            IconButton(onClick = {
-                                val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
-                                performStagedDelete(itemsToDelete)
-                                selectedIds = emptySet()
-                            }) {
-                                Icon(Icons.Rounded.Delete, contentDescription = "Delete Selected", tint = MaterialTheme.colorScheme.error)
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                        )
+                            HeaderActionIcon(
+                                icon = if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                                contentDescription = "Select All",
+                                onClick = { toggleSelectAll() }
+                            )
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.Share,
+                                contentDescription = "Share Selected",
+                                onClick = {
+                                    val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
+                                    shareMultipleFiles(context, itemsToShare)
+                                    selectedIds = emptySet()
+                                }
+                            )
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.Delete,
+                                contentDescription = "Delete Selected",
+                                onClick = {
+                                    val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
+                                    performStagedDelete(itemsToDelete)
+                                    selectedIds = emptySet()
+                                }
+                            )
+                        }
                     )
                 } else {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                "Downloads",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = onBackPress) {
-                                Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                            }
-                        },
+                    ExpressiveHeader(
+                        title = "Downloads",
+                        subtitle = "${downloadList.size} files",
+                        onBack = onBackPress,
                         actions = {
                             Box {
-                                IconButton(onClick = { sortMenuExpanded = true }) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Sort,
-                                        contentDescription = "Sort Downloads",
-                                        tint = if (sortOption != DownloadSortOption.DATE_DESC) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                HeaderActionIcon(
+                                    icon = Icons.Rounded.Sort,
+                                    contentDescription = "Sort Downloads",
+                                    onClick = { sortMenuExpanded = true }
+                                )
                                 DropdownMenu(
                                     expanded = sortMenuExpanded,
                                     onDismissRequest = { sortMenuExpanded = false }
