@@ -179,11 +179,13 @@ fun PetalDeleteScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header / Summary containment card
-                    Surface(
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    // Header / Summary containment card (Material 3 Expressive UI redesign)
+                    Card(
+                        shape = RoundedCornerShape(32.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -210,17 +212,18 @@ fun PetalDeleteScreen(
                                 Text(
                                     text = "Choose items to erase. Settings apply immediately and during clear operations.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
                                 )
                             }
                         }
                     }
 
-                    // Containment Card grouping clear options
-                    Surface(
-                        shape = RoundedCornerShape(28.dp),
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                        tonalElevation = 2.dp,
+                    // Containment Card grouping clear options (Material 3 Expressive UI redesign)
+                    Card(
+                        shape = RoundedCornerShape(32.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
