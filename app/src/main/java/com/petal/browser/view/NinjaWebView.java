@@ -246,13 +246,9 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             profile = HelperUnit.domain(url);
         }
 
+        // Ensure algorithmic darkening is explicitly turned off for web content across all SDK levels
         if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
-            String themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM");
-            boolean forceDark = sp.getBoolean("sp_force_dark_mode", false);
-            boolean profileNight = sp.getBoolean(profile + "_night", true);
-            boolean systemDark = (context.getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
-            boolean isDarkTheme = forceDark || "DARK".equalsIgnoreCase(themeConfig) || ("FOLLOW_SYSTEM".equalsIgnoreCase(themeConfig) && systemDark);
-            WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, isDarkTheme && profileNight);
+            WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, false);
         }
 
         String desktopUserAgent = getDerivedDesktopUserAgent(context);
@@ -295,23 +291,18 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         webSettings.setBlockNetworkImage(!sp.getBoolean(profile + "_images", true));
         webSettings.setGeolocationEnabled(sp.getBoolean(profile + "_location", false));
 
-        boolean forceDark = sp.getBoolean("sp_force_dark_mode", false);
-        if (forceDark) {
-            if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING)) {
-                androidx.webkit.WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, true);
-            } else if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.FORCE_DARK)) {
-                @SuppressWarnings("deprecation")
-                int forceDarkState = androidx.webkit.WebSettingsCompat.FORCE_DARK_ON;
-                androidx.webkit.WebSettingsCompat.setForceDark(webSettings, forceDarkState);
-            }
-        } else {
-            if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING)) {
-                androidx.webkit.WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, false);
-            } else if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.FORCE_DARK)) {
-                @SuppressWarnings("deprecation")
-                int forceDarkState = androidx.webkit.WebSettingsCompat.FORCE_DARK_OFF;
-                androidx.webkit.WebSettingsCompat.setForceDark(webSettings, forceDarkState);
-            }
+        // Explicitly disable web content forced dark mode / algorithmic darkening.
+        // Known Chromium WebView bug: force dark / algorithmic darkening breaks CSS backdrop-filter,
+        // blend-modes, and popups/modals (e.g. GitHub clone modal), rendering them as solid black overlays.
+        // Disabling WebSettings dark mode ensures web pages render clean CSS without dark algorithms,
+        // while preserving Petal's native Compose dark UI theme.
+        if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING)) {
+            androidx.webkit.WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, false);
+        }
+        if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.FORCE_DARK)) {
+            @SuppressWarnings("deprecation")
+            int forceDarkState = androidx.webkit.WebSettingsCompat.FORCE_DARK_OFF;
+            androidx.webkit.WebSettingsCompat.setForceDark(webSettings, forceDarkState);
         }
 
         boolean enableJs = sp.getBoolean("sp_javascript", sp.getBoolean(profile + "_javascript", true));
