@@ -1821,6 +1821,8 @@ fun PetalSettingsScreen(
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                                    var isCheckingUpdate by remember { mutableStateOf(false) }
+
                                     Surface(
                                         shape = RoundedCornerShape(16.dp),
                                         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -1838,33 +1840,43 @@ fun PetalSettingsScreen(
                                                     color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 Text(
-                                                    text = "Current Version: v$appVersionName",
+                                                    text = if (isCheckingUpdate) "Checking for updates..." else "Current Version: v$appVersionName",
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
-                                            Button(
-                                                onClick = {
-                                                    var act: android.app.Activity? = null
-                                                    var ctx = context
-                                                    while (ctx is android.content.ContextWrapper) {
-                                                        if (ctx is android.app.Activity) {
-                                                            act = ctx
-                                                            break
+                                            if (isCheckingUpdate) {
+                                                com.petal.browser.compose.composable.ContainedLoadingIndicator(
+                                                    modifier = Modifier.size(36.dp)
+                                                )
+                                            } else {
+                                                Button(
+                                                    onClick = {
+                                                        isCheckingUpdate = true
+                                                        var act: android.app.Activity? = null
+                                                        var ctx = context
+                                                        while (ctx is android.content.ContextWrapper) {
+                                                            if (ctx is android.app.Activity) {
+                                                                act = ctx
+                                                                break
+                                                            }
+                                                            ctx = ctx.baseContext
                                                         }
-                                                        ctx = ctx.baseContext
-                                                    }
-                                                    if (act != null) {
-                                                        com.petal.browser.unit.UpdateUnit.checkForUpdates(act, false)
-                                                    } else {
-                                                        com.petal.browser.view.NinjaToast.show(context, "Checking for updates...")
-                                                    }
-                                                },
-                                                shape = RoundedCornerShape(14.dp)
-                                            ) {
-                                                Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text("Check Now")
+                                                        if (act != null) {
+                                                            com.petal.browser.unit.UpdateUnit.checkForUpdates(act, false) {
+                                                                isCheckingUpdate = false
+                                                            }
+                                                        } else {
+                                                            isCheckingUpdate = false
+                                                            com.petal.browser.view.NinjaToast.show(context, "Checking for updates...")
+                                                        }
+                                                    },
+                                                    shape = RoundedCornerShape(14.dp)
+                                                ) {
+                                                    Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                    Spacer(Modifier.width(6.dp))
+                                                    Text("Check Now")
+                                                }
                                             }
                                         }
                                     }
