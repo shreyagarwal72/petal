@@ -50,8 +50,29 @@ public final class TabThumbnailCache {
     public static void put(@Nullable String tabId, @Nullable Bitmap bitmap) {
         if (tabId == null || tabId.isEmpty() || bitmap == null || bitmap.isRecycled()) return;
         String safeKey = getSafeKey(tabId);
-        cache.put(safeKey, bitmap);
-        saveToDiskAsync(safeKey, bitmap);
+        
+        // Proportional resize (contain/fit scale) instead of aggressive center-cropping
+        Bitmap resized = bitmap;
+        int maxDimension = 640;
+        if (bitmap.getWidth() > maxDimension || bitmap.getHeight() > maxDimension) {
+            float aspect = (float) bitmap.getWidth() / (float) bitmap.getHeight();
+            int newWidth, newHeight;
+            if (aspect > 1.0f) {
+                newWidth = maxDimension;
+                newHeight = Math.max(1, (int) (maxDimension / aspect));
+            } else {
+                newHeight = maxDimension;
+                newWidth = Math.max(1, (int) (maxDimension * aspect));
+            }
+            try {
+                resized = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+            } catch (Exception e) {
+                resized = bitmap;
+            }
+        }
+
+        cache.put(safeKey, resized);
+        saveToDiskAsync(safeKey, resized);
     }
 
     @Nullable

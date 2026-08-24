@@ -1,3 +1,9 @@
+### v1.5.3
+
+- fix: Improved tab preview thumbnail cache management with safe memory recycling and disk persistence.
+- improved: Replaced image cropping with proportional fit scaling to display full uncropped web page previews.
+- new: Added Chrome-style bouncy zoom scale-up animation when tapping on tab grid cards.
+
 ### v1.5.2
 
 - removed: Removed sync encryption password option from User Profile & Accounts page.
