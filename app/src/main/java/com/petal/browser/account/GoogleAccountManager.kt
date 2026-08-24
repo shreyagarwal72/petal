@@ -98,13 +98,36 @@ object GoogleAccountManager {
             val avatarTypeStr = sp.getString(KEY_AVATAR_TYPE, AvatarType.PRESET.name) ?: AvatarType.PRESET.name
             val avatarType = try { AvatarType.valueOf(avatarTypeStr) } catch (_: Throwable) { AvatarType.PRESET }
             val avatarPresetId = sp.getString(KEY_AVATAR_PRESET, "petal_flower") ?: "petal_flower"
-            val customAvatarUri = sp.getString(KEY_CUSTOM_AVATAR_URI, null)
+            var customAvatarUri = sp.getString(KEY_CUSTOM_AVATAR_URI, null)
             val globalGoogleLogin = sp.getBoolean(KEY_GLOBAL_GOOGLE_LOGIN, true)
             val syncBookmarks = sp.getBoolean(KEY_SYNC_BOOKMARKS, true)
             val syncHistory = sp.getBoolean(KEY_SYNC_HISTORY, true)
             val syncPasswords = sp.getBoolean(KEY_SYNC_PASSWORDS, true)
             val syncTabs = sp.getBoolean(KEY_SYNC_TABS, true)
             val syncSearchEngines = sp.getBoolean(KEY_SYNC_SEARCH_ENGINES, true)
+
+            // Ensure custom avatar is permanently stored in internal filesDir (never deleted by cache clear)
+            if (avatarType == AvatarType.GALLERY_URI) {
+                val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
+                if (permanentFile.exists() && permanentFile.length() > 0) {
+                    customAvatarUri = android.net.Uri.fromFile(permanentFile).toString()
+                } else if (!customAvatarUri.isNullOrEmpty()) {
+                    try {
+                        val uri = android.net.Uri.parse(customAvatarUri)
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            java.io.FileOutputStream(permanentFile).use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                        if (permanentFile.exists() && permanentFile.length() > 0) {
+                            customAvatarUri = android.net.Uri.fromFile(permanentFile).toString()
+                            sp.edit().putString(KEY_CUSTOM_AVATAR_URI, customAvatarUri).apply()
+                        }
+                    } catch (e: Throwable) {
+                        e.printStackTrace()
+                    }
+                }
+            }
 
             currentProfile = GoogleUserProfile(
                 email = email,
@@ -153,8 +176,60 @@ object GoogleAccountManager {
         }
     }
 
+    fun saveCroppedAvatar(context: Context, croppedBitmap: android.graphics.Bitmap) {
+        try {
+            val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
+            java.io.FileOutputStream(permanentFile).use { out ->
+                croppedBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+            }
+            val persistentUriString = android.net.Uri.fromFile(permanentFile).toString()
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            sp.edit()
+                .putString(KEY_AVATAR_TYPE, AvatarType.GALLERY_URI.name)
+                .putString(KEY_CUSTOM_AVATAR_URI, persistentUriString)
+                .apply()
+
+            currentProfile = currentProfile.copy(
+                avatarType = AvatarType.GALLERY_URI,
+                customAvatarUri = persistentUriString
+            )
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
+    }
+
     fun updateAvatarGalleryUri(context: Context, uriString: String) {
         try {
+            val uri = android.net.Uri.parse(uriString)
+            if (uri.scheme == "content") {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Throwable) {}
+            }
+
+            val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                java.io.FileOutputStream(permanentFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            val persistentUriString = android.net.Uri.fromFile(permanentFile).toString()
+
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            sp.edit()
+                .putString(KEY_AVATAR_TYPE, AvatarType.GALLERY_URI.name)
+                .putString(KEY_CUSTOM_AVATAR_URI, persistentUriString)
+                .apply()
+
+            currentProfile = currentProfile.copy(
+                avatarType = AvatarType.GALLERY_URI,
+                customAvatarUri = persistentUriString
+            )
+        } catch (e: Throwable) {
+            e.printStackTrace()
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
             sp.edit()
                 .putString(KEY_AVATAR_TYPE, AvatarType.GALLERY_URI.name)
@@ -164,8 +239,6 @@ object GoogleAccountManager {
                 avatarType = AvatarType.GALLERY_URI,
                 customAvatarUri = uriString
             )
-        } catch (e: Throwable) {
-            e.printStackTrace()
         }
     }
 

@@ -208,12 +208,27 @@ fun PetalUserProfileScreen(
         isLoading = false
     }
 
+    var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
+
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            GoogleAccountManager.updateAvatarGalleryUri(context, it.toString())
+            pendingCropUri = it
         }
+    }
+
+    if (pendingCropUri != null) {
+        PetalAvatarCropSheet(
+            imageUri = pendingCropUri!!,
+            onDismiss = { pendingCropUri = null },
+            onAvatarCropped = {
+                pendingCropUri = null
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Profile picture updated permanently!")
+                }
+            }
+        )
     }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(

@@ -1,3 +1,8 @@
+### v1.7.1
+
+- fix: Stored user custom profile picture permanently in `context.filesDir` to prevent deletion when clearing app cache or background tasks (`GoogleAccountManager.kt`).
+- new: Built interactive profile picture cropping modal sheet `PetalAvatarCropSheet.kt` with pinch-to-zoom, pan, rotation, and live circular mask preview.
+
 ### v1.7.0
 
 - new: Bound `PetalHapticFeedback` to Compose `LocalHapticFeedback` in `PetalTheme.kt` for universal tap feedback across all components.

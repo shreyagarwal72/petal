@@ -203,12 +203,21 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
             val context = iconContext
             val currentProfile = GoogleAccountManager.currentProfile
             var nameInput by remember { mutableStateOf(currentProfile.displayName) }
+            var pendingCropUri by remember { mutableStateOf<android.net.Uri?>(null) }
             val galleryLauncher = rememberLauncherForActivityResult(
                 contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
             ) { uri: android.net.Uri? ->
                 uri?.let {
-                    GoogleAccountManager.updateAvatarGalleryUri(context, it.toString())
+                    pendingCropUri = it
                 }
+            }
+
+            if (pendingCropUri != null) {
+                com.petal.browser.account.PetalAvatarCropSheet(
+                    imageUri = pendingCropUri!!,
+                    onDismiss = { pendingCropUri = null },
+                    onAvatarCropped = { pendingCropUri = null }
+                )
             }
 
             Card(
