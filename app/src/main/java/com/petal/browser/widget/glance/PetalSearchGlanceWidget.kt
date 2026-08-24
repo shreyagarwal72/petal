@@ -72,12 +72,9 @@ class PetalSearchGlanceWidget : GlanceAppWidget() {
         private val WIDE_BOX = DpSize(260.dp, 56.dp)
         private val TALL_BOX = DpSize(260.dp, 120.dp)
 
-        private val shapeCache = mutableMapOf<String, Bitmap>()
-
-        /** Call after a theme/palette change so cached shape bitmaps get regenerated. */
+        /** Call after a theme/palette change if needed. */
         fun clearShapeCache() {
-            shapeCache.values.forEach { if (!it.isRecycled) it.recycle() }
-            shapeCache.clear()
+            // No-op for synced standard M3 widget UI
         }
     }
 
@@ -105,58 +102,15 @@ class PetalSearchGlanceWidget : GlanceAppWidget() {
             } else {
                 paletteById(paletteId).let { if (isDark) it.dark else it.light }
             }
-            val uiMode = context.resources.configuration.uiMode
-
-            val sparkShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "spark_$paletteId$isDark", 112, MaterialShapes.Sunny, scheme.primaryContainer.toArgb())
-            }
-            val micShape = remember(uiMode, paletteId, isDark) {
-                shapeBitmap(context, "mic_$paletteId$isDark", 112, MaterialShapes.Cookie6Sided, scheme.secondaryContainer.toArgb())
-            }
 
             GlanceTheme(colors = ColorProviders(light = scheme, dark = scheme)) {
                 val size = LocalSize.current
                 val isTall = size.height >= 100.dp
                 PetalSearchWidgetContent(
-                    isTall = isTall,
-                    sparkShape = sparkShape,
-                    micShape = micShape
+                    isTall = isTall
                 )
             }
         }
-    }
-
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    @SuppressLint("RestrictedApi")
-    private fun shapeBitmap(
-        context: Context,
-        cacheKey: String,
-        sizeDp: Int,
-        shape: RoundedPolygon,
-        fillColorInt: Int
-    ): Bitmap {
-        val key = "${cacheKey}_$fillColorInt"
-        shapeCache[key]?.let { if (!it.isRecycled) return it }
-
-        val density = context.resources.displayMetrics.density
-        val sizePx = (sizeDp * density).toInt().coerceAtLeast(1)
-        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val path = shape.toPath()
-        val matrix = Matrix()
-        matrix.setScale(sizePx.toFloat(), sizePx.toFloat())
-        path.transform(matrix)
-
-        val paint = Paint().apply {
-            color = fillColorInt
-            isAntiAlias = true
-            isFilterBitmap = true
-            style = Paint.Style.FILL
-        }
-        canvas.drawPath(path, paint)
-
-        shapeCache[key] = bitmap
-        return bitmap
     }
 }
 
@@ -166,9 +120,7 @@ class PetalSearchGlanceWidgetReceiver : GlanceAppWidgetReceiver() {
 
 @Composable
 private fun PetalSearchWidgetContent(
-    isTall: Boolean,
-    sparkShape: Bitmap,
-    micShape: Bitmap
+    isTall: Boolean
 ) {
     val context = LocalContext.current
     val searchAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
@@ -211,25 +163,21 @@ private fun PetalSearchWidgetContent(
 
                 Spacer(modifier = GlanceModifier.height(6.dp))
 
-                // Search Bar taking the bottom position
+                // Search Bar taking the bottom position (Synced with Homepage PetalSearchBar)
                 WidgetSearchBar(
-                    modifier = GlanceModifier.fillMaxWidth().height(52.dp),
+                    modifier = GlanceModifier.fillMaxWidth().height(56.dp),
                     searchAction = searchAction,
                     aiAction = aiAction,
-                    voiceAction = voiceAction,
-                    sparkShape = sparkShape,
-                    micShape = micShape
+                    voiceAction = voiceAction
                 )
             }
         } else {
-            // Compact 1-row layout
+            // Compact 1-row layout (Synced with Homepage PetalSearchBar)
             WidgetSearchBar(
                 modifier = GlanceModifier.fillMaxSize(),
                 searchAction = searchAction,
                 aiAction = aiAction,
-                voiceAction = voiceAction,
-                sparkShape = sparkShape,
-                micShape = micShape
+                voiceAction = voiceAction
             )
         }
     }
@@ -240,31 +188,29 @@ private fun WidgetSearchBar(
     modifier: GlanceModifier,
     searchAction: androidx.glance.action.Action,
     aiAction: androidx.glance.action.Action,
-    voiceAction: androidx.glance.action.Action,
-    sparkShape: Bitmap,
-    micShape: Bitmap
+    voiceAction: androidx.glance.action.Action
 ) {
     val context = LocalContext.current
     Box(
         modifier = modifier
-            .cornerRadius(26.dp)
+            .cornerRadius(32.dp)
             .background(GlanceTheme.colors.surfaceVariant)
             .clickable(searchAction)
     ) {
         Row(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .padding(start = 16.dp, end = 6.dp),
+                .padding(start = 18.dp, end = 8.dp),
             verticalAlignment = Alignment.Vertical.CenterVertically
         ) {
             Image(
                 provider = ImageProvider(R.drawable.icon_search),
                 contentDescription = null,
-                modifier = GlanceModifier.size(20.dp),
+                modifier = GlanceModifier.size(24.dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
             )
 
-            Spacer(modifier = GlanceModifier.width(12.dp))
+            Spacer(modifier = GlanceModifier.width(10.dp))
 
             Box(
                 modifier = GlanceModifier.fillMaxHeight().defaultWeight(),
@@ -274,8 +220,8 @@ private fun WidgetSearchBar(
                     text = context.getString(R.string.widget_search_hint),
                     maxLines = 1,
                     style = TextStyle(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal,
                         color = GlanceTheme.colors.onSurfaceVariant
                     )
                 )
@@ -283,41 +229,31 @@ private fun WidgetSearchBar(
 
             Spacer(modifier = GlanceModifier.width(4.dp))
 
-            // AI sparkle chip (Material3 Expressive Sunny Shape)
+            // AI Search Icon (Petal AI) - synced with homepage PetalSearchBar
             Box(
-                modifier = GlanceModifier.size(42.dp).clickable(aiAction),
+                modifier = GlanceModifier.size(40.dp).clickable(aiAction),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    provider = ImageProvider(sparkShape),
-                    contentDescription = context.getString(R.string.widget_ai_search),
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-                Image(
                     provider = ImageProvider(R.drawable.ic_auto_awesome),
-                    contentDescription = null,
-                    modifier = GlanceModifier.size(18.dp),
-                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer)
+                    contentDescription = context.getString(R.string.widget_ai_search),
+                    modifier = GlanceModifier.size(22.dp),
+                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant)
                 )
             }
 
             Spacer(modifier = GlanceModifier.width(4.dp))
 
-            // Voice mic chip (Material3 Expressive Cookie6Sided Shape)
+            // Voice Search Icon - synced with homepage PetalSearchBar
             Box(
-                modifier = GlanceModifier.size(42.dp).clickable(voiceAction),
+                modifier = GlanceModifier.size(40.dp).clickable(voiceAction),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    provider = ImageProvider(micShape),
-                    contentDescription = context.getString(R.string.widget_voice_search),
-                    modifier = GlanceModifier.fillMaxSize()
-                )
-                Image(
                     provider = ImageProvider(R.drawable.ic_mic),
-                    contentDescription = null,
-                    modifier = GlanceModifier.size(18.dp),
-                    colorFilter = ColorFilter.tint(GlanceTheme.colors.onSecondaryContainer)
+                    contentDescription = context.getString(R.string.widget_voice_search),
+                    modifier = GlanceModifier.size(22.dp),
+                    colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
                 )
             }
         }
