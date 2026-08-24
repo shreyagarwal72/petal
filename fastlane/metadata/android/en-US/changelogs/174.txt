@@ -1,0 +1,9 @@
+### What's Changed in v1.7.4 🚀
+
+#### 🛠️ Fixed Compose Layout Brace Balance & Symbol Resolution
+* **Tab Manager Brace Fix (`PetalTabGridSwitcher.kt`)**: Resolved unmatched closing brace around line 436/450, balancing outer `Box` container depth so `PetalThemedSnackbarHost` correctly accesses `BoxScope.align` and eliminating top-level parser scope failures.
+* **Petal AI Hub Bridge (`PetalAiHubBridge.kt`)**: Added `PetalAiHubBridge` to seamlessly display `PetalAiHubScreen` dynamically from Settings and activity views.
+* **Settings Activity & Research API Alignment**: Corrected `Settings_Activity` class references in `PetalAiHubScreen.kt` and reconciled `PetalAiResearchEngine.performResearch` callback signature in `PetalSettingsScreen.kt`.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.7.3...v1.7.4

@@ -447,7 +447,6 @@ fun PetalTabGridSwitcher(
     }
     }
     }
-}
 
 /** Top segmented pill switcher: Regular [N] vs Incognito [N] (mask icon), full-width. */
 @Composable

@@ -153,8 +153,7 @@ fun PetalAiHubScreen(
                             icon = Icons.Rounded.VpnKey,
                             contentDescription = "API Keys Settings",
                             onClick = {
-                                val intent = android.content.Intent(context, com.petal.browser.compose.settings.PetalSettingsActivity::class.java)
-                                intent.putExtra("category", "API_INTEGRATIONS")
+                                val intent = android.content.Intent(context, com.petal.browser.activity.Settings_Activity::class.java)
                                 context.startActivity(intent)
                             }
                         )
@@ -269,8 +268,7 @@ fun PetalAiHubScreen(
 
                             OutlinedButton(
                                 onClick = {
-                                    val intent = android.content.Intent(context, com.petal.browser.compose.settings.PetalSettingsActivity::class.java)
-                                    intent.putExtra("category", "API_INTEGRATIONS")
+                                    val intent = android.content.Intent(context, com.petal.browser.activity.Settings_Activity::class.java)
                                     context.startActivity(intent)
                                 },
                                 shape = RoundedCornerShape(14.dp),

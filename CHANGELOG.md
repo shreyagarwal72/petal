@@ -1,3 +1,8 @@
+### v1.7.4
+
+- fix: Audited and balanced Compose layout braces in `PetalTabGridSwitcher.kt`, resolving outer `BoxScope.align` and syntax parser cascade errors.
+- fix: Created `PetalAiHubBridge.kt`, corrected `Settings_Activity` references in `PetalAiHubScreen.kt`, and aligned `performResearch` callback signature in `PetalSettingsScreen.kt`.
+
 ### v1.7.3
 
 - new: Added dedicated **Petal AI & API Keys Hub** category in `PetalSettingsScreen.kt` for configuring Gemini, OpenRouter, OpenAI, Grok, and Groq API keys, model selections, and live connection testing.

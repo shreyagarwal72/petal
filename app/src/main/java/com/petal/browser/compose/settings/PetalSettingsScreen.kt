@@ -553,18 +553,20 @@ fun PetalSettingsScreen(
                                         TextButton(
                                             enabled = currentKey.isNotBlank() && !isTestingKey,
                                             onClick = {
-                                                coroutineScope.launch {
-                                                    isTestingKey = true
-                                                    testResultMsg = "Testing connection..."
-                                                    val result = com.petal.browser.compose.ai.PetalAiResearchEngine.performResearch(
-                                                        context = context,
-                                                        userPrompt = "Respond with 'OK' if API key is working cleanly.",
-                                                        pageContent = "Test",
-                                                        mode = com.petal.browser.compose.ai.ResearchMode.CUSTOM
-                                                    )
-                                                    isTestingKey = false
-                                                    testResultMsg = if (result.isSuccess) "✓ API Key Verified & Connected!" else "✗ Connection Failed: ${result.exceptionOrNull()?.message ?: "Invalid Key"}"
-                                                }
+                                                isTestingKey = true
+                                                testResultMsg = "Testing connection..."
+                                                com.petal.browser.compose.ai.PetalAiResearchEngine.performResearch(
+                                                    context = context,
+                                                    pageTitle = "Test Page",
+                                                    pageUrl = "https://petal.browser/test",
+                                                    pageTextContent = "Petal Browser API key verification test",
+                                                    mode = com.petal.browser.compose.ai.ResearchMode.CUSTOM,
+                                                    customPrompt = "Respond with 'OK' if API key is working cleanly.",
+                                                    onResult = { res ->
+                                                        isTestingKey = false
+                                                        testResultMsg = if (res.isSuccess) "✓ API Key Verified & Connected!" else "✗ Connection Failed: ${res.exceptionOrNull()?.message ?: "Invalid Key"}"
+                                                    }
+                                                )
                                             }
                                         ) {
                                             if (isTestingKey) {
