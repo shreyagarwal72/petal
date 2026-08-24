@@ -62,26 +62,12 @@ public class UpdateUnit {
 
         executor.execute(() -> {
             try {
-                URL url = new URL(GITHUB_RELEASES_API);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setConnectTimeout(10000);
-                conn.setReadTimeout(10000);
-                conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
-                conn.setRequestProperty("User-Agent", "PetalBrowserApp/" + getAppVersion(activity));
+                String currentVer = getAppVersion(activity);
+                final String currentVersion = currentVer;
 
-                int responseCode = conn.getResponseCode();
-                if (responseCode == 200) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        sb.append(line);
-                    }
-                    reader.close();
-
-                    JSONObject json = new JSONObject(sb.toString());
-                    final String latestTag = json.optString("tag_name", getAppVersion(activity));
+                JSONObject json = fetchLatestReleaseJson(currentVersion);
+                if (json != null) {
+                    final String latestTag = json.optString("tag_name", currentVersion);
                     final String releaseNotes = json.optString("body", "Performance polish, security enhancements, and stability improvements.");
 
                     // Locate direct APK asset download URL if available, fallback to html_url release page
@@ -98,9 +84,6 @@ public class UpdateUnit {
                         }
                     }
                     final String finalDownloadUrl = apkDownloadUrl;
-
-                    String currentVer = getAppVersion(activity);
-                    final String currentVersion = currentVer;
 
                     // Strictly check if latest release is newer than current version
                     final boolean isNextUpdateAvailable = isNewerVersion(latestTag, currentVersion);
@@ -393,13 +376,70 @@ public class UpdateUnit {
         }
     }
 
+    private static JSONObject fetchLatestReleaseJson(String currentVersion) {
+        try {
+            URL url = new URL(GITHUB_RELEASES_API);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            conn.setRequestProperty("User-Agent", "PetalBrowserApp/" + currentVersion);
+
+            if (conn.getResponseCode() == 200) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) sb.append(line);
+                reader.close();
+                return new JSONObject(sb.toString());
+            }
+        } catch (Exception ignored) {}
+
+        // Fallback: fetch list of releases in case /releases/latest returns 404 or draft
+        try {
+            URL url = new URL("https://api.github.com/repos/shreyagarwal72/petal/releases");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            conn.setRequestProperty("User-Agent", "PetalBrowserApp/" + currentVersion);
+
+            if (conn.getResponseCode() == 200) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) sb.append(line);
+                reader.close();
+
+                JSONArray array = new JSONArray(sb.toString());
+                JSONObject bestRelease = null;
+                String bestTag = "";
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject rel = array.getJSONObject(i);
+                    String tag = rel.optString("tag_name", "");
+                    if (bestRelease == null || isNewerVersion(tag, bestTag)) {
+                        bestRelease = rel;
+                        bestTag = tag;
+                    }
+                }
+                return bestRelease;
+            }
+        } catch (Exception ignored) {}
+
+        return null;
+    }
+
     /**
      * SemVer comparator ensuring we ONLY flag an update when latest is strictly greater than current.
      */
     public static boolean isNewerVersion(String latest, String current) {
         if (latest == null || current == null) return false;
-        String cleanLatest = latest.trim().replaceAll("^[vV]", "");
-        String cleanCurrent = current.trim().replaceAll("^[vV]", "");
+        String cleanLatest = latest.trim().replaceAll("(?i)^[vV_\\s-]+", "").replaceAll("(?i)[^0-9.].*$", "");
+        String cleanCurrent = current.trim().replaceAll("(?i)^[vV_\\s-]+", "").replaceAll("(?i)[^0-9.].*$", "");
+
+        if (cleanLatest.isEmpty() || cleanCurrent.isEmpty()) return false;
 
         String[] latestParts = cleanLatest.split("\\.");
         String[] currentParts = cleanCurrent.split("\\.");

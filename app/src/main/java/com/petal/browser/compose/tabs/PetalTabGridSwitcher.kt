@@ -185,11 +185,8 @@ fun PetalTabGridSwitcher(
     val accentColor = MaterialTheme.colorScheme.primary
     val textColor = MaterialTheme.colorScheme.onSurface
 
-    // Strict navigation guard: with zero tabs there is no browser viewport to go back to,
-    // so system-back is swallowed entirely. The only way forward is the `+` button.
     BackHandler(enabled = tabs.isEmpty()) {
-        // Intentionally does nothing: locks the user out of back-navigation until a new
-        // tab exists.
+        (context as? android.app.Activity)?.finishAndRemoveTask()
     }
 
     Surface(color = backgroundColor, modifier = modifier.fillMaxSize()) {

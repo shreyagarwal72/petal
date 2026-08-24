@@ -1446,30 +1446,17 @@ fun PetalSettingsScreen(
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                                    val predictiveFlow by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
                                     val blurFlow by com.petal.browser.predictive.PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
 
                                     ToggleRow(
-                                        title = "Predictive Back Animations (Junction)",
-                                        subtitle = if (predictiveFlow) "Enabled app-wide PixelPlayer predictive gesture animations" else "Disabled predictive gesture animations app-wide",
-                                        icon = Icons.Rounded.Gesture,
-                                        checked = predictiveFlow,
+                                        title = "Depth Blur Effect (Junction)",
+                                        subtitle = if (blurFlow) "Background page receives 24dp blur & corner morphing during back navigation" else "Disabled depth blur; uses solid dim overlay",
+                                        icon = Icons.Rounded.Animation,
+                                        checked = blurFlow,
                                         onCheckedChange = { enabled ->
-                                            com.petal.browser.predictive.PetalPredictiveJunction.setPredictiveBackEnabled(sp, enabled)
+                                            com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(sp, enabled)
                                         }
                                     )
-
-                                    if (predictiveFlow) {
-                                        ToggleRow(
-                                            title = "Depth Blur Effect (Junction)",
-                                            subtitle = if (blurFlow) "Background page receives 24dp blur & corner morphing during back navigation" else "Disabled depth blur; uses solid dim overlay",
-                                            icon = Icons.Rounded.Animation,
-                                            checked = blurFlow,
-                                            onCheckedChange = { enabled ->
-                                                com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(sp, enabled)
-                                            }
-                                        )
-                                    }
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
