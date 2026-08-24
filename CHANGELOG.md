@@ -1,3 +1,8 @@
+### v1.7.3
+
+- new: Added dedicated **Petal AI & API Keys Hub** category in `PetalSettingsScreen.kt` for configuring Gemini, OpenRouter, OpenAI, Grok, and Groq API keys, model selections, and live connection testing.
+- new: Reimagined `PetalAiHubScreen.kt` as the unified home for Petal Native AI (Deep Research, AI search) and web AI tools directory, complete with API key status and 1-tap quick launchers.
+
 ### v1.7.2
 
 - new: Upgraded Tab Manager (`PetalTabGridSwitcher.kt`), Chrome Flags (`PetalChromeFlagsScreen.kt`), and Extensions (`PetalExtensionsScreen.kt`) to support Material 3 `ExpressiveHeader`.

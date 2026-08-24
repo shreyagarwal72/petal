@@ -1,0 +1,8 @@
+### What's Changed in v1.7.3 🚀
+
+#### 🔑 Petal AI Engine API Keys Settings & Reimagined AI Hub
+* **API Key Management in Settings**: Added a dedicated **Petal AI & API Keys Hub** category card in `PetalSettingsScreen.kt`. Users can select AI providers (`Google Gemini`, `OpenRouter`, `OpenAI`, `xAI Grok`, `Groq`), paste API keys with show/hide password toggles, choose preferred models, click "Get Free Key", and test keys live with instant connectivity verification.
+* **Reimagined Petal AI Hub**: Upgraded `PetalAiHubScreen.kt` into the home for Petal Native AI & Web AI tools. Features a **Petal Native AI Engine** hero banner displaying active provider/model status, key readiness badge, 1-tap "Deep Research" quick launcher, and top bar API Settings access.
+
+---
+**Full Changelog**: https://github.com/shreyagarwal72/petal/compare/v1.7.2...v1.7.3

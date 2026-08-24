@@ -450,14 +450,207 @@ fun PetalSettingsScreen(
                                 }
                             }
 
-                            // 0. Dedicated API & Integrations Hub Sub-Screen Page
-                            if ((currentCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "api webkit credential manager palette oauth incognito profile multi profile predictive back integration hub search suggestions reader wayback translation google bing duckduckgo")) {
-                                SettingsCategoryCard(title = "API & Integrations Hub", icon = Icons.Rounded.Extension) {
+                            // 0. Dedicated Petal AI & API Keys Hub Sub-Screen Page
+                            if ((currentCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "petal ai api key gemini openrouter openai grok groq key deep research webkit extensions search suggestions")) {
+                                SettingsCategoryCard(title = "Petal AI & API Keys Hub", icon = Icons.Rounded.AutoAwesome) {
                                     Text(
-                                        "Essential options for Chrome extensions and browser APIs. Core security and system APIs are automatically optimized for performance.",
+                                        "Configure AI providers, API keys, and model selections for Petal Deep Research, AI Search, and page summarizer.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
+
+                                    var selectedProvider by remember { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedProvider(context)) }
+                                    var currentKey by remember(selectedProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, selectedProvider)) }
+                                    var selectedModel by remember(selectedProvider) { mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, selectedProvider)) }
+                                    var isKeyVisible by remember { mutableStateOf(false) }
+                                    var testResultMsg by remember { mutableStateOf<String?>(null) }
+                                    var isTestingKey by remember { mutableStateOf(false) }
+                                    val coroutineScope = rememberCoroutineScope()
+
+                                    Text(
+                                        text = "Active AI Provider:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        com.petal.browser.compose.ai.AiProvider.values().forEach { provider ->
+                                            val isSelected = selectedProvider == provider
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = {
+                                                    selectedProvider = provider
+                                                    com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedProvider(context, provider)
+                                                    currentKey = com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, provider)
+                                                    selectedModel = com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedModel(context, provider)
+                                                    testResultMsg = null
+                                                },
+                                                label = { Text(provider.displayName) },
+                                                leadingIcon = if (isSelected) {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(Modifier.height(4.dp))
+
+                                    // API Key Field for Selected Provider
+                                    OutlinedTextField(
+                                        value = currentKey,
+                                        onValueChange = { newKey ->
+                                            currentKey = newKey
+                                            com.petal.browser.compose.ai.PetalAiResearchEngine.setApiKey(context, selectedProvider, newKey)
+                                            testResultMsg = null
+                                        },
+                                        label = { Text("${selectedProvider.displayName} API Key") },
+                                        placeholder = { Text("Paste your ${selectedProvider.displayName} API Key...") },
+                                        singleLine = true,
+                                        visualTransformation = if (isKeyVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                                        leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                        trailingIcon = {
+                                            Row {
+                                                IconButton(onClick = { isKeyVisible = !isKeyVisible }) {
+                                                    Icon(
+                                                        if (isKeyVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                                                        contentDescription = "Toggle Visibility"
+                                                    )
+                                                }
+                                                if (currentKey.isNotBlank()) {
+                                                    IconButton(onClick = {
+                                                        currentKey = ""
+                                                        com.petal.browser.compose.ai.PetalAiResearchEngine.setApiKey(context, selectedProvider, "")
+                                                        testResultMsg = null
+                                                    }) {
+                                                        Icon(Icons.Rounded.Close, contentDescription = "Clear Key")
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(16.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        TextButton(onClick = {
+                                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(selectedProvider.keyUrl))
+                                            context.startActivity(intent)
+                                        }) {
+                                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Get Free ${selectedProvider.displayName} Key", style = MaterialTheme.typography.labelSmall)
+                                        }
+
+                                        TextButton(
+                                            enabled = currentKey.isNotBlank() && !isTestingKey,
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    isTestingKey = true
+                                                    testResultMsg = "Testing connection..."
+                                                    val result = com.petal.browser.compose.ai.PetalAiResearchEngine.performResearch(
+                                                        context = context,
+                                                        userPrompt = "Respond with 'OK' if API key is working cleanly.",
+                                                        pageContent = "Test",
+                                                        mode = com.petal.browser.compose.ai.ResearchMode.CUSTOM
+                                                    )
+                                                    isTestingKey = false
+                                                    testResultMsg = if (result.isSuccess) "✓ API Key Verified & Connected!" else "✗ Connection Failed: ${result.exceptionOrNull()?.message ?: "Invalid Key"}"
+                                                }
+                                            }
+                                        ) {
+                                            if (isTestingKey) {
+                                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                                Spacer(Modifier.width(6.dp))
+                                            } else {
+                                                Icon(Icons.Rounded.NetworkCheck, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                            }
+                                            Text("Test Key", style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+
+                                    if (testResultMsg != null) {
+                                        Text(
+                                            text = testResultMsg!!,
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            color = if (testResultMsg!!.startsWith("✓")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                        )
+                                    }
+
+                                    // Model Choice
+                                    Text(
+                                        text = "Preferred ${selectedProvider.displayName} Model:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        selectedProvider.availableModels.forEach { model ->
+                                            val isSelected = selectedModel == model
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = {
+                                                    selectedModel = model
+                                                    com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
+                                                },
+                                                label = { Text(model) },
+                                                leadingIcon = if (isSelected) {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // Open AI Hub Button Card
+                                    Surface(
+                                        onClick = {
+                                            if (context is androidx.activity.ComponentActivity) {
+                                                com.petal.browser.compose.ai.PetalAiHubBridge.showAiHub(context)
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(14.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    "Open Petal AI Hub Directory",
+                                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                                )
+                                                Text(
+                                                    "Launch Petal AI tools, Deep Web Research, and web AI tools catalog",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+                                                )
+                                            }
+                                            Icon(Icons.Rounded.SmartToy, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                                        }
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                                     var enableLiveSuggestions by remember { mutableStateOf(sp.getBoolean("sp_enable_live_suggestions", true)) }
                                     ToggleRow(
@@ -468,20 +661,6 @@ fun PetalSettingsScreen(
                                         onCheckedChange = { newValue ->
                                             enableLiveSuggestions = newValue
                                             sp.edit().putBoolean("sp_enable_live_suggestions", newValue).apply()
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    var enableHackerNewsApi by remember { mutableStateOf(sp.getBoolean("sp_enable_hackernews", true)) }
-                                    ToggleRow(
-                                        title = "Tech News Feed on Home Screen",
-                                        subtitle = "Show trending technology stories and news articles on the home screen",
-                                        icon = Icons.Rounded.RssFeed,
-                                        checked = enableHackerNewsApi,
-                                        onCheckedChange = { newValue ->
-                                            enableHackerNewsApi = newValue
-                                            sp.edit().putBoolean("sp_enable_hackernews", newValue).apply()
                                         }
                                     )
 
