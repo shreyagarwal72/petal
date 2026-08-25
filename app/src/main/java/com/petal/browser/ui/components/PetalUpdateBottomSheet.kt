@@ -231,17 +231,16 @@ fun PetalUpdateSheetContent(
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 560.dp)
+            .heightIn(max = 600.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Drag handle / bar indicator
+            // Drag handle
             Box(
                 modifier = Modifier
                     .width(36.dp)
@@ -250,9 +249,9 @@ fun PetalUpdateSheetContent(
                     .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
             )
 
-            // Header Icon
+            // Header Icon Badge
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = CircleShape,
                 color = if (updateInfo.isUpdateAvailable) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                 modifier = Modifier.size(56.dp)
             ) {
@@ -266,18 +265,23 @@ fun PetalUpdateSheetContent(
                 }
             }
 
-            // Title
-            Text(
-                text = if (updateInfo.isUpdateAvailable) "Update Available" else "Petal Browser is Up to Date",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            // Title & Subtitle
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = if (updateInfo.isUpdateAvailable) "Update Available" else "Petal Browser is Up to Date",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-            Text(
-                text = if (updateInfo.isUpdateAvailable) "Squashed bugs, added magic. You know what to do" else "You're running the latest build (${updateInfo.versionName})",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                Text(
+                    text = if (updateInfo.isUpdateAvailable) "Squashed bugs, added magic. Ready to install!" else "Running the latest release (${updateInfo.versionName})",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             // Release Notes Container
             val notesToDisplay = fetchedNotes ?: updateInfo.releaseNotes
@@ -300,7 +304,7 @@ fun PetalUpdateSheetContent(
                 ) {
                     Text(
                         text = "What's New in ${updateInfo.versionName}",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
@@ -309,39 +313,27 @@ fun PetalUpdateSheetContent(
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        PetalMarkdownText(
-                            markdown = notesToDisplay,
-                            modifier = Modifier.fillMaxWidth().padding(16.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 220.dp)
+                                .verticalScroll(rememberScrollState())
+                                .padding(16.dp)
+                        ) {
+                            PetalMarkdownText(
+                                markdown = notesToDisplay,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
 
-            // Action Buttons Row / Column
-            if (updateInfo.releaseUrl.isNotBlank()) {
-                OutlinedButton(
-                    onClick = {
-                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
-                        try {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("View Release Notes on GitHub")
-                }
-            }
-
+            // Action Buttons
             if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
                 if (isDownloading) {
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         LinearRipplingWavyProgressIndicator(
@@ -350,7 +342,7 @@ fun PetalUpdateSheetContent(
                             height = 8.dp,
                             strokeWidth = 4.dp
                         )
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(8.dp))
                         Text(
                             text = "Downloading update... $downloadProgress%",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
@@ -377,7 +369,7 @@ fun PetalUpdateSheetContent(
                             }
                         },
                         shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
                         Icon(Icons.Rounded.FileDownload, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
@@ -386,7 +378,27 @@ fun PetalUpdateSheetContent(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            if (updateInfo.releaseUrl.isNotBlank()) {
+                OutlinedButton(
+                    onClick = {
+                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth().height(46.dp)
+                ) {
+                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("View Release Notes on GitHub")
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
         }
     }
 }
@@ -526,12 +538,13 @@ fun PetalChangelogHistorySheetContent(
     releases: List<PetalUpdateInfo>,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 560.dp)
+            .heightIn(max = 580.dp)
     ) {
         Column(
             modifier = Modifier
@@ -547,73 +560,112 @@ fun PetalChangelogHistorySheetContent(
                     .clip(RoundedCornerShape(50))
                     .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(52.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Rounded.History,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "Changelog History",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Previous browser releases & release notes",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(14.dp))
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 480.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                items(releases) { rel ->
-                    Card(
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = CircleShape
+            if (releases.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No changelog releases found.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 440.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(releases) { rel ->
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(
-                                        text = rel.versionName,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onPrimary
-                                    )
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = CircleShape
+                                    ) {
+                                        Text(
+                                            text = rel.versionName,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
+                                    if (rel.releaseUrl.isNotBlank()) {
+                                        IconButton(
+                                            onClick = {
+                                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.5f)
+                                                try {
+                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(rel.releaseUrl))
+                                                    context.startActivity(intent)
+                                                } catch (e: Exception) {
+                                                    e.printStackTrace()
+                                                }
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.OpenInNew,
+                                                contentDescription = "View on GitHub",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
                                 }
-                            }
-                            if (rel.releaseNotes.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.surfaceContainer,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    PetalMarkdownText(
-                                        markdown = rel.releaseNotes,
-                                        modifier = Modifier.padding(12.dp)
-                                    )
+                                if (rel.releaseNotes.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        PetalMarkdownText(
+                                            markdown = rel.releaseNotes,
+                                            modifier = Modifier.padding(12.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
