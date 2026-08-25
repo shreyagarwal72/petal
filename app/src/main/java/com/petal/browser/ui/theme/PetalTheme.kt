@@ -85,7 +85,13 @@ fun PetalExpressiveTheme(
     },
     customFontPath: String? = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
-        sp.getString("sp_custom_font_path", null)
+        val path = sp.getString("sp_custom_font_path", null)
+        if (!path.isNullOrBlank() && java.io.File(path).exists()) {
+            path
+        } else {
+            val defaultCustom = LocalContext.current.filesDir.resolve("custom_font.ttf")
+            if (defaultCustom.exists()) defaultCustom.absolutePath else null
+        }
     },
     customFontSettings: CustomFontSettings = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)

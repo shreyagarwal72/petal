@@ -18,8 +18,9 @@ enum class AppFont(val label: String) {
 
     companion object {
         fun fromName(name: String?): AppFont {
-            return when (name) {
-                "CUSTOM" -> CUSTOM
+            if (name.isNullOrBlank()) return PETAL
+            return when (name.trim().uppercase()) {
+                "CUSTOM", "CUSTOM_STORAGE", "CUSTOM_FONT", "CUSTOM_FILE", "CUSTOM_TTF" -> CUSTOM
                 else -> PETAL
             }
         }
@@ -295,30 +296,23 @@ fun petalTypography(
             buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
         }
         AppFont.CUSTOM -> {
-            if (!customFontPath.isNullOrBlank()) {
-                val file = java.io.File(customFontPath)
-                if (file.exists() && file.canRead()) {
+            val validPath = customFontPath?.takeIf { it.isNotBlank() }
+            val file = if (validPath != null) java.io.File(validPath) else null
+
+            if (file != null && file.exists() && file.canRead()) {
+                val customFontFamily = try {
+                    val typeface = android.graphics.Typeface.createFromFile(file)
+                    FontFamily(typeface)
+                } catch (t: Throwable) {
                     try {
-                        val displayFont = FontFamily(Font(
-                            file = file,
-                            variationSettings = customFontSettings.display.toVariationSettings(),
-                            weight = FontWeight(customFontSettings.display.weight.toInt().coerceIn(1, 1000))
-                        ))
-                        val headlineFont = FontFamily(Font(
-                            file = file,
-                            variationSettings = customFontSettings.headline.toVariationSettings(),
-                            weight = FontWeight(customFontSettings.headline.weight.toInt().coerceIn(1, 1000))
-                        ))
-                        val bodyFont = FontFamily(Font(
-                            file = file,
-                            variationSettings = customFontSettings.body.toVariationSettings(),
-                            weight = FontWeight(customFontSettings.body.weight.toInt().coerceIn(1, 1000))
-                        ))
-                        buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
-                    } catch (e: Throwable) {
-                        val customFontFamily = FontFamily(Font(file))
-                        buildTypography(Tiers(customFontFamily, customFontFamily, customFontFamily, customFontFamily, customFontFamily))
+                        FontFamily(Font(file))
+                    } catch (_: Throwable) {
+                        null
                     }
+                }
+
+                if (customFontFamily != null) {
+                    buildTypography(Tiers(customFontFamily, customFontFamily, customFontFamily, customFontFamily, customFontFamily))
                 } else {
                     petalTypography(AppFont.PETAL, fontWidth, fontWeight, fontRoundness, gsFlexSettings)
                 }

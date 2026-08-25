@@ -1214,7 +1214,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
             Surface(
                 onClick = {
                     fontSelection = "GS_FLEX_PERMANENT"
-                    sp.edit().putString("sp_font_family_option", "GS_FLEX_PERMANENT").apply()
+                    sp.edit().putString("sp_app_font", "PETAL").putString("sp_font_family_option", "GS_FLEX_PERMANENT").apply()
                 },
                 border = BorderStroke(if (isFlexSelected) 2.dp else 1.dp, if (isFlexSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                 color = if (isFlexSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
@@ -1236,7 +1236,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
             Surface(
                 onClick = {
                     fontSelection = "CUSTOM_STORAGE"
-                    sp.edit().putString("sp_font_family_option", "CUSTOM_STORAGE").apply()
+                    sp.edit().putString("sp_app_font", "CUSTOM").putString("sp_font_family_option", "CUSTOM_STORAGE").apply()
                 },
                 border = BorderStroke(if (isCustomSelected) 2.dp else 1.dp, if (isCustomSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                 color = if (isCustomSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
