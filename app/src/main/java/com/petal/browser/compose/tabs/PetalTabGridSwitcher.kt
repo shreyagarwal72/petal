@@ -203,6 +203,7 @@ fun PetalTabGridSwitcher(
     com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             ExpressiveHeader(
                 title = if (selectedCategory == TabCategory.INCOGNITO) "Incognito Tabs" else "Tab Manager",
