@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -111,7 +112,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
     val context = LocalContext.current
     val activity = context as? Activity
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 7 })
+    val pagerState = rememberPagerState(pageCount = { 10 })
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
     Surface(
@@ -124,23 +125,23 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 .navigationBarsPadding()
                 .statusBarsPadding()
         ) {
-            // Header Page Indicators & Title Bar
+            // Header Page Indicators & Title Bar (1 to 10)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Step Indicator Pills (1 to 7)
+                // Step Indicator Pills (1 to 10)
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    repeat(7) { index ->
+                    repeat(10) { index ->
                         val isSelected = pagerState.currentPage == index
                         val width by animateDpAsState(
-                            targetValue = if (isSelected) 24.dp else 8.dp,
+                            targetValue = if (isSelected) 20.dp else 6.dp,
                             animationSpec = spring(),
                             label = "indicatorWidth"
                         )
@@ -150,7 +151,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                         )
                         Box(
                             modifier = Modifier
-                                .height(8.dp)
+                                .height(6.dp)
                                 .width(width)
                                 .clip(CircleShape)
                                 .background(color)
@@ -159,13 +160,13 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 }
 
                 Text(
-                    text = "${pagerState.currentPage + 1} of 7",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    text = "${pagerState.currentPage + 1} of 10",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            // Horizontal Pager with 7 Onboarding Pages
+            // Horizontal Pager with 10 Onboarding Pages
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
@@ -187,6 +188,9 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                         4 -> ThemeAndLanguageStepPage(sp, activity)
                         5 -> BottomNavbarStyleStepPage(sp)
                         6 -> SetupPetalAiKeyStepPage(sp)
+                        7 -> SearchEngineStepPage(sp)
+                        8 -> DefaultFontStepPage(sp)
+                        9 -> AdBlockerStepPage(sp)
                     }
                 }
             }
@@ -225,7 +229,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                     }
 
                     // Next / Finish Setup Button
-                    val isLastPage = pagerState.currentPage == 6
+                    val isLastPage = pagerState.currentPage == 9
                     Button(
                         onClick = {
                             if (isLastPage) {
@@ -617,7 +621,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Allow notifications to receive real-time download progress updates, completion alerts, and media playback control controls.",
+        text = "Allow notifications to receive real-time download progress updates, completion alerts, and media playback controls.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -768,7 +772,7 @@ private fun BackupFeatureStepPage(context: Context) {
 // 5. THEME & LANGUAGE PAGE
 // ==========================================
 @Composable
-private fun ThemeAndLanguageStepPage(sp: android.content.SharedPreferences, activity: Activity?) {
+private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?) {
     var appLanguage by remember { mutableStateOf(sp.getString("sp_app_language", "system") ?: "system") }
     var nightMode by remember { mutableIntStateOf(sp.getInt("sp_night_mode", 0)) }
 
@@ -884,7 +888,7 @@ private fun ThemeChipItem(title: String, icon: ImageVector, isSelected: Boolean,
 // 6. BOTTOM NAVBAR STYLE PAGE
 // ==========================================
 @Composable
-private fun BottomNavbarStyleStepPage(sp: android.content.SharedPreferences) {
+private fun BottomNavbarStyleStepPage(sp: SharedPreferences) {
     var isBottomBar by remember { mutableStateOf(sp.getBoolean("sp_bottom_toolbar", true)) }
 
     Spacer(Modifier.height(12.dp))
@@ -975,7 +979,7 @@ private fun NavbarOptionCard(title: String, subtitle: String, icon: ImageVector,
 // 7. SETUP PETAL AI KEY PAGE
 // ==========================================
 @Composable
-private fun SetupPetalAiKeyStepPage(sp: android.content.SharedPreferences) {
+private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
     var apiKey by remember { mutableStateOf(sp.getString("sp_petal_ai_key", "") ?: "") }
 
     Spacer(Modifier.height(12.dp))
@@ -1002,7 +1006,7 @@ private fun SetupPetalAiKeyStepPage(sp: android.content.SharedPreferences) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Connect your custom API key for OpenAI, Groq, Gemini, or OpenRouter for accelerated AI web search & summarization, or skip to use free cloud defaults.",
+        text = "Connect your custom API key for OpenAI, Groq, Gemini, or OpenRouter for accelerated AI web search & summarization, or skip to use free cloud endpoints.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -1046,6 +1050,271 @@ private fun SetupPetalAiKeyStepPage(sp: android.content.SharedPreferences) {
                 SuggestionChip(onClick = {}, label = { Text("Groq") })
                 SuggestionChip(onClick = {}, label = { Text("Google Gemini") })
                 SuggestionChip(onClick = {}, label = { Text("OpenRouter") })
+            }
+        }
+    }
+}
+
+// ==========================================
+// 8. CHOOSE DEFAULT SEARCH ENGINE PAGE
+// ==========================================
+@Composable
+private fun SearchEngineStepPage(sp: SharedPreferences) {
+    var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Default Search Engine",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Select your preferred search engine provider for address bar searches and live suggestions.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    val searchEngines = listOf(
+        Pair("0", Pair("Google", "google.com")),
+        Pair("1", Pair("DuckDuckGo", "duckduckgo.com")),
+        Pair("2", Pair("Bing", "bing.com")),
+        Pair("3", Pair("Brave Search", "search.brave.com")),
+        Pair("4", Pair("Startpage", "startpage.com")),
+        Pair("5", Pair("Ecosia", "ecosia.org"))
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        searchEngines.forEach { (idx, info) ->
+            val isSelected = searchEngineIndex == idx
+            Card(
+                onClick = {
+                    searchEngineIndex = idx
+                    sp.edit()
+                        .putString("sp_search_engine", idx)
+                        .putBoolean("sp_search_engine_chosen", true)
+                        .apply()
+                },
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
+                border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = CircleShape, color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(40.dp)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.Search, contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(info.first, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text(info.second, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (isSelected) {
+                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// 9. CHOOSE DEFAULT FONT PAGE
+// ==========================================
+@Composable
+private fun DefaultFontStepPage(sp: SharedPreferences) {
+    var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.FontDownload, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Choose Default Font",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Select your preferred typography font style for Petal Browser menus and interface titles.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    val fonts = listOf(
+        Pair("PETAL", Pair("Petal Signature", "Expressive rounded signature typography")),
+        Pair("GS_FLEX", Pair("GS FLEX - Petal", "Modern Google Sans Flex variable typography"))
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        fonts.forEach { (name, info) ->
+            val isSelected = fontName == name
+            Card(
+                onClick = {
+                    fontName = name
+                    sp.edit().putString("sp_app_font", name).apply()
+                },
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
+                border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = CircleShape, color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(if (name == "PETAL") "PS" else "GS", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(info.first, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text(info.second, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (isSelected) {
+                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// 10. PREFER ADBLOCKER PAGE
+// ==========================================
+@Composable
+private fun AdBlockerStepPage(sp: SharedPreferences) {
+    var isAdBlock by remember { mutableStateOf(sp.getBoolean("sp_ad_block", true)) }
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Built-in AdBlocker Protection",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Choose whether to enable Petal's real-time AdBlocker engine to filter intrusive ads, trackers, and popup scripts.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        Card(
+            onClick = {
+                isAdBlock = true
+                sp.edit().putBoolean("sp_ad_block", true).apply()
+            },
+            colors = CardDefaults.cardColors(
+                containerColor = if (isAdBlock) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainerHigh
+            ),
+            border = if (isAdBlock) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = CircleShape, color = if (isAdBlock) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Shield, contentDescription = null, tint = if (isAdBlock) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+                    }
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Enable AdBlocker (Recommended)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Text("Blocks intrusive ads, trackers & video popups", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (isAdBlock) {
+                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                }
+            }
+        }
+
+        Card(
+            onClick = {
+                isAdBlock = false
+                sp.edit().putBoolean("sp_ad_block", false).apply()
+            },
+            colors = CardDefaults.cardColors(
+                containerColor = if (!isAdBlock) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainerHigh
+            ),
+            border = if (!isAdBlock) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = CircleShape, color = if (!isAdBlock) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.ShieldMoon, contentDescription = null, tint = if (!isAdBlock) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+                    }
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Disable AdBlocker", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Text("Allow standard web ads and tracker scripts", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (!isAdBlock) {
+                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                }
             }
         }
     }
