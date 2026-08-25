@@ -38,8 +38,8 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.AsyncImage
 import com.petal.browser.compose.home.PetalShortcut
 import com.petal.browser.ui.components.IconSwitch
+import com.petal.browser.ui.components.PetalAboutDeveloperSheet
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
-import com.petal.browser.ui.components.PetalFeatureTile
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
@@ -390,16 +390,15 @@ fun PetalUserProfileScreen(
                 }
             }
 
-            // Tappable-only Google Web Accounts SSO tile
-            if (isExpressiveFeatureTiles) {
-                PetalFeatureTile(
-                    title = "Open Google Accounts Web SSO",
-                    subtitle = "Launch Google Accounts login page to sign in to Google Web Services (YouTube, Gmail, Drive, Maps)",
-                    icon = Icons.Rounded.Language,
-                    container = MaterialTheme.colorScheme.secondaryContainer,
-                    onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
-                    pillLabel = "Open SSO",
-                    onClick = {
+            // Tappable-only Google Web Accounts SSO card
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 2.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
                         onOpenOAuth(
                             PetalShortcut(
                                 "Google Accounts SSO",
@@ -409,56 +408,48 @@ fun PetalUserProfileScreen(
                             )
                         )
                     }
-                )
-            } else {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    tonalElevation = 2.dp,
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            onOpenOAuth(
-                                PetalShortcut(
-                                    "Google Accounts SSO",
-                                    "https://accounts.google.com/ServiceLogin?hl=en",
-                                    "https://accounts.google.com/ServiceLogin?hl=en",
-                                    Color(0xFF4285F4)
-                                )
-                            )
-                        }
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    ListItem(
-                        headlineContent = {
-                            Text(
-                                "Open Google Accounts Web SSO",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                        },
-                        supportingContent = {
-                            Text(
-                                "Launch Google Accounts login page to sign in to Google Web Services (YouTube, Gmail, Drive, Maps)",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        },
-                        leadingContent = {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Rounded.Language,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(22.dp)
                             )
-                        },
-                        trailingContent = {
-                            Icon(
-                                Icons.Rounded.ArrowForward,
-                                contentDescription = "Open SSO",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        colors = ListItemDefaults.colors(
-                            containerColor = Color.Transparent
+                        }
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Open Google Accounts Web SSO",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            "Launch Google Accounts login page to sign in to Google Web Services (YouTube, Gmail, Drive, Maps)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowForward,
+                        contentDescription = "Open SSO",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }

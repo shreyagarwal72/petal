@@ -41,7 +41,6 @@ import com.petal.browser.R
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.components.PetalFeatureTile
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.BrowserUnit
@@ -229,104 +228,77 @@ fun PetalDeleteScreen(
                                 modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
                             )
 
-                            val tileColorway = listOf(
-                                MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
-                                MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
-                                MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
-                            )
-
-                            // 1. Browsing History
                             DeleteOptionItem(
                                 title = context.getString(R.string.album_title_history),
                                 subtitle = "Clear visited web pages and address bar history",
                                 icon = Icons.Rounded.History,
                                 checked = clearHistory,
-                                isExpressiveTiles = isExpressiveFeatureTiles,
-                                tileColors = tileColorway[0],
                                 onCheckedChange = {
                                     clearHistory = it
                                     sp.edit().putBoolean("sp_clear_history", it).apply()
                                 }
                             )
 
-                            // 2. Web Cache
                             DeleteOptionItem(
                                 title = context.getString(R.string.clear_title_cache),
                                 subtitle = "Frees up space by clearing cached images and files",
                                 icon = Icons.Rounded.Refresh,
                                 checked = clearCache,
-                                isExpressiveTiles = isExpressiveFeatureTiles,
-                                tileColors = tileColorway[1],
                                 onCheckedChange = {
                                     clearCache = it
                                     sp.edit().putBoolean("sp_clear_cache", it).apply()
                                 }
                             )
 
-                            // 3. IndexedDB & DOM Storage
                             DeleteOptionItem(
                                 title = context.getString(R.string.setting_title_dom),
                                 subtitle = "Local website data and offline storage",
                                 icon = Icons.Rounded.Storage,
                                 checked = clearIndexedDB,
-                                isExpressiveTiles = isExpressiveFeatureTiles,
-                                tileColors = tileColorway[2],
                                 onCheckedChange = {
                                     clearIndexedDB = it
                                     sp.edit().putBoolean("sp_clearIndexedDB", it).apply()
                                 }
                             )
 
-                            // 4. Cookies & Site Data
                             DeleteOptionItem(
                                 title = context.getString(R.string.setting_title_cookie),
                                 subtitle = context.getString(R.string.setting_summary_cookie_delete),
                                 icon = Icons.Rounded.Cookie,
                                 checked = clearCookie,
-                                isExpressiveTiles = isExpressiveFeatureTiles,
-                                tileColors = tileColorway[0],
                                 onCheckedChange = {
                                     clearCookie = it
                                     sp.edit().putBoolean("sp_clear_cookie", it).apply()
                                 }
                             )
 
-                            // 5. App Database
                             DeleteOptionItem(
                                 title = context.getString(R.string.title_appDatabase),
                                 subtitle = context.getString(R.string.setting_backup_sumDatabase),
                                 icon = Icons.Rounded.Storage,
                                 checked = clearDatabase,
-                                isExpressiveTiles = isExpressiveFeatureTiles,
-                                tileColors = tileColorway[1],
                                 onCheckedChange = {
                                     clearDatabase = it
                                     sp.edit().putBoolean("sp_deleteDatabase", it).apply()
                                 }
                             )
 
-                            // 6. Settings & Preferences
                             DeleteOptionItem(
                                 title = context.getString(R.string.setting_label),
                                 subtitle = context.getString(R.string.setting_backup_sumSettings),
                                 icon = Icons.Rounded.Settings,
                                 checked = clearSettings,
-                                isExpressiveTiles = isExpressiveFeatureTiles,
-                                tileColors = tileColorway[2],
                                 onCheckedChange = {
                                     clearSettings = it
                                     sp.edit().putBoolean("sp_clear_settings", it).apply()
                                 }
                             )
 
-                            // 7. Clear On Quit
                             DeleteOptionItem(
                                 title = context.getString(R.string.clear_title_quit),
                                 subtitle = "Automatically clear selected data when exiting Petal",
                                 icon = Icons.Rounded.Warning,
                                 checked = clearQuit,
-                                isExpressiveTiles = isExpressiveFeatureTiles,
-                                tileColors = tileColorway[0],
                                 onCheckedChange = {
                                     clearQuit = it
                                     sp.edit().putBoolean("sp_clear_quit", it).apply()
@@ -338,7 +310,6 @@ fun PetalDeleteScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Bottom Action Container with clear button
                 Surface(
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                     color = MaterialTheme.colorScheme.surfaceContainer,
@@ -348,20 +319,19 @@ fun PetalDeleteScreen(
                     Box(modifier = Modifier.padding(16.dp)) {
                         Button(
                             onClick = { showConfirmDialog = true },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp)
-                                .bouncyClickable {},
-                            shape = RoundedCornerShape(18.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.error,
                                 contentColor = MaterialTheme.colorScheme.onError
-                            )
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
                         ) {
-                            Icon(Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(Icons.Rounded.DeleteSweep, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
                             Text(
-                                text = context.getString(R.string.menu_delete),
+                                text = "Clear Selected Data",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }
@@ -380,36 +350,13 @@ private fun DeleteOptionItem(
     subtitle: String,
     icon: ImageVector,
     checked: Boolean,
-    isExpressiveTiles: Boolean,
-    tileColors: Pair<Color, Color>,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    if (isExpressiveTiles) {
-        val (container, onContainer) = tileColors
-        PetalFeatureTile(
-            title = title,
-            subtitle = subtitle,
-            icon = icon,
-            container = container,
-            onContainer = onContainer,
-            onClick = { onCheckedChange(!checked) },
-            pillLabel = null,
-            trailing = {
-                IconSwitch(
-                    checked = checked,
-                    icon = icon,
-                    onCheckedChange = onCheckedChange
-                )
-            }
-        )
-    } else {
-        // Non-expressive fallback tile, ported from RV System Monitor's appearance toggle cards.
-        com.petal.browser.ui.components.PetalMonitorToggleTile(
-            title = title,
-            subtitle = subtitle,
-            icon = icon,
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-        )
-    }
+    com.petal.browser.ui.components.PetalMonitorToggleTile(
+        title = title,
+        subtitle = subtitle,
+        icon = icon,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+    )
 }
