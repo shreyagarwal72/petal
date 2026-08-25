@@ -736,26 +736,49 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
 }
 
 // ==========================================
-// 4. BACKUP FEATURE PAGE
+// 4. RESTORE DATA STEP PAGE
 // ==========================================
 @Composable
 private fun BackupFeatureStepPage(context: Context) {
+    var restoreSuccessMessage by remember { mutableStateOf<String?>(null) }
+
+    val openRestoreLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            try {
+                com.petal.browser.unit.BackupUnit.restoreFromUri(
+                    context,
+                    uri,
+                    true,
+                    true,
+                    true,
+                    true
+                )
+                restoreSuccessMessage = "Data & preferences successfully restored!"
+                Toast.makeText(context, "Data restored successfully!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Restore failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     Spacer(Modifier.height(12.dp))
 
     Surface(
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
         modifier = Modifier.size(80.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.CloudSync, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(38.dp))
+            Icon(Icons.Rounded.Restore, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(38.dp))
         }
     }
 
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Backup & Restore Feature",
+        text = "Restore Data from Backup",
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -764,7 +787,7 @@ private fun BackupFeatureStepPage(context: Context) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Do you have a backup? Petal Browser lets you export or restore your bookmarks, history, web settings, and search engines at any time.",
+        text = "Have a previous Petal Browser backup file (.json)? Easily restore your bookmarks, history, web settings, and saved search engines now.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -775,38 +798,7 @@ private fun BackupFeatureStepPage(context: Context) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
         Card(
             onClick = {
-                try {
-                    context.startActivity(Intent(context, com.petal.browser.activity.Settings_Backup::class.java))
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Open Settings -> Data & Backup to manage backups", Toast.LENGTH_SHORT).show()
-                }
-            },
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(44.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.UploadFile, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
-                    }
-                }
-                Spacer(Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Export New Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text("Save bookmarks, history & search engines to file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-            }
-        }
-
-        Card(
-            onClick = {
-                try {
-                    context.startActivity(Intent(context, com.petal.browser.activity.Settings_Backup::class.java))
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Open Settings -> Data & Backup to restore", Toast.LENGTH_SHORT).show()
-                }
+                openRestoreLauncher.launch(arrayOf("*/*"))
             },
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             shape = RoundedCornerShape(20.dp),
@@ -821,9 +813,30 @@ private fun BackupFeatureStepPage(context: Context) {
                 Spacer(Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Restore Existing Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text("Import bookmarks and data from a .json file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Select a .json backup file from device storage", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            }
+        }
+
+        if (restoreSuccessMessage != null) {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Text(
+                        text = restoreSuccessMessage!!,
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
     }
