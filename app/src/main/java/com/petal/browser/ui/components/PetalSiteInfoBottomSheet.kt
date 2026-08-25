@@ -266,6 +266,9 @@ fun PetalSiteInfoBottomSheet(
                         onCheckedChange = { allowed ->
                             isCameraAllowed = allowed
                             sp.edit().putBoolean(profile + "_camera", allowed).apply()
+                            if (allowed && context is android.app.Activity) {
+                                HelperUnit.grantPermissionsCamera(context)
+                            }
                             webView?.reloadWithoutInit()
                         }
                     )
@@ -280,6 +283,10 @@ fun PetalSiteInfoBottomSheet(
                         onCheckedChange = { allowed ->
                             isMicAllowed = allowed
                             sp.edit().putBoolean(profile + "_microphone", allowed).apply()
+                            if (allowed && context is android.app.Activity) {
+                                HelperUnit.grantPermissionsMic(context)
+                            }
+                            webView?.reloadWithoutInit()
                         }
                     )
 
@@ -294,11 +301,14 @@ fun PetalSiteInfoBottomSheet(
                             isLocationAllowed = allowed
                             sp.edit().putBoolean(profile + "_location", allowed).apply()
                             webView?.getSettings()?.setGeolocationEnabled(allowed)
-                            if (!allowed) {
+                            if (allowed && context is android.app.Activity) {
+                                HelperUnit.grantPermissionsLoc(context)
+                            } else if (!allowed) {
                                 try {
                                     GeolocationPermissions.getInstance().clear(domain)
                                 } catch (ignored: Exception) {}
                             }
+                            webView?.reloadWithoutInit()
                         }
                     )
 
@@ -312,6 +322,11 @@ fun PetalSiteInfoBottomSheet(
                         onCheckedChange = { allowed ->
                             isNotificationsAllowed = allowed
                             sp.edit().putBoolean("sp_notifications_$domain", allowed).apply()
+                            if (allowed && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && context is android.app.Activity) {
+                                if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                    androidx.core.app.ActivityCompat.requestPermissions(context, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
+                                }
+                            }
                         }
                     )
                 }
