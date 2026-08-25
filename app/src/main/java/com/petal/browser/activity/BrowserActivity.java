@@ -318,6 +318,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             Locale.setDefault(locale);
             android.content.res.Configuration config = new android.content.res.Configuration(newBase.getResources().getConfiguration());
             config.setLocale(locale);
+            config.setLayoutDirection(locale);
             newBase = newBase.createConfigurationContext(config);
         }
         super.attachBaseContext(newBase);

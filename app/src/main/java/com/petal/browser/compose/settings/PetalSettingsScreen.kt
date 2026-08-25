@@ -1207,7 +1207,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 4. Popular Languages Selector
-                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english spanish hindi french german chinese arabic portuguese russian japanese")) {
+                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english hinglish spanish hindi french german chinese arabic portuguese russian japanese")) {
                                 SettingsCategoryCard(title = "App Language", icon = Icons.Rounded.Language) {
                                     Text(
                                         "Choose your preferred display language:",
@@ -1218,8 +1218,9 @@ fun PetalSettingsScreen(
                                     val languages = listOf(
                                         Pair("system", "System Default"),
                                         Pair("en", "English"),
-                                        Pair("es", "Español (Spanish)"),
+                                        Pair("hi-Latn", "Hinglish (Hindi in English)"),
                                         Pair("hi", "हिन्दी (Hindi)"),
+                                        Pair("es", "Español (Spanish)"),
                                         Pair("fr", "Français (French)"),
                                         Pair("de", "Deutsch (German)"),
                                         Pair("zh", "中文 (Chinese)"),
@@ -1239,10 +1240,13 @@ fun PetalSettingsScreen(
                                             FilterChip(
                                                 selected = appLanguage == tag,
                                                 onClick = {
-                                                    appLanguage = tag
-                                                    sp.edit().putString("sp_app_language", tag).apply()
-                                                    val localeList = if (tag == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
-                                                    AppCompatDelegate.setApplicationLocales(localeList)
+                                                    if (appLanguage != tag) {
+                                                        appLanguage = tag
+                                                        sp.edit().putString("sp_app_language", tag).apply()
+                                                        val localeList = if (tag == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
+                                                        AppCompatDelegate.setApplicationLocales(localeList)
+                                                        (context as? androidx.activity.ComponentActivity)?.recreate()
+                                                    }
                                                 },
                                                 label = { Text(label) },
                                                 leadingIcon = if (appLanguage == tag) {

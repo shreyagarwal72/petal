@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Petal</string>
+    <string name="main_omnibox_input_hint">खोजें या वेब पता दर्ज करें</string>
+    <string name="widget_search_hint">खोजें या वेब पता दर्ज करें</string>
+    <string name="widget_ai_search">Petal AI से पूछें</string>
+    <string name="widget_voice_search">आवाज से खोजें</string>
+    <string name="album_title_bookmarks">बुकमार्क</string>
+    <string name="album_title_history">इतिहास</string>
+    <string name="album_title_tab">खुले टैब</string>
+    <string name="app_ok">ठीक है</string>
+    <string name="app_cancel">रद्द करें</string>
+    <string name="app_done">संपन्न</string>
+</resources>
