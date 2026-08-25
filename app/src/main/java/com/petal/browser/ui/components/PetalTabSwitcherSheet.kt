@@ -78,6 +78,25 @@ object PetalTabSwitcherBridge {
             dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             dialog.setCancelable(true)
             dialog.setCanceledOnTouchOutside(false)
+            dialog.window?.let { window ->
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
+                window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            }
+            dialog.setOnShowListener {
+                try {
+                    val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                    bottomSheet?.let { sheet ->
+                        val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
+                        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                        behavior.skipCollapsed = true
+                        behavior.isDraggable = false
+                        sheet.layoutParams?.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
