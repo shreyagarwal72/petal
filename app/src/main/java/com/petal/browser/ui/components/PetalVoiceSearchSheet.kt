@@ -351,7 +351,7 @@ fun PetalVoiceSearchSheet(
                 }
             } else {
                 Text(
-                    text = "Try saying: \"Weather in Tokyo\" or \"Open github.com\"",
+                    text = "Try saying: \"Weather in India\" or \"Open github.com\"",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
