@@ -12,7 +12,6 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -175,7 +174,7 @@ private fun PetalSearchWidgetContent(
                     ExpressiveMorphActionButton(
                         shapeType = ExpressiveShapeType.BURST,
                         bgColor = GlanceTheme.colors.secondaryContainer,
-                        iconRes = R.drawable.ic_visibility_off,
+                        iconRes = R.drawable.icon_incognito,
                         iconTint = GlanceTheme.colors.onSecondaryContainer,
                         contentDescription = "New Incognito Tab",
                         action = incognitoAction
@@ -187,7 +186,7 @@ private fun PetalSearchWidgetContent(
                     ExpressiveMorphActionButton(
                         shapeType = ExpressiveShapeType.COOKIE,
                         bgColor = GlanceTheme.colors.primaryContainer,
-                        iconRes = R.drawable.ic_add,
+                        iconRes = R.drawable.icon_tab_plus,
                         iconTint = GlanceTheme.colors.onPrimaryContainer,
                         contentDescription = "New Tab",
                         action = newTabAction
@@ -378,7 +377,7 @@ private fun createExpressiveMorphShapeBitmap(
         )
     }
 
-    val path = polygon.toPath().asAndroidPath()
+    val path = polygon.toPath()
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = colorInt
         style = Paint.Style.FILL
