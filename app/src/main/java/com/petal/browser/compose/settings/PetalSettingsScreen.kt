@@ -440,14 +440,30 @@ fun PetalSettingsScreen(
                                             icon = cat.icon,
                                             container = container,
                                             onContainer = onContainer,
-                                            onClick = { currentCategory = cat },
+                                            onClick = {
+                                                if (cat == SettingsCategory.ABOUT) {
+                                                    (context as? ComponentActivity)?.let { act ->
+                                                        com.petal.browser.ui.components.PetalAboutDeveloperBridge.show(act)
+                                                    }
+                                                } else {
+                                                    currentCategory = cat
+                                                }
+                                            },
                                         )
                                     } else {
                                         SettingsCategoryRow(
                                             title = cat.title,
                                             subtitle = cat.subtitle,
                                             icon = cat.icon,
-                                            onClick = { currentCategory = cat }
+                                            onClick = {
+                                                if (cat == SettingsCategory.ABOUT) {
+                                                    (context as? ComponentActivity)?.let { act ->
+                                                        com.petal.browser.ui.components.PetalAboutDeveloperBridge.show(act)
+                                                    }
+                                                } else {
+                                                    currentCategory = cat
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -1983,7 +1999,11 @@ fun PetalSettingsScreen(
                             }
 
                             // 9. About & Developer Profile Section
-                            if ((currentCategory == SettingsCategory.ABOUT || searchQuery.isNotBlank()) && matchesSearch("About", "app developer profile version shrey agarwal github licenses terms open source")) {
+                            if (currentCategory == SettingsCategory.ABOUT) {
+                                com.petal.browser.ui.components.PetalAboutDeveloperSheetContent(
+                                    onClose = { currentCategory = SettingsCategory.OVERVIEW }
+                                )
+                            } else if (searchQuery.isNotBlank() && matchesSearch("About", "app developer profile version shrey agarwal github licenses terms open source")) {
                                 SettingsCategoryCard(title = "Developer Profile", icon = Icons.Rounded.Person) {
                                     Surface(
                                         shape = RoundedCornerShape(22.dp),
