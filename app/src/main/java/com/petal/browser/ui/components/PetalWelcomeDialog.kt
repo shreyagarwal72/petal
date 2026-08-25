@@ -13,12 +13,24 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,6 +55,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -64,8 +77,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.preference.PreferenceManager
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.petal.browser.R
 import com.petal.browser.account.GoogleAccountManager
 import com.petal.browser.account.ProfileAvatarDisplay
@@ -77,7 +89,7 @@ object PetalWelcomeBridge {
     @JvmStatic
     fun showWelcomeDialog(activity: ComponentActivity, onGetStarted: () -> Unit) {
         try {
-            val dialog = BottomSheetDialog(activity)
+            var dialog: AlertDialog? = null
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
@@ -86,19 +98,18 @@ object PetalWelcomeBridge {
                 setContent {
                     PetalExpressiveTheme {
                         PetalWelcomeScreen(onGetStarted = {
-                            try { dialog.dismiss() } catch (ignored: Exception) {}
+                            try { dialog?.dismiss() } catch (ignored: Exception) {}
                             onGetStarted()
                         })
                     }
                 }
             }
-            dialog.setContentView(composeView)
-            dialog.behavior.apply {
-                state = BottomSheetBehavior.STATE_EXPANDED
-                skipCollapsed = true
-                isFitToContents = false
-                expandedOffset = 0
-            }
+            val builder = MaterialAlertDialogBuilder(activity)
+            builder.setView(composeView)
+            builder.setCancelable(false)
+            dialog = builder.create()
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            dialog.setCanceledOnTouchOutside(false)
             dialog.show()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -116,16 +127,18 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
     Surface(
-        color = MaterialTheme.colorScheme.background,
-        modifier = Modifier.fillMaxSize()
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(32.dp),
+        shadowElevation = 12.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 680.dp)
+            .padding(12.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .navigationBarsPadding()
-                .statusBarsPadding()
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Header Page Indicators & Title Bar (1 to 10)
+            // Header Page Indicators (Pills)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -133,7 +146,6 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Step Indicator Pills (1 to 10)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -141,12 +153,12 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                     repeat(10) { index ->
                         val isSelected = pagerState.currentPage == index
                         val width by animateDpAsState(
-                            targetValue = if (isSelected) 20.dp else 6.dp,
+                            targetValue = if (isSelected) 22.dp else 6.dp,
                             animationSpec = spring(),
                             label = "indicatorWidth"
                         )
                         val color by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                             label = "indicatorColor"
                         )
                         Box(
@@ -160,30 +172,39 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 }
 
                 Text(
-                    text = "${pagerState.currentPage + 1} of 10",
+                    text = if (pagerState.currentPage == 0) "Welcome" else "${pagerState.currentPage} / 9",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            // Horizontal Pager with 10 Onboarding Pages
+            // Unswipeable Horizontal Pager
             HorizontalPager(
                 state = pagerState,
+                userScrollEnabled = false,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
             ) { page ->
+                val autoAdvance: () -> Unit = {
+                    scope.launch {
+                        if (pagerState.currentPage < 9) {
+                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                        }
+                    }
+                }
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                        .padding(horizontal = 20.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (page) {
                         0 -> WelcomeStepPage()
-                        1 -> EssentialPermissionsStepPage(activity, context)
-                        2 -> NotificationPermissionStepPage(activity, context)
+                        1 -> EssentialPermissionsStepPage(activity, context, onAutoAdvance = autoAdvance)
+                        2 -> NotificationPermissionStepPage(activity, context, onAutoAdvance = autoAdvance)
                         3 -> BackupFeatureStepPage(context)
                         4 -> ThemeAndLanguageStepPage(sp, activity)
                         5 -> BottomNavbarStyleStepPage(sp)
@@ -195,74 +216,125 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 }
             }
 
-            // Bottom Navigation Actions Bar
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                tonalElevation = 2.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Back Button (hidden on Page 0)
-                    if (pagerState.currentPage > 0) {
-                        TextButton(
-                            onClick = {
-                                scope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                                }
-                            },
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Back", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold))
+            // Bottom Navigation Action Bar
+            SetupBottomBar(
+                pagerState = pagerState,
+                onNextClicked = {
+                    scope.launch {
+                        if (pagerState.currentPage < 9) {
+                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
-                    } else {
-                        Spacer(Modifier.width(1.dp))
                     }
+                },
+                onFinishClicked = {
+                    sp.edit().putBoolean("sp_welcome_shown", true).apply()
+                    onGetStarted()
+                }
+            )
+        }
+    }
+}
 
-                    // Next / Finish Setup Button
-                    val isLastPage = pagerState.currentPage == 9
-                    Button(
-                        onClick = {
-                            if (isLastPage) {
-                                sp.edit().putBoolean("sp_welcome_shown", true).apply()
-                                onGetStarted()
-                            } else {
-                                scope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                }
-                            }
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+private fun SetupBottomBar(
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    onNextClicked: () -> Unit,
+    onFinishClicked: () -> Unit
+) {
+    val isLastPage = pagerState.currentPage == 9
+
+    // Corner Morphing Animation
+    val targetShapeValues = when (pagerState.currentPage % 3) {
+        0 -> listOf(50f, 50f, 50f, 50f)
+        1 -> listOf(26f, 26f, 26f, 26f)
+        else -> listOf(18f, 50f, 18f, 50f)
+    }
+
+    val animTopStart by animateFloatAsState(targetShapeValues[0], tween(500, easing = FastOutSlowInEasing), label = "TopStart")
+    val animTopEnd by animateFloatAsState(targetShapeValues[1], tween(500, easing = FastOutSlowInEasing), label = "TopEnd")
+    val animBottomStart by animateFloatAsState(targetShapeValues[2], tween(500, easing = FastOutSlowInEasing), label = "BottomStart")
+    val animBottomEnd by animateFloatAsState(targetShapeValues[3], tween(500, easing = FastOutSlowInEasing), label = "BottomEnd")
+
+    // Rotation Animation
+    val animatedRotation by animateFloatAsState(
+        targetValue = pagerState.currentPage * 360f,
+        animationSpec = tween(750, easing = FastOutSlowInEasing),
+        label = "FabRotation"
+    )
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 3.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Animated Step Count Text
+            AnimatedContent(
+                targetState = pagerState.currentPage,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 12.dp),
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        (slideInVertically { height -> height } + fadeIn()).togetherWith(slideOutVertically { height -> -height } + fadeOut())
+                    } else {
+                        (slideInVertically { height -> -height } + fadeIn()).togetherWith(slideOutVertically { height -> height } + fadeOut())
+                    }.using(SizeTransform(clip = false))
+                },
+                label = "StepTextAnim"
+            ) { targetPage ->
+                if (targetPage == 0) {
+                    Text(
+                        text = "Welcome to Petal",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Text(
+                        text = "Step $targetPage of 9",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Morphing Rotating Action FAB Button
+            Surface(
+                onClick = if (isLastPage) onFinishClicked else onNextClicked,
+                shape = RoundedCornerShape(
+                    topStart = animTopStart.dp,
+                    topEnd = animTopEnd.dp,
+                    bottomStart = animBottomStart.dp,
+                    bottomEnd = animBottomEnd.dp
+                ),
+                color = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shadowElevation = 4.dp,
+                modifier = Modifier
+                    .rotate(animatedRotation)
+                    .size(56.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.rotate(-animatedRotation)) {
+                    AnimatedContent(
+                        targetState = isLastPage,
+                        transitionSpec = {
+                            (fadeIn(tween(200)) + scaleIn(initialScale = 0.8f)).togetherWith(fadeOut(tween(150)) + scaleOut(targetScale = 0.8f))
                         },
-                        shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        modifier = Modifier
-                            .height(50.dp)
-                            .bouncyClickable(scaleDown = 0.94f) {}
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = if (isLastPage) "Finish Setup" else "Continue",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Icon(
-                                imageVector = if (isLastPage) Icons.Rounded.Check else Icons.AutoMirrored.Rounded.ArrowForward,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
+                        label = "FabIconAnim"
+                    ) { lastPage ->
+                        if (lastPage) {
+                            Icon(Icons.Rounded.Check, contentDescription = "Finish", modifier = Modifier.size(24.dp))
+                        } else {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Next", modifier = Modifier.size(24.dp))
                         }
                     }
                 }
@@ -290,160 +362,147 @@ private fun WelcomeStepPage() {
         BitmapPainter(bitmap.asImageBitmap())
     }
 
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(8.dp))
 
-    // App Hero Icon
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shadowElevation = 6.dp,
-        modifier = Modifier.size(96.dp)
+    // PixelPlayer Style Welcome Title Header
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Image(
-                painter = appIconPainter,
-                contentDescription = "Petal Logo",
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-            )
+        Text(
+            text = "Welcome to",
+            style = MaterialTheme.typography.displayLarge.copy(
+                fontSize = 38.sp,
+                fontWeight = FontWeight.Normal
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "Petal",
+            style = MaterialTheme.typography.displayLarge.copy(
+                fontSize = 46.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            ),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+            tonalElevation = 2.dp
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "v1.7.7",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "• Official Release",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
     }
 
     Spacer(Modifier.height(18.dp))
 
-    Text(
-        text = "Welcome to Petal",
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-        color = MaterialTheme.colorScheme.onSurface,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(8.dp))
-
-    Text(
-        text = "Fast, private, and customizable web browser designed for modern Android with Material 3 Expressive UI.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(20.dp))
-
-    // Feature Highlight Chips
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
+    // App Hero Icon & Badge Card
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        SuggestionChip(onClick = {}, label = { Text("Privacy First") }, icon = { Icon(Icons.Rounded.Shield, null, modifier = Modifier.size(16.dp)) })
-        SuggestionChip(onClick = {}, label = { Text("Material 3 Expressive") }, icon = { Icon(Icons.Rounded.Palette, null, modifier = Modifier.size(16.dp)) })
-        SuggestionChip(onClick = {}, label = { Text("Petal AI Hub") }, icon = { Icon(Icons.Rounded.AutoAwesome, null, modifier = Modifier.size(16.dp)) })
-        SuggestionChip(onClick = {}, label = { Text("Fast MDM Downloads") }, icon = { Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp)) })
+        Column(
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shadowElevation = 6.dp,
+                modifier = Modifier.size(80.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = appIconPainter,
+                        contentDescription = "Petal Logo",
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            Text(
+                text = "Fast, private & customizable web browser designed for modern Android with Material 3 Expressive UI.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+            ) {
+                SuggestionChip(onClick = {}, label = { Text("Privacy First") }, icon = { Icon(Icons.Rounded.Shield, null, modifier = Modifier.size(16.dp)) })
+                SuggestionChip(onClick = {}, label = { Text("Material 3 Expressive") }, icon = { Icon(Icons.Rounded.Palette, null, modifier = Modifier.size(16.dp)) })
+                SuggestionChip(onClick = {}, label = { Text("Petal AI Hub") }, icon = { Icon(Icons.Rounded.AutoAwesome, null, modifier = Modifier.size(16.dp)) })
+                SuggestionChip(onClick = {}, label = { Text("Fast MDM Downloads") }, icon = { Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp)) })
+            }
+        }
     }
 
-    Spacer(Modifier.height(20.dp))
+    Spacer(Modifier.height(16.dp))
 
     // Profile Customization Card
     val currentProfile = GoogleAccountManager.currentProfile
-    var nameInput by remember { mutableStateOf(currentProfile.displayName) }
-    var pendingCropUri by remember { mutableStateOf<android.net.Uri?>(null) }
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri -> uri?.let { pendingCropUri = it } }
-
-    if (pendingCropUri != null) {
-        com.petal.browser.account.PetalAvatarCropSheet(
-            imageUri = pendingCropUri!!,
-            onDismiss = { pendingCropUri = null },
-            onAvatarCropped = { pendingCropUri = null }
-        )
-    }
-
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         shape = RoundedCornerShape(22.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(modifier = Modifier.padding(18.dp)) {
             Text(
-                text = "Customize Profile",
+                text = "Active Profile",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.align(Alignment.Start)
+                color = MaterialTheme.colorScheme.onSurface
             )
-
-            Spacer(Modifier.height(10.dp))
-            ProfileAvatarDisplay(profile = currentProfile, sizeDp = 64)
-            Spacer(Modifier.height(10.dp))
-
-            OutlinedTextField(
-                value = nameInput,
-                onValueChange = { input ->
-                    if (input.length <= 15) {
-                        nameInput = input
-                        GoogleAccountManager.updateDisplayName(context, input)
-                    }
-                },
-                label = { Text("Display Name") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp)
-            )
-
             Spacer(Modifier.height(12.dp))
-
-            Text(
-                text = "Choose Profile Avatar",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                item {
-                    Surface(
-                        onClick = { galleryLauncher.launch("image/*") },
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Rounded.AccountCircle, contentDescription = "Gallery", tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(22.dp))
-                        }
-                    }
-                }
-
-                items(GoogleAccountManager.builtinAvatarPresets.size) { idx ->
-                    val (presetId, label) = GoogleAccountManager.builtinAvatarPresets[idx]
-                    val isSelected = currentProfile.avatarType == com.petal.browser.account.AvatarType.PRESET && currentProfile.avatarPresetId == presetId
-                    Surface(
-                        onClick = { GoogleAccountManager.updateAvatarPreset(context, presetId) },
-                        shape = CircleShape,
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            val iconVec = com.petal.browser.account.getPresetMaterialIcon(presetId)
-                            Icon(
-                                imageVector = iconVec ?: Icons.Rounded.AccountCircle,
-                                contentDescription = label,
-                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ProfileAvatarDisplay(profile = currentProfile, size = 46.dp)
+                Spacer(Modifier.width(14.dp))
+                Column {
+                    Text(
+                        text = currentProfile.displayName,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (currentProfile.isGuest) "Incognito Guest Mode" else "Synced Account Profile",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -454,10 +513,18 @@ private fun WelcomeStepPage() {
 // 2. ALL ESSENTIAL PERMISSIONS PAGE
 // ==========================================
 @Composable
-private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) {
+private fun EssentialPermissionsStepPage(activity: Activity?, context: Context, onAutoAdvance: () -> Unit) {
     var hasCamera by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
     var hasMic by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) }
     var hasLoc by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) }
+
+    val allGranted = hasCamera && hasMic && hasLoc
+    LaunchedEffect(allGranted) {
+        if (allGranted) {
+            kotlinx.coroutines.delay(350)
+            onAutoAdvance()
+        }
+    }
 
     Spacer(Modifier.height(12.dp))
 
@@ -588,13 +655,20 @@ private fun PermissionStatusRow(
 // 3. NOTIFICATION PERMISSION PAGE
 // ==========================================
 @Composable
-private fun NotificationPermissionStepPage(activity: Activity?, context: Context) {
+private fun NotificationPermissionStepPage(activity: Activity?, context: Context, onAutoAdvance: () -> Unit) {
     var hasNotification by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             } else true
         )
+    }
+
+    LaunchedEffect(hasNotification) {
+        if (hasNotification) {
+            kotlinx.coroutines.delay(350)
+            onAutoAdvance()
+        }
     }
 
     Spacer(Modifier.height(12.dp))
@@ -752,15 +826,15 @@ private fun BackupFeatureStepPage(context: Context) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.size(44.dp)) {
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.size(44.dp)) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.DownloadForOffline, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(22.dp))
+                        Icon(Icons.Rounded.Restore, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(22.dp))
                     }
                 }
                 Spacer(Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Restore Existing Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text("Import settings and bookmarks from JSON backup file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Import bookmarks and data from a .json file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
             }
@@ -769,215 +843,14 @@ private fun BackupFeatureStepPage(context: Context) {
 }
 
 // ==========================================
-// 5. THEME & LANGUAGE PAGE
+// 5. THEME & APP LANGUAGE PAGE
 // ==========================================
 @Composable
 private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?) {
+    val context = LocalContext.current
+    var selectedTheme by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
+    var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
     var appLanguage by remember { mutableStateOf(sp.getString("sp_app_language", "system") ?: "system") }
-    var nightMode by remember { mutableIntStateOf(sp.getInt("sp_night_mode", 0)) }
-
-    Spacer(Modifier.height(12.dp))
-
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        modifier = Modifier.size(80.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(38.dp))
-        }
-    }
-
-    Spacer(Modifier.height(16.dp))
-
-    Text(
-        text = "Theme & Display Language",
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.onSurface,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(8.dp))
-
-    Text(
-        text = "Choose your preferred app appearance theme and display language.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(20.dp))
-
-    // Theme Mode Section
-    Text("App Theme Mode", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
-    Spacer(Modifier.height(8.dp))
-
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        ThemeChipItem(title = "System", icon = Icons.Rounded.PhoneAndroid, isSelected = nightMode == 0, onClick = {
-            nightMode = 0
-            sp.edit().putInt("sp_night_mode", 0).apply()
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-        }, modifier = Modifier.weight(1f))
-
-        ThemeChipItem(title = "Dark", icon = Icons.Rounded.DarkMode, isSelected = nightMode == 2, onClick = {
-            nightMode = 2
-            sp.edit().putInt("sp_night_mode", 2).apply()
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-        }, modifier = Modifier.weight(1f))
-
-        ThemeChipItem(title = "Light", icon = Icons.Outlined.LightMode, isSelected = nightMode == 1, onClick = {
-            nightMode = 1
-            sp.edit().putInt("sp_night_mode", 1).apply()
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-        }, modifier = Modifier.weight(1f))
-    }
-
-    Spacer(Modifier.height(20.dp))
-
-    // Popular Language Selector Section
-    Text("Display Language", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
-    Spacer(Modifier.height(8.dp))
-
-    val languages = listOf(
-        Pair("system", "System Default"),
-        Pair("hi-Latn", "Hinglish (Hindi - Latin)"),
-        Pair("hi", "हिन्दी (Hindi)"),
-        Pair("en", "English")
-    )
-
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-        languages.forEach { (tag, label) ->
-            FilterChip(
-                selected = appLanguage == tag,
-                onClick = {
-                    if (appLanguage != tag) {
-                        appLanguage = tag
-                        com.petal.browser.unit.HelperUnit.setAppLanguage(activity, tag)
-                    }
-                },
-                label = { Text(label) },
-                leadingIcon = if (appLanguage == tag) {
-                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                } else null
-            )
-        }
-    }
-}
-
-@Composable
-private fun ThemeChipItem(title: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-        modifier = modifier.height(64.dp)
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.padding(4.dp)) {
-            Icon(imageVector = icon, contentDescription = title, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.height(4.dp))
-            Text(text = title, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface)
-        }
-    }
-}
-
-// ==========================================
-// 6. BOTTOM NAVBAR STYLE PAGE
-// ==========================================
-@Composable
-private fun BottomNavbarStyleStepPage(sp: SharedPreferences) {
-    var isBottomBar by remember { mutableStateOf(sp.getBoolean("sp_bottom_toolbar", true)) }
-
-    Spacer(Modifier.height(12.dp))
-
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.tertiaryContainer,
-        modifier = Modifier.size(80.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Dock, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(38.dp))
-        }
-    }
-
-    Spacer(Modifier.height(16.dp))
-
-    Text(
-        text = "Navigation Bar Position",
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.onSurface,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(8.dp))
-
-    Text(
-        text = "Choose your preferred position for the address omnibox bar and navigation toolbar controls.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(20.dp))
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        NavbarOptionCard(
-            title = "Bottom Omnibox & Toolbar",
-            subtitle = "Reachable with one hand at the bottom of your screen",
-            icon = Icons.Rounded.VerticalAlignBottom,
-            isSelected = isBottomBar,
-            onClick = {
-                isBottomBar = true
-                sp.edit().putBoolean("sp_bottom_toolbar", true).apply()
-            }
-        )
-
-        NavbarOptionCard(
-            title = "Classic Top Omnibox",
-            subtitle = "Standard traditional browser layout at the top of the page",
-            icon = Icons.Rounded.VerticalAlignTop,
-            isSelected = !isBottomBar,
-            onClick = {
-                isBottomBar = false
-                sp.edit().putBoolean("sp_bottom_toolbar", false).apply()
-            }
-        )
-    }
-}
-
-@Composable
-private fun NavbarOptionCard(title: String, subtitle: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surfaceContainerHigh),
-        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(imageVector = icon, contentDescription = title, tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
-                }
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (isSelected) {
-                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-            }
-        }
-    }
-}
-
-// ==========================================
-// 7. SETUP PETAL AI KEY PAGE
-// ==========================================
-@Composable
-private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
-    var apiKey by remember { mutableStateOf(sp.getString("sp_petal_ai_key", "") ?: "") }
 
     Spacer(Modifier.height(12.dp))
 
@@ -987,14 +860,14 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
         modifier = Modifier.size(80.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(38.dp))
+            Icon(Icons.Rounded.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(38.dp))
         }
     }
 
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Setup Petal AI Key",
+        text = "Theme & Language",
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -1003,7 +876,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Connect your custom API key for OpenAI, Groq, Gemini, or OpenRouter for accelerated AI web search & summarization, or skip to use free cloud endpoints.",
+        text = "Customize your visual style with light/dark theme modes, OLED pure black, and select your preferred display language.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -1016,48 +889,121 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
         shape = RoundedCornerShape(22.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("API Key Configuration", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = apiKey,
-                onValueChange = { input ->
-                    apiKey = input
-                    sp.edit().putString("sp_petal_ai_key", input).apply()
-                },
-                label = { Text("Petal AI Key (Optional)") },
-                placeholder = { Text("sk-...") },
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Rounded.Key, contentDescription = null) },
-                trailingIcon = if (apiKey.isNotBlank()) {
-                    { IconButton(onClick = { apiKey = ""; sp.edit().remove("sp_petal_ai_key").apply() }) { Icon(Icons.Rounded.Close, contentDescription = null) } }
-                } else null,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp)
-            )
-
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text("App Theme Mode", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(12.dp))
 
-            Text("Supported Providers:", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                FilterChip(
+                    selected = selectedTheme == "LIGHT",
+                    onClick = {
+                        selectedTheme = "LIGHT"
+                        sp.edit().putString("sp_theme_config", "LIGHT").apply()
+                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                    },
+                    label = { Text("Light") },
+                    leadingIcon = { Icon(Icons.Outlined.LightMode, null, modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.weight(1f)
+                )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                SuggestionChip(onClick = {}, label = { Text("OpenAI") })
-                SuggestionChip(onClick = {}, label = { Text("Groq") })
-                SuggestionChip(onClick = {}, label = { Text("Google Gemini") })
-                SuggestionChip(onClick = {}, label = { Text("OpenRouter") })
+                FilterChip(
+                    selected = selectedTheme == "DARK",
+                    onClick = {
+                        selectedTheme = "DARK"
+                        sp.edit().putString("sp_theme_config", "DARK").apply()
+                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                    },
+                    label = { Text("Dark") },
+                    leadingIcon = { Icon(Icons.Rounded.DarkMode, null, modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.weight(1f)
+                )
+
+                FilterChip(
+                    selected = selectedTheme == "FOLLOW_SYSTEM",
+                    onClick = {
+                        selectedTheme = "FOLLOW_SYSTEM"
+                        sp.edit().putString("sp_theme_config", "FOLLOW_SYSTEM").apply()
+                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                    },
+                    label = { Text("System") },
+                    leadingIcon = { Icon(Icons.Rounded.Android, null, modifier = Modifier.size(16.dp)) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("AMOLED Pure Black", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Text("Deep OLED pitch black background", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(
+                    checked = isAmoled,
+                    onCheckedChange = { checked ->
+                        isAmoled = checked
+                        sp.edit().putBoolean("sp_amoled", checked).apply()
+                    }
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            Text("Display Language", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.height(8.dp))
+
+            val languages = listOf(
+                Pair("system", "System Default"),
+                Pair("en", "English"),
+                Pair("hi-Latn", "Hinglish (Hindi in English)"),
+                Pair("hi", "हिन्दी (Hindi)"),
+                Pair("es", "Español (Spanish)"),
+                Pair("fr", "Français (French)"),
+                Pair("de", "Deutsch (German)"),
+                Pair("zh", "中文 (Chinese)"),
+                Pair("ar", "العربية (Arabic)"),
+                Pair("pt", "Português (Portuguese)"),
+                Pair("ru", "Русский (Russian)"),
+                Pair("ja", "日本語 (Japanese)")
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                languages.forEach { (tag, label) ->
+                    FilterChip(
+                        selected = appLanguage == tag,
+                        onClick = {
+                            if (appLanguage != tag) {
+                                appLanguage = tag
+                                HelperUnit.setAppLanguage(context, tag)
+                            }
+                        },
+                        label = { Text(label) },
+                        leadingIcon = if (appLanguage == tag) {
+                            { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null
+                    )
+                }
             }
         }
     }
 }
 
 // ==========================================
-// 8. CHOOSE DEFAULT SEARCH ENGINE PAGE
+// 6. BOTTOM NAVBAR STYLE PAGE
 // ==========================================
 @Composable
-private fun SearchEngineStepPage(sp: SharedPreferences) {
-    var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
+private fun BottomNavbarStyleStepPage(sp: SharedPreferences) {
+    var navStyle by remember { mutableStateOf(sp.getString("sp_bottom_navbar_style", "FLOATING") ?: "FLOATING") }
+    var isFloatingBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
 
     Spacer(Modifier.height(12.dp))
 
@@ -1067,7 +1013,201 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
         modifier = Modifier.size(80.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(38.dp))
+            Icon(Icons.Rounded.ViewDay, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Navigation Bar Style",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Choose between a modern floating pill navigation bar or a classic docked bottom layout for web navigation.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Card(
+                onClick = {
+                    navStyle = "FLOATING"
+                    isFloatingBar = true
+                    sp.edit().putString("sp_bottom_navbar_style", "FLOATING").putBoolean("sp_floating_tab_bar", true).apply()
+                },
+                border = BorderStroke(2.dp, if (navStyle == "FLOATING") MaterialTheme.colorScheme.primary else Color.Transparent),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.SmartButton, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Floating Pill Bar", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text("Detached rounded floating navigation bar with fluid gesture morphing", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (navStyle == "FLOATING") Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            Card(
+                onClick = {
+                    navStyle = "CLASSIC"
+                    isFloatingBar = false
+                    sp.edit().putString("sp_bottom_navbar_style", "CLASSIC").putBoolean("sp_floating_tab_bar", false).apply()
+                },
+                border = BorderStroke(2.dp, if (navStyle == "CLASSIC") MaterialTheme.colorScheme.primary else Color.Transparent),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.ViewAgenda, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Classic Docked Bar", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text("Edge-to-edge docked bottom navigation bar with integrated tab counter", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (navStyle == "CLASSIC") Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// 7. SETUP PETAL AI KEY PAGE
+// ==========================================
+@Composable
+private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
+    var apiKey by remember { mutableStateOf(sp.getString("sp_gemini_api_key", "") ?: "") }
+    var selectedProvider by remember { mutableStateOf(sp.getString("sp_ai_provider", "Gemini 2.5 Flash") ?: "Gemini 2.5 Flash") }
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Petal AI & Deep Research",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Configure your preferred AI API key for webpage summaries, instant search answers, and live site translation.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text("Select AI Engine Provider", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.height(10.dp))
+
+            val providers = listOf("Gemini 2.5 Flash", "OpenAI GPT-4o", "DeepSeek R1", "Groq Llama 3")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                providers.forEach { provider ->
+                    FilterChip(
+                        selected = selectedProvider == provider,
+                        onClick = {
+                            selectedProvider = provider
+                            sp.edit().putString("sp_ai_provider", provider).apply()
+                        },
+                        label = { Text(provider) }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            OutlinedTextField(
+                value = apiKey,
+                onValueChange = { input ->
+                    apiKey = input
+                    sp.edit().putString("sp_gemini_api_key", input).apply()
+                },
+                label = { Text("API Key (Optional)") },
+                placeholder = { Text("Paste your API key here...") },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Keys are securely stored in your local encrypted SharedPreferences.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+// ==========================================
+// 8. SEARCH ENGINE STEP PAGE
+// ==========================================
+@Composable
+private fun SearchEngineStepPage(sp: SharedPreferences) {
+    var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
+
+    val engines = listOf(
+        Pair("0", "Google"),
+        Pair("1", "DuckDuckGo"),
+        Pair("2", "Brave Search"),
+        Pair("3", "Bing"),
+        Pair("4", "Startpage"),
+        Pair("5", "Ecosia")
+    )
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(38.dp))
         }
     }
 
@@ -1083,7 +1223,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Select your preferred search engine provider for address bar searches and live suggestions.",
+        text = "Select your default search provider for omnibox address bar queries and homepage searches.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -1091,46 +1231,36 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 
     Spacer(Modifier.height(20.dp))
 
-    val searchEngines = listOf(
-        Pair("0", Pair("Google", "google.com")),
-        Pair("1", Pair("DuckDuckGo", "duckduckgo.com")),
-        Pair("2", Pair("Bing", "bing.com")),
-        Pair("3", Pair("Brave Search", "search.brave.com")),
-        Pair("4", Pair("Startpage", "startpage.com")),
-        Pair("5", Pair("Ecosia", "ecosia.org"))
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-        searchEngines.forEach { (idx, info) ->
-            val isSelected = searchEngineIndex == idx
-            Card(
-                onClick = {
-                    searchEngineIndex = idx
-                    sp.edit()
-                        .putString("sp_search_engine", idx)
-                        .putBoolean("sp_search_engine_chosen", true)
-                        .apply()
-                },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainerHigh
-                ),
-                border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = CircleShape, color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(40.dp)) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Rounded.Search, contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                        }
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(info.first, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text(info.second, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    if (isSelected) {
-                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            engines.forEach { (indexStr, name) ->
+                Card(
+                    onClick = {
+                        searchEngineIndex = indexStr
+                        sp.edit().putString("sp_search_engine", indexStr).apply()
+                    },
+                    border = BorderStroke(1.5.dp, if (searchEngineIndex == indexStr) MaterialTheme.colorScheme.primary else Color.Transparent),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
+                        RadioButton(
+                            selected = searchEngineIndex == indexStr,
+                            onClick = {
+                                searchEngineIndex = indexStr
+                                sp.edit().putString("sp_search_engine", indexStr).apply()
+                            }
+                        )
                     }
                 }
             }
@@ -1139,23 +1269,101 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 }
 
 // ==========================================
-// 9. CHOOSE DEFAULT FONT PAGE
+// 9. DEFAULT FONT STEP PAGE
 // ==========================================
 @Composable
 private fun DefaultFontStepPage(sp: SharedPreferences) {
-    val context = LocalContext.current
-    var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
-    var customFontName by remember { mutableStateOf(sp.getString("sp_custom_font_name", "No custom font loaded") ?: "No custom font loaded") }
+    var fontSelection by remember { mutableStateOf(sp.getString("sp_font_family_option", "GS_FLEX_PERMANENT") ?: "GS_FLEX_PERMANENT") }
 
-    val fontPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: android.net.Uri? ->
-        uri?.let {
-            com.petal.browser.ui.theme.PetalFontHelper.saveCustomFontUri(context, it)
-            fontName = "CUSTOM"
-            customFontName = sp.getString("sp_custom_font_name", "custom_font.ttf") ?: "custom_font.ttf"
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.TextFields, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(38.dp))
         }
     }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Typography & Font Family",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Choose between Petal Signature (Google Sans Flex) or import your custom TTF/OTF font file.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Card(
+                onClick = {
+                    fontSelection = "GS_FLEX_PERMANENT"
+                    sp.edit().putString("sp_font_family_option", "GS_FLEX_PERMANENT").apply()
+                },
+                border = BorderStroke(2.dp, if (fontSelection == "GS_FLEX_PERMANENT") MaterialTheme.colorScheme.primary else Color.Transparent),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.FontDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Petal Signature", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text("Google Sans Flex variable font with dynamic optical sizing", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (fontSelection == "GS_FLEX_PERMANENT") Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            Card(
+                onClick = {
+                    fontSelection = "CUSTOM_STORAGE"
+                    sp.edit().putString("sp_font_family_option", "CUSTOM_STORAGE").apply()
+                },
+                border = BorderStroke(2.dp, if (fontSelection == "CUSTOM_STORAGE") MaterialTheme.colorScheme.primary else Color.Transparent),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.FolderZip, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Custom Font File", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text("Import custom TTF/OTF variable font from device storage", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (fontSelection == "CUSTOM_STORAGE") Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// 10. AD BLOCKER STEP PAGE
+// ==========================================
+@Composable
+private fun AdBlockerStepPage(sp: SharedPreferences) {
+    var isAdBlockEnabled by remember { mutableStateOf(sp.getBoolean("sp_ad_block", true)) }
 
     Spacer(Modifier.height(12.dp))
 
@@ -1165,14 +1373,14 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
         modifier = Modifier.size(80.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.FontDownload, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(38.dp))
+            Icon(Icons.Rounded.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(38.dp))
         }
     }
 
     Spacer(Modifier.height(16.dp))
 
     Text(
-        text = "Choose Default Font",
+        text = "Ad & Tracker Shield",
         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
@@ -1181,167 +1389,35 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(8.dp))
 
     Text(
-        text = "Select your preferred typography font style for Petal Browser menus and interface titles.",
+        text = "Block intrusive web ads, popups, and tracking scripts automatically for faster page load speeds.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
 
-    Spacer(Modifier.height(20.dp))
+    Spacer(Modifier.height(24.dp))
 
-    val fonts = listOf(
-        Pair("PETAL", Pair("Petal Signature", "GS Flex permanent expressive signature typography")),
-        Pair("CUSTOM", Pair("Custom Font", "Select a custom .ttf or .otf font file from storage"))
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        fonts.forEach { (name, info) ->
-            val isSelected = fontName == name
-            Card(
-                onClick = {
-                    fontName = name
-                    sp.edit().putString("sp_app_font", name).apply()
-                    if (name == "CUSTOM") {
-                        fontPickerLauncher.launch("*/*")
-                    }
-                },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainerHigh
-                ),
-                border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(shape = CircleShape, color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(if (name == "PETAL") "PS" else "CF", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                        Spacer(Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(info.first, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                            Text(if (name == "CUSTOM" && isSelected) "File: $customFontName" else info.second, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        if (isSelected) {
-                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                        }
-                    }
-                    if (name == "CUSTOM" && isSelected) {
-                        Spacer(Modifier.height(10.dp))
-                        OutlinedButton(
-                            onClick = { fontPickerLauncher.launch("*/*") },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Browse Font File (.ttf / .otf)")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ==========================================
-// 10. PREFER ADBLOCKER PAGE
-// ==========================================
-@Composable
-private fun AdBlockerStepPage(sp: SharedPreferences) {
-    var isAdBlock by remember { mutableStateOf(sp.getBoolean("sp_ad_block", true)) }
-
-    Spacer(Modifier.height(12.dp))
-
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        modifier = Modifier.size(80.dp)
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(38.dp))
-        }
-    }
-
-    Spacer(Modifier.height(16.dp))
-
-    Text(
-        text = "Built-in AdBlocker Protection",
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.onSurface,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(8.dp))
-
-    Text(
-        text = "Choose whether to enable Petal's real-time AdBlocker engine to filter intrusive ads, trackers, and popup scripts.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(20.dp))
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        Card(
-            onClick = {
-                isAdBlock = true
-                sp.edit().putBoolean("sp_ad_block", true).apply()
-            },
-            colors = CardDefaults.cardColors(
-                containerColor = if (isAdBlock) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainerHigh
-            ),
-            border = if (isAdBlock) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = if (isAdBlock) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Shield, contentDescription = null, tint = if (isAdBlock) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
-                    }
-                }
-                Spacer(Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Enable AdBlocker (Recommended)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text("Blocks intrusive ads, trackers & video popups", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                if (isAdBlock) {
-                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                }
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Enable Petal Shield", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                Text("Block ads, trackers & popups across all websites", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-        }
-
-        Card(
-            onClick = {
-                isAdBlock = false
-                sp.edit().putBoolean("sp_ad_block", false).apply()
-            },
-            colors = CardDefaults.cardColors(
-                containerColor = if (!isAdBlock) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainerHigh
-            ),
-            border = if (!isAdBlock) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = if (!isAdBlock) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.ShieldMoon, contentDescription = null, tint = if (!isAdBlock) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
-                    }
+            Switch(
+                checked = isAdBlockEnabled,
+                onCheckedChange = { checked ->
+                    isAdBlockEnabled = checked
+                    sp.edit().putBoolean("sp_ad_block", checked).apply()
                 }
-                Spacer(Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Disable AdBlocker", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text("Allow standard web ads and tracker scripts", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                if (!isAdBlock) {
-                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                }
-            }
+            )
         }
     }
 }
