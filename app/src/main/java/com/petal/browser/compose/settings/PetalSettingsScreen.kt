@@ -430,6 +430,12 @@ fun PetalSettingsScreen(
                                 )
 
                                 categories.forEachIndexed { index, cat ->
+                                    val categoryShape = when (index) {
+                                        0 -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
+                                        categories.size - 1 -> RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+                                        else -> RoundedCornerShape(8.dp)
+                                    }
+
                                     if (isExpressiveFeatureTiles) {
                                         val (container, onContainer) = tileColorway[index % tileColorway.size]
                                         PetalFeatureTile(
@@ -445,8 +451,12 @@ fun PetalSettingsScreen(
                                             title = cat.title,
                                             subtitle = cat.subtitle,
                                             icon = cat.icon,
+                                            shape = categoryShape,
                                             onClick = { currentCategory = cat }
                                         )
+                                    }
+                                    if (!isExpressiveFeatureTiles && index < categories.size - 1) {
+                                        Spacer(modifier = Modifier.height(4.dp))
                                     }
                                 }
                             }
@@ -2313,12 +2323,13 @@ private fun SettingsCategoryRow(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    shape: Shape = RoundedCornerShape(16.dp),
     onClick: () -> Unit
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -2332,23 +2343,23 @@ private fun SettingsCategoryRow(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
                 }
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
