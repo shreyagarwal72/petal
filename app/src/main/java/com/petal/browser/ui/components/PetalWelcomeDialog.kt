@@ -1,28 +1,48 @@
 package com.petal.browser.ui.components
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import androidx.core.content.ContextCompat
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.Bolt
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -30,27 +50,26 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.activity.ComponentActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.VerifiedUser
-import androidx.compose.runtime.*
-import androidx.activity.compose.rememberLauncherForActivityResult
-import com.petal.browser.account.ProfileAvatarDisplay
+import androidx.preference.PreferenceManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.R
 import com.petal.browser.account.GoogleAccountManager
-import com.petal.browser.account.GoogleSignInResult
+import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.unit.HelperUnit
 import kotlinx.coroutines.launch
 
 object PetalWelcomeBridge {
@@ -86,8 +105,15 @@ object PetalWelcomeBridge {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val scope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(pageCount = { 7 })
+    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+
     Surface(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize()
@@ -95,270 +121,932 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .navigationBarsPadding()
+                .statusBarsPadding()
         ) {
-            Spacer(Modifier.height(16.dp))
-
-            // App Logo Hero Section with prominent launcher icon & Lottie glow backdrop
-            val iconContext = LocalContext.current
-            val density = LocalDensity.current
-            val appIconPainter = remember(iconContext) {
-                val sizePx = with(density) { 80.dp.roundToPx() }.coerceAtLeast(1)
-                val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-                val drawable = ContextCompat.getDrawable(iconContext, R.mipmap.ic_launcher)
-                if (drawable != null) {
-                    val canvas = Canvas(bitmap)
-                    drawable.setBounds(0, 0, canvas.width, canvas.height)
-                    drawable.draw(canvas)
-                }
-                BitmapPainter(bitmap.asImageBitmap())
-            }
-
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(110.dp)
-                    .entrance(index = 0)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 8.dp,
-                    modifier = Modifier.fillMaxSize()
-                ) {}
-
-                Image(
-                    painter = appIconPainter,
-                    contentDescription = "Petal Logo",
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                )
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            // Title & Subtitle
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.entrance(index = 1)
-            ) {
-                Text(
-                    text = "Welcome to Petal",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "Experience rapid web browsing, multi-threaded fast downloads, and expressive Stride Material 3 customization.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            Spacer(Modifier.height(28.dp))
-
-            // Expressive PetalFeatureTile Components
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+            // Header Page Indicators & Title Bar
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .entrance(index = 2)
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                PetalFeatureTile(
-                    title = "Built-in Privacy Shield",
-                    subtitle = "Automated ad blocking, tracker protection, and HTTPS security enforcement",
-                    icon = Icons.Rounded.Shield,
-                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    onContainer = MaterialTheme.colorScheme.onSurface,
-                    pillLabel = "Protected"
-                )
-
-                PetalFeatureTile(
-                    title = "High-Speed Multi-Thread Engine",
-                    subtitle = "Integrated parallel chunk download manager for maximum download speeds",
-                    icon = Icons.Rounded.Download,
-                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    onContainer = MaterialTheme.colorScheme.onSurface,
-                    pillLabel = "Fast MDM"
-                )
-
-                PetalFeatureTile(
-                    title = "Material You & Dynamic Themes",
-                    subtitle = "Personalized Monet palette colors, Stride variable fonts, and OLED AMOLED black",
-                    icon = Icons.Rounded.Palette,
-                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    onContainer = MaterialTheme.colorScheme.onSurface,
-                    pillLabel = "Expressive"
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // User Profile Customization Section (Name & Avatar Setup)
-            val context = iconContext
-            val currentProfile = GoogleAccountManager.currentProfile
-            var nameInput by remember { mutableStateOf(currentProfile.displayName) }
-            var pendingCropUri by remember { mutableStateOf<android.net.Uri?>(null) }
-            val galleryLauncher = rememberLauncherForActivityResult(
-                contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
-            ) { uri: android.net.Uri? ->
-                uri?.let {
-                    pendingCropUri = it
+                // Step Indicator Pills (1 to 7)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(7) { index ->
+                        val isSelected = pagerState.currentPage == index
+                        val width by animateDpAsState(
+                            targetValue = if (isSelected) 24.dp else 8.dp,
+                            animationSpec = spring(),
+                            label = "indicatorWidth"
+                        )
+                        val color by animateColorAsState(
+                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            label = "indicatorColor"
+                        )
+                        Box(
+                            modifier = Modifier
+                                .height(8.dp)
+                                .width(width)
+                                .clip(CircleShape)
+                                .background(color)
+                        )
+                    }
                 }
-            }
 
-            if (pendingCropUri != null) {
-                com.petal.browser.account.PetalAvatarCropSheet(
-                    imageUri = pendingCropUri!!,
-                    onDismiss = { pendingCropUri = null },
-                    onAvatarCropped = { pendingCropUri = null }
+                Text(
+                    text = "${pagerState.currentPage + 1} of 7",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                ),
-                shape = RoundedCornerShape(24.dp),
+            // Horizontal Pager with 7 Onboarding Pages
+            HorizontalPager(
+                state = pagerState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .entrance(index = 3)
-            ) {
+                    .weight(1f)
+            ) { page ->
                 Column(
-                    modifier = Modifier.padding(18.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Customize Profile",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    ProfileAvatarDisplay(profile = currentProfile, sizeDp = 72)
-
-                    Spacer(Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { input ->
-                            if (input.length <= 15) {
-                                nameInput = input
-                                GoogleAccountManager.updateDisplayName(context, input)
-                            }
-                        },
-                        label = { Text("User Name") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-
-                    Spacer(Modifier.height(14.dp))
-
-                    Text(
-                        text = "Choose Profile Avatar",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    androidx.compose.foundation.lazy.LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        item {
-                            Surface(
-                                onClick = { galleryLauncher.launch("image/*") },
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                modifier = Modifier.size(48.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.AccountCircle,
-                                        contentDescription = "Gallery",
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        items(GoogleAccountManager.builtinAvatarPresets.size) { idx ->
-                            val (presetId, label) = GoogleAccountManager.builtinAvatarPresets[idx]
-                            val isSelected = currentProfile.avatarType == com.petal.browser.account.AvatarType.PRESET && currentProfile.avatarPresetId == presetId
-                            Surface(
-                                onClick = { GoogleAccountManager.updateAvatarPreset(context, presetId) },
-                                shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                                border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-                                modifier = Modifier.size(48.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    val iconVec = com.petal.browser.account.getPresetMaterialIcon(presetId)
-                                    if (iconVec != null) {
-                                        Icon(
-                                            imageVector = iconVec,
-                                            contentDescription = label,
-                                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Rounded.AccountCircle,
-                                            contentDescription = label,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    when (page) {
+                        0 -> WelcomeStepPage()
+                        1 -> EssentialPermissionsStepPage(activity, context)
+                        2 -> NotificationPermissionStepPage(activity, context)
+                        3 -> BackupFeatureStepPage(context)
+                        4 -> ThemeAndLanguageStepPage(sp, activity)
+                        5 -> BottomNavbarStyleStepPage(sp)
+                        6 -> SetupPetalAiKeyStepPage(sp)
                     }
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
-
-            // Get Started Button
-            Button(
-                onClick = onGetStarted,
-                shape = RoundedCornerShape(26.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .bouncyClickable(scaleDown = 0.94f, onClick = onGetStarted)
-                    .entrance(index = 4)
+            // Bottom Navigation Actions Bar
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                tonalElevation = 2.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        "Explore Petal Browser",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Icon(Icons.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(20.dp))
+                    // Back Button (hidden on Page 0)
+                    if (pagerState.currentPage > 0) {
+                        TextButton(
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Back", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold))
+                        }
+                    } else {
+                        Spacer(Modifier.width(1.dp))
+                    }
+
+                    // Next / Finish Setup Button
+                    val isLastPage = pagerState.currentPage == 6
+                    Button(
+                        onClick = {
+                            if (isLastPage) {
+                                sp.edit().putBoolean("sp_welcome_shown", true).apply()
+                                onGetStarted()
+                            } else {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier
+                            .height(50.dp)
+                            .bouncyClickable(scaleDown = 0.94f) {}
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = if (isLastPage) "Finish Setup" else "Continue",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Icon(
+                                imageVector = if (isLastPage) Icons.Rounded.Check else Icons.AutoMirrored.Rounded.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                 }
             }
-
-            Spacer(Modifier.height(20.dp))
         }
     }
 }
 
+// ==========================================
+// 1. WELCOME PAGE
+// ==========================================
+@Composable
+private fun WelcomeStepPage() {
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    val appIconPainter = remember(context) {
+        val sizePx = with(density) { 80.dp.roundToPx() }.coerceAtLeast(1)
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val drawable = ContextCompat.getDrawable(context, R.mipmap.ic_launcher)
+        if (drawable != null) {
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+        }
+        BitmapPainter(bitmap.asImageBitmap())
+    }
 
+    Spacer(Modifier.height(12.dp))
+
+    // App Hero Icon
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shadowElevation = 6.dp,
+        modifier = Modifier.size(96.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Image(
+                painter = appIconPainter,
+                contentDescription = "Petal Logo",
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+            )
+        }
+    }
+
+    Spacer(Modifier.height(18.dp))
+
+    Text(
+        text = "Welcome to Petal",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Fast, private, and customizable web browser designed for modern Android with Material 3 Expressive UI.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    // Feature Highlight Chips
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+    ) {
+        SuggestionChip(onClick = {}, label = { Text("Privacy First") }, icon = { Icon(Icons.Rounded.Shield, null, modifier = Modifier.size(16.dp)) })
+        SuggestionChip(onClick = {}, label = { Text("Material 3 Expressive") }, icon = { Icon(Icons.Rounded.Palette, null, modifier = Modifier.size(16.dp)) })
+        SuggestionChip(onClick = {}, label = { Text("Petal AI Hub") }, icon = { Icon(Icons.Rounded.AutoAwesome, null, modifier = Modifier.size(16.dp)) })
+        SuggestionChip(onClick = {}, label = { Text("Fast MDM Downloads") }, icon = { Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp)) })
+    }
+
+    Spacer(Modifier.height(20.dp))
+
+    // Profile Customization Card
+    val currentProfile = GoogleAccountManager.currentProfile
+    var nameInput by remember { mutableStateOf(currentProfile.displayName) }
+    var pendingCropUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { pendingCropUri = it } }
+
+    if (pendingCropUri != null) {
+        com.petal.browser.account.PetalAvatarCropSheet(
+            imageUri = pendingCropUri!!,
+            onDismiss = { pendingCropUri = null },
+            onAvatarCropped = { pendingCropUri = null }
+        )
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Customize Profile",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            Spacer(Modifier.height(10.dp))
+            ProfileAvatarDisplay(profile = currentProfile, sizeDp = 64)
+            Spacer(Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = nameInput,
+                onValueChange = { input ->
+                    if (input.length <= 15) {
+                        nameInput = input
+                        GoogleAccountManager.updateDisplayName(context, input)
+                    }
+                },
+                label = { Text("Display Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                text = "Choose Profile Avatar",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                item {
+                    Surface(
+                        onClick = { galleryLauncher.launch("image/*") },
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.AccountCircle, contentDescription = "Gallery", tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(22.dp))
+                        }
+                    }
+                }
+
+                items(GoogleAccountManager.builtinAvatarPresets.size) { idx ->
+                    val (presetId, label) = GoogleAccountManager.builtinAvatarPresets[idx]
+                    val isSelected = currentProfile.avatarType == com.petal.browser.account.AvatarType.PRESET && currentProfile.avatarPresetId == presetId
+                    Surface(
+                        onClick = { GoogleAccountManager.updateAvatarPreset(context, presetId) },
+                        shape = CircleShape,
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            val iconVec = com.petal.browser.account.getPresetMaterialIcon(presetId)
+                            Icon(
+                                imageVector = iconVec ?: Icons.Rounded.AccountCircle,
+                                contentDescription = label,
+                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// 2. ALL ESSENTIAL PERMISSIONS PAGE
+// ==========================================
+@Composable
+private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) {
+    var hasCamera by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
+    var hasMic by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) }
+    var hasLoc by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) }
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Security, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Essential Permissions",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Grant camera, microphone, and location permissions to allow interactive websites, video calls, and maps to function properly.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Camera
+            PermissionStatusRow(
+                title = "Camera Access",
+                description = "For QR scanning, video chats & WebRTC",
+                icon = Icons.Rounded.Videocam,
+                isGranted = hasCamera,
+                onGrant = {
+                    if (activity != null) {
+                        HelperUnit.grantPermissionsCamera(activity)
+                        hasCamera = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                    }
+                }
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            // Microphone
+            PermissionStatusRow(
+                title = "Microphone Access",
+                description = "For voice search & audio calls",
+                icon = Icons.Rounded.Mic,
+                isGranted = hasMic,
+                onGrant = {
+                    if (activity != null) {
+                        HelperUnit.grantPermissionsMic(activity)
+                        hasMic = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+                    }
+                }
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            // Location
+            PermissionStatusRow(
+                title = "Location Access",
+                description = "For web maps & local search results",
+                icon = Icons.Rounded.MyLocation,
+                isGranted = hasLoc,
+                onGrant = {
+                    if (activity != null) {
+                        HelperUnit.grantPermissionsLoc(activity)
+                        hasLoc = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PermissionStatusRow(
+    title: String,
+    description: String,
+    icon: ImageVector,
+    isGranted: Boolean,
+    onGrant: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+            Icon(imageVector = icon, contentDescription = title, tint = if (isGranted) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(text = title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        Spacer(Modifier.width(8.dp))
+
+        if (isGranted) {
+            FilledTonalButton(onClick = {}, enabled = false, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Granted", style = MaterialTheme.typography.labelSmall)
+            }
+        } else {
+            Button(onClick = onGrant, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                Text("Grant", style = MaterialTheme.typography.labelSmall)
+            }
+        }
+    }
+}
+
+// ==========================================
+// 3. NOTIFICATION PERMISSION PAGE
+// ==========================================
+@Composable
+private fun NotificationPermissionStepPage(activity: Activity?, context: Context) {
+    var hasNotification by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            } else true
+        )
+    }
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Notifications, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Downloads & Media Notifications",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Allow notifications to receive real-time download progress updates, completion alerts, and media playback control controls.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(24.dp))
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = if (hasNotification) Icons.Rounded.NotificationsActive else Icons.Rounded.NotificationsOff,
+                contentDescription = null,
+                tint = if (hasNotification) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(48.dp)
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                text = if (hasNotification) "Notification Permission Enabled" else "Notification Permission Disabled",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && activity != null) {
+                        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+                        hasNotification = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                    }
+                },
+                enabled = !hasNotification,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp)
+            ) {
+                Text(if (hasNotification) "Notifications Allowed" else "Allow Notifications")
+            }
+        }
+    }
+}
+
+// ==========================================
+// 4. BACKUP FEATURE PAGE
+// ==========================================
+@Composable
+private fun BackupFeatureStepPage(context: Context) {
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.CloudSync, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Backup & Restore Feature",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Do you have a backup? Petal Browser lets you export or restore your bookmarks, history, web settings, and search engines at any time.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(24.dp))
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        Card(
+            onClick = {
+                try {
+                    context.startActivity(Intent(context, com.petal.browser.activity.Settings_Backup::class.java))
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Open Settings -> Data & Backup to manage backups", Toast.LENGTH_SHORT).show()
+                }
+            },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(44.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.UploadFile, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+                    }
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Export New Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Text("Save bookmarks, history & search engines to file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            }
+        }
+
+        Card(
+            onClick = {
+                try {
+                    context.startActivity(Intent(context, com.petal.browser.activity.Settings_Backup::class.java))
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Open Settings -> Data & Backup to restore", Toast.LENGTH_SHORT).show()
+                }
+            },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.size(44.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.DownloadForOffline, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(22.dp))
+                    }
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Restore Existing Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Text("Import settings and bookmarks from JSON backup file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
+}
+
+// ==========================================
+// 5. THEME & LANGUAGE PAGE
+// ==========================================
+@Composable
+private fun ThemeAndLanguageStepPage(sp: android.content.SharedPreferences, activity: Activity?) {
+    var appLanguage by remember { mutableStateOf(sp.getString("sp_app_language", "system") ?: "system") }
+    var nightMode by remember { mutableIntStateOf(sp.getInt("sp_night_mode", 0)) }
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Theme & Display Language",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Choose your preferred app appearance theme and display language.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    // Theme Mode Section
+    Text("App Theme Mode", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
+    Spacer(Modifier.height(8.dp))
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        ThemeChipItem(title = "System", icon = Icons.Rounded.PhoneAndroid, isSelected = nightMode == 0, onClick = {
+            nightMode = 0
+            sp.edit().putInt("sp_night_mode", 0).apply()
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        }, modifier = Modifier.weight(1f))
+
+        ThemeChipItem(title = "Dark", icon = Icons.Rounded.DarkMode, isSelected = nightMode == 2, onClick = {
+            nightMode = 2
+            sp.edit().putInt("sp_night_mode", 2).apply()
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        }, modifier = Modifier.weight(1f))
+
+        ThemeChipItem(title = "Light", icon = Icons.Outlined.LightMode, isSelected = nightMode == 1, onClick = {
+            nightMode = 1
+            sp.edit().putInt("sp_night_mode", 1).apply()
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        }, modifier = Modifier.weight(1f))
+    }
+
+    Spacer(Modifier.height(20.dp))
+
+    // Popular Language Selector Section
+    Text("Display Language", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
+    Spacer(Modifier.height(8.dp))
+
+    val languages = listOf(
+        Pair("system", "System Default"),
+        Pair("hi-Latn", "Hinglish (Hindi - Latin)"),
+        Pair("hi", "हिन्दी (Hindi)"),
+        Pair("en", "English")
+    )
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+        languages.forEach { (tag, label) ->
+            FilterChip(
+                selected = appLanguage == tag,
+                onClick = {
+                    if (appLanguage != tag) {
+                        appLanguage = tag
+                        sp.edit().putString("sp_app_language", tag).apply()
+                        val localeList = if (tag == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
+                        AppCompatDelegate.setApplicationLocales(localeList)
+                        (activity as? ComponentActivity)?.recreate()
+                    }
+                },
+                label = { Text(label) },
+                leadingIcon = if (appLanguage == tag) {
+                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                } else null
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThemeChipItem(title: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        modifier = modifier.height(64.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.padding(4.dp)) {
+            Icon(imageVector = icon, contentDescription = title, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.height(4.dp))
+            Text(text = title, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface)
+        }
+    }
+}
+
+// ==========================================
+// 6. BOTTOM NAVBAR STYLE PAGE
+// ==========================================
+@Composable
+private fun BottomNavbarStyleStepPage(sp: android.content.SharedPreferences) {
+    var isBottomBar by remember { mutableStateOf(sp.getBoolean("sp_bottom_toolbar", true)) }
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Dock, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Navigation Bar Position",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Choose your preferred position for the address omnibox bar and navigation toolbar controls.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        NavbarOptionCard(
+            title = "Bottom Omnibox & Toolbar",
+            subtitle = "Reachable with one hand at the bottom of your screen",
+            icon = Icons.Rounded.VerticalAlignBottom,
+            isSelected = isBottomBar,
+            onClick = {
+                isBottomBar = true
+                sp.edit().putBoolean("sp_bottom_toolbar", true).apply()
+            }
+        )
+
+        NavbarOptionCard(
+            title = "Classic Top Omnibox",
+            subtitle = "Standard traditional browser layout at the top of the page",
+            icon = Icons.Rounded.VerticalAlignTop,
+            isSelected = !isBottomBar,
+            onClick = {
+                isBottomBar = false
+                sp.edit().putBoolean("sp_bottom_toolbar", false).apply()
+            }
+        )
+    }
+}
+
+@Composable
+private fun NavbarOptionCard(title: String, subtitle: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surfaceContainerHigh),
+        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(shape = CircleShape, color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(imageVector = icon, contentDescription = title, tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+                }
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (isSelected) {
+                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+            }
+        }
+    }
+}
+
+// ==========================================
+// 7. SETUP PETAL AI KEY PAGE
+// ==========================================
+@Composable
+private fun SetupPetalAiKeyStepPage(sp: android.content.SharedPreferences) {
+    var apiKey by remember { mutableStateOf(sp.getString("sp_petal_ai_key", "") ?: "") }
+
+    Spacer(Modifier.height(12.dp))
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.size(80.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(38.dp))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Setup Petal AI Key",
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(8.dp))
+
+    Text(
+        text = "Connect your custom API key for OpenAI, Groq, Gemini, or OpenRouter for accelerated AI web search & summarization, or skip to use free cloud defaults.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(Modifier.height(20.dp))
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("API Key Configuration", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = apiKey,
+                onValueChange = { input ->
+                    apiKey = input
+                    sp.edit().putString("sp_petal_ai_key", input).apply()
+                },
+                label = { Text("Petal AI Key (Optional)") },
+                placeholder = { Text("sk-...") },
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Rounded.Key, contentDescription = null) },
+                trailingIcon = if (apiKey.isNotBlank()) {
+                    { IconButton(onClick = { apiKey = ""; sp.edit().remove("sp_petal_ai_key").apply() }) { Icon(Icons.Rounded.Close, contentDescription = null) } }
+                } else null,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Text("Supported Providers:", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(6.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                SuggestionChip(onClick = {}, label = { Text("OpenAI") })
+                SuggestionChip(onClick = {}, label = { Text("Groq") })
+                SuggestionChip(onClick = {}, label = { Text("Google Gemini") })
+                SuggestionChip(onClick = {}, label = { Text("OpenRouter") })
+            }
+        }
+    }
+}
