@@ -322,12 +322,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         context = this;
         activity = this;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
-            }
-        }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm != null) {
@@ -569,15 +563,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (!sp.getBoolean("sp_welcome_shown", false)) {
                 sp.edit().putBoolean("sp_welcome_shown", true).apply();
                 try {
-                    com.petal.browser.ui.components.PetalWelcomeBridge.showWelcomeDialog(this, () -> {
-                        if (!sp.getBoolean("sp_search_engine_chosen", false)) {
-                            com.petal.browser.ui.components.PetalSearchEngineBridge.showSearchEngineDialog(BrowserActivity.this, null);
-                        }
-                        return kotlin.Unit.INSTANCE;
-                    });
+                    com.petal.browser.ui.components.PetalWelcomeBridge.showWelcomeDialog(this, () -> kotlin.Unit.INSTANCE);
                 } catch (Exception ignored) {}
-            } else if (!sp.getBoolean("sp_search_engine_chosen", false)) {
-                com.petal.browser.ui.components.PetalSearchEngineBridge.showSearchEngineDialog(this, null);
             }
         }
     }

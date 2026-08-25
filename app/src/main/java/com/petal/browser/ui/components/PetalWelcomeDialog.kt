@@ -11,11 +11,8 @@ import android.graphics.Canvas
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
@@ -38,7 +35,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -46,7 +42,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.rounded.*
@@ -66,12 +61,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.os.LocaleListCompat
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
@@ -79,8 +72,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.preference.PreferenceManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.petal.browser.R
-import com.petal.browser.account.GoogleAccountManager
-import com.petal.browser.account.ProfileAvatarDisplay
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.HelperUnit
 import kotlinx.coroutines.launch
@@ -96,7 +87,27 @@ object PetalWelcomeBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
-                    PetalExpressiveTheme {
+                    val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                    val isAmoled = sp.getBoolean("sp_amoled", false)
+                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+
+                    val appFont = remember(fontName) {
+                        com.petal.browser.ui.theme.AppFont.fromName(fontName)
+                    }
+                    val colorStyle = remember(styleName) {
+                        try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                    }
+
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = appFont,
+                        colorStyle = colorStyle,
+                        paletteId = paletteId
+                    ) {
                         PetalWelcomeScreen(onGetStarted = {
                             try { dialog?.dismiss() } catch (ignored: Exception) {}
                             onGetStarted()
@@ -104,11 +115,16 @@ object PetalWelcomeBridge {
                     }
                 }
             }
-            val builder = MaterialAlertDialogBuilder(activity)
+            val builder = MaterialAlertDialogBuilder(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
             builder.setView(composeView)
             builder.setCancelable(false)
             dialog = builder.create()
-            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            dialog.window?.let { window ->
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+                window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
+                window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            }
             dialog.setCanceledOnTouchOutside(false)
             dialog.show()
         } catch (e: Exception) {
@@ -123,17 +139,15 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
     val context = LocalContext.current
     val activity = context as? Activity
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 10 })
+    val pagerState = rememberPagerState(pageCount = { 9 })
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(32.dp),
-        shadowElevation = 12.dp,
+        color = MaterialTheme.colorScheme.background,
         modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = 680.dp)
-            .padding(12.dp)
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -142,23 +156,23 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    repeat(10) { index ->
+                    repeat(9) { index ->
                         val isSelected = pagerState.currentPage == index
                         val width by animateDpAsState(
-                            targetValue = if (isSelected) 22.dp else 6.dp,
+                            targetValue = if (isSelected) 24.dp else 6.dp,
                             animationSpec = spring(),
                             label = "indicatorWidth"
                         )
                         val color by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                             label = "indicatorColor"
                         )
                         Box(
@@ -172,7 +186,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 }
 
                 Text(
-                    text = if (pagerState.currentPage == 0) "Welcome" else "${pagerState.currentPage} / 9",
+                    text = if (pagerState.currentPage == 0) "Welcome" else "${pagerState.currentPage} / 8",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -186,32 +200,23 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                     .fillMaxWidth()
                     .weight(1f)
             ) { page ->
-                val autoAdvance: () -> Unit = {
-                    scope.launch {
-                        if (pagerState.currentPage < 9) {
-                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                        }
-                    }
-                }
-
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 6.dp),
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (page) {
                         0 -> WelcomeStepPage()
-                        1 -> EssentialPermissionsStepPage(activity, context, onAutoAdvance = autoAdvance)
-                        2 -> NotificationPermissionStepPage(activity, context, onAutoAdvance = autoAdvance)
+                        1 -> EssentialPermissionsStepPage(activity, context)
+                        2 -> NotificationPermissionStepPage(activity, context)
                         3 -> BackupFeatureStepPage(context)
                         4 -> ThemeAndLanguageStepPage(sp, activity)
-                        5 -> BottomNavbarStyleStepPage(sp)
-                        6 -> SetupPetalAiKeyStepPage(sp)
-                        7 -> SearchEngineStepPage(sp)
-                        8 -> DefaultFontStepPage(sp)
-                        9 -> AdBlockerStepPage(sp)
+                        5 -> SetupPetalAiKeyStepPage(sp)
+                        6 -> SearchEngineStepPage(sp)
+                        7 -> DefaultFontStepPage(sp)
+                        8 -> AdBlockerStepPage(sp)
                     }
                 }
             }
@@ -221,7 +226,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                 pagerState = pagerState,
                 onNextClicked = {
                     scope.launch {
-                        if (pagerState.currentPage < 9) {
+                        if (pagerState.currentPage < 8) {
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
                     }
@@ -242,7 +247,7 @@ private fun SetupBottomBar(
     onNextClicked: () -> Unit,
     onFinishClicked: () -> Unit
 ) {
-    val isLastPage = pagerState.currentPage == 9
+    val isLastPage = pagerState.currentPage == 8
 
     // Corner Morphing Animation
     val targetShapeValues = when (pagerState.currentPage % 3) {
@@ -267,13 +272,13 @@ private fun SetupBottomBar(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 3.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = 24.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -300,7 +305,7 @@ private fun SetupBottomBar(
                     )
                 } else {
                     Text(
-                        text = "Step $targetPage of 9",
+                        text = "Step $targetPage of 8",
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -362,7 +367,7 @@ private fun WelcomeStepPage() {
         BitmapPainter(bitmap.asImageBitmap())
     }
 
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(12.dp))
 
     // PixelPlayer Style Welcome Title Header
     Column(
@@ -384,7 +389,7 @@ private fun WelcomeStepPage() {
         Text(
             text = "Petal",
             style = MaterialTheme.typography.displayLarge.copy(
-                fontSize = 46.sp,
+                fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             ),
@@ -419,45 +424,45 @@ private fun WelcomeStepPage() {
         }
     }
 
-    Spacer(Modifier.height(18.dp))
+    Spacer(Modifier.height(24.dp))
 
     // App Hero Icon & Badge Card
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shadowElevation = 6.dp,
-                modifier = Modifier.size(80.dp)
+                modifier = Modifier.size(84.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = appIconPainter,
                         contentDescription = "Petal Logo",
                         modifier = Modifier
-                            .size(60.dp)
+                            .size(64.dp)
                             .clip(CircleShape)
                     )
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
 
             Text(
                 text = "Fast, private & customizable web browser designed for modern Android with Material 3 Expressive UI.",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -472,59 +477,16 @@ private fun WelcomeStepPage() {
             }
         }
     }
-
-    Spacer(Modifier.height(16.dp))
-
-    // Profile Customization Card
-    val currentProfile = GoogleAccountManager.currentProfile
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = RoundedCornerShape(22.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            Text(
-                text = "Active Profile",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                ProfileAvatarDisplay(profile = currentProfile, sizeDp = 46)
-                Spacer(Modifier.width(14.dp))
-                Column {
-                    Text(
-                        text = currentProfile.displayName,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = if (!currentProfile.isSignedIn) "Incognito Guest Mode" else "Synced Account Profile",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
 }
 
 // ==========================================
 // 2. ALL ESSENTIAL PERMISSIONS PAGE
 // ==========================================
 @Composable
-private fun EssentialPermissionsStepPage(activity: Activity?, context: Context, onAutoAdvance: () -> Unit) {
+private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) {
     var hasCamera by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
     var hasMic by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) }
     var hasLoc by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) }
-
-    val allGranted = hasCamera && hasMic && hasLoc
-    LaunchedEffect(allGranted) {
-        if (allGranted) {
-            kotlinx.coroutines.delay(350)
-            onAutoAdvance()
-        }
-    }
 
     Spacer(Modifier.height(12.dp))
 
@@ -655,20 +617,13 @@ private fun PermissionStatusRow(
 // 3. NOTIFICATION PERMISSION PAGE
 // ==========================================
 @Composable
-private fun NotificationPermissionStepPage(activity: Activity?, context: Context, onAutoAdvance: () -> Unit) {
+private fun NotificationPermissionStepPage(activity: Activity?, context: Context) {
     var hasNotification by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             } else true
         )
-    }
-
-    LaunchedEffect(hasNotification) {
-        if (hasNotification) {
-            kotlinx.coroutines.delay(350)
-            onAutoAdvance()
-        }
     }
 
     Spacer(Modifier.height(12.dp))
@@ -740,9 +695,9 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(46.dp)
+                    .height(48.dp)
             ) {
-                Text(if (hasNotification) "Notifications Allowed" else "Allow Notifications")
+                Text(if (hasNotification) "Notifications Allowed" else "Allow Notifications", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -894,61 +849,73 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
             Spacer(Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                FilterChip(
-                    selected = selectedTheme == "LIGHT",
-                    onClick = {
-                        selectedTheme = "LIGHT"
-                        sp.edit().putString("sp_theme_config", "LIGHT").apply()
-                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                    },
-                    label = { Text("Light") },
-                    leadingIcon = { Icon(Icons.Outlined.LightMode, null, modifier = Modifier.size(16.dp)) },
-                    modifier = Modifier.weight(1f)
+                val themes = listOf(
+                    Triple("LIGHT", "Light", Icons.Outlined.LightMode),
+                    Triple("DARK", "Dark", Icons.Rounded.DarkMode),
+                    Triple("FOLLOW_SYSTEM", "System", Icons.Rounded.Android)
                 )
 
-                FilterChip(
-                    selected = selectedTheme == "DARK",
-                    onClick = {
-                        selectedTheme = "DARK"
-                        sp.edit().putString("sp_theme_config", "DARK").apply()
-                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                    },
-                    label = { Text("Dark") },
-                    leadingIcon = { Icon(Icons.Rounded.DarkMode, null, modifier = Modifier.size(16.dp)) },
-                    modifier = Modifier.weight(1f)
-                )
-
-                FilterChip(
-                    selected = selectedTheme == "FOLLOW_SYSTEM",
-                    onClick = {
-                        selectedTheme = "FOLLOW_SYSTEM"
-                        sp.edit().putString("sp_theme_config", "FOLLOW_SYSTEM").apply()
-                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                    },
-                    label = { Text("System") },
-                    leadingIcon = { Icon(Icons.Rounded.Android, null, modifier = Modifier.size(16.dp)) },
-                    modifier = Modifier.weight(1f)
-                )
+                themes.forEach { (mode, label, icon) ->
+                    val isSelected = selectedTheme == mode
+                    Surface(
+                        onClick = {
+                            selectedTheme = mode
+                            sp.edit().putString("sp_theme_config", mode).apply()
+                            val nightMode = when (mode) {
+                                "LIGHT" -> AppCompatDelegate.MODE_NIGHT_NO
+                                "DARK" -> AppCompatDelegate.MODE_NIGHT_YES
+                                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                            }
+                            AppCompatDelegate.setDefaultNightMode(nightMode)
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        modifier = Modifier.weight(1f).height(44.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
+                        ) {
+                            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.width(6.dp))
+                            Text(label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.height(14.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            Surface(
+                onClick = {
+                    val newValue = !isAmoled
+                    isAmoled = newValue
+                    sp.edit().putBoolean("sp_amoled", newValue).apply()
+                },
+                shape = RoundedCornerShape(16.dp),
+                color = if (isAmoled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+                border = BorderStroke(if (isAmoled) 2.dp else 1.dp, if (isAmoled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("AMOLED Pure Black", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text("Deep OLED pitch black background", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Switch(
-                    checked = isAmoled,
-                    onCheckedChange = { checked ->
-                        isAmoled = checked
-                        sp.edit().putBoolean("sp_amoled", checked).apply()
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("AMOLED Pure Black", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                        Text("Deep OLED pitch black background", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                )
+                    Switch(
+                        checked = isAmoled,
+                        onCheckedChange = { checked ->
+                            isAmoled = checked
+                            sp.edit().putBoolean("sp_amoled", checked).apply()
+                        }
+                    )
+                }
             }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
@@ -978,19 +945,30 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 languages.forEach { (tag, label) ->
-                    FilterChip(
-                        selected = appLanguage == tag,
+                    val isSelected = appLanguage == tag
+                    Surface(
                         onClick = {
                             if (appLanguage != tag) {
                                 appLanguage = tag
                                 HelperUnit.setAppLanguage(context, tag)
                             }
                         },
-                        label = { Text(label) },
-                        leadingIcon = if (appLanguage == tag) {
-                            { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                        } else null
-                    )
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        modifier = Modifier.height(38.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        ) {
+                            if (isSelected) {
+                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                            }
+                            Text(label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
                 }
             }
         }
@@ -998,100 +976,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
 }
 
 // ==========================================
-// 6. BOTTOM NAVBAR STYLE PAGE
-// ==========================================
-@Composable
-private fun BottomNavbarStyleStepPage(sp: SharedPreferences) {
-    var navStyle by remember { mutableStateOf(sp.getString("sp_bottom_navbar_style", "FLOATING") ?: "FLOATING") }
-    var isFloatingBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
-
-    Spacer(Modifier.height(12.dp))
-
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        modifier = Modifier.size(80.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.ViewDay, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(38.dp))
-        }
-    }
-
-    Spacer(Modifier.height(16.dp))
-
-    Text(
-        text = "Navigation Bar Style",
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.onSurface,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(8.dp))
-
-    Text(
-        text = "Choose between a modern floating pill navigation bar or a classic docked bottom layout for web navigation.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center
-    )
-
-    Spacer(Modifier.height(20.dp))
-
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = RoundedCornerShape(22.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Card(
-                onClick = {
-                    navStyle = "FLOATING"
-                    isFloatingBar = true
-                    sp.edit().putString("sp_bottom_navbar_style", "FLOATING").putBoolean("sp_floating_tab_bar", true).apply()
-                },
-                border = BorderStroke(2.dp, if (navStyle == "FLOATING") MaterialTheme.colorScheme.primary else Color.Transparent),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.SmartButton, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Floating Pill Bar", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text("Detached rounded floating navigation bar with fluid gesture morphing", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    if (navStyle == "FLOATING") Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                }
-            }
-
-            Card(
-                onClick = {
-                    navStyle = "CLASSIC"
-                    isFloatingBar = false
-                    sp.edit().putString("sp_bottom_navbar_style", "CLASSIC").putBoolean("sp_floating_tab_bar", false).apply()
-                },
-                border = BorderStroke(2.dp, if (navStyle == "CLASSIC") MaterialTheme.colorScheme.primary else Color.Transparent),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.ViewAgenda, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Classic Docked Bar", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text("Edge-to-edge docked bottom navigation bar with integrated tab counter", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    if (navStyle == "CLASSIC") Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                }
-            }
-        }
-    }
-}
-
-// ==========================================
-// 7. SETUP PETAL AI KEY PAGE
+// 6. SETUP PETAL AI KEY PAGE
 // ==========================================
 @Composable
 private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
@@ -1147,14 +1032,21 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 providers.forEach { provider ->
-                    FilterChip(
-                        selected = selectedProvider == provider,
+                    val isSelected = selectedProvider == provider
+                    Surface(
                         onClick = {
                             selectedProvider = provider
                             sp.edit().putString("sp_ai_provider", provider).apply()
                         },
-                        label = { Text(provider) }
-                    )
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
+                            Text(provider, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
                 }
             }
 
@@ -1184,7 +1076,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
 }
 
 // ==========================================
-// 8. SEARCH ENGINE STEP PAGE
+// 7. SEARCH ENGINE STEP PAGE
 // ==========================================
 @Composable
 private fun SearchEngineStepPage(sp: SharedPreferences) {
@@ -1238,14 +1130,15 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             engines.forEach { (indexStr, name) ->
-                Card(
+                val isSelected = searchEngineIndex == indexStr
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                     onClick = {
                         searchEngineIndex = indexStr
-                        sp.edit().putString("sp_search_engine", indexStr).apply()
+                        sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).apply()
                     },
-                    border = BorderStroke(1.5.dp, if (searchEngineIndex == indexStr) MaterialTheme.colorScheme.primary else Color.Transparent),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -1253,12 +1146,16 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
                         RadioButton(
-                            selected = searchEngineIndex == indexStr,
+                            selected = isSelected,
                             onClick = {
                                 searchEngineIndex = indexStr
-                                sp.edit().putString("sp_search_engine", indexStr).apply()
+                                sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).apply()
                             }
                         )
                     }
@@ -1269,7 +1166,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 }
 
 // ==========================================
-// 9. DEFAULT FONT STEP PAGE
+// 8. DEFAULT FONT STEP PAGE
 // ==========================================
 @Composable
 private fun DefaultFontStepPage(sp: SharedPreferences) {
@@ -1313,13 +1210,14 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Card(
+            val isFlexSelected = fontSelection == "GS_FLEX_PERMANENT"
+            Surface(
                 onClick = {
                     fontSelection = "GS_FLEX_PERMANENT"
                     sp.edit().putString("sp_font_family_option", "GS_FLEX_PERMANENT").apply()
                 },
-                border = BorderStroke(2.dp, if (fontSelection == "GS_FLEX_PERMANENT") MaterialTheme.colorScheme.primary else Color.Transparent),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(if (isFlexSelected) 2.dp else 1.dp, if (isFlexSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                color = if (isFlexSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -1330,17 +1228,18 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                         Text("Petal Signature", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
                         Text("Google Sans Flex variable font with dynamic optical sizing", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    if (fontSelection == "GS_FLEX_PERMANENT") Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    if (isFlexSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
-            Card(
+            val isCustomSelected = fontSelection == "CUSTOM_STORAGE"
+            Surface(
                 onClick = {
                     fontSelection = "CUSTOM_STORAGE"
                     sp.edit().putString("sp_font_family_option", "CUSTOM_STORAGE").apply()
                 },
-                border = BorderStroke(2.dp, if (fontSelection == "CUSTOM_STORAGE") MaterialTheme.colorScheme.primary else Color.Transparent),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(if (isCustomSelected) 2.dp else 1.dp, if (isCustomSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                color = if (isCustomSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -1351,7 +1250,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                         Text("Custom Font File", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
                         Text("Import custom TTF/OTF variable font from device storage", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    if (fontSelection == "CUSTOM_STORAGE") Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    if (isCustomSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -1359,7 +1258,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
 }
 
 // ==========================================
-// 10. AD BLOCKER STEP PAGE
+// 9. AD BLOCKER STEP PAGE
 // ==========================================
 @Composable
 private fun AdBlockerStepPage(sp: SharedPreferences) {
@@ -1402,22 +1301,34 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
         shape = RoundedCornerShape(22.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Surface(
+            onClick = {
+                val newValue = !isAdBlockEnabled
+                isAdBlockEnabled = newValue
+                sp.edit().putBoolean("sp_ad_block", newValue).apply()
+            },
+            shape = RoundedCornerShape(22.dp),
+            color = if (isAdBlockEnabled) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(if (isAdBlockEnabled) 2.dp else 1.dp, if (isAdBlockEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Enable Petal Shield", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                Text("Block ads, trackers & popups across all websites", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Switch(
-                checked = isAdBlockEnabled,
-                onCheckedChange = { checked ->
-                    isAdBlockEnabled = checked
-                    sp.edit().putBoolean("sp_ad_block", checked).apply()
+            Row(
+                modifier = Modifier.padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Enable Petal Shield", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                    Text("Block ads, trackers & popups across all websites", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            )
+                Switch(
+                    checked = isAdBlockEnabled,
+                    onCheckedChange = { checked ->
+                        isAdBlockEnabled = checked
+                        sp.edit().putBoolean("sp_ad_block", checked).apply()
+                    }
+                )
+            }
         }
     }
 }
