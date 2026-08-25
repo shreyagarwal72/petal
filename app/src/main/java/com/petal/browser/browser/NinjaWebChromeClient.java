@@ -161,24 +161,21 @@ public class NinjaWebChromeClient extends WebChromeClient {
     public void onGeolocationPermissionsShowPrompt(final String origin, final GeolocationPermissions.Callback callback) {
         Activity activity = (Activity) ninjaWebView.getContext();
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(activity);
-        boolean locEnabled = sp.getBoolean(NinjaWebView.getProfile() + "_location", true);
-        if (locEnabled) {
-            HelperUnit.grantPermissionsLoc(activity);
-            callback.invoke(origin, true, false);
-        } else {
-            new MaterialAlertDialogBuilder(activity)
-                    .setIcon(R.drawable.icon_alert)
-                    .setTitle(R.string.setting_title_location)
-                    .setMessage(origin + " wants to access your location.")
-                    .setPositiveButton(R.string.app_ok, (dialog, which) -> {
-                        sp.edit().putBoolean(NinjaWebView.getProfile() + "_location", true).apply();
-                        HelperUnit.grantPermissionsLoc(activity);
-                        callback.invoke(origin, true, false);
-                    })
-                    .setNegativeButton(R.string.app_cancel, (dialog, which) -> callback.invoke(origin, false, false))
-                    .show();
-        }
-        super.onGeolocationPermissionsShowPrompt(origin, callback);
+        new MaterialAlertDialogBuilder(activity)
+                .setIcon(R.drawable.icon_alert)
+                .setTitle(R.string.setting_title_location)
+                .setMessage(origin + " wants to access your location.")
+                .setPositiveButton(R.string.app_ok, (dialog, which) -> {
+                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_location", true).apply();
+                    HelperUnit.grantPermissionsLoc(activity);
+                    callback.invoke(origin, true, true);
+                })
+                .setNegativeButton(R.string.app_cancel, (dialog, which) -> {
+                    sp.edit().putBoolean(NinjaWebView.getProfile() + "_location", false).apply();
+                    callback.invoke(origin, false, false);
+                })
+                .setOnCancelListener(dialog -> callback.invoke(origin, false, false))
+                .show();
     }
 
     @Override
@@ -186,64 +183,59 @@ public class NinjaWebChromeClient extends WebChromeClient {
         final SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ninjaWebView.getContext());
         final Activity activity = (Activity) ninjaWebView.getContext();
         final String[] resources = request.getResources();
+        final String originStr = (request.getOrigin() != null) ? request.getOrigin().toString() : "Webpage";
 
         for (final String resource : resources) {
             if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
-                boolean cameraEnabled = sp.getBoolean(NinjaWebView.getProfile() + "_camera", false);
-                if (cameraEnabled) {
-                    HelperUnit.grantPermissionsCamera(activity);
-                    if (ninjaWebView.getSettings().getMediaPlaybackRequiresUserGesture()) {
-                        ninjaWebView.getSettings().setMediaPlaybackRequiresUserGesture(false);
-                    }
-                    request.grant(new String[]{resource});
-                } else {
-                    new MaterialAlertDialogBuilder(activity)
-                            .setIcon(R.drawable.icon_alert)
-                            .setTitle(R.string.setting_title_camera)
-                            .setMessage("Webpage wants to access your camera.")
-                            .setPositiveButton(R.string.app_ok, (dialog, which) -> {
-                                sp.edit().putBoolean(NinjaWebView.getProfile() + "_camera", true).apply();
-                                HelperUnit.grantPermissionsCamera(activity);
-                                request.grant(new String[]{resource});
-                            })
-                            .setNegativeButton(R.string.app_cancel, (dialog, which) -> request.deny())
-                            .show();
-                }
-            } else if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
-                boolean micEnabled = sp.getBoolean(NinjaWebView.getProfile() + "_microphone", false);
-                if (micEnabled) {
-                    HelperUnit.grantPermissionsMic(activity);
-                    request.grant(new String[]{resource});
-                } else {
-                    new MaterialAlertDialogBuilder(activity)
-                            .setIcon(R.drawable.icon_alert)
-                            .setTitle(R.string.setting_title_microphone)
-                            .setMessage("Webpage wants to access your microphone.")
-                            .setPositiveButton(R.string.app_ok, (dialog, which) -> {
-                                sp.edit().putBoolean(NinjaWebView.getProfile() + "_microphone", true).apply();
-                                HelperUnit.grantPermissionsMic(activity);
-                                request.grant(new String[]{resource});
-                            })
-                            .setNegativeButton(R.string.app_cancel, (dialog, which) -> request.deny())
-                            .show();
-                }
-            } else if (PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID.equals(resource)) {
-                if (sp.getBoolean(NinjaWebView.getProfile() + "_drm", true)) {
-                    request.grant(new String[]{resource});
-                } else {
-                    HelperUnit.showCustomSnackbarWithTwoActions(
-                            ninjaWebView.getContext(), ninjaWebView, null,
-                            ninjaWebView.getContext().getString(R.string.app_warning), ninjaWebView.getContext().getString(R.string.hint_DRM_Media), ninjaWebView.getUrl(),
-                            R.drawable.icon_check, () -> {
-                                request.grant(new String[]{resource});
-                                return true;
-                            },
-                            R.drawable.icon_close, () -> {
-                                request.deny();
-                                return true;
+                new MaterialAlertDialogBuilder(activity)
+                        .setIcon(R.drawable.icon_alert)
+                        .setTitle(R.string.setting_title_camera)
+                        .setMessage(originStr + " wants to access your camera.")
+                        .setPositiveButton(R.string.app_ok, (dialog, which) -> {
+                            sp.edit().putBoolean(NinjaWebView.getProfile() + "_camera", true).apply();
+                            HelperUnit.grantPermissionsCamera(activity);
+                            if (ninjaWebView.getSettings().getMediaPlaybackRequiresUserGesture()) {
+                                ninjaWebView.getSettings().setMediaPlaybackRequiresUserGesture(false);
                             }
-                    );
-                }
+                            request.grant(new String[]{resource});
+                        })
+                        .setNegativeButton(R.string.app_cancel, (dialog, which) -> {
+                            sp.edit().putBoolean(NinjaWebView.getProfile() + "_camera", false).apply();
+                            request.deny();
+                        })
+                        .setOnCancelListener(dialog -> request.deny())
+                        .show();
+            } else if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
+                new MaterialAlertDialogBuilder(activity)
+                        .setIcon(R.drawable.icon_alert)
+                        .setTitle(R.string.setting_title_microphone)
+                        .setMessage(originStr + " wants to access your microphone.")
+                        .setPositiveButton(R.string.app_ok, (dialog, which) -> {
+                            sp.edit().putBoolean(NinjaWebView.getProfile() + "_microphone", true).apply();
+                            HelperUnit.grantPermissionsMic(activity);
+                            request.grant(new String[]{resource});
+                        })
+                        .setNegativeButton(R.string.app_cancel, (dialog, which) -> {
+                            sp.edit().putBoolean(NinjaWebView.getProfile() + "_microphone", false).apply();
+                            request.deny();
+                        })
+                        .setOnCancelListener(dialog -> request.deny())
+                        .show();
+            } else if (PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID.equals(resource)) {
+                new MaterialAlertDialogBuilder(activity)
+                        .setIcon(R.drawable.icon_alert)
+                        .setTitle("DRM Protected Media")
+                        .setMessage(originStr + " wants to access DRM protected media.")
+                        .setPositiveButton(R.string.app_ok, (dialog, which) -> {
+                            sp.edit().putBoolean(NinjaWebView.getProfile() + "_drm", true).apply();
+                            request.grant(new String[]{resource});
+                        })
+                        .setNegativeButton(R.string.app_cancel, (dialog, which) -> {
+                            sp.edit().putBoolean(NinjaWebView.getProfile() + "_drm", false).apply();
+                            request.deny();
+                        })
+                        .setOnCancelListener(dialog -> request.deny())
+                        .show();
             }
         }
     }
