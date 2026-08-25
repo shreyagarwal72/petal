@@ -129,9 +129,8 @@ fun PetalTabGridSwitcher(
     val context = LocalContext.current
     val effectiveOnBack: () -> Unit = remember(onBack, context) {
         onBack ?: {
-            (context as? android.app.Activity)?.let { act ->
-                try { act.finishAndRemoveTask() } catch (_: Exception) {}
-            }
+            val activity = context as? android.app.Activity
+            try { activity?.finishAndRemoveTask() } catch (_: Exception) {}
         }
     }
 
