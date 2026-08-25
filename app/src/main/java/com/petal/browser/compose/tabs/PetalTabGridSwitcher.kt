@@ -118,12 +118,22 @@ fun PetalTabGridSwitcher(
     onCloseAllTabs: () -> Unit,
     onOpenSettings: () -> Unit = {},
     onTabVisible: (PetalTabItem) -> Unit = {},
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var displayMode by remember { mutableStateOf(TabDisplayMode.GRID) }
     var isOverflowMenuExpanded by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf(TabCategory.REGULAR) }
+
+    val context = LocalContext.current
+    val effectiveOnBack: () -> Unit = remember(onBack, context) {
+        onBack ?: {
+            (context as? android.app.Activity)?.let { act ->
+                try { act.finishAndRemoveTask() } catch (_: Exception) {}
+            }
+        }
+    }
 
     // Optimistic-close bookkeeping: ids in here are hidden from the grid immediately, but
     // `tabs` (the source of truth from the caller) hasn't been touched yet. The id is only
@@ -191,14 +201,13 @@ fun PetalTabGridSwitcher(
     val accentColor = MaterialTheme.colorScheme.primary
     val textColor = MaterialTheme.colorScheme.onSurface
 
-    val context = LocalContext.current
     BackHandler(enabled = tabs.isEmpty()) {
-        (context as? android.app.Activity)?.finishAndRemoveTask()
+        effectiveOnBack()
     }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
-        onBack = { (context as? android.app.Activity)?.finishAndRemoveTask() },
+        onBack = effectiveOnBack,
     ) {
     com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
@@ -212,6 +221,8 @@ fun PetalTabGridSwitcher(
                 ExpressiveHeader(
                     title = if (selectedCategory == TabCategory.INCOGNITO) "Incognito Tabs" else "Tab Manager",
                     subtitle = if (selectedCategory == TabCategory.INCOGNITO) "$incognitoTabCount private tabs open" else "$regularTabCount active tabs open",
+                    onBack = effectiveOnBack,
+                    enableLiquidGlass = true,
                     actions = {
                         HeaderActionIcon(
                             icon = Icons.Rounded.Add,
