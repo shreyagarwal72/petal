@@ -13,9 +13,60 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.R
 
 enum class AppFont(val label: String) {
-    PETAL("Petal's Signature"),
-    GS_FLEX("GS FLEX"),
-    NUNITO("Nunito")
+    PETAL("Petal Signature"),
+    CUSTOM("Custom Font");
+
+    companion object {
+        fun fromName(name: String?): AppFont {
+            return when (name) {
+                "CUSTOM" -> CUSTOM
+                else -> PETAL
+            }
+        }
+    }
+}
+
+object PetalFontHelper {
+    fun saveCustomFontUri(context: android.content.Context, uri: android.net.Uri): String? {
+        return try {
+            val destFile = java.io.File(context.filesDir, "custom_font.ttf")
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                destFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            val fileName = getFileName(context, uri) ?: "custom_font.ttf"
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            sp.edit()
+                .putString("sp_app_font", "CUSTOM")
+                .putString("sp_custom_font_path", destFile.absolutePath)
+                .putString("sp_custom_font_name", fileName)
+                .apply()
+            destFile.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun getFileName(context: android.content.Context, uri: android.net.Uri): String? {
+        var name: String? = null
+        if (uri.scheme == "content") {
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (index != -1) name = cursor.getString(index)
+                }
+            }
+        }
+        if (name == null) {
+            name = uri.path?.let { path ->
+                val cut = path.lastIndexOf('/')
+                if (cut != -1) path.substring(cut + 1) else path
+            }
+        }
+        return name
+    }
 }
 
 @OptIn(ExperimentalTextApi::class)
@@ -161,21 +212,12 @@ fun petalTypography(
     fontWidth: Float = 92f,
     fontWeight: Int = 750,
     fontRoundness: Float = 100f,
-    gsFlexSettings: GSFlexSettings = GSFlexSettings()
+    gsFlexSettings: GSFlexSettings = GSFlexSettings(),
+    customFontPath: String? = null
 ): Typography = try {
-    val effectiveAxes = getPresetFontAxes(gsFlexSettings.preset)
     when (appFont) {
         AppFont.PETAL -> {
-            val w = fontWeight.coerceIn(100, 900)
-            val displayFont = variableFont(R.font.google_sans_flex_variable, weight = (w + 200).coerceAtMost(950), width = fontWidth, roundness = fontRoundness)
-            val headlineFont = variableFont(R.font.google_sans_flex_variable, weight = (w + 150).coerceAtMost(900), width = fontWidth, roundness = fontRoundness)
-            val titleFont = variableFont(R.font.google_sans_flex_variable, weight = (w + 100).coerceAtMost(850), width = fontWidth, roundness = fontRoundness)
-            val bodyFont = variableFont(R.font.google_sans_flex_variable, weight = w, width = fontWidth, roundness = fontRoundness)
-            val labelFont = variableFont(R.font.google_sans_flex_variable, weight = (w + 50).coerceAtMost(850), width = fontWidth, roundness = fontRoundness)
-            buildTypography(Tiers(displayFont, headlineFont, titleFont, bodyFont, labelFont))
-        }
-        AppFont.GS_FLEX -> {
-            // Use google_sans_flex_variable — Zenith's full 6-axis version (weight, width, opsz, GRAD, slant, ROND)
+            val effectiveAxes = getPresetFontAxes(gsFlexSettings.preset)
             val displayFont = FontFamily(Font(
                 resId = R.font.google_sans_flex_variable,
                 variationSettings = effectiveAxes.first.toVariationSettings(),
@@ -193,15 +235,19 @@ fun petalTypography(
             ))
             buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
         }
-        AppFont.NUNITO -> buildTypography(
-            Tiers(
-                nunitoFont(950, 92f, 100f),
-                nunitoFont(900, 92f, 100f),
-                nunitoFont(850, 92f, 100f),
-                nunitoFont(750, 92f, 100f),
-                nunitoFont(800, 92f, 100f)
-            )
-        )
+        AppFont.CUSTOM -> {
+            if (!customFontPath.isNullOrBlank()) {
+                val file = java.io.File(customFontPath)
+                if (file.exists() && file.canRead()) {
+                    val customFontFamily = FontFamily(Font(file))
+                    buildTypography(Tiers(customFontFamily, customFontFamily, customFontFamily, customFontFamily, customFontFamily))
+                } else {
+                    petalTypography(AppFont.PETAL, fontWidth, fontWeight, fontRoundness, gsFlexSettings)
+                }
+            } else {
+                petalTypography(AppFont.PETAL, fontWidth, fontWeight, fontRoundness, gsFlexSettings)
+            }
+        }
     }
 } catch (e: Throwable) {
     systemTypography(fontWeight)

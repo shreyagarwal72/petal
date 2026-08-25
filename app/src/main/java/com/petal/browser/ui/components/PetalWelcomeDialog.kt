@@ -1146,7 +1146,19 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 // ==========================================
 @Composable
 private fun DefaultFontStepPage(sp: SharedPreferences) {
+    val context = LocalContext.current
     var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+    var customFontName by remember { mutableStateOf(sp.getString("sp_custom_font_name", "No custom font loaded") ?: "No custom font loaded") }
+
+    val fontPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            com.petal.browser.ui.theme.PetalFontHelper.saveCustomFontUri(context, it)
+            fontName = "CUSTOM"
+            customFontName = sp.getString("sp_custom_font_name", "custom_font.ttf") ?: "custom_font.ttf"
+        }
+    }
 
     Spacer(Modifier.height(12.dp))
 
@@ -1181,8 +1193,8 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
     Spacer(Modifier.height(20.dp))
 
     val fonts = listOf(
-        Pair("PETAL", Pair("Petal Signature", "Expressive rounded signature typography")),
-        Pair("GS_FLEX", Pair("GS FLEX - Petal", "Modern Google Sans Flex variable typography"))
+        Pair("PETAL", Pair("Petal Signature", "GS Flex permanent expressive signature typography")),
+        Pair("CUSTOM", Pair("Custom Font", "Select a custom .ttf or .otf font file from storage"))
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
@@ -1192,6 +1204,9 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                 onClick = {
                     fontName = name
                     sp.edit().putString("sp_app_font", name).apply()
+                    if (name == "CUSTOM") {
+                        fontPickerLauncher.launch("*/*")
+                    }
                 },
                 colors = CardDefaults.cardColors(
                     containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surfaceContainerHigh
@@ -1200,19 +1215,33 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = CircleShape, color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(if (name == "PETAL") "PS" else "GS", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = CircleShape, color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(44.dp)) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(if (name == "PETAL") "PS" else "CF", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(info.first, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                            Text(if (name == "CUSTOM" && isSelected) "File: $customFontName" else info.second, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (isSelected) {
+                            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         }
                     }
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(info.first, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text(info.second, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    if (isSelected) {
-                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    if (name == "CUSTOM" && isSelected) {
+                        Spacer(Modifier.height(10.dp))
+                        OutlinedButton(
+                            onClick = { fontPickerLauncher.launch("*/*") },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Browse Font File (.ttf / .otf)")
+                        }
                     }
                 }
             }

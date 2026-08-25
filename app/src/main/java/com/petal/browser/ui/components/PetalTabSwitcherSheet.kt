@@ -111,7 +111,7 @@ object PetalTabSwitcherBridge {
                     val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
 
                     val appFont = remember(fontName) {
-                        try { com.petal.browser.ui.theme.AppFont.valueOf(fontName) } catch (e: Exception) { com.petal.browser.ui.theme.AppFont.GS_FLEX }
+                        com.petal.browser.ui.theme.AppFont.fromName(fontName)
                     }
                     val colorStyle = remember(styleName) {
                         try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }

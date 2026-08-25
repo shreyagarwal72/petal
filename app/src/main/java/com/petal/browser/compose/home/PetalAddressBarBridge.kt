@@ -70,7 +70,7 @@ object PetalAddressBarBridge {
                 }
 
                 val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.PETAL }
+                    AppFont.fromName(fontName)
                 }
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
