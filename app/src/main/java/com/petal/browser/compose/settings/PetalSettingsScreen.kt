@@ -2121,88 +2121,96 @@ fun PetalSettingsScreen(
                                         }
                                     }
 
-                                    // About Developer Subcard
+                                    // About Developer Subcard (Material 3 Expressive)
                                     Surface(
-                                        shape = RoundedCornerShape(16.dp),
+                                        shape = RoundedCornerShape(18.dp),
                                         color = MaterialTheme.colorScheme.surfaceContainer,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                                Icon(Icons.Rounded.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                                                Column {
-                                                    Text("About Developer", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                                                    Text("Crafted with ❤ for Android & Termux", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                                    modifier = Modifier.size(44.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Text("SA", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                                    }
+                                                }
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text("Shrey Agarwal", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                                    Text("Lead Android & Systems Developer", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                                                 }
                                             }
 
-                                            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                                                    OutlinedButton(
-                                                        onClick = {
-                                                            try {
-                                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/"))
-                                                            } catch (e: Exception) { e.printStackTrace() }
-                                                        },
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
-                                                        modifier = Modifier.weight(1f)
-                                                    ) {
-                                                        Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(15.dp))
-                                                        Spacer(Modifier.width(3.dp))
-                                                        Text("GitHub", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                            Button(
+                                                onClick = {
+                                                    (context as? ComponentActivity)?.let { act ->
+                                                        com.petal.browser.ui.components.PetalAboutDeveloperBridge.show(act)
                                                     }
+                                                },
+                                                shape = RoundedCornerShape(14.dp),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = MaterialTheme.colorScheme.primary,
+                                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                                ),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Open Full Developer Profile", fontWeight = FontWeight.Bold)
+                                            }
 
-                                                    OutlinedButton(
-                                                        onClick = {
-                                                            try {
-                                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/"))
-                                                            } catch (e: Exception) { e.printStackTrace() }
-                                                        },
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
-                                                        modifier = Modifier.weight(1f)
-                                                    ) {
-                                                        Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(15.dp))
-                                                        Spacer(Modifier.width(3.dp))
-                                                        Text("Source", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                                                    }
+                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        try {
+                                                            com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/"))
+                                                        } catch (e: Exception) { e.printStackTrace() }
+                                                    },
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(15.dp))
+                                                    Spacer(Modifier.width(3.dp))
+                                                    Text("GitHub", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                                                 }
 
-                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                                                    OutlinedButton(
-                                                        onClick = {
-                                                            try {
-                                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://t.me/championworkspace"))
-                                                            } catch (e: Exception) { e.printStackTrace() }
-                                                        },
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
-                                                        modifier = Modifier.weight(1f)
-                                                    ) {
-                                                        Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(15.dp))
-                                                        Spacer(Modifier.width(3.dp))
-                                                        Text("Telegram", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                                                    }
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        try {
+                                                            com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/"))
+                                                        } catch (e: Exception) { e.printStackTrace() }
+                                                    },
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(15.dp))
+                                                    Spacer(Modifier.width(3.dp))
+                                                    Text("Source", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                                                }
 
-                                                    Button(
-                                                        onClick = {
-                                                            try {
-                                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/issues"))
-                                                            } catch (e: Exception) { e.printStackTrace() }
-                                                        },
-                                                        shape = RoundedCornerShape(12.dp),
-                                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
-                                                        modifier = Modifier.weight(1f),
-                                                        colors = ButtonDefaults.buttonColors(
-                                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                                        )
-                                                    ) {
-                                                        Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(15.dp))
-                                                        Spacer(Modifier.width(3.dp))
-                                                        Text("Feedback", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
-                                                    }
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        try {
+                                                            com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://t.me/championworkspace"))
+                                                        } catch (e: Exception) { e.printStackTrace() }
+                                                    },
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(15.dp))
+                                                    Spacer(Modifier.width(3.dp))
+                                                    Text("Telegram", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                                                 }
                                             }
                                         }
