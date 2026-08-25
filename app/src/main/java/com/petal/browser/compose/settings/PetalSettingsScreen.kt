@@ -351,7 +351,7 @@ fun PetalSettingsScreen(
                 Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
                     com.petal.browser.ui.components.ExpressiveHeader(
                         title = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
-                        subtitle = if (searchQuery.isNotBlank()) "Matching Settings" else if (currentCategory == SettingsCategory.OVERVIEW) "Browser Preferences & Customization" else "Settings Category",
+                        subtitle = if (searchQuery.isNotBlank()) "Matching Settings" else if (currentCategory == SettingsCategory.OVERVIEW) "Browser Preferences & Customization" else currentCategory.subtitle,
                         onBack = {
                             if (currentCategory != SettingsCategory.OVERVIEW) {
                                 currentCategory = SettingsCategory.OVERVIEW
@@ -409,8 +409,8 @@ fun PetalSettingsScreen(
                                     .fillMaxWidth()
                                     .weight(1f)
                                     .verticalScroll(categoryScrollState)
-                                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                                verticalArrangement = Arrangement.spacedBy(20.dp)
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                             if (currentCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
                                 Text(
@@ -474,7 +474,7 @@ fun PetalSettingsScreen(
                                     val aiProviderScrollState = rememberScrollState()
                                     com.petal.browser.ui.components.ScrollFadeRow(
                                         scrollState = aiProviderScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
                                     Row(
                                         modifier = Modifier
@@ -603,7 +603,7 @@ fun PetalSettingsScreen(
                                     val modelScrollState = rememberScrollState()
                                     com.petal.browser.ui.components.ScrollFadeRow(
                                         scrollState = modelScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
                                     Row(
                                         modifier = Modifier
@@ -729,7 +729,7 @@ fun PetalSettingsScreen(
                                     val themeScrollState = rememberScrollState()
                                     com.petal.browser.ui.components.ScrollFadeRow(
                                         scrollState = themeScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
                                     Row(
                                         modifier = Modifier
@@ -777,7 +777,7 @@ fun PetalSettingsScreen(
                                     val fontFamilyScrollState = rememberScrollState()
                                     com.petal.browser.ui.components.ScrollFadeRow(
                                         scrollState = fontFamilyScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
                                     Row(
                                         modifier = Modifier
@@ -815,7 +815,7 @@ fun PetalSettingsScreen(
                                             val presetScrollState = rememberScrollState()
                                             com.petal.browser.ui.components.ScrollFadeRow(
                                                 scrollState = presetScrollState,
-                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                             ) {
                                             Row(
                                                 modifier = Modifier
@@ -1002,7 +1002,7 @@ fun PetalSettingsScreen(
                                     val accentStyleScrollState = rememberScrollState()
                                     com.petal.browser.ui.components.ScrollFadeRow(
                                         scrollState = accentStyleScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
                                     Row(
                                         modifier = Modifier
@@ -1035,7 +1035,7 @@ fun PetalSettingsScreen(
                                     val paletteScrollState = rememberScrollState()
                                     com.petal.browser.ui.components.ScrollFadeRow(
                                         scrollState = paletteScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1155,23 +1155,40 @@ fun PetalSettingsScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
 
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        FilterChip(
-                                            selected = homepageType == "0",
-                                            onClick = {
-                                                homepageType = "0"
-                                                sp.edit().putString("sp_home_type", "0").apply()
-                                            },
-                                            label = { Text("Petal Start Page") }
-                                        )
-                                        FilterChip(
-                                            selected = homepageType == "1",
-                                            onClick = {
-                                                homepageType = "1"
-                                                sp.edit().putString("sp_home_type", "1").apply()
-                                            },
-                                            label = { Text("Custom URL") }
-                                        )
+                                    val homeTypeScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = homeTypeScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(homeTypeScrollState),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            FilterChip(
+                                                selected = homepageType == "0",
+                                                onClick = {
+                                                    homepageType = "0"
+                                                    sp.edit().putString("sp_home_type", "0").apply()
+                                                },
+                                                label = { Text("Petal Start Page") },
+                                                leadingIcon = if (homepageType == "0") {
+                                                    @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                            FilterChip(
+                                                selected = homepageType == "1",
+                                                onClick = {
+                                                    homepageType = "1"
+                                                    sp.edit().putString("sp_home_type", "1").apply()
+                                                },
+                                                label = { Text("Custom URL") },
+                                                leadingIcon = if (homepageType == "1") {
+                                                    @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
                                     }
 
                                     if (homepageType == "1") {
@@ -1295,12 +1312,13 @@ fun PetalSettingsScreen(
                                                 privateDnsMode = mode
                                                 sp.edit().putString("sp_private_dns_mode", mode).apply()
                                             },
-                                            shape = RoundedCornerShape(14.dp),
+                                            shape = RoundedCornerShape(16.dp),
                                             color = if (privateDnsMode == mode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                                            border = if (privateDnsMode == mode) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Row(
-                                                modifier = Modifier.padding(12.dp),
+                                                modifier = Modifier.padding(14.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
@@ -1377,7 +1395,7 @@ fun PetalSettingsScreen(
                                     val languageScrollState = rememberScrollState()
                                     com.petal.browser.ui.components.ScrollFadeRow(
                                         scrollState = languageScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
                                     Row(
                                         modifier = Modifier
@@ -1662,7 +1680,7 @@ fun PetalSettingsScreen(
                                             val hapticPatternScrollState = rememberScrollState()
                                             com.petal.browser.ui.components.ScrollFadeRow(
                                                 scrollState = hapticPatternScrollState,
-                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                             ) {
                                             Row(
                                                 modifier = Modifier
@@ -1693,33 +1711,41 @@ fun PetalSettingsScreen(
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        modifier = Modifier.fillMaxWidth()
+                                    val addressBarScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = addressBarScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
-                                        FilterChip(
-                                            selected = addressBarPosition == "TOP",
-                                            onClick = {
-                                                addressBarPosition = "TOP"
-                                                (context as? BrowserActivity)?.applyAddressBarPosition()
-                                            },
-                                            label = { Text("Top (Default)") },
-                                            leadingIcon = if (addressBarPosition == "TOP") {
-                                                { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                            } else null
-                                        )
-                                        FilterChip(
-                                            selected = addressBarPosition == "BOTTOM",
-                                            onClick = {
-                                                addressBarPosition = "BOTTOM"
-                                                sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
-                                                (context as? BrowserActivity)?.applyAddressBarPosition()
-                                            },
-                                            label = { Text("Bottom") },
-                                            leadingIcon = if (addressBarPosition == "BOTTOM") {
-                                                { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                            } else null
-                                        )
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(addressBarScrollState),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            FilterChip(
+                                                selected = addressBarPosition == "TOP",
+                                                onClick = {
+                                                    addressBarPosition = "TOP"
+                                                    (context as? BrowserActivity)?.applyAddressBarPosition()
+                                                },
+                                                label = { Text("Top (Default)") },
+                                                leadingIcon = if (addressBarPosition == "TOP") {
+                                                    @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                            FilterChip(
+                                                selected = addressBarPosition == "BOTTOM",
+                                                onClick = {
+                                                    addressBarPosition = "BOTTOM"
+                                                    sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
+                                                    (context as? BrowserActivity)?.applyAddressBarPosition()
+                                                },
+                                                label = { Text("Bottom") },
+                                                leadingIcon = if (addressBarPosition == "BOTTOM") {
+                                                    @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
                                     }
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -2335,13 +2361,13 @@ private fun SettingsCategoryCard(
 ) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -2377,7 +2403,8 @@ private fun SettingsCategoryRow(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
