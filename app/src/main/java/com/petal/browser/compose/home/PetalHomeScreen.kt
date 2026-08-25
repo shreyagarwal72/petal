@@ -778,7 +778,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                text = "Search or type web address",
+                text = "Search or type URL",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
