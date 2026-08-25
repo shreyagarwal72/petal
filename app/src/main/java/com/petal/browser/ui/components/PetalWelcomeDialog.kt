@@ -369,8 +369,8 @@ private fun WelcomeStepPage() {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Welcome to",
@@ -490,7 +490,7 @@ private fun WelcomeStepPage() {
             )
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ProfileAvatarDisplay(profile = currentProfile, size = 46.dp)
+                ProfileAvatarDisplay(profile = currentProfile, sizeDp = 46)
                 Spacer(Modifier.width(14.dp))
                 Column {
                     Text(
@@ -499,7 +499,7 @@ private fun WelcomeStepPage() {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = if (currentProfile.isGuest) "Incognito Guest Mode" else "Synced Account Profile",
+                        text = if (!currentProfile.isSignedIn) "Incognito Guest Mode" else "Synced Account Profile",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
