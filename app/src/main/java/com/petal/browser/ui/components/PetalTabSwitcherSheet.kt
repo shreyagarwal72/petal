@@ -85,12 +85,12 @@ object PetalTabSwitcherBridge {
             }
             dialog.setOnShowListener {
                 try {
-                    // Same fix as the About Developer sheet: BottomSheetDialog's
-                    // internal containers default to fitsSystemWindows = true and
-                    // consume the status bar inset before Compose sees it, which is
-                    // why the header sat under the status bar here but not on the
-                    // (Activity-hosted) History screen. Pass the inset through
-                    // unconsumed so ExpressiveHeader's statusBarsPadding() works.
+                    val container = dialog.findViewById<android.view.View>(com.google.android.material.R.id.container)
+                    container?.let { root ->
+                        root.fitsSystemWindows = false
+                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
+                    }
+
                     val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
                     coordinator?.let { root ->
                         root.fitsSystemWindows = false
@@ -100,6 +100,7 @@ object PetalTabSwitcherBridge {
                     val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
                     bottomSheet?.let { sheet ->
                         sheet.fitsSystemWindows = false
+                        sheet.background = null
                         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets -> insets }
 
                         val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)

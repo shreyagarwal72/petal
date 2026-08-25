@@ -68,8 +68,24 @@ object PetalAboutDeveloperBridge {
             }
             dialog.setOnShowListener {
                 try {
+                    val container = dialog.findViewById<android.view.View>(com.google.android.material.R.id.container)
+                    container?.let { root ->
+                        root.fitsSystemWindows = false
+                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
+                    }
+
+                    val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
+                    coordinator?.let { root ->
+                        root.fitsSystemWindows = false
+                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
+                    }
+
                     val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
                     bottomSheet?.let { sheet ->
+                        sheet.fitsSystemWindows = false
+                        sheet.background = null
+                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets -> insets }
+
                         val behavior = BottomSheetBehavior.from(sheet)
                         behavior.state = BottomSheetBehavior.STATE_EXPANDED
                         behavior.skipCollapsed = true
@@ -158,44 +174,43 @@ fun PetalAboutDeveloperSheetContent(
     ) {
         com.petal.browser.predictive.PetalScreenWrapper {
             Scaffold(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                topBar = {
-                    ExpressiveHeader(
-                        title = "About Developer",
-                        subtitle = "Crafted with ❤ for Android & Termux",
-                        onBack = onClose,
-                        enableLiquidGlass = true,
-                        actions = {
-                            HeaderActionIcon(
-                                icon = Icons.Rounded.Share,
-                                contentDescription = "Share Profile",
-                                onClick = {
-                                    copyToClipboard("Developer Profile Link", "https://github.com/shreyagarwal72")
-                                }
-                            )
-                        }
-                    )
-                }
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             ) { innerPadding ->
                 Box(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
+                    modifier = modifier.fillMaxSize()
                 ) {
                     M3ExpressiveVariableBackground(pageSeed = "about_developer_page")
 
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 20.dp, vertical = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        // ── Developer Hero Profile Card ─────────────────────────
-                        DeveloperHeroCard(
-                            onCopyGithub = { copyToClipboard("GitHub URL", "https://github.com/shreyagarwal72") }
+                        ExpressiveHeader(
+                            title = "About Developer",
+                            subtitle = "Crafted with ❤ for Android & Termux",
+                            onBack = onClose,
+                            enableLiquidGlass = true,
+                            actions = {
+                                HeaderActionIcon(
+                                    icon = Icons.Rounded.Share,
+                                    contentDescription = "Share Profile",
+                                    onClick = {
+                                        copyToClipboard("Developer Profile Link", "https://github.com/shreyagarwal72")
+                                    }
+                                )
+                            }
                         )
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // ── Developer Hero Profile Card ─────────────────────────
+                            DeveloperHeroCard(
+                                onCopyGithub = { copyToClipboard("GitHub URL", "https://github.com/shreyagarwal72") }
+                            )
 
                         // ── Petal Browser Philosophy & Mission Card ─────────────
                         DeveloperMissionCard()
