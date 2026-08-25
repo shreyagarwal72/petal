@@ -312,16 +312,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         }
 
-        String lang = sp.getString("sp_app_language", "system");
-        if (lang != null && !lang.equals("system")) {
-            Locale locale = Locale.forLanguageTag(lang);
-            Locale.setDefault(locale);
-            android.content.res.Configuration config = new android.content.res.Configuration(newBase.getResources().getConfiguration());
-            config.setLocale(locale);
-            config.setLayoutDirection(locale);
-            newBase = newBase.createConfigurationContext(config);
-        }
-        super.attachBaseContext(newBase);
+        super.attachBaseContext(HelperUnit.applyLanguage(newBase));
     }
 
     @Override

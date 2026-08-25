@@ -244,7 +244,6 @@ fun PetalSettingsScreen(
     var isFloatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
-    var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
     var isExpressiveBgShapes by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
 
     // Private DNS & Language States
@@ -278,9 +277,6 @@ fun PetalSettingsScreen(
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when (key) {
-                "sp_expressive_feature_tiles" -> {
-                    isExpressiveFeatureTiles = sp.getBoolean("sp_expressive_feature_tiles", true)
-                }
                 "sp_floating_tab_bar" -> {
                     isFloatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
                 }
@@ -434,47 +430,22 @@ fun PetalSettingsScreen(
                                     SettingsCategory.ABOUT
                                 )
 
-                                val tileColorway = listOf(
-                                    MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
-                                    MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer,
-                                    MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer,
-                                )
-
-                                categories.forEachIndexed { index, cat ->
-                                    if (isExpressiveFeatureTiles) {
-                                        val (container, onContainer) = tileColorway[index % tileColorway.size]
-                                        PetalFeatureTile(
-                                            title = cat.title,
-                                            subtitle = cat.subtitle,
-                                            icon = cat.icon,
-                                            container = container,
-                                            onContainer = onContainer,
-                                            onClick = {
-                                                if (cat == SettingsCategory.ABOUT) {
-                                                    (context as? ComponentActivity)?.let { act ->
-                                                        com.petal.browser.ui.components.PetalAboutDeveloperBridge.show(act)
-                                                    }
-                                                } else {
-                                                    currentCategory = cat
-                                                }
-                                            },
-                                        )
-                                    } else {
-                                        SettingsCategoryRow(
-                                            title = cat.title,
-                                            subtitle = cat.subtitle,
-                                            icon = cat.icon,
-                                            onClick = {
-                                                if (cat == SettingsCategory.ABOUT) {
-                                                    (context as? ComponentActivity)?.let { act ->
-                                                        com.petal.browser.ui.components.PetalAboutDeveloperBridge.show(act)
-                                                    }
-                                                } else {
-                                                    currentCategory = cat
-                                                }
-                                            }
-                                        )
-                                    }
+                                categories.forEach { cat ->
+                                     SettingsCategoryRow(
+                                         title = cat.title,
+                                         subtitle = cat.subtitle,
+                                         icon = cat.icon,
+                                         onClick = {
+                                             if (cat == SettingsCategory.ABOUT) {
+                                                 (context as? ComponentActivity)?.let { act ->
+                                                     com.petal.browser.ui.components.PetalAboutDeveloperBridge.show(act)
+                                                 }
+                                             } else {
+                                                 currentCategory = cat
+                                             }
+                                         }
+                                     )
+                                 }
                                 }
                             }
 
@@ -1116,55 +1087,6 @@ fun PetalSettingsScreen(
                                     )
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    // API Features Hub Toggle Row & Direct Action
-                                    var isApiFeaturesEnabled by remember { mutableStateOf(sp.getBoolean("sp_api_features_hub_enabled", true)) }
-
-                                    ToggleRow(
-                                        title = "New API Integration Features Hub",
-                                        subtitle = "Enable AndroidX WebKit multi-profile, Google OAuth Credential Manager & Monet color extraction",
-                                        icon = Icons.Rounded.Extension,
-                                        checked = isApiFeaturesEnabled,
-                                        onCheckedChange = { newValue ->
-                                            isApiFeaturesEnabled = newValue
-                                            sp.edit().putBoolean("sp_api_features_hub_enabled", newValue).apply()
-                                        }
-                                    )
-
-                                    if (isApiFeaturesEnabled) {
-                                        Surface(
-                                            shape = RoundedCornerShape(16.dp),
-                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 4.dp)
-                                        ) {
-                                            Column(modifier = Modifier.padding(14.dp)) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    Icon(
-                                                        Icons.Rounded.AutoAwesome,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.size(20.dp)
-                                                    )
-                                                    Text(
-                                                        "API Integrations Active",
-                                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                                    )
-                                                }
-                                                Spacer(Modifier.height(4.dp))
-                                                Text(
-                                                    "• Palette Favicon Accent Color Extraction\n• AndroidX WebKit Private Incognito Multi-Profile\n• Google Credential Manager OAuth Sync\n• Predictive Back Gesture System Integration",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
-                                                )
-                                            }
-                                        }
-                                    }
 
                                     // Expressive Colors Toggle
                                     ToggleRow(
