@@ -2093,20 +2093,10 @@ fun PetalSettingsScreen(
                                         }
                                     }
                                 }
-                            }
-                                                ) {
-                                                    Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(15.dp))
-                                                    Spacer(Modifier.width(3.dp))
-                                                    Text("Telegram", style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                                                }
-                                            }
-                                        }
-                                    }
 
-                                    Spacer(Modifier.height(32.dp))
-                                        }
-                                    }
+                                Spacer(Modifier.height(32.dp))
                             }
+                        }
                     }
                 }
             }
