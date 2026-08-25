@@ -562,9 +562,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (sp != null) {
             if (!sp.getBoolean("sp_welcome_shown", false)) {
                 sp.edit().putBoolean("sp_welcome_shown", true).apply();
-                try {
-                    com.petal.browser.ui.components.PetalWelcomeBridge.showWelcomeDialog(this, () -> kotlin.Unit.INSTANCE);
-                } catch (Exception ignored) {}
             }
         }
     }

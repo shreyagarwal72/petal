@@ -434,7 +434,7 @@ fun PetalHomeScreen(
     }
 
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    var isWelcomeShown by remember { mutableStateOf(sp.getBoolean("sp_welcome_shown", false)) }
+    var isWelcomeShown by remember { mutableStateOf(sp.getBoolean("sp_welcome_shown", true)) }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
