@@ -714,10 +714,15 @@ fun PetalSettingsScreen(
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
+                                    val themeScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = themeScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState()),
+                                            .horizontalScroll(themeScrollState),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         ThemeConfig.values().forEach { config ->
@@ -749,6 +754,7 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                     }
+                                    }
 
                                     // --- Font Choice Chips ---
                                     Text(
@@ -756,10 +762,15 @@ fun PetalSettingsScreen(
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
+                                    val fontFamilyScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = fontFamilyScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState()),
+                                            .horizontalScroll(fontFamilyScrollState),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         AppFont.values().forEach { font ->
@@ -779,6 +790,7 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                     }
+                                    }
 
                                     // --- GS Flex Preset Chips (For Petal Signature) ---
                                     androidx.compose.animation.AnimatedVisibility(visible = selectedFont == AppFont.PETAL) {
@@ -788,10 +800,15 @@ fun PetalSettingsScreen(
                                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
+                                            val presetScrollState = rememberScrollState()
+                                            com.petal.browser.ui.components.ScrollFadeRow(
+                                                scrollState = presetScrollState,
+                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                            ) {
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .horizontalScroll(rememberScrollState()),
+                                                    .horizontalScroll(presetScrollState),
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                                             ) {
                                                 GSFlexPreset.values().forEach { preset ->
@@ -807,6 +824,7 @@ fun PetalSettingsScreen(
                                                         } else null
                                                     )
                                                 }
+                                            }
                                             }
                                         }
                                     }
@@ -969,10 +987,15 @@ fun PetalSettingsScreen(
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
+                                    val accentStyleScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = accentStyleScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState()),
+                                            .horizontalScroll(accentStyleScrollState),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         ColorStyle.values().forEach { style ->
@@ -988,6 +1011,7 @@ fun PetalSettingsScreen(
                                                 } else null
                                             )
                                         }
+                                    }
                                     }
 
                                     // --- Preset Palette Seeds ---
@@ -1611,10 +1635,15 @@ fun PetalSettingsScreen(
                                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
+                                            val hapticPatternScrollState = rememberScrollState()
+                                            com.petal.browser.ui.components.ScrollFadeRow(
+                                                scrollState = hapticPatternScrollState,
+                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                            ) {
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .horizontalScroll(rememberScrollState()),
+                                                    .horizontalScroll(hapticPatternScrollState),
                                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                                             ) {
                                                 com.petal.browser.haptics.PetalHapticEngine.Pattern.values().forEach { pattern ->
@@ -1628,6 +1657,7 @@ fun PetalSettingsScreen(
                                                         label = { Text(pattern.name.replace("_", " ")) }
                                                     )
                                                 }
+                                            }
                                             }
                                         }
                                     }
