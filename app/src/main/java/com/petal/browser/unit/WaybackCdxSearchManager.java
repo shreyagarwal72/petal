@@ -40,7 +40,7 @@ public class WaybackCdxSearchManager {
             HttpURLConnection connection = null;
             try {
                 String encodedUrl = URLEncoder.encode(pageUrl.trim(), "UTF-8");
-                String apiUrl = "http://web.archive.org/cdx/search/cdx?url=" + encodedUrl + "&output=json&limit=10";
+                String apiUrl = "https://web.archive.org/cdx/search/cdx?url=" + encodedUrl + "&output=json&limit=10";
                 URL url = new URL(apiUrl);
 
                 connection = (HttpURLConnection) url.openConnection();
