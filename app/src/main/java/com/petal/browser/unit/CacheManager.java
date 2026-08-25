@@ -28,13 +28,9 @@ public class CacheManager {
         if (context == null) return;
         Context appContext = context.getApplicationContext();
 
-        // 1. Clear Chromium WebView Cache & WebStorage
+        // 1. Clear Chromium WebView Cache (http/disk cache ONLY)
         try {
             BrowsingDataManager.clearCache(appContext, activeWebView);
-            BrowsingDataManager.clearWebStorage();
-            BrowsingDataManager.clearCookies();
-            BrowsingDataManager.clearAutofillData(appContext);
-            BrowsingDataManager.clearPermissions();
         } catch (Exception e) {
             Log.w(TAG, "Error clearing Chromium cache sources", e);
         }

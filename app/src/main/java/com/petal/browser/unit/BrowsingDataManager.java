@@ -120,7 +120,6 @@ public class BrowsingDataManager {
             runOnMainThreadBlocking(() -> webView.clearCache(true));
         }
         trimWebViewMemory(context);
-        clearProfileCacheAndStorage();
         clearHttpResponseCache();
         if (context != null) {
             try {

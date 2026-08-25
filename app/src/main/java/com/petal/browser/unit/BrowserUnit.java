@@ -244,7 +244,7 @@ public class BrowserUnit {
             }
         }
         if (clearSettings) {
-            sp.edit().clear().apply();
+            clearSettingsSafely(sp);
             List_standard listStandard = new List_standard(context);
             listStandard.clearDomains();
         }
@@ -265,6 +265,51 @@ public class BrowserUnit {
                 WebStorage.getInstance().deleteAllData();
             } catch (Exception ignored) {}
         }
+    }
+
+    public static void clearSettingsSafely(SharedPreferences sp) {
+        if (sp == null) return;
+        java.util.Map<String, ?> all = sp.getAll();
+        java.util.Map<String, Object> protectedMap = new java.util.HashMap<>();
+        for (java.util.Map.Entry<String, ?> entry : all.entrySet()) {
+            String key = entry.getKey();
+            if (key != null && (
+                key.contains("api_key") ||
+                key.contains("account") ||
+                key.contains("auth") ||
+                key.contains("token") ||
+                key.contains("login") ||
+                key.contains("pass") ||
+                key.startsWith("sp_gemini") ||
+                key.startsWith("sp_openrouter") ||
+                key.startsWith("sp_openai") ||
+                key.startsWith("sp_grok") ||
+                key.startsWith("sp_groq") ||
+                key.startsWith("sp_google") ||
+                key.startsWith("sp_custom_font") ||
+                key.startsWith("sp_custom_")
+            )) {
+                protectedMap.put(key, entry.getValue());
+            }
+        }
+
+        SharedPreferences.Editor editor = sp.edit().clear();
+        for (java.util.Map.Entry<String, Object> entry : protectedMap.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if (value instanceof String) {
+                editor.putString(key, (String) value);
+            } else if (value instanceof Boolean) {
+                editor.putBoolean(key, (Boolean) value);
+            } else if (value instanceof Integer) {
+                editor.putInt(key, (Integer) value);
+            } else if (value instanceof Long) {
+                editor.putLong(key, (Long) value);
+            } else if (value instanceof Float) {
+                editor.putFloat(key, (Float) value);
+            }
+        }
+        editor.apply();
     }
 
     public static void intentURL(Context context, Uri uri) {
