@@ -347,47 +347,37 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
             modifier = Modifier.fillMaxSize()
         ) {
             if (isSelectionMode) {
-                val selectedCount = selectedIds.size
-                val singleSelectedItem = if (selectedCount == 1) downloadList.find { selectedIds.contains(it.id) } else null
-                val headerTitle = singleSelectedItem?.fileName ?: "$selectedCount Selected"
-                val headerSubtitle = if (singleSelectedItem != null) {
-                    val sizeStr = if (singleSelectedItem.totalSize > 0) formatBytes(singleSelectedItem.totalSize) else formatBytes(singleSelectedItem.bytesDownloaded)
-                    "1 file selected • $sizeStr"
-                } else {
-                    "$selectedCount files selected"
-                }
-
                 ExpressiveHeader(
-                    title = headerTitle,
-                    subtitle = headerSubtitle,
-                    onBack = { selectedIds = emptySet() },
-                    actions = {
-                        HeaderActionIcon(
-                            icon = if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
-                            contentDescription = "Select All",
-                            onClick = { toggleSelectAll() }
-                        )
-                        HeaderActionIcon(
-                            icon = Icons.Rounded.Share,
-                            contentDescription = "Share Selected",
-                            onClick = {
-                                val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
-                                shareMultipleFiles(context, itemsToShare)
-                                selectedIds = emptySet()
-                            }
-                        )
-                        HeaderActionIcon(
-                            icon = Icons.Rounded.Delete,
-                            contentDescription = "Delete Selected",
-                            onClick = {
-                                val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
-                                performStagedDelete(itemsToDelete)
-                                selectedIds = emptySet()
-                            }
-                        )
-                    }
-                )
-            } else {
+                    title = "${selectedIds.size} Selected",
+                        subtitle = "Selection Mode Active",
+                        onBack = { selectedIds = emptySet() },
+                        actions = {
+                            HeaderActionIcon(
+                                icon = if (selectedIds.size == downloadList.size) Icons.Rounded.Deselect else Icons.Rounded.SelectAll,
+                                contentDescription = "Select All",
+                                onClick = { toggleSelectAll() }
+                            )
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.Share,
+                                contentDescription = "Share Selected",
+                                onClick = {
+                                    val itemsToShare = downloadList.filter { selectedIds.contains(it.id) }
+                                    shareMultipleFiles(context, itemsToShare)
+                                    selectedIds = emptySet()
+                                }
+                            )
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.Delete,
+                                contentDescription = "Delete Selected",
+                                onClick = {
+                                    val itemsToDelete = downloadList.filter { selectedIds.contains(it.id) }
+                                    performStagedDelete(itemsToDelete)
+                                    selectedIds = emptySet()
+                                }
+                            )
+                        }
+                    )
+                } else {
                     ExpressiveHeader(
                         title = "Downloads",
                         subtitle = "${downloadList.size} files",
