@@ -1,8 +1,0 @@
-﻿2026-08-22T06:50:59.2617652Z ##[group]Run chmod +x gradlew
-2026-08-22T06:50:59.2618033Z [36;1mchmod +x gradlew[0m
-2026-08-22T06:50:59.2661676Z shell: /usr/bin/bash -e {0}
-2026-08-22T06:50:59.2662226Z env:
-2026-08-22T06:50:59.2662709Z   GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m -XX:+UseG1GC" -Dorg.gradle.daemon=false
-2026-08-22T06:50:59.2663385Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-8/x64
-2026-08-22T06:50:59.2663910Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-8/x64
-2026-08-22T06:50:59.2664305Z ##[endgroup]
