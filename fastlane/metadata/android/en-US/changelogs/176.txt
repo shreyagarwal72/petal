@@ -1,0 +1,4 @@
+* **Reimagined Home Screen Widget**: Completely redesigned `PetalSearchGlanceWidget.kt` with Material 3 Expressive morphing shape containers (Clover, Scallop, Burst, Cookie) rendered dynamically using `RoundedPolygon` and canvas bitmap drawing.
+* **Dual Responsive Layouts**: Added 1-row compact search bar and 2-row expanded layout featuring greeting tagline and quick action shortcuts for Petal AI, Voice Search, Incognito Mode, and New Tab.
+* **Material 3 Expressive About Developer UI**: Created standalone `PetalAboutDeveloperSheet.kt` and `PetalAboutDeveloperBridge` featuring expressive hero cards, developer metric badges, tech stack chips, and community hub links.
+* **Tab Manager Status Bar Padding**: Fixed window inset propagation in `PetalTabSwitcherSheet.kt` and `PetalTabGridSwitcher.kt` so the `ExpressiveHeader` seamlessly integrates status bar top padding.
