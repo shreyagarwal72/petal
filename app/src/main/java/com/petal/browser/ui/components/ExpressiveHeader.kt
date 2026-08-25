@@ -178,14 +178,14 @@ fun ExpressiveHeader(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             val titleFontSize = remember(currentTitle, onBack) {
                                 when {
-                                    onBack != null && currentTitle.length > 22 -> 14.sp
-                                    onBack != null && currentTitle.length > 18 -> 15.sp
-                                    onBack != null && currentTitle.length > 14 -> 16.5.sp
-                                    onBack != null -> 18.sp
-                                    currentTitle.length > 22 -> 16.5.sp
-                                    currentTitle.length > 18 -> 17.5.sp
-                                    currentTitle.length > 14 -> 19.5.sp
-                                    else -> 22.sp
+                                    onBack != null && currentTitle.length > 25 -> 12.5.sp
+                                    onBack != null && currentTitle.length > 18 -> 14.sp
+                                    onBack != null && currentTitle.length > 12 -> 15.5.sp
+                                    onBack != null -> 17.5.sp
+                                    currentTitle.length > 25 -> 14.sp
+                                    currentTitle.length > 18 -> 16.sp
+                                    currentTitle.length > 12 -> 18.sp
+                                    else -> 20.sp
                                 }
                             }
 
@@ -193,19 +193,19 @@ fun ExpressiveHeader(
                                 text = currentTitle,
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontSize = titleFontSize,
-                                    lineHeight = (titleFontSize.value + 4).sp
+                                    lineHeight = (titleFontSize.value + 3).sp
                                 ),
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false,
-                                overflow = TextOverflow.Clip
+                                overflow = TextOverflow.Ellipsis
                             )
 
                             if (currentSubtitle.isNotBlank()) {
                                 val subtitleFontSize = remember(currentSubtitle) {
                                     when {
-                                        currentSubtitle.length > 32 -> 11.5.sp
-                                        currentSubtitle.length > 24 -> 12.sp
+                                        currentSubtitle.length > 32 -> 11.sp
+                                        currentSubtitle.length > 22 -> 12.sp
                                         else -> 13.sp
                                     }
                                 }
@@ -213,12 +213,12 @@ fun ExpressiveHeader(
                                     text = currentSubtitle,
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         fontSize = subtitleFontSize,
-                                        lineHeight = (subtitleFontSize.value + 4).sp
+                                        lineHeight = (subtitleFontSize.value + 3).sp
                                     ),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = maxSubtitleLines,
+                                    maxLines = 1,
                                     softWrap = false,
-                                    overflow = TextOverflow.Clip
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
