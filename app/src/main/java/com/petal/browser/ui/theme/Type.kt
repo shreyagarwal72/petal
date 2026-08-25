@@ -69,6 +69,64 @@ object PetalFontHelper {
     }
 }
 
+data class CustomFontSettings(
+    val display: FontAxes = FontAxes(950f, 100f, 30f, 0f, 0f, 100f),
+    val headline: FontAxes = FontAxes(700f, 100f, 32f, 0f, 0f, 60f),
+    val body: FontAxes = FontAxes(450f, 100f, 16f, 0f, 0f, 0f)
+)
+
+fun getCustomFontSettings(sp: android.content.SharedPreferences): CustomFontSettings {
+    return CustomFontSettings(
+        display = FontAxes(
+            weight = sp.getFloat("sp_custom_display_weight", 950f),
+            width = sp.getFloat("sp_custom_display_width", 100f),
+            opsz = sp.getFloat("sp_custom_display_opsz", 30f),
+            grade = sp.getFloat("sp_custom_display_grade", 0f),
+            slant = sp.getFloat("sp_custom_display_slant", 0f),
+            roundness = sp.getFloat("sp_custom_display_roundness", 100f)
+        ),
+        headline = FontAxes(
+            weight = sp.getFloat("sp_custom_headline_weight", 700f),
+            width = sp.getFloat("sp_custom_headline_width", 100f),
+            opsz = sp.getFloat("sp_custom_headline_opsz", 32f),
+            grade = sp.getFloat("sp_custom_headline_grade", 0f),
+            slant = sp.getFloat("sp_custom_headline_slant", 0f),
+            roundness = sp.getFloat("sp_custom_headline_roundness", 60f)
+        ),
+        body = FontAxes(
+            weight = sp.getFloat("sp_custom_body_weight", 450f),
+            width = sp.getFloat("sp_custom_body_width", 100f),
+            opsz = sp.getFloat("sp_custom_body_opsz", 16f),
+            grade = sp.getFloat("sp_custom_body_grade", 0f),
+            slant = sp.getFloat("sp_custom_body_slant", 0f),
+            roundness = sp.getFloat("sp_custom_body_roundness", 0f)
+        )
+    )
+}
+
+fun saveCustomFontSettings(sp: android.content.SharedPreferences, settings: CustomFontSettings) {
+    sp.edit()
+        .putFloat("sp_custom_display_weight", settings.display.weight)
+        .putFloat("sp_custom_display_width", settings.display.width)
+        .putFloat("sp_custom_display_opsz", settings.display.opsz)
+        .putFloat("sp_custom_display_grade", settings.display.grade)
+        .putFloat("sp_custom_display_slant", settings.display.slant)
+        .putFloat("sp_custom_display_roundness", settings.display.roundness)
+        .putFloat("sp_custom_headline_weight", settings.headline.weight)
+        .putFloat("sp_custom_headline_width", settings.headline.width)
+        .putFloat("sp_custom_headline_opsz", settings.headline.opsz)
+        .putFloat("sp_custom_headline_grade", settings.headline.grade)
+        .putFloat("sp_custom_headline_slant", settings.headline.slant)
+        .putFloat("sp_custom_headline_roundness", settings.headline.roundness)
+        .putFloat("sp_custom_body_weight", settings.body.weight)
+        .putFloat("sp_custom_body_width", settings.body.width)
+        .putFloat("sp_custom_body_opsz", settings.body.opsz)
+        .putFloat("sp_custom_body_grade", settings.body.grade)
+        .putFloat("sp_custom_body_slant", settings.body.slant)
+        .putFloat("sp_custom_body_roundness", settings.body.roundness)
+        .apply()
+}
+
 @OptIn(ExperimentalTextApi::class)
 private fun variableFont(
     resId: Int,
@@ -213,7 +271,8 @@ fun petalTypography(
     fontWeight: Int = 750,
     fontRoundness: Float = 100f,
     gsFlexSettings: GSFlexSettings = GSFlexSettings(),
-    customFontPath: String? = null
+    customFontPath: String? = null,
+    customFontSettings: CustomFontSettings = CustomFontSettings()
 ): Typography = try {
     when (appFont) {
         AppFont.PETAL -> {
@@ -239,8 +298,27 @@ fun petalTypography(
             if (!customFontPath.isNullOrBlank()) {
                 val file = java.io.File(customFontPath)
                 if (file.exists() && file.canRead()) {
-                    val customFontFamily = FontFamily(Font(file))
-                    buildTypography(Tiers(customFontFamily, customFontFamily, customFontFamily, customFontFamily, customFontFamily))
+                    try {
+                        val displayFont = FontFamily(Font(
+                            file = file,
+                            variationSettings = customFontSettings.display.toVariationSettings(),
+                            weight = FontWeight(customFontSettings.display.weight.toInt().coerceIn(1, 1000))
+                        ))
+                        val headlineFont = FontFamily(Font(
+                            file = file,
+                            variationSettings = customFontSettings.headline.toVariationSettings(),
+                            weight = FontWeight(customFontSettings.headline.weight.toInt().coerceIn(1, 1000))
+                        ))
+                        val bodyFont = FontFamily(Font(
+                            file = file,
+                            variationSettings = customFontSettings.body.toVariationSettings(),
+                            weight = FontWeight(customFontSettings.body.weight.toInt().coerceIn(1, 1000))
+                        ))
+                        buildTypography(Tiers(displayFont, headlineFont, headlineFont, bodyFont, bodyFont))
+                    } catch (e: Throwable) {
+                        val customFontFamily = FontFamily(Font(file))
+                        buildTypography(Tiers(customFontFamily, customFontFamily, customFontFamily, customFontFamily, customFontFamily))
+                    }
                 } else {
                     petalTypography(AppFont.PETAL, fontWidth, fontWeight, fontRoundness, gsFlexSettings)
                 }

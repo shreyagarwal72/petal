@@ -87,6 +87,10 @@ fun PetalExpressiveTheme(
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
         sp.getString("sp_custom_font_path", null)
     },
+    customFontSettings: CustomFontSettings = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        getCustomFontSettings(sp)
+    },
     fontWidth: Float = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
         sp.getFloat("sp_font_width", 92f)
@@ -196,7 +200,7 @@ fun PetalExpressiveTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexSettings, customFontPath),
+            typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexSettings, customFontPath, customFontSettings),
             content = content
         )
     }
