@@ -197,14 +197,45 @@ private fun isSameDay(c1: Calendar, c2: Calendar): Boolean {
 fun getFileTypeIcon(fileName: String): ImageVector {
     val ext = fileName.substringAfterLast('.', "").lowercase()
     return when (ext) {
-        "jpg", "jpeg", "png", "webp", "gif", "svg", "bmp" -> Icons.Rounded.Image
-        "mp4", "mkv", "webm", "avi", "mov", "flv" -> Icons.Rounded.Movie
-        "mp3", "wav", "aac", "flac", "ogg", "m4a" -> Icons.Rounded.MusicNote
-        "apk" -> Icons.Rounded.Android
+        "jpg", "jpeg", "png", "webp", "gif", "svg", "bmp", "ico", "heic" -> Icons.Rounded.Image
+        "mp4", "mkv", "webm", "avi", "mov", "flv", "3gp", "m4v" -> Icons.Rounded.MovieFilter
+        "mp3", "wav", "aac", "flac", "ogg", "m4a", "opus" -> Icons.Rounded.GraphicEq
+        "apk", "xapk", "apks" -> Icons.Rounded.Android
         "pdf" -> Icons.Rounded.PictureAsPdf
-        "doc", "docx", "txt", "rtf", "odt" -> Icons.Rounded.Description
-        "zip", "tar", "gz", "rar", "7z" -> Icons.Rounded.FolderZip
+        "doc", "docx", "txt", "rtf", "odt" -> Icons.Rounded.Article
+        "zip", "tar", "gz", "rar", "7z", "bz2", "xz" -> Icons.Rounded.FolderZip
+        "html", "htm", "xml", "json", "js", "css", "py", "kt", "java", "c", "cpp", "sh" -> Icons.Rounded.Code
+        "ttf", "otf", "woff", "woff2" -> Icons.Rounded.FontDownload
         else -> Icons.Rounded.InsertDriveFile
+    }
+}
+
+@Composable
+fun getFileTypeContainerColors(fileName: String, isSelected: Boolean): Pair<Color, Color> {
+    if (isSelected) {
+        return Pair(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary)
+    }
+    val ext = fileName.substringAfterLast('.', "").lowercase()
+    val scheme = MaterialTheme.colorScheme
+    return when (ext) {
+        "jpg", "jpeg", "png", "webp", "gif", "svg", "bmp", "ico", "heic" -> 
+            Pair(scheme.secondaryContainer, scheme.onSecondaryContainer)
+        "mp4", "mkv", "webm", "avi", "mov", "flv", "3gp", "m4v" -> 
+            Pair(scheme.tertiaryContainer, scheme.onTertiaryContainer)
+        "mp3", "wav", "aac", "flac", "ogg", "m4a", "opus" -> 
+            Pair(scheme.primaryContainer, scheme.onPrimaryContainer)
+        "apk", "xapk", "apks" -> 
+            Pair(Color(0xFFDCFCE7), Color(0xFF15803D))
+        "pdf" -> 
+            Pair(Color(0xFFFEE2E2), Color(0xFFB91C1C))
+        "doc", "docx", "txt", "rtf", "odt" -> 
+            Pair(scheme.surfaceContainerHighest, scheme.onSurfaceVariant)
+        "zip", "tar", "gz", "rar", "7z", "bz2", "xz" -> 
+            Pair(Color(0xFFFEF3C7), Color(0xFFB45309))
+        "html", "htm", "xml", "json", "js", "css", "py", "kt", "java", "c", "cpp", "sh" -> 
+            Pair(Color(0xFFCFFAFE), Color(0xFF0E7490))
+        else -> 
+            Pair(scheme.surfaceContainerHigh, scheme.onSurfaceVariant)
     }
 }
 
@@ -853,9 +884,11 @@ private fun DownloadProgressRing(
         shapes[(item.id.toInt() and 0x7FFFFFFF) % shapes.size]
     }
 
+    val (expressiveBgColor, expressiveIconTint) = getFileTypeContainerColors(item.fileName, isSelected)
+
     Surface(
         shape = if (showRing) CircleShape else avatarShape,
-        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
+        color = expressiveBgColor,
         modifier = Modifier
             .size(44.dp)
             .then(
@@ -950,8 +983,8 @@ private fun DownloadProgressRing(
                     isPaused -> "Resume download"
                     else -> null
                 },
-                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(if (showRing) 20.dp else 24.dp)
+                tint = expressiveIconTint,
+                modifier = Modifier.size(if (showRing) 20.dp else 22.dp)
             )
         }
     }
