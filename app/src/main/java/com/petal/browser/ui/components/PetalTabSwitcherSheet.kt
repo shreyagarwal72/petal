@@ -80,6 +80,8 @@ object PetalTabSwitcherBridge {
             dialog.setCanceledOnTouchOutside(false)
             dialog.window?.let { window ->
                 androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+                window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
+                window.setBackgroundDrawableResource(android.R.color.transparent)
                 window.statusBarColor = android.graphics.Color.TRANSPARENT
                 window.navigationBarColor = android.graphics.Color.TRANSPARENT
             }
@@ -88,12 +90,14 @@ object PetalTabSwitcherBridge {
                     val container = dialog.findViewById<android.view.View>(com.google.android.material.R.id.container)
                     container?.let { root ->
                         root.fitsSystemWindows = false
+                        if (root is android.view.ViewGroup) root.clipToPadding = false
                         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
                     }
 
                     val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
                     coordinator?.let { root ->
                         root.fitsSystemWindows = false
+                        if (root is android.view.ViewGroup) root.clipToPadding = false
                         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
                     }
 
@@ -101,6 +105,7 @@ object PetalTabSwitcherBridge {
                     bottomSheet?.let { sheet ->
                         sheet.fitsSystemWindows = false
                         sheet.background = null
+                        if (sheet is android.view.ViewGroup) sheet.clipToPadding = false
                         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets -> insets }
 
                         val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
