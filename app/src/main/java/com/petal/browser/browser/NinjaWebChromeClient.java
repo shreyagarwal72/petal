@@ -161,21 +161,20 @@ public class NinjaWebChromeClient extends WebChromeClient {
     public void onGeolocationPermissionsShowPrompt(final String origin, final GeolocationPermissions.Callback callback) {
         Activity activity = (Activity) ninjaWebView.getContext();
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(activity);
-        new MaterialAlertDialogBuilder(activity)
-                .setIcon(R.drawable.icon_alert)
-                .setTitle(R.string.setting_title_location)
-                .setMessage(origin + " wants to access your location.")
-                .setPositiveButton(R.string.app_ok, (dialog, which) -> {
+        com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
+                activity,
+                com.petal.browser.ui.components.PetalPermissionType.LOCATION,
+                origin,
+                () -> {
                     sp.edit().putBoolean(NinjaWebView.getProfile() + "_location", true).apply();
                     HelperUnit.grantPermissionsLoc(activity);
                     callback.invoke(origin, true, true);
-                })
-                .setNegativeButton(R.string.app_cancel, (dialog, which) -> {
+                },
+                () -> {
                     sp.edit().putBoolean(NinjaWebView.getProfile() + "_location", false).apply();
                     callback.invoke(origin, false, false);
-                })
-                .setOnCancelListener(dialog -> callback.invoke(origin, false, false))
-                .show();
+                }
+        );
     }
 
     @Override
@@ -187,55 +186,52 @@ public class NinjaWebChromeClient extends WebChromeClient {
 
         for (final String resource : resources) {
             if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
-                new MaterialAlertDialogBuilder(activity)
-                        .setIcon(R.drawable.icon_alert)
-                        .setTitle(R.string.setting_title_camera)
-                        .setMessage(originStr + " wants to access your camera.")
-                        .setPositiveButton(R.string.app_ok, (dialog, which) -> {
+                com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
+                        activity,
+                        com.petal.browser.ui.components.PetalPermissionType.CAMERA,
+                        originStr,
+                        () -> {
                             sp.edit().putBoolean(NinjaWebView.getProfile() + "_camera", true).apply();
                             HelperUnit.grantPermissionsCamera(activity);
                             if (ninjaWebView.getSettings().getMediaPlaybackRequiresUserGesture()) {
                                 ninjaWebView.getSettings().setMediaPlaybackRequiresUserGesture(false);
                             }
                             request.grant(new String[]{resource});
-                        })
-                        .setNegativeButton(R.string.app_cancel, (dialog, which) -> {
+                        },
+                        () -> {
                             sp.edit().putBoolean(NinjaWebView.getProfile() + "_camera", false).apply();
                             request.deny();
-                        })
-                        .setOnCancelListener(dialog -> request.deny())
-                        .show();
+                        }
+                );
             } else if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
-                new MaterialAlertDialogBuilder(activity)
-                        .setIcon(R.drawable.icon_alert)
-                        .setTitle(R.string.setting_title_microphone)
-                        .setMessage(originStr + " wants to access your microphone.")
-                        .setPositiveButton(R.string.app_ok, (dialog, which) -> {
+                com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
+                        activity,
+                        com.petal.browser.ui.components.PetalPermissionType.MICROPHONE,
+                        originStr,
+                        () -> {
                             sp.edit().putBoolean(NinjaWebView.getProfile() + "_microphone", true).apply();
                             HelperUnit.grantPermissionsMic(activity);
                             request.grant(new String[]{resource});
-                        })
-                        .setNegativeButton(R.string.app_cancel, (dialog, which) -> {
+                        },
+                        () -> {
                             sp.edit().putBoolean(NinjaWebView.getProfile() + "_microphone", false).apply();
                             request.deny();
-                        })
-                        .setOnCancelListener(dialog -> request.deny())
-                        .show();
+                        }
+                );
             } else if (PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID.equals(resource)) {
-                new MaterialAlertDialogBuilder(activity)
-                        .setIcon(R.drawable.icon_alert)
-                        .setTitle("DRM Protected Media")
-                        .setMessage(originStr + " wants to access DRM protected media.")
-                        .setPositiveButton(R.string.app_ok, (dialog, which) -> {
+                com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
+                        activity,
+                        com.petal.browser.ui.components.PetalPermissionType.DRM,
+                        originStr,
+                        () -> {
                             sp.edit().putBoolean(NinjaWebView.getProfile() + "_drm", true).apply();
                             request.grant(new String[]{resource});
-                        })
-                        .setNegativeButton(R.string.app_cancel, (dialog, which) -> {
+                        },
+                        () -> {
                             sp.edit().putBoolean(NinjaWebView.getProfile() + "_drm", false).apply();
                             request.deny();
-                        })
-                        .setOnCancelListener(dialog -> request.deny())
-                        .show();
+                        }
+                );
             }
         }
     }
