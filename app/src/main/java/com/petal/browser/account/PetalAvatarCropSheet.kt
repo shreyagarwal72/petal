@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.PetalSlider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
@@ -47,6 +48,7 @@ fun PetalAvatarCropSheet(
     var rotationAngle by remember { mutableFloatStateOf(0f) }
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
 
     LaunchedEffect(imageUri) {
         withContext(Dispatchers.IO) {
@@ -139,6 +141,7 @@ fun PetalAvatarCropSheet(
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val canvasWidth = size.width
                         val canvasHeight = size.height
+                        canvasSize = IntSize(canvasWidth.toInt(), canvasHeight.toInt())
                         val circleRadius = Math.min(canvasWidth, canvasHeight) * 0.4f
 
                         // Draw Rotated & Transformed Image
@@ -173,9 +176,9 @@ fun PetalAvatarCropSheet(
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(14.dp))
 
-                // Control Toolbar: Rotate, Reset, Zoom Slider
+                // Control Toolbar: Rotate, Reset, PetalSlider Zoom
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -197,11 +200,13 @@ fun PetalAvatarCropSheet(
                         Icon(Icons.Rounded.Refresh, contentDescription = "Reset")
                     }
 
-                    Slider(
+                    PetalSlider(
                         value = scale,
                         onValueChange = { scale = it },
                         valueRange = 0.8f..4f,
-                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp)
                     )
                 }
 
@@ -211,7 +216,9 @@ fun PetalAvatarCropSheet(
                 Button(
                     onClick = {
                         val bmp = sourceBitmap ?: return@Button
-                        val cropped = cropBitmap(bmp, scale, offset, rotationAngle)
+                        val cw = if (canvasSize.width > 0) canvasSize.width.toFloat() else 1000f
+                        val ch = if (canvasSize.height > 0) canvasSize.height.toFloat() else 1000f
+                        val cropped = cropBitmap(bmp, scale, offset, rotationAngle, cw, ch)
                         GoogleAccountManager.saveCroppedAvatar(context, cropped)
                         PetalHapticEngine.getInstance(context).playClick(context)
                         onAvatarCropped()
@@ -235,16 +242,67 @@ fun PetalAvatarCropSheet(
     }
 }
 
-private fun cropBitmap(source: Bitmap, scale: Float, offset: Offset, rotationAngle: Float): Bitmap {
-    val matrix = Matrix().apply {
-        postRotate(rotationAngle)
-        postScale(scale, scale)
+/**
+ * Accurate bitmap crop calculation taking into account user pan offset, scale zoom, rotation angle,
+ * and preview canvas coordinate mapping.
+ */
+private fun cropBitmap(
+    source: Bitmap,
+    scale: Float,
+    offset: Offset,
+    rotationAngle: Float,
+    canvasWidth: Float,
+    canvasHeight: Float
+): Bitmap {
+    if (source.isRecycled || source.width <= 0 || source.height <= 0) return source
+
+    try {
+        val rotatedBitmap = if (rotationAngle % 360f != 0f) {
+            val matrix = Matrix().apply { postRotate(rotationAngle) }
+            Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+        } else {
+            source
+        }
+
+        val rw = rotatedBitmap.width.toFloat()
+        val rh = rotatedBitmap.height.toFloat()
+
+        val cw = if (canvasWidth > 0f) canvasWidth else 1000f
+        val ch = if (canvasHeight > 0f) canvasHeight else 1000f
+        val cropSize = Math.min(cw, ch) * 0.8f
+        val currentScale = scale.coerceAtLeast(0.1f)
+
+        val imgCenterX = cw / 2f + offset.x
+        val imgCenterY = ch / 2f + offset.y
+
+        val imgLeftCanvas = imgCenterX - (rw * currentScale) / 2f
+        val imgTopCanvas = imgCenterY - (rh * currentScale) / 2f
+
+        val cropLeftCanvas = cw / 2f - cropSize / 2f
+        val cropTopCanvas = ch / 2f - cropSize / 2f
+
+        val dxCanvas = cropLeftCanvas - imgLeftCanvas
+        val dyCanvas = cropTopCanvas - imgTopCanvas
+
+        val cropX = (dxCanvas / currentScale).coerceIn(0f, (rw - 1f).coerceAtLeast(0f))
+        val cropY = (dyCanvas / currentScale).coerceIn(0f, (rh - 1f).coerceAtLeast(0f))
+
+        val maxAllowedW = rw - cropX
+        val maxAllowedH = rh - cropY
+        val cropDim = (cropSize / currentScale)
+            .coerceIn(1f, Math.min(maxAllowedW, maxAllowedH).coerceAtLeast(1f))
+
+        val cropped = Bitmap.createBitmap(
+            rotatedBitmap,
+            cropX.toInt(),
+            cropY.toInt(),
+            cropDim.toInt().coerceAtLeast(1),
+            cropDim.toInt().coerceAtLeast(1)
+        )
+
+        return Bitmap.createScaledBitmap(cropped, 512, 512, true)
+    } catch (e: Throwable) {
+        e.printStackTrace()
+        return source
     }
-
-    val transformed = Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
-    val targetDim = Math.min(transformed.width, transformed.height)
-    val startX = Math.max(0, (transformed.width - targetDim) / 2)
-    val startY = Math.max(0, (transformed.height - targetDim) / 2)
-
-    return Bitmap.createBitmap(transformed, startX, startY, targetDim, targetDim)
 }
