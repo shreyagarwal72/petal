@@ -138,7 +138,7 @@ fun PetalExtensionsScreen(
             ) {
                 items(filteredExtensions, key = { it.id }) { ext ->
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(24.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         modifier = Modifier.fillMaxWidth()
                     ) {
