@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Petal</string>
+    <string name="main_omnibox_input_hint">Search karo ya URL likho</string>
+    <string name="widget_search_hint">Search karo ya website address likho</string>
+    <string name="widget_ai_search">Petal AI se pucho</string>
+    <string name="widget_voice_search">Bol kar search karo</string>
+    <string name="album_title_bookmarks">Bookmarks</string>
+    <string name="album_title_history">History</string>
+    <string name="album_title_tab">Khule Hue Tabs</string>
+    <string name="app_ok">Thik Hai</string>
+    <string name="app_cancel">Radd Karo</string>
+    <string name="app_done">Ho Gaya</string>
+</resources>
