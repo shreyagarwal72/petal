@@ -433,20 +433,32 @@ fun PetalHomeScreen(
         shortcuts.map { it to true } + extraVisited.map { it to false }
     }
 
+    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    var isWelcomeShown by remember { mutableStateOf(sp.getBoolean("sp_welcome_shown", false)) }
+
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sp_welcome_shown") {
+                isWelcomeShown = sp.getBoolean("sp_welcome_shown", false)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // ── Layer 0: living Material 3 Expressive background ───────────
-            // Same shared component every other screen already uses
-            // (History, Settings, Downloads, Delete, Account Sync, Omnibox) —
-            // "home_page" gives Home its own random layout, consistent with
-            // how those screens each pass their own pageSeed.
-            com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                modifier = Modifier.fillMaxSize(),
-                pageSeed = "home_page"
-            )
+            // Only display background after initial welcome setup is complete
+            if (isWelcomeShown) {
+                com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                    modifier = Modifier.fillMaxSize(),
+                    pageSeed = "home_page"
+                )
+            }
 
             Column(
                 modifier = Modifier.fillMaxSize()

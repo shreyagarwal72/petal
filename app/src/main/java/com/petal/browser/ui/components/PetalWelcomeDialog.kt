@@ -88,14 +88,42 @@ object PetalWelcomeBridge {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
-                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
-                    val isAmoled = sp.getBoolean("sp_amoled", false)
-                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                    var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+                    var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
+                    var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
+                    var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
+                    var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL") }
+                    var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
+                    var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId) }
+                    var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                    var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)) }
+
+                    DisposableEffect(sp) {
+                        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                            when (key) {
+                                "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                                "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
+                                "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
+                                "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
+                                "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL"
+                                "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                                "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                                "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                                "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                            }
+                        }
+                        sp.registerOnSharedPreferenceChangeListener(listener)
+                        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+                    }
 
                     val appFont = remember(fontName) {
                         com.petal.browser.ui.theme.AppFont.fromName(fontName)
+                    }
+                    val resolvedPreset = remember(presetName) {
+                        try { com.petal.browser.ui.theme.GSFlexPreset.valueOf(presetName) } catch (e: Exception) { com.petal.browser.ui.theme.GSFlexPreset.PETAL }
+                    }
+                    val gsFlexSettings = remember(presetName) {
+                        com.petal.browser.ui.theme.GSFlexSettings(preset = resolvedPreset)
                     }
                     val colorStyle = remember(styleName) {
                         try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
@@ -105,6 +133,10 @@ object PetalWelcomeBridge {
                         dynamicColor = dynamicColor,
                         useAmoled = isAmoled,
                         appFont = appFont,
+                        fontWidth = fontWidthVal,
+                        fontWeight = fontWeightVal,
+                        fontRoundness = fontRoundnessVal,
+                        gsFlexSettings = gsFlexSettings,
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
