@@ -404,6 +404,9 @@ fun PetalSettingsScreen(
                     ) {
                         key(currentCategory) {
                             val categoryScrollState = rememberScrollState()
+                            LaunchedEffect(currentCategory) {
+                                categoryScrollState.scrollTo(0)
+                            }
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
