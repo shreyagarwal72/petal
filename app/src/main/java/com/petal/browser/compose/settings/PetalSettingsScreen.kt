@@ -998,93 +998,6 @@ fun PetalSettingsScreen(
                                             sp.edit().putBoolean("sp_expressive_colors", newValue).apply()
                                         }
                                     )
-
-                                    // Expressive Feature Tiles Toggle
-                                    ToggleRow(
-                                        title = "Expressive Feature Tiles",
-                                        subtitle = "Use scalloped icon cards for settings and account actions instead of plain rows",
-                                        icon = Icons.Rounded.GridView,
-                                        checked = isExpressiveFeatureTiles,
-                                        onCheckedChange = { newValue ->
-                                            isExpressiveFeatureTiles = newValue
-                                            sp.edit().putBoolean("sp_expressive_feature_tiles", newValue).apply()
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    var isWaterRipplePull by remember { mutableStateOf(sp.getBoolean("sp_water_ripple_pull", true)) }
-
-                                    // Expressive Water Ripple Pull-to-Refresh Toggle
-                                    ToggleRow(
-                                        title = "Expressive Water Ripple Pull-to-Refresh",
-                                        subtitle = "Elastic M3 water-ripple wave animation when pulling down web pages",
-                                        icon = Icons.Rounded.Waves,
-                                        checked = isWaterRipplePull,
-                                        onCheckedChange = { newValue ->
-                                            isWaterRipplePull = newValue
-                                            sp.edit().putBoolean("sp_water_ripple_pull", newValue).apply()
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    var isWallpaperBlur by remember { mutableStateOf(sp.getBoolean("sp_wallpaper_blur", true)) }
-                                    var isExpressiveToast by remember { mutableStateOf(sp.getBoolean("sp_expressive_toast", true)) }
-
-                                    ToggleRow(
-                                        title = "Dynamic Wallpaper Blur Backdrop Engine",
-                                        subtitle = "Real-time frosted glass backdrop blur behind browser toolbars",
-                                        icon = Icons.Rounded.BlurOn,
-                                        checked = isWallpaperBlur,
-                                        onCheckedChange = { newValue ->
-                                            isWallpaperBlur = newValue
-                                            sp.edit().putBoolean("sp_wallpaper_blur", newValue).apply()
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    ToggleRow(
-                                        title = "Floating Expressive Toast Pills",
-                                        subtitle = "Slide-up spring animated toast notification pills for actions",
-                                        icon = Icons.Rounded.NotificationsActive,
-                                        checked = isExpressiveToast,
-                                        onCheckedChange = { newValue ->
-                                            isExpressiveToast = newValue
-                                            sp.edit().putBoolean("sp_expressive_toast", newValue).apply()
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    var isReadingProgressPill by remember { mutableStateOf(sp.getBoolean("sp_reading_progress_pill", true)) }
-
-                                    ToggleRow(
-                                        title = "Floating Expressive Reading Progress Pill",
-                                        subtitle = "Slim animated reading progress bar at top of browser while scrolling web pages",
-                                        icon = Icons.Rounded.LinearScale,
-                                        checked = isReadingProgressPill,
-                                        onCheckedChange = { newValue ->
-                                            isReadingProgressPill = newValue
-                                            sp.edit().putBoolean("sp_reading_progress_pill", newValue).apply()
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    var isQuickActionsPill by remember { mutableStateOf(sp.getBoolean("sp_quick_actions_pill", true)) }
-
-                                    ToggleRow(
-                                        title = "Expressive Floating Quick Actions Pill",
-                                        subtitle = "Floating quick-settings bottom pill bar for Desktop, AdBlock, and Dark Mode",
-                                        icon = Icons.Rounded.Tune,
-                                        checked = isQuickActionsPill,
-                                        onCheckedChange = { newValue ->
-                                            isQuickActionsPill = newValue
-                                            sp.edit().putBoolean("sp_quick_actions_pill", newValue).apply()
-                                        }
-                                    )
                                 }
                             }
 
@@ -1611,33 +1524,6 @@ fun PetalSettingsScreen(
                                             }
                                         }
                                     }
-
-                                    ToggleRow(
-                                        title = "Press Back Again to Exit",
-                                        subtitle = "Require confirmation back press before closing Petal (works with both gesture and 3-button navigation)",
-                                        icon = Icons.Rounded.ExitToApp,
-                                        checked = isDoubleBackExit,
-                                        onCheckedChange = { newValue ->
-                                            isDoubleBackExit = newValue
-                                            sp.edit().putBoolean("sp_double_back_exit", newValue).apply()
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    val blurFlow by com.petal.browser.predictive.PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
-
-                                    ToggleRow(
-                                        title = "Depth Blur Effect (Junction)",
-                                        subtitle = if (blurFlow) "Background page receives 24dp blur & corner morphing during back navigation" else "Disabled depth blur; uses solid dim overlay",
-                                        icon = Icons.Rounded.Animation,
-                                        checked = blurFlow,
-                                        onCheckedChange = { enabled ->
-                                            com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(sp, enabled)
-                                        }
-                                    )
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
