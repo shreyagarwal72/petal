@@ -82,7 +82,7 @@ public class BrowserUnit {
             // Fall 2: Die Eingabe hat kein Schema (z.B. "google.com")
             Pattern domainPattern = Pattern.compile("^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(/.*)?$");
             if (domainPattern.matcher(urlString).matches()) {
-                URI fallbackUri = new URI("http://" + urlString);
+                URI fallbackUri = new URI("https://" + urlString);
                 return fallbackUri.getHost() != null && fallbackUri.getHost().contains(".");
             }
 
@@ -158,7 +158,7 @@ public class BrowserUnit {
         // Sicherstellen, dass das Protokoll für den Android-Uri-Parser passt
         String verifiedUrl = url;
         if (!url.toLowerCase(Locale.US).startsWith("http://") && !url.toLowerCase(Locale.US).startsWith("https://")) {
-            verifiedUrl = "http://" + url;
+            verifiedUrl = "https://" + url;
         }
         // Berechtigungsprüfung (Ab Android 10/Q wird WRITE_EXTERNAL_STORAGE für Downloads nicht mehr benötigt)
         boolean hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || BackupUnit.checkPermissionStorage(context);

@@ -39,7 +39,7 @@ public class WaybackMachineManager {
             HttpURLConnection connection = null;
             try {
                 String encodedUrl = URLEncoder.encode(pageUrl.trim(), "UTF-8");
-                String apiUrl = "http://archive.org/wayback/available?url=" + encodedUrl;
+                String apiUrl = "https://archive.org/wayback/available?url=" + encodedUrl;
                 URL url = new URL(apiUrl);
 
                 connection = (HttpURLConnection) url.openConnection();
