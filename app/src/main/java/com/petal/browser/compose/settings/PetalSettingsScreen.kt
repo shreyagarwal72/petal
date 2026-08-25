@@ -714,15 +714,10 @@ fun PetalSettingsScreen(
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    val themeScrollState = rememberScrollState()
-                                    com.petal.browser.ui.components.ScrollFadeRow(
-                                        scrollState = themeScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                    ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(themeScrollState),
+                                            .horizontalScroll(rememberScrollState()),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         ThemeConfig.values().forEach { config ->
@@ -754,7 +749,6 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                     }
-                                    }
 
                                     // --- Font Choice Chips ---
                                     Text(
@@ -762,15 +756,10 @@ fun PetalSettingsScreen(
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    val fontFamilyScrollState = rememberScrollState()
-                                    com.petal.browser.ui.components.ScrollFadeRow(
-                                        scrollState = fontFamilyScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                    ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(fontFamilyScrollState),
+                                            .horizontalScroll(rememberScrollState()),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         AppFont.values().forEach { font ->
@@ -790,7 +779,6 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                     }
-                                    }
 
                                     // --- GS Flex Preset Chips (For Petal Signature) ---
                                     androidx.compose.animation.AnimatedVisibility(visible = selectedFont == AppFont.PETAL) {
@@ -800,15 +788,10 @@ fun PetalSettingsScreen(
                                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
-                                            val presetScrollState = rememberScrollState()
-                                            com.petal.browser.ui.components.ScrollFadeRow(
-                                                scrollState = presetScrollState,
-                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                            ) {
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .horizontalScroll(presetScrollState),
+                                                    .horizontalScroll(rememberScrollState()),
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                                             ) {
                                                 GSFlexPreset.values().forEach { preset ->
@@ -824,7 +807,6 @@ fun PetalSettingsScreen(
                                                         } else null
                                                     )
                                                 }
-                                            }
                                             }
                                         }
                                     }
@@ -987,15 +969,10 @@ fun PetalSettingsScreen(
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    val accentStyleScrollState = rememberScrollState()
-                                    com.petal.browser.ui.components.ScrollFadeRow(
-                                        scrollState = accentStyleScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                    ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(accentStyleScrollState),
+                                            .horizontalScroll(rememberScrollState()),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         ColorStyle.values().forEach { style ->
@@ -1011,7 +988,6 @@ fun PetalSettingsScreen(
                                                 } else null
                                             )
                                         }
-                                    }
                                     }
 
                                     // --- Preset Palette Seeds ---
@@ -1635,15 +1611,10 @@ fun PetalSettingsScreen(
                                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
-                                            val hapticPatternScrollState = rememberScrollState()
-                                            com.petal.browser.ui.components.ScrollFadeRow(
-                                                scrollState = hapticPatternScrollState,
-                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                            ) {
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .horizontalScroll(hapticPatternScrollState),
+                                                    .horizontalScroll(rememberScrollState()),
                                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                                             ) {
                                                 com.petal.browser.haptics.PetalHapticEngine.Pattern.values().forEach { pattern ->
@@ -1657,7 +1628,6 @@ fun PetalSettingsScreen(
                                                         label = { Text(pattern.name.replace("_", " ")) }
                                                     )
                                                 }
-                                            }
                                             }
                                         }
                                     }
@@ -2312,7 +2282,6 @@ private fun SettingsCategoryCard(
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -2323,15 +2292,7 @@ private fun SettingsCategoryCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(18.dp))
-                    }
-                }
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
                     title,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -2413,14 +2374,14 @@ private fun ToggleRow(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
