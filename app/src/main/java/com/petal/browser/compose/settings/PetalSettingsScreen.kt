@@ -345,6 +345,7 @@ fun PetalSettingsScreen(
       com.petal.browser.predictive.PetalScreenWrapper {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 // Top App Bar Header + Search (hosted in Scaffold's topBar so insets, collapse
                 // offset, and content padding are all resolved consistently by Scaffold).
@@ -437,15 +438,7 @@ fun PetalSettingsScreen(
                                          title = cat.title,
                                          subtitle = cat.subtitle,
                                          icon = cat.icon,
-                                         onClick = {
-                                             if (cat == SettingsCategory.ABOUT) {
-                                                 (context as? ComponentActivity)?.let { act ->
-                                                     com.petal.browser.ui.components.PetalAboutDeveloperBridge.show(act)
-                                                 }
-                                             } else {
-                                                 currentCategory = cat
-                                             }
-                                         }
+                                         onClick = { currentCategory = cat }
                                      )
                                  }
                                 }
@@ -2192,102 +2185,183 @@ fun PetalSettingsScreen(
                             }
 
                             // 9. About & Developer Profile Section
-                            if (currentCategory == SettingsCategory.ABOUT) {
-                                com.petal.browser.ui.components.PetalAboutDeveloperSheetContent(
-                                    onClose = { currentCategory = SettingsCategory.OVERVIEW }
-                                )
-                            } else if (searchQuery.isNotBlank() && matchesSearch("About", "app developer profile version shrey agarwal github licenses terms open source")) {
-                                SettingsCategoryCard(title = "Developer Profile", icon = Icons.Rounded.Person) {
+                            if ((currentCategory == SettingsCategory.ABOUT || searchQuery.isNotBlank()) && matchesSearch("About", "app developer profile version shrey agarwal github licenses terms open source")) {
+                                // --- Card 1: Lead Developer Profile ---
+                                SettingsCategoryCard(title = "Lead Developer Profile", icon = Icons.Rounded.Person) {
                                     Surface(
                                         shape = RoundedCornerShape(22.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
-                                        onClick = {
-                                            (context as? ComponentActivity)?.let { act ->
-                                                com.petal.browser.ui.components.PetalAboutDeveloperBridge.show(act)
-                                            }
-                                        },
+                                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Column(
-                                            modifier = Modifier.padding(20.dp),
-                                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                                            modifier = Modifier.padding(18.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                                                modifier = Modifier.fillMaxWidth()
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = MaterialTheme.colorScheme.primaryContainer,
+                                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
+                                                modifier = Modifier.size(64.dp)
                                             ) {
-                                                Surface(
-                                                    shape = CircleShape,
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(52.dp)
-                                                ) {
-                                                    Box(contentAlignment = Alignment.Center) {
-                                                        Text(
-                                                            "SA",
-                                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                                                            color = MaterialTheme.colorScheme.onPrimary
-                                                        )
-                                                    }
-                                                }
-
-                                                Column(modifier = Modifier.weight(1f)) {
+                                                Box(contentAlignment = Alignment.Center) {
                                                     Text(
-                                                        "Shrey Agarwal",
-                                                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                    Text(
-                                                        "Lead Android & Systems Developer",
-                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                                                        color = MaterialTheme.colorScheme.primary
-                                                    )
-                                                    Text(
-                                                        "Petal Browser v$appVersionName (Build $appVersionCode)",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        text = "SA",
+                                                        style = MaterialTheme.typography.headlineSmall.copy(
+                                                            fontWeight = FontWeight.ExtraBold
+                                                        ),
+                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
                                                     )
                                                 }
-
-                                                Icon(
-                                                    Icons.AutoMirrored.Rounded.ArrowForward,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
                                             }
+
+                                            Spacer(Modifier.height(10.dp))
 
                                             Text(
-                                                "Tap to view the complete Material 3 Expressive developer profile, project architecture breakdown, technology stack, and social connections.",
-                                                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                text = "Shrey Agarwal",
+                                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                textAlign = TextAlign.Center
+                                            )
+                                            Text(
+                                                text = "@shreyagarwal72",
+                                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                                color = MaterialTheme.colorScheme.primary,
+                                                textAlign = TextAlign.Center
+                                            )
+                                            Text(
+                                                text = "Petal Browser v$appVersionName (Build $appVersionCode)",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center
                                             )
 
-                                            Button(
-                                                onClick = {
-                                                    (context as? ComponentActivity)?.let { act ->
-                                                        com.petal.browser.ui.components.PetalAboutDeveloperBridge.show(act)
-                                                    }
-                                                },
-                                                shape = RoundedCornerShape(16.dp),
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = MaterialTheme.colorScheme.primary,
-                                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                                ),
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(48.dp)
-                                            ) {
-                                                Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                Spacer(Modifier.width(8.dp))
-                                                Text("Open Full Developer Profile", fontWeight = FontWeight.Bold)
-                                            }
+                                            Spacer(Modifier.height(10.dp))
+
+                                            Text(
+                                                text = "Lead Android & Systems Developer crafting high-performance browsers, native tools, and expressive UI experiences for Android & Termux.",
+                                                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center
+                                            )
                                         }
                                     }
                                 }
 
-                                Spacer(Modifier.height(32.dp))
+                                // --- Card 2: Mission & Architecture ---
+                                SettingsCategoryCard(title = "The Petal Mission", icon = Icons.Rounded.RocketLaunch) {
+                                    Text(
+                                        text = "Petal Browser was built to prove that an Android web browser can combine uncompromising speed, complete user privacy, and fluid Material 3 Expressive motion physics without corporate telemetry or heavy bloat.",
+                                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 21.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                // --- Card 3: Community & Connect ---
+                                SettingsCategoryCard(title = "Community & Links", icon = Icons.Rounded.Share) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/"))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                            ),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("GitHub", fontWeight = FontWeight.Bold, maxLines = 1)
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/"))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Rounded.Code, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("Source", fontWeight = FontWeight.Bold, maxLines = 1)
+                                        }
+                                    }
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://t.me/championworkspace"))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("Telegram", maxLines = 1)
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = {
+                                                try {
+                                                    com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("https://github.com/shreyagarwal72/petal/issues"))
+                                                } catch (e: Exception) { e.printStackTrace() }
+                                            },
+                                            shape = RoundedCornerShape(14.dp),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("Feedback", maxLines = 1)
+                                        }
+                                    }
+                                }
+
+                                // --- Footer Copyright ---
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "Petal Browser • Open Source Project",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = "Made with Jetpack Compose & Material 3 Expressive UI",
+                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.height(32.dp))
                             }
                         }
                     }
@@ -2353,7 +2427,8 @@ fun PetalSettingsScreen(
 }
 }
 }
-}
+
+
 
 
 
