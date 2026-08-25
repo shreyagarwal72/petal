@@ -471,10 +471,15 @@ fun PetalSettingsScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
 
+                                    val aiProviderScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = aiProviderScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState()),
+                                            .horizontalScroll(aiProviderScrollState),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         com.petal.browser.compose.ai.AiProvider.values().forEach { provider ->
@@ -494,6 +499,7 @@ fun PetalSettingsScreen(
                                                 } else null
                                             )
                                         }
+                                    }
                                     }
 
                                     Spacer(Modifier.height(4.dp))
@@ -594,10 +600,15 @@ fun PetalSettingsScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
 
+                                    val modelScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = modelScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState()),
+                                            .horizontalScroll(modelScrollState),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         selectedProvider.availableModels.forEach { model ->
@@ -614,6 +625,7 @@ fun PetalSettingsScreen(
                                                 } else null
                                             )
                                         }
+                                    }
                                     }
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -1020,12 +1032,17 @@ fun PetalSettingsScreen(
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
+                                    val paletteScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = paletteScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState())
+                                            .horizontalScroll(paletteScrollState)
                                     ) {
                                         PetalPalettes.forEach { pal ->
                                             val isSelected = selectedPaletteId == pal.id && !isDynamicColor
@@ -1052,6 +1069,7 @@ fun PetalSettingsScreen(
                                                 }
                                             }
                                         }
+                                    }
                                     }
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -1356,10 +1374,15 @@ fun PetalSettingsScreen(
                                         Pair("ja", "日本語 (Japanese)")
                                     )
 
+                                    val languageScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = languageScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState()),
+                                            .horizontalScroll(languageScrollState),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         languages.forEach { (tag, label) ->
@@ -1380,6 +1403,7 @@ fun PetalSettingsScreen(
                                                 } else null
                                             )
                                         }
+                                    }
                                     }
                                 }
                             }
