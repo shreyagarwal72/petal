@@ -148,7 +148,11 @@ fun PetalDeleteScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
             M3ExpressiveVariableBackground(pageSeed = "delete_page")
 
             Column(
@@ -169,7 +173,7 @@ fun PetalDeleteScreen(
                 ) {
                     // Header / Summary containment card (Material 3 Expressive UI redesign)
                     Card(
-                        shape = RoundedCornerShape(32.dp),
+                        shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -177,7 +181,7 @@ fun PetalDeleteScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(20.dp),
+                            modifier = Modifier.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
@@ -208,7 +212,7 @@ fun PetalDeleteScreen(
 
                     // Containment Card grouping clear options (Material 3 Expressive UI redesign)
                     Card(
-                        shape = RoundedCornerShape(32.dp),
+                        shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                         ),
