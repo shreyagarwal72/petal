@@ -139,11 +139,9 @@ fun ExpressiveHeader(
                 Modifier
                     .fillMaxWidth()
                     .drawGlowBackground(glow, secondaryGlow)
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    )
+                    .statusBarsPadding()
                     .padding(horizontal = 20.dp)
-                    .padding(top = 2.dp, bottom = 10.dp),
+                    .padding(top = 4.dp, bottom = 12.dp),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
