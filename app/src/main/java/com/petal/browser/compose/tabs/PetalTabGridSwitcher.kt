@@ -130,7 +130,12 @@ fun PetalTabGridSwitcher(
     val effectiveOnBack: () -> Unit = remember(onBack, context) {
         onBack ?: {
             val activity = context as? android.app.Activity
-            try { activity?.finishAndRemoveTask() } catch (_: Exception) {}
+            if (activity != null) {
+                try {
+                    activity.finishAndRemoveTask()
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 
