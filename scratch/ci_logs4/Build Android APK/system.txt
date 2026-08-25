@@ -1,8 +1,0 @@
-2026-08-21T16:51:04.9810000Z Evaluating build.if
-2026-08-21T16:51:04.9810000Z Evaluating: success()
-2026-08-21T16:51:04.9810000Z Result: true
-2026-08-21T16:51:04.9830000Z Requested labels: ubuntu-latest
-2026-08-21T16:51:04.9830000Z Job defined at: shreyagarwal72/petal/.github/workflows/android_build.yml@refs/heads/main
-2026-08-21T16:51:04.9830000Z Waiting for a runner to pick up this job...
-2026-08-21T16:51:05.2090000Z Job is waiting for a hosted runner to come online.
-2026-08-21T16:51:05.2090000Z Job is about to start running on the hosted runner: GitHub Actions 1000004900
