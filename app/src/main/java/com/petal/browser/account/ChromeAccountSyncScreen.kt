@@ -240,7 +240,7 @@ fun PetalUserProfileScreen(
         topBar = {
             com.petal.browser.ui.components.ExpressiveHeader(
                 title = "User Accounts & Profile",
-                subtitle = "Manage account, cloud sync & preferences",
+                subtitle = "Manage account & preferences",
                 onBack = { onBack() },
                 maxTitleLines = 1,
                 maxSubtitleLines = 1
