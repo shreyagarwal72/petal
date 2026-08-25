@@ -449,7 +449,6 @@ fun PetalSettingsScreen(
                                      )
                                  }
                                 }
-                            }
 
                             // 0. Dedicated Petal AI & API Keys Hub Sub-Screen Page
                             if ((currentCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "petal ai api key gemini openrouter openai grok groq key deep research webkit extensions search suggestions")) {
