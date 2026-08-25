@@ -179,12 +179,14 @@ fun ExpressiveHeader(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             val titleFontSize = remember(currentTitle, onBack) {
                                 when {
-                                    onBack != null && currentTitle.length > 20 -> 15.5.sp
-                                    onBack != null && currentTitle.length > 14 -> 17.sp
-                                    onBack != null -> 18.5.sp
-                                    currentTitle.length > 20 -> 19.sp
-                                    currentTitle.length > 14 -> 21.sp
-                                    else -> 23.sp
+                                    onBack != null && currentTitle.length > 22 -> 14.sp
+                                    onBack != null && currentTitle.length > 18 -> 15.sp
+                                    onBack != null && currentTitle.length > 14 -> 16.5.sp
+                                    onBack != null -> 18.sp
+                                    currentTitle.length > 22 -> 16.5.sp
+                                    currentTitle.length > 18 -> 17.5.sp
+                                    currentTitle.length > 14 -> 19.5.sp
+                                    else -> 22.sp
                                 }
                             }
 
@@ -197,19 +199,27 @@ fun ExpressiveHeader(
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Clip
                             )
 
                             if (currentSubtitle.isNotBlank()) {
+                                val subtitleFontSize = remember(currentSubtitle) {
+                                    when {
+                                        currentSubtitle.length > 32 -> 11.5.sp
+                                        currentSubtitle.length > 24 -> 12.sp
+                                        else -> 13.sp
+                                    }
+                                }
                                 Text(
                                     text = currentSubtitle,
                                     style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 13.sp,
-                                        lineHeight = 17.sp
+                                        fontSize = subtitleFontSize,
+                                        lineHeight = (subtitleFontSize.value + 4).sp
                                     ),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = maxSubtitleLines,
-                                    overflow = TextOverflow.Ellipsis
+                                    softWrap = false,
+                                    overflow = TextOverflow.Clip
                                 )
                             }
                         }
