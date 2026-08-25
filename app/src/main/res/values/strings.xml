@@ -38,7 +38,7 @@
     <string name="main_menu_new_tab">New tab (background)</string>
     <string name="main_menu_new_tabOpen">New tab (foreground)</string>
     <string name="main_omnibox_input_hint">Search or type URL</string>
-    <string name="widget_search_hint">Search or type web address</string>
+    <string name="widget_search_hint">Search or type URL</string>
     <string name="widget_ai_search">Ask Petal AI</string>
     <string name="widget_voice_search">Voice Search</string>
     <string name="menu_quit">Quit</string>
