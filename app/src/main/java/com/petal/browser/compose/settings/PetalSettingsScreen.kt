@@ -999,7 +999,10 @@ fun PetalSettingsScreen(
                                     )
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState())
                                     ) {
                                         PetalPalettes.forEach { pal ->
                                             val isSelected = selectedPaletteId == pal.id && !isDynamicColor
