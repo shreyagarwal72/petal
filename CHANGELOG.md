@@ -1,3 +1,9 @@
+### v1.7.6
+
+- new: Reimagined `PetalSearchGlanceWidget.kt` with Material 3 Expressive morphing shape containers (Clover, Scallop, Burst, Cookie) rendered dynamically using `RoundedPolygon` and canvas bitmap drawing.
+- new: Integrated `PetalAboutDeveloperSheet.kt` and `PetalAboutDeveloperBridge` featuring expressive hero cards, developer metric badges, tech stack chips, and community hub links.
+- fix: Fixed window inset propagation in `PetalTabSwitcherSheet.kt` and `PetalTabGridSwitcher.kt` so `ExpressiveHeader` seamlessly includes status bar top padding.
+
 ### v1.7.5
 
 - new: Integrated `Util1DM` utility class to automatically detect 1DM / 1DM+ / 1DM Lite download managers and hand off downloads, headers, cookies, and user-agent without UI changes.
