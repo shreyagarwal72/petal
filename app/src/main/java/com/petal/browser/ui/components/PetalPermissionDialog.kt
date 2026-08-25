@@ -233,7 +233,7 @@ object PetalPermissionDialogBridge {
         val builder = MaterialAlertDialogBuilder(activity)
         builder.setView(composeView)
         builder.setCancelable(true)
-        builder.setOnCancelListener { onDeny() }
+        builder.setOnCancelListener { onDeny.run() }
 
         dialog = builder.create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
