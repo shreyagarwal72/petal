@@ -1,3 +1,11 @@
+### v1.7.7
+
+- new: Made Google Sans Flex permanent as **Petal Signature** font and added support for loading custom `.ttf`/`.otf` font files directly from device storage.
+- new: Introduced custom font tier customizer with independent **Display**, **Headline**, and **Body** level tabs and expressive `PetalSlider` controls for Weight, Width, Optical Size, Slant, and Roundness.
+- fix: Updated search bar hint to *"Search or type URL"* across homepage searchbar, omnibox, and widgets.
+- fix: Hidden frequently visited shortcuts row on blank home tabs, displaying them only when opening the omnibox from an active website.
+- fix: Fixed Java-Kotlin SAM interop for `onDeny` callback in `PetalPermissionDialogBridge` site permission prompts.
+
 ### v1.7.6
 
 - new: Reimagined `PetalSearchGlanceWidget.kt` with Material 3 Expressive morphing shape containers (Clover, Scallop, Burst, Cookie) rendered dynamically using `RoundedPolygon` and canvas bitmap drawing.

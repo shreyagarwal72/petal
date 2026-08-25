@@ -1,0 +1,4 @@
+* **Petal Signature & Custom Storage Fonts**: Made Google Sans Flex permanent as Petal Signature font and added support for importing custom .ttf/.otf font files from device storage.
+* **Custom Font Tier Customizer**: Introduced fine-grained typography controls for imported custom fonts with independent Display, Headline, and Body level tabs and expressive PetalSlider controls for Weight, Width, Optical Size, Slant, and Roundness.
+* **Search Bar & Omnibox Updates**: Updated search hint to "Search or type URL" across homepage, omnibox, and widgets. Hidden frequently visited shortcuts on blank tabs until focused from an active website.
+* **Java Permission Prompt Interop Fix**: Fixed Kotlin Runnable callback reference in PetalPermissionDialogBridge for clean site permission prompt dialog execution.
