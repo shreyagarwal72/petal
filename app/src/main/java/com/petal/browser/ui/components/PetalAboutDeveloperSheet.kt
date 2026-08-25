@@ -271,7 +271,7 @@ fun PetalAboutDeveloperSheetContent(
 
 /** Developer Hero Profile Card with glowing radial avatar ring and bio chips. */
 @Composable
-private fun DeveloperHeroCard(
+fun DeveloperHeroCard(
     onCopyGithub: () -> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -377,7 +377,7 @@ private fun DeveloperHeroCard(
 
 /** Expressive Project Mission Card describing Petal Browser's architectural vision. */
 @Composable
-private fun DeveloperMissionCard() {
+fun DeveloperMissionCard() {
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -428,7 +428,7 @@ private fun DeveloperMissionCard() {
 
 /** Horizontal Metric Highlights below Petal Mission. */
 @Composable
-private fun DeveloperMetricsGrid() {
+fun DeveloperMetricsGrid() {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxWidth()
@@ -511,7 +511,7 @@ private fun MetricBadgeCard(
 
 /** Developer Tech Stack Chip Grid. */
 @Composable
-private fun DeveloperTechStackCard() {
+fun DeveloperTechStackCard() {
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -578,7 +578,7 @@ private fun TechChip(label: String) {
 
 /** Action buttons for GitHub, Source Code, Telegram, and Bug Reports. */
 @Composable
-private fun DeveloperActionsCard(
+fun DeveloperActionsCard(
     onOpenUrl: (String) -> Unit
 ) {
     Surface(
