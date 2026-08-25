@@ -717,69 +717,112 @@ fun PetalOmniboxPage(
                             }
                         }
 
-                        // Suggestions List - fills the rest of the page
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
-                        ) {
-                            items(
-                                items = suggestions,
-                                key = { item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
-                            ) { item ->
-                                Surface(
-                                    shape = RoundedCornerShape(14.dp),
-                                    color = Color.Transparent,
+                        // Suggestions List - fills the rest of the page with Material 3 Expressive containment
+                        if (suggestions.isNotEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(24.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                tonalElevation = 2.dp,
+                                shadowElevation = 1.dp,
+                                border = androidx.compose.foundation.BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(14.dp))
-                                        .clickable {
-                                            val trimmed = item.query.trim()
-                                            if (trimmed.isNotEmpty()) {
-                                                onQuerySubmitted(trimmed)
-                                            }
-                                        }
+                                        .padding(vertical = 6.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Text(
+                                        text = "Search Suggestions",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                    )
+
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = if (item.isHistory) Icons.Rounded.History else Icons.Rounded.Search,
-                                            contentDescription = null,
-                                            tint = if (item.isHistory) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-
-                                        Spacer(Modifier.width(20.dp))
-
-                                        Text(
-                                            text = item.query,
-                                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.weight(1f)
-                                        )
-
-                                        IconButton(
-                                            onClick = {
-                                                queryState = TextFieldValue(
-                                                    text = item.query,
-                                                    selection = TextRange(item.query.length)
+                                        itemsIndexed(
+                                            items = suggestions,
+                                            key = { _, item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
+                                        ) { index, item ->
+                                            if (index > 0) {
+                                                HorizontalDivider(
+                                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                                                    modifier = Modifier.padding(horizontal = 12.dp)
                                                 )
-                                            },
-                                            modifier = Modifier.size(32.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.NorthWest,
-                                                contentDescription = "Insert query into omnibox",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                                modifier = Modifier.size(18.dp)
-                                            )
+                                            }
+
+                                            Surface(
+                                                shape = RoundedCornerShape(16.dp),
+                                                color = Color.Transparent,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(16.dp))
+                                                    .clickable {
+                                                        val trimmed = item.query.trim()
+                                                        if (trimmed.isNotEmpty()) {
+                                                            onQuerySubmitted(trimmed)
+                                                        }
+                                                    }
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    // Contained icon badge
+                                                    Surface(
+                                                        shape = CircleShape,
+                                                        color = if (item.isHistory) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                        modifier = Modifier.size(34.dp)
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Icon(
+                                                                imageVector = if (item.isHistory) Icons.Rounded.History else Icons.Rounded.Search,
+                                                                contentDescription = null,
+                                                                tint = if (item.isHistory) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                modifier = Modifier.size(18.dp)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    Spacer(Modifier.width(14.dp))
+
+                                                    Text(
+                                                        text = item.query,
+                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+
+                                                    IconButton(
+                                                        onClick = {
+                                                            queryState = TextFieldValue(
+                                                                text = item.query,
+                                                                selection = TextRange(item.query.length)
+                                                            )
+                                                        },
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.NorthWest,
+                                                            contentDescription = "Insert query into omnibox",
+                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
