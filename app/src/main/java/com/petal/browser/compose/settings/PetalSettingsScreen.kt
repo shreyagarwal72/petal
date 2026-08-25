@@ -2074,54 +2074,52 @@ fun PetalSettingsScreen(
                                     var isCheckingUpdate by remember { mutableStateOf(false) }
 
                                     Surface(
-                                        shape = RoundedCornerShape(20.dp),
-                                        color = MaterialTheme.colorScheme.surfaceContainer,
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                .padding(horizontal = 12.dp, vertical = 8.dp),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                                         ) {
                                             Surface(
                                                 shape = CircleShape,
                                                 color = MaterialTheme.colorScheme.primaryContainer,
                                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                modifier = Modifier.size(42.dp)
+                                                modifier = Modifier.size(34.dp)
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
                                                     Icon(
                                                         Icons.Rounded.Sync,
                                                         contentDescription = null,
-                                                        modifier = Modifier.size(20.dp)
+                                                        modifier = Modifier.size(18.dp)
                                                     )
                                                 }
                                             }
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
                                                     text = "Check for Updates Now",
-                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurface
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
-                                                Spacer(Modifier.height(2.dp))
-                                                Surface(
-                                                    shape = RoundedCornerShape(6.dp),
-                                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                    modifier = Modifier.wrapContentWidth()
-                                                ) {
-                                                    Text(
-                                                        text = if (isCheckingUpdate) "Checking for updates..." else "Version v$appVersionName ($appVersionCode)",
-                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                                    )
-                                                }
+                                                Text(
+                                                    text = if (isCheckingUpdate) "Checking for updates..." else "Version v$appVersionName ($appVersionCode)",
+                                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
                                             }
                                             if (isCheckingUpdate) {
                                                 com.petal.browser.compose.composable.ContainedLoadingIndicator(
-                                                    modifier = Modifier.size(36.dp)
+                                                    modifier = Modifier.size(32.dp)
                                                 )
                                             } else {
                                                 Button(
@@ -2146,12 +2144,12 @@ fun PetalSettingsScreen(
                                                             com.petal.browser.view.NinjaToast.show(context, "Checking for updates...")
                                                         }
                                                     },
-                                                    shape = RoundedCornerShape(14.dp),
-                                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                                 ) {
-                                                    Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                    Spacer(Modifier.width(6.dp))
-                                                    Text("Check")
+                                                    Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text("Check", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                                                 }
                                             }
                                         }
