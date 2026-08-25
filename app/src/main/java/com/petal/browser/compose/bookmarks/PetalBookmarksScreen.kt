@@ -151,7 +151,8 @@ fun PetalBookmarksScreen(
     ) {
     com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(

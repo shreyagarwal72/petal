@@ -332,6 +332,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
     com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             snackbarHost = {
                 PetalThemedSnackbarHost(
                     hostState = snackbarHostState,
