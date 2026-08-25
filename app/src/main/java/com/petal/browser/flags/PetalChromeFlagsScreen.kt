@@ -292,6 +292,7 @@ fun PetalChromeFlagsScreen(
     }
 }
 }
+}
 
 @Composable
 private fun ChromeFlagCard(
