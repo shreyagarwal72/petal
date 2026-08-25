@@ -195,8 +195,8 @@ object PetalPermissionDialogBridge {
         context: Context,
         type: PetalPermissionType,
         origin: String,
-        onAllow: () -> Unit,
-        onDeny: () -> Unit
+        onAllow: Runnable,
+        onDeny: Runnable
     ) {
         var currContext = context
         while (currContext is android.content.ContextWrapper) {
@@ -219,11 +219,11 @@ object PetalPermissionDialogBridge {
                         origin = origin,
                         onAllow = {
                             try { dialog?.dismiss() } catch (ignored: Exception) {}
-                            onAllow()
+                            onAllow.run()
                         },
                         onDeny = {
                             try { dialog?.dismiss() } catch (ignored: Exception) {}
-                            onDeny()
+                            onDeny.run()
                         }
                     )
                 }
