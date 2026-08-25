@@ -252,8 +252,9 @@ fun PetalAboutDeveloperSheetContent(
                             )
                         }
                     }
+                }
 
-                    // Floating Material 3 Toast / Snackbar Host
+                // Floating Material 3 Toast / Snackbar Host
                     PetalThemedSnackbarHost(
                         hostState = snackbarHostState,
                         modifier = Modifier
