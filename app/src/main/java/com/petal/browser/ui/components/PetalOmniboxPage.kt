@@ -637,81 +637,83 @@ fun PetalOmniboxPage(
                             }
                         }
 
-                        // Frequently Visited Site Shortcuts Row
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "Frequently Visited",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
-                            )
-
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        // Frequently Visited Site Shortcuts Row (Only show when a website is already opened in this tab)
+                        if (cleanPageUrl.isNotBlank()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
                             ) {
-                                items(siteShortcuts) { shortcut ->
-                                    val faviconUrl = remember(shortcut.url) {
-                                        com.petal.browser.database.FaviconHelper.getGoogleFaviconUrl(shortcut.url)
-                                    }
+                                Text(
+                                    text = "Frequently Visited",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                                )
 
-                                    Surface(
-                                        onClick = { onQuerySubmitted(shortcut.url) },
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = MaterialTheme.colorScheme.surfaceContainer,
-                                        tonalElevation = 1.dp,
-                                        modifier = Modifier.width(92.dp)
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    items(siteShortcuts) { shortcut ->
+                                        val faviconUrl = remember(shortcut.url) {
+                                            com.petal.browser.database.FaviconHelper.getGoogleFaviconUrl(shortcut.url)
+                                        }
+
+                                        Surface(
+                                            onClick = { onQuerySubmitted(shortcut.url) },
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = MaterialTheme.colorScheme.surfaceContainer,
+                                            tonalElevation = 1.dp,
+                                            modifier = Modifier.width(92.dp)
                                         ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(36.dp)
-                                                    .clip(CircleShape)
-                                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                                contentAlignment = Alignment.Center
+                                            Column(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
                                             ) {
-                                                coil.compose.SubcomposeAsyncImage(
-                                                    model = faviconUrl,
-                                                    contentDescription = shortcut.title,
+                                                Box(
                                                     modifier = Modifier
-                                                        .size(24.dp)
-                                                        .clip(CircleShape),
-                                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                                                    loading = {
-                                                        Icon(
-                                                            imageVector = shortcut.icon,
-                                                            contentDescription = shortcut.title,
-                                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                            modifier = Modifier.size(18.dp)
-                                                        )
-                                                    },
-                                                    error = {
-                                                        Icon(
-                                                            imageVector = shortcut.icon,
-                                                            contentDescription = shortcut.title,
-                                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                            modifier = Modifier.size(18.dp)
-                                                        )
-                                                    }
+                                                        .size(36.dp)
+                                                        .clip(CircleShape)
+                                                        .background(MaterialTheme.colorScheme.primaryContainer),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    coil.compose.SubcomposeAsyncImage(
+                                                        model = faviconUrl,
+                                                        contentDescription = shortcut.title,
+                                                        modifier = Modifier
+                                                            .size(24.dp)
+                                                            .clip(CircleShape),
+                                                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                                        loading = {
+                                                            Icon(
+                                                                imageVector = shortcut.icon,
+                                                                contentDescription = shortcut.title,
+                                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                                modifier = Modifier.size(18.dp)
+                                                            )
+                                                        },
+                                                        error = {
+                                                            Icon(
+                                                                imageVector = shortcut.icon,
+                                                                contentDescription = shortcut.title,
+                                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                                modifier = Modifier.size(18.dp)
+                                                            )
+                                                        }
+                                                    )
+                                                }
+
+                                                Spacer(Modifier.height(4.dp))
+
+                                                Text(
+                                                    text = shortcut.title,
+                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             }
-
-                                            Spacer(Modifier.height(4.dp))
-
-                                            Text(
-                                                text = shortcut.title,
-                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
                                         }
                                     }
                                 }
