@@ -409,48 +409,33 @@ private fun DeveloperMissionCard() {
     }
 }
 
-/** 2x2 Grid of Expressive Metric Highlights. */
+/** Horizontal Metric Highlights below Petal Mission. */
 @Composable
 private fun DeveloperMetricsGrid() {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            MetricBadgeCard(
-                icon = Icons.Rounded.FolderCopy,
-                value = "15+",
-                label = "Open Source Repos",
-                modifier = Modifier.weight(1f)
-            )
-            MetricBadgeCard(
-                icon = Icons.Rounded.Speed,
-                value = "60 FPS",
-                label = "Fluid Motion Physics",
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            MetricBadgeCard(
-                icon = Icons.Rounded.Security,
-                value = "Zero",
-                label = "Telemetry & Trackers",
-                modifier = Modifier.weight(1f)
-            )
-            MetricBadgeCard(
-                icon = Icons.Rounded.DesignServices,
-                value = "100%",
-                label = "Material 3 Expressive",
-                modifier = Modifier.weight(1f)
-            )
-        }
+        MetricBadgeCard(
+            icon = Icons.Rounded.FolderCopy,
+            value = "15+ Repositories",
+            label = "Active Open Source Repositories & Libraries"
+        )
+        MetricBadgeCard(
+            icon = Icons.Rounded.Speed,
+            value = "60 FPS Performance",
+            label = "Fluid Motion Physics & Dynamic Stride Animations"
+        )
+        MetricBadgeCard(
+            icon = Icons.Rounded.Security,
+            value = "Zero Telemetry",
+            label = "100% Private — No Trackers, Telemetry, or Analytics"
+        )
+        MetricBadgeCard(
+            icon = Icons.Rounded.DesignServices,
+            value = "100% Material 3",
+            label = "Material 3 Expressive Design System & Dynamic Palettes"
+        )
     }
 }
 
@@ -466,40 +451,41 @@ private fun MetricBadgeCard(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 2.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-        modifier = modifier.entrance()
+        modifier = modifier
+            .fillMaxWidth()
+            .entrance()
     ) {
         Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(44.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
 
-            Column {
+            Spacer(Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
