@@ -202,7 +202,7 @@ fun PetalTabGridSwitcher(
     ) {
     com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Box(modifier = modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(pageSeed = "tabs_page")
