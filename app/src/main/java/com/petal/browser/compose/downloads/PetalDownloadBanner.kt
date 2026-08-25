@@ -104,7 +104,7 @@ object PetalDownloadBannerBridge {
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
                 val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.GS_FLEX }
+                    AppFont.fromName(fontName)
                 }
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }

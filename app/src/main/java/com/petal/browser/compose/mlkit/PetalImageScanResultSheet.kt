@@ -173,7 +173,7 @@ object PetalImageScannerBridge {
                     val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
                     val appFont = remember(fontName) {
-                        try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.GS_FLEX }
+                        AppFont.fromName(fontName)
                     }
                     val colorStyle = remember(styleName) {
                         try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }

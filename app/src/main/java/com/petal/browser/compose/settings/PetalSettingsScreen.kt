@@ -214,7 +214,15 @@ fun PetalSettingsScreen(
 
     // Saved Preference States
     var selectedFont by remember {
-        mutableStateOf(try { AppFont.valueOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") } catch (e: Exception) { AppFont.PETAL })
+        mutableStateOf(AppFont.fromName(sp.getString("sp_app_font", "PETAL")))
+    }
+    val fontPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            PetalFontHelper.saveCustomFontUri(context, it)
+            selectedFont = AppFont.CUSTOM
+        }
     }
     var selectedPreset by remember {
         mutableStateOf(try { GSFlexPreset.valueOf(sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL") } catch (e: Exception) { GSFlexPreset.PETAL })
@@ -790,6 +798,9 @@ fun PetalSettingsScreen(
                                                 onClick = {
                                                     selectedFont = font
                                                     sp.edit().putString("sp_app_font", font.name).apply()
+                                                    if (font == AppFont.CUSTOM) {
+                                                        fontPickerLauncher.launch("*/*")
+                                                    }
                                                 },
                                                 label = { Text(font.label) },
                                                 leadingIcon = if (selectedFont == font) {
@@ -799,11 +810,11 @@ fun PetalSettingsScreen(
                                         }
                                     }
 
-                                    // --- GS Flex Preset Chips ---
-                                    androidx.compose.animation.AnimatedVisibility(visible = selectedFont == AppFont.GS_FLEX) {
+                                    // --- GS Flex Preset Chips (For Petal Signature) ---
+                                    androidx.compose.animation.AnimatedVisibility(visible = selectedFont == AppFont.PETAL) {
                                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                             Text(
-                                                "GS Flex Design Preset:",
+                                                "Petal Signature Design Preset:",
                                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
@@ -827,8 +838,49 @@ fun PetalSettingsScreen(
                                                     )
                                                 }
                                             }
+                                        }
+                                    }
 
-
+                                    // --- Custom Font File Picker UI ---
+                                    androidx.compose.animation.AnimatedVisibility(visible = selectedFont == AppFont.CUSTOM) {
+                                        val customFontName = sp.getString("sp_custom_font_name", "No font file selected") ?: "No font file selected"
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(14.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.FontDownload,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(28.dp)
+                                                )
+                                                Spacer(Modifier.width(12.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = "Custom Font File",
+                                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Text(
+                                                        text = customFontName,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                                Button(
+                                                    onClick = { fontPickerLauncher.launch("*/*") },
+                                                    shape = RoundedCornerShape(12.dp)
+                                                ) {
+                                                    Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                    Spacer(Modifier.width(6.dp))
+                                                    Text("Browse")
+                                                }
+                                            }
                                         }
                                     }
 

@@ -66,7 +66,7 @@ object PetalAiSearchBridge {
                     val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                     val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                    val appFont = try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.GS_FLEX }
+                    val appFont = AppFont.fromName(fontName)
                     val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
 
                     PetalExpressiveTheme(
