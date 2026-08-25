@@ -852,10 +852,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                 onClick = {
                     if (appLanguage != tag) {
                         appLanguage = tag
-                        sp.edit().putString("sp_app_language", tag).apply()
-                        val localeList = if (tag == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
-                        AppCompatDelegate.setApplicationLocales(localeList)
-                        (activity as? ComponentActivity)?.recreate()
+                        com.petal.browser.unit.HelperUnit.setAppLanguage(activity, tag)
                     }
                 },
                 label = { Text(label) },

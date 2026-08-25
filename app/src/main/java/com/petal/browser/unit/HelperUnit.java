@@ -876,4 +876,43 @@ public class HelperUnit {
     public static void applyBouncyTouchFeedback(android.view.View view) {
         applyBouncyTouchFeedback(view, 0.94f);
     }
+
+    public static Context applyLanguage(Context context) {
+        if (context == null) return null;
+        SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        String lang = sp.getString("sp_app_language", "system");
+        if (lang != null && !lang.equals("system")) {
+            Locale locale = Locale.forLanguageTag(lang);
+            Locale.setDefault(locale);
+            Configuration config = new Configuration(context.getResources().getConfiguration());
+            config.setLocale(locale);
+            config.setLayoutDirection(locale);
+            return context.createConfigurationContext(config);
+        }
+        return context;
+    }
+
+    public static void setAppLanguage(Context context, String langTag) {
+        if (context == null) return;
+        SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        sp.edit().putString("sp_app_language", langTag).apply();
+
+        androidx.core.os.LocaleListCompat localeList = "system".equals(langTag)
+                ? androidx.core.os.LocaleListCompat.getEmptyLocaleList()
+                : androidx.core.os.LocaleListCompat.forLanguageTags(langTag);
+        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList);
+
+        Activity activity = null;
+        Context current = context;
+        while (current instanceof android.content.ContextWrapper) {
+            if (current instanceof Activity) {
+                activity = (Activity) current;
+                break;
+            }
+            current = ((android.content.ContextWrapper) current).getBaseContext();
+        }
+        if (activity != null) {
+            activity.recreate();
+        }
+    }
 }

@@ -19,6 +19,11 @@ import com.petal.browser.unit.HelperUnit;
 public class Settings_Activity extends AppCompatActivity {
 
     @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(HelperUnit.applyLanguage(newBase));
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         HelperUnit.initTheme(this);
