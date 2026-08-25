@@ -349,7 +349,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
             if (isSelectionMode) {
                 ExpressiveHeader(
                     title = "${selectedIds.size} Selected",
-                        subtitle = "Selection Mode Active",
+                        subtitle = "Selecting Mode",
                         onBack = { selectedIds = emptySet() },
                         actions = {
                             HeaderActionIcon(
