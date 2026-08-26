@@ -134,6 +134,7 @@ fun PetalUserProfileScreen(
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var isSigningIn by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
@@ -260,7 +261,7 @@ fun PetalUserProfileScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RenderUserProfileContent(
-    profile: GoogleProfile,
+    profile: GoogleUserProfile,
     isLoading: Boolean,
     isSigningIn: Boolean,
     isExpressiveFeatureTiles: Boolean,
@@ -278,7 +279,7 @@ private fun RenderUserProfileContent(
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { GoogleAccountManager.updateAvatarCustomUri(context, it.toString()) }
+        uri?.let { GoogleAccountManager.updateAvatarGalleryUri(context, it.toString()) }
     }
 
     var showEditNameDialog by remember { mutableStateOf(false) }
@@ -853,8 +854,6 @@ private fun RenderUserProfileContent(
                 )
             }
         }
-    }
-    }
     }
 }
 
