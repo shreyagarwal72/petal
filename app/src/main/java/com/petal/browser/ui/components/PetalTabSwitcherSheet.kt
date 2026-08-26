@@ -85,6 +85,11 @@ object PetalTabSwitcherBridge {
                 window.statusBarColor = android.graphics.Color.TRANSPARENT
                 window.navigationBarColor = android.graphics.Color.TRANSPARENT
             }
+            // NOTE: only ONE setOnShowListener is registered on a Dialog — a second call
+            // would silently replace this one. The insets pass-through set up here is what
+            // lets ExpressiveHeader's statusBarsPadding() actually receive the status bar
+            // height, so this logic must stay merged with the "force full height" logic
+            // below rather than living in a separate setOnShowListener call.
             dialog.setOnShowListener {
                 try {
                     val container = dialog.findViewById<android.view.View>(com.google.android.material.R.id.container)
@@ -108,12 +113,17 @@ object PetalTabSwitcherBridge {
                         if (sheet is android.view.ViewGroup) sheet.clipToPadding = false
                         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets -> insets }
 
+                        val params = sheet.layoutParams
+                        params.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                        sheet.layoutParams = params
+
                         val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
                         behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
                         behavior.skipCollapsed = true
                         behavior.isDraggable = false
-                        sheet.layoutParams?.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
                     }
+
+                    androidx.core.view.ViewCompat.requestApplyInsets(dialog.window!!.decorView)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -248,22 +258,6 @@ object PetalTabSwitcherBridge {
                 }
             }
             dialog.setContentView(composeView)
-            dialog.setOnShowListener {
-                // Force the sheet's internal container to fill the entire window so the
-                // tab manager truly occupies the full screen rather than the default
-                // wrap-content bottom sheet.
-                val sheetView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-                if (sheetView != null) {
-                    val params = sheetView.layoutParams
-                    params.height = ViewGroup.LayoutParams.MATCH_PARENT
-                    sheetView.layoutParams = params
-                    com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheetView).apply {
-                        isDraggable = false
-                        skipCollapsed = true
-                        state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-                    }
-                }
-            }
             dialog.setOnDismissListener {
                 (activity as? BrowserActivity)?.apply {
                     runOnUiThread { updatePersistentBottomNav() }
