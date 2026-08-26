@@ -75,7 +75,14 @@ fun PetalAppLockConfigScreen(
         enabled = true,
         onBack = onBack
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 1. Underlay Screen (Home Screen Preview) - Rendered behind App Lock Config during back gesture
+            com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
+                com.petal.browser.compose.home.PetalHomeScreen()
+            }
+
+            // 2. Foreground Screen (App Lock Config Page) - Shrinks to 88% card & 32dp corners
+            com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
             Scaffold(
                 topBar = {
                     ExpressiveHeader(
@@ -385,5 +392,6 @@ fun PetalAppLockConfigScreen(
                 }
             }
         }
+    }
     }
 }
