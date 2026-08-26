@@ -130,7 +130,7 @@ private fun PetalModeSwitchWidgetContent() {
                     maxLines = 1,
                     style = TextStyle(
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Medium,
                         color = GlanceTheme.colors.onSurfaceVariant
                     ),
                     modifier = GlanceModifier.defaultWeight()
