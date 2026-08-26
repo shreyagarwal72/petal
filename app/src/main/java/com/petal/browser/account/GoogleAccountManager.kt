@@ -32,12 +32,7 @@ data class GoogleUserProfile(
     val avatarPresetId: String = "app_icon",
     val customAvatarUri: String? = null,
     val isSignedIn: Boolean = false,
-    val globalGoogleLogin: Boolean = true,
-    val syncBookmarks: Boolean = true,
-    val syncHistory: Boolean = true,
-    val syncPasswords: Boolean = true,
-    val syncOpenTabs: Boolean = true,
-    val syncSearchEngines: Boolean = true
+    val globalGoogleLogin: Boolean = true
 )
 
 sealed class GoogleSignInResult {
@@ -61,11 +56,6 @@ object GoogleAccountManager {
     private const val KEY_AVATAR_PRESET = "sp_user_avatar_preset"
     private const val KEY_CUSTOM_AVATAR_URI = "sp_user_custom_avatar_uri"
     private const val KEY_GLOBAL_GOOGLE_LOGIN = "sp_global_google_login"
-    private const val KEY_SYNC_BOOKMARKS = "sp_google_sync_bookmarks"
-    private const val KEY_SYNC_HISTORY = "sp_google_sync_history"
-    private const val KEY_SYNC_PASSWORDS = "sp_google_sync_passwords"
-    private const val KEY_SYNC_TABS = "sp_google_sync_tabs"
-    private const val KEY_SYNC_SEARCH_ENGINES = "sp_google_sync_search_engines"
 
     val builtinAvatarPresets = listOf(
         "app_icon" to "App Icon (Default)",
@@ -100,11 +90,6 @@ object GoogleAccountManager {
             val avatarPresetId = sp.getString(KEY_AVATAR_PRESET, "petal_flower") ?: "petal_flower"
             var customAvatarUri = sp.getString(KEY_CUSTOM_AVATAR_URI, null)
             val globalGoogleLogin = sp.getBoolean(KEY_GLOBAL_GOOGLE_LOGIN, true)
-            val syncBookmarks = sp.getBoolean(KEY_SYNC_BOOKMARKS, true)
-            val syncHistory = sp.getBoolean(KEY_SYNC_HISTORY, true)
-            val syncPasswords = sp.getBoolean(KEY_SYNC_PASSWORDS, true)
-            val syncTabs = sp.getBoolean(KEY_SYNC_TABS, true)
-            val syncSearchEngines = sp.getBoolean(KEY_SYNC_SEARCH_ENGINES, true)
 
             // Ensure custom avatar is permanently stored in internal filesDir (never deleted by cache clear)
             if (avatarType == AvatarType.GALLERY_URI) {
@@ -137,12 +122,7 @@ object GoogleAccountManager {
                 avatarPresetId = avatarPresetId,
                 customAvatarUri = customAvatarUri,
                 isSignedIn = isSignedIn,
-                globalGoogleLogin = globalGoogleLogin,
-                syncBookmarks = syncBookmarks,
-                syncHistory = syncHistory,
-                syncPasswords = syncPasswords,
-                syncOpenTabs = syncTabs,
-                syncSearchEngines = syncSearchEngines
+                globalGoogleLogin = globalGoogleLogin
             )
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -462,33 +442,5 @@ object GoogleAccountManager {
         }
     }
 
-    fun updateSyncSettings(
-        context: Context,
-        syncBookmarks: Boolean,
-        syncHistory: Boolean,
-        syncPasswords: Boolean,
-        syncTabs: Boolean,
-        syncSearchEngines: Boolean
-    ) {
-        try {
-            val sp = PreferenceManager.getDefaultSharedPreferences(context)
-            sp.edit()
-                .putBoolean(KEY_SYNC_BOOKMARKS, syncBookmarks)
-                .putBoolean(KEY_SYNC_HISTORY, syncHistory)
-                .putBoolean(KEY_SYNC_PASSWORDS, syncPasswords)
-                .putBoolean(KEY_SYNC_TABS, syncTabs)
-                .putBoolean(KEY_SYNC_SEARCH_ENGINES, syncSearchEngines)
-                .apply()
 
-            currentProfile = currentProfile.copy(
-                syncBookmarks = syncBookmarks,
-                syncHistory = syncHistory,
-                syncPasswords = syncPasswords,
-                syncOpenTabs = syncTabs,
-                syncSearchEngines = syncSearchEngines
-            )
-        } catch (e: Throwable) {
-            e.printStackTrace()
-        }
-    }
 }
