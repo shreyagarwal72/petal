@@ -163,14 +163,18 @@ fun PetalPredictiveBackSurface(
                 }
                 // Gesture committed — smoothly animate remaining progress to 1f before firing back
                 scope.launch {
-                    progressAnim.animateTo(1f, animationSpec = tween(durationMillis = 160, easing = FastOutSlowInEasing))
+                    progressAnim.animateTo(1f, animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)) {
+                        backState = backState.copy(isActive = true, progress = value)
+                    }
                     backState = PredictiveBackState.Idle
                     onBack()
                 }
             } catch (e: CancellationException) {
                 // Gesture cancelled — smoothly relax progress back to 0f
                 scope.launch {
-                    progressAnim.animateTo(0f, animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing))
+                    progressAnim.animateTo(0f, animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)) {
+                        backState = backState.copy(isActive = true, progress = value)
+                    }
                     backState = PredictiveBackState.Idle
                 }
                 throw e
@@ -199,13 +203,13 @@ fun PetalPredictiveBackSurface(
  * to publish gesture state into the composition tree.
  *
  * Visual effects:
- * - Scale: 1.0 at rest → 0.92 at full gesture (foreground screen shrinking).
- * - Corner radius: 0 dp → 28 dp as gesture progresses (foreground only).
+ * - Scale: 1.0 at rest → 0.88 at full gesture (foreground screen shrinking).
+ * - Corner radius: 0 dp → 32 dp as gesture progresses (foreground only).
  * - Dim + blur on [isBehind] screens — clears live with the finger so the reveal
  *   feels attached to the swipe, not triggered by the commit.
- * - Revealed-screen scale: 0.96 → 1.0 as gesture progresses (subtle grow-to-meet).
- * - Ease: quadratic (1-(1-p)²) applied to the raw progress so blur/dim clear
- *   noticeably ahead of the finger — matches the system's own back-reveal feel.
+ * - Revealed-screen scale: 0.94 → 1.0 as gesture progresses (subtle grow-to-meet).
+ * - Ease: FastOutSlowInEasing applied to the raw progress so blur/dim clear
+ *   noticeably ahead of the finger — matches PixelPlayer & RvSystem-Monitor.
  */
 @Composable
 fun PetalScreenWrapper(
@@ -224,9 +228,9 @@ fun PetalScreenWrapper(
 
     val isPredictiveBackTarget = isBehind && predictiveBack.isActive
 
-    // Quadratic ease matching Pixel predictive back feel
+    // FastOutSlowInEasing matching PixelPlayer & RvSystem-Monitor feel
     val backProgressEased =
-        if (predictiveBack.isActive) 1f - (1f - predictiveBack.progress).let { it * it }
+        if (predictiveBack.isActive) FastOutSlowInEasing.transform(predictiveBack.progress)
         else 0f
 
     // Foreground PixelPlayer / RvSystem-Monitor style predictive back card transformations:
