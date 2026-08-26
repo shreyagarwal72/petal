@@ -226,7 +226,6 @@ fun PetalUserProfileScreen(
                         onBack = onBack,
                         onOpenOAuth = onOpenOAuth,
                         onStartGoogleSignIn = { startGoogleSignIn() },
-                        onPickAvatar = { galleryLauncher.launch("image/*") },
                         onOpenAppLockConfig = { showAppLockConfigPage = true },
                         modifier = modifier
                     )
@@ -250,7 +249,6 @@ fun PetalUserProfileScreen(
                     onBack = onBack,
                     onOpenOAuth = onOpenOAuth,
                     onStartGoogleSignIn = { startGoogleSignIn() },
-                    onPickAvatar = { galleryLauncher.launch("image/*") },
                     onOpenAppLockConfig = { showAppLockConfigPage = true },
                     modifier = modifier
                 )
@@ -270,7 +268,6 @@ private fun RenderUserProfileContent(
     onBack: () -> Unit,
     onOpenOAuth: (PetalShortcut) -> Unit,
     onStartGoogleSignIn: () -> Unit,
-    onPickAvatar: () -> Unit,
     onOpenAppLockConfig: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -278,8 +275,14 @@ private fun RenderUserProfileContent(
     val coroutineScope = rememberCoroutineScope()
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { GoogleAccountManager.updateAvatarCustomUri(context, it.toString()) }
+    }
+
     var showEditNameDialog by remember { mutableStateOf(false) }
-    var nameInput by remember { mutableStateOf(profile.displayName) }
+    var nameInput by remember(profile.displayName) { mutableStateOf<String>(profile.displayName ?: "") }
 
     Scaffold(
         topBar = {
