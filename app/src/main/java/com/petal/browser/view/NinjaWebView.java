@@ -21,6 +21,7 @@ import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.CookieManager;
 import android.webkit.WebBackForwardList;
+import android.webkit.WebHistoryItem;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Button;
@@ -213,9 +214,11 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
      */
     public void resetGestureExclusionRects() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                setSystemGestureExclusionRects(java.util.Collections.emptyList());
-            } catch (Exception ignored) {}
+            post(() -> {
+                try {
+                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
+                } catch (Exception ignored) {}
+            });
         }
     }
 
@@ -482,16 +485,27 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     public synchronized void goBack() {
-        WebBackForwardList mWebBackForwardList = this.copyBackForwardList();
-        if (mWebBackForwardList.getCurrentIndex() > 0) {
-            stopLoading();
-            String historyUrl = mWebBackForwardList.getItemAtIndex(mWebBackForwardList.getCurrentIndex()-1).getUrl();
-            initPreferences(historyUrl);
-            if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(historyUrl)) && sp.getBoolean("sp_standard_always", true)) {
-                sp.edit().putString("profile", "profileStandard").apply();
+        try {
+            WebBackForwardList mWebBackForwardList = this.copyBackForwardList();
+            if (mWebBackForwardList != null && mWebBackForwardList.getCurrentIndex() > 0) {
+                stopLoading();
+                int prevIndex = mWebBackForwardList.getCurrentIndex() - 1;
+                if (prevIndex >= 0 && prevIndex < mWebBackForwardList.getSize()) {
+                    WebHistoryItem item = mWebBackForwardList.getItemAtIndex(prevIndex);
+                    if (item != null && item.getUrl() != null) {
+                        String historyUrl = item.getUrl();
+                        initPreferences(historyUrl);
+                        if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(historyUrl)) && sp.getBoolean("sp_standard_always", true)) {
+                            sp.edit().putString("profile", "profileStandard").apply();
+                        }
+                    }
+                }
             }
-        }
-        super.goBack();
+        } catch (Exception ignored) {}
+        try {
+            super.goBack();
+        } catch (Exception ignored) {}
+        resetGestureExclusionRects();
     }
 
     public synchronized void initWebSettings() {
