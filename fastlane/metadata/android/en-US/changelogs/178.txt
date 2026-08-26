@@ -1,0 +1,6 @@
+* **Context Menu Dialog & Link Opening**: Refactored link context menus into Material 3 `BottomSheetDialog` to eliminate touch interception freezes on web views and properly wired open in new tab, incognito, reading list, and download actions.
+* **ML Kit Image Recognition & Scan Results**: Resolved UI thread crashes by dispatching ML Kit text/barcode detection results to the main thread looper and rendering interactive scan bottom sheet overlay.
+* **RvSystem-Monitor Haptics Integration**: Integrated `RvSystem-Monitor` haptic feedback framework (`LocalHapticEnabled`, `LocalVibrationIntensity`) providing tactile feedback presets (`LIGHT`, `MEDIUM`, `STRONG`) and `hapticClickable()` modifiers across Petal.
+* **Delete Browsing Data & Settings Icons**: Aligned data category icons on the Clear Browsing Data page (`PetalDeleteScreen.kt`) with primary category icons in Settings.
+* **Tab Manager Thumbnail Cache**: Bound tab preview thumbnail eviction strictly to explicit tab closure, preserving cached snapshots during tab switching and navigation, and ensured faithful home screen thumbnail rendering.
+* **Account Sync Screen Composition Audit**: Fixed Kotlin scoping and brace balance in `ChromeAccountSyncScreen.kt` and `PetalTheme.kt` for clean release builds.
