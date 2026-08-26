@@ -1,0 +1,4 @@
+* **Material 3 Expressive Widget Suite**: Redesigned home screen widgets inspired by Zenith, PixelPlayer, and RvSystem-Monitor with full Material 3 Expressive shapes, dynamic color tokens, and responsive size layouts.
+* **Chrome-Style Shortcuts & Bookmarks Widget**: Added `PetalShortcutsGlanceWidget` featuring a quick search pill alongside dedicated shortcut tiles for New Tab, Bookmarks, Downloads, and Private mode.
+* **Mode Switcher Widget**: Added `PetalModeSwitchGlanceWidget` compact pill widget for instant mode switching between standard and Incognito browsing.
+* **Intent & Action Wiring Preservation**: Preserved 100% of underlying intent actions (`ACTION_OPEN_SEARCH`, `ACTION_OPEN_VOICE`, `ACTION_OPEN_AI_SEARCH`, `ACTION_OPEN_INCOGNITO`, `ACTION_OPEN_NEW_TAB`, `ACTION_OPEN_BOOKMARKS`, `ACTION_OPEN_DOWNLOADS`).

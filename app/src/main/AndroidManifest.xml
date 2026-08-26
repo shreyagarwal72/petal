@@ -209,6 +209,30 @@
                 android:resource="@xml/petal_search_widget_info" />
         </receiver>
 
+        <receiver
+            android:name="com.petal.browser.widget.glance.PetalShortcutsGlanceWidgetReceiver"
+            android:label="Petal Shortcuts &amp; Bookmarks"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/petal_shortcuts_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.petal.browser.widget.glance.PetalModeSwitchGlanceWidgetReceiver"
+            android:label="Petal Mode Switcher"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/petal_mode_switch_widget_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
