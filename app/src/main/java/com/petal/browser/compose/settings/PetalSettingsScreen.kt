@@ -162,6 +162,61 @@ object PetalSettingsBridge {
             }
         }
     }
+
+    PetalExpressiveTheme(
+        darkTheme = isDarkTheme,
+        dynamicColor = isDynamicColor,
+        useAmoled = isAmoled,
+        expressiveColors = isExpressiveColors,
+        appFont = selectedFont,
+        fontWidth = fontWidth,
+        fontWeight = fontWeight.toInt(),
+        fontRoundness = fontRoundness,
+        gsFlexSettings = selectedGSFlexSettings,
+        colorStyle = selectedColorStyle,
+        paletteId = selectedPaletteId
+    ) {
+        val isCategoryDrilled = currentCategory != SettingsCategory.OVERVIEW && searchQuery.isBlank()
+        val activeCategory = currentCategory
+
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = true,
+            onBack = {
+                if (isCategoryDrilled) {
+                    currentCategory = SettingsCategory.OVERVIEW
+                } else {
+                    onBackPress()
+                }
+            },
+        ) {
+            if (isCategoryDrilled) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // 1. Underlay Screen (Overview List) - Blurred 28dp & Dimmed
+                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
+                        RenderCategoryPage(
+                            scaffoldCategory = SettingsCategory.OVERVIEW,
+                            onHeaderBack = onBackPress
+                        )
+                    }
+
+                    // 2. Foreground Screen (Active Category Page) - Shrinks to 90% card & 32dp corners
+                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                        RenderCategoryPage(
+                            scaffoldCategory = activeCategory,
+                            onHeaderBack = { currentCategory = SettingsCategory.OVERVIEW }
+                        )
+                    }
+                }
+            } else {
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                    RenderCategoryPage(
+                        scaffoldCategory = SettingsCategory.OVERVIEW,
+                        onHeaderBack = onBackPress
+                    )
+                }
+            }
+        }
+    }
 }
 
 enum class SettingsCategory(val title: String, val subtitle: String, val icon: ImageVector) {
@@ -305,12 +360,6 @@ fun PetalSettingsScreen(
         }
     }
 
-    // In-category back (drilling back up to the overview list) stays an instant,
-    // non-predictive BackHandler since it's an internal state change, not a screen exit.
-    androidx.activity.compose.BackHandler(enabled = currentCategory != SettingsCategory.OVERVIEW) {
-        currentCategory = SettingsCategory.OVERVIEW
-    }
-
     fun matchesSearch(sectionTitle: String, keywords: String): Boolean {
         if (searchQuery.isBlank()) return true
         val query = searchQuery.trim().lowercase()
@@ -324,43 +373,20 @@ fun PetalSettingsScreen(
         ThemeConfig.DARK -> true
     }
 
-    PetalExpressiveTheme(
-        darkTheme = isDarkTheme,
-        dynamicColor = isDynamicColor,
-        useAmoled = isAmoled,
-        expressiveColors = isExpressiveColors,
-        appFont = selectedFont,
-        fontWidth = fontWidth,
-        fontWeight = fontWeight.toInt(),
-        fontRoundness = fontRoundness,
-        gsFlexSettings = selectedGSFlexSettings,
-        colorStyle = selectedColorStyle,
-        paletteId = selectedPaletteId
+    @Composable
+    fun RenderCategoryPage(
+        scaffoldCategory: SettingsCategory,
+        onHeaderBack: () -> Unit
     ) {
-      // Predictive back gesture only fires when the OVERVIEW category is showing;
-      // while drilled into a category the BackHandler above intercepts back first.
-      com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = currentCategory == SettingsCategory.OVERVIEW,
-        onBack = onBackPress,
-      ) {
-      com.petal.browser.predictive.PetalScreenWrapper {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
-                // Top App Bar Header + Search (hosted in Scaffold's topBar so insets, collapse
-                // offset, and content padding are all resolved consistently by Scaffold).
                 Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
                     com.petal.browser.ui.components.ExpressiveHeader(
-                        title = if (searchQuery.isNotBlank()) "Search Results" else currentCategory.title,
-                        subtitle = if (searchQuery.isNotBlank()) "Matching Settings" else if (currentCategory == SettingsCategory.OVERVIEW) "Browser Preferences & Customization" else currentCategory.subtitle,
-                        onBack = {
-                            if (currentCategory != SettingsCategory.OVERVIEW) {
-                                currentCategory = SettingsCategory.OVERVIEW
-                            } else {
-                                onBackPress()
-                            }
-                        }
+                        title = if (searchQuery.isNotBlank()) "Search Results" else scaffoldCategory.title,
+                        subtitle = if (searchQuery.isNotBlank()) "Matching Settings" else if (scaffoldCategory == SettingsCategory.OVERVIEW) "Browser Preferences & Customization" else scaffoldCategory.subtitle,
+                        onBack = onHeaderBack
                     )
 
                     // 🔍 Settings Search Bar
@@ -404,9 +430,9 @@ fun PetalSettingsScreen(
                     Column(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        key(currentCategory) {
+                        key(scaffoldCategory) {
                             val categoryScrollState = rememberScrollState()
-                            LaunchedEffect(currentCategory) {
+                            LaunchedEffect(scaffoldCategory) {
                                 categoryScrollState.scrollTo(0)
                             }
                             Column(
@@ -417,7 +443,7 @@ fun PetalSettingsScreen(
                                     .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                            if (currentCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
+                            if (scaffoldCategory == SettingsCategory.OVERVIEW && searchQuery.isBlank()) {
                                 Text(
                                     "Categories",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -445,7 +471,7 @@ fun PetalSettingsScreen(
                                 }
 
                             // 0. Dedicated Petal AI & API Keys Hub Sub-Screen Page
-                            if ((currentCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "petal ai api key gemini openrouter openai grok groq key deep research webkit extensions search suggestions")) {
+                            if ((scaffoldCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "petal ai api key gemini openrouter openai grok groq key deep research webkit extensions search suggestions")) {
                                 SettingsCategoryCard(title = "Petal AI & API Keys Hub", icon = Icons.Rounded.AutoAwesome) {
                                     Text(
                                         "Configure AI providers, API keys, and model selections for Petal Deep Research, AI Search, and page summarizer.",
@@ -708,7 +734,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 1. Live Interactive Font & Accent Customization
-                            if ((currentCategory == SettingsCategory.APPEARANCE || searchQuery.isNotBlank()) && matchesSearch("Appearance", "fonts accent theme palette amoled")) {
+                            if ((scaffoldCategory == SettingsCategory.APPEARANCE || searchQuery.isNotBlank()) && matchesSearch("Appearance", "fonts accent theme palette amoled")) {
                                 SettingsCategoryCard(title = "Custom Fonts & Accent Themes", icon = Icons.Rounded.Palette) {
                                     Text(
                                         "Customize app typography and accent style",
@@ -1143,7 +1169,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 2. Custom Homepage & Background Play
-                            if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Homepage", "custom home start page background play video audio media")) {
+                            if ((scaffoldCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Homepage", "custom home start page background play video audio media")) {
                                 SettingsCategoryCard(title = "Homepage & Media Playback", icon = Icons.Rounded.Home) {
                                     Text(
                                         "Custom Homepage:",
@@ -1251,7 +1277,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 3. Private DNS & Chrome Flags
-                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Chrome Flags", "chrome://flags petal://flags flags experimental webgpu features force dark safe browsing")) {
+                            if ((scaffoldCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Chrome Flags", "chrome://flags petal://flags flags experimental webgpu features force dark safe browsing")) {
                                 SettingsCategoryCard(title = "Experimental Petal & Chrome Flags", icon = Icons.Rounded.Science) {
                                     Surface(
                                         onClick = {
@@ -1286,7 +1312,7 @@ fun PetalSettingsScreen(
                                 }
                             }
 
-                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Private DNS", "dns cleanbrowsing cloudflare 1.1.1.1 google opendns security filter")) {
+                            if ((scaffoldCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Private DNS", "dns cleanbrowsing cloudflare 1.1.1.1 google opendns security filter")) {
                                 SettingsCategoryCard(title = "Private DNS Protection", icon = Icons.Rounded.Dns) {
                                     Text(
                                         "Encrypt DNS queries to prevent tracking & block malicious content:",
@@ -1365,7 +1391,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 4. Popular Languages Selector
-                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english hinglish spanish hindi french german chinese arabic portuguese russian japanese")) {
+                            if ((scaffoldCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english hinglish spanish hindi french german chinese arabic portuguese russian japanese")) {
                                 SettingsCategoryCard(title = "App Language", icon = Icons.Rounded.Language) {
                                     Text(
                                         "Choose your preferred display language:",
@@ -1423,7 +1449,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 5. Default Search Engine Section
-                            if ((currentCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Search Engine", "google duckduckgo bing brave startpage ecosia search provider")) {
+                            if ((scaffoldCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Search Engine", "google duckduckgo bing brave startpage ecosia search provider")) {
                                 SettingsCategoryCard(title = "Default Search Engine", icon = Icons.Rounded.Search) {
                                     val currentEngineName = remember(searchEngineIndex) {
                                         val idx = searchEngineIndex.toIntOrNull() ?: 0
@@ -1463,7 +1489,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 6. Privacy & Shield Section
-                            if ((currentCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Privacy Shield", "adblock tracker popups https javascript external apps protection")) {
+                            if ((scaffoldCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Privacy Shield", "adblock tracker popups https javascript external apps protection")) {
                                 SettingsCategoryCard(title = "Privacy & Shield Protection", icon = Icons.Rounded.Shield) {
                                     ToggleRow(
                                         title = "Ad & Tracker Shield",
@@ -1643,7 +1669,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 7. Accessibility & Scaling (using PetalSlider)
-                            if ((currentCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom")) {
+                            if ((scaffoldCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom")) {
                                 SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
                                     ToggleRow(
                                         title = "Touch Haptics Engine",
@@ -1998,7 +2024,7 @@ fun PetalSettingsScreen(
                                 )
                             }
 
-                            if ((currentCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Backup Sync", "backup restore sync history bookmarks settings database export import json")) {
+                            if ((scaffoldCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Backup Sync", "backup restore sync history bookmarks settings database export import json")) {
                                 SettingsCategoryCard(title = "Backup & Restore (JSON)", icon = Icons.Rounded.Backup) {
                                     Text(
                                         "Export or restore specific items to/from a single JSON file (Documents/browser_backup/petal_browser_backup.json):",
@@ -2056,7 +2082,7 @@ fun PetalSettingsScreen(
 
 
                             // 9. App Updates & Inbuilt Updater Section
-                            if ((currentCategory == SettingsCategory.UPDATER || searchQuery.isNotBlank()) && matchesSearch("App Updates", "update updater version check launch github download upgrade")) {
+                            if ((scaffoldCategory == SettingsCategory.UPDATER || searchQuery.isNotBlank()) && matchesSearch("App Updates", "update updater version check launch github download upgrade")) {
                                 SettingsCategoryCard(title = "App Updates & Inbuilt Updater", icon = Icons.Rounded.SystemUpdate) {
                                     ToggleRow(
                                         title = "Check for Updates on Launch",
@@ -2184,7 +2210,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 9. About & Developer Profile Section
-                            if ((currentCategory == SettingsCategory.ABOUT || searchQuery.isNotBlank()) && matchesSearch("About", "app developer profile version shrey agarwal github licenses terms open source")) {
+                            if ((scaffoldCategory == SettingsCategory.ABOUT || searchQuery.isNotBlank()) && matchesSearch("About", "app developer profile version shrey agarwal github licenses terms open source")) {
                                 com.petal.browser.ui.components.DeveloperHeroCard(
                                     onCopyGithub = {
                                         try {
