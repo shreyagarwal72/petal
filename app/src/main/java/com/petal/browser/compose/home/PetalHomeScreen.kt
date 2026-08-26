@@ -454,7 +454,12 @@ fun PetalHomeScreen(
         enabled = true,
         underlayContent = null,
         onBack = {
-            (context as? ComponentActivity)?.finishAndRemoveTask()
+            val activity = context as? com.petal.browser.activity.BrowserActivity
+            if (activity != null) {
+                activity.handleBackPress()
+            } else {
+                (context as? ComponentActivity)?.finishAndRemoveTask()
+            }
         }
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
