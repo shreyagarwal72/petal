@@ -812,9 +812,6 @@ private fun PetalHomePreviewCard(
         }
     }
 }
-        }
-    }
-}
 
 @Composable
 private fun PetalTabListItem(
