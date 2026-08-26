@@ -201,8 +201,6 @@ fun PetalUserProfileScreen(
         }
     }
 
-    var showEditNameDialog by remember { mutableStateOf(false) }
-    var nameInput by remember { mutableStateOf(profile.displayName) }
     var showAppLockConfigPage by remember { mutableStateOf(false) }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
@@ -228,10 +226,6 @@ fun PetalUserProfileScreen(
                         onBack = onBack,
                         onOpenOAuth = onOpenOAuth,
                         onStartGoogleSignIn = { startGoogleSignIn() },
-                        onEditName = {
-                            nameInput = profile.displayName
-                            showEditNameDialog = true
-                        },
                         onPickAvatar = { galleryLauncher.launch("image/*") },
                         onOpenAppLockConfig = { showAppLockConfigPage = true },
                         modifier = modifier
@@ -256,10 +250,6 @@ fun PetalUserProfileScreen(
                     onBack = onBack,
                     onOpenOAuth = onOpenOAuth,
                     onStartGoogleSignIn = { startGoogleSignIn() },
-                    onEditName = {
-                        nameInput = profile.displayName
-                        showEditNameDialog = true
-                    },
                     onPickAvatar = { galleryLauncher.launch("image/*") },
                     onOpenAppLockConfig = { showAppLockConfigPage = true },
                     modifier = modifier
@@ -280,7 +270,6 @@ private fun RenderUserProfileContent(
     onBack: () -> Unit,
     onOpenOAuth: (PetalShortcut) -> Unit,
     onStartGoogleSignIn: () -> Unit,
-    onEditName: () -> Unit,
     onPickAvatar: () -> Unit,
     onOpenAppLockConfig: () -> Unit,
     modifier: Modifier = Modifier
@@ -288,6 +277,9 @@ private fun RenderUserProfileContent(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+
+    var showEditNameDialog by remember { mutableStateOf(false) }
+    var nameInput by remember { mutableStateOf(profile.displayName) }
 
     Scaffold(
         topBar = {

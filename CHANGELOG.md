@@ -1,3 +1,12 @@
+### v1.7.8
+
+- fix: Refactored website link & image context menus into Material 3 `BottomSheetDialog` (`PetalLinkContextMenuSheet.kt`) to resolve invisible touch interception overlays and wired all actions.
+- fix: Resolved ML Kit image recognition background thread state mutation issues by posting callbacks to main thread (`PetalImageScanResultSheet.kt`).
+- new: Integrated `RvSystem-Monitor` haptic feedback framework (`LocalHapticEnabled`, `LocalVibrationIntensity`, `rememberHapticOnClick`, `hapticClickable`).
+- ui: Aligned icons on Clear Browsing Data screen (`PetalDeleteScreen.kt`) with primary category icons in Settings.
+- fix: Bound `TabThumbnailCache` eviction strictly to tab closure and ensured faithful home screen snapshot rendering in tab manager.
+- fix: Audited Compose layout braces and fixed Kotlin compiler errors in `ChromeAccountSyncScreen.kt` and `PetalTheme.kt`.
+
 ### v1.7.7
 
 - new: Made Google Sans Flex permanent as **Petal Signature** font and added support for loading custom `.ttf`/`.otf` font files directly from device storage.
