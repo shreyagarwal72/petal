@@ -408,10 +408,10 @@ fun ComposeView.setupExpressiveHomeScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PetalHomeScreen(
-    accountViewModel: AccountViewModel,
-    onSearch: (String) -> Unit,
-    onOpenShortcutUrl: (String) -> Unit,
-    onOpenAccountSync: () -> Unit,
+    accountViewModel: AccountViewModel = viewModel(),
+    onSearch: (String) -> Unit = {},
+    onOpenShortcutUrl: (String) -> Unit = {},
+    onOpenAccountSync: () -> Unit = {},
     onOpenBookmarksAction: () -> Unit = {},
     onOpenHistoryAction: () -> Unit = {},
     onOpenDownloadsAction: () -> Unit = {},
@@ -446,10 +446,17 @@ fun PetalHomeScreen(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = {
+            (context as? ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
+        }
     ) {
+        com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // ── Layer 0: living Material 3 Expressive background ───────────
             // Only display background after initial welcome setup is complete

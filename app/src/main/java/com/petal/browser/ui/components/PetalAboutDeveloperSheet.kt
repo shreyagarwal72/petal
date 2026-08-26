@@ -187,7 +187,7 @@ fun PetalAboutDeveloperSheetContent(
                     ) {
                         ExpressiveHeader(
                             title = "About Developer",
-                            subtitle = "Crafted with ❤ for Android & Termux",
+                            subtitle = "Crafted with ❤ for Android & Ternux",
                             onBack = onClose,
                             enableLiquidGlass = true,
                             actions = {
@@ -353,7 +353,7 @@ fun DeveloperHeroCard(
 
             // Short Executive Bio
             Text(
-                text = "Lead Android & Systems Developer crafting high-performance browsers, native tools, and expressive UI experiences for Android & Termux.",
+                text = "Lead Android & Systems Developer crafting high-performance browsers, native tools, and expressive UI experiences for Android & Ternux.",
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -369,7 +369,7 @@ fun DeveloperHeroCard(
             ) {
                 ExpressivePillChip(icon = Icons.Rounded.Code, label = "Kotlin")
                 ExpressivePillChip(icon = Icons.Rounded.AutoAwesome, label = "M3 Expressive")
-                ExpressivePillChip(icon = Icons.Rounded.Terminal, label = "Termux OS")
+                ExpressivePillChip(icon = Icons.Rounded.Terminal, label = "Ternux OS")
             }
         }
     }
@@ -380,9 +380,9 @@ fun DeveloperHeroCard(
 fun DeveloperMissionCard() {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 2.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
             .entrance()
@@ -514,9 +514,9 @@ private fun MetricBadgeCard(
 fun DeveloperTechStackCard() {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 2.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
             .entrance()
@@ -529,12 +529,21 @@ fun DeveloperTechStackCard() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.Layers,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp)
-                )
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Layers,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
                 Text(
                     text = "Core Tech Stack",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -554,7 +563,7 @@ fun DeveloperTechStackCard() {
                 TechChip(label = "Native WebView Bridges")
                 TechChip(label = "PixelCopy GPU Snapshots")
                 TechChip(label = "AdBlock Rule Engine")
-                TechChip(label = "Termux Integration")
+                TechChip(label = "Ternux Integration")
             }
         }
     }
