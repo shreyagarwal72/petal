@@ -291,7 +291,7 @@ fun PetalUserProfileScreen(
                     ) {
                         Text(
                             text = profile.displayName,
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         IconButton(onClick = {
@@ -309,7 +309,7 @@ fun PetalUserProfileScreen(
 
                     Text(
                         text = if (profile.isSignedIn) profile.email else "Local Petal Explorer Profile",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -318,7 +318,7 @@ fun PetalUserProfileScreen(
                     // Avatar Selection Section (Built-in Presets vs Gallery)
                     Text(
                         text = "Choose Profile Picture",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.align(Alignment.Start)
                     )
