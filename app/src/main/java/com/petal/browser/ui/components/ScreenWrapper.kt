@@ -197,8 +197,10 @@ fun ScreenWrapper(
                 if (shouldRunDepthEffects && animatedCornerRadius > 0.5f) {
                     this.shape = RoundedCornerShape(animatedCornerRadius.dp)
                     this.clip = true
+                    this.shadowElevation = (16f * (animatedCornerRadius / 32f)).dp.toPx()
                 } else {
                     this.clip = false
+                    this.shadowElevation = 0f
                 }
             }
             .blur(radius = if (shouldRunDepthEffects) animatedBlurRadius else 0.dp)
