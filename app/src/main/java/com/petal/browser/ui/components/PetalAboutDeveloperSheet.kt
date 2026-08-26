@@ -187,7 +187,7 @@ fun PetalAboutDeveloperSheetContent(
                     ) {
                         ExpressiveHeader(
                             title = "About Developer",
-                            subtitle = "Crafted with ❤ for Android & Ternux",
+                            subtitle = "Crafted with ❤ for Android & Termux",
                             onBack = onClose,
                             enableLiquidGlass = true,
                             actions = {
@@ -353,7 +353,7 @@ fun DeveloperHeroCard(
 
             // Short Executive Bio
             Text(
-                text = "Lead Android & Systems Developer crafting high-performance browsers, native tools, and expressive UI experiences for Android & Ternux.",
+                text = "Lead Android & Systems Developer crafting high-performance browsers, native tools, and expressive UI experiences for Android & Termux.",
                 style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -369,7 +369,7 @@ fun DeveloperHeroCard(
             ) {
                 ExpressivePillChip(icon = Icons.Rounded.Code, label = "Kotlin")
                 ExpressivePillChip(icon = Icons.Rounded.AutoAwesome, label = "M3 Expressive")
-                ExpressivePillChip(icon = Icons.Rounded.Terminal, label = "Ternux OS")
+                ExpressivePillChip(icon = Icons.Rounded.Terminal, label = "Termux")
             }
         }
     }
@@ -563,7 +563,7 @@ fun DeveloperTechStackCard() {
                 TechChip(label = "Native WebView Bridges")
                 TechChip(label = "PixelCopy GPU Snapshots")
                 TechChip(label = "AdBlock Rule Engine")
-                TechChip(label = "Ternux Integration")
+                TechChip(label = "Termux Integration")
             }
         }
     }
@@ -670,7 +670,7 @@ fun DeveloperActionsCard(
                 ) {
                     Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Feedback", maxLines = 1)
+                    Text("Issues", maxLines = 1)
                 }
             }
         }
