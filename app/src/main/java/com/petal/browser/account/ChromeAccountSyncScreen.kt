@@ -126,7 +126,7 @@ fun getPresetMaterialIcon(presetId: String): androidx.compose.ui.graphics.vector
 @Composable
 fun PetalUserProfileScreen(
     onBack: () -> Unit,
-    onOpenOAuth: (PetalShortcut) -> Unit,
+    onOpenOAuth: (PetalShortcut) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
