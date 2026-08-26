@@ -33,8 +33,10 @@ public class PetalDownloadEngine {
     private PetalDownloadEngine(Context context) {
         Context appContext = context.getApplicationContext();
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
-                .setDownloadConcurrentLimit(4)
-                .setProgressReportingInterval(250L)
+                .setDownloadConcurrentLimit(12)
+                .setProgressReportingInterval(100L)
+                .enableAutoStart(true)
+                .enableRetryOnNetworkGain(true)
                 .enableLogging(false)
                 .build();
         fetch = Fetch.Impl.getInstance(fetchConfiguration);
@@ -117,6 +119,7 @@ public class PetalDownloadEngine {
         Request request = new Request(url, filePath);
         request.setPriority(Priority.HIGH);
         request.setNetworkType(NetworkType.ALL);
+        request.setAutoResumption(true);
 
         if (userAgent != null && !userAgent.isEmpty()) {
             request.addHeader("User-Agent", userAgent);
