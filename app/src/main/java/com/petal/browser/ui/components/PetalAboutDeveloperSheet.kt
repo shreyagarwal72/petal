@@ -439,9 +439,9 @@ fun DeveloperMetricsGrid() {
             label = "Active Open Source Repositories & Libraries"
         )
         MetricBadgeCard(
-            icon = Icons.Rounded.Speed,
-            value = "60 FPS Performance",
-            label = "Fluid Motion Physics & Dynamic Stride Animations"
+            icon = Icons.Rounded.Gavel,
+            value = "GPL-3.0 License",
+            label = "Free & Open Source — Redistribute and Modify Freely"
         )
         MetricBadgeCard(
             icon = Icons.Rounded.Security,
