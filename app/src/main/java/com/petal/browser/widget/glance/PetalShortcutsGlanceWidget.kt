@@ -213,7 +213,7 @@ private fun PetalShortcutsWidgetContent() {
 
                 ShortcutTileItem(
                     label = "Bookmarks",
-                    iconRes = R.drawable.ic_bookmark,
+                    iconRes = R.drawable.icon_bookmark,
                     bgColor = GlanceTheme.colors.secondaryContainer,
                     iconTint = GlanceTheme.colors.onSecondaryContainer,
                     action = bookmarksAction,
@@ -236,7 +236,7 @@ private fun PetalShortcutsWidgetContent() {
                 ShortcutTileItem(
                     label = "Private",
                     iconRes = R.drawable.icon_incognito,
-                    bgColor = GlanceTheme.colors.surfaceContainerHighest,
+                    bgColor = GlanceTheme.colors.surfaceVariant,
                     iconTint = GlanceTheme.colors.onSurface,
                     action = incognitoAction,
                     modifier = GlanceModifier.defaultWeight()

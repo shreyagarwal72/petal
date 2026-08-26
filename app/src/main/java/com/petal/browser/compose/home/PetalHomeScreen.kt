@@ -70,6 +70,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
@@ -670,7 +671,7 @@ private fun ShortcutTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .com.petal.browser.ui.components.entrance(3 + index)
+            .entrance(3 + index)
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = androidx.compose.foundation.LocalIndication.current,
@@ -732,7 +733,7 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .com.petal.browser.ui.components.entrance(3 + index)
+            .entrance(3 + index)
             .clickable(onClick = onClick)
     ) {
         Box(
@@ -796,7 +797,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 64.dp)
-            .com.petal.browser.ui.components.entrance(2)
+            .entrance(2)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clickable(
                 interactionSource = interactionSource,
@@ -930,7 +931,7 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
-            .com.petal.browser.ui.components.entrance(1)
+            .entrance(1)
     ) {
         Row(
             modifier = Modifier
