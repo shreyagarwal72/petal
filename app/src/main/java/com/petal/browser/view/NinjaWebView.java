@@ -672,7 +672,15 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             float scaleX = (float) targetWidth / w;
             float scaleY = (float) targetHeight / h;
             canvas.scale(scaleX, scaleY);
-            draw(canvas);
+
+            // If this tab is currently showing the Home Screen / overlay view attached to parent,
+            // draw the parent container or content frame to faithfully capture the home screen UI
+            android.view.ViewParent parentView = getParent();
+            if (parentView instanceof android.view.View && getVisibility() != View.VISIBLE) {
+                ((android.view.View) parentView).draw(canvas);
+            } else {
+                draw(canvas);
+            }
             return bitmap;
         } catch (Exception e) {
             return null;
