@@ -8,7 +8,6 @@
 
 package com.petal.browser.compose.downloads
 
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -26,14 +25,10 @@ class PetalDownloadService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP_SERVICE) {
-            stopForegroundAndSelf()
-            return START_NOT_STICKY
-        }
-
         val downloadId = intent?.getLongExtra(EXTRA_DOWNLOAD_ID, -1L) ?: -1L
         val fileName = intent?.getStringExtra(EXTRA_FILE_NAME) ?: "File"
 
+        // 1. Synchronously create notification channel and build valid initial notification
         LiveUpdateNotificationManager.ensureChannelCreated(applicationContext)
 
         val initialNotif = LiveUpdateNotificationManager.buildLiveNotification(
@@ -50,6 +45,7 @@ class PetalDownloadService : Service() {
             null
         )
 
+        // 2. VERY FIRST synchronous call: startForeground() on main thread within 5s window
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
@@ -64,8 +60,19 @@ class PetalDownloadService : Service() {
             Log.e(TAG, "Failed to startForeground: ${e.message}")
         }
 
+        if (intent?.action == ACTION_STOP_SERVICE) {
+            stopForegroundAndSelf()
+            return START_NOT_STICKY
+        }
+
+        // 3. Perform download tracking without re-triggering startForegroundService loop (startService = false)
         if (downloadId > 0L) {
-            PetalLiveAlertManager.trackDownload(applicationContext, downloadId, fileName)
+            PetalLiveAlertManager.trackDownload(
+                context = applicationContext,
+                downloadId = downloadId,
+                fileName = fileName,
+                startService = false
+            )
         }
 
         return START_STICKY

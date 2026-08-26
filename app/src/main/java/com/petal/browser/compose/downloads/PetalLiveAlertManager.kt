@@ -25,23 +25,32 @@ object PetalLiveAlertManager {
     private val trackingJobs = ConcurrentHashMap<Long, Job>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    @JvmOverloads
     @JvmStatic
-    fun trackDownload(context: Context, downloadId: Long, fileName: String) {
+    fun trackDownload(context: Context, downloadId: Long, fileName: String, startService: Boolean = true) {
         if (downloadId <= 0L) return
         val appContext = context.applicationContext
 
         ensureNotificationChannel(appContext)
         PetalFetchDownloadBridge.ensureInitialized(appContext)
 
-        // Ensure background Foreground Service is active so downloads continue when app is minimized/closed
-        try {
-            PetalDownloadService.start(appContext, downloadId, fileName)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start PetalDownloadService: ${e.message}")
+        // Only start service if requested and not already tracking actively
+        if (startService) {
+            val existing = trackingJobs[downloadId]
+            if (existing == null || !existing.isActive) {
+                try {
+                    PetalDownloadService.start(appContext, downloadId, fileName)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to start PetalDownloadService: ${e.message}")
+                }
+            }
         }
 
-        // Cancel existing job if re-tracking
-        trackingJobs[downloadId]?.cancel()
+        // Avoid re-launching tracking job if it's already active for the same download
+        val existingJob = trackingJobs[downloadId]
+        if (existingJob != null && existingJob.isActive) {
+            return
+        }
 
         val job = scope.launch {
             while (isActive) {

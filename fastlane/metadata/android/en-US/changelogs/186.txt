@@ -1,0 +1,3 @@
+* **Foreground Service Crash Fix**: Made `startForeground()` the very first synchronous call in `PetalDownloadService.onStartCommand()`, immediately after ensuring notification channel and building initial live notification.
+* **Android 14+ DataSync Compliance**: Passed `ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC` matching `android:foregroundServiceType="dataSync"` manifest declaration on API 29+ (Q+).
+* **Race Condition Prevention**: Updated `PetalLiveAlertManager.trackDownload()` with re-entrancy protection and `startService` parameter to prevent rapid duplicate service starts.
