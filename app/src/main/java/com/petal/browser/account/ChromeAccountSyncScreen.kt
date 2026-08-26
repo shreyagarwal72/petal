@@ -851,6 +851,8 @@ private fun RenderUserProfileContent(
             }
         }
     }
+    }
+    }
 }
 
 @Composable
