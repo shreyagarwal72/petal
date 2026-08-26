@@ -2427,6 +2427,8 @@ fun PetalSettingsScreen(
             }
         )
     }
+}
+
 
     PetalExpressiveTheme(
         darkTheme = isDarkTheme,
@@ -2483,6 +2485,8 @@ fun PetalSettingsScreen(
         }
     }
 }
+
+
 
 
 
