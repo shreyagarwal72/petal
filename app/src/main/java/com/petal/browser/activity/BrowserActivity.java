@@ -1944,13 +1944,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 isLoading,
                 canGoBack,
                 () -> {
-                    if (ninjaWebView != null && ninjaWebView.canGoBack()) {
-                        ninjaWebView.goBack();
-                    } else if (ninjaWebView != null) {
-                        ninjaWebView.loadUrl("about:blank");
-                        ninjaWebView.clearHistory();
-                        showAlbum(currentAlbumController, "about:blank");
-                    }
+                    performBackNavigation();
                 },
                 () -> {
                     String shareUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
