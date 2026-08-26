@@ -198,7 +198,6 @@ fun PetalExpressiveTheme(
         }
     }
 
-    val context = LocalContext.current
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val hapticFeedback = androidx.compose.runtime.remember(context) { PetalHapticFeedback(context) }
     val hapticsEnabled = androidx.compose.runtime.remember(sp) { sp.getBoolean("sp_touch_haptics", true) }
