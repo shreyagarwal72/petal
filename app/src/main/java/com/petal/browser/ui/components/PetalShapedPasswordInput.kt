@@ -177,8 +177,28 @@ fun PetalShapedPasswordInput(
                                 getStableShapeIndex(ch, index)
                             }
                             val characterShape: Shape = ExpressivePasswordShapes[shapeIndex].toShape()
+
+                            val scaleAnim = androidx.compose.animation.core.rememberTransition(targetState = index).let {
+                                val anim = remember { androidx.compose.animation.core.Animatable(0f) }
+                                LaunchedEffect(index) {
+                                    anim.animateTo(
+                                        targetValue = 1f,
+                                        animationSpec = androidx.compose.animation.core.spring(
+                                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                        )
+                                    )
+                                }
+                                anim.value
+                            }
+
                             Canvas(
-                                modifier = Modifier.size(shapeSize)
+                                modifier = Modifier
+                                    .size(shapeSize)
+                                    .graphicsLayer {
+                                        scaleX = scaleAnim
+                                        scaleY = scaleAnim
+                                    }
                             ) {
                                 val outline = characterShape.createOutline(size, layoutDirection, density)
                                 val path = when (outline) {
