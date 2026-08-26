@@ -1,0 +1,3 @@
+* **120fps Draw-Phase Predictive Back Smoothness**: Completely eliminated recomposition stutter and frame drops by executing scale, corner radius, alpha, edge translation, and dim level property evaluations purely within the Draw-phase `graphicsLayer` pipeline.
+* **Static Underlay Blur Buffer Optimization**: Fixed frame-by-frame RenderNode re-allocation lag by converting underlay blur to a static background filter and using hardware-accelerated dim alpha scaling during live swipe gestures.
+* **Inline Gesture Animation Completion**: Synchronized gesture commit (120ms) and cancellation (180ms) easing animations directly within frame clock ticks to eliminate visual hitches when lifting the finger.
