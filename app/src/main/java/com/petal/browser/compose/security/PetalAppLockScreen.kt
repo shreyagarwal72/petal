@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Shape
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressivePasswordShapes
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
