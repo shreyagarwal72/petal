@@ -214,24 +214,8 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     public void resetGestureExclusionRects() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
-                int width = getWidth();
-                int height = getHeight();
-                if (width <= 0 || height <= 0) {
-                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
-                    return;
-                }
-                int marginPx = (int) (24 * getResources().getDisplayMetrics().density);
-                if (width > marginPx * 2) {
-                    Rect centerExclusion = new Rect(marginPx, 0, width - marginPx, height);
-                    setSystemGestureExclusionRects(java.util.Collections.singletonList(centerExclusion));
-                } else {
-                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
-                }
-            } catch (Exception e) {
-                try {
-                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
-                } catch (Exception ignored) {}
-            }
+                setSystemGestureExclusionRects(java.util.Collections.emptyList());
+            } catch (Exception ignored) {}
         }
     }
 

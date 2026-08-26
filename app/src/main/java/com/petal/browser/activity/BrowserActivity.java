@@ -705,7 +705,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (fullscreenHolder != null || customView != null || videoView != null) {
-            Log.v(TAG, "Petal in fullscreen mode");
+            onHideCustomView();
         } else if (dialogOverview != null && dialogOverview.isShowing()) {
             hideOverview();
         } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
@@ -718,7 +718,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else {
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
             if (currentUrl != null && !isHomePage(currentUrl)) {
-                ninjaWebView.loadUrl("about:blank");
+                if (ninjaWebView != null) {
+                    ninjaWebView.loadUrl("about:blank");
+                    ninjaWebView.clearHistory();
+                }
                 showAlbum(currentAlbumController, "about:blank");
             } else {
                 boolean requireDoubleBack = sp.getBoolean("sp_double_back_exit", true);
@@ -845,18 +848,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         runOnUiThread(() -> {
             if (webView != ninjaWebView) return;
 
-            // If this WebView is already the one attached and visible (i.e. we're just
-            // navigating within the currently-shown tab, not switching tabs or coming
-            // from the home screen), do NOT tear down and rebuild the content view.
-            // Removing/re-adding the WebView to contentFrame while it is mid-navigation
-            // kills its rendering surface, which causes pages to hang on a blank
-            // screen with the loading spinner never resolving.
+            boolean isHome = isHomePage(url);
             boolean alreadyAttached = currentAlbumController == webView
                     && contentFrame != null
                     && contentFrame.getChildCount() == 1
                     && contentFrame.getChildAt(0) == webView;
 
-            if (alreadyAttached) {
+            if (alreadyAttached && !isHome) {
                 updateAddressBar();
                 updatePersistentBottomNav();
             } else {
@@ -1947,6 +1945,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         ninjaWebView.goBack();
                     } else if (ninjaWebView != null) {
                         ninjaWebView.loadUrl("about:blank");
+                        ninjaWebView.clearHistory();
                         showAlbum(currentAlbumController, "about:blank");
                     }
                 },
