@@ -4401,27 +4401,27 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
                         @Override
                         public void onOpenInNewTab() {
-                            addAlbum(getString(R.string.app_name), imageURL, false);
+                            addAlbum(HelperUnit.domain(imageURL), imageURL, false);
                         }
 
                         @Override
                         public void onOpenInNewTabInGroup() {
-                            addAlbum(getString(R.string.app_name), imageURL, false);
+                            addAlbum(HelperUnit.domain(imageURL), imageURL, false);
                         }
 
                         @Override
                         public void onOpenInIncognitoTab() {
-                            addAlbum(getString(R.string.app_name), imageURL, false);
+                            addAlbum(HelperUnit.domain(imageURL), imageURL, false, true);
                         }
 
                         @Override
                         public void onOpenInNewWindow() {
-                            addAlbum(getString(R.string.app_name), imageURL, true);
+                            addAlbum(HelperUnit.domain(imageURL), imageURL, true);
                         }
 
                         @Override
                         public void onPreviewPage() {
-                            addAlbum(getString(R.string.app_name), imageURL, true);
+                            addAlbum(HelperUnit.domain(imageURL), imageURL, true);
                         }
 
                         @Override
@@ -4506,22 +4506,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
                         @Override
                         public void onOpenInNewTab() {
-                            addAlbum(getString(R.string.app_name), urlResult, false);
+                            addAlbum(HelperUnit.domain(urlResult), urlResult, false);
                         }
 
                         @Override
                         public void onOpenInNewTabInGroup() {
-                            addAlbum(getString(R.string.app_name), urlResult, false);
+                            addAlbum(HelperUnit.domain(urlResult), urlResult, false);
                         }
 
                         @Override
                         public void onOpenInIncognitoTab() {
-                            addAlbum(getString(R.string.app_name), urlResult, false);
+                            addAlbum(HelperUnit.domain(urlResult), urlResult, false, true);
                         }
 
                         @Override
                         public void onOpenInNewWindow() {
-                            addAlbum(getString(R.string.app_name), urlResult, true);
+                            addAlbum(HelperUnit.domain(urlResult), urlResult, true);
                         }
 
                         @Override

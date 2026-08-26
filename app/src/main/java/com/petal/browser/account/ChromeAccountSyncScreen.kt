@@ -827,42 +827,38 @@ private fun RenderUserProfileContent(
                     )
                 }
             }
-        }
-    }
 
-        // Edit User Name Dialog
-        if (showEditNameDialog) {
-            AlertDialog(
-                onDismissRequest = { showEditNameDialog = false },
-                title = { Text("Edit User Name") },
-                text = {
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { if (it.length <= 15) nameInput = it },
-                        label = { Text("User Name (max 15 chars)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
-                confirmButton = {
-                    Button(onClick = {
-                        GoogleAccountManager.updateDisplayName(context, nameInput)
-                        showEditNameDialog = false
-                    }) {
-                        Text("Save")
+            // Edit User Name Dialog
+            if (showEditNameDialog) {
+                AlertDialog(
+                    onDismissRequest = { showEditNameDialog = false },
+                    title = { Text("Edit User Name") },
+                    text = {
+                        OutlinedTextField(
+                            value = nameInput,
+                            onValueChange = { if (it.length <= 15) nameInput = it },
+                            label = { Text("User Name (max 15 chars)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    confirmButton = {
+                        Button(onClick = {
+                            GoogleAccountManager.updateDisplayName(context, nameInput)
+                            showEditNameDialog = false
+                        }) {
+                            Text("Save")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showEditNameDialog = false }) {
+                            Text("Cancel")
+                        }
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showEditNameDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
+                )
+            }
         }
     }
-}
-}
-}
 }
 
 @Composable

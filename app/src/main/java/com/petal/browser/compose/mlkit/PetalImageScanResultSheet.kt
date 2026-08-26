@@ -62,6 +62,7 @@ object PetalImageScannerManager {
         onResult: (detectedText: String?, detectedBarcodes: List<BarcodeResult>?, error: String?) -> Unit
     ) {
         Thread {
+            val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
             try {
                 val bitmap: Bitmap? = if (imageUrl.startsWith("data:image")) {
                     val base64Data = imageUrl.substringAfter(",")
@@ -80,13 +81,15 @@ object PetalImageScannerManager {
                 }
 
                 if (bitmap == null) {
-                    onResult(null, null, "Failed to decode image bitmap.")
+                    mainHandler.post { onResult(null, null, "Failed to decode image bitmap.") }
                     return@Thread
                 }
 
-                scanBitmap(bitmap, onResult)
+                scanBitmap(bitmap) { text, barcodes, err ->
+                    mainHandler.post { onResult(text, barcodes, err) }
+                }
             } catch (e: Exception) {
-                onResult(null, null, e.localizedMessage ?: "Failed to load or process image.")
+                mainHandler.post { onResult(null, null, e.localizedMessage ?: "Failed to load or process image.") }
             }
         }.start()
     }
