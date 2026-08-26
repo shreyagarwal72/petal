@@ -139,6 +139,7 @@ val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
 fun PetalPredictiveBackSurface(
     enabled: Boolean = true,
     onBack: () -> Unit,
+    underlayContent: (@Composable () -> Unit)? = { com.petal.browser.compose.home.PetalHomeScreen() },
     content: @Composable () -> Unit,
 ) {
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
@@ -147,7 +148,6 @@ fun PetalPredictiveBackSurface(
 
     val isFullyEnabled = enabled && junctionPredictiveEnabled && !isUnderlayPreview
 
-    val scope = rememberCoroutineScope()
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
     val progressAnim = remember { Animatable(0f) }
 
@@ -163,23 +163,24 @@ fun PetalPredictiveBackSurface(
                     )
                 }
                 // Gesture committed — smoothly animate remaining progress to 1f before firing back
-                scope.launch {
-                    progressAnim.animateTo(1f, animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)) {
-                        backState = backState.copy(isActive = true, progress = value)
-                    }
-                    backState = backState.copy(isActive = true, progress = 1f)
-                    onBack()
-                    delay(150L)
-                    backState = PredictiveBackState.Idle
+                progressAnim.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing)
+                ) {
+                    backState = backState.copy(isActive = true, progress = value)
                 }
+                backState = backState.copy(isActive = true, progress = 1f)
+                onBack()
+                backState = PredictiveBackState.Idle
             } catch (e: CancellationException) {
                 // Gesture cancelled — smoothly relax progress back to 0f
-                scope.launch {
-                    progressAnim.animateTo(0f, animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)) {
-                        backState = backState.copy(isActive = true, progress = value)
-                    }
-                    backState = PredictiveBackState.Idle
+                progressAnim.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                ) {
+                    backState = backState.copy(isActive = true, progress = value)
                 }
+                backState = PredictiveBackState.Idle
                 throw e
             }
         }
@@ -190,7 +191,18 @@ fun PetalPredictiveBackSurface(
         LocalPetalDepthBlurJunctionState provides junctionBlurEnabled,
         LocalPredictiveBackState provides backState
     ) {
-        content()
+        if (underlayContent != null && !isUnderlayPreview) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (backState.isActive) {
+                    PetalScreenWrapper(isBehind = true) {
+                        underlayContent()
+                    }
+                }
+                content()
+            }
+        } else {
+            content()
+        }
     }
 }
 
@@ -291,7 +303,7 @@ fun PetalScreenWrapper(
             modifier = modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    compositingStrategy = if (predictiveEnabled) {
+                    compositingStrategy = if (predictiveEnabled && predictiveBack.isActive) {
                         CompositingStrategy.Offscreen
                     } else {
                         CompositingStrategy.Auto

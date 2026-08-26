@@ -215,9 +215,9 @@ fun PetalUserProfileScreen(
         },
     ) {
         if (showAppLockConfigPage) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                // 1. Underlay Screen (User Profile) - Blurred 28dp & Dimmed behind App Lock Config
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
+            com.petal.browser.compose.security.PetalAppLockConfigScreen(
+                onBack = { showAppLockConfigPage = false },
+                underlayContent = {
                     RenderUserProfileContent(
                         profile = profile,
                         isLoading = isLoading,
@@ -231,14 +231,7 @@ fun PetalUserProfileScreen(
                         modifier = modifier
                     )
                 }
-
-                // 2. Foreground Screen (App Lock Config Page) - Shrinks to 88% card & 32dp corners
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
-                    com.petal.browser.compose.security.PetalAppLockConfigScreen(
-                        onBack = { showAppLockConfigPage = false }
-                    )
-                }
-            }
+            )
         } else {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Underlay Screen (Home Screen Preview) - Rendered behind User & Account during back gesture

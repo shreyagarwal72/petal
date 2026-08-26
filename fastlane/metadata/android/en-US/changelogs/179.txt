@@ -1,0 +1,3 @@
+* **Dynamic Real Underlay Page Previews**: Fixed predictive back gestures to dynamically render the real previous screen (such as main Settings overview, caller profile screen, or Home page) as the underlay preview instead of hardcoded screen defaults.
+* **Frame Smoothness & End-of-Gesture Animation**: Resolved end-of-gesture frame drops and stutters by synchronizing commit/cancellation animations inline within frame ticks and optimizing offscreen compositing strategy strictly during active gestures.
+* **Layout Brace & Scope Audit**: Audited and balanced Compose layout nesting structures across `PetalPredictiveJunction.kt`, `PetalSettingsScreen.kt`, `PetalAppLockConfigScreen.kt`, and `ChromeAccountSyncScreen.kt`.

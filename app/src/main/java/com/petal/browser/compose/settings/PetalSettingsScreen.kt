@@ -2442,48 +2442,35 @@ fun PetalSettingsScreen(
         val isCategoryDrilled = currentCategory != SettingsCategory.OVERVIEW && searchQuery.isBlank()
         val activeCategory = currentCategory
 
-        com.petal.browser.predictive.PetalPredictiveBackSurface(
-            enabled = true,
-            onBack = {
-                if (isCategoryDrilled) {
-                    currentCategory = SettingsCategory.OVERVIEW
-                } else {
-                    onBackPress()
+        if (isCategoryDrilled) {
+            com.petal.browser.predictive.PetalPredictiveBackSurface(
+                enabled = true,
+                onBack = { currentCategory = SettingsCategory.OVERVIEW },
+                underlayContent = {
+                    RenderCategoryPage(
+                        scaffoldCategory = SettingsCategory.OVERVIEW,
+                        onHeaderBack = onBackPress
+                    )
                 }
-            },
-        ) {
-            if (isCategoryDrilled) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // 1. Underlay Screen (Overview List) - Blurred 28dp & Dimmed
-                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
-                        RenderCategoryPage(
-                            scaffoldCategory = SettingsCategory.OVERVIEW,
-                            onHeaderBack = onBackPress
-                        )
-                    }
-
-                    // 2. Foreground Screen (Active Category Page) - Shrinks to 90% card & 32dp corners
-                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
-                        RenderCategoryPage(
-                            scaffoldCategory = activeCategory,
-                            onHeaderBack = { currentCategory = SettingsCategory.OVERVIEW }
-                        )
-                    }
+            ) {
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                    RenderCategoryPage(
+                        scaffoldCategory = activeCategory,
+                        onHeaderBack = { currentCategory = SettingsCategory.OVERVIEW }
+                    )
                 }
-            } else {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // 1. Underlay Screen (Home Screen Preview) - Rendered behind main Settings Overview during back gesture
-                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
-                        com.petal.browser.compose.home.PetalHomeScreen()
-                    }
-
-                    // 2. Foreground Screen (Settings Overview List) - Shrinks to 88% card & 32dp corners
-                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
-                        RenderCategoryPage(
-                            scaffoldCategory = SettingsCategory.OVERVIEW,
-                            onHeaderBack = onBackPress
-                        )
-                    }
+            }
+        } else {
+            com.petal.browser.predictive.PetalPredictiveBackSurface(
+                enabled = true,
+                onBack = onBackPress,
+                underlayContent = { com.petal.browser.compose.home.PetalHomeScreen() }
+            ) {
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                    RenderCategoryPage(
+                        scaffoldCategory = SettingsCategory.OVERVIEW,
+                        onHeaderBack = onBackPress
+                    )
                 }
             }
         }

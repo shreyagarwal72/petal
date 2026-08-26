@@ -47,7 +47,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalAppLockConfigScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    underlayContent: (@Composable () -> Unit)? = null
 ) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -73,16 +74,10 @@ fun PetalAppLockConfigScreen(
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
-        onBack = onBack
+        onBack = onBack,
+        underlayContent = underlayContent
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // 1. Underlay Screen (User & Account Profile Preview) - Rendered behind App Lock Config during back gesture
-            com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
-                com.petal.browser.account.PetalUserProfileScreen(onBack = {}, onOpenOAuth = {})
-            }
-
-            // 2. Foreground Screen (App Lock Config Page) - Shrinks to 88% card & 32dp corners
-            com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+        com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
             Scaffold(
                 topBar = {
                     ExpressiveHeader(
@@ -392,6 +387,5 @@ fun PetalAppLockConfigScreen(
                 }
             }
         }
-    }
     }
 }
