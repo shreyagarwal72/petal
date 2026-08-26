@@ -199,9 +199,12 @@ fun PetalExpressiveTheme(
     }
 
     val hapticFeedback = androidx.compose.runtime.remember(context) { PetalHapticFeedback(context) }
+    val hapticsEnabled = androidx.compose.runtime.remember(sp) { sp.getBoolean("sp_touch_haptics", true) }
 
     CompositionLocalProvider(
         LocalPetalBlurEffectEnabled provides blurEffectEnabled,
+        com.petal.browser.haptics.LocalHapticEnabled provides hapticsEnabled,
+        com.petal.browser.haptics.LocalVibrationIntensity provides com.petal.browser.haptics.VibrationIntensity.LIGHT,
         androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback
     ) {
         MaterialTheme(
