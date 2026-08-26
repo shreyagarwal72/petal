@@ -153,6 +153,20 @@ fun PetalPredictiveBackSurface(
 
     if (isFullyEnabled) {
         PredictiveBackHandler(enabled = true) { progressFlow ->
+            val canWebGoBack = try {
+                com.petal.browser.activity.BrowserActivity.canNinjaGoBack()
+            } catch (_: Exception) {
+                false
+            }
+            if (canWebGoBack) {
+                try {
+                    (context as? com.petal.browser.activity.BrowserActivity)?.handleBackPress()
+                } catch (_: Exception) {
+                    (context as? androidx.activity.ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
+                }
+                return@PredictiveBackHandler
+            }
+
             try {
                 progressFlow.collect { backEvent ->
                     progressAnim.snapTo(backEvent.progress)

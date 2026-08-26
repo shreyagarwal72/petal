@@ -266,6 +266,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public static Context getAppContext() {
         return context;
     }
+
+    public static NinjaWebView getNinjaWebView() {
+        return ninjaWebView;
+    }
+
+    public static boolean canNinjaGoBack() {
+        return ninjaWebView != null && ninjaWebView.canGoBack();
+    }
+
+    public void handleBackPress() {
+        runOnUiThread(this::performBackNavigation);
+    }
     private AlertDialog dialogOverview;
 
     private AlertDialog dialog_overflow;
