@@ -30,7 +30,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.components.ExpressivePasswordShapes
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
@@ -102,7 +104,7 @@ fun PetalAppLockScreen(
             ) {
                 // Header Lock Avatar with Monogram Morphing Shape Animation
                 val animatedShapeIndex by remember { mutableIntStateOf(0) }
-                val headerShape = ExpressivePasswordShapes[animatedShapeIndex % ExpressivePasswordShapes.size].toShape()
+                val headerShape: Shape = ExpressivePasswordShapes[animatedShapeIndex % ExpressivePasswordShapes.size].toShape()
                 val avatarScale = remember { androidx.compose.animation.core.Animatable(0.8f) }
                 LaunchedEffect(isUnlockedSuccess) {
                     avatarScale.animateTo(
