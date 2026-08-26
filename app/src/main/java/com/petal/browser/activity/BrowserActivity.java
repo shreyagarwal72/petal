@@ -670,7 +670,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 notificationManager.cancel(1);
             }
             BrowserContainer.clear();
-            if (sp != null && sp.getBoolean("sp_clear_quit", false)) {
+            if (sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
                 BrowserUnit.clearBrowserData(this);
             }
             if (sp != null && sp.getBoolean("sp_backup_quit", false)) {
