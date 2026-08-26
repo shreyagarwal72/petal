@@ -85,6 +85,11 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name="com.petal.browser.compose.downloads.PetalDownloadService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
         <activity
             android:name="com.petal.browser.activity.BrowserActivity"
             android:theme="@style/Theme.Petal.Splash"
