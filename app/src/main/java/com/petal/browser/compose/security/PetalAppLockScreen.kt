@@ -100,19 +100,36 @@ fun PetalAppLockScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Header Lock Avatar
+                // Header Lock Avatar with Monogram Morphing Shape Animation
+                val animatedShapeIndex by remember { mutableIntStateOf(0) }
+                val headerShape = ExpressivePasswordShapes[animatedShapeIndex % ExpressivePasswordShapes.size].toShape()
+                val avatarScale = remember { androidx.compose.animation.core.Animatable(0.8f) }
+                LaunchedEffect(isUnlockedSuccess) {
+                    avatarScale.animateTo(
+                        1f,
+                        animationSpec = androidx.compose.animation.core.spring(
+                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                        )
+                    )
+                }
+
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(84.dp)
-                        .clip(CircleShape)
+                        .size(88.dp)
+                        .graphicsLayer {
+                            scaleX = avatarScale.value
+                            scaleY = avatarScale.value
+                        }
+                        .clip(headerShape)
                         .background(MaterialTheme.colorScheme.primaryContainer)
                 ) {
                     Icon(
                         imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(42.dp)
+                        modifier = Modifier.size(44.dp)
                     )
                 }
 
