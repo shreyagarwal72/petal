@@ -203,6 +203,14 @@ fun PetalUserProfileScreen(
 
     var showEditNameDialog by remember { mutableStateOf(false) }
     var nameInput by remember { mutableStateOf(profile.displayName) }
+    var showAppLockConfigPage by remember { mutableStateOf(false) }
+
+    if (showAppLockConfigPage) {
+        com.petal.browser.compose.security.PetalAppLockConfigScreen(
+            onBack = { showAppLockConfigPage = false }
+        )
+        return
+    }
 
     var isLoading by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
@@ -483,76 +491,22 @@ fun PetalUserProfileScreen(
 
                     Spacer(Modifier.height(14.dp))
 
-                    // Biometric Lock Preference
-                    var isBiometricEnabled by remember { mutableStateOf(sp.getBoolean("sp_biometric_lock", false)) }
+                    // Dedicated App & Profile Lock Config Navigation Row (No direct toggle, opens page)
+                    val isLockActive = sp.getBoolean("sp_app_lock_enabled", false)
                     AccountActionRow(
                         title = "App & Profile Lock",
-                        subtitle = "Require biometric / device lock when launching Petal Browser",
+                        subtitle = if (isLockActive) "Protection active • Fingerprint or Password" else "Require authentication on app startup",
                         icon = Icons.Rounded.Lock,
                         trailing = {
-                            IconSwitch(
-                                checked = isBiometricEnabled,
-                                icon = Icons.Rounded.Lock,
-                                onCheckedChange = { checked ->
-                                    val activity = context as? androidx.appcompat.app.AppCompatActivity
-                                    if (checked && activity != null) {
-                                        com.petal.browser.security.BiometricLockManager.authenticate(
-                                            activity,
-                                            "Enable Biometric App Lock",
-                                            "Verify your fingerprint or PIN to enable lock",
-                                            Runnable {
-                                                isBiometricEnabled = true
-                                                sp.edit().putBoolean("sp_biometric_lock", true).apply()
-                                                coroutineScope.launch {
-                                                    snackbarHostState.showSnackbar("Biometric App Lock enabled & verified")
-                                                }
-                                            },
-                                            java.util.function.Consumer { error ->
-                                                isBiometricEnabled = false
-                                                sp.edit().putBoolean("sp_biometric_lock", false).apply()
-                                                coroutineScope.launch {
-                                                    snackbarHostState.showSnackbar("Biometric setup failed: $error")
-                                                }
-                                            }
-                                        )
-                                    } else {
-                                        isBiometricEnabled = false
-                                        sp.edit().putBoolean("sp_biometric_lock", false).apply()
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar("Biometric App Lock disabled")
-                                        }
-                                    }
-                                }
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowForward,
+                                contentDescription = "Configure Lock",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
                         },
                         onClick = {
-                            val activity = context as? androidx.appcompat.app.AppCompatActivity
-                            val newChecked = !isBiometricEnabled
-                            if (newChecked && activity != null) {
-                                com.petal.browser.security.BiometricLockManager.authenticate(
-                                    activity,
-                                    "Enable Biometric App Lock",
-                                    "Verify your fingerprint or PIN to enable lock",
-                                    Runnable {
-                                        isBiometricEnabled = true
-                                        sp.edit().putBoolean("sp_biometric_lock", true).apply()
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar("Biometric App Lock enabled & verified")
-                                        }
-                                    },
-                                    java.util.function.Consumer { error ->
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar("Biometric setup failed: $error")
-                                        }
-                                    }
-                                )
-                            } else {
-                                isBiometricEnabled = false
-                                sp.edit().putBoolean("sp_biometric_lock", false).apply()
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Biometric App Lock disabled")
-                                }
-                            }
+                            showAppLockConfigPage = true
                         }
                     )
 
