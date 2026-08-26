@@ -31,9 +31,13 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -216,7 +220,11 @@ fun PetalOmniboxPage(
         )
     }
 
-    // Fetch local search/browsing history from SQLite database
+    // Fetch local search/browsing history from SQLite database. Only page TITLES are
+    // used as suggestion text - raw URLs are deliberately left out so every row in the
+    // suggestions list reads like a normal search query (Chrome/Google-style), never a
+    // pasted-looking link. Clicking a title-based suggestion still just re-searches for
+    // that text via onQuerySubmitted, same as any other suggestion.
     val localHistoryList = remember {
         val list = mutableListOf<String>()
         try {
@@ -226,9 +234,6 @@ fun PetalOmniboxPage(
             action.close()
             records.forEach { r ->
                 if (!r.title.isNullOrBlank()) list.add(r.title)
-                if (!r.url.isNullOrBlank() && !r.url.startsWith("about:") && !r.url.startsWith("petal://")) {
-                    list.add(r.url)
-                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -734,6 +739,15 @@ fun PetalOmniboxPage(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    // Smoothly grows/shrinks as the suggestion count changes
+                                    // on every keystroke, instead of the list snapping to a
+                                    // new height.
+                                    .animateContentSize(
+                                        animationSpec = spring(
+                                            dampingRatio = Spring.DampingRatioNoBouncy,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
+                                    )
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -767,6 +781,18 @@ fun PetalOmniboxPage(
                                                 color = Color.Transparent,
                                                 modifier = Modifier
                                                     .fillMaxWidth()
+                                                    // Rows fade in/out and slide smoothly into their
+                                                    // new position as `suggestions` is replaced on
+                                                    // every keystroke, instead of the list just
+                                                    // popping to its new contents.
+                                                    .animateItem(
+                                                        fadeInSpec = tween(220),
+                                                        fadeOutSpec = tween(150),
+                                                        placementSpec = spring(
+                                                            dampingRatio = Spring.DampingRatioNoBouncy,
+                                                            stiffness = Spring.StiffnessMediumLow
+                                                        )
+                                                    )
                                                     .clip(RoundedCornerShape(16.dp))
                                                     .clickable {
                                                         val trimmed = item.query.trim()
