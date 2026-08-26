@@ -249,7 +249,7 @@ fun PetalDeleteScreen(
                             DeleteOptionItem(
                                 title = context.getString(R.string.clear_title_cache),
                                 subtitle = "Frees up space by clearing cached images and files",
-                                icon = Icons.Rounded.Refresh,
+                                icon = Icons.Rounded.Storage,
                                 checked = clearCache,
                                 onCheckedChange = {
                                     clearCache = it
@@ -260,7 +260,7 @@ fun PetalDeleteScreen(
                             DeleteOptionItem(
                                 title = context.getString(R.string.setting_title_dom),
                                 subtitle = "Local website data and offline storage",
-                                icon = Icons.Rounded.Storage,
+                                icon = Icons.Rounded.FolderZip,
                                 checked = clearIndexedDB,
                                 onCheckedChange = {
                                     clearIndexedDB = it
@@ -282,7 +282,7 @@ fun PetalDeleteScreen(
                             DeleteOptionItem(
                                 title = context.getString(R.string.title_appDatabase),
                                 subtitle = context.getString(R.string.setting_backup_sumDatabase),
-                                icon = Icons.Rounded.Storage,
+                                icon = Icons.Rounded.Backup,
                                 checked = clearDatabase,
                                 onCheckedChange = {
                                     clearDatabase = it
@@ -304,7 +304,7 @@ fun PetalDeleteScreen(
                             DeleteOptionItem(
                                 title = context.getString(R.string.clear_title_quit),
                                 subtitle = "Automatically clear selected data when exiting Petal",
-                                icon = Icons.Rounded.Warning,
+                                icon = Icons.Rounded.ExitToApp,
                                 checked = clearQuit,
                                 onCheckedChange = {
                                     clearQuit = it
