@@ -44,7 +44,14 @@ import com.petal.browser.ui.components.PetalAboutDeveloperBridge
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
-import com.petal.browser.ui.theme.isDynamicColorSupported
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
 import kotlinx.coroutines.launch
 
 @Composable
@@ -277,10 +284,16 @@ private fun RenderUserProfileContent(
     val coroutineScope = rememberCoroutineScope()
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
+    var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
+    var showCropDialog by remember { mutableStateOf(false) }
+
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { GoogleAccountManager.updateAvatarGalleryUri(context, it.toString()) }
+        uri?.let {
+            pendingCropUri = it
+            showCropDialog = true
+        }
     }
 
     var showEditNameDialog by remember { mutableStateOf(false) }
@@ -329,7 +342,28 @@ private fun RenderUserProfileContent(
                     modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    ProfileAvatarDisplay(profile = profile, sizeDp = 84)
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        ProfileAvatarDisplay(profile = profile, sizeDp = 84)
+                        if (profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    pendingCropUri = Uri.parse(profile.customAvatarUri)
+                                    showCropDialog = true
+                                },
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Crop,
+                                    contentDescription = "Crop Profile Picture",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(Modifier.height(12.dp))
 
@@ -380,7 +414,7 @@ private fun RenderUserProfileContent(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Gallery Button
+                        // Gallery / Crop Button
                         Surface(
                             onClick = { galleryLauncher.launch("image/*") },
                             shape = CircleShape,
@@ -390,7 +424,7 @@ private fun RenderUserProfileContent(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Rounded.AddPhotoAlternate,
-                                    contentDescription = "Select from Gallery",
+                                    contentDescription = "Select from Gallery & Crop",
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.size(24.dp)
                                 )
@@ -550,22 +584,7 @@ private fun RenderUserProfileContent(
                         }
                     )
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    )
 
-                    // Google Passkey & WebAuthn Management
-                    AccountActionRow(
-                        title = "Google Passkey & Credential Vault",
-                        subtitle = "Hardware-bound passwordless authentication & FIDO2 passkeys",
-                        icon = Icons.Rounded.Key,
-                        onClick = {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Google Passkey vault synced with Android Credential Manager")
-                            }
-                        }
-                    )
 
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 4.dp),
@@ -854,6 +873,21 @@ private fun RenderUserProfileContent(
                     }
                 )
             }
+
+            // Profile Picture Crop Dialog
+            if (showCropDialog && pendingCropUri != null) {
+                ProfilePictureCropDialog(
+                    sourceUri = pendingCropUri!!,
+                    onDismiss = { showCropDialog = false },
+                    onCropSuccess = { croppedUriString ->
+                        GoogleAccountManager.updateAvatarGalleryUri(context, croppedUriString)
+                        showCropDialog = false
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Profile picture cropped and updated!")
+                        }
+                    }
+                )
+            }
         }
     }
     }
@@ -969,5 +1003,175 @@ object PetalAccountSyncBridge {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ProfilePictureCropDialog(
+    sourceUri: Uri,
+    onDismiss: () -> Unit,
+    onCropSuccess: (String) -> Unit
+) {
+    val context = LocalContext.current
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+    var rotation by remember { mutableFloatStateOf(0f) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Crop Profile Picture",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Pinch to zoom or drag to align inside circular crop frame:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Interactive Crop Viewport
+                Box(
+                    modifier = Modifier
+                        .size(200.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black)
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                scale = (scale * zoom).coerceIn(1f, 4f)
+                                offsetX += pan.x
+                                offsetY += pan.y
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = sourceUri,
+                        contentDescription = "Crop Target",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                                translationX = offsetX
+                                translationY = offsetY
+                                rotationZ = rotation
+                            },
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                // Zoom Slider & Rotation Controls
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Zoom", style = MaterialTheme.typography.labelMedium)
+                        Text("${(scale * 100).toInt()}%", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                    }
+                    Slider(
+                        value = scale,
+                        onValueChange = { scale = it },
+                        valueRange = 1f..4f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        IconButton(onClick = { rotation = (rotation + 90f) % 360f }) {
+                            Icon(Icons.Rounded.RotateRight, contentDescription = "Rotate 90°")
+                        }
+                        IconButton(onClick = {
+                            scale = 1f
+                            offsetX = 0f
+                            offsetY = 0f
+                            rotation = 0f
+                        }) {
+                            Icon(Icons.Rounded.RestartAlt, contentDescription = "Reset Crop")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val croppedUri = cropAndSaveAvatarBitmap(
+                        context = context,
+                        sourceUri = sourceUri,
+                        scale = scale,
+                        offsetX = offsetX,
+                        offsetY = offsetY,
+                        rotation = rotation
+                    )
+                    if (croppedUri != null) {
+                        onCropSuccess(croppedUri)
+                    }
+                }
+            ) {
+                Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Apply Crop")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+private fun cropAndSaveAvatarBitmap(
+    context: Context,
+    sourceUri: Uri,
+    scale: Float,
+    offsetX: Float,
+    offsetY: Float,
+    rotation: Float
+): String? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(sourceUri) ?: return null
+        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+        inputStream.close()
+        if (originalBitmap == null) return null
+
+        val size = 512
+        val croppedBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(croppedBitmap)
+
+        val matrix = Matrix()
+        val srcWidth = originalBitmap.width.toFloat()
+        val srcHeight = originalBitmap.height.toFloat()
+        val baseScale = Math.max(size / srcWidth, size / srcHeight)
+
+        matrix.postTranslate(-srcWidth / 2f, -srcHeight / 2f)
+        matrix.postRotate(rotation)
+        matrix.postScale(baseScale * scale, baseScale * scale)
+        matrix.postTranslate(size / 2f + offsetX, size / 2f + offsetY)
+
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        canvas.drawBitmap(originalBitmap, matrix, paint)
+
+        val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
+        java.io.FileOutputStream(permanentFile).use { out ->
+            croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        Uri.fromFile(permanentFile).toString()
+    } catch (e: Exception) {
+        android.util.Log.e("PetalCrop", "Error cropping avatar bitmap", e)
+        null
     }
 }
