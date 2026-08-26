@@ -268,12 +268,6 @@ fun PetalScreenWrapper(
         )
     }
 
-    val foregroundBlurRadius = if (!isBehind && predictiveBack.isActive && !disableBlurAllOver) {
-        (12f * backProgressEased).dp
-    } else {
-        0.dp
-    }
-
     val animatedBlurRadius = if (isBehind) {
         if (predictiveEnabled && isPredictiveBackTarget && !disableBlurAllOver) {
             (settledTargetBlur * (1f - backProgressEased)).dp
@@ -281,7 +275,7 @@ fun PetalScreenWrapper(
             fallbackBlurRadius.value.dp
         }
     } else {
-        foregroundBlurRadius
+        0.dp
     }
 
     val revealScale = if (predictiveEnabled && isPredictiveBackTarget) {
