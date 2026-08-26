@@ -401,7 +401,15 @@ fun PetalTabGridSwitcher(
                                         PetalTabCard(
                                             tab = tab,
                                             accentColor = accentColor,
-                                            onTabSelect = { onTabSelect(tab) },
+                                            onTabSelect = {
+                                                // Selecting an existing tab is a decisive action - it
+                                                // shouldn't leave a still-pending "Undo" close hanging
+                                                // around. Commit any pending removals right now so a
+                                                // just-closed tab is actually gone instead of only
+                                                // disappearing once its snackbar happens to time out.
+                                                commitPendingRemovals()
+                                                onTabSelect(tab)
+                                            },
                                             onTabClose = { requestOptimisticClose(tab) }
                                         )
                                     }
@@ -424,7 +432,12 @@ fun PetalTabGridSwitcher(
                                     PetalTabListItem(
                                         tab = tab,
                                         accentColor = accentColor,
-                                        onTabSelect = { onTabSelect(tab) },
+                                        onTabSelect = {
+                                            // Same reasoning as the grid card above: commit any
+                                            // pending "Undo" closes before switching tabs.
+                                            commitPendingRemovals()
+                                            onTabSelect(tab)
+                                        },
                                         onTabClose = { requestOptimisticClose(tab) }
                                     )
                                 }
