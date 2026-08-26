@@ -1,0 +1,2 @@
+* **Home Page Predictive Back Gestures**: Enabled full predictive back surface gesture transitions on `PetalHomeScreen`, allowing the home surface to cleanly scale down into a rounded card (`0.88f` scale, `32dp` corners) with edge translation when swiping back.
+* **Staggered Spring Entrance Motion**: Inspired by PixelPlayer and RvSystem-Monitor, added staggered spring scale (`0.93f` -> `1.0f`) and offset entrance animations for greeting tagline, search bar, and shortcut grid tiles.
