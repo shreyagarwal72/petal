@@ -573,6 +573,8 @@ fun PetalHomeScreen(
                 )
             }
         }
+            }
+        }
     }
 }
 
