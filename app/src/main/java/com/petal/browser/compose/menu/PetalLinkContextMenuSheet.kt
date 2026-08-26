@@ -234,63 +234,51 @@ object PetalLinkContextMenuBridge {
         faviconUrl: String? = null,
         handler: PetalLinkContextMenuHandler
     ) {
-        val rootGroup = activity.findViewById<android.view.ViewGroup>(android.R.id.content) ?: return
-        val composeView = ComposeView(activity)
+        activity.runOnUiThread {
+            try {
+                val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(activity)
+                val composeView = ComposeView(activity).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeViewModelStoreOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                    setContent {
+                        val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+                        val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                        val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                        val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                        val isAmoled = sp.getBoolean("sp_amoled", false)
+                        val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-        val dismissAction = {
-            activity.runOnUiThread {
-                try {
-                    rootGroup.removeView(composeView)
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                        val appFont = remember(fontName) {
+                            AppFont.fromName(fontName)
+                        }
+                        val colorStyle = remember(styleName) {
+                            try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
+                        }
+
+                        PetalExpressiveTheme(
+                            dynamicColor = dynamicColor,
+                            useAmoled = isAmoled,
+                            appFont = appFont,
+                            colorStyle = colorStyle,
+                            paletteId = paletteId
+                        ) {
+                            PetalLinkContextMenuSheet(
+                                linkTitle = linkTitle,
+                                linkUrl = linkUrl,
+                                faviconUrl = faviconUrl,
+                                onDismiss = { dialog.dismiss() },
+                                handler = handler
+                            )
+                        }
+                    }
                 }
+                dialog.setContentView(composeView)
+                dialog.show()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
-
-        composeView.apply {
-            setViewTreeLifecycleOwner(activity)
-            setViewTreeViewModelStoreOwner(activity)
-            setViewTreeSavedStateRegistryOwner(activity)
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
-            setContent {
-                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
-                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                val isAmoled = sp.getBoolean("sp_amoled", false)
-                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-
-                val appFont = remember(fontName) {
-                    AppFont.fromName(fontName)
-                }
-                val colorStyle = remember(styleName) {
-                    try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
-                }
-
-                PetalExpressiveTheme(
-                    dynamicColor = dynamicColor,
-                    useAmoled = isAmoled,
-                    appFont = appFont,
-                    colorStyle = colorStyle,
-                    paletteId = paletteId
-                ) {
-                    PetalLinkContextMenuSheet(
-                        linkTitle = linkTitle,
-                        linkUrl = linkUrl,
-                        faviconUrl = faviconUrl,
-                        onDismiss = dismissAction,
-                        handler = handler
-                    )
-                }
-            }
-        }
-
-        rootGroup.addView(
-            composeView,
-            android.view.ViewGroup.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        )
     }
 }
