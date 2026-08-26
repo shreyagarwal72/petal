@@ -7,10 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * `GlanceAppWidget.updateAll()` is a suspend function, so this gives the existing Java
- * call sites (theme/palette pickers in [com.petal.browser.compose.settings.PetalSettingsScreen])
- * a plain static entry point to refresh every placed instance of [PetalSearchGlanceWidget]
- * — e.g. right after the user changes the active color palette or light/dark override.
+ * `GlanceAppWidget.updateAll()` is a suspend function, so this gives existing Java
+ * call sites (theme/palette pickers in Settings) a static entry point to refresh every placed
+ * instance of Petal Glance widgets (Quick Search, Shortcuts & Bookmarks, and Mode Switcher).
  */
 object PetalSearchGlanceWidgetUpdater {
 
@@ -21,8 +20,10 @@ object PetalSearchGlanceWidgetUpdater {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 PetalSearchGlanceWidget().updateAll(appContext)
+                PetalShortcutsGlanceWidget().updateAll(appContext)
+                PetalModeSwitchGlanceWidget().updateAll(appContext)
             } catch (e: Exception) {
-                android.util.Log.e("PetalSearchWidget", "Error updating Glance search widgets", e)
+                android.util.Log.e("PetalWidgetUpdater", "Error updating Glance search widgets", e)
             }
         }
     }
