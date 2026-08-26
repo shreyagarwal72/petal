@@ -58,6 +58,15 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         initSmoothScrolling(context);
     }
 
+    /**
+     * Hook called on every ACTION_DOWN so a subclass (NinjaWebView) can re-apply its
+     * system gesture exclusion rects right before the OS decides whether this touch
+     * belongs to the app or to a predictive back/forward edge swipe. No-op here -
+     * this base class has no concept of gesture exclusion on its own.
+     */
+    protected void onGestureExclusionRefreshNeeded() {
+    }
+
     private void initSmoothScrolling(Context context) {
         // NOTE: do NOT force LAYER_TYPE_HARDWARE here. NinjaWebView.initPreferences()
         // deliberately sets LAYER_TYPE_NONE right after this view is constructed, so this
@@ -103,6 +112,13 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         if (action == MotionEvent.ACTION_DOWN) {
             nestedOffsets[0] = 0;
             nestedOffsets[1] = 0;
+            // Chromium's WebView internals manage system gesture exclusion rects on
+            // their own and will silently widen them back over the screen edges as
+            // soon as the page is scrolled/interacted with - overriding whatever the
+            // app set at layout/page-load time. Re-claiming the edges right here, on
+            // every touch-down, wins that race so the system's predictive back/forward
+            // edge swipe keeps reaching the app instead of being swallowed by the page.
+            onGestureExclusionRefreshNeeded();
         }
 
         vtev.offsetLocation(nestedOffsets[0], nestedOffsets[1]);
