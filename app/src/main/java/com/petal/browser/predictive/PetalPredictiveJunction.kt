@@ -92,6 +92,7 @@ object PetalPredictiveJunction {
 
 val LocalPetalPredictiveJunctionState = compositionLocalOf { true }
 val LocalPetalDepthBlurJunctionState = compositionLocalOf { true }
+val LocalIsUnderlayPreview = compositionLocalOf { false }
 
 // ---------------------------------------------------------------------------
 // Predictive back gesture state — published downward via CompositionLocal so
@@ -141,8 +142,9 @@ fun PetalPredictiveBackSurface(
 ) {
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
     val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
+    val isUnderlayPreview = LocalIsUnderlayPreview.current
 
-    val isFullyEnabled = enabled && junctionPredictiveEnabled
+    val isFullyEnabled = enabled && junctionPredictiveEnabled && !isUnderlayPreview
 
     val scope = rememberCoroutineScope()
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
@@ -277,41 +279,43 @@ fun PetalScreenWrapper(
         1f
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .graphicsLayer {
-                compositingStrategy = if (predictiveEnabled) {
-                    CompositingStrategy.Offscreen
-                } else {
-                    CompositingStrategy.Auto
+    CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehind || LocalIsUnderlayPreview.current)) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    compositingStrategy = if (predictiveEnabled) {
+                        CompositingStrategy.Offscreen
+                    } else {
+                        CompositingStrategy.Auto
+                    }
+                    scaleX = if (isBehind) revealScale else scale
+                    scaleY = if (isBehind) revealScale else scale
+                    translationX = if (!isBehind) size.width * translationXFactor * foregroundProgress else 0f
+                    translationY = if (!isBehind) size.height * 0.015f * foregroundProgress else 0f
+                    alpha = alphaVal
+                    if (predictiveEnabled && cornerRadius > 0.5f) {
+                        this.shape = RoundedCornerShape(cornerRadius.dp)
+                        this.clip = true
+                        this.shadowElevation = (16f * foregroundProgress).dp.toPx()
+                    } else {
+                        this.clip = false
+                        this.shadowElevation = 0f
+                    }
                 }
-                scaleX = if (isBehind) revealScale else scale
-                scaleY = if (isBehind) revealScale else scale
-                translationX = if (!isBehind) size.width * translationXFactor * foregroundProgress else 0f
-                translationY = if (!isBehind) size.height * 0.015f * foregroundProgress else 0f
-                alpha = alphaVal
-                if (predictiveEnabled && cornerRadius > 0.5f) {
-                    this.shape = RoundedCornerShape(cornerRadius.dp)
-                    this.clip = true
-                    this.shadowElevation = (16f * foregroundProgress).dp.toPx()
-                } else {
-                    this.clip = false
-                    this.shadowElevation = 0f
-                }
-            }
-            .blur(radius = if (!disableBlurAllOver) animatedBlurRadius else 0.dp)
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        content()
+                .blur(radius = if (!disableBlurAllOver) animatedBlurRadius else 0.dp)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            content()
 
-        if (isBehind) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { alpha = animatedDimAlpha }
-                    .background(Color.Black),
-            )
+            if (isBehind) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = animatedDimAlpha }
+                        .background(Color.Black),
+                )
+            }
         }
     }
 }
