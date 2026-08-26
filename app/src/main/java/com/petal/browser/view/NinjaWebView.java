@@ -105,6 +105,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
+        // See resetGestureExclusionRects(): Chromium re-widens its own exclusion rects
+        // during scroll/fling, so keep reclaiming the edges here too - not just on
+        // touch-down - or a fast fling can leave the edges blocked again mid-gesture.
+        resetGestureExclusionRects();
         if (onScrollChangeListener != null) {
             int dy = t - oldt;
             if (dy > 12) {
@@ -113,6 +117,11 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                 onScrollChangeListener.onScrollUp();
             }
         }
+    }
+
+    @Override
+    protected void onGestureExclusionRefreshNeeded() {
+        resetGestureExclusionRects();
     }
 
     public NinjaWebView(Context context, AttributeSet attrs) {
