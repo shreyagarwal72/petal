@@ -1,0 +1,2 @@
+* **Profile Picture Image Cropper**: Added interactive Profile Picture Image Cropper dialog (`ProfilePictureCropDialog`) with circular crop viewport, pinch-to-zoom (1.0x - 4.0x), pan gesture alignment, rotation (90° steps), and anti-aliased bitmap output in User & Accounts page.
+* **Account Page Cleanup**: Removed obsolete Google Passkey & Credential Vault option from `ChromeAccountSyncScreen.kt`.
