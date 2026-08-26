@@ -146,7 +146,15 @@ fun PetalDeleteScreen(
     ) {
     com.petal.browser.predictive.PetalScreenWrapper {
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            ExpressiveHeader(
+                title = context.getString(R.string.menu_delete),
+                subtitle = "Clear Browsing Data & History",
+                onBack = onBackPress
+            )
+        }
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -158,11 +166,6 @@ fun PetalDeleteScreen(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                ExpressiveHeader(
-                    title = context.getString(R.string.menu_delete),
-                    subtitle = "Clear Browsing Data & History",
-                    onBack = onBackPress
-                )
 
                 Column(
                     modifier = Modifier
