@@ -239,99 +239,72 @@ fun PetalScreenWrapper(
     val blurEnabled = junctionBlurEnabled
     val disableBlurAllOver = !blurEnabled
 
-    val predictiveBack = LocalPredictiveBackState.current
-
-    val isPredictiveBackTarget = isBehind && predictiveBack.isActive
-
-    // FastOutSlowInEasing matching PixelPlayer & RvSystem-Monitor feel
-    val backProgressEased =
-        if (predictiveBack.isActive) FastOutSlowInEasing.transform(predictiveBack.progress)
-        else 0f
-
-    // Foreground PixelPlayer / RvSystem-Monitor style predictive back card transformations:
-    // Scale: 1.0 -> 0.88, Corner Radius: 0 -> 32dp, Alpha: 1.0 -> 0.85, shadow & edge-aware translation
-    val foregroundProgress = if (predictiveEnabled && !isBehind) predictiveBack.progress else 0f
-    val scale = 1f - (0.12f * foregroundProgress)
-    val cornerRadius = if (!isBehind) 32f * foregroundProgress else 0f
-    val alphaVal = if (!isBehind && predictiveBack.isActive) 1f - (0.15f * foregroundProgress) else 1f
-
-    val swipeEdge = predictiveBack.swipeEdge
-    val translationXFactor = if (!isBehind && predictiveBack.isActive) {
-        if (swipeEdge == BackEventCompat.EDGE_LEFT) 0.35f
-        else if (swipeEdge == BackEventCompat.EDGE_RIGHT) -0.35f
-        else 0f
-    } else 0f
-
-    val settledTargetDim = if (isBehind) {
-        if (disableBlurAllOver) 0.75f else 0.40f
-    } else {
-        0f
-    }
-    val animatedDimAlpha = if (predictiveEnabled && isBehind) {
-        if (predictiveBack.isActive) {
-            settledTargetDim * (1f - backProgressEased)
-        } else {
-            settledTargetDim
-        }
-    } else {
-        0f
-    }
-
-    val settledTargetBlur = if (isBehind && !disableBlurAllOver) 24f else 0f
-    val animatedBlurRadius = if (isBehind && !disableBlurAllOver) {
-        if (predictiveEnabled && predictiveBack.isActive) {
-            (settledTargetBlur * (1f - backProgressEased)).dp
-        } else {
-            settledTargetBlur.dp
-        }
-    } else {
-        0.dp
-    }
-
-    val revealScale = if (predictiveEnabled && isBehind) {
-        if (predictiveBack.isActive) {
-            0.94f + 0.06f * backProgressEased
-        } else {
-            0.94f
-        }
-    } else {
-        1f
-    }
+    val predictiveBackState = LocalPredictiveBackState.current
+    val underlayBlurRadius = if (isBehind && !disableBlurAllOver) 24.dp else 0.dp
 
     CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehind || LocalIsUnderlayPreview.current)) {
         Box(
             modifier = modifier
                 .fillMaxSize()
+                .blur(radius = underlayBlurRadius)
                 .graphicsLayer {
-                    compositingStrategy = if (predictiveEnabled && predictiveBack.isActive) {
-                        CompositingStrategy.Offscreen
+                    val isActive = predictiveBackState.isActive
+                    val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
+                    val backProgressEased = if (isActive) FastOutSlowInEasing.transform(progress) else 0f
+
+                    if (!isBehind) {
+                        // Foreground card transformations — executed purely in Draw phase
+                        val scale = 1f - (0.12f * progress)
+                        val cornerRadius = 32f * progress
+                        val alphaVal = if (isActive) 1f - (0.15f * progress) else 1f
+                        val swipeEdge = predictiveBackState.swipeEdge
+                        val translationXFactor = if (isActive) {
+                            if (swipeEdge == BackEventCompat.EDGE_LEFT) 0.35f
+                            else if (swipeEdge == BackEventCompat.EDGE_RIGHT) -0.35f
+                            else 0f
+                        } else 0f
+
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = size.width * translationXFactor * progress
+                        translationY = size.height * 0.015f * progress
+                        alpha = alphaVal
+                        compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+
+                        if (cornerRadius > 0.5f) {
+                            this.shape = RoundedCornerShape(cornerRadius.dp)
+                            this.clip = true
+                            this.shadowElevation = (16f * progress).dp.toPx()
+                        } else {
+                            this.clip = false
+                            this.shadowElevation = 0f
+                        }
                     } else {
-                        CompositingStrategy.Auto
-                    }
-                    scaleX = if (isBehind) revealScale else scale
-                    scaleY = if (isBehind) revealScale else scale
-                    translationX = if (!isBehind) size.width * translationXFactor * foregroundProgress else 0f
-                    translationY = if (!isBehind) size.height * 0.015f * foregroundProgress else 0f
-                    alpha = alphaVal
-                    if (predictiveEnabled && cornerRadius > 0.5f) {
-                        this.shape = RoundedCornerShape(cornerRadius.dp)
-                        this.clip = true
-                        this.shadowElevation = (16f * foregroundProgress).dp.toPx()
-                    } else {
+                        // Revealed underlay screen transformations — executed purely in Draw phase
+                        val revealScale = if (isActive) 0.94f + 0.06f * backProgressEased else 1f
+                        scaleX = revealScale
+                        scaleY = revealScale
+                        alpha = 1f
+                        compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
                         this.clip = false
                         this.shadowElevation = 0f
                     }
                 }
-                .blur(radius = if (!disableBlurAllOver) animatedBlurRadius else 0.dp)
                 .background(MaterialTheme.colorScheme.background)
         ) {
             content()
 
             if (isBehind) {
+                val settledTargetDim = if (disableBlurAllOver) 0.75f else 0.40f
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer { alpha = animatedDimAlpha }
+                        .graphicsLayer {
+                            val isActive = predictiveBackState.isActive
+                            val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
+                            val backProgressEased = if (isActive) FastOutSlowInEasing.transform(progress) else 0f
+                            alpha = if (isActive) settledTargetDim * (1f - backProgressEased) else settledTargetDim
+                        }
                         .background(Color.Black),
                 )
             }
