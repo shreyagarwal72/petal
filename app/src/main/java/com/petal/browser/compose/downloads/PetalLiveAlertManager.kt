@@ -33,19 +33,20 @@ object PetalLiveAlertManager {
         ensureNotificationChannel(appContext)
         PetalFetchDownloadBridge.ensureInitialized(appContext)
 
+        // Ensure background Foreground Service is active so downloads continue when app is minimized/closed
+        try {
+            PetalDownloadService.start(appContext, downloadId, fileName)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start PetalDownloadService: ${e.message}")
+        }
+
         // Cancel existing job if re-tracking
         trackingJobs[downloadId]?.cancel()
 
-        // Reacts to Fetch2's live download events instead of polling the system
-        // DownloadManager - that source never actually changed status on pause (the
-        // system DownloadManager has no public pause API), so the notification used to
-        // just keep showing "Downloading" forever even after a pause was requested.
         val job = scope.launch {
             while (isActive) {
                 val item = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { it.id == downloadId }
                 if (item == null) {
-                    // Not tracked yet - Fetch2's onQueued event may not have arrived. Keep
-                    // polling briefly rather than giving up immediately.
                     delay(500L)
                     continue
                 }
@@ -69,10 +70,12 @@ object PetalLiveAlertManager {
                     }
                     DownloadManager.STATUS_SUCCESSFUL -> {
                         showCompletionNotification(appContext, downloadId, displayTitle, item.totalSize)
+                        PetalDownloadService.stopIfNoActiveDownloads(appContext)
                         break
                     }
                     DownloadManager.STATUS_FAILED -> {
                         showFailureNotification(appContext, downloadId, displayTitle)
+                        PetalDownloadService.stopIfNoActiveDownloads(appContext)
                         break
                     }
                 }
@@ -91,6 +94,7 @@ object PetalLiveAlertManager {
         trackingJobs.remove(downloadId)
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         nm?.cancel(downloadId.toInt())
+        PetalDownloadService.stopIfNoActiveDownloads(context.applicationContext)
     }
 
     private fun ensureNotificationChannel(context: Context) {
