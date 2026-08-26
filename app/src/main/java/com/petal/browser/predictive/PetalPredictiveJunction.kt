@@ -166,8 +166,10 @@ fun PetalPredictiveBackSurface(
                     progressAnim.animateTo(1f, animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)) {
                         backState = backState.copy(isActive = true, progress = value)
                     }
-                    backState = PredictiveBackState.Idle
+                    backState = backState.copy(isActive = true, progress = 1f)
                     onBack()
+                    delay(150L)
+                    backState = PredictiveBackState.Idle
                 }
             } catch (e: CancellationException) {
                 // Gesture cancelled — smoothly relax progress back to 0f
