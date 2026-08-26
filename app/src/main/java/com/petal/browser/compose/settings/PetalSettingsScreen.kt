@@ -2479,7 +2479,7 @@ fun PetalSettingsScreen(
             com.petal.browser.predictive.PetalPredictiveBackSurface(
                 enabled = true,
                 onBack = onBackPress,
-                underlayContent = { com.petal.browser.compose.home.PetalHomeScreen() }
+                underlayContent = { com.petal.browser.predictive.PetalDynamicUnderlayPreview() }
             ) {
                 com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
                     RenderCategoryPage(

@@ -1926,15 +1926,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return clean.startsWith("file:///android_asset/");
     }
 
-    private boolean isCurrentTabHomeOrBlank() {
-        if (currentAlbumController == null) return true;
-        String url = currentAlbumController.getUrl();
-        if (url == null || url.trim().isEmpty()) {
-            if (ninjaWebView != null) {
-                url = ninjaWebView.getUrl();
-            }
+    public static boolean isCurrentTabHomeOrBlank() {
+        if (ninjaWebView == null) return true;
+        String url = ninjaWebView.getUrl();
+        if (url == null || url.trim().isEmpty()) return true;
+        String clean = url.trim().toLowerCase(java.util.Locale.ROOT);
+        if (clean.equals("about:blank") || clean.equals("about:home") || clean.equals("petal://home") || clean.equals("petal://start") || clean.contains("petal_home.html")) {
+            return true;
         }
-        return isHomePage(url);
+        return clean.startsWith("file:///android_asset/");
     }
 
     private androidx.compose.ui.platform.ComposeView composeAddressBar;

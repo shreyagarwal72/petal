@@ -50,6 +50,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -139,7 +160,7 @@ val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
 fun PetalPredictiveBackSurface(
     enabled: Boolean = true,
     onBack: () -> Unit,
-    underlayContent: (@Composable () -> Unit)? = { com.petal.browser.compose.home.PetalHomeScreen() },
+    underlayContent: (@Composable () -> Unit)? = { PetalDynamicUnderlayPreview() },
     content: @Composable () -> Unit,
 ) {
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
@@ -331,6 +352,134 @@ fun PetalScreenWrapper(
                         .background(Color.Black),
                 )
             }
+        }
+    }
+}
+
+/**
+ * Renders the dynamic underlay preview behind screens (Settings, Account Sync, etc.) during predictive back.
+ * If a website is active in the WebView, displays a high-fidelity web page preview card with title, URL, and brand emblem.
+ * If no website is open, renders the standard Petal Home Screen.
+ */
+@Composable
+fun PetalDynamicUnderlayPreview() {
+    val isHomeOrBlank = remember {
+        try {
+            com.petal.browser.activity.BrowserActivity.isCurrentTabHomeOrBlank()
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    if (isHomeOrBlank) {
+        com.petal.browser.compose.home.PetalHomeScreen()
+    } else {
+        PetalWebPageUnderlayPreviewCard()
+    }
+}
+
+@Composable
+private fun PetalWebPageUnderlayPreviewCard() {
+    val webView = remember {
+        try {
+            com.petal.browser.activity.BrowserActivity.getNinjaWebView()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    val pageUrl = webView?.url ?: "https://petal.browser"
+    val pageTitle = webView?.title?.takeIf { it.isNotBlank() } ?: "Web Page"
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainerLow),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Header: Address Bar Pill with Title & URL
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = pageTitle,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = pageUrl,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            // Center: Website Content Emblem Placeholder
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Language,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = pageTitle,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = pageUrl,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Bottom Spacer / Dock
+            Spacer(Modifier.height(32.dp))
         }
     }
 }
