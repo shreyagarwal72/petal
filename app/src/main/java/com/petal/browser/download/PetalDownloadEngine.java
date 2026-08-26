@@ -119,7 +119,6 @@ public class PetalDownloadEngine {
         Request request = new Request(url, filePath);
         request.setPriority(Priority.HIGH);
         request.setNetworkType(NetworkType.ALL);
-        request.setAutoResumption(true);
 
         if (userAgent != null && !userAgent.isEmpty()) {
             request.addHeader("User-Agent", userAgent);
