@@ -154,7 +154,7 @@ fun PetalPredictiveBackSurface(
     if (isFullyEnabled) {
         PredictiveBackHandler(enabled = true) { progressFlow ->
             try {
-                progressFlow.collectLatest { backEvent ->
+                progressFlow.collect { backEvent ->
                     progressAnim.snapTo(backEvent.progress)
                     backState = PredictiveBackState(
                         isActive = true,
@@ -162,10 +162,14 @@ fun PetalPredictiveBackSurface(
                         swipeEdge = backEvent.swipeEdge,
                     )
                 }
-                // Gesture committed — smoothly animate remaining progress to 1f before firing back
+                // Gesture committed — smoothly animate remaining progress to 1f with spring physics
+                progressAnim.snapTo(backState.progress)
                 progressAnim.animateTo(
                     targetValue = 1f,
-                    animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing)
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMediumLow,
+                        dampingRatio = Spring.DampingRatioNoBouncy
+                    )
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
                 }
@@ -173,13 +177,18 @@ fun PetalPredictiveBackSurface(
                 onBack()
                 backState = PredictiveBackState.Idle
             } catch (e: CancellationException) {
-                // Gesture cancelled — smoothly relax progress back to 0f
+                // Gesture cancelled — smoothly relax progress back to 0f with spring physics
+                progressAnim.snapTo(backState.progress)
                 progressAnim.animateTo(
                     targetValue = 0f,
-                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMediumLow,
+                        dampingRatio = Spring.DampingRatioLowBouncy
+                    )
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
                 }
+                backState = backState.copy(isActive = true, progress = 0f)
                 backState = PredictiveBackState.Idle
                 throw e
             }
