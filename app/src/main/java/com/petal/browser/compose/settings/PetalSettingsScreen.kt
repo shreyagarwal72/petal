@@ -843,6 +843,19 @@ fun PetalSettingsScreen(
 
                             // 1. Live Interactive Font & Accent Customization
                             if ((scaffoldCategory == SettingsCategory.APPEARANCE || searchQuery.isNotBlank()) && matchesSearch("Appearance", "fonts accent theme palette amoled")) {
+                                AppearanceHeroBanner(
+                                    selectedTheme = selectedThemeConfig,
+                                    onThemeSelected = { newTheme ->
+                                        selectedThemeConfig = newTheme
+                                        sp.edit().putString("sp_theme_config", newTheme.name).apply()
+                                        when (newTheme) {
+                                            ThemeConfig.FOLLOW_SYSTEM -> androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                                            ThemeConfig.LIGHT -> androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
+                                            ThemeConfig.DARK -> androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)
+                                        }
+                                    }
+                                )
+
                                 SettingsCategoryCard(title = "Custom Fonts & Accent Themes", icon = Icons.Rounded.Palette) {
                                     Text(
                                         "Customize app typography and accent style",
@@ -2470,6 +2483,184 @@ fun PetalSettingsScreen(
                             scaffoldCategory = SettingsCategory.OVERVIEW,
                             onHeaderBack = onBackPress
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppearanceHeroBanner(
+    selectedTheme: ThemeConfig,
+    onThemeSelected: (ThemeConfig) -> Unit
+) {
+    val isDarkSelected = selectedTheme == ThemeConfig.DARK
+    val isLightSelected = selectedTheme == ThemeConfig.LIGHT
+
+    val cardBgColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (isDarkSelected) {
+            androidx.compose.ui.graphics.Color(0xFF2E1A47)
+        } else {
+            androidx.compose.ui.graphics.Color(0xFF5B21B6)
+        },
+        animationSpec = androidx.compose.animation.core.tween(500),
+        label = "heroCardBg"
+    )
+
+    Surface(
+        shape = RoundedCornerShape(32.dp),
+        color = cardBgColor,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        shadowElevation = 6.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
+            // Moon/Sun floating badge in top corner
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.25f),
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(Alignment.TopEnd)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    androidx.compose.animation.AnimatedContent(
+                        targetState = isDarkSelected,
+                        transitionSpec = {
+                            (androidx.compose.animation.scaleIn() + androidx.compose.animation.fadeIn()).togetherWith(
+                                androidx.compose.animation.scaleOut() + androidx.compose.animation.fadeOut()
+                            )
+                        },
+                        label = "badgeIcon"
+                    ) { dark ->
+                        Icon(
+                            imageVector = if (dark) Icons.Rounded.Nightlight else Icons.Rounded.LightMode,
+                            contentDescription = null,
+                            tint = androidx.compose.ui.graphics.Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 40.dp)
+            ) {
+                Text(
+                    text = "Appearance",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    color = androidx.compose.ui.graphics.Color.White
+                )
+
+                Spacer(Modifier.height(6.dp))
+
+                Text(
+                    text = "Make it pretty enough to flex in screenshots.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f)
+                )
+
+                Spacer(Modifier.height(24.dp))
+
+                // Interactive Mini Theme Cards Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Dark Mode Mini Card
+                    Surface(
+                        onClick = { onThemeSelected(ThemeConfig.DARK) },
+                        shape = RoundedCornerShape(20.dp),
+                        color = androidx.compose.ui.graphics.Color(0xFF0F0B15),
+                        border = if (isDarkSelected) {
+                            androidx.compose.foundation.BorderStroke(3.dp, androidx.compose.ui.graphics.Color.White)
+                        } else null,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(72.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(androidx.compose.ui.graphics.Color(0xFFB8A0E8))
+                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(64.dp)
+                                        .height(8.dp)
+                                        .clip(CircleShape)
+                                        .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.6f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(42.dp)
+                                        .height(6.dp)
+                                        .clip(CircleShape)
+                                        .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.35f))
+                                )
+                            }
+                        }
+                    }
+
+                    // Light Mode Mini Card
+                    Surface(
+                        onClick = { onThemeSelected(ThemeConfig.LIGHT) },
+                        shape = RoundedCornerShape(20.dp),
+                        color = androidx.compose.ui.graphics.Color(0xFFF3E8FF),
+                        border = if (isLightSelected) {
+                            androidx.compose.foundation.BorderStroke(3.dp, androidx.compose.ui.graphics.Color(0xFF5B21B6))
+                        } else null,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(72.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(androidx.compose.ui.graphics.Color(0xFF5B21B6))
+                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(64.dp)
+                                        .height(8.dp)
+                                        .clip(CircleShape)
+                                        .background(androidx.compose.ui.graphics.Color(0xFF5B21B6).copy(alpha = 0.6f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(42.dp)
+                                        .height(6.dp)
+                                        .clip(CircleShape)
+                                        .background(androidx.compose.ui.graphics.Color(0xFF5B21B6).copy(alpha = 0.35f))
+                                )
+                            }
+                        }
                     }
                 }
             }
