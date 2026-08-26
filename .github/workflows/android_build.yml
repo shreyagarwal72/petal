@@ -113,11 +113,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract App Version
+      - name: Extract App Version and Changelog
         id: get_version
         run: |
           VERSION=$(grep "versionName" app/build.gradle | head -n 1 | awk -F '"' '{print $2}')
+          VERSION_CODE=$(grep "versionCode" app/build.gradle | head -n 1 | awk '{print $2}')
           echo "APP_VERSION=v$VERSION" >> $GITHUB_ENV
+
+          CHANGELOG_FILE="fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt"
+          if [ -f "$CHANGELOG_FILE" ]; then
+            echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+            cat "$CHANGELOG_FILE" >> $GITHUB_ENV
+            echo "" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          else
+            echo "CHANGELOG=Release v$VERSION" >> $GITHUB_ENV
+          fi
 
       - name: Download Release APK Artifact
         uses: actions/download-artifact@v4
@@ -149,7 +160,11 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || env.APP_VERSION }}
           name: ${{ startsWith(github.ref, 'refs/tags/v') && format('Petal Browser {0} Release', github.ref_name) || format('Petal Browser {0} Release', env.APP_VERSION) }}
           body: |
-            ## Petal Browser Production Release
+            ## What's Changed in ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || env.APP_VERSION }}
+
+            ${{ env.CHANGELOG }}
+
+            ---
 
             ### Direct APK Downloads:
             - **`petal-browser-arm64-v8a-release.apk`**: 64-bit ARM architecture (Recommended for modern smartphones)
@@ -157,6 +172,7 @@ jobs:
             - **`petal-browser-universal-release.apk`**: Universal build containing all ABIs
           files: |
             dist/*.apk
+          generate_release_notes: true
           make_latest: true
           draft: false
           prerelease: false
