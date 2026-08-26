@@ -57,7 +57,7 @@ import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
  * List of Material 3 Expressive shapes used for password masking.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val ExpressivePasswordShapes = listOf(
+val ExpressivePasswordShapes = listOf(
     MaterialShapes.Cookie12Sided,
     MaterialShapes.Clover4Leaf,
     MaterialShapes.Pentagon,
@@ -178,26 +178,23 @@ fun PetalShapedPasswordInput(
                             }
                             val characterShape: Shape = ExpressivePasswordShapes[shapeIndex].toShape()
 
-                            val scaleAnim = androidx.compose.animation.core.rememberTransition(targetState = index).let {
-                                val anim = remember { androidx.compose.animation.core.Animatable(0f) }
-                                LaunchedEffect(index) {
-                                    anim.animateTo(
-                                        targetValue = 1f,
-                                        animationSpec = androidx.compose.animation.core.spring(
-                                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                                            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                                        )
+                            val scaleAnim = remember(index, value.length) { androidx.compose.animation.core.Animatable(0f) }
+                            LaunchedEffect(index, value.length) {
+                                scaleAnim.animateTo(
+                                    targetValue = 1f,
+                                    animationSpec = androidx.compose.animation.core.spring(
+                                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
                                     )
-                                }
-                                anim.value
+                                )
                             }
 
                             Canvas(
                                 modifier = Modifier
                                     .size(shapeSize)
                                     .graphicsLayer {
-                                        scaleX = scaleAnim
-                                        scaleY = scaleAnim
+                                        scaleX = scaleAnim.value
+                                        scaleY = scaleAnim.value
                                     }
                             ) {
                                 val outline = characterShape.createOutline(size, layoutDirection, density)
