@@ -267,10 +267,21 @@ fun PetalScreenWrapper(
             animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
         )
     }
-    val animatedBlurRadius = if (predictiveEnabled && isPredictiveBackTarget && !disableBlurAllOver) {
-        (settledTargetBlur * (1f - backProgressEased)).dp
+
+    val foregroundBlurRadius = if (!isBehind && predictiveBack.isActive && !disableBlurAllOver) {
+        (18f * backProgressEased).dp
     } else {
-        fallbackBlurRadius.value.dp
+        0.dp
+    }
+
+    val animatedBlurRadius = if (isBehind) {
+        if (predictiveEnabled && isPredictiveBackTarget && !disableBlurAllOver) {
+            (settledTargetBlur * (1f - backProgressEased)).dp
+        } else {
+            fallbackBlurRadius.value.dp
+        }
+    } else {
+        foregroundBlurRadius
     }
 
     val revealScale = if (predictiveEnabled && isPredictiveBackTarget) {
