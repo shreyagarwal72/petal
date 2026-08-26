@@ -28,18 +28,25 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun Modifier.entrance(index: Int = 0): Modifier {
     val animProgress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(index) {
+        if (index > 0) {
+            kotlinx.coroutines.delay((index * 35L).coerceAtMost(280L))
+        }
         animProgress.animateTo(
             targetValue = 1f,
             animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
+                dampingRatio = Spring.DampingRatioLowBouncy,
                 stiffness = Spring.StiffnessMediumLow
             )
         )
     }
     return graphicsLayer {
-        alpha = animProgress.value
-        translationY = (1f - animProgress.value) * 16.dp.toPx()
+        val progress = animProgress.value
+        val currentScale = 0.93f + (0.07f * progress)
+        alpha = progress
+        scaleX = currentScale
+        scaleY = currentScale
+        translationY = (1f - progress) * 20.dp.toPx()
     }
 }
 

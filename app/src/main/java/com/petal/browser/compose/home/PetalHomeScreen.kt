@@ -451,9 +451,10 @@ fun PetalHomeScreen(
     }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = false,
+        enabled = true,
+        underlayContent = null,
         onBack = {
-            (context as? ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
+            (context as? ComponentActivity)?.finishAndRemoveTask()
         }
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
@@ -614,6 +615,7 @@ private fun PetalShortcutGrid(
             ShortcutTile(
                 shortcut = shortcut,
                 isEditable = isEditable,
+                index = index,
                 onClick = { onOpenShortcut(shortcut) },
                 onLongClick = { if (isEditable) onEditShortcutSlot(index) }
             )
@@ -621,7 +623,7 @@ private fun PetalShortcutGrid(
 
         // "+" Add tile at end
         item {
-            AddShortcutTile(onClick = onAddShortcutClick)
+            AddShortcutTile(index = items.size, onClick = onAddShortcutClick)
         }
     }
 }
@@ -644,6 +646,7 @@ fun getFaviconUrl(url: String): String? {
 private fun ShortcutTile(
     shortcut: PetalShortcut,
     isEditable: Boolean,
+    index: Int = 0,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -662,6 +665,7 @@ private fun ShortcutTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
+            .com.petal.browser.ui.components.entrance(3 + index)
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = androidx.compose.foundation.LocalIndication.current,
@@ -718,11 +722,12 @@ private fun ShortcutTile(
 }
 
 @Composable
-private fun AddShortcutTile(onClick: () -> Unit) {
+private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
+            .com.petal.browser.ui.components.entrance(3 + index)
             .clickable(onClick = onClick)
     ) {
         Box(
@@ -786,6 +791,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 64.dp)
+            .com.petal.browser.ui.components.entrance(2)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clickable(
                 interactionSource = interactionSource,
@@ -919,6 +925,7 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
+            .com.petal.browser.ui.components.entrance(1)
     ) {
         Row(
             modifier = Modifier
