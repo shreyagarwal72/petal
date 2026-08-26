@@ -2475,11 +2475,19 @@ fun PetalSettingsScreen(
                     }
                 }
             } else {
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
-                    RenderCategoryPage(
-                        scaffoldCategory = SettingsCategory.OVERVIEW,
-                        onHeaderBack = onBackPress
-                    )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // 1. Underlay Screen (Home Screen Preview) - Blurred 28dp & Dimmed behind main Settings
+                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
+                        com.petal.browser.compose.home.PetalHomeScreen()
+                    }
+
+                    // 2. Foreground Screen (Settings Overview List) - Shrinks to 90% card & 32dp corners
+                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                        RenderCategoryPage(
+                            scaffoldCategory = SettingsCategory.OVERVIEW,
+                            onHeaderBack = onBackPress
+                        )
+                    }
                 }
             }
         }
