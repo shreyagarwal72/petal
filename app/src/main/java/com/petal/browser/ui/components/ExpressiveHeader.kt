@@ -148,28 +148,38 @@ fun ExpressiveHeader(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (onBack != null) {
-                        FilledTonalIconButton(
-                            onClick = onBack,
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            ),
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = onBack != null,
+                        enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)) +
+                                androidx.compose.animation.slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessLow)),
+                        exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                scaleOut(targetScale = 0.92f) +
+                                androidx.compose.animation.slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = spring(stiffness = Spring.StiffnessLow))
+                    ) {
+                        Row {
+                            FilledTonalIconButton(
+                                onClick = { onBack?.invoke() },
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                ),
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                            Spacer(Modifier.width(12.dp))
                         }
-                        Spacer(Modifier.width(12.dp))
                     }
 
                     AnimatedContent(
                         targetState = title to (subtitle ?: ""),
                         transitionSpec = {
-                            (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                             slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { it / 3 } +
-                             scaleIn(initialScale = 0.95f))
+                            (fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                             slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { it / 3 } +
+                             scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)))
                                 .togetherWith(
-                                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) +
-                                    slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { -it / 3 } +
-                                    scaleOut(targetScale = 0.95f)
+                                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                    slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) { -it / 3 } +
+                                    scaleOut(targetScale = 0.92f)
                                 )
                         },
                         label = "ExpressiveHeaderTransition",
