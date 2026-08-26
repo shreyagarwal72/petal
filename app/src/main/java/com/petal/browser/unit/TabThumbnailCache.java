@@ -37,7 +37,7 @@ public final class TabThumbnailCache {
     public static void initDiskCache(Context context) {
         if (diskCacheDir != null) return;
         try {
-            File baseDir = context.getApplicationContext().getCacheDir();
+            File baseDir = context.getApplicationContext().getFilesDir();
             diskCacheDir = new File(baseDir, "petal_tab_thumbnails");
             if (!diskCacheDir.exists()) {
                 diskCacheDir.mkdirs();
