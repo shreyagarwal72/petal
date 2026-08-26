@@ -576,10 +576,10 @@ private fun RenderUserProfileContent(
                     )
 
                     // Auto-Clear on Exit Preference
-                    var isClearOnExit by remember { mutableStateOf(sp.getBoolean("sp_clear_on_exit", false)) }
+                    var isClearOnExit by remember { mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) }
                     AccountActionRow(
                         title = "Auto-Clear Data on Exit",
-                        subtitle = "Automatically purge cache, history, and cookies on close",
+                        subtitle = "Automatically purge cache, history, and cookies when leaving app",
                         icon = Icons.Rounded.CleaningServices,
                         trailing = {
                             IconSwitch(
@@ -587,7 +587,10 @@ private fun RenderUserProfileContent(
                                 icon = Icons.Rounded.CleaningServices,
                                 onCheckedChange = { checked ->
                                     isClearOnExit = checked
-                                    sp.edit().putBoolean("sp_clear_on_exit", checked).apply()
+                                    sp.edit()
+                                        .putBoolean("sp_clear_quit", checked)
+                                        .putBoolean("sp_clear_on_exit", checked)
+                                        .apply()
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar(
                                             if (checked) "Auto-Clear on exit enabled" else "Auto-Clear on exit disabled"
@@ -598,7 +601,15 @@ private fun RenderUserProfileContent(
                         },
                         onClick = {
                             isClearOnExit = !isClearOnExit
-                            sp.edit().putBoolean("sp_clear_on_exit", isClearOnExit).apply()
+                            sp.edit()
+                                .putBoolean("sp_clear_quit", isClearOnExit)
+                                .putBoolean("sp_clear_on_exit", isClearOnExit)
+                                .apply()
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    if (isClearOnExit) "Auto-Clear on exit enabled" else "Auto-Clear on exit disabled"
+                                )
+                            }
                         }
                     )
 
