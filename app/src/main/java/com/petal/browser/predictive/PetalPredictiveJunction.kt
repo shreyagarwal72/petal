@@ -227,22 +227,22 @@ fun PetalScreenWrapper(
         if (predictiveBack.isActive) 1f - (1f - predictiveBack.progress).let { it * it }
         else 0f
 
-    // Foreground PixelPlayer style predictive back transformations:
-    // Scale: 1.0 -> 0.92, Corner Radius: 0 -> 32dp, Alpha: 1.0 -> 0.72, and edge-aware translation
+    // Foreground PixelPlayer / RvSystem-Monitor style predictive back card transformations:
+    // Scale: 1.0 -> 0.88, Corner Radius: 0 -> 32dp, Alpha: 1.0 -> 0.85, shadow & edge-aware translation
     val foregroundProgress = if (predictiveEnabled && !isBehind) predictiveBack.progress else 0f
-    val scale = 1f - (0.08f * foregroundProgress)
+    val scale = 1f - (0.12f * foregroundProgress)
     val cornerRadius = if (!isBehind) 32f * foregroundProgress else 0f
-    val alphaVal = if (!isBehind && predictiveBack.isActive) 1f - (0.28f * foregroundProgress) else 1f
+    val alphaVal = if (!isBehind && predictiveBack.isActive) 1f - (0.15f * foregroundProgress) else 1f
 
     val swipeEdge = predictiveBack.swipeEdge
     val translationXFactor = if (!isBehind && predictiveBack.isActive) {
-        if (swipeEdge == BackEventCompat.EDGE_LEFT) 0.04f
-        else if (swipeEdge == BackEventCompat.EDGE_RIGHT) -0.04f
+        if (swipeEdge == BackEventCompat.EDGE_LEFT) 0.35f
+        else if (swipeEdge == BackEventCompat.EDGE_RIGHT) -0.35f
         else 0f
     } else 0f
 
     val settledTargetDim = if (isBehind) {
-        if (disableBlurAllOver) 0.75f else 0.4f
+        if (disableBlurAllOver) 0.75f else 0.45f
     } else {
         0f
     }
@@ -259,7 +259,7 @@ fun PetalScreenWrapper(
         fallbackDimAlpha.value
     }
 
-    val settledTargetBlur = if (isBehind && !disableBlurAllOver) 24f else 0f
+    val settledTargetBlur = if (isBehind && !disableBlurAllOver) 28f else 0f
     val fallbackBlurRadius = remember { Animatable(settledTargetBlur) }
     LaunchedEffect(settledTargetBlur) {
         fallbackBlurRadius.animateTo(
@@ -269,7 +269,7 @@ fun PetalScreenWrapper(
     }
 
     val foregroundBlurRadius = if (!isBehind && predictiveBack.isActive && !disableBlurAllOver) {
-        (18f * backProgressEased).dp
+        (12f * backProgressEased).dp
     } else {
         0.dp
     }
@@ -285,7 +285,7 @@ fun PetalScreenWrapper(
     }
 
     val revealScale = if (predictiveEnabled && isPredictiveBackTarget) {
-        0.95f + 0.05f * backProgressEased
+        0.94f + 0.06f * backProgressEased
     } else {
         1f
     }
@@ -302,13 +302,15 @@ fun PetalScreenWrapper(
                 scaleX = if (isBehind) revealScale else scale
                 scaleY = if (isBehind) revealScale else scale
                 translationX = if (!isBehind) size.width * translationXFactor * foregroundProgress else 0f
-                translationY = if (!isBehind) size.height * 0.03f * foregroundProgress else 0f
+                translationY = if (!isBehind) size.height * 0.015f * foregroundProgress else 0f
                 alpha = alphaVal
                 if (predictiveEnabled && cornerRadius > 0.5f) {
                     this.shape = RoundedCornerShape(cornerRadius.dp)
                     this.clip = true
+                    this.shadowElevation = (16f * foregroundProgress).dp.toPx()
                 } else {
                     this.clip = false
+                    this.shadowElevation = 0f
                 }
             }
             .blur(radius = if (!disableBlurAllOver) animatedBlurRadius else 0.dp)
