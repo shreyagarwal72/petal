@@ -342,25 +342,28 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             Log.e(TAG, "Error binding PetalMediaSessionService", e);
         }
 
-        if (sp.getBoolean("sp_biometric_lock", false)) {
-            com.petal.browser.security.BiometricLockManager.authenticate(
-                this,
-                "Petal Browser Locked",
-                "Authenticate using biometric or PIN to continue",
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        // Success: user authenticated
+        if (sp.getBoolean("sp_app_lock_enabled", false)) {
+            String lockType = sp.getString("sp_app_lock_type", "FINGERPRINT");
+            if ("FINGERPRINT".equals(lockType) || sp.getBoolean("sp_biometric_lock", false)) {
+                com.petal.browser.security.BiometricLockManager.authenticate(
+                    this,
+                    "Petal Browser Locked",
+                    "Authenticate using biometric or PIN to continue",
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            // Success: user authenticated
+                        }
+                    },
+                    new java.util.function.Consumer<String>() {
+                        @Override
+                        public void accept(String error) {
+                            Toast.makeText(BrowserActivity.this, "Authentication required: " + error, Toast.LENGTH_SHORT).show();
+                            finish();
+                        }
                     }
-                },
-                new java.util.function.Consumer<String>() {
-                    @Override
-                    public void accept(String error) {
-                        Toast.makeText(BrowserActivity.this, "Biometric authentication required: " + error, Toast.LENGTH_SHORT).show();
-                        finish();
-                    }
-                }
-            );
+                );
+            }
         }
 
         try {

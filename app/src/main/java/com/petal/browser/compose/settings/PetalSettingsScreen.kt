@@ -1756,24 +1756,7 @@ fun PetalSettingsScreen(
                                             isJavaScript = newValue
                                             sp.edit().putBoolean("sp_javascript", newValue).putBoolean("profileStandard_javascript", newValue).apply()
                                         }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    ToggleRow(
-                                        title = "App Lock Security Passcode",
-                                        subtitle = if (isAppLockEnabled) "Passcode active • Tap to configure shaped-mask passcode" else "Require shaped-mask passcode to access browser",
-                                        icon = Icons.Rounded.Key,
-                                        checked = isAppLockEnabled,
-                                        onCheckedChange = { enabled ->
-                                            isAppLockEnabled = enabled
-                                            sp.edit().putBoolean("sp_app_lock_enabled", enabled).apply()
-                                            if (enabled) {
-                                                showPasscodeDialog = true
-                                            }
-                                        }
-                                    )
-                                }
+                                    )                                }
                             }
 
                             // 7. Accessibility & Scaling (using PetalSlider)
