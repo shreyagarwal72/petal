@@ -712,16 +712,25 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
      * The callback always runs on the main thread. It may be invoked synchronously (older
      * devices) or asynchronously (API 31+, once the compositor delivers the copied frame).
      */
+    public String getThumbnailKey() {
+        String currentUrl = getUrl();
+        if (currentUrl != null && !currentUrl.isEmpty() && !"about:blank".equals(currentUrl)) {
+            return currentUrl;
+        }
+        return String.valueOf(hashCode());
+    }
+
     public void capturePreviewBitmapAsync(@NonNull java.util.function.Consumer<Bitmap> callback) {
         // Wrap the caller's callback so every capture path - PixelCopy success, PixelCopy
         // failure fallback, and the pre-API-31/detached-view software fallback - writes
         // into the bounded LRU cache before the bitmap reaches the caller. This is what
         // makes "on page load and tab switch" (see updatePreviewCache() below) actually
         // populate the cache, not just the grid's own onTabVisible capture.
-        final String tabId = String.valueOf(hashCode());
+        final String tabId = getThumbnailKey();
         java.util.function.Consumer<Bitmap> cachingCallback = bitmap -> {
             if (bitmap != null) {
                 TabThumbnailCache.put(tabId, bitmap);
+                TabThumbnailCache.put(String.valueOf(hashCode()), bitmap);
             }
             callback.accept(bitmap);
         };
@@ -793,6 +802,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     /** Returns the most recently cached preview thumbnail for this tab, if any. */
     @Nullable
     public Bitmap getCachedPreviewBitmap() {
+        Bitmap bitmap = TabThumbnailCache.get(getThumbnailKey());
+        if (bitmap != null && !bitmap.isRecycled()) {
+            return bitmap;
+        }
         return TabThumbnailCache.get(String.valueOf(hashCode()));
     }
 

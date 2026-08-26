@@ -881,6 +881,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         currentAlbumController.activate();
         contentFrame.removeAllViews();
 
+        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+        if (bottomNavContainer != null) {
+            bottomNavContainer.setTranslationY(0f);
+            bottomNavContainer.setVisibility(VISIBLE);
+        }
+
         String url = overrideUrl != null ? overrideUrl : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
         boolean isIncognitoTab = ninjaWebView != null && ninjaWebView.isIncognito();
         if (isIncognitoTab) {
@@ -1094,8 +1100,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void updatePersistentBottomNav() {
         try {
+            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+            if (bottomNavContainer != null) {
+                bottomNavContainer.setTranslationY(0f);
+                bottomNavContainer.setVisibility(VISIBLE);
+            }
             androidx.compose.ui.platform.ComposeView bottomNavCompose = findViewById(R.id.bottom_nav_compose);
             if (bottomNavCompose != null) {
+                bottomNavCompose.setTranslationY(0f);
                 bottomNavCompose.setVisibility(VISIBLE);
                 String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                 boolean isHome = isHomePage(currentUrl);
