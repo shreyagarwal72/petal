@@ -234,8 +234,19 @@ fun ExpressiveHeader(
                         }
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        actions()
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                scaleIn(initialScale = 0.92f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)),
+                        exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessLow)) +
+                                scaleOut(targetScale = 0.92f)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            actions()
+                        }
                     }
                 }
             }

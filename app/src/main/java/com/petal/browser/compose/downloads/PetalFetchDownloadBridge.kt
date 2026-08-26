@@ -272,13 +272,15 @@ object PetalFetchDownloadBridge {
             val file = File(download.file)
             if (!file.exists()) return
             MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), null, null)
-            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
-            val ext = MimeTypeMap.getFileExtensionFromUrl(file.name)?.lowercase(Locale.US)
-            val mime = if (!ext.isNullOrEmpty()) {
-                MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
-            } else "*/*"
-            dm.addCompletedDownload(file.name, file.name, true, mime, file.absolutePath, file.length(), true)
-        } catch (e: Exception) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return
+                val ext = MimeTypeMap.getFileExtensionFromUrl(file.name)?.lowercase(Locale.US)
+                val mime = if (!ext.isNullOrEmpty()) {
+                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
+                } else "*/*"
+                dm.addCompletedDownload(file.name, file.name, true, mime, file.absolutePath, file.length(), true)
+            }
+        } catch (e: Throwable) {
             e.printStackTrace()
         }
     }

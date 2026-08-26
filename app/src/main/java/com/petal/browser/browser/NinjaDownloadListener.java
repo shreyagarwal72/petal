@@ -137,11 +137,13 @@ public class NinjaDownloadListener implements DownloadListener {
                                 }
                                 MediaScannerConnection.scanFile(context, new String[]{file.getAbsolutePath()}, null, null);
                                 try {
-                                    DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-                                    if (dm != null) {
-                                        dm.addCompletedDownload(file.getName(), file.getName(), true, mimeType != null ? mimeType : "*/*", file.getAbsolutePath(), file.length(), true);
+                                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                                        DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                                        if (dm != null) {
+                                            dm.addCompletedDownload(file.getName(), file.getName(), true, mimeType != null ? mimeType : "*/*", file.getAbsolutePath(), file.length(), true);
+                                        }
                                     }
-                                } catch (Exception ignored) {}
+                                } catch (Throwable ignored) {}
                                 webView.post(() -> {
                                     String text = webView.getContext().getString(R.string.app_done) + ". " + webView.getContext().getString(R.string.menu_download) + "?";
                                     Snackbar snackbar = Snackbar.make(webView, text, Snackbar.LENGTH_SHORT);
