@@ -240,19 +240,27 @@ fun PetalUserProfileScreen(
                 }
             }
         } else {
-            com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
-                RenderUserProfileContent(
-                    profile = profile,
-                    isLoading = isLoading,
-                    isSigningIn = isSigningIn,
-                    isExpressiveFeatureTiles = isExpressiveFeatureTiles,
-                    snackbarHostState = snackbarHostState,
-                    onBack = onBack,
-                    onOpenOAuth = onOpenOAuth,
-                    onStartGoogleSignIn = { startGoogleSignIn() },
-                    onOpenAppLockConfig = { showAppLockConfigPage = true },
-                    modifier = modifier
-                )
+            Box(modifier = Modifier.fillMaxSize()) {
+                // 1. Underlay Screen (Home Screen Preview) - Rendered behind User & Account during back gesture
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
+                    com.petal.browser.compose.home.PetalHomeScreen()
+                }
+
+                // 2. Foreground Screen (User & Account Profile) - Shrinks to 88% card & 32dp corners
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                    RenderUserProfileContent(
+                        profile = profile,
+                        isLoading = isLoading,
+                        isSigningIn = isSigningIn,
+                        isExpressiveFeatureTiles = isExpressiveFeatureTiles,
+                        snackbarHostState = snackbarHostState,
+                        onBack = onBack,
+                        onOpenOAuth = onOpenOAuth,
+                        onStartGoogleSignIn = { startGoogleSignIn() },
+                        onOpenAppLockConfig = { showAppLockConfigPage = true },
+                        modifier = modifier
+                    )
+                }
             }
         }
     }

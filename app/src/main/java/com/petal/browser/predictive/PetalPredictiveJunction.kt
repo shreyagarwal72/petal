@@ -242,7 +242,7 @@ fun PetalScreenWrapper(
     } else 0f
 
     val settledTargetDim = if (isBehind) {
-        if (disableBlurAllOver) 0.75f else 0.45f
+        if (disableBlurAllOver) 0.75f else 0.40f
     } else {
         0f
     }
@@ -256,7 +256,7 @@ fun PetalScreenWrapper(
         0f
     }
 
-    val settledTargetBlur = if (isBehind && !disableBlurAllOver) 28f else 0f
+    val settledTargetBlur = if (isBehind && !disableBlurAllOver) 24f else 0f
     val animatedBlurRadius = if (isBehind && !disableBlurAllOver) {
         if (predictiveEnabled && predictiveBack.isActive) {
             (settledTargetBlur * (1f - backProgressEased)).dp
