@@ -246,40 +246,33 @@ fun PetalScreenWrapper(
     } else {
         0f
     }
-    val fallbackDimAlpha = remember { Animatable(settledTargetDim) }
-    LaunchedEffect(settledTargetDim) {
-        fallbackDimAlpha.animateTo(
-            settledTargetDim,
-            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-        )
-    }
-    val animatedDimAlpha = if (predictiveEnabled && isPredictiveBackTarget) {
-        settledTargetDim * (1f - backProgressEased)
+    val animatedDimAlpha = if (predictiveEnabled && isBehind) {
+        if (predictiveBack.isActive) {
+            settledTargetDim * (1f - backProgressEased)
+        } else {
+            settledTargetDim
+        }
     } else {
-        fallbackDimAlpha.value
+        0f
     }
 
     val settledTargetBlur = if (isBehind && !disableBlurAllOver) 28f else 0f
-    val fallbackBlurRadius = remember { Animatable(settledTargetBlur) }
-    LaunchedEffect(settledTargetBlur) {
-        fallbackBlurRadius.animateTo(
-            settledTargetBlur,
-            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-        )
-    }
-
-    val animatedBlurRadius = if (isBehind) {
-        if (predictiveEnabled && isPredictiveBackTarget && !disableBlurAllOver) {
+    val animatedBlurRadius = if (isBehind && !disableBlurAllOver) {
+        if (predictiveEnabled && predictiveBack.isActive) {
             (settledTargetBlur * (1f - backProgressEased)).dp
         } else {
-            fallbackBlurRadius.value.dp
+            settledTargetBlur.dp
         }
     } else {
         0.dp
     }
 
-    val revealScale = if (predictiveEnabled && isPredictiveBackTarget) {
-        0.94f + 0.06f * backProgressEased
+    val revealScale = if (predictiveEnabled && isBehind) {
+        if (predictiveBack.isActive) {
+            0.94f + 0.06f * backProgressEased
+        } else {
+            0.94f
+        }
     } else {
         1f
     }
