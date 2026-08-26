@@ -110,6 +110,15 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract App Version
+        id: get_version
+        run: |
+          VERSION=$(grep "versionName" app/build.gradle | head -n 1 | awk -F '"' '{print $2}')
+          echo "APP_VERSION=v$VERSION" >> $GITHUB_ENV
+
       - name: Download Release APK Artifact
         uses: actions/download-artifact@v4
         with:
@@ -137,8 +146,8 @@ jobs:
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0.0' }}
-          name: ${{ startsWith(github.ref, 'refs/tags/v') && format('Petal Browser {0} Release', github.ref_name) || 'Petal Browser Production Release' }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || env.APP_VERSION }}
+          name: ${{ startsWith(github.ref, 'refs/tags/v') && format('Petal Browser {0} Release', github.ref_name) || format('Petal Browser {0} Release', env.APP_VERSION) }}
           body: |
             ## Petal Browser Production Release
 
