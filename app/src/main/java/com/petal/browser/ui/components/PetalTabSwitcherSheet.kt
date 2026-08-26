@@ -95,6 +95,7 @@ object PetalTabSwitcherBridge {
                     val container = dialog.findViewById<android.view.View>(com.google.android.material.R.id.container)
                     container?.let { root ->
                         root.fitsSystemWindows = false
+                        root.setPadding(0, 0, 0, 0)
                         if (root is android.view.ViewGroup) root.clipToPadding = false
                         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
                     }
@@ -102,6 +103,7 @@ object PetalTabSwitcherBridge {
                     val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
                     coordinator?.let { root ->
                         root.fitsSystemWindows = false
+                        root.setPadding(0, 0, 0, 0)
                         if (root is android.view.ViewGroup) root.clipToPadding = false
                         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
                     }
@@ -109,6 +111,7 @@ object PetalTabSwitcherBridge {
                     val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
                     bottomSheet?.let { sheet ->
                         sheet.fitsSystemWindows = false
+                        sheet.setPadding(0, 0, 0, 0)
                         sheet.background = null
                         if (sheet is android.view.ViewGroup) sheet.clipToPadding = false
                         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets -> insets }

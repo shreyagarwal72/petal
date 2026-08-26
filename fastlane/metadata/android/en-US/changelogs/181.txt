@@ -1,0 +1,3 @@
+* **Petal Home Preview Thumbnails**: Added high-fidelity Petal Home & Incognito start page card previews (emblem, search pill, and quick dials) for home tabs in Tab Manager.
+* **Tab Manager Header Alignment**: Integrated `ExpressiveHeader` back button and aligned header position to match Settings, History, and Bookmarks pages.
+* **Edge-to-Edge Status Bar Overlap**: Configured zero-padding root containers on `BottomSheetDialog` to ensure `ExpressiveHeader` background cleanly overlaps the status bar edge-to-edge.
