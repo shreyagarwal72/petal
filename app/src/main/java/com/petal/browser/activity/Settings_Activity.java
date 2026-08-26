@@ -13,10 +13,20 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.petal.browser.R;
 import com.petal.browser.compose.settings.PetalSettingsBridge;
+import com.petal.browser.compose.settings.SettingsCategory;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 
 public class Settings_Activity extends AppCompatActivity {
+
+    /**
+     * Optional String extra naming a {@link SettingsCategory} enum constant (e.g.
+     * "API_INTEGRATIONS"). When present, Settings opens straight to that category's
+     * page instead of the root category list - so a caller like the Petal AI Hub's
+     * "Configure Keys" action lands the user on the actual page they asked for, not
+     * a list they then have to tap through themselves.
+     */
+    public static final String EXTRA_SETTINGS_CATEGORY = "settings_category";
 
     @Override
     protected void attachBaseContext(android.content.Context newBase) {
@@ -31,7 +41,18 @@ public class Settings_Activity extends AppCompatActivity {
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         controller.hide(WindowInsetsCompat.Type.systemBars());
         controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-        setContentView(PetalSettingsBridge.createSettingsView(this, () -> {
+
+        SettingsCategory initialCategory = SettingsCategory.OVERVIEW;
+        String requestedCategory = getIntent() != null ? getIntent().getStringExtra(EXTRA_SETTINGS_CATEGORY) : null;
+        if (requestedCategory != null) {
+            try {
+                initialCategory = SettingsCategory.valueOf(requestedCategory);
+            } catch (IllegalArgumentException ignored) {
+                // Unknown/typo'd category name - fall back to the overview rather than crash.
+            }
+        }
+
+        setContentView(PetalSettingsBridge.createSettingsView(this, initialCategory, () -> {
             finish();
             return kotlin.Unit.INSTANCE;
         }));
