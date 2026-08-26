@@ -1,0 +1,1 @@
+* **Predictive Back Depth Blur Toggle**: Added a dedicated setting under `Appearance & Theme` -> `Predictive Back Depth Blur` (inspired by RvSystem-Monitor and PixelPlayer) to toggle real-time depth blur behind swiped underlay screens during predictive back gestures.
