@@ -478,38 +478,6 @@ fun PetalHomeScreen(
                     title = "Petal",
                     subtitle = "Personal Window to the Web",
                     actions = {
-                        val activeTabCount = remember {
-                            com.petal.browser.browser.BrowserContainer.size().coerceAtLeast(1)
-                        }
-                        IconButton(
-                            onClick = {
-                                if (onOpenTabSwitcher != {}) {
-                                    onOpenTabSwitcher()
-                                } else if (context is com.petal.browser.activity.BrowserActivity) {
-                                    (context as com.petal.browser.activity.BrowserActivity).showOverview()
-                                }
-                            },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
-                                modifier = Modifier.size(26.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = activeTabCount.toString(),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 11.sp
-                                        ),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        }
-
                         IconButton(
                             onClick = onOpenAccountSync,
                             modifier = Modifier.size(44.dp)
