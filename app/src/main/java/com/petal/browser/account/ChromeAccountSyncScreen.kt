@@ -205,53 +205,96 @@ fun PetalUserProfileScreen(
     var nameInput by remember { mutableStateOf(profile.displayName) }
     var showAppLockConfigPage by remember { mutableStateOf(false) }
 
-    if (showAppLockConfigPage) {
-        com.petal.browser.compose.security.PetalAppLockConfigScreen(
-            onBack = { showAppLockConfigPage = false }
-        )
-        return
-    }
-
-    var isLoading by remember { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(600L)
-        isLoading = false
-    }
-
-    var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
-
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            pendingCropUri = it
-        }
-    }
-
-    if (pendingCropUri != null) {
-        PetalAvatarCropSheet(
-            imageUri = pendingCropUri!!,
-            onDismiss = { pendingCropUri = null },
-            onAvatarCropped = {
-                pendingCropUri = null
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Profile picture updated permanently!")
-                }
-            }
-        )
-    }
-
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
-        onBack = { onBack() },
+        onBack = {
+            if (showAppLockConfigPage) {
+                showAppLockConfigPage = false
+            } else {
+                onBack()
+            }
+        },
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper {
-        Scaffold(
+        if (showAppLockConfigPage) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                // 1. Underlay Screen (User Profile) - Blurred 28dp & Dimmed behind App Lock Config
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
+                    RenderUserProfileContent(
+                        profile = profile,
+                        isLoading = isLoading,
+                        isSigningIn = isSigningIn,
+                        isExpressiveFeatureTiles = isExpressiveFeatureTiles,
+                        snackbarHostState = snackbarHostState,
+                        onBack = onBack,
+                        onOpenOAuth = onOpenOAuth,
+                        onStartGoogleSignIn = { startGoogleSignIn() },
+                        onEditName = {
+                            nameInput = profile.displayName
+                            showEditNameDialog = true
+                        },
+                        onPickAvatar = { galleryLauncher.launch("image/*") },
+                        onOpenAppLockConfig = { showAppLockConfigPage = true },
+                        modifier = modifier
+                    )
+                }
+
+                // 2. Foreground Screen (App Lock Config Page) - Shrinks to 88% card & 32dp corners
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                    com.petal.browser.compose.security.PetalAppLockConfigScreen(
+                        onBack = { showAppLockConfigPage = false }
+                    )
+                }
+            }
+        } else {
+            com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                RenderUserProfileContent(
+                    profile = profile,
+                    isLoading = isLoading,
+                    isSigningIn = isSigningIn,
+                    isExpressiveFeatureTiles = isExpressiveFeatureTiles,
+                    snackbarHostState = snackbarHostState,
+                    onBack = onBack,
+                    onOpenOAuth = onOpenOAuth,
+                    onStartGoogleSignIn = { startGoogleSignIn() },
+                    onEditName = {
+                        nameInput = profile.displayName
+                        showEditNameDialog = true
+                    },
+                    onPickAvatar = { galleryLauncher.launch("image/*") },
+                    onOpenAppLockConfig = { showAppLockConfigPage = true },
+                    modifier = modifier
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RenderUserProfileContent(
+    profile: GoogleProfile,
+    isLoading: Boolean,
+    isSigningIn: Boolean,
+    isExpressiveFeatureTiles: Boolean,
+    snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
+    onOpenOAuth: (PetalShortcut) -> Unit,
+    onStartGoogleSignIn: () -> Unit,
+    onEditName: () -> Unit,
+    onPickAvatar: () -> Unit,
+    onOpenAppLockConfig: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+
+    Scaffold(
         topBar = {
             com.petal.browser.ui.components.ExpressiveHeader(
                 title = "User Accounts & Profile",
                 subtitle = "Manage account & preferences",
-                onBack = { onBack() },
+                onBack = onBack,
                 maxTitleLines = 1,
                 maxSubtitleLines = 1
             )
@@ -506,7 +549,7 @@ fun PetalUserProfileScreen(
                             )
                         },
                         onClick = {
-                            showAppLockConfigPage = true
+                            onOpenAppLockConfig()
                         }
                     )
 
