@@ -451,7 +451,7 @@ fun PetalHomeScreen(
     }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
+        enabled = false,
         onBack = {
             (context as? ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
         }
