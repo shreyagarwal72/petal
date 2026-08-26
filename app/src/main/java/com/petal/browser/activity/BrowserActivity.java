@@ -1298,6 +1298,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 tab_container.removeView(controller.getAlbumView());
                 int index = BrowserContainer.indexOf(controller);
                 BrowserContainer.remove(controller);
+                com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
                 if ((predecessor != null) && (BrowserContainer.indexOf(predecessor) != -1)) {
                     //if predecessor is stored and has not been closed in the meantime
                     showAlbum(predecessor);
@@ -1321,6 +1322,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             boolean isClosingCurrent = (controller == currentAlbumController);
             BrowserContainer.remove(controller);
+            com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
             if (isClosingCurrent && BrowserContainer.size() > 0) {
                 showAlbum(BrowserContainer.get(Math.max(0, BrowserContainer.size() - 1)));
             }
