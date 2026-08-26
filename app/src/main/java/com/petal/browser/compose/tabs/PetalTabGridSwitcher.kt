@@ -210,7 +210,7 @@ fun PetalTabGridSwitcher(
                 subtitle = if (selectedCategory == TabCategory.INCOGNITO) "$incognitoTabCount private tabs open" else "$regularTabCount active tabs open",
                 onBack = {
                     commitPendingRemovals()
-                    (context as? android.app.Activity)?.onBackPressedDispatcher?.onBackPressed()
+                    (context as? androidx.activity.ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
                 },
                 actions = {
                     HeaderActionIcon(

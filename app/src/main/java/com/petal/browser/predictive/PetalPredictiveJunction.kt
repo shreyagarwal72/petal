@@ -28,6 +28,8 @@ import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -46,6 +48,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
@@ -163,6 +166,7 @@ fun PetalPredictiveBackSurface(
     underlayContent: (@Composable () -> Unit)? = { PetalDynamicUnderlayPreview() },
     content: @Composable () -> Unit,
 ) {
+    val context = LocalContext.current
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
     val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
     val isUnderlayPreview = LocalIsUnderlayPreview.current

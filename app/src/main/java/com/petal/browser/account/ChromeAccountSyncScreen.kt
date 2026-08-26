@@ -38,6 +38,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.AsyncImage
+import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.compose.home.PetalShortcut
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.PetalAboutDeveloperBridge
