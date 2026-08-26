@@ -154,6 +154,10 @@ fun PetalAiHubScreen(
                             contentDescription = "API Keys Settings",
                             onClick = {
                                 val intent = android.content.Intent(context, com.petal.browser.activity.Settings_Activity::class.java)
+                                intent.putExtra(
+                                    com.petal.browser.activity.Settings_Activity.EXTRA_SETTINGS_CATEGORY,
+                                    com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS.name
+                                )
                                 context.startActivity(intent)
                             }
                         )
@@ -271,6 +275,10 @@ fun PetalAiHubScreen(
                             OutlinedButton(
                                 onClick = {
                                     val intent = android.content.Intent(context, com.petal.browser.activity.Settings_Activity::class.java)
+                                    intent.putExtra(
+                                        com.petal.browser.activity.Settings_Activity.EXTRA_SETTINGS_CATEGORY,
+                                        com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS.name
+                                    )
                                     context.startActivity(intent)
                                 },
                                 shape = RoundedCornerShape(14.dp),
