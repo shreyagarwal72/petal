@@ -715,7 +715,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             searchOnSiteInput.setText("");
             searchOnSiteLayout.setVisibility(GONE);
             appBar.setVisibility(VISIBLE);
-        } else if (ninjaWebView != null && ninjaWebView.canGoBack() && (ninjaWebView.getUrl() == null || !isHomePage(ninjaWebView.getUrl()))) {
+        } else if (ninjaWebView != null && ninjaWebView.canGoBack()) {
             sp.edit().putBoolean("backPressed", true).apply();
             ninjaWebView.goBack();
         } else {
