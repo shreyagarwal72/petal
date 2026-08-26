@@ -42,6 +42,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -54,6 +55,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 /**
  * Global settings & state junction for Predictive Back and Depth Blur effects across the Petal App.
@@ -142,30 +144,33 @@ fun PetalPredictiveBackSurface(
 
     val isFullyEnabled = enabled && junctionPredictiveEnabled
 
+    val scope = rememberCoroutineScope()
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
-    // Used only during cancel settling so the smooth relaxation has something to follow.
-    val settleProgress = remember { Animatable(0f) }
+    val progressAnim = remember { Animatable(0f) }
 
     if (isFullyEnabled) {
         PredictiveBackHandler(enabled = true) { progressFlow ->
             try {
                 progressFlow.collectLatest { backEvent ->
+                    progressAnim.snapTo(backEvent.progress)
                     backState = PredictiveBackState(
                         isActive = true,
                         progress = backEvent.progress,
                         swipeEdge = backEvent.swipeEdge,
                     )
                 }
-                // Gesture committed — let the system drive the dismissal.
-                // Reset immediately so the revealed screen doesn't hold a stale dim/blur.
-                backState = PredictiveBackState.Idle
-                onBack()
+                // Gesture committed — smoothly animate remaining progress to 1f before firing back
+                scope.launch {
+                    progressAnim.animateTo(1f, animationSpec = tween(durationMillis = 160, easing = FastOutSlowInEasing))
+                    backState = PredictiveBackState.Idle
+                    onBack()
+                }
             } catch (e: CancellationException) {
-                // Gesture cancelled: animate progress back to 0 so blur/scale relax smoothly
-                // instead of snapping clear. 220 ms matches the system's cancel spring duration.
-                settleProgress.snapTo(backState.progress)
-                settleProgress.animateTo(0f, animationSpec = tween(durationMillis = 220))
-                backState = PredictiveBackState.Idle
+                // Gesture cancelled — smoothly relax progress back to 0f
+                scope.launch {
+                    progressAnim.animateTo(0f, animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing))
+                    backState = PredictiveBackState.Idle
+                }
                 throw e
             }
         }
@@ -215,38 +220,32 @@ fun PetalScreenWrapper(
 
     val predictiveBack = LocalPredictiveBackState.current
 
-    // Gate active reveal tracking: only the second-from-top screen should react to the
-    // live finger position. When not behind, only the foreground effects (scale, corner)
-    // apply, and they are driven purely by predictiveBack.progress.
     val isPredictiveBackTarget = isBehind && predictiveBack.isActive
 
-    // Quadratic ease: blur/dim clear noticeably faster than the raw swipe progress.
+    // Quadratic ease matching Pixel predictive back feel
     val backProgressEased =
         if (predictiveBack.isActive) 1f - (1f - predictiveBack.progress).let { it * it }
         else 0f
 
-    // -----------------------------------------------------------------------
-    // Foreground effects — active screen shrinks + grows rounded corners
-    // -----------------------------------------------------------------------
-
-    // Scale: 1.0 → 0.92 during gesture (8 % matching Pixel system chrome).
+    // Foreground PixelPlayer style predictive back transformations:
+    // Scale: 1.0 -> 0.92, Corner Radius: 0 -> 32dp, Alpha: 1.0 -> 0.72, and edge-aware translation
     val foregroundProgress = if (predictiveEnabled && !isBehind) predictiveBack.progress else 0f
     val scale = 1f - (0.08f * foregroundProgress)
+    val cornerRadius = if (!isBehind) 32f * foregroundProgress else 0f
+    val alphaVal = if (!isBehind && predictiveBack.isActive) 1f - (0.28f * foregroundProgress) else 1f
 
-    // Corner radius: 0 dp → 28 dp as gesture progresses.
-    val cornerRadius = if (!isBehind) 28f * foregroundProgress else 0f
+    val swipeEdge = predictiveBack.swipeEdge
+    val translationXFactor = if (!isBehind && predictiveBack.isActive) {
+        if (swipeEdge == BackEventCompat.EDGE_LEFT) 0.04f
+        else if (swipeEdge == BackEventCompat.EDGE_RIGHT) -0.04f
+        else 0f
+    } else 0f
 
-    // -----------------------------------------------------------------------
-    // Behind-screen effects — dim + blur clear live with the finger
-    // -----------------------------------------------------------------------
-
-    // Settled target dim: If strictly behind top -> 0.4f (or 0.75f if blur is disabled). Else -> 0f.
     val settledTargetDim = if (isBehind) {
         if (disableBlurAllOver) 0.75f else 0.4f
     } else {
         0f
     }
-    // Fallback tween: animates dim on screen push/pop lifecycle events.
     val fallbackDimAlpha = remember { Animatable(settledTargetDim) }
     LaunchedEffect(settledTargetDim) {
         fallbackDimAlpha.animateTo(
@@ -254,14 +253,12 @@ fun PetalScreenWrapper(
             animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
         )
     }
-    // Live tracking overrides the tween while a gesture is in flight.
     val animatedDimAlpha = if (predictiveEnabled && isPredictiveBackTarget) {
         settledTargetDim * (1f - backProgressEased)
     } else {
         fallbackDimAlpha.value
     }
 
-    // Settled target blur: If strictly behind top -> 24dp (or 0dp if blur disabled).
     val settledTargetBlur = if (isBehind && !disableBlurAllOver) 24f else 0f
     val fallbackBlurRadius = remember { Animatable(settledTargetBlur) }
     LaunchedEffect(settledTargetBlur) {
@@ -276,10 +273,8 @@ fun PetalScreenWrapper(
         fallbackBlurRadius.value.dp
     }
 
-    // Subtle scale-up on the revealed screen — mirrors the system back-to-home animation
-    // where the destination grows slightly to meet the finger.
     val revealScale = if (predictiveEnabled && isPredictiveBackTarget) {
-        0.96f + 0.04f * backProgressEased
+        0.95f + 0.05f * backProgressEased
     } else {
         1f
     }
@@ -287,7 +282,6 @@ fun PetalScreenWrapper(
     Box(
         modifier = modifier
             .fillMaxSize()
-            // Keep CompositingStrategy STABLE when predictive is enabled.
             .graphicsLayer {
                 compositingStrategy = if (predictiveEnabled) {
                     CompositingStrategy.Offscreen
@@ -296,6 +290,9 @@ fun PetalScreenWrapper(
                 }
                 scaleX = if (isBehind) revealScale else scale
                 scaleY = if (isBehind) revealScale else scale
+                translationX = if (!isBehind) size.width * translationXFactor * foregroundProgress else 0f
+                translationY = if (!isBehind) size.height * 0.03f * foregroundProgress else 0f
+                alpha = alphaVal
                 if (predictiveEnabled && cornerRadius > 0.5f) {
                     this.shape = RoundedCornerShape(cornerRadius.dp)
                     this.clip = true
@@ -308,7 +305,6 @@ fun PetalScreenWrapper(
     ) {
         content()
 
-        // Dim overlay — only visible on the revealed (behind) screen.
         if (isBehind) {
             Box(
                 modifier = Modifier
