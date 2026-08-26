@@ -1,0 +1,1 @@
+* **Dynamic Predictive Back Underlay Preview**: Added `PetalDynamicUnderlayPreview()` to dynamically render the active web page preview card (showing site title, URL, lock security status, and brand emblem) behind settings, account sync, and secondary screens when a web page is open, seamlessly switching back to `PetalHomeScreen` when on blank/home tabs.

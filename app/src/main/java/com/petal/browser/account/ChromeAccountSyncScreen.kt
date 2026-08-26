@@ -236,7 +236,7 @@ fun PetalUserProfileScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Underlay Screen (Home Screen Preview) - Rendered behind User & Account during back gesture
                 com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
-                    com.petal.browser.compose.home.PetalHomeScreen()
+                    com.petal.browser.predictive.PetalDynamicUnderlayPreview()
                 }
 
                 // 2. Foreground Screen (User & Account Profile) - Shrinks to 88% card & 32dp corners
