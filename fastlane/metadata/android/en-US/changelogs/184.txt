@@ -1,0 +1,1 @@
+* **Zero-Discontinuity End-of-Gesture Animation**: Completely eliminated end-of-gesture stutter by synchronizing spring animation specs (`Spring.StiffnessMediumLow`) on commit and cancellation, ensuring `progress` matches exact resting bounds (`0f` / `1f`) before resetting `isActive` state.
