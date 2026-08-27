@@ -107,9 +107,15 @@ object PetalSettingsBridge {
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
                 var themeConfigName by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
+                var customFontSettingsState by remember { mutableStateOf(getCustomFontSettings(sp)) }
+                var customFontPathState by remember { mutableStateOf(sp.getString("sp_custom_font_path", null)) }
 
                 DisposableEffect(sp) {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                        if (key != null && key.startsWith("sp_custom_")) {
+                            customFontSettingsState = getCustomFontSettings(sp)
+                            customFontPathState = sp.getString("sp_custom_font_path", null)
+                        }
                         when (key) {
                             "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                             "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
@@ -158,6 +164,8 @@ object PetalSettingsBridge {
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
                     appFont = appFont,
+                    customFontPath = customFontPathState,
+                    customFontSettings = customFontSettingsState,
                     fontWidth = fontWidthVal,
                     fontWeight = fontWeightVal,
                     fontRoundness = fontRoundnessVal,
@@ -1006,6 +1014,16 @@ fun PetalSettingsScreen(
                                         var customFontSettings by remember { mutableStateOf(getCustomFontSettings(sp)) }
                                         var selectedLevelTab by remember { mutableIntStateOf(0) }
                                         val customFontName = sp.getString("sp_custom_font_name", "No font file selected") ?: "No font file selected"
+
+                                        DisposableEffect(sp) {
+                                            val fontListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                                                if (key != null && key.startsWith("sp_custom_")) {
+                                                    customFontSettings = getCustomFontSettings(sp)
+                                                }
+                                            }
+                                            sp.registerOnSharedPreferenceChangeListener(fontListener)
+                                            onDispose { sp.unregisterOnSharedPreferenceChangeListener(fontListener) }
+                                        }
 
                                         Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                                             Surface(
