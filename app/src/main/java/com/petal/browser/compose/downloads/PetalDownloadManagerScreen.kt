@@ -37,6 +37,7 @@ import androidx.compose.material3.*
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
+import com.petal.browser.ui.components.PetalExpressiveLinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
