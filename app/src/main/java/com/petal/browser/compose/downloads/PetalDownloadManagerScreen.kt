@@ -91,12 +91,20 @@ data class DownloadItem(
 object PetalDownloadBridge {
     @JvmStatic
     fun createDownloadView(activity: androidx.activity.ComponentActivity, onBackPress: () -> Unit): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -118,7 +126,7 @@ object PetalDownloadBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    PetalDownloadManagerScreen(onBackPress = onBackPress)
+                    PetalDownloadManagerScreen(backgroundSnapshot = snapshotBitmap, onBackPress = onBackPress)
                 }
             }
         }
@@ -240,9 +248,12 @@ fun getFileTypeContainerColors(fileName: String, isSelected: Boolean): Pair<Colo
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
+fun PetalDownloadManagerScreen(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
+    onBackPress: () -> Unit = {}
+) {
     val context = LocalContext.current
 
     // Downloads now flow through Fetch2 (see BrowserUnit.download), which is the only
@@ -361,7 +372,7 @@ fun PetalDownloadManagerScreen(onBackPress: () -> Unit = {}) {
         enabled = true,
         onBack = onBackPress,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper {
+    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),

@@ -149,6 +149,7 @@ fun getPresetMaterialIcon(presetId: String): androidx.compose.ui.graphics.vector
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalUserProfileScreen(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onBack: () -> Unit,
     onOpenOAuth: (PetalShortcut) -> Unit = {},
     modifier: Modifier = Modifier
@@ -243,7 +244,7 @@ fun PetalUserProfileScreen(
                 onBack = { showAppLockConfigPage = false },
             )
         } else {
-            com.petal.browser.predictive.PetalScreenWrapper {
+            com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
                 RenderUserProfileContent(
                     profile = profile,
                     isLoading = isLoading,
@@ -941,12 +942,20 @@ object PetalAccountSyncBridge {
         onBack: () -> Unit,
         onOpenOAuth: (PetalShortcut) -> Unit
     ): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                 var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
@@ -992,6 +1001,7 @@ object PetalAccountSyncBridge {
                     fontRoundness = fontRoundnessVal
                 ) {
                     PetalUserProfileScreen(
+                        backgroundSnapshot = snapshotBitmap,
                         onBack = onBack,
                         onOpenOAuth = onOpenOAuth
                     )

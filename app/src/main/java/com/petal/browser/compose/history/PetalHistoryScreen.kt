@@ -71,12 +71,20 @@ object PetalHistoryBridge {
         onClearBrowsingData: HistoryActionHandler,
         onBackPress: () -> Unit
     ): android.view.View {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -99,6 +107,7 @@ object PetalHistoryBridge {
                     paletteId = paletteId
                 ) {
                     PetalHistoryScreen(
+                        backgroundSnapshot = snapshotBitmap,
                         onOpenUrl = { url -> onOpenUrl.open(url) },
                         onClearBrowsingData = { onClearBrowsingData.action() },
                         onDismiss = onBackPress
@@ -112,9 +121,10 @@ object PetalHistoryBridge {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PetalHistoryScreen(
-    onOpenUrl: (String) -> Unit,
-    onClearBrowsingData: () -> Unit,
-    onDismiss: () -> Unit
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
+    onOpenUrl: (String) -> Unit = {},
+    onClearBrowsingData: () -> Unit = {},
+    onDismiss: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
@@ -188,7 +198,7 @@ fun PetalHistoryScreen(
         enabled = true,
         onBack = onDismiss,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper {
+    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)

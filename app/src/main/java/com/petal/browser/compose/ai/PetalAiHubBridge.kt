@@ -14,6 +14,8 @@ object PetalAiHubBridge {
     fun showAiHub(activity: ComponentActivity) {
         activity.runOnUiThread {
             try {
+                val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+                com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
                 var composeView: ComposeView? = null
                 composeView = ComposeView(activity).apply {
                     setViewTreeLifecycleOwner(activity)
@@ -22,7 +24,14 @@ object PetalAiHubBridge {
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
 
                     setContent {
+                        val snapshotBitmap = androidx.compose.runtime.remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                        androidx.compose.runtime.DisposableEffect(Unit) {
+                            onDispose {
+                                com.petal.browser.predictive.PetalContentSnapshot.clear()
+                            }
+                        }
                         PetalAiHubScreen(
+                            backgroundSnapshot = snapshotBitmap,
                             context = activity,
                             onOpenUrl = { url ->
                                 (activity as? com.petal.browser.activity.BrowserActivity)?.let { b ->

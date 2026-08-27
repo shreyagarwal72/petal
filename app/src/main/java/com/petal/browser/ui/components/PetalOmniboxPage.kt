@@ -115,6 +115,8 @@ object PetalOmniboxBridge {
         onBackPress: () -> Unit,
         onQuerySubmitted: (String) -> Unit
     ): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             isFocusable = true
             isFocusableInTouchMode = true
@@ -123,6 +125,12 @@ object PetalOmniboxBridge {
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -145,6 +153,7 @@ object PetalOmniboxBridge {
                     paletteId = paletteId
                 ) {
                     PetalOmniboxPage(
+                        backgroundSnapshot = snapshotBitmap,
                         activity = activity,
                         initialQuery = initialQuery,
                         pageTitle = pageTitle,
@@ -164,6 +173,7 @@ object PetalOmniboxBridge {
 
 @Composable
 fun PetalOmniboxPage(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     activity: ComponentActivity,
     initialQuery: String = "",
     pageTitle: String = "",
@@ -310,7 +320,7 @@ fun PetalOmniboxPage(
         enabled = true,
         onBack = { onBackPress() },
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper {
+        com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = WindowInsets(0)

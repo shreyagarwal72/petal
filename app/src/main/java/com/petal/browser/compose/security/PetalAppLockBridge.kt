@@ -42,10 +42,19 @@ object PetalAppLockBridge {
     @JvmStatic
     fun showConfig(activity: Activity, onBack: Runnable) {
         val decor = activity.window.decorView as? ViewGroup ?: return
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         var composeView: ComposeView? = null
         composeView = ComposeView(activity).apply {
             setContent {
+                val snapshotBitmap = androidx.compose.runtime.remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                androidx.compose.runtime.DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
                 PetalAppLockConfigScreen(
+                    backgroundSnapshot = snapshotBitmap,
                     onBack = {
                         decor.removeView(composeView)
                         onBack.run()

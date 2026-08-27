@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalAppLockConfigScreen(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -75,7 +76,7 @@ fun PetalAppLockConfigScreen(
         enabled = true,
         onBack = onBack,
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper {
+        com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
             Scaffold(
                 topBar = {
                     ExpressiveHeader(

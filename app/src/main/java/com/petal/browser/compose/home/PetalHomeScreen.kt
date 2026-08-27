@@ -46,6 +46,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
@@ -335,6 +337,8 @@ object PetalComposeBridge {
         tabCount: Int,
         handler: PetalHomeActionHandler
     ): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setupExpressiveHomeScreen(
                 activity = activity,
@@ -370,6 +374,12 @@ fun ComposeView.setupExpressiveHomeScreen(
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
     setContent {
+        val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+        DisposableEffect(Unit) {
+            onDispose {
+                com.petal.browser.predictive.PetalContentSnapshot.clear()
+            }
+        }
         val accountViewModel = viewModel<AccountViewModel>(activity)
         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
         var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
@@ -394,6 +404,7 @@ fun ComposeView.setupExpressiveHomeScreen(
             dynamicColor = useDynamic
         ) {
             PetalHomeScreen(
+                backgroundSnapshot = snapshotBitmap,
                 accountViewModel = accountViewModel,
                 onSearch = onSearch,
                 onOpenShortcutUrl = onOpenShortcutUrl,
@@ -413,6 +424,7 @@ fun ComposeView.setupExpressiveHomeScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PetalHomeScreen(
+    backgroundSnapshot: ImageBitmap? = null,
     accountViewModel: AccountViewModel = viewModel(),
     onSearch: (String) -> Unit = {},
     onOpenShortcutUrl: (String) -> Unit = {},
@@ -463,7 +475,7 @@ fun PetalHomeScreen(
             }
         }
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper {
+        com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background

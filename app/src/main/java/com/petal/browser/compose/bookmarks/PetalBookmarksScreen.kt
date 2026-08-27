@@ -62,12 +62,20 @@ object PetalBookmarksBridge {
         onOpenUrl: BookmarkUrlHandler,
         onBackPress: () -> Unit
     ): android.view.View {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -90,6 +98,7 @@ object PetalBookmarksBridge {
                     paletteId = paletteId
                 ) {
                     PetalBookmarksScreen(
+                        backgroundSnapshot = snapshotBitmap,
                         onOpenUrl = { url -> onOpenUrl.open(url) },
                         onDismiss = onBackPress
                     )
@@ -102,8 +111,9 @@ object PetalBookmarksBridge {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PetalBookmarksScreen(
-    onOpenUrl: (String) -> Unit,
-    onDismiss: () -> Unit
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
+    onOpenUrl: (String) -> Unit = {},
+    onDismiss: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
@@ -149,7 +159,7 @@ fun PetalBookmarksScreen(
         enabled = true,
         onBack = onDismiss,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper {
+    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)

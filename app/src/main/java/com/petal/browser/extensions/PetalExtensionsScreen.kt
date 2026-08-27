@@ -39,6 +39,7 @@ import com.petal.browser.ui.theme.isDynamicColorSupported
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalExtensionsScreen(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -72,7 +73,7 @@ fun PetalExtensionsScreen(
         enabled = true,
         onBack = onDismiss,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper {
+    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         topBar = {
             com.petal.browser.ui.components.ExpressiveHeader(
@@ -235,12 +236,20 @@ object PetalExtensionsBridge {
                 }
             }
 
+            val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
+                    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            com.petal.browser.predictive.PetalContentSnapshot.clear()
+                        }
+                    }
                     val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                     val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                     val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
@@ -252,6 +261,7 @@ object PetalExtensionsBridge {
                         paletteId = paletteId
                     ) {
                         PetalExtensionsScreen(
+                            backgroundSnapshot = snapshotBitmap,
                             onDismiss = { dialog.dismiss() }
                         )
                     }
