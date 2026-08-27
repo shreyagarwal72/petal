@@ -161,5 +161,14 @@
     <string name="menu_delete_entry">Delete entry</string>
     <string name="app_intro_a">Thanks for using Petal!</string>
     <string name="app_intro_b">The currently opened website is the WIKI of Petal. This site is also saved as your first Bookmark. On the WIKI you can find helpful tips and links.</string>
-    <string name="widget_expressive_bar">Expressive Search Bar</string>
+
+    <!-- Widget Titles & Descriptions -->
+    <string name="widget_quick_search_name">Petal Search 1 (Compact Bar)</string>
+    <string name="widget_quick_search_desc">Compact search bar with AI and Voice shortcuts.</string>
+    <string name="widget_expressive_bar_name">Petal Search 8 (Expressive Island)</string>
+    <string name="widget_expressive_bar_desc">Material 3 Expressive search bar with Scallop monogram badge and action island.</string>
+    <string name="widget_shortcuts_name">Petal Shortcuts &amp; Bookmarks</string>
+    <string name="widget_shortcuts_desc">Quick access grid for favorite shortcuts and bookmarks.</string>
+    <string name="widget_mode_switch_name">Petal Mode Switcher</string>
+    <string name="widget_mode_switch_desc">Instant toggle between Standard and Incognito browsing mode.</string>
 </resources>

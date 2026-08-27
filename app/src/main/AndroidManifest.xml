@@ -199,7 +199,7 @@
 
         <receiver
             android:name="com.petal.browser.widget.glance.PetalSearchGlanceWidgetReceiver"
-            android:label="Petal Quick Search"
+            android:label="@string/widget_quick_search_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -211,7 +211,7 @@
 
         <receiver
             android:name="com.petal.browser.widget.glance.PetalShortcutsGlanceWidgetReceiver"
-            android:label="Petal Shortcuts &amp; Bookmarks"
+            android:label="@string/widget_shortcuts_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -223,7 +223,7 @@
 
         <receiver
             android:name="com.petal.browser.widget.glance.PetalExpressiveGlanceWidgetReceiver"
-            android:label="Petal Expressive Search Bar"
+            android:label="@string/widget_expressive_bar_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -235,7 +235,7 @@
 
         <receiver
             android:name="com.petal.browser.widget.glance.PetalModeSwitchGlanceWidgetReceiver"
-            android:label="Petal Mode Switcher"
+            android:label="@string/widget_mode_switch_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
