@@ -472,6 +472,7 @@ public class NinjaWebViewClient extends WebViewClient {
             if (!ninjaWebView.isCamera()) {
                 // Safe non-destructive media device protection
             }
+            view.evaluateJavascript(com.petal.browser.media.PetalMediaBridge.MEDIA_JS_INJECTION, null);
             }
         } catch (Exception e) {
             e.printStackTrace();
