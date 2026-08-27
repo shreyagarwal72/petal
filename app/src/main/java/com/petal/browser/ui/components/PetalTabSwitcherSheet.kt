@@ -195,6 +195,7 @@ object PetalTabSwitcherBridge {
 
                         com.petal.browser.compose.tabs.PetalTabGridSwitcher(
                             tabs = tabItems,
+                            onBack = { try { dialog.dismiss() } catch (_: Exception) {} },
                             onTabSelect = { tabItem ->
                                 try { dialog.dismiss() } catch (ignored: Exception) {}
                                 val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
