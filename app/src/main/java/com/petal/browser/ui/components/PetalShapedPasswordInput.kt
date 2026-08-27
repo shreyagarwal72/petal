@@ -58,21 +58,7 @@ import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
  * List of Material 3 Expressive shapes used for password masking.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-val ExpressivePasswordShapes = listOf(
-    MaterialShapes.Cookie12Sided,
-    MaterialShapes.Clover4Leaf,
-    MaterialShapes.Pentagon,
-    MaterialShapes.Sunny,
-    MaterialShapes.Cookie6Sided,
-    MaterialShapes.Pill,
-    MaterialShapes.Cookie4Sided,
-    MaterialShapes.Arch,
-    MaterialShapes.Flower,
-    MaterialShapes.Gem,
-    MaterialShapes.Circle,
-    MaterialShapes.Cookie9Sided,
-    MaterialShapes.Burst
-)
+val ExpressivePasswordShapes = com.petal.browser.ui.theme.PetalMaterialShapes.allShapes
 
 /**
  * Deterministically picks a stable shape index for character [ch] at string index [index].
