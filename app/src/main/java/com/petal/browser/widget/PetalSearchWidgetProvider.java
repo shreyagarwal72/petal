@@ -27,6 +27,7 @@ public final class PetalSearchWidgetProvider {
     public static final String ACTION_OPEN_BOOKMARKS = "com.petal.browser.action.OPEN_BOOKMARKS";
     public static final String ACTION_OPEN_DOWNLOADS = "com.petal.browser.action.OPEN_DOWNLOADS";
     public static final String ACTION_OPEN_NEW_TAB = "com.petal.browser.action.OPEN_NEW_TAB";
+    public static final String ACTION_OPEN_LENS = "com.petal.browser.action.OPEN_LENS";
 
     /** Refreshes every placed instance of the widget, e.g. after a theme/palette change. */
     public static void updateAllWidgets(android.content.Context context) {

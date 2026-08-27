@@ -52,6 +52,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CenterFocusWeak
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -388,6 +389,15 @@ fun PetalOmniboxPage(
                                                 )
                                             }
                                         } else {
+                                            IconButton(onClick = {
+                                                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(activity)
+                                            }) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.CenterFocusWeak,
+                                                    contentDescription = "Google Lens Search",
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
                                             IconButton(onClick = {
                                                 PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
                                                     if (result.isNotBlank()) onQuerySubmitted(result.trim())

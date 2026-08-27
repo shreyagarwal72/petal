@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CenterFocusWeak
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -48,6 +49,7 @@ interface PetalLinkContextMenuHandler {
     fun onShareLink()
     fun onShareImage()
     fun onScanImage()
+    fun onSearchWithGoogleLens() {}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -168,6 +170,10 @@ fun PetalLinkContextMenuSheet(
             ContextMenuItem("Scan Image", Icons.Rounded.DocumentScanner) {
                 onDismiss()
                 handler.onScanImage()
+            }
+            ContextMenuItem("Search image with Google Lens", Icons.Rounded.CenterFocusWeak) {
+                onDismiss()
+                handler.onSearchWithGoogleLens()
             }
             ContextMenuItem("Share image", Icons.Rounded.Share) {
                 onDismiss()

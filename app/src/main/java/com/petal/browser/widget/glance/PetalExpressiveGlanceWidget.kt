@@ -119,6 +119,7 @@ private fun PetalExpressiveWidgetContent(isTall: Boolean) {
     val aiAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
     val voiceAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_VOICE))
     val incognitoAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO))
+    val lensAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_LENS))
     val greetingText = remember { PetalGreetingManager.getRandomGreeting(context) }
 
     Box(
@@ -298,7 +299,7 @@ private fun ExpressiveSearchBarCapsule(
                         modifier = GlanceModifier
                             .size(34.dp)
                             .cornerRadius(17.dp)
-                            .clickable(voiceAction),
+                            .clickable(lensAction),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
