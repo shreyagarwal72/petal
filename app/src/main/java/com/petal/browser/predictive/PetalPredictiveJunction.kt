@@ -228,6 +228,7 @@ fun PetalPredictiveBackSurface(
                     backState = backState.copy(isActive = true, progress = value)
                 }
                 backState = backState.copy(isActive = false, progress = 0f)
+            }
         }
     }
 
