@@ -815,6 +815,41 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     /**
+     * URL of the history entry that {@code goBack()} would land on right now, or {@code null}
+     * if there isn't one.
+     */
+    @Nullable
+    public String getBackHistoryUrl() {
+        try {
+            WebBackForwardList list = copyBackForwardList();
+            int targetIndex = list.getCurrentIndex() - 1;
+            if (targetIndex < 0) return null;
+            WebHistoryItem item = list.getItemAtIndex(targetIndex);
+            return item != null ? item.getUrl() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Real, live screenshot of the page a back-navigation would reveal, sourced from
+     * {@link TabThumbnailCache} - the same URL-keyed cache {@link #updatePreviewCache()} already
+     * fills in on every page-finished/tab-switch. Returns {@code null} (never a placeholder)
+     * when that page hasn't been visited/cached yet, so callers can fall back honestly instead
+     * of showing a fake preview.
+     */
+    @Nullable
+    public Bitmap getBackPreviewBitmap() {
+        String url = getBackHistoryUrl();
+        if (url == null || url.isEmpty()) return null;
+        Bitmap bitmap = TabThumbnailCache.get(url);
+        if (bitmap != null && !bitmap.isRecycled()) {
+            return bitmap;
+        }
+        return null;
+    }
+
+    /**
      * Walks up the Context chain to find the {@link Window} of the hosting {@link Activity},
      * unwrapping any {@code ContextWrapper} layers (e.g. from theming libraries). Returns
      * {@code null} if this view isn't hosted in an Activity (e.g. a detached or preview context).
