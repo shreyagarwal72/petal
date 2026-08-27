@@ -200,12 +200,12 @@ fun PetalMaterial3SearchBarWidget(
     val variant = SearchBarVariant.fromKey(selectedVariantKey)
 
     val effectiveOpenSearch = {
-        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.LIGHT_CLICK, 0.5f)
+        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.5f)
         onSearch("")
     }
 
     val effectiveOpenAi = {
-        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.MEDIUM_CLICK, 0.6f)
+        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.6f)
         if (onOpenAi != null) {
             onOpenAi()
         } else if (activity != null) {
@@ -214,7 +214,7 @@ fun PetalMaterial3SearchBarWidget(
     }
 
     val effectiveOpenIncognito = {
-        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.MEDIUM_CLICK, 0.6f)
+        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.6f)
         if (onOpenIncognito != null) {
             onOpenIncognito()
         } else if (activity != null) {
@@ -225,7 +225,7 @@ fun PetalMaterial3SearchBarWidget(
     }
 
     val effectiveOpenLens = {
-        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.MEDIUM_CLICK, 0.6f)
+        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.6f)
         if (onOpenLens != null) {
             onOpenLens()
         } else if (activity != null) {
