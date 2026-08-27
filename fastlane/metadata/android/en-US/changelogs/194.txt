@@ -1,0 +1,9 @@
+v1.9.4 Release Highlights:
+- Added complete Google Lens integration with Camera Capture, Gallery Photo Picker, Search Bar Lens launcher, and Webpage Image context menu search.
+- Added Multi-Engine High-Speed Torrent & Magnet Downloader with 1DM Engine, In-App Native Downloader, and System Downloader modes.
+- Added real-time Torrent Engine switcher in Settings (Data & Storage).
+- System-wide Haptic Feedback overall app inspired by RvSystem-Monitor & Ever-Haptics.
+- Periodic Ambient Morphing Background Shapes with customizable auto-change interval (0 to 60 min) using PetalSlider.
+- Real-time Custom Font Tweaker with live typography variation updates (Weight, Width, Optical Size, Slant, Roundness).
+- Full Material 3 Expressive Glance Widgets named and configured.
+- Biometric & Passcode Security Dialogs for App Lock and Profile Lock pages.
