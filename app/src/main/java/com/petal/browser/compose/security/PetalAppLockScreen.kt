@@ -41,6 +41,7 @@ import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PetalAppLockScreen(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onUnlocked: () -> Unit = {},
     onBackPress: () -> Unit = {}
 ) {
@@ -86,9 +87,14 @@ fun PetalAppLockScreen(
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onBackPress,
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.background
+            ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
