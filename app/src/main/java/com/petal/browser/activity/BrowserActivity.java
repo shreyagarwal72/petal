@@ -4527,6 +4527,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             };
             runOrDeferPendingWidgetAction();
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_LENS.equals(action)) {
+            try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            pendingWidgetAction = () -> {
+                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this);
+            };
+            runOrDeferPendingWidgetAction();
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO.equals(action)) {
             try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
             getIntent().setAction("");
@@ -4776,6 +4784,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         public void onScanImage() {
                             if (imageURL != null && !imageURL.trim().isEmpty()) {
                                 com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(BrowserActivity.this, imageURL);
+                            } else {
+                                NinjaToast.show(BrowserActivity.this, "No valid image URL found");
+                            }
+                        }
+
+                        @Override
+                        public void onSearchWithGoogleLens() {
+                            if (imageURL != null && !imageURL.trim().isEmpty()) {
+                                String lensUrl = "https://lens.google.com/uploadbyurl?url=" + android.net.Uri.encode(imageURL);
+                                addAlbum(null, lensUrl, true);
                             } else {
                                 NinjaToast.show(BrowserActivity.this, "No valid image URL found");
                             }
