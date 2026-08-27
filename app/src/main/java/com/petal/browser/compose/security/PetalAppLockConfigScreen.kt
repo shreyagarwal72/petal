@@ -353,7 +353,7 @@ fun PetalAppLockConfigScreen(
                                         onValueChange = { tempPasscode = it },
                                         hintText = "Enter passcode",
                                         accentColor = MaterialTheme.colorScheme.primary,
-                                        onUnlock = {},
+                                        onUnlock = null,
                                         unlockButtonText = ""
                                     )
                                 }

@@ -159,9 +159,12 @@ fun PetalAppLockScreen(
                 // Shaped Mask Password Input Component
                 PetalShapedPasswordInput(
                     value = enteredPasscode,
-                    onValueChange = {
-                        enteredPasscode = it
+                    onValueChange = { newValue ->
+                        enteredPasscode = newValue
                         if (errorMessage != null) errorMessage = null
+                        if (savedPasscode.isNotBlank() && newValue.trim() == savedPasscode.trim()) {
+                            verifyPasscode()
+                        }
                     },
                     hintText = "Enter App Password",
                     isError = errorMessage != null,

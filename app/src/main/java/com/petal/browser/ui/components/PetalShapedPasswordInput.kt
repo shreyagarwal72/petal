@@ -219,8 +219,9 @@ fun PetalShapedPasswordInput(
                     onValueChange = onValueChange,
                     enabled = enabled,
                     singleLine = true,
+                    visualTransformation = if (isPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
+                        keyboardType = if (isPasswordVisible) KeyboardType.Text else KeyboardType.Password,
                         imeAction = if (onUnlock != null) ImeAction.Done else ImeAction.Default
                     ),
                     keyboardActions = KeyboardActions(
@@ -250,12 +251,12 @@ fun PetalShapedPasswordInput(
                 Icon(
                     imageVector = if (isPasswordVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
                     contentDescription = if (isPasswordVisible) "Hide password" else "Show password",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = if (isPasswordVisible) accentColor else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             // Optional Unlock Button
-            if (onUnlock != null) {
+            if (onUnlock != null && unlockButtonText.isNotBlank()) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = onUnlock,
