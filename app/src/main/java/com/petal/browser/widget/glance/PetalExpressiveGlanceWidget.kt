@@ -161,7 +161,8 @@ private fun PetalExpressiveWidgetContent(isTall: Boolean) {
                     searchAction = searchAction,
                     aiAction = aiAction,
                     incognitoAction = incognitoAction,
-                    voiceAction = voiceAction
+                    voiceAction = voiceAction,
+                    lensAction = lensAction
                 )
             }
         } else {
@@ -170,7 +171,8 @@ private fun PetalExpressiveWidgetContent(isTall: Boolean) {
                 searchAction = searchAction,
                 aiAction = aiAction,
                 incognitoAction = incognitoAction,
-                voiceAction = voiceAction
+                voiceAction = voiceAction,
+                lensAction = lensAction
             )
         }
     }
@@ -182,7 +184,8 @@ private fun ExpressiveSearchBarCapsule(
     searchAction: androidx.glance.action.Action,
     aiAction: androidx.glance.action.Action,
     incognitoAction: androidx.glance.action.Action,
-    voiceAction: androidx.glance.action.Action
+    voiceAction: androidx.glance.action.Action,
+    lensAction: androidx.glance.action.Action
 ) {
     val context = LocalContext.current
     val emblemColorInt = GlanceTheme.colors.primary.getColor(context).toArgb()
@@ -200,7 +203,7 @@ private fun ExpressiveSearchBarCapsule(
     Box(
         modifier = modifier
             .cornerRadius(30.dp)
-            .background(GlanceTheme.colors.surfaceContainerHigh)
+            .background(GlanceTheme.colors.surfaceContainer)
             .clickable(searchAction)
     ) {
         Row(
