@@ -954,26 +954,36 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * uses, so push and pop now feel like a matched pair instead of two different apps.
      */
     private void presentComposeScreen(View screen) {
+        presentComposeScreen(screen, true);
+    }
+
+    private void presentComposeScreen(View screen, boolean animate) {
         screen.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
             android.view.ViewGroup.LayoutParams.MATCH_PARENT
         ));
-        screen.setAlpha(0f);
-        contentFrame.addView(screen);
-        screen.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
-            @Override
-            public boolean onPreDraw() {
-                screen.getViewTreeObserver().removeOnPreDrawListener(this);
-                screen.setTranslationX(screen.getWidth() / 3f);
-                screen.animate()
-                        .alpha(1f)
-                        .translationX(0f)
-                        .setDuration(PB_TRANSITION_DURATION_MS)
-                        .setInterpolator(predictiveBackEasing)
-                        .start();
-                return true;
-            }
-        });
+        if (animate) {
+            screen.setAlpha(0f);
+            contentFrame.addView(screen);
+            screen.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    screen.getViewTreeObserver().removeOnPreDrawListener(this);
+                    screen.setTranslationX(screen.getWidth() / 3f);
+                    screen.animate()
+                            .alpha(1f)
+                            .translationX(0f)
+                            .setDuration(PB_TRANSITION_DURATION_MS)
+                            .setInterpolator(predictiveBackEasing)
+                            .start();
+                    return true;
+                }
+            });
+        } else {
+            screen.setAlpha(1f);
+            screen.setTranslationX(0f);
+            contentFrame.addView(screen);
+        }
     }
 
     @Override
@@ -1169,7 +1179,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 () -> closeAllIncognitoTabs()
             );
-            presentComposeScreen(incognitoHome);
+            presentComposeScreen(incognitoHome, false);
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
         } else if (isHomePage(url)) {
@@ -1310,7 +1320,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
             ));
-            presentComposeScreen(composeView);
+            presentComposeScreen(composeView, false);
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
         } else {
