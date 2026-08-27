@@ -419,6 +419,7 @@ fun PetalSettingsScreen(
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
     var isExpressiveBgShapes by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
+    var bgShapeRotationMin by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) }
 
     // Private DNS & Language States
     var privateDnsMode by remember { mutableStateOf(sp.getString("sp_private_dns_mode", "OFF") ?: "OFF") }
@@ -458,6 +459,9 @@ fun PetalSettingsScreen(
                 }
                 "sp_expressive_bg_shapes" -> {
                     isExpressiveBgShapes = sp.getBoolean("sp_expressive_bg_shapes", true)
+                }
+                "sp_bg_shape_rotation_min" -> {
+                    bgShapeRotationMin = sp.getInt("sp_bg_shape_rotation_min", 5)
                 }
             }
         }
@@ -1285,6 +1289,55 @@ fun PetalSettingsScreen(
                                             sp.edit().putBoolean("sp_expressive_bg_shapes", newValue).apply()
                                         }
                                     )
+
+                                    if (isExpressiveBgShapes) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 4.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "Auto-Change Shapes Interval:",
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            val shapeRotationScrollState = rememberScrollState()
+                                            com.petal.browser.ui.components.ScrollFadeRow(
+                                                scrollState = shapeRotationScrollState,
+                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .horizontalScroll(shapeRotationScrollState),
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    val options = listOf(
+                                                        0 to "Disabled",
+                                                        1 to "1 min",
+                                                        5 to "5 min",
+                                                        10 to "10 min",
+                                                        15 to "15 min",
+                                                        30 to "30 min"
+                                                    )
+                                                    options.forEach { (mins, label) ->
+                                                        FilterChip(
+                                                            selected = bgShapeRotationMin == mins,
+                                                            onClick = {
+                                                                bgShapeRotationMin = mins
+                                                                sp.edit().putInt("sp_bg_shape_rotation_min", mins).apply()
+                                                            },
+                                                            label = { Text(label) },
+                                                            leadingIcon = if (bgShapeRotationMin == mins) {
+                                                                @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                            } else null
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 

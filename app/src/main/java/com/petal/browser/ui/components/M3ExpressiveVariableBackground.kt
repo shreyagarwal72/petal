@@ -136,11 +136,15 @@ fun M3ExpressiveVariableBackground(
     val context = LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
+    var rotationMinutes by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) } // 0 = Disabled, 1, 5, 10, 15, 30 min, etc.
+    var seedEpoch by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_expressive_bg_shapes") {
                 isShapesEnabled = sp.getBoolean("sp_expressive_bg_shapes", true)
+            } else if (key == "sp_bg_shape_rotation_min") {
+                rotationMinutes = sp.getInt("sp_bg_shape_rotation_min", 5)
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
@@ -150,11 +154,20 @@ fun M3ExpressiveVariableBackground(
     }
 
     if (!isShapesEnabled) return
-    // A fresh random layout each time this screen is entered (matches the
-    // "variable" behavior every other screen already has), but stable for
-    // the lifetime of this composition so it doesn't jump around mid-visit.
-    val blobs = remember(pageSeed) {
-        M3ExpressiveBackgroundProvider.generateRandomBlobs(pageSeed + System.currentTimeMillis().toString())
+
+    // Periodic Shape Rotation Timer
+    LaunchedEffect(rotationMinutes) {
+        if (rotationMinutes > 0) {
+            val intervalMs = rotationMinutes * 60 * 1000L
+            while (kotlinx.coroutines.isActive) {
+                kotlinx.coroutines.delay(intervalMs)
+                seedEpoch = System.currentTimeMillis()
+            }
+        }
+    }
+
+    val blobs = remember(pageSeed, seedEpoch) {
+        M3ExpressiveBackgroundProvider.generateRandomBlobs(pageSeed + seedEpoch.toString())
     }
 
     val primaryColor = MaterialTheme.colorScheme.primary
