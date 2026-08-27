@@ -179,6 +179,7 @@ public class Fragment_settings_Backup extends BasePreferenceFragment {
                     Element element = (Element) child;
                     String type = element.getNodeName();
                     String name = element.getAttribute("name");
+                    editor.remove(name);
                     if (type.equals("string")) {
                         String value = element.getTextContent();
                         editor.putString(name, value);
