@@ -1169,7 +1169,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 () -> closeAllIncognitoTabs()
             );
-            contentFrame.addView(incognitoHome);
+            presentComposeScreen(incognitoHome);
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
         } else if (isHomePage(url)) {
@@ -1310,7 +1310,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
             ));
-            contentFrame.addView(composeView);
+            presentComposeScreen(composeView);
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
         } else {
