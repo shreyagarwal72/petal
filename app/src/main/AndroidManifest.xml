@@ -222,6 +222,18 @@
         </receiver>
 
         <receiver
+            android:name="com.petal.browser.widget.glance.PetalExpressiveGlanceWidgetReceiver"
+            android:label="Petal Expressive Search Bar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/petal_expressive_widget_info" />
+        </receiver>
+
+        <receiver
             android:name="com.petal.browser.widget.glance.PetalModeSwitchGlanceWidgetReceiver"
             android:label="Petal Mode Switcher"
             android:exported="true">

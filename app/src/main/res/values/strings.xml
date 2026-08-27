@@ -161,4 +161,5 @@
     <string name="menu_delete_entry">Delete entry</string>
     <string name="app_intro_a">Thanks for using Petal!</string>
     <string name="app_intro_b">The currently opened website is the WIKI of Petal. This site is also saved as your first Bookmark. On the WIKI you can find helpful tips and links.</string>
+    <string name="widget_expressive_bar">Expressive Search Bar</string>
 </resources>
