@@ -8,6 +8,13 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 import android.Manifest;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.graphics.Outline;
+import android.view.ViewOutlineProvider;
+import android.view.animation.PathInterpolator;
+import androidx.activity.BackEventCompat;
+import androidx.dynamicanimation.animation.DynamicAnimation;
+import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -275,6 +282,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return ninjaWebView != null && ninjaWebView.canGoBack();
     }
 
+    /**
+     * Real, live screenshot of the page a back-navigation would reveal (see
+     * {@link com.petal.browser.view.NinjaWebView#getBackPreviewBitmap()}), for Compose surfaces
+     * (e.g. {@code PetalWebPageUnderlayPreviewCard}) that need the same predictive-back preview
+     * the native browsing surface uses. Returns {@code null}, never a placeholder, when nothing
+     * is cached yet - callers decide their own honest fallback.
+     */
+    @androidx.annotation.Nullable
+    public static Bitmap getBackNavigationPreviewBitmap() {
+        return ninjaWebView != null ? ninjaWebView.getBackPreviewBitmap() : null;
+    }
+
     public void handleBackPress() {
         runOnUiThread(this::performBackNavigation);
     }
@@ -286,6 +305,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private AlertDialog dialogCustomSearches;
     private CardView appBar;
     private View contentView;
+
+    // ---------------------------------------------------------------------
+    // Predictive back (native window) for the primary browsing surface.
+    // Mirrors PetalScreenWrapper's math in predictive/PetalPredictiveJunction.kt
+    // so the in-page back gesture looks and settles identically to the
+    // Compose screens (Settings, Bookmarks, History, etc.).
+    // ---------------------------------------------------------------------
+    private ImageView predictiveBackUnderlay;
+    private View predictiveBackRoot;
+    private boolean predictiveBackGestureActive = false;
+    private float predictiveBackProgress = 0f;
+    private ValueAnimator predictiveBackSettleAnimator;
+    private final java.util.List<SpringAnimation> predictiveBackSprings = new java.util.ArrayList<>();
+    private static final float PB_SCALE_DELTA = 0.12f;
+    private static final float PB_MAX_CORNER_RADIUS_DP = 32f;
+    private static final float PB_ALPHA_DELTA = 0.15f;
+    private static final float PB_TRANSLATE_X_FACTOR = 0.35f;
+    private final PathInterpolator predictiveBackEasing = new PathInterpolator(0.4f, 0f, 0.2f, 1f);
 
     private AlbumController nextAlbumController(boolean next) {
         if (BrowserContainer.size() <= 1) return currentAlbumController;
@@ -404,12 +441,45 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
+            public void handleOnBackStarted(@NonNull BackEventCompat backEvent) {
+                // Only take over the gesture visually when there's actual in-page web
+                // history to reveal - otherwise fall through untouched so the system's
+                // own predictive-back-to-home/exit preview isn't fought with ours.
+                predictiveBackGestureActive = ninjaWebView != null && ninjaWebView.canGoBack();
+                if (predictiveBackGestureActive) {
+                    beginPredictiveBackGesture();
+                    applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
+                }
+            }
+
+            @Override
+            public void handleOnBackProgressed(@NonNull BackEventCompat backEvent) {
+                if (predictiveBackGestureActive) {
+                    applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
+                }
+            }
+
+            @Override
+            public void handleOnBackCancelled() {
+                if (predictiveBackGestureActive) {
+                    predictiveBackGestureActive = false;
+                    settlePredictiveBackGesture(false);
+                }
+            }
+
+            @Override
             public void handleOnBackPressed() {
-                performBackNavigation();
+                if (predictiveBackGestureActive) {
+                    predictiveBackGestureActive = false;
+                    settlePredictiveBackGesture(true);
+                } else {
+                    performBackNavigation();
+                }
             }
         });
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
+        setupPredictiveBackUnderlay();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             boolean isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
@@ -753,6 +823,211 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             }
         }
+    }
+
+    /**
+     * Adds a full-bleed {@link ImageView} directly behind {@code @id/main} in the window's
+     * content view. It stays {@code GONE} outside of an active predictive-back gesture, so it
+     * costs nothing at rest, and hosts whichever bitmap {@link #beginPredictiveBackGesture()}
+     * loads for the page the gesture is about to reveal.
+     */
+    private void setupPredictiveBackUnderlay() {
+        ViewGroup decorContent = findViewById(android.R.id.content);
+        predictiveBackRoot = findViewById(R.id.main);
+        if (decorContent == null || predictiveBackRoot == null) return;
+        predictiveBackUnderlay = new ImageView(this);
+        predictiveBackUnderlay.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        predictiveBackUnderlay.setVisibility(GONE);
+        predictiveBackUnderlay.setBackgroundColor(ContextCompat.getColor(this, R.color.md_theme_background));
+        int mainIndex = decorContent.indexOfChild(predictiveBackRoot);
+        decorContent.addView(
+                predictiveBackUnderlay,
+                Math.max(mainIndex, 0),
+                new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        );
+    }
+
+    /**
+     * Fires once, at gesture start: loads the real cached screenshot of the page the WebView
+     * will land on (see {@link com.petal.browser.view.NinjaWebView#getBackPreviewBitmap()}) so
+     * the reveal underneath the shrinking foreground is the actual destination page - not a
+     * generic placeholder - the same way a live composable is what's really behind a Compose
+     * screen during {@code predictivePopTransitionSpec} in RvSystem-Monitor's NavDisplay.
+     */
+    private void beginPredictiveBackGesture() {
+        if (predictiveBackSettleAnimator != null) {
+            predictiveBackSettleAnimator.cancel();
+            predictiveBackSettleAnimator = null;
+        }
+        // A new gesture starting mid-settle (e.g. a quick double-swipe) shouldn't fight the
+        // previous gesture's still-running springs for control of the same view properties.
+        for (SpringAnimation spring : predictiveBackSprings) {
+            spring.cancel();
+        }
+        predictiveBackSprings.clear();
+        if (predictiveBackUnderlay == null || predictiveBackRoot == null || ninjaWebView == null) return;
+
+        Bitmap preview = ninjaWebView.getBackPreviewBitmap();
+        if (preview != null) {
+            predictiveBackUnderlay.setImageBitmap(preview);
+        } else {
+            // No cached snapshot yet for that history entry (e.g. it was never fully loaded
+            // before navigating away) - fall back to a neutral surface rather than a stale
+            // or wrong image. It will be cached the next time that page finishes loading.
+            predictiveBackUnderlay.setImageDrawable(null);
+        }
+        predictiveBackUnderlay.setScaleX(0.94f);
+        predictiveBackUnderlay.setScaleY(0.94f);
+        predictiveBackUnderlay.setAlpha(1f);
+        predictiveBackUnderlay.setVisibility(VISIBLE);
+        predictiveBackRoot.setClipToOutline(true);
+        predictiveBackRoot.setOutlineProvider(predictiveBackOutlineProvider);
+    }
+
+    private final ViewOutlineProvider predictiveBackOutlineProvider = new ViewOutlineProvider() {
+        @Override
+        public void getOutline(View view, Outline outline) {
+            float radiusPx = PB_MAX_CORNER_RADIUS_DP * predictiveBackProgress * getResources().getDisplayMetrics().density;
+            outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radiusPx);
+        }
+    };
+
+    /**
+     * Applies the live, per-frame transform for the in-progress gesture. Uses the same scale /
+     * corner-radius / translate / alpha curve as {@code PetalScreenWrapper} in
+     * PetalPredictiveJunction.kt so the native browsing surface and the Compose screens
+     * (Settings, Bookmarks, History, etc.) feel like the same gesture.
+     */
+    private void applyPredictiveBackTransform(float progress, int swipeEdge) {
+        if (predictiveBackRoot == null) return;
+        predictiveBackProgress = progress;
+
+        float scale = 1f - (PB_SCALE_DELTA * progress);
+        float translateXFactor = swipeEdge == BackEventCompat.EDGE_RIGHT ? -PB_TRANSLATE_X_FACTOR : PB_TRANSLATE_X_FACTOR;
+
+        predictiveBackRoot.setScaleX(scale);
+        predictiveBackRoot.setScaleY(scale);
+        predictiveBackRoot.setTranslationX(predictiveBackRoot.getWidth() * translateXFactor * progress);
+        predictiveBackRoot.setTranslationY(predictiveBackRoot.getHeight() * 0.015f * progress);
+        predictiveBackRoot.setAlpha(1f - (PB_ALPHA_DELTA * progress));
+        predictiveBackRoot.invalidateOutline();
+
+        if (predictiveBackUnderlay != null) {
+            float eased = predictiveBackEasing.getInterpolation(progress);
+            float revealScale = 0.94f + 0.06f * eased;
+            predictiveBackUnderlay.setScaleX(revealScale);
+            predictiveBackUnderlay.setScaleY(revealScale);
+        }
+    }
+
+    /**
+     * Settles the gesture once the finger lifts.
+     * <p>
+     * - Cancelled: springs the foreground back to identity so it relaxes instead of snapping,
+     *   matching the system back-cancel feel (same spring constants as the Compose cancel path).
+     * - Committed: finishes the shrink-away quickly (~140ms, matches the underlay bitmap already
+     *   on screen), performs the actual {@link #performBackNavigation()} once the handoff is
+     *   visually complete so the WebView repaints underneath content that already looks right,
+     *   then springs the (now-updated) foreground back to identity instead of hard-cutting to
+     *   it - this is the smooth-finish fix for the abrupt end-of-gesture snap.
+     */
+    private void settlePredictiveBackGesture(boolean committed) {
+        if (predictiveBackRoot == null) return;
+
+        if (predictiveBackSettleAnimator != null) {
+            predictiveBackSettleAnimator.cancel();
+            predictiveBackSettleAnimator = null;
+        }
+
+        if (!committed) {
+            ValueAnimator cancelAnim = ValueAnimator.ofFloat(predictiveBackProgress, 0f);
+            cancelAnim.setDuration(220);
+            cancelAnim.setInterpolator(predictiveBackEasing);
+            cancelAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), BackEventCompat.EDGE_LEFT));
+            cancelAnim.addListener(new android.animation.AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(android.animation.Animator animation) {
+                    resetPredictiveBackVisuals();
+                }
+            });
+            predictiveBackSettleAnimator = cancelAnim;
+            cancelAnim.start();
+            return;
+        }
+
+        ValueAnimator commitAnim = ValueAnimator.ofFloat(predictiveBackProgress, 1f);
+        commitAnim.setDuration(140);
+        commitAnim.setInterpolator(predictiveBackEasing);
+        commitAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), BackEventCompat.EDGE_LEFT));
+        commitAnim.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                // The underlay already shows the destination page, so the actual navigation
+                // can happen now without a visible pop - then spring the (updated) real
+                // WebView content back into place instead of snapping it there instantly.
+                performBackNavigation();
+                springPredictiveBackToIdentity();
+            }
+        });
+        predictiveBackSettleAnimator = commitAnim;
+        commitAnim.start();
+    }
+
+    private void springPredictiveBackToIdentity() {
+        if (predictiveBackRoot == null) return;
+
+        SpringAnimation scaleXSpring = new SpringAnimation(predictiveBackRoot, DynamicAnimation.SCALE_X, 1f);
+        SpringAnimation scaleYSpring = new SpringAnimation(predictiveBackRoot, DynamicAnimation.SCALE_Y, 1f);
+        SpringAnimation translationXSpring = new SpringAnimation(predictiveBackRoot, DynamicAnimation.TRANSLATION_X, 0f);
+        SpringAnimation translationYSpring = new SpringAnimation(predictiveBackRoot, DynamicAnimation.TRANSLATION_Y, 0f);
+        SpringAnimation alphaSpring = new SpringAnimation(predictiveBackRoot, DynamicAnimation.ALPHA, 1f);
+
+        predictiveBackSprings.clear();
+        for (SpringAnimation spring : new SpringAnimation[]{scaleXSpring, scaleYSpring, translationXSpring, translationYSpring, alphaSpring}) {
+            spring.getSpring().setStiffness(SpringForce.STIFFNESS_MEDIUM).setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY);
+            predictiveBackSprings.add(spring);
+        }
+
+        // Corner radius doesn't have a DynamicAnimation property - animate it manually and let
+        // it drive the shared outline provider, staying in step with the spring's duration.
+        ValueAnimator cornerAnim = ValueAnimator.ofFloat(predictiveBackProgress, 0f);
+        cornerAnim.setDuration(260);
+        cornerAnim.addUpdateListener(anim -> {
+            predictiveBackProgress = (float) anim.getAnimatedValue();
+            if (predictiveBackRoot != null) predictiveBackRoot.invalidateOutline();
+        });
+        cornerAnim.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                resetPredictiveBackVisuals();
+            }
+        });
+        predictiveBackSettleAnimator = cornerAnim;
+        cornerAnim.start();
+
+        scaleXSpring.start();
+        scaleYSpring.start();
+        translationXSpring.start();
+        translationYSpring.start();
+        alphaSpring.start();
+    }
+
+    private void resetPredictiveBackVisuals() {
+        predictiveBackProgress = 0f;
+        if (predictiveBackRoot != null) {
+            predictiveBackRoot.setScaleX(1f);
+            predictiveBackRoot.setScaleY(1f);
+            predictiveBackRoot.setTranslationX(0f);
+            predictiveBackRoot.setTranslationY(0f);
+            predictiveBackRoot.setAlpha(1f);
+            predictiveBackRoot.setClipToOutline(false);
+            predictiveBackRoot.invalidateOutline();
+        }
+        if (predictiveBackUnderlay != null) {
+            predictiveBackUnderlay.setVisibility(GONE);
+            predictiveBackUnderlay.setImageDrawable(null);
+        }
+        predictiveBackSettleAnimator = null;
     }
 
     @Override
