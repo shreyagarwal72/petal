@@ -23,31 +23,72 @@
 
 package com.petal.browser.predictive
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 
 /**
- * Ported directly from RvSystem-Monitor's `ui/navigation/Transitions.kt`.
- *
- * RvSystem-Monitor expresses these as declarative [androidx.compose.animation.EnterTransition] /
- * [androidx.compose.animation.ExitTransition] pairs handed to Navigation3's
- * `NavDisplay.predictivePopTransitionSpec`, which plays them automatically as the gesture
- * commits. Petal isn't on Navigation3 - each screen is its own Activity/Composable root driven
- * directly by [androidx.activity.compose.PredictiveBackHandler] - so [PetalPredictiveBackSurface]
- * and [PetalScreenWrapper] evaluate the same curve and values by hand, once per frame, against
- * the live gesture progress instead. The numbers below are unchanged from the source file.
+ * Ported 1:1 from RvSystem-Monitor & PixelPlayer's `ui/navigation/Transitions.kt`.
  */
 
 // Material 3 "emphasized" easing - cubic-bezier(0.2, 0, 0, 1.0), fast start / smooth settle.
-// Equivalent to RvSystem's M3EmphasizedEasing.
 val PetalM3EmphasizedEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
-// Equivalent to RvSystem's AOSP_TRANSITION_DURATION.
+// AOSP Transition duration millis.
 const val PETAL_TRANSITION_DURATION = 350
 
-// Equivalent to RvSystem's aospSharedAxisPopExit easing: barely moves at the start of the
-// drag, then slides fully away as the gesture completes.
+// Pop exit slide easing: cubic slide curve f * f * f.
 val PetalPopExitSlideEasing: Easing = Easing { f -> f * f * f }
 
-// Equivalent to RvSystem's aospSharedAxisPopExit targetScale = 0.85f.
+// Pop exit target scale delta (0.85f final scale).
 const val PETAL_POP_EXIT_MAX_SCALE_DELTA = 0.15f
+
+// Ported 1:1 from RvSystem-Monitor & PixelPlayer
+fun aospSharedAxisEnter(): EnterTransition {
+    return slideInHorizontally(
+        initialOffsetX = { it / 3 },
+        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+    ) + fadeIn(
+        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+    )
+}
+
+fun aospSharedAxisExit(): ExitTransition {
+    return slideOutHorizontally(
+        targetOffsetX = { -it / 3 },
+        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+    ) + scaleOut(
+        targetScale = 0.92f,
+        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+    )
+}
+
+fun aospSharedAxisPopEnter(): EnterTransition {
+    return slideInHorizontally(
+        initialOffsetX = { -it / 3 },
+        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+    ) + fadeIn(
+        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+    )
+}
+
+fun aospSharedAxisPopExit(): ExitTransition {
+    return slideOutHorizontally(
+        targetOffsetX = { it },
+        animationSpec = tween(
+            durationMillis = PETAL_TRANSITION_DURATION,
+            easing = PetalPopExitSlideEasing
+        )
+    ) + scaleOut(
+        targetScale = 0.85f,
+        animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
+    )
+}
