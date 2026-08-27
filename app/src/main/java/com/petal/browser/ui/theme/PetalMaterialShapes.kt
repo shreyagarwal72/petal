@@ -4,6 +4,7 @@ import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asComposePath
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.circle
@@ -63,8 +64,6 @@ data class ExpressiveShapeHolder(
 ) {
     fun toShape(): Shape = polygon.toShape()
 }
-
-import androidx.compose.ui.graphics.asComposePath
 
 /**
  * Converts a [RoundedPolygon] into a Jetpack Compose [Shape].
