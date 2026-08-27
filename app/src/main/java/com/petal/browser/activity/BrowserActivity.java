@@ -757,6 +757,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onDestroy();
     }
 
+    @Override
+    protected void onStop() {
+        try {
+            if (isFinishing() && sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
+                BrowserUnit.clearBrowserData(this);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in BrowserActivity.onStop", e);
+        }
+        super.onStop();
+    }
+
     private long lastBackPressTime = 0;
 
     /**
