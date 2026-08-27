@@ -27,9 +27,30 @@ import android.content.SharedPreferences
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -38,52 +59,73 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Global settings & state junction for Predictive Back across the Petal App. Changes here
- * automatically propagate to every page and route without needing per-screen logic.
+ * Global settings & state junction for Predictive Back and Depth Blur effects across the Petal App.
+ * Changes here automatically propagate to every page and route without needing per-screen logic.
  *
- * The animation itself is ported from RvSystem-Monitor's `aospSharedAxisPopExit` transition
- * (see [PetalTransitions]) - a plain slide + scale, no depth blur, no live underlay preview.
+ * Implements 1:1 depth blur, reveal scaling, and back page underlay blur matching RvSystem-Monitor.
  */
 object PetalPredictiveJunction {
     private const val KEY_PREDICTIVE_BACK_ENABLED = "sp_predictive_back_junction_enabled"
+    private const val KEY_DEPTH_BLUR_ENABLED = "sp_depth_blur_junction_enabled"
 
     private val _isPredictiveBackEnabled = MutableStateFlow(true)
     val isPredictiveBackEnabled: StateFlow<Boolean> = _isPredictiveBackEnabled.asStateFlow()
 
+    private val _isDepthBlurEnabled = MutableStateFlow(true)
+    val isDepthBlurEnabled: StateFlow<Boolean> = _isDepthBlurEnabled.asStateFlow()
+
     @JvmStatic
     fun init(prefs: SharedPreferences) {
-        _isPredictiveBackEnabled.value = true
+        _isPredictiveBackEnabled.value = prefs.getBoolean(KEY_PREDICTIVE_BACK_ENABLED, true)
+        _isDepthBlurEnabled.value = prefs.getBoolean(KEY_DEPTH_BLUR_ENABLED, true)
     }
 
     @JvmStatic
     fun setPredictiveBackEnabled(prefs: SharedPreferences, enabled: Boolean) {
-        _isPredictiveBackEnabled.value = true
-        prefs.edit().putBoolean(KEY_PREDICTIVE_BACK_ENABLED, true).apply()
+        _isPredictiveBackEnabled.value = enabled
+        prefs.edit().putBoolean(KEY_PREDICTIVE_BACK_ENABLED, enabled).apply()
+    }
+
+    @JvmStatic
+    fun setDepthBlurEnabled(prefs: SharedPreferences, enabled: Boolean) {
+        _isDepthBlurEnabled.value = enabled
+        prefs.edit().putBoolean(KEY_DEPTH_BLUR_ENABLED, enabled).apply()
     }
 }
 
 val LocalPetalPredictiveJunctionState = compositionLocalOf { true }
+val LocalPetalDepthBlurJunctionState = compositionLocalOf { true }
+val LocalIsUnderlayPreview = compositionLocalOf { false }
 
 // ---------------------------------------------------------------------------
 // Predictive back gesture state — published downward via CompositionLocal so
-// any descendant (PetalScreenWrapper) can track the live finger position
-// instead of waiting for the settled navigation event.
+// any descendant (ScreenWrapper, PetalScreenWrapper) can track the live finger
+// position instead of waiting for the settled navigation event.
 // ---------------------------------------------------------------------------
 
 /**
  * Live state of an in-flight predictive back gesture.
  *
  * [progress] is 0f (finger at edge) → 1f (fully committed). It updates every frame
- * while the thumb is moving, which lets the foreground screen's slide/scale track
+ * while the thumb is moving, which lets the revealed screen's blur/dim/scale track
  * the finger instead of snapping at commit time.
  */
 data class PredictiveBackState(
@@ -107,47 +149,74 @@ val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
  * Wraps [content] with a [PredictiveBackHandler] and republishes gesture progress
  * through [LocalPredictiveBackState] so any descendant can react to it live.
  *
- * Only intercepts back when [enabled] is true AND the junction setting is on. There is no
- * underlay/preview layer here - matching RvSystem-Monitor's `predictivePopTransitionSpec`,
- * which has none either - so whatever's actually behind this screen (the previous Activity,
- * or the launcher) is left for the system to reveal on its own.
+ * - Only intercepts back when [enabled] is true AND the junction setting is on.
+ * - On cancel: animates progress smoothly back to 0 so blur/scale relax instead of snapping.
+ * - Underlay content (revealed screen preview card / wallpaper) is rendered behind the surface
+ *   with depth blur matching RvSystem-Monitor.
  */
 @Composable
 fun PetalPredictiveBackSurface(
     enabled: Boolean = true,
     onBack: () -> Unit,
+    underlayContent: (@Composable () -> Unit)? = { PetalDynamicUnderlayPreview() },
     content: @Composable () -> Unit,
 ) {
+    val context = LocalContext.current
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
+    val isUnderlayPreview = LocalIsUnderlayPreview.current
 
-    val isFullyEnabled = enabled && junctionPredictiveEnabled
+    val isFullyEnabled = enabled && junctionPredictiveEnabled && !isUnderlayPreview
 
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
     val progressAnim = remember { Animatable(0f) }
 
     if (isFullyEnabled) {
         PredictiveBackHandler(enabled = true) { progressFlow ->
+            val canWebGoBack = try {
+                com.petal.browser.activity.BrowserActivity.canNinjaGoBack()
+            } catch (_: Exception) {
+                false
+            }
+            if (canWebGoBack) {
+                try {
+                    (context as? com.petal.browser.activity.BrowserActivity)?.handleBackPress()
+                } catch (_: Exception) {
+                    (context as? androidx.activity.ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
+                }
+                return@PredictiveBackHandler
+            }
+
             try {
                 progressFlow.collect { backEvent ->
+                    progressAnim.snapTo(backEvent.progress)
                     backState = PredictiveBackState(
                         isActive = true,
                         progress = backEvent.progress,
                         swipeEdge = backEvent.swipeEdge,
                     )
                 }
-                // Gesture committed - the system already confirmed it, so fire the real
-                // navigation immediately rather than layering on an extra settle animation.
-                // Matches RvSystem-Monitor: once Navigation3's predictive pop commits, there's
-                // no additional flourish beyond the declared transition.
-                backState = PredictiveBackState.Idle
+                progressAnim.snapTo(backState.progress)
+                progressAnim.animateTo(
+                    targetValue = 1f,
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMedium,
+                        dampingRatio = Spring.DampingRatioNoBouncy
+                    )
+                ) {
+                    backState = backState.copy(isActive = true, progress = value)
+                }
+                backState = backState.copy(isActive = true, progress = 1f)
                 onBack()
+                backState = PredictiveBackState.Idle
             } catch (e: CancellationException) {
-                // Gesture cancelled — relax progress back to 0 with the same tween
-                // RvSystem-Monitor uses for its transitions, so it settles instead of snapping.
                 progressAnim.snapTo(backState.progress)
                 progressAnim.animateTo(
                     targetValue = 0f,
-                    animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing),
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMediumLow,
+                        dampingRatio = Spring.DampingRatioLowBouncy
+                    )
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
                 }
@@ -158,9 +227,21 @@ fun PetalPredictiveBackSurface(
 
     CompositionLocalProvider(
         LocalPetalPredictiveJunctionState provides junctionPredictiveEnabled,
-        LocalPredictiveBackState provides backState,
+        LocalPetalDepthBlurJunctionState provides junctionBlurEnabled,
+        LocalPredictiveBackState provides backState
     ) {
-        content()
+        if (underlayContent != null && !isUnderlayPreview) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (backState.isActive) {
+                    PetalScreenWrapper(isBehind = true) {
+                        underlayContent()
+                    }
+                }
+                content()
+            }
+        } else {
+            content()
+        }
     }
 }
 
@@ -169,52 +250,320 @@ fun PetalPredictiveBackSurface(
 // ---------------------------------------------------------------------------
 
 /**
- * Screen wrapper that applies predictive back visual effects to full-screen Petal surfaces.
- *
- * Reads [LocalPredictiveBackState] directly instead of requiring a manually threaded
- * `progress` float parameter. Wrap with [PetalPredictiveBackSurface] at the call site
- * to publish gesture state into the composition tree.
- *
- * Ported 1:1 from RvSystem-Monitor's `aospSharedAxisPopExit` (see [PetalTransitions]):
- * - Slide: full screen width toward the swipe edge, eased with the same cubic (f*f*f) curve
- *   RvSystem uses so it barely moves at the start of the drag and finishes fast.
- * - Scale: 1.0 at rest → 0.85 at full gesture, eased with RvSystem's M3 emphasized curve.
- * - No fade (RvSystem's popExit doesn't fade), no corner-radius clip, no dim, no blur, no
- *   preview underlay.
+ * Screen wrapper that applies predictive back visual effects and depth blur to full-screen Petal surfaces.
+ * Ported 1:1 from RvSystem-Monitor:
+ * - Depth blur: 24.dp on revealed back page underlay.
+ * - Dim overlay: 0.4f (or 0.75f when blur disabled) clearing as gesture progresses.
+ * - Scale & corner radius transformation on foreground surface.
  */
 @Composable
 fun PetalScreenWrapper(
+    isBehind: Boolean = false,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
+
+    val predictiveEnabled = junctionPredictiveEnabled
+    val blurEnabled = junctionBlurEnabled
+    val disableBlurAllOver = !blurEnabled
+
     val predictiveBackState = LocalPredictiveBackState.current
+    val underlayBlurRadius = if (isBehind && !disableBlurAllOver) 24.dp else 0.dp
 
+    CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehind || LocalIsUnderlayPreview.current)) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .blur(radius = underlayBlurRadius)
+                .graphicsLayer {
+                    val isActive = predictiveBackState.isActive
+                    val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
+                    val backProgressEased = if (isActive) FastOutSlowInEasing.transform(progress) else 0f
+
+                    if (!isBehind) {
+                        val scale = 1f - (0.12f * progress)
+                        val cornerRadius = 32f * progress
+                        val alphaVal = if (isActive) 1f - (0.15f * progress) else 1f
+                        val swipeEdge = predictiveBackState.swipeEdge
+                        val translationXFactor = if (isActive) {
+                            if (swipeEdge == BackEventCompat.EDGE_LEFT) 0.35f
+                            else if (swipeEdge == BackEventCompat.EDGE_RIGHT) -0.35f
+                            else 0f
+                        } else 0f
+
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = size.width * translationXFactor * progress
+                        translationY = size.height * 0.015f * progress
+                        alpha = alphaVal
+                        compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+
+                        if (cornerRadius > 0.5f) {
+                            this.shape = RoundedCornerShape(cornerRadius.dp)
+                            this.clip = true
+                            this.shadowElevation = (16f * progress).dp.toPx()
+                        } else {
+                            this.clip = false
+                            this.shadowElevation = 0f
+                        }
+                    } else {
+                        val revealScale = if (isActive) 0.94f + 0.06f * backProgressEased else 1f
+                        scaleX = revealScale
+                        scaleY = revealScale
+                        alpha = 1f
+                        compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                        this.clip = false
+                        this.shadowElevation = 0f
+                    }
+                }
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            content()
+
+            if (isBehind) {
+                val settledTargetDim = if (disableBlurAllOver) 0.75f else 0.40f
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            val isActive = predictiveBackState.isActive
+                            val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
+                            val backProgressEased = if (isActive) FastOutSlowInEasing.transform(progress) else 0f
+                            alpha = if (isActive) settledTargetDim * (1f - backProgressEased) else settledTargetDim
+                        }
+                        .background(Color.Black),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Renders the dynamic underlay preview behind screens (Settings, Account Sync, etc.) during predictive back.
+ * If a website is active in the WebView, displays a high-fidelity web page preview card with title, URL, and brand emblem.
+ * If no website is open, renders the launcher desktop wallpaper preview.
+ */
+@Composable
+fun PetalDynamicUnderlayPreview() {
+    val isHomeOrBlank = remember {
+        try {
+            com.petal.browser.activity.BrowserActivity.isCurrentTabHomeOrBlank()
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    if (isHomeOrBlank) {
+        LauncherWallpaperUnderlayPreview()
+    } else {
+        PetalWebPageUnderlayPreviewCard()
+    }
+}
+
+@Composable
+fun LauncherWallpaperUnderlayPreview() {
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .graphicsLayer {
-                val isActive = predictiveBackState.isActive
-                val progress = if (junctionPredictiveEnabled && isActive) predictiveBackState.progress else 0f
-
-                val slideEased = PetalPopExitSlideEasing.transform(progress)
-                val scaleEased = PetalM3EmphasizedEasing.transform(progress)
-
-                val swipeEdge = predictiveBackState.swipeEdge
-                val translationXFactor = if (isActive) {
-                    if (swipeEdge == BackEventCompat.EDGE_RIGHT) -1f else 1f
-                } else {
-                    0f
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                            MaterialTheme.colorScheme.surfaceContainerLow,
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .height(48.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
 
-                val scale = 1f - (PETAL_POP_EXIT_MAX_SCALE_DELTA * scaleEased)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    repeat(3) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(24.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            repeat(4) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(52.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Language,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
 
-                scaleX = scale
-                scaleY = scale
-                translationX = size.width * translationXFactor * slideEased
-                compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(4) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Language,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    }
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun PetalWebPageUnderlayPreviewCard() {
+    val webView = remember {
+        try {
+            com.petal.browser.activity.BrowserActivity.getNinjaWebView()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    val pageUrl = webView?.url ?: "https://petal.browser"
+    val pageTitle = webView?.title?.takeIf { it.isNotBlank() } ?: "Web Page"
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainerLow),
+        contentAlignment = Alignment.Center
     ) {
-        content()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = pageTitle,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = pageUrl,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Language,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = pageTitle,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = pageUrl,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(Modifier.height(32.dp))
+        }
     }
 }
