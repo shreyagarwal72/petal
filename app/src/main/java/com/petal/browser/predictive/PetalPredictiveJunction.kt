@@ -27,10 +27,8 @@ import android.content.SharedPreferences
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,7 +36,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -50,7 +47,6 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -179,9 +175,9 @@ fun PetalPredictiveBackSurface(
 }
 
 /**
- * Screen wrapper that applies predictive back visual effects and depth blur to full-screen Petal surfaces.
+ * Screen wrapper that applies predictive back visual effects and dynamic depth blur to full-screen Petal surfaces.
  * Ported 1:1 from RvSystem-Monitor & PixelPlayer:
- * - Depth blur: 24.dp on revealed back page underlay.
+ * - Depth blur: dynamic 24.dp blur on revealed back page / in-flight gesture surfaces.
  * - Dim overlay: 0.4f (or 0.75f when blur disabled) clearing as gesture progresses.
  * - Scale & corner radius transformation on foreground surface.
  */
@@ -198,27 +194,29 @@ fun PetalScreenWrapper(
     val blurEnabled = junctionBlurEnabled
     val predictiveBackState = LocalPredictiveBackState.current
 
-    val targetBlur = if (isBehind && blurEnabled) 24f else 0f
-    val animatedBlurRadius = remember { Animatable(targetBlur) }
+    val isActive = predictiveBackState.isActive
+    val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
+    val scaleEased = PetalM3EmphasizedEasing.transform(progress)
 
-    LaunchedEffect(isBehind, blurEnabled) {
-        animatedBlurRadius.animateTo(
-            targetValue = targetBlur,
-            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
-        )
+    val currentBlurRadiusDp = if (blurEnabled) {
+        if (isBehind) {
+            24.dp
+        } else if (isActive) {
+            (24f * scaleEased).dp
+        } else {
+            0.dp
+        }
+    } else {
+        0.dp
     }
 
     CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehind || LocalIsUnderlayPreview.current)) {
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .blur(radius = animatedBlurRadius.value.dp)
+                .blur(radius = currentBlurRadiusDp)
                 .graphicsLayer {
-                    val isActive = predictiveBackState.isActive
-                    val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
-
                     val slideEased = PetalPopExitSlideEasing.transform(progress)
-                    val scaleEased = PetalM3EmphasizedEasing.transform(progress)
 
                     if (!isBehind) {
                         val swipeEdge = predictiveBackState.swipeEdge
@@ -234,7 +232,7 @@ fun PetalScreenWrapper(
                         scaleX = scale
                         scaleY = scale
                         translationX = size.width * translationXFactor * slideEased
-                        compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                        compositingStrategy = if (isActive || currentBlurRadiusDp > 0.dp) CompositingStrategy.Offscreen else CompositingStrategy.Auto
 
                         if (cornerRadius > 0.5f) {
                             this.shape = RoundedCornerShape(cornerRadius.dp)
@@ -249,7 +247,7 @@ fun PetalScreenWrapper(
                         scaleX = revealScale
                         scaleY = revealScale
                         alpha = 1f
-                        compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                        compositingStrategy = if (isActive || currentBlurRadiusDp > 0.dp) CompositingStrategy.Offscreen else CompositingStrategy.Auto
                         this.clip = false
                         this.shadowElevation = 0f
                     }
@@ -258,16 +256,13 @@ fun PetalScreenWrapper(
         ) {
             content()
 
-            if (isBehind) {
+            if (isBehind || (isActive && blurEnabled)) {
                 val settledTargetDim = if (!blurEnabled) 0.75f else 0.40f
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            val isActive = predictiveBackState.isActive
-                            val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
-                            val backProgressEased = if (isActive) PetalM3EmphasizedEasing.transform(progress) else 0f
-                            alpha = if (isActive) settledTargetDim * (1f - backProgressEased) else settledTargetDim
+                            alpha = if (isActive) settledTargetDim * (1f - scaleEased) else settledTargetDim
                         }
                         .background(Color.Black)
                 )

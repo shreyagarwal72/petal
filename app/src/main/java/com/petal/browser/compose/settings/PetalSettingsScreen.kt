@@ -430,6 +430,8 @@ fun PetalSettingsScreen(
     var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", false)) }
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
     var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
+    var isPredictiveBackJunction by remember { mutableStateOf(sp.getBoolean("sp_predictive_back_junction_enabled", true)) }
+    var isDepthBlurJunction by remember { mutableStateOf(sp.getBoolean("sp_depth_blur_junction_enabled", true)) }
     var isAppLockEnabled by remember { mutableStateOf(sp.getBoolean("sp_app_lock_enabled", false)) }
     var showPasscodeDialog by remember { mutableStateOf(false) }
     var isDoubleBackExit by remember { mutableStateOf(sp.getBoolean("sp_double_back_exit", true)) }
@@ -1778,6 +1780,28 @@ fun PetalSettingsScreen(
                             // 7. Accessibility & Scaling (using PetalSlider)
                             if ((scaffoldCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom")) {
                                 SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
+                                    ToggleRow(
+                                        title = "Predictive Back Animations",
+                                        subtitle = "Enable fluid predictive back gesture scaling and slide transitions across all screens",
+                                        icon = Icons.Rounded.Animation,
+                                        checked = isPredictiveBackJunction,
+                                        onCheckedChange = { newValue ->
+                                            isPredictiveBackJunction = newValue
+                                            com.petal.browser.predictive.PetalPredictiveJunction.setPredictiveBackEnabled(sp, newValue)
+                                        }
+                                    )
+
+                                    ToggleRow(
+                                        title = "Depth Blur Effects",
+                                        subtitle = "Show 24.dp depth blur and black dim overlay on back pages during navigation and predictive gestures",
+                                        icon = Icons.Rounded.BlurOn,
+                                        checked = isDepthBlurJunction,
+                                        onCheckedChange = { newValue ->
+                                            isDepthBlurJunction = newValue
+                                            com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(sp, newValue)
+                                        }
+                                    )
+
                                     ToggleRow(
                                         title = "Touch Haptics Engine",
                                         subtitle = "Vibrate with Ever-Haptics tactile feedback on button presses and UI gestures",
