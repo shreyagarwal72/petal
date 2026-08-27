@@ -151,6 +151,7 @@ fun PetalPredictiveBackSurface(
                 }
                 backState = backState.copy(isActive = true, progress = 1f)
                 onBack()
+                kotlinx.coroutines.delay(200)
                 backState = PredictiveBackState.Idle
             } catch (e: CancellationException) {
                 progressAnim.snapTo(backState.progress)
