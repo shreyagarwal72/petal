@@ -240,9 +240,32 @@ fun PetalUserProfileScreen(
         },
     ) {
         if (showAppLockConfigPage) {
-            com.petal.browser.compose.security.PetalAppLockConfigScreen(
-                onBack = { showAppLockConfigPage = false },
-            )
+            // Both entries rendered live in the same Box, exactly like Settings' drilled
+            // category (PetalSettingsScreen.kt): Profile stays composed underneath
+            // (isBehind = true) so PetalScreenWrapper has a real surface to blur/dim/parallax,
+            // while App Lock config sits on top (isBehind = false) and does the
+            // scale/corner-clip/slide — matches the History/Downloads predictive treatment.
+            Box(modifier = Modifier.fillMaxSize()) {
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
+                    RenderUserProfileContent(
+                        profile = profile,
+                        isLoading = isLoading,
+                        isSigningIn = isSigningIn,
+                        isExpressiveFeatureTiles = isExpressiveFeatureTiles,
+                        snackbarHostState = snackbarHostState,
+                        onBack = onBack,
+                        onOpenOAuth = onOpenOAuth,
+                        onStartGoogleSignIn = { startGoogleSignIn() },
+                        onOpenAppLockConfig = { showAppLockConfigPage = true },
+                        modifier = modifier
+                    )
+                }
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                    com.petal.browser.compose.security.PetalAppLockConfigScreen(
+                        onBack = { showAppLockConfigPage = false },
+                    )
+                }
+            }
         } else {
             com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
                 RenderUserProfileContent(
