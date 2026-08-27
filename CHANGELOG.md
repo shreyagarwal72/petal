@@ -1,3 +1,29 @@
+### v1.9.4
+
+- **✨ Google Lens Integration**:
+  - Integrated **Google Lens** across Petal Browser with Camera Capture, Gallery Photo Picker, and Google Lens Search Intent.
+  - Added dedicated Lens search button (`CenterFocusWeak` icon) to the search input field in `PetalOmniboxPage.kt`.
+  - Added *"Search image with Google Lens"* option to webpage image long-press context menus (`PetalLinkContextMenuSheet.kt` & `BrowserActivity.java`).
+  - Wired Lens shortcut button in Material 3 Expressive `PetalExpressiveGlanceWidget.kt`.
+
+- **⚡ High-Speed Torrent & Magnet Engines**:
+  - Built multi-engine Torrent & Magnet downloader supporting **1DM High-Speed P2P Engine (Official)**, **In-App Native WebSeed & Magnet Streamer**, and **System Downloader**.
+  - Added real-time Torrent Engine switcher in `PetalSettingsScreen.kt` under *Data & Storage*.
+  - Automated interception of `magnet:` links and `.torrent` files across all webpage downloads.
+
+- **🎨 Dynamic Morphing Background & PetalSlider**:
+  - Added periodic ambient background shape rotation with user-controlled timer loop (`0 min` to `60 min`).
+  - Integrated rolling scalloped `PetalSlider` for shape change intervals in `PetalSettingsScreen.kt`.
+
+- **🔊 System-Wide Haptics (RvSystem-Monitor & Ever-Haptics Inspired)**:
+  - Integrated tactile haptic feedback across WebView scrolling (`Pattern.TICK`), bottom navigation, address bar actions, site controls, and predictive back gestures (`PetalHapticEngine.java`).
+
+- **🔤 Custom Font Tweaker Real-Time Variations**:
+  - Fixed font variation settings (`toVariationSettings()`) in `Type.kt` so custom `.ttf`/`.otf` font files respond immediately to Weight, Width, Optical Size, Slant, and Roundness sliders in real-time.
+
+- **🔐 App Lock & Profile Security Dialogs**:
+  - Added Material 3 Expressive Biometric & Passcode choice dialogs for App Lock and Profile Lock pages matching app-wide predictive back gesture transitions.
+
 ### v1.9.3
 
 - **🎨 UI/UX & Predictive Back Polish**:
