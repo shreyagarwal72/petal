@@ -46,11 +46,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Arrangement
@@ -183,18 +185,29 @@ fun PetalPredictiveBackSurface(
             } catch (_: Exception) {
                 false
             }
-            if (canWebGoBack) {
-                try {
-                    (context as? com.petal.browser.activity.BrowserActivity)?.handleBackPress()
-                } catch (_: Exception) {
-                    (context as? androidx.activity.ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
+
+            // What actually executes once the gesture commits - resolved up front so the
+            // gesture itself (progress collection + live visuals below) behaves identically
+            // whether committing pops this Compose screen or navigates the WebView back a
+            // page. Previously the WebView-can-go-back case short-circuited straight to this
+            // action *before* collecting any progress at all, so it fired the instant the
+            // gesture began instead of on release, and never showed the live preview/blur -
+            // that was why predictive back looked broken for the most common case (a page
+            // with web history) even though it worked fine for Compose-only screens.
+            val commitAction: () -> Unit = {
+                if (canWebGoBack) {
+                    try {
+                        (context as? com.petal.browser.activity.BrowserActivity)?.handleBackPress()
+                    } catch (_: Exception) {
+                        (context as? androidx.activity.ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
+                    }
+                } else {
+                    onBack()
                 }
-                return@PredictiveBackHandler
             }
 
             try {
                 progressFlow.collect { backEvent ->
-                    progressAnim.snapTo(backEvent.progress)
                     backState = PredictiveBackState(
                         isActive = true,
                         progress = backEvent.progress,
@@ -213,7 +226,14 @@ fun PetalPredictiveBackSurface(
                     backState = backState.copy(isActive = true, progress = value)
                 }
                 backState = backState.copy(isActive = true, progress = 1f)
-                onBack()
+                commitAction()
+                // Give the real navigation one frame to land before clearing the gesture
+                // visuals, instead of resetting to Idle synchronously in the same instant
+                // onBack()/goBack() fires - that synchronous reset was the abrupt snap at the
+                // end of the gesture. If this composable gets disposed by the navigation (e.g.
+                // a Compose backstack pop), this coroutine is simply cancelled at that point,
+                // which is fine - there's nothing left to reset.
+                withFrameNanos { }
                 backState = PredictiveBackState.Idle
             } catch (e: CancellationException) {
                 // Gesture cancelled — smoothly relax progress back to 0f with spring physics
@@ -495,6 +515,28 @@ private fun PetalWebPageUnderlayPreviewCard() {
 
     val pageUrl = webView?.url ?: "https://petal.browser"
     val pageTitle = webView?.title?.takeIf { it.isNotBlank() } ?: "Web Page"
+
+    // Real, live screenshot of the page this gesture is about to reveal - sourced from the
+    // same URL-keyed cache the tab switcher already fills on every page load, not a synthetic
+    // mockup. Falls back to the placeholder card below only when nothing's cached yet (e.g.
+    // that history entry never finished loading), so the preview is honest either way.
+    val livePreview = remember(pageUrl) {
+        try {
+            com.petal.browser.activity.BrowserActivity.getBackNavigationPreviewBitmap()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    if (livePreview != null) {
+        androidx.compose.foundation.Image(
+            bitmap = livePreview.asImageBitmap(),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+        )
+        return
+    }
 
     Box(
         modifier = Modifier
