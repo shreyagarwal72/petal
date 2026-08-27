@@ -1294,48 +1294,37 @@ fun PetalSettingsScreen(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(vertical = 4.dp),
+                                                .padding(vertical = 6.dp),
                                             verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            Text(
-                                                text = "Auto-Change Shapes Interval:",
-                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            val shapeRotationScrollState = rememberScrollState()
-                                            com.petal.browser.ui.components.ScrollFadeRow(
-                                                scrollState = shapeRotationScrollState,
-                                                edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .horizontalScroll(shapeRotationScrollState),
-                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                                ) {
-                                                    val options = listOf(
-                                                        0 to "Disabled",
-                                                        1 to "1 min",
-                                                        5 to "5 min",
-                                                        10 to "10 min",
-                                                        15 to "15 min",
-                                                        30 to "30 min"
-                                                    )
-                                                    options.forEach { (mins, label) ->
-                                                        FilterChip(
-                                                            selected = bgShapeRotationMin == mins,
-                                                            onClick = {
-                                                                bgShapeRotationMin = mins
-                                                                sp.edit().putInt("sp_bg_shape_rotation_min", mins).apply()
-                                                            },
-                                                            label = { Text(label) },
-                                                            leadingIcon = if (bgShapeRotationMin == mins) {
-                                                                @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                                            } else null
-                                                        )
-                                                    }
-                                                }
+                                                Text(
+                                                    text = "Auto-Change Shapes Interval:",
+                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Text(
+                                                    text = if (bgShapeRotationMin == 0) "Disabled" else "$bgShapeRotationMin min",
+                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
                                             }
+                                            PetalSlider(
+                                                value = bgShapeRotationMin.toFloat(),
+                                                onValueChange = { newValue ->
+                                                    val rounded = Math.round(newValue)
+                                                    if (rounded != bgShapeRotationMin) {
+                                                        bgShapeRotationMin = rounded
+                                                        sp.edit().putInt("sp_bg_shape_rotation_min", rounded).apply()
+                                                    }
+                                                },
+                                                valueRange = 0f..60f,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
                                         }
                                     }
 
