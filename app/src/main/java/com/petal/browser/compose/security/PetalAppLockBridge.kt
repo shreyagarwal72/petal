@@ -8,7 +8,11 @@ package com.petal.browser.compose.security
 
 import android.app.Activity
 import android.view.ViewGroup
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
+import com.petal.browser.predictive.PetalContentSnapshot
 
 object PetalAppLockBridge {
 
@@ -47,10 +51,10 @@ object PetalAppLockBridge {
         var composeView: ComposeView? = null
         composeView = ComposeView(activity).apply {
             setContent {
-                val snapshotBitmap = androidx.compose.runtime.remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
-                androidx.compose.runtime.DisposableEffect(Unit) {
+                val snapshotBitmap = remember { PetalContentSnapshot.current?.asImageBitmap() }
+                DisposableEffect(Unit) {
                     onDispose {
-                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                        PetalContentSnapshot.clear()
                     }
                 }
                 PetalAppLockConfigScreen(
