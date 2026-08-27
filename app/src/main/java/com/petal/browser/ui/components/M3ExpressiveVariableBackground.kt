@@ -26,7 +26,12 @@ import kotlin.math.sin
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.delay
 import androidx.preference.PreferenceManager
 
 enum class M3ExpressiveShapeType {
