@@ -2699,7 +2699,7 @@ private fun AppearanceHeroBanner(
     }
 }
 
-private fun Modifier.petalShimmerEffect(): Modifier = androidx.compose.ui.composed {
+private fun Modifier.petalShimmerEffect(): Modifier = composed {
     val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "Shimmer Transition")
     val translateAnim by transition.animateFloat(
         initialValue = 0f,

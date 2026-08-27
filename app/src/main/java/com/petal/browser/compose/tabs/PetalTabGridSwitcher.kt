@@ -130,6 +130,7 @@ fun PetalTabGridSwitcher(
     val effectiveOnBack: () -> Unit = remember(onBack, context) {
         onBack ?: {
             (context as? androidx.activity.ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
+            Unit
         }
     }
 
@@ -199,7 +200,6 @@ fun PetalTabGridSwitcher(
     val accentColor = MaterialTheme.colorScheme.primary
     val textColor = MaterialTheme.colorScheme.onSurface
 
-    val context = LocalContext.current
     BackHandler(enabled = tabs.isEmpty()) {
         effectiveOnBack()
     }
