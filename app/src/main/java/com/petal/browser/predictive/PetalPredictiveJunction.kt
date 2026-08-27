@@ -227,7 +227,7 @@ fun PetalScreenWrapper(
                     if (!isBehind) {
                         val swipeEdge = predictiveBackState.swipeEdge
                         val translationXFactor = if (isActive) {
-                            if (swipeEdge == BackEventCompat.EDGE_RIGHT) -0.5f else 0.5f
+                            if (swipeEdge == BackEventCompat.EDGE_RIGHT) -1.0f else 1.0f
                         } else {
                             0f
                         }
