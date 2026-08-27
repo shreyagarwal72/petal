@@ -227,14 +227,22 @@ public class BrowserUnit {
         action.close();
     }
 
-    public static void  clearBrowserData(Context context) {
+    public static void clearBrowserData(Context context) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        boolean clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false);
         boolean clearCache = sp.getBoolean("sp_clear_cache", false);
         boolean clearCookie = sp.getBoolean("sp_clear_cookie", false);
         boolean clearHistory = sp.getBoolean("sp_clear_history", false);
         boolean clearIndexedDB = sp.getBoolean("sp_clearIndexedDB", false);
         boolean clearDB = sp.getBoolean("sp_deleteDatabase", false);
         boolean clearSettings = sp.getBoolean("sp_clear_settings", false);
+
+        if (clearQuit && !clearCache && !clearCookie && !clearHistory && !clearIndexedDB && !clearDB && !clearSettings) {
+            clearCache = true;
+            clearCookie = true;
+            clearHistory = true;
+        }
+
         if (clearHistory) BrowserUnit.clearHistory(context);
         if (clearCache)  {
             try {
