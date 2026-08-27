@@ -306,6 +306,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private View predictiveBackRoot;
     private boolean predictiveBackGestureActive = false;
     private float predictiveBackProgress = 0f;
+    // Which edge the in-flight gesture started from - must be remembered so the
+    // cancel/commit settle animation keeps sliding the same direction the finger
+    // was already moving in. Previously this was hardcoded to EDGE_LEFT in the
+    // settle animator, which snapped the root view to the wrong side (a visible
+    // direction-reversal glitch) whenever the user swiped from the right edge.
+    private int predictiveBackSwipeEdge = BackEventCompat.EDGE_LEFT;
     private ValueAnimator predictiveBackSettleAnimator;
     // Mirrors aospSharedAxisPopExit's targetScale = 0.85f
     private static final float PB_MAX_SCALE_DELTA = 0.15f;
@@ -437,15 +443,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // own predictive-back-to-home/exit preview isn't fought with ours.
                 predictiveBackGestureActive = ninjaWebView != null && ninjaWebView.canGoBack();
                 if (predictiveBackGestureActive) {
+                    predictiveBackSwipeEdge = backEvent.getSwipeEdge();
                     beginPredictiveBackGesture();
-                    applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
+                    applyPredictiveBackTransform(backEvent.getProgress(), predictiveBackSwipeEdge);
                 }
             }
 
             @Override
             public void handleOnBackProgressed(@NonNull BackEventCompat backEvent) {
                 if (predictiveBackGestureActive) {
-                    applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
+                    predictiveBackSwipeEdge = backEvent.getSwipeEdge();
+                    applyPredictiveBackTransform(backEvent.getProgress(), predictiveBackSwipeEdge);
                 }
             }
 
@@ -879,7 +887,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ValueAnimator cancelAnim = ValueAnimator.ofFloat(predictiveBackProgress, 0f);
             cancelAnim.setDuration(PB_TRANSITION_DURATION_MS);
             cancelAnim.setInterpolator(predictiveBackEasing);
-            cancelAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), BackEventCompat.EDGE_LEFT));
+            cancelAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), predictiveBackSwipeEdge));
             cancelAnim.addListener(new android.animation.AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(android.animation.Animator animation) {
@@ -894,7 +902,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         ValueAnimator commitAnim = ValueAnimator.ofFloat(predictiveBackProgress, 1f);
         commitAnim.setDuration(PB_TRANSITION_DURATION_MS);
         commitAnim.setInterpolator(predictiveBackEasing);
-        commitAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), BackEventCompat.EDGE_LEFT));
+        commitAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), predictiveBackSwipeEdge));
         commitAnim.addListener(new android.animation.AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(android.animation.Animator animation) {
@@ -908,12 +916,48 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     private void resetPredictiveBackVisuals() {
         predictiveBackProgress = 0f;
+        predictiveBackSwipeEdge = BackEventCompat.EDGE_LEFT;
         if (predictiveBackRoot != null) {
             predictiveBackRoot.setScaleX(1f);
             predictiveBackRoot.setScaleY(1f);
             predictiveBackRoot.setTranslationX(0f);
         }
         predictiveBackSettleAnimator = null;
+    }
+
+    /**
+     * Forward-navigation entrance for a Compose screen mounted into contentFrame
+     * (Settings, Downloads, History, Bookmarks, Account Sync, Omnibox, etc.).
+     *
+     * Previously these screens were added with contentFrame.addView(view) and no
+     * animation at all - only the predictive-back *exit* was animated, so pushing
+     * forward into a screen was an instant, jarring snap while going back was smooth.
+     * This mirrors aospSharedAxisEnter (ui/navigation/Transitions.kt, ported 1:1 from
+     * RvSystem-Monitor / PetalTransitions.kt): slide in from 1/3 screen width + fade,
+     * 350ms, M3 emphasized easing - the same curve every predictive-back exit already
+     * uses, so push and pop now feel like a matched pair instead of two different apps.
+     */
+    private void presentComposeScreen(View screen) {
+        screen.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+        screen.setAlpha(0f);
+        contentFrame.addView(screen);
+        screen.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                screen.getViewTreeObserver().removeOnPreDrawListener(this);
+                screen.setTranslationX(screen.getWidth() / 3f);
+                screen.animate()
+                        .alpha(1f)
+                        .translationX(0f)
+                        .setDuration(PB_TRANSITION_DURATION_MS)
+                        .setInterpolator(predictiveBackEasing)
+                        .start();
+                return true;
+            }
+        });
     }
 
     @Override
@@ -1227,7 +1271,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             showAlbum(currentAlbumController);
                             return kotlin.Unit.INSTANCE;
                         });
-                        contentFrame.addView(downloadView);
+                        presentComposeScreen(downloadView);
                     } catch (Exception ignored) {}
                 }
 
@@ -2981,7 +3025,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 }
             );
-            contentFrame.addView(omniboxView);
+            presentComposeScreen(omniboxView);
         } catch (Exception e) {
             Log.e(TAG, "Error showing omnibox page", e);
         }
@@ -3005,7 +3049,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
             });
-            contentFrame.addView(downloadView);
+            presentComposeScreen(downloadView);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -3039,7 +3083,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 }
             );
-            contentFrame.addView(historyView);
+            presentComposeScreen(historyView);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -3072,7 +3116,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 }
             );
-            contentFrame.addView(bookmarksView);
+            presentComposeScreen(bookmarksView);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -3150,7 +3194,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 }
             );
-            contentFrame.addView(accountSyncView);
+            presentComposeScreen(accountSyncView);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -4958,10 +5002,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showAlbum(currentAlbumController);
                 return kotlin.Unit.INSTANCE;
             });
-            android.view.animation.AlphaAnimation fadeIn = new android.view.animation.AlphaAnimation(0.0f, 1.0f);
-            fadeIn.setDuration(240);
-            settingsView.startAnimation(fadeIn);
-            contentFrame.addView(settingsView);
+            presentComposeScreen(settingsView);
         } catch (Exception e) {
             startActivity(new Intent(BrowserActivity.this, Settings_Activity.class));
         }
