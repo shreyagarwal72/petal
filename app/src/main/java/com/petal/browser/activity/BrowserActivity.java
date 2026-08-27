@@ -459,6 +459,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // own predictive-back-to-home/exit preview isn't fought with ours.
                 predictiveBackGestureActive = ninjaWebView != null && ninjaWebView.canGoBack();
                 if (predictiveBackGestureActive) {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playTick(BrowserActivity.this);
                     predictiveBackSwipeEdge = backEvent.getSwipeEdge();
                     beginPredictiveBackGesture();
                     applyPredictiveBackTransform(backEvent.getProgress(), predictiveBackSwipeEdge);
@@ -483,6 +484,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             @Override
             public void handleOnBackPressed() {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                 if (predictiveBackGestureActive) {
                     predictiveBackGestureActive = false;
                     settlePredictiveBackGesture(true);
@@ -1397,6 +1399,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     new com.petal.browser.compose.home.PetalBottomNavHandler() {
                         @Override
                         public void onHomeClick() {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             if (ninjaWebView != null) {
                                 ninjaWebView.loadUrl("about:blank");
                                 showAlbum(currentAlbumController, "about:blank");
@@ -1405,16 +1408,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                         @Override
                         public void onNewTabClick() {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             addAlbum(getString(R.string.app_name), "about:blank", true);
                         }
 
                         @Override
                         public void onTabsClick() {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             showOverview();
                         }
 
                         @Override
                         public void onMenuClick() {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             View navView = findViewById(R.id.bottom_nav_compose);
                             showOverflow(null, navView, 0, ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "", null, null, 0);
                         }
@@ -2231,9 +2237,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 isLoading,
                 canGoBack,
                 () -> {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                     performBackNavigation();
                 },
                 () -> {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                     String shareUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     if (shareUrl != null && !shareUrl.isEmpty() && !isHomePage(shareUrl)) {
                         Intent shareIntent = new Intent(Intent.ACTION_SEND);
@@ -2243,6 +2251,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                 },
                 () -> {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                     String cUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     if (cUrl == null || cUrl.equalsIgnoreCase("about:blank") || cUrl.startsWith("about:") || isHomePage(cUrl)) {
                         cUrl = "";
@@ -2250,6 +2259,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     showOmniboxPage(cUrl);
                 },
                 () -> {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                     com.petal.browser.ui.components.PetalSiteInfoBridge.showSiteInfoBottomSheet(
                         this,
                         ninjaWebView,
@@ -2258,7 +2268,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
                     );
                 },
-                this::showAiResearchSheet
+                () -> {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
+                    showAiResearchSheet();
+                }
         );
         if (refreshState != null && refreshState.isRefreshing()) {
             refreshState.setRefreshing(false);
