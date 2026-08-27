@@ -805,22 +805,23 @@ private fun DownloadRowItem(
                     label = "Progress"
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                LinearRipplingWavyProgressIndicator(
+                com.petal.browser.ui.components.PetalExpressiveLinearProgressIndicator(
                     progress = animatedProgress,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 8.dp,
+                    isWaveActive = true
                 )
             } else if (item.status == DownloadManager.STATUS_PAUSED) {
                 // A frozen, muted bar (no wave motion) makes "paused" visually distinct from
                 // an actively downloading file, matching how Chrome dims a paused download.
                 Spacer(modifier = Modifier.height(6.dp))
-                LinearProgressIndicator(
+                PetalExpressiveLinearProgressIndicator(
                     progress = item.progress ?: 0f,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(4.5.dp)
-                        .clip(RoundedCornerShape(50)),
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 6.dp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
+                    isWaveActive = false
                 )
             }
         }

@@ -104,14 +104,13 @@ fun PetalFancyWebLoadingBar(
         enter = fadeIn(),
         exit = fadeOut()
     ) {
-        LinearRipplingWavyProgressIndicator(
+        PetalExpressiveLinearProgressIndicator(
             progress = progress,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(14.dp),
-            height = 10.dp,
-            strokeWidth = 3.dp,
-            waveAmplitude = 3.dp
+                .height(10.dp),
+            height = 8.dp,
+            isWaveActive = true
         )
     }
 }
