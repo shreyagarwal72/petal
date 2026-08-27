@@ -164,7 +164,7 @@ fun M3ExpressiveVariableBackground(
     LaunchedEffect(rotationMinutes) {
         if (rotationMinutes > 0) {
             val intervalMs = rotationMinutes * 60 * 1000L
-            while (kotlinx.coroutines.isActive) {
+            while (this.isActive) {
                 kotlinx.coroutines.delay(intervalMs)
                 seedEpoch = System.currentTimeMillis()
             }
