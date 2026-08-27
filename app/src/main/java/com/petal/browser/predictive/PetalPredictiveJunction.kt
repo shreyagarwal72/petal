@@ -27,30 +27,9 @@ import android.content.SharedPreferences
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -59,28 +38,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Global settings & state junction for Predictive Back and Depth Blur effects across the Petal App.
- * Changes here automatically propagate to every page and route without needing per-screen logic.
+ * Global settings & state junction for Predictive Back across the Petal App. Changes here
+ * automatically propagate to every page and route without needing per-screen logic.
  *
- * Implements 1:1 depth blur, reveal scaling, and back page underlay blur matching RvSystem-Monitor.
+ * Ported 1:1 from RvSystem-Monitor and PixelPlayer official navigation transitions -
+ * slide + scale with M3 emphasized curve and no artificial mockup previews.
  */
 object PetalPredictiveJunction {
     private const val KEY_PREDICTIVE_BACK_ENABLED = "sp_predictive_back_junction_enabled"
@@ -113,7 +85,6 @@ object PetalPredictiveJunction {
 
 val LocalPetalPredictiveJunctionState = compositionLocalOf { true }
 val LocalPetalDepthBlurJunctionState = compositionLocalOf { true }
-val LocalIsUnderlayPreview = compositionLocalOf { false }
 
 // ---------------------------------------------------------------------------
 // Predictive back gesture state — published downward via CompositionLocal so
@@ -125,7 +96,7 @@ val LocalIsUnderlayPreview = compositionLocalOf { false }
  * Live state of an in-flight predictive back gesture.
  *
  * [progress] is 0f (finger at edge) → 1f (fully committed). It updates every frame
- * while the thumb is moving, which lets the revealed screen's blur/dim/scale track
+ * while the thumb is moving, which lets the foreground screen's slide/scale track
  * the finger instead of snapping at commit time.
  */
 data class PredictiveBackState(
@@ -149,29 +120,23 @@ val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
  * Wraps [content] with a [PredictiveBackHandler] and republishes gesture progress
  * through [LocalPredictiveBackState] so any descendant can react to it live.
  *
- * - Only intercepts back when [enabled] is true AND the junction setting is on.
- * - On cancel: animates progress smoothly back to 0 so blur/scale relax instead of snapping.
- * - Underlay content (revealed screen preview card / wallpaper) is rendered behind the surface
- *   with depth blur matching RvSystem-Monitor.
+ * Only intercepts back when [enabled] is true AND the junction setting is on.
+ * Matches official RvSystem-Monitor implementation.
  */
 @Composable
 fun PetalPredictiveBackSurface(
     enabled: Boolean = true,
     onBack: () -> Unit,
-    underlayContent: (@Composable () -> Unit)? = { PetalDynamicUnderlayPreview() },
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
     val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
-    val isUnderlayPreview = LocalIsUnderlayPreview.current
-
-    val isFullyEnabled = enabled && junctionPredictiveEnabled && !isUnderlayPreview
 
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
     val progressAnim = remember { Animatable(0f) }
 
-    if (isFullyEnabled) {
+    if (enabled && junctionPredictiveEnabled) {
         PredictiveBackHandler(enabled = true) { progressFlow ->
             val canWebGoBack = try {
                 com.petal.browser.activity.BrowserActivity.canNinjaGoBack()
@@ -189,34 +154,19 @@ fun PetalPredictiveBackSurface(
 
             try {
                 progressFlow.collect { backEvent ->
-                    progressAnim.snapTo(backEvent.progress)
                     backState = PredictiveBackState(
                         isActive = true,
                         progress = backEvent.progress,
                         swipeEdge = backEvent.swipeEdge,
                     )
                 }
-                progressAnim.snapTo(backState.progress)
-                progressAnim.animateTo(
-                    targetValue = 1f,
-                    animationSpec = spring(
-                        stiffness = Spring.StiffnessMedium,
-                        dampingRatio = Spring.DampingRatioNoBouncy
-                    )
-                ) {
-                    backState = backState.copy(isActive = true, progress = value)
-                }
-                backState = backState.copy(isActive = true, progress = 1f)
-                onBack()
                 backState = PredictiveBackState.Idle
+                onBack()
             } catch (e: CancellationException) {
                 progressAnim.snapTo(backState.progress)
                 progressAnim.animateTo(
                     targetValue = 0f,
-                    animationSpec = spring(
-                        stiffness = Spring.StiffnessMediumLow,
-                        dampingRatio = Spring.DampingRatioLowBouncy
-                    )
+                    animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing),
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
                 }
@@ -228,20 +178,9 @@ fun PetalPredictiveBackSurface(
     CompositionLocalProvider(
         LocalPetalPredictiveJunctionState provides junctionPredictiveEnabled,
         LocalPetalDepthBlurJunctionState provides junctionBlurEnabled,
-        LocalPredictiveBackState provides backState
+        LocalPredictiveBackState provides backState,
     ) {
-        if (underlayContent != null && !isUnderlayPreview) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (backState.isActive) {
-                    PetalScreenWrapper(isBehind = true) {
-                        underlayContent()
-                    }
-                }
-                content()
-            }
-        } else {
-            content()
-        }
+        content()
     }
 }
 
@@ -250,320 +189,45 @@ fun PetalPredictiveBackSurface(
 // ---------------------------------------------------------------------------
 
 /**
- * Screen wrapper that applies predictive back visual effects and depth blur to full-screen Petal surfaces.
- * Ported 1:1 from RvSystem-Monitor:
- * - Depth blur: 24.dp on revealed back page underlay.
- * - Dim overlay: 0.4f (or 0.75f when blur disabled) clearing as gesture progresses.
- * - Scale & corner radius transformation on foreground surface.
+ * Screen wrapper that applies predictive back visual effects to full-screen Petal surfaces.
+ *
+ * Ported 1:1 from RvSystem-Monitor's `aospSharedAxisPopExit` & PixelPlayer's official spec:
+ * - Slide: full screen width toward the swipe edge with cubic easing.
+ * - Scale: 1.0 at rest → 0.85 at full gesture with M3 emphasized easing.
  */
 @Composable
 fun PetalScreenWrapper(
-    isBehind: Boolean = false,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
-    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
-
-    val predictiveEnabled = junctionPredictiveEnabled
-    val blurEnabled = junctionBlurEnabled
-    val disableBlurAllOver = !blurEnabled
-
     val predictiveBackState = LocalPredictiveBackState.current
-    val underlayBlurRadius = if (isBehind && !disableBlurAllOver) 24.dp else 0.dp
-
-    CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehind || LocalIsUnderlayPreview.current)) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .blur(radius = underlayBlurRadius)
-                .graphicsLayer {
-                    val isActive = predictiveBackState.isActive
-                    val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
-                    val backProgressEased = if (isActive) FastOutSlowInEasing.transform(progress) else 0f
-
-                    if (!isBehind) {
-                        val scale = 1f - (0.12f * progress)
-                        val cornerRadius = 32f * progress
-                        val alphaVal = if (isActive) 1f - (0.15f * progress) else 1f
-                        val swipeEdge = predictiveBackState.swipeEdge
-                        val translationXFactor = if (isActive) {
-                            if (swipeEdge == BackEventCompat.EDGE_LEFT) 0.35f
-                            else if (swipeEdge == BackEventCompat.EDGE_RIGHT) -0.35f
-                            else 0f
-                        } else 0f
-
-                        scaleX = scale
-                        scaleY = scale
-                        translationX = size.width * translationXFactor * progress
-                        translationY = size.height * 0.015f * progress
-                        alpha = alphaVal
-                        compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
-
-                        if (cornerRadius > 0.5f) {
-                            this.shape = RoundedCornerShape(cornerRadius.dp)
-                            this.clip = true
-                            this.shadowElevation = (16f * progress).dp.toPx()
-                        } else {
-                            this.clip = false
-                            this.shadowElevation = 0f
-                        }
-                    } else {
-                        val revealScale = if (isActive) 0.94f + 0.06f * backProgressEased else 1f
-                        scaleX = revealScale
-                        scaleY = revealScale
-                        alpha = 1f
-                        compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
-                        this.clip = false
-                        this.shadowElevation = 0f
-                    }
-                }
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            content()
-
-            if (isBehind) {
-                val settledTargetDim = if (disableBlurAllOver) 0.75f else 0.40f
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            val isActive = predictiveBackState.isActive
-                            val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
-                            val backProgressEased = if (isActive) FastOutSlowInEasing.transform(progress) else 0f
-                            alpha = if (isActive) settledTargetDim * (1f - backProgressEased) else settledTargetDim
-                        }
-                        .background(Color.Black),
-                )
-            }
-        }
-    }
-}
-
-/**
- * Renders the dynamic underlay preview behind screens (Settings, Account Sync, etc.) during predictive back.
- * If a website is active in the WebView, displays a high-fidelity web page preview card with title, URL, and brand emblem.
- * If no website is open, renders the launcher desktop wallpaper preview.
- */
-@Composable
-fun PetalDynamicUnderlayPreview() {
-    val isHomeOrBlank = remember {
-        try {
-            com.petal.browser.activity.BrowserActivity.isCurrentTabHomeOrBlank()
-        } catch (_: Exception) {
-            true
-        }
-    }
-
-    if (isHomeOrBlank) {
-        LauncherWallpaperUnderlayPreview()
-    } else {
-        PetalWebPageUnderlayPreviewCard()
-    }
-}
-
-@Composable
-fun LauncherWallpaperUnderlayPreview() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                            MaterialTheme.colorScheme.surfaceContainerLow,
-                            MaterialTheme.colorScheme.background
-                        )
-                    )
-                )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .height(48.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Lock,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    repeat(3) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(24.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            repeat(4) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(52.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Language,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    repeat(4) {
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Language,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PetalWebPageUnderlayPreviewCard() {
-    val webView = remember {
-        try {
-            com.petal.browser.activity.BrowserActivity.getNinjaWebView()
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    val pageUrl = webView?.url ?: "https://petal.browser"
-    val pageTitle = webView?.title?.takeIf { it.isNotBlank() } ?: "Web Page"
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceContainerLow),
-        contentAlignment = Alignment.Center
+            .graphicsLayer {
+                val isActive = predictiveBackState.isActive
+                val progress = if (junctionPredictiveEnabled && isActive) predictiveBackState.progress else 0f
+
+                val slideEased = PetalPopExitSlideEasing.transform(progress)
+                val scaleEased = PetalM3EmphasizedEasing.transform(progress)
+
+                val swipeEdge = predictiveBackState.swipeEdge
+                val translationXFactor = if (isActive) {
+                    if (swipeEdge == BackEventCompat.EDGE_RIGHT) -1f else 1f
+                } else {
+                    0f
+                }
+
+                val scale = 1f - (PETAL_POP_EXIT_MAX_SCALE_DELTA * scaleEased)
+
+                scaleX = scale
+                scaleY = scale
+                translationX = size.width * translationXFactor * slideEased
+                compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+            }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Lock,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = pageTitle,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = pageUrl,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Language,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = pageTitle,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = pageUrl,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(Modifier.height(32.dp))
-        }
+        content()
     }
 }
