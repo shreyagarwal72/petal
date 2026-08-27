@@ -211,7 +211,6 @@ object GoogleAccountManager {
                 avatarType = AvatarType.GALLERY_URI,
                 customAvatarUri = persistentUriString
             )
-            _userProfileState.value = currentProfile
         } catch (e: Throwable) {
             e.printStackTrace()
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -223,7 +222,6 @@ object GoogleAccountManager {
                 avatarType = AvatarType.GALLERY_URI,
                 customAvatarUri = uriString
             )
-            _userProfileState.value = currentProfile
         }
     }
 
