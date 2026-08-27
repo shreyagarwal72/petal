@@ -203,7 +203,7 @@ private fun ExpressiveSearchBarCapsule(
     Box(
         modifier = modifier
             .cornerRadius(30.dp)
-            .background(GlanceTheme.colors.surfaceContainer)
+            .background(GlanceTheme.colors.surfaceVariant)
             .clickable(searchAction)
     ) {
         Row(
