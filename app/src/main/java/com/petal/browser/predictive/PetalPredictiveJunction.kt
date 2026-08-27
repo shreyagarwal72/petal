@@ -26,9 +26,16 @@ package com.petal.browser.predictive
 import android.content.SharedPreferences
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +43,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -49,6 +57,12 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -189,21 +203,21 @@ fun PetalPredictiveBackSurface(
  */
 @Composable
 fun PetalScreenWrapper(
-    navController: androidx.navigation.NavController? = null,
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null,
+    navController: NavController? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     isBehind: Boolean = false,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val initialCurrentState = lifecycleOwner.lifecycle.currentStateAsState().value
-    var isResumed by remember { mutableStateOf(initialCurrentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) }
+    var isResumed by remember { mutableStateOf(initialCurrentState.isAtLeast(Lifecycle.State.RESUMED)) }
 
-    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
                 isResumed = true
-            } else if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) {
+            } else if (event == Lifecycle.Event.ON_PAUSE) {
                 isResumed = false
             }
         }
@@ -218,7 +232,7 @@ fun PetalScreenWrapper(
     val blurEnabled = junctionBlurEnabled
     val predictiveBackState = LocalPredictiveBackState.current
 
-    val myEntry = lifecycleOwner as? androidx.navigation.NavBackStackEntry
+    val myEntry = lifecycleOwner as? NavBackStackEntry
     val previousEntryId = navController?.previousBackStackEntry?.id
     val isBehindTopScreen = isBehind || (myEntry != null && previousEntryId == myEntry.id)
 
@@ -226,20 +240,20 @@ fun PetalScreenWrapper(
 
     val transitionCornerRadius = if (transition != null) {
         val animatedValue by transition.animateFloat(
-            transitionSpec = { androidx.compose.animation.core.tween(durationMillis = 350, easing = androidx.compose.animation.core.FastOutSlowInEasing) },
+            transitionSpec = { tween(durationMillis = 350, easing = FastOutSlowInEasing) },
             label = "cornerRadius"
         ) { state ->
-            if (state == androidx.compose.animation.EnterExitState.PostExit || state == androidx.compose.animation.EnterExitState.PreEnter) 32f else 0f
+            if (state == EnterExitState.PostExit || state == EnterExitState.PreEnter) 32f else 0f
         }
         animatedValue
     } else 0f
 
     val transitionDimAlpha = if (transition != null) {
         val animatedValue by transition.animateFloat(
-            transitionSpec = { androidx.compose.animation.core.tween(durationMillis = 350, easing = androidx.compose.animation.core.CubicBezierEasing(0.5f, 0f, 0.8f, 0.2f)) },
+            transitionSpec = { tween(durationMillis = 350, easing = CubicBezierEasing(0.5f, 0f, 0.8f, 0.2f)) },
             label = "dimAlpha"
         ) { state ->
-            if (isBehindTopScreen && (state == androidx.compose.animation.EnterExitState.PostExit || state == androidx.compose.animation.EnterExitState.PreEnter)) {
+            if (isBehindTopScreen && (state == EnterExitState.PostExit || state == EnterExitState.PreEnter)) {
                 if (!blurEnabled) 0.75f else 0.40f
             } else 0f
         }
@@ -248,10 +262,10 @@ fun PetalScreenWrapper(
 
     val transitionBlurRadiusDp = if (transition != null) {
         val animatedValue by transition.animateDp(
-            transitionSpec = { androidx.compose.animation.core.tween(durationMillis = 350, easing = androidx.compose.animation.core.CubicBezierEasing(0.5f, 0f, 0.8f, 0.2f)) },
+            transitionSpec = { tween(durationMillis = 350, easing = CubicBezierEasing(0.5f, 0f, 0.8f, 0.2f)) },
             label = "blurRadius"
         ) { state ->
-            if (isBehindTopScreen && blurEnabled && (state == androidx.compose.animation.EnterExitState.PostExit || state == androidx.compose.animation.EnterExitState.PreEnter)) {
+            if (isBehindTopScreen && blurEnabled && (state == EnterExitState.PostExit || state == EnterExitState.PreEnter)) {
                 24.dp
             } else 0.dp
         }
