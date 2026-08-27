@@ -63,14 +63,15 @@ object PetalUpdateSheetBridge {
     @JvmStatic
     fun showChangelogHistorySheet(activity: ComponentActivity) {
         executor.execute {
+            var releases: List<PetalUpdateInfo>? = null
             try {
                 val url = URL("https://api.github.com/repos/shreyagarwal72/petal/releases")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "GET"
                 conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
                 conn.setRequestProperty("User-Agent", "PetalBrowserApp")
-                conn.connectTimeout = 8000
-                conn.readTimeout = 8000
+                conn.connectTimeout = 5000
+                conn.readTimeout = 5000
                 if (conn.responseCode == 200) {
                     val reader = java.io.BufferedReader(java.io.InputStreamReader(conn.inputStream))
                     val sb = StringBuilder()
@@ -80,31 +81,86 @@ object PetalUpdateSheetBridge {
                     }
                     reader.close()
                     val jsonArray = com.google.gson.JsonParser.parseString(sb.toString()).asJsonArray
-                    val releases = mutableListOf<PetalUpdateInfo>()
+                    val fetchedReleases = mutableListOf<PetalUpdateInfo>()
                     for (i in 0 until jsonArray.size()) {
                         val obj = jsonArray.get(i).asJsonObject
                         val tag = obj.get("tag_name")?.asString ?: ""
                         val body = obj.get("body")?.asString ?: ""
                         val htmlUrl = obj.get("html_url")?.asString ?: "https://github.com/shreyagarwal72/petal/releases"
-                        releases.add(PetalUpdateInfo(versionName = tag, releaseNotes = body, downloadUrl = "", releaseUrl = htmlUrl, isUpdateAvailable = false))
+                        fetchedReleases.add(PetalUpdateInfo(versionName = tag, releaseNotes = body, downloadUrl = "", releaseUrl = htmlUrl, isUpdateAvailable = false))
                     }
-                    activity.runOnUiThread {
-                        if (!activity.isFinishing) {
-                            showChangelogDialog(activity, releases)
-                        }
-                    }
-                } else {
-                    activity.runOnUiThread {
-                        com.petal.browser.view.NinjaToast.show(activity, "Failed to fetch release history")
+                    if (fetchedReleases.isNotEmpty()) {
+                        releases = fetchedReleases
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                activity.runOnUiThread {
-                    com.petal.browser.view.NinjaToast.show(activity, "Error fetching changelog history")
+            }
+
+            if (releases == null || releases.isEmpty()) {
+                releases = getFallbackReleases(activity)
+            }
+
+            val finalReleases = releases
+            activity.runOnUiThread {
+                if (!activity.isFinishing) {
+                    showChangelogDialog(activity, finalReleases)
                 }
             }
         }
+    }
+
+    private fun getFallbackReleases(activity: ComponentActivity): List<PetalUpdateInfo> {
+        val currentVer = try {
+            activity.packageManager.getPackageInfo(activity.packageName, 0).versionName
+        } catch (_: Exception) {
+            "1.9.2"
+        }
+
+        return listOf(
+            PetalUpdateInfo(
+                versionName = "v$currentVer",
+                releaseNotes = "* **Appearance Hero Animations**: Added RvSystem-Monitor inspired spring scale physics & infinite shimmer sweep to active theme mini cards in Settings.\n* **Launcher Wallpaper Preview**: Added dynamic system launcher preview during predictive back on Home screen.",
+                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases"
+            ),
+            PetalUpdateInfo(
+                versionName = "v1.9.1",
+                releaseNotes = "* **Predictive Back Launcher Preview**: Added system launcher desktop preview behind the Home screen during predictive back exit.\n* **Profile Picture Visibility & PetalSlider**: Fixed custom gallery avatar loading with dynamic Coil cache keying and added PetalSlider to profile picture cropper dialog.",
+                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.9.1"
+            ),
+            PetalUpdateInfo(
+                versionName = "v1.9.0",
+                releaseNotes = "* **Fixed Files Integration**: Merged updated project core composables, Glance widgets, and predictive back junction components.",
+                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.9.0"
+            ),
+            PetalUpdateInfo(
+                versionName = "v1.8.9",
+                releaseNotes = "* **Profile Picture Image Cropper**: Added interactive Profile Picture Image Cropper dialog (`ProfilePictureCropDialog`) with circular crop viewport, pinch-to-zoom (1.0x - 4.0x), pan gesture alignment, rotation (90° steps), and anti-aliased bitmap output.\n* **Account Page Cleanup**: Removed obsolete Google Passkey option.",
+                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.8.9"
+            ),
+            PetalUpdateInfo(
+                versionName = "v1.8.8",
+                releaseNotes = "* **Dynamic Predictive Back Underlay Preview**: Added `PetalDynamicUnderlayPreview()` to dynamically render active web page preview cards behind settings & secondary screens when a web page is open.",
+                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.8.8"
+            ),
+            PetalUpdateInfo(
+                versionName = "v1.8.7",
+                releaseNotes = "* **Website Back Navigation & Flicker Fix**: Fixed website back gestures by detecting active WebView web history (`canNinjaGoBack()`) in `PetalPredictiveJunction.kt`, bypassing activity scale-down effects.",
+                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.8.7"
+            ),
+            PetalUpdateInfo(
+                versionName = "v1.8.6",
+                releaseNotes = "* **Foreground Service Crash Fix**: Made `startForeground()` the synchronous first call in `PetalDownloadService.onStartCommand()`.",
+                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.8.6"
+            )
+        )
     }
 
     private fun showChangelogDialog(activity: ComponentActivity, releases: List<PetalUpdateInfo>) {
