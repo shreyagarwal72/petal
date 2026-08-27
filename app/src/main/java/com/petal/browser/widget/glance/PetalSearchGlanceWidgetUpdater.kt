@@ -20,6 +20,7 @@ object PetalSearchGlanceWidgetUpdater {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 PetalSearchGlanceWidget().updateAll(appContext)
+                PetalExpressiveGlanceWidget().updateAll(appContext)
                 PetalShortcutsGlanceWidget().updateAll(appContext)
                 PetalModeSwitchGlanceWidget().updateAll(appContext)
             } catch (e: Exception) {
