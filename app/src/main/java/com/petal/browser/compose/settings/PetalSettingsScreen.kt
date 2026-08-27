@@ -74,6 +74,8 @@ import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.availableSearchEngines
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.haptics.PetalHapticEngine
+import kotlinx.coroutines.launch
 import com.petal.browser.ui.theme.*
 
 object PetalSettingsBridge {
