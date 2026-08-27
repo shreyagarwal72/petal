@@ -75,6 +75,8 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.components.homeLaunchEntrance
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.PetalMaterialShapes
+import com.petal.browser.ui.theme.toShape
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import org.json.JSONArray
@@ -679,6 +681,19 @@ private fun ShortcutTile(
     val faviconUrl = remember(shortcut.url) { getFaviconUrl(shortcut.url) }
     var isImageError by remember(shortcut.url) { mutableStateOf(false) }
 
+    // Pick a unique Material 3 Expressive shape based on tile index and shortcut label
+    val uniqueShapeIndex = remember(shortcut.label, index) {
+        val hash = (shortcut.label.hashCode() * 31 + index * 17)
+        Math.abs(hash) % PetalMaterialShapes.allShapes.size
+    }
+    val tileShape = remember(uniqueShapeIndex) {
+        PetalMaterialShapes.allShapes[uniqueShapeIndex].toShape()
+    }
+    val fallbackShape = remember(uniqueShapeIndex) {
+        val offsetIndex = (uniqueShapeIndex + 7) % PetalMaterialShapes.allShapes.size
+        PetalMaterialShapes.allShapes[offsetIndex].toShape()
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -696,8 +711,8 @@ private fun ShortcutTile(
             modifier = Modifier
                 .size(60.dp)
                 .graphicsLayer { scaleX = scale; scaleY = scale }
-                .shadow(elevation = 3.dp, shape = RoundedCornerShape(20.dp), clip = false)
-                .clip(RoundedCornerShape(20.dp))
+                .shadow(elevation = 3.dp, shape = tileShape, clip = false)
+                .clip(tileShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
         ) {
             if (!faviconUrl.isNullOrEmpty() && !isImageError) {
@@ -715,7 +730,7 @@ private fun ShortcutTile(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(38.dp)
-                        .clip(CircleShape)
+                        .clip(fallbackShape)
                         .background(shortcut.containerColor.copy(alpha = 0.18f))
                 ) {
                     SiteBrandIconTinted(
@@ -748,15 +763,16 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
             .homeLaunchEntrance(3 + index)
             .clickable(onClick = onClick)
     ) {
+        val addTileShape = remember { PetalMaterialShapes.Scallop.toShape() }
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(60.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(addTileShape)
                 .border(
                     width = 1.5.dp,
                     color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(20.dp)
+                    shape = addTileShape
                 )
         ) {
             Icon(
@@ -935,8 +951,11 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         }
     }
 
+    val greetingTagShape = remember { PetalMaterialShapes.Arch.toShape() }
+    val greetingIconShape = remember { PetalMaterialShapes.Clover4Leaf.toShape() }
+
     Surface(
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 10.dp, bottomEnd = 28.dp),
+        shape = greetingTagShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
         shadowElevation = 2.dp,
@@ -953,10 +972,10 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
             horizontalArrangement = Arrangement.Center
         ) {
             Surface(
-                shape = CircleShape,
+                shape = greetingIconShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(38.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
