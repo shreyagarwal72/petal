@@ -150,34 +150,38 @@ fun PetalPredictiveBackSurface(
         PredictiveBackHandler(enabled = true) { progressFlow ->
             try {
                 progressFlow.collect { backEvent ->
-                    progressAnim.snapTo(backEvent.progress)
+                    progressAnim.animateTo(
+                        targetValue = backEvent.progress,
+                        animationSpec = spring(
+                            stiffness = 1600f,
+                            dampingRatio = 1.0f
+                        )
+                    )
                     backState = PredictiveBackState(
                         isActive = true,
-                        progress = backEvent.progress,
+                        progress = progressAnim.value,
                         swipeEdge = backEvent.swipeEdge,
                     )
                 }
-                progressAnim.snapTo(backState.progress)
                 progressAnim.animateTo(
                     targetValue = 1f,
                     animationSpec = spring(
-                        stiffness = Spring.StiffnessMedium,
-                        dampingRatio = Spring.DampingRatioNoBouncy
+                        stiffness = 350f,
+                        dampingRatio = 0.86f
                     )
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
                 }
                 backState = backState.copy(isActive = true, progress = 1f)
                 onBack()
-                kotlinx.coroutines.delay(200)
+                kotlinx.coroutines.delay(100)
                 backState = PredictiveBackState.Idle
             } catch (e: CancellationException) {
-                progressAnim.snapTo(backState.progress)
                 progressAnim.animateTo(
                     targetValue = 0f,
                     animationSpec = spring(
-                        stiffness = Spring.StiffnessMediumLow,
-                        dampingRatio = Spring.DampingRatioLowBouncy
+                        stiffness = 450f,
+                        dampingRatio = 0.82f
                     )
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
