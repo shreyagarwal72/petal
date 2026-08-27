@@ -1,0 +1,1 @@
+* **Appearance Hero Animations & Tagline Update**: Added `@RvSystem-Monitor` inspired animated spring scale physics (`Spring.StiffnessMediumLow`, `DampingRatioMediumBouncy`) and infinite shimmer sweep effect (`petalShimmerEffect()`) to active theme mini cards in Appearance Settings box. Renamed tagline to `"Turn it into pure eye candy."`.

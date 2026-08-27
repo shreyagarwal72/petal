@@ -2510,6 +2510,23 @@ private fun AppearanceHeroBanner(
         label = "heroCardBg"
     )
 
+    val darkCardScale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isDarkSelected) 1.05f else 1.0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
+        ),
+        label = "darkScale"
+    )
+    val lightCardScale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isLightSelected) 1.05f else 1.0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
+        ),
+        label = "lightScale"
+    )
+
     Surface(
         shape = RoundedCornerShape(32.dp),
         color = cardBgColor,
@@ -2565,7 +2582,7 @@ private fun AppearanceHeroBanner(
                 Spacer(Modifier.height(6.dp))
 
                 Text(
-                    text = "Make it pretty enough to flex in screenshots.",
+                    text = "Turn it into pure eye candy.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f)
                 )
@@ -2588,6 +2605,10 @@ private fun AppearanceHeroBanner(
                         modifier = Modifier
                             .weight(1f)
                             .height(72.dp)
+                            .graphicsLayer {
+                                scaleX = darkCardScale
+                                scaleY = darkCardScale
+                            }
                     ) {
                         Row(
                             modifier = Modifier
@@ -2601,6 +2622,7 @@ private fun AppearanceHeroBanner(
                                     .size(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(androidx.compose.ui.graphics.Color(0xFFB8A0E8))
+                                    .then(if (isDarkSelected) Modifier.petalShimmerEffect() else Modifier)
                             )
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Box(
@@ -2632,6 +2654,10 @@ private fun AppearanceHeroBanner(
                         modifier = Modifier
                             .weight(1f)
                             .height(72.dp)
+                            .graphicsLayer {
+                                scaleX = lightCardScale
+                                scaleY = lightCardScale
+                            }
                     ) {
                         Row(
                             modifier = Modifier
@@ -2645,6 +2671,7 @@ private fun AppearanceHeroBanner(
                                     .size(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(androidx.compose.ui.graphics.Color(0xFF5B21B6))
+                                    .then(if (isLightSelected) Modifier.petalShimmerEffect() else Modifier)
                             )
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Box(
@@ -2668,6 +2695,31 @@ private fun AppearanceHeroBanner(
             }
         }
     }
+}
+
+private fun Modifier.petalShimmerEffect(): Modifier = androidx.compose.ui.composed {
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "Shimmer Transition")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(durationMillis = 1200, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Restart,
+        ),
+        label = "Shimmer Offset",
+    )
+
+    background(
+        brush = androidx.compose.ui.graphics.Brush.linearGradient(
+            colors = listOf(
+                androidx.compose.ui.graphics.Color.White.copy(alpha = 0.0f),
+                androidx.compose.ui.graphics.Color.White.copy(alpha = 0.4f),
+                androidx.compose.ui.graphics.Color.White.copy(alpha = 0.0f),
+            ),
+            start = androidx.compose.ui.geometry.Offset.Zero,
+            end = androidx.compose.ui.geometry.Offset(x = translateAnim, y = translateAnim),
+        ),
+    )
 }
 
 
