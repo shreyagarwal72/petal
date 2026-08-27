@@ -199,8 +199,9 @@ fun PetalPredictiveBackSurface(
 /**
  * Screen wrapper that applies predictive back visual effects and depth blur to full-screen Petal surfaces.
  * Ported 1:1 from RvSystem-Monitor & PixelPlayer:
- * - Background (behind) surface: 24.dp depth blur + black dim overlay (0.40f/0.75f clearing as gesture completes).
- * - Foreground (top) surface: crisp scale down (1.0 -> 0.85) + 32.dp corner clipping + 16.dp drop shadow + slide offset.
+ * - Background (behind) surface: 24.dp depth blur + black dim overlay (0.40f/0.75f clearing as gesture completes)
+ *   with aospSharedAxisPopEnter parallax slide in (-33% -> 0).
+ * - Foreground (top) surface: crisp scale down (1.0 -> 0.85) + 32.dp corner clipping + 16.dp drop shadow + aospSharedAxisPopExit slide offset (+50% right / -50% left).
  */
 @Composable
 fun PetalScreenWrapper(
@@ -232,7 +233,7 @@ fun PetalScreenWrapper(
                     if (!isBehind) {
                         val swipeEdge = predictiveBackState.swipeEdge
                         val translationXFactor = if (isActive) {
-                            if (swipeEdge == BackEventCompat.EDGE_RIGHT) -1f else 1f
+                            if (swipeEdge == BackEventCompat.EDGE_RIGHT) -0.5f else 0.5f
                         } else {
                             0f
                         }
@@ -255,8 +256,13 @@ fun PetalScreenWrapper(
                         }
                     } else {
                         val revealScale = if (isActive) 0.94f + 0.06f * scaleEased else 1f
+                        val swipeEdge = predictiveBackState.swipeEdge
+                        val bgDirectionFactor = if (swipeEdge == BackEventCompat.EDGE_RIGHT) (1f / 3f) else (-1f / 3f)
+                        val bgParallaxOffset = if (isActive) size.width * bgDirectionFactor * (1f - scaleEased) else 0f
+
                         scaleX = revealScale
                         scaleY = revealScale
+                        translationX = bgParallaxOffset
                         alpha = 1f
                         compositingStrategy = if (isActive || currentBlurRadiusDp > 0.dp) CompositingStrategy.Offscreen else CompositingStrategy.Auto
                         this.clip = false
