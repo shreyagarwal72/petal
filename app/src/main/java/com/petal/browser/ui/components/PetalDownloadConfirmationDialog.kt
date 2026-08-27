@@ -238,7 +238,9 @@ object PetalDownloadDialogBridge {
                                 onConfirm = {
                                     handler.removeCallbacks(autoDismissRunnable)
                                     if (dialog.isShowing) dialog.dismiss()
-                                    onConfirmDownload(guessedFileName)
+                                    if (!com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, url, guessedFileName, mimeType)) {
+                                        onConfirmDownload(guessedFileName)
+                                    }
                                 },
                                 onDismiss = {
                                     handler.removeCallbacks(autoDismissRunnable)

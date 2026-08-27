@@ -164,6 +164,9 @@ public class NinjaDownloadListener implements DownloadListener {
                     R.drawable.icon_close, () -> true
             );
         } else {
+            if (context instanceof android.app.Activity && com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet((android.app.Activity) context, downloadUrl, null, mimeType)) {
+                return;
+            }
             com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
                 context,
                 downloadUrl,
