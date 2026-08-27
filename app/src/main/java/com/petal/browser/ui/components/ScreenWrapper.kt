@@ -45,6 +45,8 @@ fun ScreenWrapper(
     content: @Composable () -> Unit
 ) {
     PetalScreenWrapper(
+        navController = navController,
+        animatedVisibilityScope = animatedVisibilityScope,
         isBehind = isBehind,
         modifier = modifier,
         content = content

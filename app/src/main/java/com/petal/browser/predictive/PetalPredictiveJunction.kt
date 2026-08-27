@@ -196,13 +196,32 @@ fun PetalPredictiveBackSurface(
  * - Background (behind) surface: 24.dp depth blur + black dim overlay (0.40f/0.75f clearing as gesture completes)
  *   with aospSharedAxisPopEnter parallax slide in (-33% -> 0).
  * - Foreground (top) surface: crisp scale down (1.0 -> 0.85) + 32.dp corner clipping + 16.dp drop shadow + aospSharedAxisPopExit slide offset (+50% right / -50% left).
+ * - AnimatedVisibilityScope support: live 32dp corner radius, 24dp depth blur, and dim alpha transition specs during NavHost transitions.
  */
 @Composable
 fun PetalScreenWrapper(
+    navController: androidx.navigation.NavController? = null,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null,
     isBehind: Boolean = false,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val initialCurrentState = lifecycleOwner.lifecycle.currentStateAsState().value
+    var isResumed by remember { mutableStateOf(initialCurrentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) }
+
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                isResumed = true
+            } else if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) {
+                isResumed = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
     val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
 
@@ -210,13 +229,55 @@ fun PetalScreenWrapper(
     val blurEnabled = junctionBlurEnabled
     val predictiveBackState = LocalPredictiveBackState.current
 
+    val myEntry = lifecycleOwner as? androidx.navigation.NavBackStackEntry
+    val previousEntryId = navController?.previousBackStackEntry?.id
+    val isBehindTopScreen = isBehind || (myEntry != null && previousEntryId == myEntry.id)
+
+    val transition = animatedVisibilityScope?.transition
+
+    val transitionCornerRadius = if (transition != null) {
+        val animatedValue by transition.animateFloat(
+            transitionSpec = { androidx.compose.animation.core.tween(durationMillis = 350, easing = androidx.compose.animation.core.FastOutSlowInEasing) },
+            label = "cornerRadius"
+        ) { state ->
+            if (state == androidx.compose.animation.EnterExitState.PostExit || state == androidx.compose.animation.EnterExitState.PreEnter) 32f else 0f
+        }
+        animatedValue
+    } else 0f
+
+    val transitionDimAlpha = if (transition != null) {
+        val animatedValue by transition.animateFloat(
+            transitionSpec = { androidx.compose.animation.core.tween(durationMillis = 350, easing = androidx.compose.animation.core.CubicBezierEasing(0.5f, 0f, 0.8f, 0.2f)) },
+            label = "dimAlpha"
+        ) { state ->
+            if (isBehindTopScreen && (state == androidx.compose.animation.EnterExitState.PostExit || state == androidx.compose.animation.EnterExitState.PreEnter)) {
+                if (!blurEnabled) 0.75f else 0.40f
+            } else 0f
+        }
+        animatedValue
+    } else 0f
+
+    val transitionBlurRadiusDp = if (transition != null) {
+        val animatedValue by transition.animateDp(
+            transitionSpec = { androidx.compose.animation.core.tween(durationMillis = 350, easing = androidx.compose.animation.core.CubicBezierEasing(0.5f, 0f, 0.8f, 0.2f)) },
+            label = "blurRadius"
+        ) { state ->
+            if (isBehindTopScreen && blurEnabled && (state == androidx.compose.animation.EnterExitState.PostExit || state == androidx.compose.animation.EnterExitState.PreEnter)) {
+                24.dp
+            } else 0.dp
+        }
+        animatedValue
+    } else 0.dp
+
     val isActive = predictiveBackState.isActive
     val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
     val scaleEased = PetalM3EmphasizedEasing.transform(progress)
 
-    val currentBlurRadiusDp = if (isBehind && blurEnabled) 24.dp else 0.dp
+    val currentBlurRadiusDp = if ((isBehindTopScreen || transitionBlurRadiusDp > 0.dp) && blurEnabled) {
+        if (transitionBlurRadiusDp > 0.dp) transitionBlurRadiusDp else 24.dp
+    } else 0.dp
 
-    CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehind || LocalIsUnderlayPreview.current)) {
+    CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehindTopScreen || LocalIsUnderlayPreview.current)) {
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -224,7 +285,7 @@ fun PetalScreenWrapper(
                 .graphicsLayer {
                     val slideEased = PetalPopExitSlideEasing.transform(progress)
 
-                    if (!isBehind) {
+                    if (!isBehindTopScreen) {
                         val swipeEdge = predictiveBackState.swipeEdge
                         val translationXFactor = if (isActive) {
                             if (swipeEdge == BackEventCompat.EDGE_RIGHT) -1.0f else 1.0f
@@ -233,12 +294,12 @@ fun PetalScreenWrapper(
                         }
 
                         val scale = 1f - (PETAL_POP_EXIT_MAX_SCALE_DELTA * scaleEased)
-                        val cornerRadius = 32f * scaleEased
+                        val cornerRadius = maxOf(32f * scaleEased, transitionCornerRadius)
 
                         scaleX = scale
                         scaleY = scale
                         translationX = size.width * translationXFactor * slideEased
-                        compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                        compositingStrategy = if (isActive || transitionCornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
 
                         if (cornerRadius > 0.5f) {
                             this.shape = RoundedCornerShape(cornerRadius.dp)
@@ -254,12 +315,19 @@ fun PetalScreenWrapper(
                         val bgDirectionFactor = if (swipeEdge == BackEventCompat.EDGE_RIGHT) (1f / 3f) else (-1f / 3f)
                         val bgParallaxOffset = if (isActive) size.width * bgDirectionFactor * (1f - scaleEased) else 0f
 
+                        val cornerRadius = maxOf(32f * (1f - scaleEased), transitionCornerRadius)
+
                         scaleX = revealScale
                         scaleY = revealScale
                         translationX = bgParallaxOffset
                         alpha = 1f
-                        compositingStrategy = if (isActive || currentBlurRadiusDp > 0.dp) CompositingStrategy.Offscreen else CompositingStrategy.Auto
-                        this.clip = false
+                        compositingStrategy = if (isActive || currentBlurRadiusDp > 0.dp || cornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                        if (cornerRadius > 0.5f) {
+                            this.shape = RoundedCornerShape(cornerRadius.dp)
+                            this.clip = true
+                        } else {
+                            this.clip = false
+                        }
                         this.shadowElevation = 0f
                     }
                 }
@@ -267,13 +335,14 @@ fun PetalScreenWrapper(
         ) {
             content()
 
-            if (isBehind) {
+            if (isBehindTopScreen || transitionDimAlpha > 0f) {
                 val settledTargetDim = if (!blurEnabled) 0.75f else 0.40f
+                val effectiveDimAlpha = if (isActive) settledTargetDim * (1f - scaleEased) else maxOf(settledTargetDim, transitionDimAlpha)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            alpha = if (isActive) settledTargetDim * (1f - scaleEased) else settledTargetDim
+                            alpha = effectiveDimAlpha
                         }
                         .background(Color.Black)
                 )
@@ -281,3 +350,4 @@ fun PetalScreenWrapper(
         }
     }
 }
+
