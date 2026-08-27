@@ -2470,15 +2470,27 @@ fun PetalSettingsScreen(
         val activeCategory = currentCategory
 
         if (isCategoryDrilled) {
+            // Both backstack entries are rendered live in the same Box, exactly like RV's
+            // two-entry NavDisplay: Overview stays composed underneath (isBehind = true) so
+            // PetalScreenWrapper has a real surface to blur/dim/parallax, while the drilled
+            // category sits on top (isBehind = false) and does the scale/corner-clip/slide.
             com.petal.browser.predictive.PetalPredictiveBackSurface(
                 enabled = true,
                 onBack = { currentCategory = SettingsCategory.OVERVIEW },
             ) {
-                com.petal.browser.predictive.PetalScreenWrapper {
-                    RenderCategoryPage(
-                        scaffoldCategory = activeCategory,
-                        onHeaderBack = { currentCategory = SettingsCategory.OVERVIEW }
-                    )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
+                        RenderCategoryPage(
+                            scaffoldCategory = SettingsCategory.OVERVIEW,
+                            onHeaderBack = onBackPress
+                        )
+                    }
+                    com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                        RenderCategoryPage(
+                            scaffoldCategory = activeCategory,
+                            onHeaderBack = { currentCategory = SettingsCategory.OVERVIEW }
+                        )
+                    }
                 }
             }
         } else {
