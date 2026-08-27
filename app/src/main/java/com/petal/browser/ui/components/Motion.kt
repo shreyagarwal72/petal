@@ -22,6 +22,44 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 
+object PetalLaunchTracker {
+    var isHomeLaunchAnimated: Boolean = false
+}
+
+/**
+ * Entrance animation for the Home Screen that plays ONLY on initial app launch.
+ * On subsequent navigation visits to the Home screen, it skips animation.
+ */
+@Composable
+fun Modifier.homeLaunchEntrance(index: Int = 0): Modifier {
+    if (PetalLaunchTracker.isHomeLaunchAnimated) {
+        return this
+    }
+
+    val animProgress = remember { Animatable(0f) }
+    LaunchedEffect(index) {
+        if (index > 0) {
+            kotlinx.coroutines.delay((index * 35L).coerceAtMost(280L))
+        }
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        )
+        PetalLaunchTracker.isHomeLaunchAnimated = true
+    }
+    return graphicsLayer {
+        val progress = animProgress.value
+        val currentScale = 0.93f + (0.07f * progress)
+        alpha = progress
+        scaleX = currentScale
+        scaleY = currentScale
+        translationY = (1f - progress) * 20.dp.toPx()
+    }
+}
+
 /**
  * Fast, lightweight staggered entrance animation: fade-in + subtle Y translation.
  */
