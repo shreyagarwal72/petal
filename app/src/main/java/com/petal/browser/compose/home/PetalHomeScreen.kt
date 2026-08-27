@@ -457,9 +457,9 @@ fun PetalHomeScreen(
         onBack = {
             val activity = context as? com.petal.browser.activity.BrowserActivity
             if (activity != null) {
-                activity.handleBackPress()
+                activity.moveTaskToBack(true)
             } else {
-                (context as? ComponentActivity)?.finishAndRemoveTask()
+                (context as? androidx.activity.ComponentActivity)?.moveTaskToBack(true)
             }
         }
     ) {
