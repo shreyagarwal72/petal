@@ -410,7 +410,6 @@ fun PetalSettingsScreen(
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
     var isExpressiveBgShapes by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
-    var isDepthBlurEnabled by remember { mutableStateOf(sp.getBoolean("sp_depth_blur_junction_enabled", true)) }
 
     // Private DNS & Language States
     var privateDnsMode by remember { mutableStateOf(sp.getString("sp_private_dns_mode", "OFF") ?: "OFF") }
@@ -1290,19 +1289,6 @@ fun PetalSettingsScreen(
                                         }
                                     )
 
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    // Predictive Back Depth Blur Toggle (PixelPlayer & RvSystem-Monitor style)
-                                    ToggleRow(
-                                        title = "Predictive Back Depth Blur",
-                                        subtitle = "Apply real-time depth blur behind swiped screens during predictive back gestures",
-                                        icon = Icons.Rounded.BlurOn,
-                                        checked = isDepthBlurEnabled,
-                                        onCheckedChange = { newValue ->
-                                            isDepthBlurEnabled = newValue
-                                            com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(sp, newValue)
-                                        }
-                                    )
                                 }
                             }
 
@@ -2463,14 +2449,8 @@ fun PetalSettingsScreen(
             com.petal.browser.predictive.PetalPredictiveBackSurface(
                 enabled = true,
                 onBack = { currentCategory = SettingsCategory.OVERVIEW },
-                underlayContent = {
-                    RenderCategoryPage(
-                        scaffoldCategory = SettingsCategory.OVERVIEW,
-                        onHeaderBack = onBackPress
-                    )
-                }
             ) {
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                com.petal.browser.predictive.PetalScreenWrapper {
                     RenderCategoryPage(
                         scaffoldCategory = activeCategory,
                         onHeaderBack = { currentCategory = SettingsCategory.OVERVIEW }
@@ -2481,9 +2461,8 @@ fun PetalSettingsScreen(
             com.petal.browser.predictive.PetalPredictiveBackSurface(
                 enabled = true,
                 onBack = onBackPress,
-                underlayContent = { com.petal.browser.predictive.PetalDynamicUnderlayPreview() }
             ) {
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+                com.petal.browser.predictive.PetalScreenWrapper {
                     RenderCategoryPage(
                         scaffoldCategory = SettingsCategory.OVERVIEW,
                         onHeaderBack = onBackPress

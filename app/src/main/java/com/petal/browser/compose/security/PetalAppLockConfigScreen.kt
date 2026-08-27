@@ -48,7 +48,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun PetalAppLockConfigScreen(
     onBack: () -> Unit,
-    underlayContent: (@Composable () -> Unit)? = null
 ) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -75,9 +74,8 @@ fun PetalAppLockConfigScreen(
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
         onBack = onBack,
-        underlayContent = underlayContent
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+        com.petal.browser.predictive.PetalScreenWrapper {
             Scaffold(
                 topBar = {
                     ExpressiveHeader(

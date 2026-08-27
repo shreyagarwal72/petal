@@ -241,43 +241,21 @@ fun PetalUserProfileScreen(
         if (showAppLockConfigPage) {
             com.petal.browser.compose.security.PetalAppLockConfigScreen(
                 onBack = { showAppLockConfigPage = false },
-                underlayContent = {
-                    RenderUserProfileContent(
-                        profile = profile,
-                        isLoading = isLoading,
-                        isSigningIn = isSigningIn,
-                        isExpressiveFeatureTiles = isExpressiveFeatureTiles,
-                        snackbarHostState = snackbarHostState,
-                        onBack = onBack,
-                        onOpenOAuth = onOpenOAuth,
-                        onStartGoogleSignIn = { startGoogleSignIn() },
-                        onOpenAppLockConfig = { showAppLockConfigPage = true },
-                        modifier = modifier
-                    )
-                }
             )
         } else {
-            Box(modifier = Modifier.fillMaxSize()) {
-                // 1. Underlay Screen (Home Screen Preview) - Rendered behind User & Account during back gesture
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
-                    com.petal.browser.predictive.PetalDynamicUnderlayPreview()
-                }
-
-                // 2. Foreground Screen (User & Account Profile) - Shrinks to 88% card & 32dp corners
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
-                    RenderUserProfileContent(
-                        profile = profile,
-                        isLoading = isLoading,
-                        isSigningIn = isSigningIn,
-                        isExpressiveFeatureTiles = isExpressiveFeatureTiles,
-                        snackbarHostState = snackbarHostState,
-                        onBack = onBack,
-                        onOpenOAuth = onOpenOAuth,
-                        onStartGoogleSignIn = { startGoogleSignIn() },
-                        onOpenAppLockConfig = { showAppLockConfigPage = true },
-                        modifier = modifier
-                    )
-                }
+            com.petal.browser.predictive.PetalScreenWrapper {
+                RenderUserProfileContent(
+                    profile = profile,
+                    isLoading = isLoading,
+                    isSigningIn = isSigningIn,
+                    isExpressiveFeatureTiles = isExpressiveFeatureTiles,
+                    snackbarHostState = snackbarHostState,
+                    onBack = onBack,
+                    onOpenOAuth = onOpenOAuth,
+                    onStartGoogleSignIn = { startGoogleSignIn() },
+                    onOpenAppLockConfig = { showAppLockConfigPage = true },
+                    modifier = modifier
+                )
             }
         }
     }

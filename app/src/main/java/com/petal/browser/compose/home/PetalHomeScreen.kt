@@ -454,7 +454,6 @@ fun PetalHomeScreen(
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
-        underlayContent = { com.petal.browser.predictive.LauncherWallpaperUnderlayPreview() },
         onBack = {
             val activity = context as? com.petal.browser.activity.BrowserActivity
             if (activity != null) {
@@ -464,7 +463,7 @@ fun PetalHomeScreen(
             }
         }
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
+        com.petal.browser.predictive.PetalScreenWrapper {
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
