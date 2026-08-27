@@ -103,6 +103,8 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         }
     }
 
+    private int lastScrollHapticY = 0;
+
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
@@ -110,6 +112,14 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         // during scroll/fling, so keep reclaiming the edges here too - not just on
         // touch-down - or a fast fling can leave the edges blocked again mid-gesture.
         resetGestureExclusionRects();
+
+        // Tactile Scroll Haptics (Inspired by Ever-Haptics)
+        if (Math.abs(t - lastScrollHapticY) > 36) {
+            lastScrollHapticY = t;
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(getContext())
+                    .playIfEnabled(getContext(), com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.45f, 60L);
+        }
+
         if (onScrollChangeListener != null) {
             int dy = t - oldt;
             if (dy > 12) {
