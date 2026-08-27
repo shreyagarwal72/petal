@@ -36,6 +36,7 @@ import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,7 +55,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -206,6 +209,7 @@ fun PetalScreenWrapper(
     navController: NavController? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     isBehind: Boolean = false,
+    backgroundSnapshot: ImageBitmap? = null,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -334,8 +338,20 @@ fun PetalScreenWrapper(
                         this.shadowElevation = 0f
                     }
                 }
-                .background(MaterialTheme.colorScheme.background)
+                .then(
+                    if (backgroundSnapshot == null) Modifier.background(MaterialTheme.colorScheme.background)
+                    else Modifier
+                )
         ) {
+            if (backgroundSnapshot != null) {
+                Image(
+                    bitmap = backgroundSnapshot,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
             content()
 
             if (isBehindTopScreen || transitionDimAlpha > 0f) {

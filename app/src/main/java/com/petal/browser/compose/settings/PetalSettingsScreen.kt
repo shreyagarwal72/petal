@@ -80,12 +80,20 @@ object PetalSettingsBridge {
     @JvmStatic
     @JvmOverloads
     fun createSettingsView(activity: ComponentActivity, initialCategory: SettingsCategory = SettingsCategory.OVERVIEW, onBackPress: () -> Unit): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
                 val context = LocalContext.current
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
@@ -158,7 +166,7 @@ object PetalSettingsBridge {
                     paletteId = paletteId
                 ) {
                     com.petal.browser.ui.components.ScreenWrapper {
-                        PetalSettingsScreen(initialCategory = initialCategory, onBackPress = onBackPress)
+                        PetalSettingsScreen(backgroundSnapshot = snapshotBitmap, initialCategory = initialCategory, onBackPress = onBackPress)
                     }
                 }
             }
@@ -344,6 +352,7 @@ private fun PetalVariableSlider(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalSettingsScreen(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     initialCategory: SettingsCategory = SettingsCategory.OVERVIEW,
     onBackPress: () -> Unit = {}
 ) {
@@ -2498,7 +2507,7 @@ fun PetalSettingsScreen(
                 enabled = true,
                 onBack = onBackPress,
             ) {
-                com.petal.browser.predictive.PetalScreenWrapper {
+                com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
                     RenderCategoryPage(
                         scaffoldCategory = SettingsCategory.OVERVIEW,
                         onHeaderBack = onBackPress

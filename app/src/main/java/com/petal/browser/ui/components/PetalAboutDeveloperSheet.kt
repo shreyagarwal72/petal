@@ -97,12 +97,20 @@ object PetalAboutDeveloperBridge {
                 }
             }
 
+            val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
+                    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            com.petal.browser.predictive.PetalContentSnapshot.clear()
+                        }
+                    }
                     val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                     val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -125,6 +133,7 @@ object PetalAboutDeveloperBridge {
                         paletteId = paletteId
                     ) {
                         PetalAboutDeveloperSheetContent(
+                            backgroundSnapshot = snapshotBitmap,
                             onClose = {
                                 try { dialog.dismiss() } catch (_: Exception) {}
                                 onDismiss?.run()
@@ -146,6 +155,7 @@ object PetalAboutDeveloperBridge {
  */
 @Composable
 fun PetalAboutDeveloperSheetContent(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onClose: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -172,7 +182,7 @@ fun PetalAboutDeveloperSheetContent(
         enabled = true,
         onBack = onClose
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper {
+        com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0)

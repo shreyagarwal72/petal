@@ -111,6 +111,7 @@ data class PetalTabItem(
  */
 @Composable
 fun PetalTabGridSwitcher(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     tabs: List<PetalTabItem>,
     onTabSelect: (PetalTabItem) -> Unit,
     onTabClose: (PetalTabItem) -> Unit,
@@ -208,7 +209,7 @@ fun PetalTabGridSwitcher(
         enabled = true,
         onBack = effectiveOnBack,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper {
+    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -930,12 +931,20 @@ object PetalTabGridBridge {
         onCloseAllTabsListener: () -> Unit,
         onOpenSettingsListener: () -> Unit
     ): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -958,6 +967,7 @@ object PetalTabGridBridge {
                     paletteId = paletteId
                 ) {
                     PetalTabGridSwitcher(
+                        backgroundSnapshot = snapshotBitmap,
                         tabs = tabs,
                         onTabSelect = onTabSelectListener,
                         onTabClose = onTabCloseListener,

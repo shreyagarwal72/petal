@@ -61,6 +61,7 @@ val PetalFlowerShape: Shape = GenericShape { size, _ ->
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PetalAiHubScreen(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     context: Context,
     onOpenUrl: (String) -> Unit,
     onBack: () -> Unit
@@ -141,7 +142,7 @@ fun PetalAiHubScreen(
             enabled = true,
             onBack = onBack,
         ) {
-        com.petal.browser.predictive.PetalScreenWrapper {
+        com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
         Scaffold(
             topBar = {
                 com.petal.browser.ui.components.ExpressiveHeader(

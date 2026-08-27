@@ -48,12 +48,20 @@ import com.petal.browser.unit.BrowserUnit
 object PetalDeleteBridge {
     @JvmStatic
     fun createDeleteView(activity: ComponentActivity, onBackPress: Runnable): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.let { androidx.compose.ui.graphics.asImageBitmap(it) } }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
                 val context = LocalContext.current
                 val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
 
@@ -78,6 +86,7 @@ object PetalDeleteBridge {
                     paletteId = paletteId
                 ) {
                     PetalDeleteScreen(
+                        backgroundSnapshot = snapshotBitmap,
                         onBackPress = { onBackPress.run() }
                     )
                 }
@@ -89,6 +98,7 @@ object PetalDeleteBridge {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalDeleteScreen(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onBackPress: () -> Unit
 ) {
     val context = LocalContext.current
@@ -144,7 +154,7 @@ fun PetalDeleteScreen(
         enabled = true,
         onBack = onBackPress,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper {
+    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
