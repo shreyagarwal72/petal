@@ -92,3 +92,103 @@ fun aospSharedAxisPopExit(): ExitTransition {
         animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing)
     )
 }
+
+// MD3 Expressive – Emphasized easing (matches Material Motion spec)
+private val EmphasizedDecelerateEasing = CubicBezierEasing(0.2f, 0.85f, 0.7f, 1f)
+private val EmphasizedAccelerateEasing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
+
+const val PETAL_EXPRESSIVE_TRANSITION_DURATION = 450
+
+fun enterTransition() = slideInHorizontally(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
+    initialOffsetX = { (it * 0.5f).toInt() }
+) + scaleIn(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
+    initialScale = 0.92f,
+    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.5f)
+) + fadeIn(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedAccelerateEasing)
+)
+
+fun exitTransition() = slideOutHorizontally(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedAccelerateEasing),
+    targetOffsetX = { -(it * 0.25f).toInt() }
+) + fadeOut(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION / 2, easing = EmphasizedAccelerateEasing)
+)
+
+fun popEnterTransition() = slideInHorizontally(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
+    initialOffsetX = { -(it * 0.25f).toInt() }
+) + scaleIn(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
+    initialScale = 0.95f
+) + fadeIn(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION / 2, easing = EmphasizedDecelerateEasing)
+)
+
+fun popExitTransition() = slideOutHorizontally(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedAccelerateEasing),
+    targetOffsetX = { (it * 0.5f).toInt() }
+) + scaleOut(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION, easing = EmphasizedAccelerateEasing),
+    targetScale = 0.92f,
+    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.5f)
+) + fadeOut(
+    animationSpec = tween(PETAL_EXPRESSIVE_TRANSITION_DURATION / 2, easing = EmphasizedAccelerateEasing)
+)
+
+enum class PetalMainRootDirection {
+    FORWARD,
+    BACKWARD,
+}
+
+private val MAIN_ROOT_TRANSITION_SPEC =
+    tween<androidx.compose.ui.unit.IntOffset>(durationMillis = 400, easing = PetalM3EmphasizedEasing)
+
+private val MAIN_ROOT_FADE_SPEC =
+    tween<Float>(durationMillis = 400, easing = PetalM3EmphasizedEasing)
+
+fun mainRootDirection(fromIndex: Int, toIndex: Int): PetalMainRootDirection? {
+    if (fromIndex == toIndex) return null
+    return if (toIndex > fromIndex) PetalMainRootDirection.FORWARD else PetalMainRootDirection.BACKWARD
+}
+
+fun mainRootEnterTransition(direction: PetalMainRootDirection?, fallback: EnterTransition): EnterTransition =
+    when (direction) {
+        PetalMainRootDirection.FORWARD -> {
+            slideInHorizontally(
+                animationSpec = MAIN_ROOT_TRANSITION_SPEC,
+                initialOffsetX = { it },
+            ) + fadeIn(animationSpec = MAIN_ROOT_FADE_SPEC)
+        }
+
+        PetalMainRootDirection.BACKWARD -> {
+            slideInHorizontally(
+                animationSpec = MAIN_ROOT_TRANSITION_SPEC,
+                initialOffsetX = { -it },
+            ) + fadeIn(animationSpec = MAIN_ROOT_FADE_SPEC)
+        }
+
+        null -> fallback
+    }
+
+fun mainRootExitTransition(direction: PetalMainRootDirection?, fallback: ExitTransition): ExitTransition =
+    when (direction) {
+        PetalMainRootDirection.FORWARD -> {
+            slideOutHorizontally(
+                animationSpec = MAIN_ROOT_TRANSITION_SPEC,
+                targetOffsetX = { -it },
+            ) + fadeOut(animationSpec = MAIN_ROOT_FADE_SPEC)
+        }
+
+        PetalMainRootDirection.BACKWARD -> {
+            slideOutHorizontally(
+                animationSpec = MAIN_ROOT_TRANSITION_SPEC,
+                targetOffsetX = { it },
+            ) + fadeOut(animationSpec = MAIN_ROOT_FADE_SPEC)
+        }
+
+        null -> fallback
+    }
+
