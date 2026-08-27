@@ -2,7 +2,6 @@ package com.petal.browser.ui.theme
 
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.graphics.shapes.CornerRounding
@@ -65,17 +64,19 @@ data class ExpressiveShapeHolder(
     fun toShape(): Shape = polygon.toShape()
 }
 
+import androidx.compose.ui.graphics.asComposePath
+
 /**
  * Converts a [RoundedPolygon] into a Jetpack Compose [Shape].
  */
 fun RoundedPolygon.toShape(): Shape {
     return GenericShape { size, _ ->
-        val path = this@toShape.toPath()
-        val matrix = Matrix()
-        matrix.scale(size.width / 2f, size.height / 2f)
-        matrix.translate(1f, 1f)
-        path.transform(matrix)
-        this.addPath(path)
+        val androidPath = this@toShape.toPath()
+        val matrix = android.graphics.Matrix()
+        matrix.postScale(size.width / 2f, size.height / 2f)
+        matrix.postTranslate(size.width / 2f, size.height / 2f)
+        androidPath.transform(matrix)
+        this.addPath(androidPath.asComposePath())
     }
 }
 
