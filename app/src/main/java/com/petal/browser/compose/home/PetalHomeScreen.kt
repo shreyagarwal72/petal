@@ -527,8 +527,8 @@ fun PetalHomeScreen(
 
                     Spacer(Modifier.height(18.dp))
 
-                    // ── Hero Search Bar (moved down into former quick-actions slot) ──
-                    PetalSearchBar(onSearch = onSearch)
+                    // ── Hero Search Bar (Custom M3 Widget Collection) ──
+                    com.petal.browser.ui.components.PetalMaterial3SearchBarWidget(onSearch = onSearch)
 
                     Spacer(Modifier.height(26.dp))
 
