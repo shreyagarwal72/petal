@@ -111,7 +111,8 @@ val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
  * Wraps [content] with a [PredictiveBackHandler] and republishes gesture progress
  * through [LocalPredictiveBackState] so any descendant can react to it live.
  *
- * Matches official RvSystem-Monitor & PixelPlayer architecture.
+ * Renders the real Home Screen surface in the background with 24.dp depth blur
+ * during in-flight back gestures, matching RvSystem-Monitor & PixelPlayer 1:1.
  */
 @Composable
 fun PetalPredictiveBackSurface(
@@ -121,11 +122,14 @@ fun PetalPredictiveBackSurface(
 ) {
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
     val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
+    val isUnderlayPreview = LocalIsUnderlayPreview.current
+
+    val isFullyEnabled = enabled && junctionPredictiveEnabled && !isUnderlayPreview
 
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
     val progressAnim = remember { Animatable(0f) }
 
-    if (enabled && junctionPredictiveEnabled) {
+    if (isFullyEnabled) {
         PredictiveBackHandler(enabled = true) { progressFlow ->
             try {
                 progressFlow.collect { backEvent ->
@@ -171,7 +175,24 @@ fun PetalPredictiveBackSurface(
         LocalPetalDepthBlurJunctionState provides junctionBlurEnabled,
         LocalPredictiveBackState provides backState,
     ) {
-        content()
+        if (!isUnderlayPreview) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (backState.isActive) {
+                    PetalScreenWrapper(isBehind = true) {
+                        com.petal.browser.compose.home.PetalHomeScreen(
+                            onNavigateToSettings = {},
+                            onNavigateToBookmarks = {},
+                            onNavigateToHistory = {},
+                            onNavigateToDownloads = {},
+                            onNavigateToTabs = {}
+                        )
+                    }
+                }
+                content()
+            }
+        } else {
+            content()
+        }
     }
 }
 
@@ -198,7 +219,6 @@ fun PetalScreenWrapper(
     val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
     val scaleEased = PetalM3EmphasizedEasing.transform(progress)
 
-    // Blur is applied ONLY to the background (behind) screen, NEVER to the foreground card!
     val currentBlurRadiusDp = if (isBehind && blurEnabled) 24.dp else 0.dp
 
     CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehind || LocalIsUnderlayPreview.current)) {
