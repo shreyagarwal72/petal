@@ -408,6 +408,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
                     }
                 );
+            } else if ("PASSWORD".equals(lockType)) {
+                com.petal.browser.compose.security.PetalAppLockBridge.showLockOverlay(
+                    this,
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            // Success: password unlocked
+                        }
+                    },
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            finish();
+                        }
+                    }
+                );
             }
         }
 
