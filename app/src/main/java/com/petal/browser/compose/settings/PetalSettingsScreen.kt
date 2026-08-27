@@ -449,9 +449,6 @@ fun PetalSettingsScreen(
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
     var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
     var showEngineSheet by remember { mutableStateOf(false) }
-    var searchBarWidgetVariant by remember {
-        mutableStateOf(sp.getString("sp_search_bar_widget_variant", com.petal.browser.ui.components.SearchBarVariant.VARIANT_1.key) ?: com.petal.browser.ui.components.SearchBarVariant.VARIANT_1.key)
-    }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -461,9 +458,6 @@ fun PetalSettingsScreen(
                 }
                 "sp_expressive_bg_shapes" -> {
                     isExpressiveBgShapes = sp.getBoolean("sp_expressive_bg_shapes", true)
-                }
-                "sp_search_bar_widget_variant" -> {
-                    searchBarWidgetVariant = sp.getString("sp_search_bar_widget_variant", com.petal.browser.ui.components.SearchBarVariant.VARIANT_1.key) ?: com.petal.browser.ui.components.SearchBarVariant.VARIANT_1.key
                 }
             }
         }
