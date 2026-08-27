@@ -4911,6 +4911,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         public void onShareLink() {
                             shareLink(HelperUnit.domain(urlResult), urlResult);
                         }
+
+                        @Override
+                        public void onSearchWithGoogleLens() {
+                            if (urlResult != null && !urlResult.trim().isEmpty()) {
+                                String lensUrl = "https://lens.google.com/uploadbyurl?url=" + android.net.Uri.encode(urlResult);
+                                addAlbum(null, lensUrl, true);
+                            }
+                        }
                     }
                 );
                 return true;
