@@ -1,0 +1,7 @@
+v1.9.3 Release Highlights:
+- Force Dark Webpages with AndroidX WebSettingsCompat algorithmic darkening.
+- Native OS Auto-PiP mode transition on Android 12+ (API 31+).
+- Background audio & video playback with Page Visibility API overrides.
+- Predictive Back gesture scaling & 24.dp background depth blur matching RvSystem-Monitor & PixelPlayer.
+- Auto Clear Data on Exit reliability fixes.
+- Refactored dialogs to pure Kotlin Compose Material 3 Expressive.

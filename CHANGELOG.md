@@ -1,3 +1,23 @@
+### v1.9.3
+
+- **🎨 UI/UX & Predictive Back Polish**:
+  - Aligned Predictive Back animations and Depth Blur 1:1 with `RvSystem-Monitor` and `PixelPlayer`.
+  - Applied 24.dp depth blur exclusively to background screen (`isBehind = true`) while keeping foreground card crisp (`blur = 0.dp`) with Material 3 Emphasized scaling (`1.0 → 0.85`), 32.dp corner clipping, 16.dp drop shadow, and horizontal slide offset.
+  - Rendered real live `PetalHomeScreen` in background with 24.dp depth blur during in-flight back gestures (zero synthetic previews).
+  - Added user settings toggles for Predictive Back Animations and Depth Blur Effects in *Accessibility & Display Options*.
+
+- **🐛 Bug & Layout Fixes**:
+  - Refactored legacy Java `CustomRedirectsDialog.java` to pure Kotlin Compose Material 3 Expressive implementation in `CustomRedirectsDialog.kt`.
+  - Fixed **Auto Clear Data on Exit** to execute reliably on activity finish/stop and default to clearing Browsing History, Cache, and Cookies if no individual sub-filters are checked.
+  - Enabled **Force Dark Webpages** dynamically with AndroidX `setAlgorithmicDarkeningAllowed`, `setForceDark`, and `DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING`.
+
+- **⚡ Media & Picture-in-Picture Enhancements**:
+  - Fixed background audio & video playback by injecting `PetalMediaBridge.MEDIA_JS_INJECTION` to override Page Visibility API (`hidden: false`, `visibilityState: 'visible'`).
+  - Enabled native OS Auto-PiP mode transition on Android 12+ (API 31+) with `setPictureInPictureParams(setAutoEnterEnabled(true))` on media play.
+
+- **📦 Build & Infrastructure**:
+  - Added `androidx.webkit:webkit:1.12.0`, `androidx.media:media:1.7.0`, `androidx.media3:media3-session:1.4.1`, and `androidx.media3:media3-exoplayer:1.4.1` dependencies to `build.gradle`.
+
 ### v1.7.8
 
 - fix: Refactored website link & image context menus into Material 3 `BottomSheetDialog` (`PetalLinkContextMenuSheet.kt`) to resolve invisible touch interception overlays and wired all actions.

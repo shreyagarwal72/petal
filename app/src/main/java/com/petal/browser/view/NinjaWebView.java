@@ -326,18 +326,17 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         webSettings.setBlockNetworkImage(!sp.getBoolean(profile + "_images", true));
         webSettings.setGeolocationEnabled(sp.getBoolean(profile + "_location", false));
 
-        // Explicitly disable web content forced dark mode / algorithmic darkening.
-        // Known Chromium WebView bug: force dark / algorithmic darkening breaks CSS backdrop-filter,
-        // blend-modes, and popups/modals (e.g. GitHub clone modal), rendering them as solid black overlays.
-        // Disabling WebSettings dark mode ensures web pages render clean CSS without dark algorithms,
-        // while preserving Petal's native Compose dark UI theme.
+        boolean isForceDark = sp.getBoolean("sp_force_dark_mode", false) || sp.getBoolean("sp_dark_mode", false);
         if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING)) {
-            androidx.webkit.WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, false);
+            androidx.webkit.WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, isForceDark);
         }
         if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.FORCE_DARK)) {
             @SuppressWarnings("deprecation")
-            int forceDarkState = androidx.webkit.WebSettingsCompat.FORCE_DARK_OFF;
+            int forceDarkState = isForceDark ? androidx.webkit.WebSettingsCompat.FORCE_DARK_ON : androidx.webkit.WebSettingsCompat.FORCE_DARK_OFF;
             androidx.webkit.WebSettingsCompat.setForceDark(webSettings, forceDarkState);
+        }
+        if (isForceDark && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.FORCE_DARK_STRATEGY)) {
+            androidx.webkit.WebSettingsCompat.setForceDarkStrategy(webSettings, androidx.webkit.WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING);
         }
 
         boolean enableJs = sp.getBoolean("sp_javascript", sp.getBoolean(profile + "_javascript", true));
