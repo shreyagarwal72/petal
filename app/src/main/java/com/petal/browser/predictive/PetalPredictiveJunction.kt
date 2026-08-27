@@ -175,18 +175,7 @@ fun PetalPredictiveBackSurface(
         LocalPetalDepthBlurJunctionState provides junctionBlurEnabled,
         LocalPredictiveBackState provides backState,
     ) {
-        if (!isUnderlayPreview) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (backState.isActive) {
-                    PetalScreenWrapper(isBehind = true) {
-                        com.petal.browser.compose.home.PetalHomeScreen()
-                    }
-                }
-                content()
-            }
-        } else {
-            content()
-        }
+        content()
     }
 }
 
