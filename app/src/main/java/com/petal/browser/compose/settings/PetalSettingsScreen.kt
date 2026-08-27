@@ -2529,21 +2529,37 @@ private fun AppearanceHeroBanner(
     selectedTheme: ThemeConfig,
     onThemeSelected: (ThemeConfig) -> Unit
 ) {
+    val context = LocalContext.current
     val isDarkSelected = selectedTheme == ThemeConfig.DARK
     val isLightSelected = selectedTheme == ThemeConfig.LIGHT
+    val isSystemSelected = selectedTheme == ThemeConfig.FOLLOW_SYSTEM
 
-    val cardBgColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isDarkSelected) {
-            androidx.compose.ui.graphics.Color(0xFF2E1A47)
-        } else {
-            androidx.compose.ui.graphics.Color(0xFF5B21B6)
-        },
-        animationSpec = androidx.compose.animation.core.tween(500),
-        label = "heroCardBg"
-    )
+    val shakeOffset = remember { androidx.compose.animation.core.Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+
+    fun triggerHapticAndShake(theme: ThemeConfig) {
+        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.6f)
+        onThemeSelected(theme)
+        coroutineScope.launch {
+            shakeOffset.animateTo(
+                targetValue = 0f,
+                animationSpec = androidx.compose.animation.core.keyframes {
+                    durationMillis = 240
+                    -4f at 30 using androidx.compose.animation.core.LinearEasing
+                    4f at 60 using androidx.compose.animation.core.LinearEasing
+                    -3f at 90 using androidx.compose.animation.core.LinearEasing
+                    3f at 120 using androidx.compose.animation.core.LinearEasing
+                    -2f at 150 using androidx.compose.animation.core.LinearEasing
+                    2f at 180 using androidx.compose.animation.core.LinearEasing
+                    -1f at 210 using androidx.compose.animation.core.LinearEasing
+                    0f at 240 using androidx.compose.animation.core.LinearEasing
+                }
+            )
+        }
+    }
 
     val darkCardScale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isDarkSelected) 1.05f else 1.0f,
+        targetValue = if (isDarkSelected) 1.06f else 1.0f,
         animationSpec = androidx.compose.animation.core.spring(
             stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
@@ -2551,49 +2567,62 @@ private fun AppearanceHeroBanner(
         label = "darkScale"
     )
     val lightCardScale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isLightSelected) 1.05f else 1.0f,
+        targetValue = if (isLightSelected) 1.06f else 1.0f,
         animationSpec = androidx.compose.animation.core.spring(
             stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
         ),
         label = "lightScale"
     )
+    val systemCardScale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isSystemSelected) 1.06f else 1.0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
+        ),
+        label = "systemScale"
+    )
 
     Surface(
         shape = RoundedCornerShape(32.dp),
-        color = cardBgColor,
+        color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
-        shadowElevation = 6.dp
+        shadowElevation = 4.dp
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .padding(22.dp)
         ) {
-            // Moon/Sun floating badge in top corner
+            // Floating morphing theme badge in top corner
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.25f),
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f),
                 modifier = Modifier
                     .size(48.dp)
                     .align(Alignment.TopEnd)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     androidx.compose.animation.AnimatedContent(
-                        targetState = isDarkSelected,
+                        targetState = selectedTheme,
                         transitionSpec = {
                             (androidx.compose.animation.scaleIn() + androidx.compose.animation.fadeIn()).togetherWith(
                                 androidx.compose.animation.scaleOut() + androidx.compose.animation.fadeOut()
                             )
                         },
                         label = "badgeIcon"
-                    ) { dark ->
+                    ) { config ->
+                        val icon = when (config) {
+                            ThemeConfig.FOLLOW_SYSTEM -> Icons.Rounded.BrightnessAuto
+                            ThemeConfig.LIGHT -> Icons.Rounded.LightMode
+                            ThemeConfig.DARK -> Icons.Rounded.Nightlight
+                        }
                         Icon(
-                            imageVector = if (dark) Icons.Rounded.Nightlight else Icons.Rounded.LightMode,
+                            imageVector = icon,
                             contentDescription = null,
-                            tint = androidx.compose.ui.graphics.Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -2608,119 +2637,180 @@ private fun AppearanceHeroBanner(
                 Text(
                     text = "Appearance",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color = androidx.compose.ui.graphics.Color.White
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
                 Spacer(Modifier.height(6.dp))
 
                 Text(
-                    text = "Turn it into pure eye candy.",
+                    text = "Customize themes, colors, and visual styles.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f)
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(20.dp))
 
-                // Interactive Mini Theme Cards Row
+                // Interactive Mini Theme Cards Row (Dark, Light, System)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Dark Mode Mini Card
+                    // 1. Dark Mode Mini Card
                     Surface(
-                        onClick = { onThemeSelected(ThemeConfig.DARK) },
+                        onClick = { triggerHapticAndShake(ThemeConfig.DARK) },
                         shape = RoundedCornerShape(20.dp),
-                        color = androidx.compose.ui.graphics.Color(0xFF0F0B15),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                         border = if (isDarkSelected) {
-                            androidx.compose.foundation.BorderStroke(3.dp, androidx.compose.ui.graphics.Color.White)
+                            BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary)
                         } else null,
                         modifier = Modifier
                             .weight(1f)
-                            .height(72.dp)
+                            .height(76.dp)
                             .graphicsLayer {
+                                translationX = shakeOffset.value
                                 scaleX = darkCardScale
                                 scaleY = darkCardScale
                             }
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(androidx.compose.ui.graphics.Color(0xFFB8A0E8))
-                                    .then(if (isDarkSelected) Modifier.petalShimmerEffect() else Modifier)
-                            )
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 Box(
                                     modifier = Modifier
-                                        .width(64.dp)
-                                        .height(8.dp)
-                                        .clip(CircleShape)
-                                        .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.6f))
+                                        .size(26.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.primary)
+                                        .then(if (isDarkSelected) Modifier.petalShimmerEffect() else Modifier)
                                 )
-                                Box(
-                                    modifier = Modifier
-                                        .width(42.dp)
-                                        .height(6.dp)
-                                        .clip(CircleShape)
-                                        .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.35f))
+                                Icon(
+                                    Icons.Rounded.Nightlight,
+                                    contentDescription = "Dark",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
+                            Spacer(Modifier.height(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.7f)
+                                    .height(5.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                            )
                         }
                     }
 
-                    // Light Mode Mini Card
+                    // 2. Light Mode Mini Card
                     Surface(
-                        onClick = { onThemeSelected(ThemeConfig.LIGHT) },
+                        onClick = { triggerHapticAndShake(ThemeConfig.LIGHT) },
                         shape = RoundedCornerShape(20.dp),
-                        color = androidx.compose.ui.graphics.Color(0xFFF3E8FF),
+                        color = MaterialTheme.colorScheme.surface,
                         border = if (isLightSelected) {
-                            androidx.compose.foundation.BorderStroke(3.dp, androidx.compose.ui.graphics.Color(0xFF5B21B6))
+                            BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary)
                         } else null,
                         modifier = Modifier
                             .weight(1f)
-                            .height(72.dp)
+                            .height(76.dp)
                             .graphicsLayer {
+                                translationX = shakeOffset.value
                                 scaleX = lightCardScale
                                 scaleY = lightCardScale
                             }
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(androidx.compose.ui.graphics.Color(0xFF5B21B6))
-                                    .then(if (isLightSelected) Modifier.petalShimmerEffect() else Modifier)
-                            )
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 Box(
                                     modifier = Modifier
-                                        .width(64.dp)
-                                        .height(8.dp)
-                                        .clip(CircleShape)
-                                        .background(androidx.compose.ui.graphics.Color(0xFF5B21B6).copy(alpha = 0.6f))
+                                        .size(26.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.secondary)
+                                        .then(if (isLightSelected) Modifier.petalShimmerEffect() else Modifier)
                                 )
-                                Box(
-                                    modifier = Modifier
-                                        .width(42.dp)
-                                        .height(6.dp)
-                                        .clip(CircleShape)
-                                        .background(androidx.compose.ui.graphics.Color(0xFF5B21B6).copy(alpha = 0.35f))
+                                Icon(
+                                    Icons.Rounded.LightMode,
+                                    contentDescription = "Light",
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
+                            Spacer(Modifier.height(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.7f)
+                                    .height(5.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            )
+                        }
+                    }
+
+                    // 3. System Default Mini Card
+                    Surface(
+                        onClick = { triggerHapticAndShake(ThemeConfig.FOLLOW_SYSTEM) },
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        border = if (isSystemSelected) {
+                            BorderStroke(2.5.dp, MaterialTheme.colorScheme.tertiary)
+                        } else null,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(76.dp)
+                            .graphicsLayer {
+                                translationX = shakeOffset.value
+                                scaleX = systemCardScale
+                                scaleY = systemCardScale
+                            }
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(26.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.tertiary)
+                                        .then(if (isSystemSelected) Modifier.petalShimmerEffect() else Modifier)
+                                )
+                                Icon(
+                                    Icons.Rounded.BrightnessAuto,
+                                    contentDescription = "System",
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.7f)
+                                    .height(5.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.6f))
+                            )
                         }
                     }
                 }
