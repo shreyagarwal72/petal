@@ -154,19 +154,36 @@ fun PetalPredictiveBackSurface(
 
             try {
                 progressFlow.collect { backEvent ->
+                    progressAnim.snapTo(backEvent.progress)
                     backState = PredictiveBackState(
                         isActive = true,
                         progress = backEvent.progress,
                         swipeEdge = backEvent.swipeEdge,
                     )
                 }
-                backState = PredictiveBackState.Idle
+                // Gesture committed — smoothly animate remaining progress to 1f with spring physics
+                progressAnim.snapTo(backState.progress)
+                progressAnim.animateTo(
+                    targetValue = 1f,
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMedium,
+                        dampingRatio = Spring.DampingRatioNoBouncy
+                    )
+                ) {
+                    backState = backState.copy(isActive = true, progress = value)
+                }
+                backState = backState.copy(isActive = true, progress = 1f)
                 onBack()
+                backState = PredictiveBackState.Idle
             } catch (e: CancellationException) {
+                // Gesture cancelled — smoothly relax progress back to 0f with spring physics
                 progressAnim.snapTo(backState.progress)
                 progressAnim.animateTo(
                     targetValue = 0f,
-                    animationSpec = tween(durationMillis = PETAL_TRANSITION_DURATION, easing = PetalM3EmphasizedEasing),
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMediumLow,
+                        dampingRatio = Spring.DampingRatioLowBouncy
+                    )
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
                 }
