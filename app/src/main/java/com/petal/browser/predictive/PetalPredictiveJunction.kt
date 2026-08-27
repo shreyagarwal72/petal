@@ -302,33 +302,30 @@ fun PetalScreenWrapper(
                 val swipeEdge = predictiveBackState.swipeEdge
                 val bgDirectionFactor = if (swipeEdge == BackEventCompat.EDGE_RIGHT) (1f / 3f) else (-1f / 3f)
 
-                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                    val bgParallaxOffset = maxWidth * bgDirectionFactor * (1f - scaleEased)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (snapshotBlurRadius > 0.dp) Modifier.blur(radius = snapshotBlurRadius)
+                            else Modifier
+                        )
+                        .graphicsLayer {
+                            scaleX = snapshotScale
+                            scaleY = snapshotScale
+                            translationX = size.width * bgDirectionFactor * (1f - scaleEased)
+                        }
+                ) {
+                    Image(
+                        bitmap = backgroundSnapshot,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .then(
-                                if (snapshotBlurRadius > 0.dp) Modifier.blur(radius = snapshotBlurRadius)
-                                else Modifier
-                            )
-                            .graphicsLayer {
-                                scaleX = snapshotScale
-                                scaleY = snapshotScale
-                                translationX = bgParallaxOffset.toPx()
-                            }
-                    ) {
-                        Image(
-                            bitmap = backgroundSnapshot,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black.copy(alpha = snapshotDimAlpha))
-                        )
-                    }
+                            .background(Color.Black.copy(alpha = snapshotDimAlpha))
+                    )
                 }
             }
 
