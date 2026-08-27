@@ -27,38 +27,26 @@ import android.content.SharedPreferences
 import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
@@ -72,7 +60,7 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * Global settings & state junction for Predictive Back and Depth Blur effects across the Petal App.
  *
- * Implements 1:1 depth blur, reveal scaling, and back page underlay blur matching RvSystem-Monitor & PixelPlayer.
+ * Ported 1:1 from RvSystem-Monitor & PixelPlayer's official architecture.
  */
 object PetalPredictiveJunction {
     private const val KEY_PREDICTIVE_BACK_ENABLED = "sp_predictive_back_junction_enabled"
@@ -126,26 +114,21 @@ val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
  * Wraps [content] with a [PredictiveBackHandler] and republishes gesture progress
  * through [LocalPredictiveBackState] so any descendant can react to it live.
  *
- * Renders an underlay depth-blurred background behind the surface during gestures
- * matching RvSystem-Monitor & PixelPlayer.
+ * Matches official RvSystem-Monitor & PixelPlayer architecture.
  */
 @Composable
 fun PetalPredictiveBackSurface(
     enabled: Boolean = true,
     onBack: () -> Unit,
-    underlayContent: (@Composable () -> Unit)? = { PetalDefaultUnderlayBlurPreview() },
     content: @Composable () -> Unit,
 ) {
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
     val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
-    val isUnderlayPreview = LocalIsUnderlayPreview.current
-
-    val isFullyEnabled = enabled && junctionPredictiveEnabled && !isUnderlayPreview
 
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
     val progressAnim = remember { Animatable(0f) }
 
-    if (isFullyEnabled) {
+    if (enabled && junctionPredictiveEnabled) {
         PredictiveBackHandler(enabled = true) { progressFlow ->
             try {
                 progressFlow.collect { backEvent ->
@@ -190,18 +173,7 @@ fun PetalPredictiveBackSurface(
         LocalPetalDepthBlurJunctionState provides junctionBlurEnabled,
         LocalPredictiveBackState provides backState,
     ) {
-        if (underlayContent != null && !isUnderlayPreview) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (backState.isActive) {
-                    PetalScreenWrapper(isBehind = true) {
-                        underlayContent()
-                    }
-                }
-                content()
-            }
-        } else {
-            content()
-        }
+        content()
     }
 }
 
@@ -223,15 +195,23 @@ fun PetalScreenWrapper(
 
     val predictiveEnabled = junctionPredictiveEnabled
     val blurEnabled = junctionBlurEnabled
-
     val predictiveBackState = LocalPredictiveBackState.current
-    val underlayBlurRadius = if (isBehind && blurEnabled) 24.dp else 0.dp
+
+    val targetBlur = if (isBehind && blurEnabled) 24f else 0f
+    val animatedBlurRadius = remember { Animatable(targetBlur) }
+
+    LaunchedEffect(isBehind, blurEnabled) {
+        animatedBlurRadius.animateTo(
+            targetValue = targetBlur,
+            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+        )
+    }
 
     CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehind || LocalIsUnderlayPreview.current)) {
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .blur(radius = underlayBlurRadius)
+                .blur(radius = animatedBlurRadius.value.dp)
                 .graphicsLayer {
                     val isActive = predictiveBackState.isActive
                     val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
@@ -290,81 +270,6 @@ fun PetalScreenWrapper(
                         }
                         .background(Color.Black)
                 )
-            }
-        }
-    }
-}
-
-/**
- * Default depth blur preview underlay surface rendered behind full-screen surfaces during predictive back gestures.
- * Ported 1:1 from RvSystem-Monitor & PixelPlayer's depth preview layout.
- */
-@Composable
-fun PetalDefaultUnderlayBlurPreview() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Spacer(Modifier.height(48.dp))
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                repeat(3) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(28.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        repeat(4) {
-                            Box(
-                                modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Language,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(26.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(4) {
-                    Box(
-                        modifier = Modifier
-                            .size(58.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Language,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
             }
         }
     }
