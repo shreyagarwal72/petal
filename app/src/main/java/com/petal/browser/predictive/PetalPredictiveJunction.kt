@@ -179,13 +179,7 @@ fun PetalPredictiveBackSurface(
             Box(modifier = Modifier.fillMaxSize()) {
                 if (backState.isActive) {
                     PetalScreenWrapper(isBehind = true) {
-                        com.petal.browser.compose.home.PetalHomeScreen(
-                            onNavigateToSettings = {},
-                            onNavigateToBookmarks = {},
-                            onNavigateToHistory = {},
-                            onNavigateToDownloads = {},
-                            onNavigateToTabs = {}
-                        )
+                        com.petal.browser.compose.home.PetalHomeScreen()
                     }
                 }
                 content()
