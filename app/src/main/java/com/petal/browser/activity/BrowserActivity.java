@@ -961,12 +961,42 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public void updatePipParams(boolean enableAutoEnter) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            try {
+                android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
+                boolean isAutoPipEnabled = sp != null && sp.getBoolean("sp_auto_pip", true);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    pipBuilder.setAutoEnterEnabled(isAutoPipEnabled && enableAutoEnter);
+                }
+                View targetView = customView != null ? customView : (videoView != null ? videoView : (ninjaWebView != null ? ninjaWebView : contentFrame));
+                if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
+                    int width = targetView.getWidth();
+                    int height = targetView.getHeight();
+                    float ratio = (float) width / (float) height;
+                    if (ratio > 2.39f) ratio = 2.39f;
+                    if (ratio < 0.418f) ratio = 0.418f;
+                    android.util.Rational aspectRatio = new android.util.Rational((int) (ratio * 1000), 1000);
+                    pipBuilder.setAspectRatio(aspectRatio);
+
+                    android.graphics.Rect rect = new android.graphics.Rect();
+                    targetView.getGlobalVisibleRect(rect);
+                    if (!rect.isEmpty()) {
+                        pipBuilder.setSourceRectHint(rect);
+                    }
+                }
+                setPictureInPictureParams(pipBuilder.build());
+            } catch (Exception ignored) {}
+        }
+    }
+
     private void triggerSystemPipMode() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             try {
                 android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
+                boolean isAutoPipEnabled = sp != null && sp.getBoolean("sp_auto_pip", true);
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    pipBuilder.setAutoEnterEnabled(true);
+                    pipBuilder.setAutoEnterEnabled(isAutoPipEnabled);
                 }
                 View targetView = customView != null ? customView : (videoView != null ? videoView : (ninjaWebView != null ? ninjaWebView : contentFrame));
                 if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
@@ -4527,6 +4557,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     @Override
                     public void onMediaPlay(String title, long positionMs, long durationMs) {
                         isMediaPlaying = true;
+                        updatePipParams(true);
                         if (mediaService != null) {
                             mediaService.updateMediaState(title, ninjaWebView.getTitle(), true, positionMs, durationMs);
                         }
@@ -4535,6 +4566,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     @Override
                     public void onMediaPause(long positionMs, long durationMs) {
                         isMediaPlaying = false;
+                        updatePipParams(false);
                         if (mediaService != null) {
                             mediaService.updateMediaState(ninjaWebView.getTitle(), ninjaWebView.getTitle(), false, positionMs, durationMs);
                         }
@@ -4548,6 +4580,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     @Override
                     public void onMediaPlayingStateChanged(boolean playing) {
                         isMediaPlaying = playing;
+                        updatePipParams(playing);
                     }
                 }
         );
