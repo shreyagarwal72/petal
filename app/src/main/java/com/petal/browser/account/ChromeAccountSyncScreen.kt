@@ -244,7 +244,7 @@ fun PetalUserProfileScreen(
                 onBack = { showAppLockConfigPage = false },
             )
         } else {
-            com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
+            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
                 RenderUserProfileContent(
                     profile = profile,
                     isLoading = isLoading,

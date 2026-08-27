@@ -73,7 +73,7 @@ fun PetalChromeFlagsScreen(
         enabled = true,
         onBack = onDismiss,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
+    com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         topBar = {
             com.petal.browser.ui.components.ExpressiveHeader(

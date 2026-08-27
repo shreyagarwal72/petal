@@ -281,92 +281,136 @@ fun PetalScreenWrapper(
     val scaleEased = PetalM3EmphasizedEasing.transform(progress)
 
     val currentBlurRadiusDp = if ((isBehindTopScreen || transitionBlurRadiusDp > 0.dp) && blurEnabled) {
-        if (transitionBlurRadiusDp > 0.dp) transitionBlurRadiusDp else 24.dp
+        if (isActive) {
+            (24f * (1f - scaleEased)).dp
+        } else if (transitionBlurRadiusDp > 0.dp) {
+            transitionBlurRadiusDp
+        } else {
+            24.dp
+        }
     } else 0.dp
 
     CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehindTopScreen || LocalIsUnderlayPreview.current)) {
         Box(
-            modifier = modifier
-                .fillMaxSize()
-                .blur(radius = currentBlurRadiusDp)
-                .graphicsLayer {
-                    val slideEased = PetalPopExitSlideEasing.transform(progress)
+            modifier = modifier.fillMaxSize()
+        ) {
+            // Layer 0: Background snapshot underlay (rendered when gesture is active or behind top screen)
+            if (backgroundSnapshot != null && (isActive || isBehindTopScreen)) {
+                val snapshotBlurRadius = if (blurEnabled) (24f * (1f - scaleEased)).dp else 0.dp
+                val snapshotDimAlpha = if (!blurEnabled) 0.75f * (1f - scaleEased) else 0.40f * (1f - scaleEased)
+                val snapshotScale = 0.94f + 0.06f * scaleEased
+                val swipeEdge = predictiveBackState.swipeEdge
+                val bgDirectionFactor = if (swipeEdge == BackEventCompat.EDGE_RIGHT) (1f / 3f) else (-1f / 3f)
 
-                    if (!isBehindTopScreen) {
-                        val swipeEdge = predictiveBackState.swipeEdge
-                        val translationXFactor = if (isActive) {
-                            if (swipeEdge == BackEventCompat.EDGE_RIGHT) -1.0f else 1.0f
-                        } else {
-                            0f
-                        }
-
-                        val scale = 1f - (PETAL_POP_EXIT_MAX_SCALE_DELTA * scaleEased)
-                        val cornerRadius = maxOf(32f * scaleEased, transitionCornerRadius)
-
-                        scaleX = scale
-                        scaleY = scale
-                        translationX = size.width * translationXFactor * slideEased
-                        compositingStrategy = if (isActive || transitionCornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
-
-                        if (cornerRadius > 0.5f) {
-                            this.shape = RoundedCornerShape(cornerRadius.dp)
-                            this.clip = true
-                            this.shadowElevation = (16f * scaleEased).dp.toPx()
-                        } else {
-                            this.clip = false
-                            this.shadowElevation = 0f
-                        }
-                    } else {
-                        val revealScale = if (isActive) 0.94f + 0.06f * scaleEased else 1f
-                        val swipeEdge = predictiveBackState.swipeEdge
-                        val bgDirectionFactor = if (swipeEdge == BackEventCompat.EDGE_RIGHT) (1f / 3f) else (-1f / 3f)
-                        val bgParallaxOffset = if (isActive) size.width * bgDirectionFactor * (1f - scaleEased) else 0f
-
-                        val cornerRadius = maxOf(32f * (1f - scaleEased), transitionCornerRadius)
-
-                        scaleX = revealScale
-                        scaleY = revealScale
-                        translationX = bgParallaxOffset
-                        alpha = 1f
-                        compositingStrategy = if (isActive || currentBlurRadiusDp > 0.dp || cornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
-                        if (cornerRadius > 0.5f) {
-                            this.shape = RoundedCornerShape(cornerRadius.dp)
-                            this.clip = true
-                        } else {
-                            this.clip = false
-                        }
-                        this.shadowElevation = 0f
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val bgParallaxOffset = maxWidth * bgDirectionFactor * (1f - scaleEased)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(
+                                if (snapshotBlurRadius > 0.dp) Modifier.blur(radius = snapshotBlurRadius)
+                                else Modifier
+                            )
+                            .graphicsLayer {
+                                scaleX = snapshotScale
+                                scaleY = snapshotScale
+                                translationX = bgParallaxOffset.toPx()
+                            }
+                    ) {
+                        Image(
+                            bitmap = backgroundSnapshot,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = snapshotDimAlpha))
+                        )
                     }
                 }
-                .then(
-                    if (backgroundSnapshot == null) Modifier.background(MaterialTheme.colorScheme.background)
-                    else Modifier
-                )
-        ) {
-            if (backgroundSnapshot != null) {
-                Image(
-                    bitmap = backgroundSnapshot,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
             }
 
-            content()
+            // Layer 1: Foreground interactive screen content
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (isBehindTopScreen && blurEnabled && currentBlurRadiusDp > 0.dp) Modifier.blur(radius = currentBlurRadiusDp)
+                        else Modifier
+                    )
+                    .graphicsLayer {
+                        val slideEased = PetalPopExitSlideEasing.transform(progress)
 
-            if (isBehindTopScreen || transitionDimAlpha > 0f) {
-                val settledTargetDim = if (!blurEnabled) 0.75f else 0.40f
-                val effectiveDimAlpha = if (isActive) settledTargetDim * (1f - scaleEased) else maxOf(settledTargetDim, transitionDimAlpha)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            alpha = effectiveDimAlpha
+                        if (!isBehindTopScreen) {
+                            val swipeEdge = predictiveBackState.swipeEdge
+                            val translationXFactor = if (isActive) {
+                                if (swipeEdge == BackEventCompat.EDGE_RIGHT) -1.0f else 1.0f
+                            } else {
+                                0f
+                            }
+
+                            val scale = 1f - (PETAL_POP_EXIT_MAX_SCALE_DELTA * scaleEased)
+                            val cornerRadius = maxOf(32f * scaleEased, transitionCornerRadius)
+
+                            scaleX = scale
+                            scaleY = scale
+                            translationX = size.width * translationXFactor * slideEased
+                            compositingStrategy = if (isActive || transitionCornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+
+                            if (cornerRadius > 0.5f) {
+                                this.shape = RoundedCornerShape(cornerRadius.dp)
+                                this.clip = true
+                                this.shadowElevation = (16f * scaleEased).dp.toPx()
+                            } else {
+                                this.clip = false
+                                this.shadowElevation = 0f
+                            }
+                        } else {
+                            val revealScale = if (isActive) 0.94f + 0.06f * scaleEased else 1f
+                            val swipeEdge = predictiveBackState.swipeEdge
+                            val bgDirectionFactor = if (swipeEdge == BackEventCompat.EDGE_RIGHT) (1f / 3f) else (-1f / 3f)
+                            val bgParallaxOffset = if (isActive) size.width * bgDirectionFactor * (1f - scaleEased) else 0f
+
+                            val cornerRadius = maxOf(32f * (1f - scaleEased), transitionCornerRadius)
+
+                            scaleX = revealScale
+                            scaleY = revealScale
+                            translationX = bgParallaxOffset
+                            alpha = 1f
+                            compositingStrategy = if (isActive || currentBlurRadiusDp > 0.dp || cornerRadius > 0.5f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                            if (cornerRadius > 0.5f) {
+                                this.shape = RoundedCornerShape(cornerRadius.dp)
+                                this.clip = true
+                            } else {
+                                this.clip = false
+                            }
+                            this.shadowElevation = 0f
                         }
-                        .background(Color.Black)
-                )
+                    }
+                    .then(
+                        if (backgroundSnapshot == null && !isBehindTopScreen) Modifier.background(MaterialTheme.colorScheme.background)
+                        else Modifier
+                    )
+            ) {
+                content()
+
+                if (isBehindTopScreen || transitionDimAlpha > 0f) {
+                    val settledTargetDim = if (!blurEnabled) 0.75f else 0.40f
+                    val effectiveDimAlpha = if (isActive) settledTargetDim * (1f - scaleEased) else maxOf(settledTargetDim, transitionDimAlpha)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                alpha = effectiveDimAlpha
+                            }
+                            .background(Color.Black)
+                    )
+                }
             }
         }
     }
 }
+
 

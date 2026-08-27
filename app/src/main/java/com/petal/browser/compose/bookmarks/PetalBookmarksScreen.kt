@@ -160,7 +160,7 @@ fun PetalBookmarksScreen(
         enabled = true,
         onBack = onDismiss,
     ) {
-    com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
+    com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)

@@ -66,7 +66,7 @@ fun PetalIncognitoHomeScreen(
             enabled = true,
             onBack = onCloseIncognito,
         ) {
-        com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
         val incognitoSubtitles = remember {
             listOf(
                 "Off the grid. No traces, no history.",
