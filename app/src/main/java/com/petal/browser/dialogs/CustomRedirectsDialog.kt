@@ -29,7 +29,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,20 +69,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.DialogFragment
 import androidx.preference.PreferenceManager
 import com.petal.browser.objects.CustomRedirect
 import com.petal.browser.objects.CustomRedirectsHelper
 import com.petal.browser.ui.components.bouncyClickable
-import com.petal.browser.ui.theme.PetalTheme
+import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.view.NinjaToast
 
 /**
@@ -98,7 +94,7 @@ class CustomRedirectsDialog : DialogFragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                PetalTheme {
+                PetalExpressiveTheme {
                     CustomRedirectsDialogContent(
                         onDismiss = { dismiss() }
                     )
@@ -265,7 +261,7 @@ private fun CustomRedirectsDialogContent(
                     onClick = { showCreateDialog = true },
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    modifier = Modifier.bouncyClickable()
+                    modifier = Modifier.bouncyClickable(onClick = { showCreateDialog = true })
                 ) {
                     Icon(imageVector = Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
@@ -274,7 +270,7 @@ private fun CustomRedirectsDialogContent(
 
                 TextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.bouncyClickable()
+                    modifier = Modifier.bouncyClickable(onClick = onDismiss)
                 ) {
                     Text(text = "Done", fontWeight = FontWeight.Bold)
                 }
@@ -305,7 +301,7 @@ private fun CreateNewRedirectDialog(
     var sourceText by remember { mutableStateOf("") }
     var targetText by remember { mutableStateOf("") }
 
-    Dialog(
+    androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
@@ -360,7 +356,7 @@ private fun CreateNewRedirectDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss, modifier = Modifier.bouncyClickable()) {
+                    TextButton(onClick = onDismiss, modifier = Modifier.bouncyClickable(onClick = onDismiss)) {
                         Text("Cancel")
                     }
                     Spacer(Modifier.width(8.dp))
@@ -373,7 +369,13 @@ private fun CreateNewRedirectDialog(
                             }
                         },
                         shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.bouncyClickable()
+                        modifier = Modifier.bouncyClickable(onClick = {
+                            if (sourceText.isBlank() || targetText.isBlank()) {
+                                NinjaToast.show(context, com.petal.browser.R.string.toast_input_empty)
+                            } else {
+                                onAdd(CustomRedirect(sourceText.trim(), targetText.trim()))
+                            }
+                        })
                     ) {
                         Text("Save", fontWeight = FontWeight.Bold)
                     }
