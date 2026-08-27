@@ -19,10 +19,19 @@ object PetalAppLockBridge {
     @JvmStatic
     fun showLockOverlay(activity: Activity, onUnlocked: Runnable, onCancel: Runnable) {
         val decor = activity.window.decorView as? ViewGroup ?: return
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         var composeView: ComposeView? = null
         composeView = ComposeView(activity).apply {
             setContent {
+                val snapshotBitmap = remember { PetalContentSnapshot.current?.asImageBitmap() }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        PetalContentSnapshot.clear()
+                    }
+                }
                 PetalAppLockScreen(
+                    backgroundSnapshot = snapshotBitmap,
                     onUnlocked = {
                         decor.removeView(composeView)
                         onUnlocked.run()
