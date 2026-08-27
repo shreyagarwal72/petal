@@ -915,4 +915,50 @@ public class HelperUnit {
             activity.recreate();
         }
     }
+
+    public static String getSafeString(SharedPreferences sp, String key, String defaultValue) {
+        try {
+            return sp.getString(key, defaultValue);
+        } catch (ClassCastException e) {
+            try {
+                Object val = sp.getAll().get(key);
+                return val != null ? String.valueOf(val) : defaultValue;
+            } catch (Exception ex) {
+                return defaultValue;
+            }
+        }
+    }
+
+    public static boolean getSafeBoolean(SharedPreferences sp, String key, boolean defaultValue) {
+        try {
+            return sp.getBoolean(key, defaultValue);
+        } catch (ClassCastException e) {
+            try {
+                Object val = sp.getAll().get(key);
+                if (val instanceof Boolean) return (Boolean) val;
+                if (val instanceof String) return Boolean.parseBoolean((String) val);
+                if (val instanceof Number) return ((Number) val).intValue() != 0;
+                return defaultValue;
+            } catch (Exception ex) {
+                return defaultValue;
+            }
+        }
+    }
+
+    public static int getSafeInt(SharedPreferences sp, String key, int defaultValue) {
+        try {
+            return sp.getInt(key, defaultValue);
+        } catch (ClassCastException e) {
+            try {
+                Object val = sp.getAll().get(key);
+                if (val instanceof Number) return ((Number) val).intValue();
+                if (val instanceof String) {
+                    try { return Integer.parseInt((String) val); } catch (Exception ignored) {}
+                }
+                return defaultValue;
+            } catch (Exception ex) {
+                return defaultValue;
+            }
+        }
+    }
 }

@@ -267,9 +267,14 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
-        webSettings.setTextZoom(Integer.parseInt(Objects.requireNonNull(sp.getString("sp_fontSize", "100"))));
+        String fontSizeStr = HelperUnit.getSafeString(sp, "sp_fontSize", "100");
+        try {
+            webSettings.setTextZoom(Integer.parseInt(fontSizeStr));
+        } catch (Exception e) {
+            webSettings.setTextZoom(100);
+        }
 
-        profile = sp.getString("profile", "profileStandard");
+        profile = HelperUnit.getSafeString(sp, "profile", "profileStandard");
         String profileOriginal = profile;
 
         if (listStandard.isWhite(url)) {
@@ -290,13 +295,13 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         //Override UserAgent if own UserAgent is defined
         if (!sp.contains("userAgentSwitch")) {
             //if new switch_text_preference has never been used initialize the switch
-            if (Objects.requireNonNull(sp.getString("sp_userAgent", "")).isEmpty()) {
+            if (HelperUnit.getSafeString(sp, "sp_userAgent", "").isEmpty()) {
                 sp.edit().putBoolean("userAgentSwitch", false).apply();
             } else sp.edit().putBoolean("userAgentSwitch", true).apply();
         }
 
-        String ownUserAgent = sp.getString("sp_userAgent", "");
-        if (!ownUserAgent.isEmpty() && (sp.getBoolean("userAgentSwitch", false))) mobileUserAgent = ownUserAgent;
+        String ownUserAgent = HelperUnit.getSafeString(sp, "sp_userAgent", "");
+        if (!ownUserAgent.isEmpty() && (HelperUnit.getSafeBoolean(sp, "userAgentSwitch", false))) mobileUserAgent = ownUserAgent;
 
         if (sp.getBoolean(profile + "_desktop", false) || sp.getBoolean("sp_desktop_site", false)) {
             webSettings.setUserAgentString(desktopUserAgent);

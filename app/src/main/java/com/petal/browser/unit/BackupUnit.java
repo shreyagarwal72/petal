@@ -372,12 +372,29 @@ public class BackupUnit {
                 if (restoreSettings && backupJson.has("settings")) {
                     try {
                         org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
-                        android.content.SharedPreferences.Editor editor = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit();
+                        android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                        android.content.SharedPreferences.Editor editor = sp.edit();
                         java.util.Iterator<String> keys = settingsObj.keys();
+
+                        while (keys.hasNext()) {
+                            editor.remove(keys.next());
+                        }
+                        editor.apply();
+
+                        editor = sp.edit();
+                        keys = settingsObj.keys();
                         while (keys.hasNext()) {
                             String key = keys.next();
                             Object val = settingsObj.opt(key);
-                            if (val instanceof Boolean) {
+                            if (val == null || val == org.json.JSONObject.NULL) continue;
+
+                            boolean isKnownStringKey = "sp_fontSize".equals(key) || "sp_search_engine".equals(key) ||
+                                    "sp_searchEngine".equals(key) || "sp_userAgent".equals(key) ||
+                                    "profile".equals(key) || key.startsWith("icon_");
+
+                            if (isKnownStringKey) {
+                                editor.putString(key, String.valueOf(val));
+                            } else if (val instanceof Boolean) {
                                 editor.putBoolean(key, (Boolean) val);
                             } else if (val instanceof Integer) {
                                 editor.putInt(key, (Integer) val);
@@ -389,6 +406,13 @@ public class BackupUnit {
                                 editor.putFloat(key, (Float) val);
                             } else if (val instanceof String) {
                                 editor.putString(key, (String) val);
+                            } else if (val instanceof org.json.JSONArray) {
+                                org.json.JSONArray arr = (org.json.JSONArray) val;
+                                java.util.Set<String> set = new java.util.HashSet<>();
+                                for (int i = 0; i < arr.length(); i++) {
+                                    set.add(arr.optString(i));
+                                }
+                                editor.putStringSet(key, set);
                             }
                         }
                         editor.apply();
@@ -497,12 +521,29 @@ public class BackupUnit {
                 if (restoreSettings && backupJson.has("settings")) {
                     try {
                         org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
-                        android.content.SharedPreferences.Editor editor = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit();
+                        android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                        android.content.SharedPreferences.Editor editor = sp.edit();
                         java.util.Iterator<String> keys = settingsObj.keys();
+
+                        while (keys.hasNext()) {
+                            editor.remove(keys.next());
+                        }
+                        editor.apply();
+
+                        editor = sp.edit();
+                        keys = settingsObj.keys();
                         while (keys.hasNext()) {
                             String key = keys.next();
                             Object val = settingsObj.opt(key);
-                            if (val instanceof Boolean) {
+                            if (val == null || val == org.json.JSONObject.NULL) continue;
+
+                            boolean isKnownStringKey = "sp_fontSize".equals(key) || "sp_search_engine".equals(key) ||
+                                    "sp_searchEngine".equals(key) || "sp_userAgent".equals(key) ||
+                                    "profile".equals(key) || key.startsWith("icon_");
+
+                            if (isKnownStringKey) {
+                                editor.putString(key, String.valueOf(val));
+                            } else if (val instanceof Boolean) {
                                 editor.putBoolean(key, (Boolean) val);
                             } else if (val instanceof Integer) {
                                 editor.putInt(key, (Integer) val);
@@ -514,6 +555,13 @@ public class BackupUnit {
                                 editor.putFloat(key, (Float) val);
                             } else if (val instanceof String) {
                                 editor.putString(key, (String) val);
+                            } else if (val instanceof org.json.JSONArray) {
+                                org.json.JSONArray arr = (org.json.JSONArray) val;
+                                java.util.Set<String> set = new java.util.HashSet<>();
+                                for (int i = 0; i < arr.length(); i++) {
+                                    set.add(arr.optString(i));
+                                }
+                                editor.putStringSet(key, set);
                             }
                         }
                         editor.apply();
