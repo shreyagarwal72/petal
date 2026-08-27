@@ -150,38 +150,34 @@ fun PetalPredictiveBackSurface(
         PredictiveBackHandler(enabled = true) { progressFlow ->
             try {
                 progressFlow.collect { backEvent ->
-                    progressAnim.animateTo(
-                        targetValue = backEvent.progress,
-                        animationSpec = spring(
-                            stiffness = 1600f,
-                            dampingRatio = 1.0f
-                        )
-                    )
+                    progressAnim.snapTo(backEvent.progress)
                     backState = PredictiveBackState(
                         isActive = true,
-                        progress = progressAnim.value,
+                        progress = backEvent.progress,
                         swipeEdge = backEvent.swipeEdge,
                     )
                 }
+                progressAnim.snapTo(backState.progress)
                 progressAnim.animateTo(
                     targetValue = 1f,
                     animationSpec = spring(
-                        stiffness = 350f,
-                        dampingRatio = 0.86f
+                        stiffness = Spring.StiffnessMedium,
+                        dampingRatio = Spring.DampingRatioNoBouncy
                     )
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
                 }
                 backState = backState.copy(isActive = true, progress = 1f)
                 onBack()
-                kotlinx.coroutines.delay(100)
+                kotlinx.coroutines.delay(200)
                 backState = PredictiveBackState.Idle
             } catch (e: CancellationException) {
+                progressAnim.snapTo(backState.progress)
                 progressAnim.animateTo(
                     targetValue = 0f,
                     animationSpec = spring(
-                        stiffness = 450f,
-                        dampingRatio = 0.82f
+                        stiffness = Spring.StiffnessMediumLow,
+                        dampingRatio = Spring.DampingRatioLowBouncy
                     )
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
