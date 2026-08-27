@@ -79,8 +79,24 @@ fun ProfileAvatarDisplay(
                 )
             }
             profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty() -> {
+                val context = LocalContext.current
+                val avatarFile = remember(profile.customAvatarUri) {
+                    java.io.File(context.filesDir, "petal_user_avatar.png")
+                }
+                val imageModel = remember(profile.customAvatarUri, avatarFile.lastModified()) {
+                    if (avatarFile.exists() && avatarFile.length() > 0) {
+                        coil.request.ImageRequest.Builder(context)
+                            .data(avatarFile)
+                            .memoryCacheKey("${avatarFile.absolutePath}_${avatarFile.lastModified()}")
+                            .diskCacheKey("${avatarFile.absolutePath}_${avatarFile.lastModified()}")
+                            .crossfade(true)
+                            .build()
+                    } else {
+                        profile.customAvatarUri
+                    }
+                }
                 AsyncImage(
-                    model = Uri.parse(profile.customAvatarUri),
+                    model = imageModel,
                     contentDescription = "Custom Photo",
                     modifier = Modifier.size(size).clip(CircleShape),
                     contentScale = ContentScale.Crop
@@ -1080,7 +1096,7 @@ private fun ProfilePictureCropDialog(
                         Text("Zoom", style = MaterialTheme.typography.labelMedium)
                         Text("${(scale * 100).toInt()}%", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                     }
-                    Slider(
+                    com.petal.browser.ui.components.PetalSlider(
                         value = scale,
                         onValueChange = { scale = it },
                         valueRange = 1f..4f,

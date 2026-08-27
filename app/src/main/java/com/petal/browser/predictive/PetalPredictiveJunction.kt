@@ -206,7 +206,7 @@ fun PetalPredictiveBackSurface(
                 progressAnim.animateTo(
                     targetValue = 1f,
                     animationSpec = spring(
-                        stiffness = Spring.StiffnessMediumLow,
+                        stiffness = Spring.StiffnessMedium,
                         dampingRatio = Spring.DampingRatioNoBouncy
                     )
                 ) {
@@ -227,10 +227,7 @@ fun PetalPredictiveBackSurface(
                 ) {
                     backState = backState.copy(isActive = true, progress = value)
                 }
-                backState = backState.copy(isActive = true, progress = 0f)
-                backState = PredictiveBackState.Idle
-                throw e
-            }
+                backState = backState.copy(isActive = false, progress = 0f)
         }
     }
 
@@ -363,7 +360,7 @@ fun PetalScreenWrapper(
 /**
  * Renders the dynamic underlay preview behind screens (Settings, Account Sync, etc.) during predictive back.
  * If a website is active in the WebView, displays a high-fidelity web page preview card with title, URL, and brand emblem.
- * If no website is open, renders the standard Petal Home Screen.
+ * If no website is open, renders the launcher desktop wallpaper preview.
  */
 @Composable
 fun PetalDynamicUnderlayPreview() {
@@ -376,9 +373,112 @@ fun PetalDynamicUnderlayPreview() {
     }
 
     if (isHomeOrBlank) {
-        com.petal.browser.compose.home.PetalHomeScreen()
+        LauncherWallpaperUnderlayPreview()
     } else {
         PetalWebPageUnderlayPreviewCard()
+    }
+}
+
+@Composable
+fun LauncherWallpaperUnderlayPreview() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                            MaterialTheme.colorScheme.surfaceContainerLow,
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .height(48.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    repeat(3) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(24.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            repeat(4) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(52.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Language,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(4) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Language,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

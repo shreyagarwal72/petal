@@ -181,21 +181,24 @@ object GoogleAccountManager {
     fun updateAvatarGalleryUri(context: Context, uriString: String) {
         try {
             val uri = android.net.Uri.parse(uriString)
-            if (uri.scheme == "content") {
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                } catch (_: Throwable) {}
-            }
-
             val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                java.io.FileOutputStream(permanentFile).use { output ->
-                    input.copyTo(output)
+
+            if (uri.path != permanentFile.absolutePath) {
+                if (uri.scheme == "content") {
+                    try {
+                        context.contentResolver.takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    } catch (_: Throwable) {}
+                }
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    java.io.FileOutputStream(permanentFile).use { output ->
+                        input.copyTo(output)
+                    }
                 }
             }
+
             val persistentUriString = android.net.Uri.fromFile(permanentFile).toString()
 
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -208,6 +211,7 @@ object GoogleAccountManager {
                 avatarType = AvatarType.GALLERY_URI,
                 customAvatarUri = persistentUriString
             )
+            _userProfileState.value = currentProfile
         } catch (e: Throwable) {
             e.printStackTrace()
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -219,6 +223,7 @@ object GoogleAccountManager {
                 avatarType = AvatarType.GALLERY_URI,
                 customAvatarUri = uriString
             )
+            _userProfileState.value = currentProfile
         }
     }
 

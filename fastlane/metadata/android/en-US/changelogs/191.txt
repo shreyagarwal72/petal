@@ -1,0 +1,2 @@
+* **Predictive Back Launcher Preview & End Frame Physics**: Added system launcher desktop preview (`LauncherWallpaperUnderlayPreview`) behind the Home screen during predictive back exit and matched commit/cancel spring physics (`Spring.StiffnessMedium`) with `@PixelPlayer` & `@RvSystem-Monitor`.
+* **Profile Picture Visibility & PetalSlider**: Fixed custom gallery avatar loading using dynamic Coil cache keying and replaced standard Slider with expressive `PetalSlider` in the profile picture cropper dialog.
