@@ -238,12 +238,23 @@ fun PetalScreenWrapper(
                 }
 
                 val scale = 1f - (PETAL_POP_EXIT_MAX_SCALE_DELTA * scaleEased)
+                val cornerRadius = 32f * scaleEased
 
                 scaleX = scale
                 scaleY = scale
                 translationX = size.width * translationXFactor * slideEased
                 compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+
+                if (cornerRadius > 0.5f) {
+                    this.shape = RoundedCornerShape(cornerRadius.dp)
+                    this.clip = true
+                    this.shadowElevation = (16f * scaleEased).dp.toPx()
+                } else {
+                    this.clip = false
+                    this.shadowElevation = 0f
+                }
             }
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
     ) {
         content()
     }
