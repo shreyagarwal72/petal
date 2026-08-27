@@ -76,7 +76,7 @@ fun PetalAppLockConfigScreen(
         enabled = true,
         onBack = onBack,
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
             Scaffold(
                 topBar = {
                     ExpressiveHeader(

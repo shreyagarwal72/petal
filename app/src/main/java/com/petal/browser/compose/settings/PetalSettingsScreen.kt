@@ -2507,7 +2507,7 @@ fun PetalSettingsScreen(
                 enabled = true,
                 onBack = onBackPress,
             ) {
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = true, backgroundSnapshot = backgroundSnapshot) {
+                com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
                     RenderCategoryPage(
                         scaffoldCategory = SettingsCategory.OVERVIEW,
                         onHeaderBack = onBackPress
