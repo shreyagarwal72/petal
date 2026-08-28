@@ -41,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -936,7 +937,7 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         }
     }
 
-    val tagline = remember(username, updateWelcomeMessage) {
+    val tagline = rememberSaveable(username, updateWelcomeMessage) {
         if (!updateWelcomeMessage.isNullOrBlank()) {
             updateWelcomeMessage!!
         } else {
