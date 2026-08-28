@@ -44,7 +44,10 @@ interface PetalLinkContextMenuHandler {
     fun onCopyLinkAddress()
     fun onCopyLinkText()
     fun onDownloadLink()
+    fun onOpenImageInNewTab() {}
+    fun onCopyImage() {}
     fun onDownloadImage()
+    fun onDownloadVideo() {}
     fun onAddToReadingList()
     fun onShareLink()
     fun onShareImage()
@@ -58,6 +61,8 @@ fun PetalLinkContextMenuSheet(
     linkTitle: String?,
     linkUrl: String,
     faviconUrl: String? = null,
+    isImage: Boolean = false,
+    isVideo: Boolean = false,
     onDismiss: () -> Unit,
     handler: PetalLinkContextMenuHandler
 ) {
@@ -100,8 +105,8 @@ fun PetalLinkContextMenuSheet(
                         )
                     } else {
                         Icon(
-                            imageVector = Icons.Rounded.Language,
-                            contentDescription = "Website",
+                            imageVector = if (isImage) Icons.Rounded.Image else if (isVideo) Icons.Rounded.Videocam else Icons.Rounded.Language,
+                            contentDescription = "Content",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )
@@ -130,58 +135,82 @@ fun PetalLinkContextMenuSheet(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             Spacer(Modifier.height(8.dp))
 
-            // Action Items
-            ContextMenuItem("Open in new tab", Icons.Rounded.OpenInNew) {
-                onDismiss()
-                handler.onOpenInNewTab()
-            }
-            ContextMenuItem("Open in new tab in group", Icons.Rounded.TabUnselected) {
-                onDismiss()
-                handler.onOpenInNewTabInGroup()
-            }
-            ContextMenuItem("Open in Incognito tab", Icons.Rounded.VisibilityOff) {
-                onDismiss()
-                handler.onOpenInIncognitoTab()
-            }
-            ContextMenuItem("Open in new window", Icons.Rounded.OpenInBrowser) {
-                onDismiss()
-                handler.onOpenInNewWindow()
-            }
-            ContextMenuItem("Preview page", Icons.Rounded.FindInPage) {
-                onDismiss()
-                handler.onPreviewPage()
-            }
-            ContextMenuItem("Copy link address", Icons.Rounded.ContentCopy) {
-                onDismiss()
-                handler.onCopyLinkAddress()
-            }
-            ContextMenuItem("Copy link text", Icons.Rounded.Title) {
-                onDismiss()
-                handler.onCopyLinkText()
-            }
-            ContextMenuItem("Download image", Icons.Rounded.ImageSearch) {
-                onDismiss()
-                handler.onDownloadImage()
-            }
-            ContextMenuItem("Add to reading list", Icons.Rounded.BookmarkAdd) {
-                onDismiss()
-                handler.onAddToReadingList()
-            }
-            ContextMenuItem("Scan Image", Icons.Rounded.DocumentScanner) {
-                onDismiss()
-                handler.onScanImage()
-            }
-            ContextMenuItem("Search image with Google Lens", Icons.Rounded.CenterFocusWeak) {
-                onDismiss()
-                handler.onSearchWithGoogleLens()
-            }
-            ContextMenuItem("Share image", Icons.Rounded.Share) {
-                onDismiss()
-                handler.onShareImage()
-            }
-            ContextMenuItem("Share link", Icons.Rounded.Share, trailingIcon = Icons.Rounded.IosShare) {
-                onDismiss()
-                handler.onShareLink()
+            // Action Items - Dynamically contextually adapted for Link vs Image vs Video
+            if (isImage) {
+                ContextMenuItem("Open image in new tab", Icons.Rounded.OpenInNew) {
+                    onDismiss()
+                    handler.onOpenImageInNewTab()
+                }
+                ContextMenuItem("Copy image", Icons.Rounded.ContentCopy) {
+                    onDismiss()
+                    handler.onCopyImage()
+                }
+                ContextMenuItem("Download image", Icons.Rounded.Download) {
+                    onDismiss()
+                    handler.onDownloadImage()
+                }
+                ContextMenuItem("Search Google for this image", Icons.Rounded.TravelExplore) {
+                    onDismiss()
+                    handler.onSearchWithGoogleLens()
+                }
+                ContextMenuItem("Share image", Icons.Rounded.Share) {
+                    onDismiss()
+                    handler.onShareImage()
+                }
+            } else if (isVideo) {
+                ContextMenuItem("Open video in new tab", Icons.Rounded.OpenInNew) {
+                    onDismiss()
+                    handler.onOpenInNewTab()
+                }
+                ContextMenuItem("Download video", Icons.Rounded.Download) {
+                    onDismiss()
+                    handler.onDownloadVideo()
+                }
+                ContextMenuItem("Copy video link", Icons.Rounded.ContentCopy) {
+                    onDismiss()
+                    handler.onCopyLinkAddress()
+                }
+                ContextMenuItem("Share video", Icons.Rounded.Share) {
+                    onDismiss()
+                    handler.onShareLink()
+                }
+            } else {
+                ContextMenuItem("Open in new tab", Icons.Rounded.OpenInNew) {
+                    onDismiss()
+                    handler.onOpenInNewTab()
+                }
+                ContextMenuItem("Open in new tab in group", Icons.Rounded.TabUnselected) {
+                    onDismiss()
+                    handler.onOpenInNewTabInGroup()
+                }
+                ContextMenuItem("Open in Incognito tab", Icons.Rounded.VisibilityOff) {
+                    onDismiss()
+                    handler.onOpenInIncognitoTab()
+                }
+                ContextMenuItem("Open in new window", Icons.Rounded.OpenInBrowser) {
+                    onDismiss()
+                    handler.onOpenInNewWindow()
+                }
+                ContextMenuItem("Preview page", Icons.Rounded.FindInPage) {
+                    onDismiss()
+                    handler.onPreviewPage()
+                }
+                ContextMenuItem("Copy link address", Icons.Rounded.ContentCopy) {
+                    onDismiss()
+                    handler.onCopyLinkAddress()
+                }
+                ContextMenuItem("Copy link text", Icons.Rounded.Title) {
+                    onDismiss()
+                    handler.onCopyLinkText()
+                }
+                ContextMenuItem("Add to reading list", Icons.Rounded.BookmarkAdd) {
+                    onDismiss()
+                    handler.onAddToReadingList()
+                }
+                ContextMenuItem("Share link", Icons.Rounded.Share) {
+                    onDismiss()
+                    handler.onShareLink()
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -233,11 +262,14 @@ private fun ContextMenuItem(
 
 object PetalLinkContextMenuBridge {
     @JvmStatic
+    @JvmOverloads
     fun show(
         activity: ComponentActivity,
         linkTitle: String?,
         linkUrl: String,
         faviconUrl: String? = null,
+        isImage: Boolean = false,
+        isVideo: Boolean = false,
         handler: PetalLinkContextMenuHandler
     ) {
         activity.runOnUiThread {
@@ -274,6 +306,8 @@ object PetalLinkContextMenuBridge {
                                 linkTitle = linkTitle,
                                 linkUrl = linkUrl,
                                 faviconUrl = faviconUrl,
+                                isImage = isImage,
+                                isVideo = isVideo,
                                 onDismiss = { dialog.dismiss() },
                                 handler = handler
                             )
