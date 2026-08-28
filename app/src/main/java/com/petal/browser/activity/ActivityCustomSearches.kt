@@ -1,0 +1,19 @@
+package com.petal.browser.activity
+
+import android.app.Activity
+import android.content.Intent
+import android.os.Bundle
+
+class ActivityCustomSearches : Activity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val intent = intent
+        val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+        val browserIntent = Intent(this, BrowserActivity::class.java).apply {
+            putExtra(Intent.EXTRA_TEXT, sharedText)
+            action = "customSearches"
+        }
+        startActivity(browserIntent)
+        finish()
+    }
+}
