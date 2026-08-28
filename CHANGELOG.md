@@ -1,3 +1,20 @@
+### v1.9.8
+
+- **⚡ 100% Complete Java-to-Kotlin Migration**:
+  - Full, seamless conversion of the entire codebase from Java to Kotlin with 0 remaining `.java` files in `com.petal.browser`.
+  - Converted core browser engines and web clients: `NinjaWebViewClient.kt`, `NinjaWebChromeClient.kt`, `BrowserContainer.kt`, `BrowserController.kt`, `AlbumController.kt`, `WebAppInterface.kt`, `AdBlock.kt`, `BannerBlock.kt`, and `NinjaDownloadListener.kt`.
+  - Converted all Settings Activities, Fragments, and Preference widgets: `Settings_Activity.kt`, `Settings_Backup.kt`, `Settings_Delete.kt`, `Settings_Filter.kt`, `Settings_Gesture.kt`, `Settings_Menu.kt`, `Settings_Profile.kt`, `Settings_ProfileList.kt`, `Fragment_settings*.kt`, `BasePreferenceFragment.kt`, `EditTextSwitchPreference.kt`, and `ListSwitchPreference.kt`.
+  - Converted all 42 Utility, Network, DNS, and Security Managers (`BrowsingDataManager`, `CacheManager`, `TabSessionManager`, `TabThumbnailCache`, `SearchSuggestionsManager`, `ReaderModeManager`, `WikipediaSummaryManager`, `CloudflareDnssecManager`, `NextDnsManager`, `OpenDnsDoHManager`, `Quad9DnsManager`, `NetworkBenchmarkManager`, `DuckAssistManager`, `UrlScanSecurityManager`, `WhoisRdapManager`, `IpGeoAuditManager`, `SslHealthAuditManager`, etc.).
+  - Converted custom UI views: `NestedScrollWebView.kt`, `NinjaWebView.kt`, and `PetalSearchWidgetProvider.kt`.
+
+- **🎨 Material 3 Expressive UI/UX & 35 Expressive Shapes**:
+  - Full system-wide integration with all 35 official Material 3 Expressive Shapes catalog from `PetalMaterialShapes.kt` (`RoundedSquare`, `Cookie4/6/7/9/12Sided`, `Arch`, `Hexagon`, `Octagon`, `Pill`, `SoftScallop`, `Clover4/8Leaf`, `Sunny`, `Flower`, `Star`, `Gem`).
+  - Native Edge-to-Edge window inset control and dynamic color extraction across all settings and browser sheets.
+
+- **🚀 Performance & Architecture**:
+  - 120Hz smooth scrolling physics with `NestedScrollingChild3` and hardware-accelerated rendering.
+  - Robust runtime type-safety and null-safety across all network requests and background tasks.
+
 ### v1.9.7
 
 - **⚡ Complete Kotlin Migration & Subsystem Decoupling**:
