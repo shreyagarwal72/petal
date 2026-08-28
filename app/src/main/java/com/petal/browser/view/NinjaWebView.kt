@@ -62,7 +62,7 @@ import com.petal.browser.database.RecordAction;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
 
-public class NinjaWebView extends NestedScrollWebView implements AlbumController {
+open class NinjaWebView : NestedScrollWebView, AlbumController {
 
     public boolean fingerPrintProtection;
     public boolean history;
@@ -135,15 +135,15 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         resetGestureExclusionRects();
     }
 
-    public NinjaWebView(Context context, AttributeSet attrs) {
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         super(context, attrs);
     }
 
-    public NinjaWebView(Context context, AttributeSet attrs, int defStyleAttr) {
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
-    public NinjaWebView(Context context) {
+    constructor(context: Context) : super(context) {
         super(context);
         sp = PreferenceManager.getDefaultSharedPreferences(context);
         String profile = sp.getString("profile", "standard");

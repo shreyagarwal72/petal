@@ -12,7 +12,7 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with the browser webview app.
+    aval with the browser webview app.
 
     If not, see <http://www.gnu.org/licenses/>.
  */
@@ -57,67 +57,71 @@ import com.petal.browser.database.Record;
 import com.petal.browser.database.RecordAction;
 import com.petal.browser.view.NinjaToast;
 
-public class BackupUnit {
+object BackupUnit {
 
-    public static final int PERMISSION_REQUEST_CODE = 123;
-    private static final String BOOKMARK_TYPE_SIMPLE = "<DT><A HREF=\"{url}\">{title}</A>";
-    private static final String BOOKMARK_TITLE = "{title}";
-    private static final String BOOKMARK_URL = "{url}";
+    const val PERMISSION_REQUEST_CODE = 123
+    private static val BOOKMARK_TYPE_SIMPLE = "<DT><A HREF=\"{url}\">{title}</A>";
+    private const val BOOKMARK_TITLE = "{title}"
+    private const val BOOKMARK_URL = "{url}"
     // Thread-Pool einmalig global deklarieren statt bei jedem Klick neu zu instanziieren (schont Ressourcen)
-    public static boolean checkPermissionStorage(Context context) {
+    @JvmStatic
+    fun checkPermissionStorage(Context context): Boolean {
         if (context == null) return false;
         // Ab Android 10 (Q, API 29) wird dank Scoped Storage/MediaStore keine Berechtigung für Documents mehr benötigt
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return true;
         }
         // Für Android 9 und älter prüfen wir die klassischen Lese- und Schreibrechte
-        int readCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE);
-        int writeCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        val readCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE);
+        val writeCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         return readCheck == PackageManager.PERMISSION_GRANTED && writeCheck == PackageManager.PERMISSION_GRANTED;
     }
 
-    public static void requestPermission(Activity activity) {
+    @JvmStatic
+    fun requestPermission(Activity activity) {
         if (activity == null || activity.isFinishing()) return;
         // Ab Android 10 ist dieser Dialog überflüssig, da MediaStore direkt funktioniert
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return;
         }
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+        MaterialAlertDialogBuilder builder = MaterialAlertDialogBuilder(activity);
         builder.setIcon(R.drawable.icon_alert);
         builder.setTitle(R.string.app_warning);
         builder.setMessage(R.string.app_permission);
         builder.setPositiveButton(R.string.app_ok, (dialog, whichButton) -> {
             // Erst das eigene Fenster sauber schließen, um Klick-Sperren (Overlays) zu vermeiden
-            dialog.dismiss();
+            dialog.dismiss()
             // Da wir uns hier sicher unter Android 10 befinden, fordern wir die klassischen Rechte an
             ActivityCompat.requestPermissions(activity,
                     new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     PERMISSION_REQUEST_CODE);
         });
         builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
-        AlertDialog dialog = builder.create();
-        dialog.show();
+        AlertDialog dialog = builder.create()
+        dialog.show()
         HelperUnit.setupDialog(activity, dialog);
     }
 
-    public static void makeBackupDir(Context context) {
+    @JvmStatic
+    fun makeBackupDir(Context context) {
         if (context == null) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Log.d("Petal", "Verzeichnis-Erstellung wird automatisch vom MediaStore verwaltet.");
         } else {
-            File backupDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "browser_backup");
+            File backupDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "browser_backup");
             if (!backupDir.exists() && !backupDir.mkdirs()) {
                 Log.e("Petal", "Ordner konnte auf altem Gerät nicht erstellt werden.");
             }
         }
     }
 
-    public static void backupToJson(Activity context, boolean backupBookmarks, boolean backupHistory, boolean backupSavedSites, boolean backupSettings) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+    @JvmStatic
+    fun backupToJson(Activity context, val backupBookmarks, val backupHistory, val backupSavedSites, val backupSettings) {
+        ExecutorService executor = Executors.newSingleThreadExecutor()
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try {
-                org.json.JSONObject backupJson = new org.json.JSONObject();
+                org.json.JSONObject backupJson = new org.json.JSONObject()
                 backupJson.put("version", 1);
                 backupJson.put("timestamp", System.currentTimeMillis());
 
@@ -126,11 +130,11 @@ public class BackupUnit {
                 if (backupBookmarks) {
                     action.open(false);
                     List<Record> bookmarks = action.listBookmark(context, false, 0);
-                    action.close();
+                    action.close()
 
-                    org.json.JSONArray bookmarksArray = new org.json.JSONArray();
+                    org.json.JSONArray bookmarksArray = new org.json.JSONArray()
                     for (Record r : bookmarks) {
-                        org.json.JSONObject obj = new org.json.JSONObject();
+                        org.json.JSONObject obj = new org.json.JSONObject()
                         obj.put("title", r.getTitle() != null ? r.getTitle() : "");
                         obj.put("url", r.getURL() != null ? r.getURL() : "");
                         obj.put("time", r.getTime());
@@ -142,11 +146,11 @@ public class BackupUnit {
                 if (backupHistory) {
                     action.open(false);
                     List<Record> history = action.listHistory(context);
-                    action.close();
+                    action.close()
 
-                    org.json.JSONArray historyArray = new org.json.JSONArray();
+                    org.json.JSONArray historyArray = new org.json.JSONArray()
                     for (Record r : history) {
-                        org.json.JSONObject obj = new org.json.JSONObject();
+                        org.json.JSONObject obj = new org.json.JSONObject()
                         obj.put("title", r.getTitle() != null ? r.getTitle() : "");
                         obj.put("url", r.getURL() != null ? r.getURL() : "");
                         obj.put("time", r.getTime());
@@ -158,10 +162,10 @@ public class BackupUnit {
                 if (backupSavedSites) {
                     action.open(false);
                     List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
-                    action.close();
+                    action.close()
 
-                    org.json.JSONArray sitesArray = new org.json.JSONArray();
-                    for (String domain : domains) {
+                    org.json.JSONArray sitesArray = new org.json.JSONArray()
+                    for (val domain : domains) {
                         sitesArray.put(domain);
                     }
                     backupJson.put("saved_sites", sitesArray);
@@ -169,9 +173,9 @@ public class BackupUnit {
 
                 if (backupSettings) {
                     android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-                    org.json.JSONObject settingsObj = new org.json.JSONObject();
+                    org.json.JSONObject settingsObj = new org.json.JSONObject()
                     for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
-                        Object val = entry.getValue();
+                        Object val = entry.getValue()
                         if (val != null) {
                             settingsObj.put(entry.getKey(), val);
                         }
@@ -179,13 +183,13 @@ public class BackupUnit {
                     backupJson.put("settings", settingsObj);
                 }
 
-                File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
-                if (!backupDir.exists()) backupDir.mkdirs();
-                File jsonFile = new File(backupDir, "petal_browser_backup.json");
+                File backupDir = File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
+                if (!backupDir.exists()) backupDir.mkdirs()
+                File jsonFile = File(backupDir, "petal_browser_backup.json");
 
                 BufferedWriter writer = new BufferedWriter(new FileWriter(jsonFile, false));
                 writer.write(backupJson.toString(2));
-                writer.close();
+                writer.close()
 
                 handler.post(() -> {
                     NinjaToast.show(context, context.getString(R.string.app_done) + ": Backup saved to " + jsonFile.getName());
@@ -199,12 +203,13 @@ public class BackupUnit {
         });
     }
 
-    public static void backupToUri(Context context, android.net.Uri uri, boolean backupBookmarks, boolean backupHistory, boolean backupSavedSites, boolean backupSettings) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+    @JvmStatic
+    fun backupToUri(Context context, android.net.Uri uri, val backupBookmarks, val backupHistory, val backupSavedSites, val backupSettings) {
+        ExecutorService executor = Executors.newSingleThreadExecutor()
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try {
-                org.json.JSONObject backupJson = new org.json.JSONObject();
+                org.json.JSONObject backupJson = new org.json.JSONObject()
                 backupJson.put("version", 1);
                 backupJson.put("timestamp", System.currentTimeMillis());
 
@@ -213,11 +218,11 @@ public class BackupUnit {
                 if (backupBookmarks) {
                     action.open(false);
                     List<Record> bookmarks = action.listBookmark(context, false, 0);
-                    action.close();
+                    action.close()
 
-                    org.json.JSONArray bookmarksArray = new org.json.JSONArray();
+                    org.json.JSONArray bookmarksArray = new org.json.JSONArray()
                     for (Record r : bookmarks) {
-                        org.json.JSONObject obj = new org.json.JSONObject();
+                        org.json.JSONObject obj = new org.json.JSONObject()
                         obj.put("title", r.getTitle() != null ? r.getTitle() : "");
                         obj.put("url", r.getURL() != null ? r.getURL() : "");
                         obj.put("time", r.getTime());
@@ -229,11 +234,11 @@ public class BackupUnit {
                 if (backupHistory) {
                     action.open(false);
                     List<Record> history = action.listHistory(context);
-                    action.close();
+                    action.close()
 
-                    org.json.JSONArray historyArray = new org.json.JSONArray();
+                    org.json.JSONArray historyArray = new org.json.JSONArray()
                     for (Record r : history) {
-                        org.json.JSONObject obj = new org.json.JSONObject();
+                        org.json.JSONObject obj = new org.json.JSONObject()
                         obj.put("title", r.getTitle() != null ? r.getTitle() : "");
                         obj.put("url", r.getURL() != null ? r.getURL() : "");
                         obj.put("time", r.getTime());
@@ -245,10 +250,10 @@ public class BackupUnit {
                 if (backupSavedSites) {
                     action.open(false);
                     List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
-                    action.close();
+                    action.close()
 
-                    org.json.JSONArray sitesArray = new org.json.JSONArray();
-                    for (String domain : domains) {
+                    org.json.JSONArray sitesArray = new org.json.JSONArray()
+                    for (val domain : domains) {
                         sitesArray.put(domain);
                     }
                     backupJson.put("saved_sites", sitesArray);
@@ -256,9 +261,9 @@ public class BackupUnit {
 
                 if (backupSettings) {
                     android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-                    org.json.JSONObject settingsObj = new org.json.JSONObject();
+                    org.json.JSONObject settingsObj = new org.json.JSONObject()
                     for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
-                        Object val = entry.getValue();
+                        Object val = entry.getValue()
                         if (val != null) {
                             settingsObj.put(entry.getKey(), val);
                         }
@@ -270,7 +275,7 @@ public class BackupUnit {
                 if (os != null) {
                     BufferedWriter writer = new BufferedWriter(new java.io.OutputStreamWriter(os));
                     writer.write(backupJson.toString(2));
-                    writer.close();
+                    writer.close()
                 }
 
                 handler.post(() -> {
@@ -285,8 +290,9 @@ public class BackupUnit {
         });
     }
 
-    public static void restoreFromUri(Context context, android.net.Uri uri, boolean restoreBookmarks, boolean restoreHistory, boolean restoreSavedSites, boolean restoreSettings) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+    @JvmStatic
+    fun restoreFromUri(Context context, android.net.Uri uri, val restoreBookmarks, val restoreHistory, val restoreSavedSites, val restoreSettings) {
+        ExecutorService executor = Executors.newSingleThreadExecutor()
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try {
@@ -297,12 +303,12 @@ public class BackupUnit {
                 }
 
                 BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(is));
-                StringBuilder sb = new StringBuilder();
-                String line;
+                StringBuilder sb = StringBuilder()
+                val line;
                 while ((line = reader.readLine()) != null) {
                     sb.append(line);
                 }
-                reader.close();
+                reader.close()
 
                 org.json.JSONObject backupJson = new org.json.JSONObject(sb.toString());
 
@@ -311,13 +317,13 @@ public class BackupUnit {
                         org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
                         RecordAction action = new RecordAction(context);
                         action.open(true);
-                        for (int i = 0; i < bookmarksArray.length(); i++) {
+                        for (val i = 0; i < bookmarksArray.length() i++) {
                             org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
-                            String title = obj.optString("title", "");
-                            String url = obj.optString("url", "");
-                            long time = obj.optLong("time", System.currentTimeMillis());
+                            val title = obj.optString("title", "");
+                            val url = obj.optString("url", "");
+                            val time = obj.optLong("time", System.currentTimeMillis());
                             if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
-                                Record record = new Record();
+                                Record record = new Record()
                                 record.setTitle(title);
                                 record.setURL(url);
                                 record.setTime(time);
@@ -325,7 +331,7 @@ public class BackupUnit {
                                 action.addBookmark(record);
                             }
                         }
-                        action.close();
+                        action.close()
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring bookmarks", e);
                     }
@@ -336,16 +342,16 @@ public class BackupUnit {
                         org.json.JSONArray historyArray = backupJson.getJSONArray("history");
                         RecordAction action = new RecordAction(context);
                         action.open(true);
-                        for (int i = 0; i < historyArray.length(); i++) {
+                        for (val i = 0; i < historyArray.length() i++) {
                             org.json.JSONObject obj = historyArray.getJSONObject(i);
-                            String title = obj.optString("title", "");
-                            String url = obj.optString("url", "");
-                            long time = obj.optLong("time", System.currentTimeMillis());
+                            val title = obj.optString("title", "");
+                            val url = obj.optString("url", "");
+                            val time = obj.optLong("time", System.currentTimeMillis());
                             if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
                                 action.addHistory(new Record(title, url, time, 0L));
                             }
                         }
-                        action.close();
+                        action.close()
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring history", e);
                     }
@@ -357,13 +363,13 @@ public class BackupUnit {
                         RecordAction action = new RecordAction(context);
                         List_standard listStandard = new List_standard(context);
                         action.open(true);
-                        for (int i = 0; i < sitesArray.length(); i++) {
-                            String domain = sitesArray.optString(i, "");
+                        for (val i = 0; i < sitesArray.length() i++) {
+                            val domain = sitesArray.optString(i, "");
                             if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
                                 listStandard.addDomain(domain);
                             }
                         }
-                        action.close();
+                        action.close()
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring saved sites", e);
                     }
@@ -373,22 +379,22 @@ public class BackupUnit {
                     try {
                         org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
                         android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-                        android.content.SharedPreferences.Editor editor = sp.edit();
-                        java.util.Iterator<String> keys = settingsObj.keys();
+                        android.content.SharedPreferences.Editor editor = sp.edit()
+                        java.util.Iterator<String> keys = settingsObj.keys()
 
                         while (keys.hasNext()) {
                             editor.remove(keys.next());
                         }
-                        editor.apply();
+                        editor.apply()
 
-                        editor = sp.edit();
-                        keys = settingsObj.keys();
+                        editor = sp.edit()
+                        keys = settingsObj.keys()
                         while (keys.hasNext()) {
-                            String key = keys.next();
+                            val key = keys.next()
                             Object val = settingsObj.opt(key);
                             if (val == null || val == org.json.JSONObject.NULL) continue;
 
-                            boolean isKnownStringKey = "sp_fontSize".equals(key) || "sp_search_engine".equals(key) ||
+                            val isKnownStringKey = "sp_fontSize".equals(key) || "sp_search_engine".equals(key) ||
                                     "sp_searchEngine".equals(key) || "sp_userAgent".equals(key) ||
                                     "profile".equals(key) || key.startsWith("icon_");
 
@@ -408,14 +414,14 @@ public class BackupUnit {
                                 editor.putString(key, (String) val);
                             } else if (val instanceof org.json.JSONArray) {
                                 org.json.JSONArray arr = (org.json.JSONArray) val;
-                                java.util.Set<String> set = new java.util.HashSet<>();
-                                for (int i = 0; i < arr.length(); i++) {
+                                java.util.Set<String> set = new java.util.HashSet<>()
+                                for (val i = 0; i < arr.length() i++) {
                                     set.add(arr.optString(i));
                                 }
                                 editor.putStringSet(key, set);
                             }
                         }
-                        editor.apply();
+                        editor.apply()
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring settings", e);
                     }
@@ -433,25 +439,26 @@ public class BackupUnit {
         });
     }
 
-    public static void restoreFromJson(Activity context, boolean restoreBookmarks, boolean restoreHistory, boolean restoreSavedSites, boolean restoreSettings) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+    @JvmStatic
+    fun restoreFromJson(Activity context, val restoreBookmarks, val restoreHistory, val restoreSavedSites, val restoreSettings) {
+        ExecutorService executor = Executors.newSingleThreadExecutor()
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try {
-                File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
-                File jsonFile = new File(backupDir, "petal_browser_backup.json");
+                File backupDir = File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
+                File jsonFile = File(backupDir, "petal_browser_backup.json");
                 if (!jsonFile.exists()) {
                     handler.post(() -> NinjaToast.show(context, "No backup file found at Documents/browser_backup/petal_browser_backup.json"));
                     return;
                 }
 
                 BufferedReader reader = new BufferedReader(new FileReader(jsonFile));
-                StringBuilder sb = new StringBuilder();
-                String line;
+                StringBuilder sb = StringBuilder()
+                val line;
                 while ((line = reader.readLine()) != null) {
                     sb.append(line);
                 }
-                reader.close();
+                reader.close()
 
                 org.json.JSONObject backupJson = new org.json.JSONObject(sb.toString());
 
@@ -460,13 +467,13 @@ public class BackupUnit {
                         org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
                         RecordAction action = new RecordAction(context);
                         action.open(true);
-                        for (int i = 0; i < bookmarksArray.length(); i++) {
+                        for (val i = 0; i < bookmarksArray.length() i++) {
                             org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
-                            String title = obj.optString("title", "");
-                            String url = obj.optString("url", "");
-                            long time = obj.optLong("time", System.currentTimeMillis());
+                            val title = obj.optString("title", "");
+                            val url = obj.optString("url", "");
+                            val time = obj.optLong("time", System.currentTimeMillis());
                             if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
-                                Record record = new Record();
+                                Record record = new Record()
                                 record.setTitle(title);
                                 record.setURL(url);
                                 record.setTime(time);
@@ -474,7 +481,7 @@ public class BackupUnit {
                                 action.addBookmark(record);
                             }
                         }
-                        action.close();
+                        action.close()
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring bookmarks", e);
                     }
@@ -485,16 +492,16 @@ public class BackupUnit {
                         org.json.JSONArray historyArray = backupJson.getJSONArray("history");
                         RecordAction action = new RecordAction(context);
                         action.open(true);
-                        for (int i = 0; i < historyArray.length(); i++) {
+                        for (val i = 0; i < historyArray.length() i++) {
                             org.json.JSONObject obj = historyArray.getJSONObject(i);
-                            String title = obj.optString("title", "");
-                            String url = obj.optString("url", "");
-                            long time = obj.optLong("time", System.currentTimeMillis());
+                            val title = obj.optString("title", "");
+                            val url = obj.optString("url", "");
+                            val time = obj.optLong("time", System.currentTimeMillis());
                             if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
                                 action.addHistory(new Record(title, url, time, 0L));
                             }
                         }
-                        action.close();
+                        action.close()
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring history", e);
                     }
@@ -506,13 +513,13 @@ public class BackupUnit {
                         RecordAction action = new RecordAction(context);
                         List_standard listStandard = new List_standard(context);
                         action.open(true);
-                        for (int i = 0; i < sitesArray.length(); i++) {
-                            String domain = sitesArray.optString(i, "");
+                        for (val i = 0; i < sitesArray.length() i++) {
+                            val domain = sitesArray.optString(i, "");
                             if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
                                 listStandard.addDomain(domain);
                             }
                         }
-                        action.close();
+                        action.close()
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring saved sites", e);
                     }
@@ -522,22 +529,22 @@ public class BackupUnit {
                     try {
                         org.json.JSONObject settingsObj = backupJson.getJSONObject("settings");
                         android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-                        android.content.SharedPreferences.Editor editor = sp.edit();
-                        java.util.Iterator<String> keys = settingsObj.keys();
+                        android.content.SharedPreferences.Editor editor = sp.edit()
+                        java.util.Iterator<String> keys = settingsObj.keys()
 
                         while (keys.hasNext()) {
                             editor.remove(keys.next());
                         }
-                        editor.apply();
+                        editor.apply()
 
-                        editor = sp.edit();
-                        keys = settingsObj.keys();
+                        editor = sp.edit()
+                        keys = settingsObj.keys()
                         while (keys.hasNext()) {
-                            String key = keys.next();
+                            val key = keys.next()
                             Object val = settingsObj.opt(key);
                             if (val == null || val == org.json.JSONObject.NULL) continue;
 
-                            boolean isKnownStringKey = "sp_fontSize".equals(key) || "sp_search_engine".equals(key) ||
+                            val isKnownStringKey = "sp_fontSize".equals(key) || "sp_search_engine".equals(key) ||
                                     "sp_searchEngine".equals(key) || "sp_userAgent".equals(key) ||
                                     "profile".equals(key) || key.startsWith("icon_");
 
@@ -557,14 +564,14 @@ public class BackupUnit {
                                 editor.putString(key, (String) val);
                             } else if (val instanceof org.json.JSONArray) {
                                 org.json.JSONArray arr = (org.json.JSONArray) val;
-                                java.util.Set<String> set = new java.util.HashSet<>();
-                                for (int i = 0; i < arr.length(); i++) {
+                                java.util.Set<String> set = new java.util.HashSet<>()
+                                for (val i = 0; i < arr.length() i++) {
                                     set.add(arr.optString(i));
                                 }
                                 editor.putStringSet(key, set);
                             }
                         }
-                        editor.apply();
+                        editor.apply()
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring settings", e);
                     }
@@ -582,27 +589,29 @@ public class BackupUnit {
         });
     }
 
-    public static void backupData(Activity context, int i) {
+    @JvmStatic
+    fun backupData(Activity context, val i) {
         backupToJson(context, true, true, true, true);
     }
 
-    public static void performAutoVersionBackup(Context context) {
+    @JvmStatic
+    fun performAutoVersionBackup(Context context) {
         if (context == null) return;
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newSingleThreadExecutor()
         executor.execute(() -> {
             try {
                 SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-                int currentVersionCode = 0;
+                val currentVersionCode = 0;
                 try {
                     currentVersionCode = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionCode;
                 } catch (Exception ignored) {}
 
-                int lastVersionCode = sp.getInt("sp_last_app_version_code", 0);
+                val lastVersionCode = sp.getInt("sp_last_app_version_code", 0);
                 if (currentVersionCode > 0 && currentVersionCode != lastVersionCode) {
-                    sp.edit().putInt("sp_last_app_version_code", currentVersionCode).apply();
+                    sp.edit().putInt("sp_last_app_version_code", currentVersionCode).apply()
                 }
 
-                org.json.JSONObject backupJson = new org.json.JSONObject();
+                org.json.JSONObject backupJson = new org.json.JSONObject()
                 backupJson.put("version", 1);
                 backupJson.put("app_version_code", currentVersionCode);
                 backupJson.put("timestamp", System.currentTimeMillis());
@@ -612,11 +621,11 @@ public class BackupUnit {
                 List<Record> bookmarks = action.listBookmark(context, false, 0);
                 List<Record> history = action.listHistory(context);
                 List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
-                action.close();
+                action.close()
 
-                org.json.JSONArray bookmarksArray = new org.json.JSONArray();
+                org.json.JSONArray bookmarksArray = new org.json.JSONArray()
                 for (Record r : bookmarks) {
-                    org.json.JSONObject obj = new org.json.JSONObject();
+                    org.json.JSONObject obj = new org.json.JSONObject()
                     obj.put("title", r.getTitle() != null ? r.getTitle() : "");
                     obj.put("url", r.getURL() != null ? r.getURL() : "");
                     obj.put("time", r.getTime());
@@ -624,9 +633,9 @@ public class BackupUnit {
                 }
                 backupJson.put("bookmarks", bookmarksArray);
 
-                org.json.JSONArray historyArray = new org.json.JSONArray();
+                org.json.JSONArray historyArray = new org.json.JSONArray()
                 for (Record r : history) {
-                    org.json.JSONObject obj = new org.json.JSONObject();
+                    org.json.JSONObject obj = new org.json.JSONObject()
                     obj.put("title", r.getTitle() != null ? r.getTitle() : "");
                     obj.put("url", r.getURL() != null ? r.getURL() : "");
                     obj.put("time", r.getTime());
@@ -634,28 +643,28 @@ public class BackupUnit {
                 }
                 backupJson.put("history", historyArray);
 
-                org.json.JSONArray sitesArray = new org.json.JSONArray();
-                for (String domain : domains) {
+                org.json.JSONArray sitesArray = new org.json.JSONArray()
+                for (val domain : domains) {
                     sitesArray.put(domain);
                 }
                 backupJson.put("saved_sites", sitesArray);
 
-                org.json.JSONObject settingsObj = new org.json.JSONObject();
+                org.json.JSONObject settingsObj = new org.json.JSONObject()
                 for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
-                    Object val = entry.getValue();
+                    Object val = entry.getValue()
                     if (val != null) {
                         settingsObj.put(entry.getKey(), val);
                     }
                 }
                 backupJson.put("settings", settingsObj);
 
-                File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
-                if (!backupDir.exists()) backupDir.mkdirs();
-                File jsonFile = new File(backupDir, "petal_downgrade_snapshot.json");
+                File backupDir = File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
+                if (!backupDir.exists()) backupDir.mkdirs()
+                File jsonFile = File(backupDir, "petal_downgrade_snapshot.json");
 
                 BufferedWriter writer = new BufferedWriter(new FileWriter(jsonFile, false));
                 writer.write(backupJson.toString(2));
-                writer.close();
+                writer.close()
                 Log.i("Petal", "Automatic downgrade protection backup saved: " + jsonFile.getAbsolutePath());
             } catch (Exception e) {
                 Log.e("Petal", "Failed to save automatic version snapshot", e);
@@ -663,14 +672,21 @@ public class BackupUnit {
         });
     }
 
-    public static void restoreData(Activity context, int i) {
+    @JvmStatic
+    fun restoreData(Activity context, val i) {
         restoreFromJson(context, true, true, true, true);
     }
 
-    public static void exportList(Context context) {}
-    public static void importList(Context context) {}
-    public static void exportBookmarksSimple(Context context) {}
-    public static void importBookmarksSimple(Context context) {}
-    public static void exportHistory(Context context) {}
-    public static void importHistory(Context context) {}
+    @JvmStatic
+    fun exportList(Context context) {}
+    @JvmStatic
+    fun importList(Context context) {}
+    @JvmStatic
+    fun exportBookmarksSimple(Context context) {}
+    @JvmStatic
+    fun importBookmarksSimple(Context context) {}
+    @JvmStatic
+    fun exportHistory(Context context) {}
+    @JvmStatic
+    fun importHistory(Context context) {}
 }

@@ -52,18 +52,19 @@ import com.petal.browser.database.RecordAction;
 import com.petal.browser.objects.CustomRedirect;
 import com.petal.browser.objects.CustomRedirectsHelper;
 
-public class BrowserUnit {
+object BrowserUnit {
 
-    public static final int LOADING_STOPPED = 101;  //Must be > PROGRESS_MAX !
-    public static final String MIME_TYPE_TEXT_PLAIN = "text/plain";
-    public static final String URL_ENCODING = "UTF-8";
+    const val LOADING_STOPPED = 101  //Must be > PROGRESS_MAX !
+    const val MIME_TYPE_TEXT_PLAIN = "text/plain"
+    const val URL_ENCODING = "UTF-8"
 
-    public static boolean isURL(String urlString) {
-        if (urlString == null || urlString.trim().isEmpty()) {
+    @JvmStatic
+    fun isURL(val urlString): Boolean {
+        if (urlval == null || urlString.trim().isEmpty()) {
             return false;
         }
 
-        urlString = urlString.trim();
+        urlval = urlString.trim()
         // If string contains unencoded spaces, it's a search query, not a direct URL
         if (urlString.contains(" ")) {
             return false;
@@ -74,7 +75,7 @@ public class BrowserUnit {
 
             // Fall 1: Die URL hat bereits ein explizites Schema
             if (uri.getScheme() != null) {
-                String scheme = uri.getScheme().toLowerCase();
+                val scheme = uri.getScheme().toLowerCase()
                 // Erlaubt Web-Links sowie lokale Datei- und Inhalts-Pfade von Android
                 return "http".equals(scheme) || "https".equals(scheme) || "file".equals(scheme) || "content".equals(scheme) || "about".equals(scheme) || "chrome".equals(scheme) || "petal".equals(scheme);
             }
@@ -92,14 +93,15 @@ public class BrowserUnit {
         }
     }
 
-    public static String queryWrapper(Context context, String query) {
+    @JvmStatic
+    fun queryWrapper(Context context, val query): val {
         if (query == null || query.trim().isEmpty()) {
             return "";
         }
-        query = query.trim();
+        query = query.trim()
 
         if (query.contains(";jsessionid=")) {
-            String tracking = query.substring(query.lastIndexOf(";"));
+            val tracking = query.substring(query.lastIndexOf(";"));
             query = query.replace(tracking, "");
         }
 
@@ -113,10 +115,10 @@ public class BrowserUnit {
             return query;
         } else {
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-            String customSearchEngine = sp.getString("sp_search_engine_custom", "");
-            String customSearches = sp.getString("sp_search_customSearches", "");
+            val customSearchEngine = sp.getString("sp_search_engine_custom", "");
+            val customSearches = sp.getString("sp_search_customSearches", "");
             
-            String encodedQuery;
+            val encodedQuery;
             try {
                 encodedQuery = URLEncoder.encode(query, "UTF-8");
             } catch (Exception e) {
@@ -128,7 +130,7 @@ public class BrowserUnit {
             } else if (sp.getBoolean("searchEngineSwitch", false) && !customSearchEngine.isEmpty()) {
                 return customSearchEngine + encodedQuery;
             } else {
-                int i = 0;
+                val i = 0;
                 try {
                     i = Integer.parseInt(Objects.requireNonNull(sp.getString("sp_search_engine", "0")));
                 } catch (Exception ignored) {}
@@ -151,24 +153,25 @@ public class BrowserUnit {
         }
     }
 
-    public static void download(final Context context, final String url, final String fileName, final String mimeType) {
+    @JvmStatic
+    fun download(val context, val url, val fileName, val mimeType) {
         if (context == null || url == null || url.trim().isEmpty()) {
             return;
         }
         // Sicherstellen, dass das Protokoll für den Android-Uri-Parser passt
-        String verifiedUrl = url;
+        val verifiedUrl = url;
         if (!url.toLowerCase(Locale.US).startsWith("http://") && !url.toLowerCase(Locale.US).startsWith("https://")) {
             verifiedUrl = "https://" + url;
         }
         // Berechtigungsprüfung (Ab Android 10/Q wird WRITE_EXTERNAL_STORAGE für Downloads nicht mehr benötigt)
-        boolean hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || BackupUnit.checkPermissionStorage(context);
+        val hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || BackupUnit.checkPermissionStorage(context);
         if (hasPermission) {
             try {
-                String userAgent = WebSettings.getDefaultUserAgent(context);
-                CookieManager cookieManager = CookieManager.getInstance();
-                String cookie = cookieManager.getCookie(verifiedUrl);
+                val userAgent = WebSettings.getDefaultUserAgent(context);
+                CookieManager cookieManager = CookieManager.getInstance()
+                val cookie = cookieManager.getCookie(verifiedUrl);
 
-                java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
+                java.util.Map<String, String> extraHeaders = new java.util.HashMap<>()
                 extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
                 extraHeaders.put("Accept-Language", Locale.getDefault().toLanguageTag());
                 extraHeaders.put("Accept-Encoding", "gzip, deflate, br, identity");
@@ -199,8 +202,8 @@ public class BrowserUnit {
                 );
             } catch (Exception e) {
                 // Sicherer Umgang mit Fehlermeldungen ohne StringIndexOutOfBoundsException
-                String errorMessage = e.getMessage() != null ? e.getMessage() : e.toString();
-                Toast.makeText(context, context.getString(R.string.app_error) + ": " + errorMessage, Toast.LENGTH_LONG).show();
+                val errorMessage = e.getMessage() != null ? e.getMessage() : e.toString()
+                Toast.makeText(context, context.getString(R.string.app_error) + ": " + errorMessage, Toast.LENGTH_LONG).show()
                 Log.e(TAG, "Petal: Error Downloading File", e);
             }
         } else {
@@ -213,29 +216,32 @@ public class BrowserUnit {
         }
     }
 
-    public static void clearBookmark(Context context) {
+    @JvmStatic
+    fun clearBookmark(Context context) {
         RecordAction action = new RecordAction(context);
         action.open(true);
         action.clearTable(RecordUnit.TABLE_BOOKMARK);
-        action.close();
+        action.close()
     }
 
-    public static void clearHistory(Context context) {
+    @JvmStatic
+    fun clearHistory(Context context) {
         RecordAction action = new RecordAction(context);
         action.open(true);
         action.clearTable(RecordUnit.TABLE_HISTORY);
-        action.close();
+        action.close()
     }
 
-    public static void clearBrowserData(Context context) {
+    @JvmStatic
+    fun clearBrowserData(Context context) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false);
-        boolean clearCache = sp.getBoolean("sp_clear_cache", false);
-        boolean clearCookie = sp.getBoolean("sp_clear_cookie", false);
-        boolean clearHistory = sp.getBoolean("sp_clear_history", false);
-        boolean clearIndexedDB = sp.getBoolean("sp_clearIndexedDB", false);
-        boolean clearDB = sp.getBoolean("sp_deleteDatabase", false);
-        boolean clearSettings = sp.getBoolean("sp_clear_settings", false);
+        val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false);
+        val clearCache = sp.getBoolean("sp_clear_cache", false);
+        val clearCookie = sp.getBoolean("sp_clear_cookie", false);
+        val clearHistory = sp.getBoolean("sp_clear_history", false);
+        val clearIndexedDB = sp.getBoolean("sp_clearIndexedDB", false);
+        val clearDB = sp.getBoolean("sp_deleteDatabase", false);
+        val clearSettings = sp.getBoolean("sp_clear_settings", false);
 
         if (clearQuit && !clearCache && !clearCookie && !clearHistory && !clearIndexedDB && !clearDB && !clearSettings) {
             clearCache = true;
@@ -254,33 +260,34 @@ public class BrowserUnit {
         if (clearSettings) {
             clearSettingsSafely(sp);
             List_standard listStandard = new List_standard(context);
-            listStandard.clearDomains();
+            listStandard.clearDomains()
         }
         if (clearCookie) {
-            CookieManager cookieManager = CookieManager.getInstance();
-            cookieManager.flush();
+            CookieManager cookieManager = CookieManager.getInstance()
+            cookieManager.flush()
             cookieManager.removeAllCookies(value -> {
             });
         }
         if (clearDB) {
             context.deleteDatabase("Ninja4.db");
             context.deleteDatabase("item_icon.db");
-            sp.edit().putInt("restart_changed", 1).apply();
+            sp.edit().putInt("restart_changed", 1).apply()
         }
         if (clearIndexedDB) {
             // Use WebStorage instead of raw app_webview file deletion while tabs are open
             try {
-                WebStorage.getInstance().deleteAllData();
+                WebStorage.getInstance().deleteAllData()
             } catch (Exception ignored) {}
         }
     }
 
-    public static void clearSettingsSafely(SharedPreferences sp) {
+    @JvmStatic
+    fun clearSettingsSafely(SharedPreferences sp) {
         if (sp == null) return;
-        java.util.Map<String, ?> all = sp.getAll();
-        java.util.Map<String, Object> protectedMap = new java.util.HashMap<>();
+        java.util.Map<String, ?> all = sp.getAll()
+        java.util.Map<String, Object> protectedMap = new java.util.HashMap<>()
         for (java.util.Map.Entry<String, ?> entry : all.entrySet()) {
-            String key = entry.getKey();
+            val key = entry.getKey()
             if (key != null && (
                 key.contains("api_key") ||
                 key.contains("account") ||
@@ -301,10 +308,10 @@ public class BrowserUnit {
             }
         }
 
-        SharedPreferences.Editor editor = sp.edit().clear();
+        SharedPreferences.Editor editor = sp.edit().clear()
         for (java.util.Map.Entry<String, Object> entry : protectedMap.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
+            val key = entry.getKey()
+            Object value = entry.getValue()
             if (value instanceof String) {
                 editor.putString(key, (String) value);
             } else if (value instanceof Boolean) {
@@ -317,21 +324,22 @@ public class BrowserUnit {
                 editor.putFloat(key, (Float) value);
             }
         }
-        editor.apply();
+        editor.apply()
     }
 
-    public static void intentURL(Context context, Uri uri) {
+    @JvmStatic
+    fun intentURL(Context context, Uri uri) {
         if (context == null || uri == null) return;
         try {
-            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            PackageManager pm = context.getPackageManager();
+            Intent intent = Intent(Intent.ACTION_VIEW, uri);
+            PackageManager pm = context.getPackageManager()
             List<ResolveInfo> resolveInfos = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-            List<Intent> targetIntents = new ArrayList<>();
+            List<Intent> targetIntents = ArrayList()
 
             for (ResolveInfo info : resolveInfos) {
-                String packageName = info.activityInfo.packageName;
+                val packageName = info.activityInfo.packageName;
                 if (!packageName.equals(context.getPackageName())) {
-                    Intent targetIntent = new Intent(Intent.ACTION_VIEW, uri);
+                    Intent targetIntent = Intent(Intent.ACTION_VIEW, uri);
                     targetIntent.setPackage(packageName);
                     if (!(context instanceof Activity)) {
                         targetIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -357,13 +365,13 @@ public class BrowserUnit {
         }
     }
 
-    public static String redirectURL (WebView ninjaWebView, SharedPreferences sp, String url) {
+    public static val redirectURL (WebView ninjaWebView, SharedPreferences sp, val url) {
         try {
             List<CustomRedirect> redirects = CustomRedirectsHelper.getRedirects(sp);
-            for (int i = 0; i < redirects.size(); i++) {
+            for (val i = 0; i < redirects.size() i++) {
                 CustomRedirect customRedirect = redirects.get(i);
                 if (url.contains(customRedirect.getSource()) && sp.getBoolean(customRedirect.getSource(), true)) {
-                    ninjaWebView.stopLoading();
+                    ninjaWebView.stopLoading()
                     url = url.replace(customRedirect.getSource(), customRedirect.getTarget());
                     return url;
                 }
@@ -374,18 +382,19 @@ public class BrowserUnit {
         return url;
     }
 
-    public static void openInBackground(Activity activity, WebView webView) {
+    @JvmStatic
+    fun openInBackground(Activity activity, WebView webView) {
         if (activity == null || webView == null) return;
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(activity);
         if (!sp.getBoolean("sp_tabBackground", false)) return;
-        String dialogSetting = sp.getString("openBackground_dialog", "show");
+        val dialogSetting = sp.getString("openBackground_dialog", "show");
         if ("never".equals(dialogSetting)) return;
         // Notification-Inhalt vorbereiten
-        String url = webView.getUrl();
-        String text = activity.getString(R.string.dialog_backGround);
+        val url = webView.getUrl()
+        val text = activity.getString(R.string.dialog_backGround);
         NotificationManager mNotifyMgr = (NotificationManager) activity.getSystemService(Context.NOTIFICATION_SERVICE);
         // PendingIntent für Klick auf die Benachrichtigung
-        Intent intentP = new Intent(activity, BrowserActivity.class);
+        Intent intentP = Intent(activity, BrowserActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(activity, 0, intentP, PendingIntent.FLAG_IMMUTABLE);
         // Notification Channel erstellen (nur ab Android 8/Orest)
         if (mNotifyMgr != null) {
@@ -401,18 +410,18 @@ public class BrowserUnit {
                 .setContentTitle(HelperUnit.domain(url))
                 .setContentText(text)
                 .setContentIntent(pendingIntent)
-                .build();
+                .build()
         // Verzweigung für Snackbar oder direkten Aufruf
         if ("show".equals(dialogSetting)) {
             HelperUnit.showCustomSnackbarWithTwoActions(
                     activity, webView, null, text, activity.getString(R.string.app_session), url,
                     R.drawable.icon_check, () -> {
-                        sp.edit().putString("openBackground_dialog", "always").apply();
+                        sp.edit().putString("openBackground_dialog", "always").apply()
                         displayNotification(activity, mNotifyMgr, buildNotification);
                         return true;
                     },
                     R.drawable.icon_close, () -> {
-                        sp.edit().putString("openBackground_dialog", "never").apply();
+                        sp.edit().putString("openBackground_dialog", "never").apply()
                         return true;
                     }
             );
@@ -425,42 +434,43 @@ public class BrowserUnit {
 
         if (activity == null || mNotifyMgr == null || buildNotification == null) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            new MaterialAlertDialogBuilder(activity)
+            MaterialAlertDialogBuilder(activity)
                     .setIcon(R.drawable.icon_alert)
                     .setTitle(R.string.app_permission_notification)
                     .setMessage(R.string.app_permission)
                     .setPositiveButton(R.string.app_ok, (dialog, whichButton) -> {
-                        dialog.dismiss();
+                        dialog.dismiss()
                         try {
-                            Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            Intent intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                                     .putExtra(Settings.EXTRA_APP_PACKAGE, activity.getPackageName());
                             activity.startActivity(intent);
                         } catch (Exception e) {
-                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            Intent intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                                     .setData(Uri.fromParts("package", activity.getPackageName(), null));
                             activity.startActivity(intent);
                         }
                     })
                     .setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel())
-                    .show(); // Direkt anzeigen über Fluent-API
+                    .show() // Direkt anzeigen über Fluent-API
             return;
         }
         // Berechtigung vorhanden oder älteres Android -> Benachrichtigung senden
         mNotifyMgr.notify(4, buildNotification);
         activity.moveTaskToBack(true);
     }
-    public static boolean deleteDir(File dir) {
+    @JvmStatic
+    fun deleteDir(File dir): Boolean {
         if (dir != null && dir.isDirectory()) {
-            File[] children = dir.listFiles();
+            File[] children = dir.listFiles()
             if (children != null) {
                 for (File child : children) {
-                    boolean success = deleteDir(child);
+                    val success = deleteDir(child);
                     if (!success) {
                         return false;
                     }
                 }
             }
         }
-        return dir != null && dir.delete();
+        return dir != null && dir.delete()
     }
 }
