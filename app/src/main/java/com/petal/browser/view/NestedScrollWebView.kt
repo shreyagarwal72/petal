@@ -63,6 +63,7 @@ open class NestedScrollWebView @JvmOverloads constructor(
 
         customScroller = OverScroller(context)
         customScroller?.setFriction(0.0085f)
+        com.petal.browser.unit.PetalHighRefreshRateManager.applySurfaceFrameRate(this)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

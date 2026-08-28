@@ -428,7 +428,8 @@ fun PetalSettingsScreen(
     var isFloatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
-    var isExpressiveBgShapes by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
+    var isHighRefreshRate by remember { mutableStateOf(sp.getBoolean("sp_high_refresh_rate", true)) }
+    val maxDetectedRefreshRate = remember(context) { com.petal.browser.unit.PetalHighRefreshRateManager.getMaxSupportedRefreshRate(context) }
     var bgShapeChangeMode by remember { mutableStateOf(sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS") }
     var bgShapeRotationMin by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) }
 
@@ -1393,6 +1394,27 @@ fun PetalSettingsScreen(
                                         onCheckedChange = { newValue ->
                                             isExpressiveColors = newValue
                                             sp.edit().putBoolean("sp_expressive_colors", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // High Refresh Rate (120Hz+) Toggle
+                                    ToggleRow(
+                                        title = "High Refresh Rate (120Hz+)",
+                                        subtitle = "Force 120Hz/144Hz peak display refresh rate and smooth 120 FPS frame pacing (Detected hardware peak: ${maxDetectedRefreshRate.toInt()} Hz)",
+                                        icon = Icons.Rounded.Speed,
+                                        checked = isHighRefreshRate,
+                                        onCheckedChange = { newValue ->
+                                            isHighRefreshRate = newValue
+                                            sp.edit().putBoolean("sp_high_refresh_rate", newValue).apply()
+                                            (context as? android.app.Activity)?.let {
+                                                if (newValue) {
+                                                    com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(it)
+                                                } else {
+                                                    com.petal.browser.unit.PetalHighRefreshRateManager.resetRefreshRate(it)
+                                                }
+                                            }
                                         }
                                     )
 

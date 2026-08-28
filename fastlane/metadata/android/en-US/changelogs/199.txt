@@ -1,0 +1,5 @@
+v1.9.9 Release Highlights:
+- High Refresh Rate (120Hz/144Hz+) Native Hardware Display Synchronization.
+- Added PetalHighRefreshRateManager for optimal Display.Mode resolution selection, Android 11+ preferredMin/MaxDisplayRefreshRate bounding, and Surface.setFrameRate() presentation hints.
+- Real-time 120 FPS frame pacing for NestedScrollWebView, SurfaceFlinger, and Jetpack Compose transitions.
+- Added High Refresh Rate user toggle in Display & Theme Settings with real-time detected hardware peak refresh rate badge.

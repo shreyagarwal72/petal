@@ -387,6 +387,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onCreate(savedInstanceState);
         context = this;
         activity = this;
+        com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -736,6 +737,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onResume() {
         super.onResume();
+        com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this);
         applyAddressBarPosition();
         if (ninjaWebView != null) {
             ninjaWebView.onResume();

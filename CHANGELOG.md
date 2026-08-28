@@ -1,3 +1,11 @@
+### v1.9.9
+
+- **⚡ High Refresh Rate (120Hz/144Hz+) Native Hardware Synchronization**:
+  - Added [PetalHighRefreshRateManager.kt](file:///data/data/com.termux/files/home/petal/app/src/main/java/com/petal/browser/unit/PetalHighRefreshRateManager.kt) to lock the highest available hardware display mode (`Display.Mode`), preferred refresh rate bounds (`preferredMinDisplayRefreshRate` & `preferredMaxDisplayRefreshRate`), and `Surface.setFrameRate()` on supported devices.
+  - Device refresh rate overlays (Developer Options "Show refresh rate", FPS meters, OEM gaming overlays) now immediately detect and sustain a solid 120Hz/144Hz during browsing, scrolling, and tab switching.
+  - Added **"High Refresh Rate (120Hz+)"** preference toggle with real-time detected peak hardware refresh rate readout in *Settings -> Display & Themes*.
+  - Synchronized `NestedScrollWebView` and decor surfaces with SurfaceFlinger for zero-jitter, fluid 120 FPS kinetic scrolling.
+
 ### v1.9.8
 
 - **⚡ 100% Complete Java-to-Kotlin Migration**:
