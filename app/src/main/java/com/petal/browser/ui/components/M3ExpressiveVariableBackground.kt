@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.delay
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.preference.PreferenceManager
 
 enum class M3ExpressiveShapeType {
@@ -167,24 +168,29 @@ fun M3ExpressiveVariableBackground(
 
     if (!isShapesEnabled) return
 
+    // Static seed epoch for PERIODIC mode so shapes remain stable until timer ticks
+    var periodicSeedEpoch by rememberSaveable { mutableLongStateOf(sp.getLong("sp_periodic_seed_epoch", 1000L)) }
+
     // Periodic Shape Rotation Timer (only active in PERIODIC mode)
     LaunchedEffect(shapeChangeMode, rotationMinutes) {
         if (shapeChangeMode == "PERIODIC" && rotationMinutes > 0) {
             val intervalMs = rotationMinutes * 60 * 1000L
             while (this.isActive) {
                 kotlinx.coroutines.delay(intervalMs)
-                seedEpoch = System.currentTimeMillis()
+                val nextEpoch = System.currentTimeMillis()
+                periodicSeedEpoch = nextEpoch
+                sp.edit().putLong("sp_periodic_seed_epoch", nextEpoch).apply()
             }
         }
     }
 
     val effectiveSeed = if (shapeChangeMode == "ALWAYS") {
-        pageSeed + seedEpoch.toString()
-    } else {
         pageSeed + "_" + seedEpoch.toString()
+    } else {
+        pageSeed + "_periodic_" + periodicSeedEpoch.toString()
     }
 
-    val blobs = remember(pageSeed, shapeChangeMode, seedEpoch) {
+    val blobs = remember(pageSeed, shapeChangeMode, seedEpoch, periodicSeedEpoch) {
         M3ExpressiveBackgroundProvider.generateRandomBlobs(effectiveSeed)
     }
 
