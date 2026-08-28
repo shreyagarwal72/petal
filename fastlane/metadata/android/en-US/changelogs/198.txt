@@ -1,0 +1,7 @@
+v1.9.8 Release Highlights:
+- 100% Complete Java-to-Kotlin Migration across the entire Petal Browser codebase (0 remaining Java files).
+- Full Kotlin rewrite of Browser Engines, Native Chromium Bridges, WebAppInterface, and NinjaWebViewClient/ChromeClient with modern Kotlin idioms, null-safety, and coroutines compatibility.
+- Comprehensive Material 3 Expressive UI/UX integration with all 35 official M3 shapes catalog (RoundedSquare, Cookie, Arch, Hexagon, Octagon, Pill, SoftScallop, Clover, Star, Gem).
+- Converted all Settings Activities, Preference Fragments, and Custom Preference widgets to Kotlin.
+- Converted all 42 Utility, Network, DNS, and Security Managers into streamlined Kotlin singletons.
+- Enhanced 120Hz smooth scrolling physics with NestedScrollingChild3 and improved gesture arbitration.
