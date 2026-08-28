@@ -18,6 +18,7 @@ class Settings_Activity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
         HelperUnit.initTheme(this)
         EdgeToEdge.enable(this)
         val controller = WindowCompat.getInsetsController(window, window.decorView)
