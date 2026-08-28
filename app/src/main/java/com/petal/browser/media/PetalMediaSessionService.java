@@ -41,6 +41,8 @@ public class PetalMediaSessionService extends Service {
     public static final String ACTION_STOP = "com.petal.browser.media.ACTION_STOP";
     public static final String ACTION_SKIP_FORWARD = "com.petal.browser.media.ACTION_SKIP_FORWARD";
     public static final String ACTION_SKIP_BACKWARD = "com.petal.browser.media.ACTION_SKIP_BACKWARD";
+    public static final String ACTION_SPEED_TOGGLE = "com.petal.browser.media.ACTION_SPEED_TOGGLE";
+    public static final String ACTION_MUTE_TOGGLE = "com.petal.browser.media.ACTION_MUTE_TOGGLE";
 
     private final IBinder binder = new LocalBinder();
     private MediaSessionCompat mediaSession;
@@ -51,12 +53,17 @@ public class PetalMediaSessionService extends Service {
     private String currentArtist = "Petal Browser";
     private long currentPosition = 0;
     private long currentDuration = 0;
+    private float currentSpeed = 1.0f;
+    private boolean isMuted = false;
 
     public interface MediaControlListener {
         void onPlay();
         void onPause();
         void onStop();
         void onSeekTo(long positionMs);
+        default void onSpeedToggle(float newSpeed) {}
+        default void onMuteToggle() {}
+        default void onSkip(int deltaSeconds) {}
     }
 
     private MediaControlListener controlListener;
@@ -112,11 +119,31 @@ public class PetalMediaSessionService extends Service {
                     if (controlListener != null) controlListener.onSeekTo(currentPosition + 10000);
                     break;
                 case ACTION_SKIP_BACKWARD:
-                    if (controlListener != null) controlListener.onSeekTo(Math.max(0, currentPosition - 10000));
+                    if (controlListener != null) controlListener.onSkip(-10);
+                    break;
+                case ACTION_SKIP_FORWARD:
+                    if (controlListener != null) controlListener.onSkip(10);
+                    break;
+                case ACTION_SPEED_TOGGLE:
+                    cycleSpeed();
+                    if (controlListener != null) controlListener.onSpeedToggle(currentSpeed);
+                    updateMediaState(currentTitle, currentArtist, isPlaying, currentPosition, currentDuration);
+                    break;
+                case ACTION_MUTE_TOGGLE:
+                    isMuted = !isMuted;
+                    if (controlListener != null) controlListener.onMuteToggle();
+                    updateMediaState(currentTitle, currentArtist, isPlaying, currentPosition, currentDuration);
                     break;
             }
         }
         return START_NOT_STICKY;
+    }
+
+        private void cycleSpeed() {
+        if (currentSpeed == 1.0f) currentSpeed = 1.25f;
+        else if (currentSpeed == 1.25f) currentSpeed = 1.5f;
+        else if (currentSpeed == 1.5f) currentSpeed = 2.0f;
+        else currentSpeed = 1.0f;
     }
 
     public void setMediaControlListener(MediaControlListener listener) {
@@ -208,12 +235,33 @@ public class PetalMediaSessionService extends Service {
                 .setStyle(style)
                 .setOngoing(isPlaying);
 
+        PendingIntent speedIntent = PendingIntent.getService(
+                this, 4, new Intent(this, PetalMediaSessionService.class).setAction(ACTION_SPEED_TOGGLE), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        PendingIntent muteIntent = PendingIntent.getService(
+                this, 5, new Intent(this, PetalMediaSessionService.class).setAction(ACTION_MUTE_TOGGLE), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        PendingIntent skipBackIntent = PendingIntent.getService(
+                this, 6, new Intent(this, PetalMediaSessionService.class).setAction(ACTION_SKIP_BACKWARD), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        PendingIntent skipForwardIntent = PendingIntent.getService(
+                this, 7, new Intent(this, PetalMediaSessionService.class).setAction(ACTION_SKIP_FORWARD), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        builder.addAction(R.drawable.icon_close, "-10s", skipBackIntent);
         if (isPlaying) {
             builder.addAction(R.drawable.icon_close, "Pause", pauseIntent);
         } else {
             builder.addAction(R.drawable.icon_media_play, "Play", playIntent);
         }
-        builder.addAction(R.drawable.icon_close, "Stop", stopIntent);
+        builder.addAction(R.drawable.icon_close, "+10s", skipForwardIntent);
+        builder.addAction(R.drawable.icon_close, String.format(java.util.Locale.US, "%.2fx", currentSpeed), speedIntent);
+        builder.addAction(R.drawable.icon_close, isMuted ? "Unmute" : "Mute", muteIntent);
+
+        // Enable live progress updates & live activity / notification bar compatibility
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
+        }
 
         return builder.build();
     }
