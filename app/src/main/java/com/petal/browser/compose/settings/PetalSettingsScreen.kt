@@ -1846,7 +1846,7 @@ fun PetalSettingsScreen(
 
                                     ToggleRow(
                                         title = "Auto Open External Apps",
-                                        subtitle = "Open YouTube, Maps & Play Store links in native apps",
+                                        subtitle = "Allow YouTube, Maps & Play Store links to open in external native apps instead of Petal",
                                         icon = Icons.Rounded.Launch,
                                         checked = isAutoOpenApps,
                                         onCheckedChange = { newValue ->
