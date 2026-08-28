@@ -1383,6 +1383,42 @@ fun PetalSettingsScreen(
 
                                      HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                                     // Download Engine Mode Switcher
+                                     Text(
+                                         "Download & Torrent Engine:",
+                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                                     )
+
+                                     val engineScrollState = rememberScrollState()
+                                     com.petal.browser.ui.components.ScrollFadeRow(
+                                         scrollState = engineScrollState,
+                                         edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                     ) {
+                                         Row(
+                                             modifier = Modifier
+                                                 .fillMaxWidth()
+                                                 .horizontalScroll(engineScrollState),
+                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                         ) {
+                                             com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().forEach { mode ->
+                                                 FilterChip(
+                                                     selected = torrentEngineMode.equals(mode.key, ignoreCase = true),
+                                                     onClick = {
+                                                         torrentEngineMode = mode.key
+                                                         com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(context, mode)
+                                                     },
+                                                     label = { Text(mode.title) },
+                                                     leadingIcon = if (torrentEngineMode.equals(mode.key, ignoreCase = true)) {
+                                                         @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                     } else null
+                                                 )
+                                             }
+                                         }
+                                     }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                                     // Expressive Colors Toggle
                                     ToggleRow(
                                         title = "Expressive Container Colors",
