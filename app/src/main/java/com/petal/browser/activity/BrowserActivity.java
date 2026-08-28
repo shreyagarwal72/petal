@@ -4779,9 +4779,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     HelperUnit.domain(imageURL),
                     imageURL,
                     imageURL,
+                    true, // isImage
+                    false, // isVideo
                     new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
                         @Override
                         public void onOpenInNewTab() {
+                            addAlbum(HelperUnit.domain(imageURL), imageURL, false);
+                        }
+
+                        @Override
+                        public void onOpenImageInNewTab() {
                             addAlbum(HelperUnit.domain(imageURL), imageURL, false);
                         }
 
@@ -4809,6 +4816,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         public void onCopyLinkAddress() {
                             HelperUnit.copy(BrowserActivity.this, imageURL);
                             NinjaToast.show(BrowserActivity.this, "Image URL copied");
+                        }
+
+                        @Override
+                        public void onCopyImage() {
+                            HelperUnit.copy(BrowserActivity.this, imageURL);
+                            NinjaToast.show(BrowserActivity.this, "Image copied to clipboard");
                         }
 
                         @Override
@@ -4886,7 +4899,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 );
                 return true;
             }
-            if (type == WebView.HitTestResult.SRC_ANCHOR_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+            if (type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
                 final String urlResult = result.getExtra();
                 v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
                 com.petal.browser.compose.menu.PetalLinkContextMenuBridge.show(
@@ -4894,6 +4907,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     HelperUnit.domain(urlResult),
                     urlResult,
                     urlResult + "/favicon.ico",
+                    false, // isImage
+                    false, // isVideo
                     new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
                         @Override
                         public void onOpenInNewTab() {
@@ -4993,6 +5008,74 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 );
                 return true;
             }
+
+            // Inspect HTML5 video / media element on long press
+            ninjaWebView.evaluateJavascript(
+                "(function() {" +
+                "   var el = document.elementFromPoint(window.lastTouchX || 0, window.lastTouchY || 0);" +
+                "   if (!el) el = document.activeElement;" +
+                "   if (el && el.tagName !== 'VIDEO') el = el.querySelector('video') || el.closest('video');" +
+                "   if (el && el.src) return el.src;" +
+                "   var v = document.querySelector('video');" +
+                "   return v ? (v.currentSrc || v.src || '') : '';" +
+                "})();",
+                videoSrc -> {
+                    if (videoSrc != null && !videoSrc.equals("null") && !videoSrc.isEmpty()) {
+                        String cleanVideoUrl = videoSrc.replace("\"", "").trim();
+                        if (!cleanVideoUrl.isEmpty()) {
+                            v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                            com.petal.browser.compose.menu.PetalLinkContextMenuBridge.show(
+                                BrowserActivity.this,
+                                HelperUnit.domain(cleanVideoUrl),
+                                cleanVideoUrl,
+                                null,
+                                false, // isImage
+                                true,  // isVideo
+                                new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
+                                    @Override
+                                    public void onOpenInNewTab() {
+                                        addAlbum(HelperUnit.domain(cleanVideoUrl), cleanVideoUrl, false);
+                                    }
+
+                                    @Override
+                                    public void onDownloadVideo() {
+                                        try {
+                                            String fileName = android.webkit.URLUtil.guessFileName(cleanVideoUrl, null, "video/mp4");
+                                            com.petal.browser.unit.BrowserUnit.download(BrowserActivity.this, cleanVideoUrl, fileName, null);
+                                            NinjaToast.show(BrowserActivity.this, "Video download started");
+                                        } catch (Exception e) {
+                                            NinjaToast.show(BrowserActivity.this, "Failed to start video download");
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onCopyLinkAddress() {
+                                        HelperUnit.copy(BrowserActivity.this, cleanVideoUrl);
+                                        NinjaToast.show(BrowserActivity.this, "Video link copied");
+                                    }
+
+                                    @Override
+                                    public void onShareLink() {
+                                        shareLink(HelperUnit.domain(cleanVideoUrl), cleanVideoUrl);
+                                    }
+
+                                    @Override public void onOpenInNewTabInGroup() {}
+                                    @Override public void onOpenInIncognitoTab() {}
+                                    @Override public void onOpenInNewWindow() {}
+                                    @Override public void onPreviewPage() {}
+                                    @Override public void onCopyLinkText() {}
+                                    @Override public void onDownloadLink() {}
+                                    @Override public void onDownloadImage() {}
+                                    @Override public void onAddToReadingList() {}
+                                    @Override public void onShareImage() {}
+                                    @Override public void onScanImage() {}
+                                }
+                            );
+                        }
+                    }
+                }
+            );
+
             return false;
         });
 
