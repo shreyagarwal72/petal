@@ -612,10 +612,15 @@ private fun MenuRowItem(
     isSubItem: Boolean = false,
     onClick: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                onClick()
+            })
             .padding(
                 start = if (isSubItem) 28.dp else 16.dp,
                 end = 16.dp,

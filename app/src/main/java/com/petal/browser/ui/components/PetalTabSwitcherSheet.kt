@@ -646,6 +646,7 @@ fun TabCard(
     val borderColor = if (tab.isActive) MaterialTheme.colorScheme.primary else Color.Transparent
     val borderWidth = if (tab.isActive) 2.dp else 0.dp
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
@@ -657,7 +658,7 @@ fun TabCard(
             .fillMaxWidth()
             .height(105.dp)
             .border(borderWidth, borderColor, RoundedCornerShape(20.dp))
-            .clickable { onSelect() }
+            .bouncyClickable { onSelect() }
             .entrance(index = 0)
     ) {
         Column(

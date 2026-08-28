@@ -225,8 +225,13 @@ private fun ContextMenuItem(
     trailingIcon: ImageVector? = null,
     onClick: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Surface(
-        onClick = onClick,
+        onClick = {
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+            onClick()
+        },
         color = androidx.compose.ui.graphics.Color.Transparent,
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth()

@@ -83,10 +83,12 @@ public class PetalHapticEngine {
         float clamped = Math.max(0f, Math.min(1f, intensity));
         VibrationEffect effect = effectFor(pattern, clamped);
 
-        // Cancel any active vibration prior to triggering new pattern for immediate feedback
-        try {
-            vibrator.cancel();
-        } catch (Throwable ignored) {}
+        // For rapid succession tap sequences (like fast scrolling or rapid button presses), avoid canceling subtle ticks so feedback feels smooth
+        if (pattern == Pattern.DOUBLE_CLICK || pattern == Pattern.HEAVY_CLICK) {
+            try {
+                vibrator.cancel();
+            } catch (Throwable ignored) {}
+        }
 
         if (effect != null) {
             try {
