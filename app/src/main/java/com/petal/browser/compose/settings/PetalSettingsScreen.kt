@@ -73,6 +73,8 @@ import com.petal.browser.ui.components.PetalSearchEngineSheetContent
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.availableSearchEngines
+import com.petal.browser.ui.components.ExpressiveButtonGroup
+import com.petal.browser.ui.components.ExpressiveSegmentItem
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.*
 
@@ -427,6 +429,7 @@ fun PetalSettingsScreen(
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
     var isExpressiveBgShapes by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
+    var bgShapeChangeMode by remember { mutableStateOf(sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS") }
     var bgShapeRotationMin by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) }
 
     // Private DNS & Language States
@@ -468,6 +471,9 @@ fun PetalSettingsScreen(
                 }
                 "sp_expressive_bg_shapes" -> {
                     isExpressiveBgShapes = sp.getBoolean("sp_expressive_bg_shapes", true)
+                }
+                "sp_bg_shape_change_mode" -> {
+                    bgShapeChangeMode = sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS"
                 }
                 "sp_bg_shape_rotation_min" -> {
                     bgShapeRotationMin = sp.getInt("sp_bg_shape_rotation_min", 5)
@@ -1310,44 +1316,72 @@ fun PetalSettingsScreen(
                                     )
 
                                     if (isExpressiveBgShapes) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 6.dp),
-                                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "Auto-Change Shapes Interval:",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = if (bgShapeRotationMin == 0) "Disabled" else "$bgShapeRotationMin min",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                            PetalSlider(
-                                                value = bgShapeRotationMin.toFloat(),
-                                                onValueChange = { newValue ->
-                                                    val rounded = Math.round(newValue)
-                                                    if (rounded != bgShapeRotationMin) {
-                                                        bgShapeRotationMin = rounded
-                                                        sp.edit().putInt("sp_bg_shape_rotation_min", rounded).apply()
-                                                    }
-                                                },
-                                                valueRange = 0f..60f,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                        }
-                                    }
+                                         Column(
+                                             modifier = Modifier
+                                                 .fillMaxWidth()
+                                                 .padding(vertical = 6.dp),
+                                             verticalArrangement = Arrangement.spacedBy(8.dp)
+                                         ) {
+                                             Text(
+                                                 text = "Shape Change Mode:",
+                                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
+                                             )
 
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                             ExpressiveButtonGroup(
+                                                 items = listOf(
+                                                     ExpressiveSegmentItem(id = "ALWAYS", label = "Always", icon = Icons.Rounded.Autorenew),
+                                                     ExpressiveSegmentItem(id = "PERIODIC", label = "Periodically", icon = Icons.Rounded.Schedule)
+                                                 ),
+                                                 selectedId = bgShapeChangeMode,
+                                                 onItemSelected = { selected ->
+                                                     bgShapeChangeMode = selected
+                                                     sp.edit().putString("sp_bg_shape_change_mode", selected).apply()
+                                                 },
+                                                 modifier = Modifier.fillMaxWidth()
+                                             )
+
+                                             if (bgShapeChangeMode == "PERIODIC") {
+                                                 Column(
+                                                     modifier = Modifier
+                                                         .fillMaxWidth()
+                                                         .padding(top = 4.dp),
+                                                     verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                 ) {
+                                                     Row(
+                                                         modifier = Modifier.fillMaxWidth(),
+                                                         horizontalArrangement = Arrangement.SpaceBetween,
+                                                         verticalAlignment = Alignment.CenterVertically
+                                                     ) {
+                                                         Text(
+                                                             text = "Auto-Change Interval:",
+                                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                         )
+                                                         Text(
+                                                             text = "$bgShapeRotationMin min",
+                                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                             color = MaterialTheme.colorScheme.primary
+                                                         )
+                                                     }
+                                                     PetalSlider(
+                                                         value = bgShapeRotationMin.coerceIn(1, 60).toFloat(),
+                                                         onValueChange = { newValue ->
+                                                             val rounded = Math.round(newValue).coerceIn(1, 60)
+                                                             if (rounded != bgShapeRotationMin) {
+                                                                 bgShapeRotationMin = rounded
+                                                                 sp.edit().putInt("sp_bg_shape_rotation_min", rounded).apply()
+                                                             }
+                                                         },
+                                                         valueRange = 1f..60f,
+                                                         modifier = Modifier.fillMaxWidth()
+                                                     )
+                                                 }
+                                             }
+                                         }
+                                     }
+
+                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                                     // Expressive Colors Toggle
                                     ToggleRow(

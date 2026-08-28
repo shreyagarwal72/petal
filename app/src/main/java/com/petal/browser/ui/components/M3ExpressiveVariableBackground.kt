@@ -141,15 +141,22 @@ fun M3ExpressiveVariableBackground(
     val context = LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
-    var rotationMinutes by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) } // 0 = Disabled, 1, 5, 10, 15, 30 min, etc.
+    var shapeChangeMode by remember { mutableStateOf(sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS") } // "ALWAYS" or "PERIODIC"
+    var rotationMinutes by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) } // 1..60 min
     var seedEpoch by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "sp_expressive_bg_shapes") {
-                isShapesEnabled = sp.getBoolean("sp_expressive_bg_shapes", true)
-            } else if (key == "sp_bg_shape_rotation_min") {
-                rotationMinutes = sp.getInt("sp_bg_shape_rotation_min", 5)
+            when (key) {
+                "sp_expressive_bg_shapes" -> {
+                    isShapesEnabled = sp.getBoolean("sp_expressive_bg_shapes", true)
+                }
+                "sp_bg_shape_change_mode" -> {
+                    shapeChangeMode = sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS"
+                }
+                "sp_bg_shape_rotation_min" -> {
+                    rotationMinutes = sp.getInt("sp_bg_shape_rotation_min", 5)
+                }
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
@@ -160,9 +167,9 @@ fun M3ExpressiveVariableBackground(
 
     if (!isShapesEnabled) return
 
-    // Periodic Shape Rotation Timer
-    LaunchedEffect(rotationMinutes) {
-        if (rotationMinutes > 0) {
+    // Periodic Shape Rotation Timer (only active in PERIODIC mode)
+    LaunchedEffect(shapeChangeMode, rotationMinutes) {
+        if (shapeChangeMode == "PERIODIC" && rotationMinutes > 0) {
             val intervalMs = rotationMinutes * 60 * 1000L
             while (this.isActive) {
                 kotlinx.coroutines.delay(intervalMs)
@@ -171,8 +178,14 @@ fun M3ExpressiveVariableBackground(
         }
     }
 
-    val blobs = remember(pageSeed, seedEpoch) {
-        M3ExpressiveBackgroundProvider.generateRandomBlobs(pageSeed + seedEpoch.toString())
+    val effectiveSeed = if (shapeChangeMode == "ALWAYS") {
+        pageSeed + seedEpoch.toString()
+    } else {
+        pageSeed + "_" + seedEpoch.toString()
+    }
+
+    val blobs = remember(pageSeed, shapeChangeMode, seedEpoch) {
+        M3ExpressiveBackgroundProvider.generateRandomBlobs(effectiveSeed)
     }
 
     val primaryColor = MaterialTheme.colorScheme.primary
