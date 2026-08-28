@@ -1,3 +1,16 @@
+### v1.9.5
+
+- **⚡ Complete Kotlin Migration & Subsystem Decoupling**:
+  - Fully converted `BrowserActivity.java`, `PetalApplication.java`, and `ActivityShare.java` to Kotlin.
+  - Extracted 8 modular Kotlin subsystem delegates (`BrowserContextMenuManager`, `BrowserNavigationDelegate`, `BrowserWebViewController`, `BrowserIntentHandler`, `BrowserMediaDelegate`, `BrowserDialogManager`, `BrowserGestureHandler`, `BrowserActivityExtensions`), reducing core activity boilerplate by over 830 lines.
+
+- **🎨 35 Material 3 Expressive Shapes Catalog Integration**:
+  - Integrated the complete **35 Material 3 Expressive Shapes Catalog** (`RoundedSquare`, `Cookie6Sided`, `Arch`, `Hexagon`, `Octagon`, `Pill`, `SoftScallop`, `Clover4Leaf`) from `PetalMaterialShapes.kt` across Jetpack Compose UI sheets and icon containers (`PetalLinkContextMenuSheet.kt`).
+  - Saved workspace rule `~/.gemini/config/rules/material3_expressive.md` enforcing Pure Material 3 Expressive components, dynamic colors, motion, and container shapes.
+
+- **🐛 Bug & Compilation Fixes**:
+  - Fixed `PetalLinkContextMenuHandler` interface compilation and missing method overrides (`onDownloadVideo`, `onOpenImageInNewTab`, `onCopyImage`, `onSearchWithGoogleLens`) across Web context menu handlers.
+
 ### v1.9.4
 
 - **✨ Google Lens Integration**:

@@ -166,10 +166,10 @@ import com.petal.browser.view.NinjaWebView;
 import com.petal.browser.view.AdapterRecord;
 import com.petal.browser.view.SwipeTouchListener;
 
-public class BrowserActivity extends AppCompatActivity implements BrowserController {
+open class BrowserActivity : AppCompatActivity(), BrowserController {
 
     // Menus
-    private static final int INPUT_FILE_REQUEST_CODE = 1;
+    private const val INPUT_FILE_REQUEST_CODE: Int = 1
     private AdapterRecord adapter;
     private ImageButton fab_overview;
     private ListView listView;
@@ -226,56 +226,56 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private Runnable pendingWidgetAction = null;
     private final ServiceConnection mediaConnection = new ServiceConnection() {
         @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
+        open fun onServiceConnected(ComponentName name, IBinder service) {
             com.petal.browser.media.PetalMediaSessionService.LocalBinder binder = (com.petal.browser.media.PetalMediaSessionService.LocalBinder) service;
             mediaService = binder.getService();
             isMediaBound = true;
             if (mediaService != null) {
                 mediaService.setMediaControlListener(new com.petal.browser.media.PetalMediaSessionService.MediaControlListener() {
                     @Override
-                    public void onPlay() {
+                    open fun onPlay() {
                         if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
                             ninjaWebView.getMediaBridge().playMedia();
                         }
                     }
 
                     @Override
-                    public void onPause() {
+                    open fun onPause() {
                         if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
                             ninjaWebView.getMediaBridge().pauseMedia();
                         }
                     }
 
                     @Override
-                    public void onStop() {
+                    open fun onStop() {
                         if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
                             ninjaWebView.getMediaBridge().pauseMedia();
                         }
                     }
 
                     @Override
-                    public void onSeekTo(long positionMs) {
+                    open fun onSeekTo(long positionMs) {
                         if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
                             ninjaWebView.getMediaBridge().seekMediaTo(positionMs);
                         }
                     }
 
                     @Override
-                    public void onSpeedToggle(float newSpeed) {
+                    open fun onSpeedToggle(float newSpeed) {
                         if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
                             ninjaWebView.getMediaBridge().changeSpeed(newSpeed);
                         }
                     }
 
                     @Override
-                    public void onMuteToggle() {
+                    open fun onMuteToggle() {
                         if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
                             ninjaWebView.getMediaBridge().toggleMute();
                         }
                     }
 
                     @Override
-                    public void onSkip(int deltaSeconds) {
+                    open fun onSkip(int deltaSeconds) {
                         if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
                             ninjaWebView.getMediaBridge().skip(deltaSeconds);
                         }
@@ -285,7 +285,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
+        open fun onServiceDisconnected(ComponentName name) {
             mediaService = null;
             isMediaBound = false;
         }
@@ -303,7 +303,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return ninjaWebView != null && ninjaWebView.canGoBack();
     }
 
-    public void handleBackPress() {
+    open fun handleBackPress() {
         runOnUiThread(this::performBackNavigation);
     }
     private AlertDialog dialogOverview;
@@ -339,7 +339,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     // Mirrors RvSystem's M3EmphasizedEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
     private final PathInterpolator predictiveBackEasing = new PathInterpolator(0.2f, 0f, 0f, 1f);
     // Mirrors RvSystem's AOSP_TRANSITION_DURATION
-    private static final int PB_TRANSITION_DURATION_MS = 350;
+    private const val PB_TRANSITION_DURATION_MS: Int = 350
 
     private AlbumController nextAlbumController(boolean next) {
         if (BrowserContainer.size() <= 1) return currentAlbumController;
@@ -360,14 +360,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return false;
         }
         @Override
-        public void onCompletion(MediaPlayer mp) {
+        open fun onCompletion(MediaPlayer mp) {
             onHideCustomView();
         }
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
-    protected void attachBaseContext(Context newBase) {
+    override fun attachBaseContext(Context newBase) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(newBase);
         String themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM");
         if ("LIGHT".equals(themeConfig)) {
@@ -382,7 +382,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    open fun onCreate(Bundle savedInstanceState) {
         androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         context = this;
@@ -417,13 +417,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     "Authenticate using biometric or PIN to continue",
                     new Runnable() {
                         @Override
-                        public void run() {
+                        open fun run() {
                             // Success: user authenticated
                         }
                     },
                     new java.util.function.Consumer<String>() {
                         @Override
-                        public void accept(String error) {
+                        open fun accept(String error) {
                             Toast.makeText(BrowserActivity.this, "Authentication required: " + error, Toast.LENGTH_SHORT).show();
                             finish();
                         }
@@ -434,13 +434,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     this,
                     new Runnable() {
                         @Override
-                        public void run() {
+                        open fun run() {
                             // Success: password unlocked
                         }
                     },
                     new Runnable() {
                         @Override
-                        public void run() {
+                        open fun run() {
                             finish();
                         }
                     }
@@ -474,7 +474,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
-            public void handleOnBackStarted(@NonNull BackEventCompat backEvent) {
+            open fun handleOnBackStarted(@NonNull BackEventCompat backEvent) {
                 // Only take over the gesture visually when there's actual in-page web
                 // history to reveal - otherwise fall through untouched so the system's
                 // own predictive-back-to-home/exit preview isn't fought with ours.
@@ -488,7 +488,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             @Override
-            public void handleOnBackProgressed(@NonNull BackEventCompat backEvent) {
+            open fun handleOnBackProgressed(@NonNull BackEventCompat backEvent) {
                 if (predictiveBackGestureActive) {
                     predictiveBackSwipeEdge = backEvent.getSwipeEdge();
                     applyPredictiveBackTransform(backEvent.getProgress(), predictiveBackSwipeEdge);
@@ -496,7 +496,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             @Override
-            public void handleOnBackCancelled() {
+            open fun handleOnBackCancelled() {
                 if (predictiveBackGestureActive) {
                     predictiveBackGestureActive = false;
                     settlePredictiveBackGesture(false);
@@ -504,7 +504,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             @Override
-            public void handleOnBackPressed() {
+            open fun handleOnBackPressed() {
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                 if (predictiveBackGestureActive) {
                     predictiveBackGestureActive = false;
@@ -557,7 +557,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, Intent intent) {
+            open fun onReceive(Context context, Intent intent) {
                 try {
                     String text = getString(R.string.app_done) + ". " + getString(R.string.menu_download) + "?";
                     View anchor = contentFrame != null ? contentFrame : getWindow().getDecorView();
@@ -674,7 +674,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    protected void onStart() {
+    override fun onStart() {
         super.onStart();
         try {
             com.petal.browser.account.GoogleAccountManager.INSTANCE.init(this);
@@ -688,10 +688,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    private static final int VOICE_SEARCH_REQUEST_CODE = 1002;
+    private const val VOICE_SEARCH_REQUEST_CODE: Int = 1002
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    open fun onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == VOICE_SEARCH_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
             ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (matches != null && !matches.isEmpty()) {
@@ -727,14 +727,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
+    override fun onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
         dispatchIntent(intent);
     }
 
     @Override
-    public void onResume() {
+    open fun onResume() {
         super.onResume();
         applyAddressBarPosition();
         if (ninjaWebView != null) {
@@ -776,7 +776,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    public void onDestroy() {
+    open fun onDestroy() {
         try {
             if (isMediaBound) {
                 try {
@@ -805,7 +805,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    protected void onStop() {
+    override fun onStop() {
         try {
             if (isFinishing() && sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
                 BrowserUnit.clearBrowserData(this);
@@ -823,7 +823,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * path (3-button nav / hardware back) and the OnBackPressedCallback path (gesture
      * nav / predictive back) below, so both routes behave identically.
      */
-    private void performBackNavigation() {
+    private fun performBackNavigation() {
         View currentFocus = getCurrentFocus();
         boolean isKeyboardVisible = false;
         View mainView = findViewById(R.id.main);
@@ -880,7 +880,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * view. There is no preview underlay to prepare - RvSystem-Monitor's predictive transitions
      * don't have one, so neither does this.
      */
-    private void beginPredictiveBackGesture() {
+    private fun beginPredictiveBackGesture() {
         if (predictiveBackSettleAnimator != null) {
             predictiveBackSettleAnimator.cancel();
             predictiveBackSettleAnimator = null;
@@ -895,7 +895,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * clip, no preview underlay - PetalScreenWrapper (PetalPredictiveJunction.kt) applies the
      * identical curve to every Compose screen so the native browsing surface feels the same.
      */
-    private void applyPredictiveBackTransform(float progress, int swipeEdge) {
+    private fun applyPredictiveBackTransform(float progress, int swipeEdge) {
         if (predictiveBackRoot == null) return;
         predictiveBackProgress = progress;
 
@@ -914,7 +914,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * and easing throughout - cancelled gestures relax back to identity, committed gestures
      * finish sliding off before the real {@link #performBackNavigation()} fires.
      */
-    private void settlePredictiveBackGesture(boolean committed) {
+    private fun settlePredictiveBackGesture(boolean committed) {
         if (predictiveBackRoot == null) return;
 
         if (predictiveBackSettleAnimator != null) {
@@ -929,7 +929,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             cancelAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), predictiveBackSwipeEdge));
             cancelAnim.addListener(new android.animation.AnimatorListenerAdapter() {
                 @Override
-                public void onAnimationEnd(android.animation.Animator animation) {
+                open fun onAnimationEnd(android.animation.Animator animation) {
                     resetPredictiveBackVisuals();
                 }
             });
@@ -944,7 +944,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         commitAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), predictiveBackSwipeEdge));
         commitAnim.addListener(new android.animation.AnimatorListenerAdapter() {
             @Override
-            public void onAnimationEnd(android.animation.Animator animation) {
+            open fun onAnimationEnd(android.animation.Animator animation) {
                 performBackNavigation();
                 resetPredictiveBackVisuals();
             }
@@ -953,7 +953,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         commitAnim.start();
     }
 
-    private void resetPredictiveBackVisuals() {
+    private fun resetPredictiveBackVisuals() {
         predictiveBackProgress = 0f;
         predictiveBackSwipeEdge = BackEventCompat.EDGE_LEFT;
         if (predictiveBackRoot != null) {
@@ -976,11 +976,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * 350ms, M3 emphasized easing - the same curve every predictive-back exit already
      * uses, so push and pop now feel like a matched pair instead of two different apps.
      */
-    private void presentComposeScreen(View screen) {
+    private fun presentComposeScreen(View screen) {
         presentComposeScreen(screen, true);
     }
 
-    private void presentComposeScreen(View screen, boolean animate) {
+    private fun presentComposeScreen(View screen, boolean animate) {
         screen.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
             android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -1023,7 +1023,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    protected void onUserLeaveHint() {
+    override fun onUserLeaveHint() {
         super.onUserLeaveHint();
         try {
             boolean isPipSupported = getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
@@ -1054,88 +1054,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void updatePipParams(boolean enableAutoEnter) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            try {
-                android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
-                boolean isAutoPipEnabled = sp != null && sp.getBoolean("sp_auto_pip", true);
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    pipBuilder.setAutoEnterEnabled(isAutoPipEnabled && enableAutoEnter);
-                }
-                View targetView = customView != null ? customView : (videoView != null ? videoView : (ninjaWebView != null ? ninjaWebView : contentFrame));
-                int width = 0;
-                int height = 0;
-                if (currentVideoWidth > 0 && currentVideoHeight > 0) {
-                    width = currentVideoWidth;
-                    height = currentVideoHeight;
-                } else if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
-                    width = targetView.getWidth();
-                    height = targetView.getHeight();
-                }
-
-                if (width > 0 && height > 0) {
-                    float ratio = (float) width / (float) height;
-                    if (ratio > 2.39f) ratio = 2.39f;
-                    if (ratio < 0.418f) ratio = 0.418f;
-                    android.util.Rational aspectRatio = new android.util.Rational((int) (ratio * 1000), 1000);
-                    pipBuilder.setAspectRatio(aspectRatio);
-
-                    if (targetView != null) {
-                        android.graphics.Rect rect = new android.graphics.Rect();
-                        targetView.getGlobalVisibleRect(rect);
-                        if (!rect.isEmpty()) {
-                            pipBuilder.setSourceRectHint(rect);
-                        }
-                    }
-                }
-                setPictureInPictureParams(pipBuilder.build());
-            } catch (Exception ignored) {}
-        }
+    open fun updatePipParams(boolean enableAutoEnter) {
+        com.petal.browser.media.BrowserMediaDelegate.updatePipParams(this, enableAutoEnter);
     }
 
-    private void triggerSystemPipMode() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            try {
-                android.app.PictureInPictureParams.Builder pipBuilder = new android.app.PictureInPictureParams.Builder();
-                boolean isAutoPipEnabled = sp != null && sp.getBoolean("sp_auto_pip", true);
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    pipBuilder.setAutoEnterEnabled(isAutoPipEnabled);
-                }
-                View targetView = customView != null ? customView : (videoView != null ? videoView : (ninjaWebView != null ? ninjaWebView : contentFrame));
-                int width = 0;
-                int height = 0;
-                if (currentVideoWidth > 0 && currentVideoHeight > 0) {
-                    width = currentVideoWidth;
-                    height = currentVideoHeight;
-                } else if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
-                    width = targetView.getWidth();
-                    height = targetView.getHeight();
-                }
-
-                if (width > 0 && height > 0) {
-                    float ratio = (float) width / (float) height;
-                    if (ratio > 2.39f) ratio = 2.39f;
-                    if (ratio < 0.418f) ratio = 0.418f;
-                    android.util.Rational aspectRatio = new android.util.Rational((int) (ratio * 1000), 1000);
-                    pipBuilder.setAspectRatio(aspectRatio);
-
-                    if (targetView != null) {
-                        android.graphics.Rect rect = new android.graphics.Rect();
-                        targetView.getGlobalVisibleRect(rect);
-                        if (!rect.isEmpty()) {
-                            pipBuilder.setSourceRectHint(rect);
-                        }
-                    }
-                }
-                enterPictureInPictureMode(pipBuilder.build());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    open fun triggerSystemPipMode() {
+        com.petal.browser.media.BrowserMediaDelegate.triggerSystemPipMode(this);
     }
 
     @Override
-    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig) {
+    open fun onPictureInPictureModeChanged(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
         try {
             View composeAddressBar = findViewById(R.id.compose_address_bar);
@@ -1197,7 +1125,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void onTabUrlStarted(NinjaWebView webView, String url) {
+    open fun onTabUrlStarted(NinjaWebView webView, String url) {
         runOnUiThread(() -> {
             if (webView != ninjaWebView) return;
 
@@ -1262,7 +1190,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else if (isHomePage(url)) {
             View composeView = PetalComposeBridge.createComposeHomeView(this, BrowserContainer.size(), new PetalHomeActionHandler() {
                 @Override
-                public void onSearch(String query) {
+                open fun onSearch(String query) {
                     if (query != null && !query.trim().isEmpty()) {
                         String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, query.trim());
                         if (ninjaWebView != null) {
@@ -1277,7 +1205,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
 
                 @Override
-                public void onOpenUrl(String u) {
+                open fun onOpenUrl(String u) {
                     if (u != null && u.contains("category=api_integrations")) {
                         openApiIntegrationsHub();
                         return;
@@ -1293,7 +1221,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
 
                 @Override
-                public void onAddShortcut() {
+                open fun onAddShortcut() {
                     runOnUiThread(() -> {
                         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(BrowserActivity.this);
                         builder.setTitle("Add Custom Shortcut");
@@ -1350,22 +1278,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
 
                 @Override
-                public void onNewTab() {
+                open fun onNewTab() {
                     addAlbum(getString(R.string.app_name), "about:blank", true);
                 }
 
                 @Override
-                public void onOpenBookmarks() {
+                open fun onOpenBookmarks() {
                     showOverview();
                 }
 
                 @Override
-                public void onOpenHistory() {
+                open fun onOpenHistory() {
                     showOverview();
                 }
 
                 @Override
-                public void onOpenDownloads() {
+                open fun onOpenDownloads() {
                     try {
                         captureBrowserMainPreview();
                         contentFrame.removeAllViews();
@@ -1379,17 +1307,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
 
                 @Override
-                public void onOpenSettings() {
+                open fun onOpenSettings() {
                     showOverflow(null, null, 0, ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "", null, null, 0);
                 }
 
                 @Override
-                public void onOpenTabsOverview() {
+                open fun onOpenTabsOverview() {
                     showOverview();
                 }
 
                 @Override
-                public void onOpenAccountSync() {
+                open fun onOpenAccountSync() {
                     showAccountSyncScreen();
                 }
             });
@@ -1416,7 +1344,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ninjaWebView.updatePreviewCache();
                 ninjaWebView.setOnScrollChangeListener(new NinjaWebView.OnScrollChangeListener() {
                     @Override
-                    public void onScrollDown() {
+                    open fun onScrollDown() {
                         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
                         if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
                             bottomNavContainer.animate()
@@ -1427,7 +1355,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
 
                     @Override
-                    public void onScrollUp() {
+                    open fun onScrollUp() {
                         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
                         if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
                             bottomNavContainer.animate()
@@ -1448,7 +1376,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void updatePersistentBottomNav() {
+    open fun updatePersistentBottomNav() {
         try {
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
             if (bottomNavContainer != null) {
@@ -1473,7 +1401,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     isIncognito,
                     new com.petal.browser.compose.home.PetalBottomNavHandler() {
                         @Override
-                        public void onHomeClick() {
+                        open fun onHomeClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             if (ninjaWebView != null) {
                                 ninjaWebView.loadUrl("about:blank");
@@ -1482,19 +1410,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
 
                         @Override
-                        public void onNewTabClick() {
+                        open fun onNewTabClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             addAlbum(getString(R.string.app_name), "about:blank", true);
                         }
 
                         @Override
-                        public void onTabsClick() {
+                        open fun onTabsClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             showOverview();
                         }
 
                         @Override
-                        public void onMenuClick() {
+                        open fun onMenuClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             View navView = findViewById(R.id.bottom_nav_compose);
                             showOverflow(null, navView, 0, ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "", null, null, 0);
@@ -1507,7 +1435,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         applyAddressBarPosition();
     }
 
-    public void applyAddressBarPosition() {
+    open fun applyAddressBarPosition() {
         try {
             String pos = sp.getString("sp_address_bar_position", "TOP");
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
@@ -1751,7 +1679,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    public void showFileChooser(ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
+    open fun showFileChooser(ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
         if (mFilePathCallback != null) {
             mFilePathCallback.onReceiveValue(null);
         }
@@ -1797,7 +1725,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+    open fun onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
         if (view == null) return;
         if (customView != null && callback != null) {
             callback.onCustomViewHidden();
@@ -1835,7 +1763,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    public void onHideCustomView() {
+    open fun onHideCustomView() {
         FrameLayout decorView = (FrameLayout) getWindow().getDecorView();
         decorView.removeView(fullscreenHolder);
         customView.setKeepScreenOn(false);
@@ -1851,7 +1779,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void initOverview() {
+    private fun initOverview() {
         if (dialogOverview == null) return;
         listView = dialogOverview.findViewById(R.id.list_overView);
         AtomicInteger intPage = new AtomicInteger();
@@ -2093,22 +2021,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (fab_overview != null) {
             fab_overview.setOnTouchListener(new SwipeTouchListener(context) {
-                public void onSwipeTop() {
+                open fun onSwipeTop() {
                     String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     performGesture("setting_gesture_tb_up", url);
                     hideOverview();
                 }
-                public void onSwipeBottom() {
+                open fun onSwipeBottom() {
                     String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     performGesture("setting_gesture_tb_down", url);
                     hideOverview();
                 }
-                public void onSwipeRight() {
+                open fun onSwipeRight() {
                     String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     performGesture("setting_gesture_tb_right", url);
                     hideOverview();
                 }
-                public void onSwipeLeft() {
+                open fun onSwipeLeft() {
                     String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     performGesture("setting_gesture_tb_left", url);
                     hideOverview();
@@ -2118,22 +2046,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (fab_menu != null) {
             fab_menu.setOnTouchListener(new SwipeTouchListener(context) {
-                public void onSwipeTop() {
+                open fun onSwipeTop() {
                     String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     performGesture("setting_gesture_nav_up", url);
                     hideOverflow();
                 }
-                public void onSwipeBottom() {
+                open fun onSwipeBottom() {
                     String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     performGesture("setting_gesture_nav_down", url);
                     hideOverflow();
                 }
-                public void onSwipeRight() {
+                open fun onSwipeRight() {
                     String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     performGesture("setting_gesture_nav_right", url);
                     hideOverflow();
                 }
-                public void onSwipeLeft() {
+                open fun onSwipeLeft() {
                     String url = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                     performGesture("setting_gesture_nav_left", url);
                     hideOverflow();
@@ -2173,10 +2101,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             search_input.addTextChangedListener(new TextWatcher() {
                 @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                open fun beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
                 @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                open fun onTextChanged(CharSequence s, int start, int before, int count) {
                     String liveText = s.toString().trim();
                     boolean hasText = !liveText.isEmpty();
                     if (search_textField != null) {
@@ -2218,7 +2146,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
 
                 @Override
-                public void afterTextChanged(Editable s) {}
+                open fun afterTextChanged(Editable s) {}
             });
         }
         if (fab_overview != null) {
@@ -2232,7 +2160,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @SuppressLint({"ClickableViewAccessibility", "UnsafeOptInUsageError"})
-    private void initOmniBox() {
+    private fun initOmniBox() {
         search_input = dialogViewSearch.findViewById(R.id.search_input);
         contentView = findViewById(android.R.id.content);
         composeAddressBar = findViewById(R.id.compose_address_bar);
@@ -2246,7 +2174,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updateAddressBar();
     }
 
-    private void handleFinalSearch(String query) {
+    private fun handleFinalSearch(String query) {
         if (query != null && !query.trim().isEmpty()) {
             hideSearch();
             String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, query.trim());
@@ -2281,7 +2209,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     private androidx.compose.ui.platform.ComposeView composeAddressBar;
 
-    public void updateAddressBar() {
+    open fun updateAddressBar() {
         if (composeAddressBar == null) {
             composeAddressBar = findViewById(R.id.compose_address_bar);
         }
@@ -2358,7 +2286,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private final android.os.Handler aiResearchTimeoutHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable aiResearchTimeoutRunnable;
 
-    public void showAiResearchSheet() {
+    open fun showAiResearchSheet() {
         if (ninjaWebView == null) return;
 
         // Guard against rapid repeated taps queuing up multiple evaluateJavascript
@@ -2426,7 +2354,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private int currentVideoWidth = 0;
     private int currentVideoHeight = 0;
 
-    public void updateVideoDimensions(int width, int height) {
+    open fun updateVideoDimensions(int width, int height) {
         if (width > 0 && height > 0) {
             this.currentVideoWidth = width;
             this.currentVideoHeight = height;
@@ -2436,7 +2364,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     private boolean isAddressBarCollapsed = false;
 
-    public void animateAddressBarCollapse(boolean collapse) {
+    open fun animateAddressBarCollapse(boolean collapse) {
         String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
         View fab_bubble = findViewById(R.id.fab_bubble);
         if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
@@ -2536,7 +2464,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    private void springTranslateY(View view, float endValue, float stiffness, float dampingRatio) {
+    private fun springTranslateY(View view, float endValue, float stiffness, float dampingRatio) {
         new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.TRANSLATION_Y)
                 .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
                         .setStiffness(stiffness)
@@ -2544,7 +2472,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 .start();
     }
 
-    private void springScale(View view, float endValue, float stiffness, float dampingRatio) {
+    private fun springScale(View view, float endValue, float stiffness, float dampingRatio) {
         new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.SCALE_X)
                 .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
                         .setStiffness(stiffness)
@@ -2557,7 +2485,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 .start();
     }
 
-    private void springAlpha(View view, float endValue, float stiffness, float dampingRatio) {
+    private fun springAlpha(View view, float endValue, float stiffness, float dampingRatio) {
         new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.ALPHA)
                 .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
                         .setStiffness(stiffness)
@@ -2565,7 +2493,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 .start();
     }
 
-    private void updateOmniBox() {
+    private fun updateOmniBox() {
         if (ninjaWebView == null) return;
         updateAddressBar();
 
@@ -2633,11 +2561,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (searchOnSiteInput != null) {
             searchOnSiteInput.addTextChangedListener(new TextWatcher() {
                 @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+                open fun beforeTextChanged(CharSequence s, int start, int count, int after) { }
                 @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) { }
+                open fun onTextChanged(CharSequence s, int start, int before, int count) { }
                 @Override
-                public void afterTextChanged(Editable s) {
+                open fun afterTextChanged(Editable s) {
                     if (ninjaWebView != null) {
                         String query = s.toString();
                         if (query.isEmpty()) {
@@ -2651,7 +2579,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    private void initPullToRefresh() {
+    private fun initPullToRefresh() {
         androidx.compose.ui.platform.ComposeView refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         View addressBarForMargin = findViewById(R.id.compose_address_bar);
         if (refreshBarCompose != null) {
@@ -2770,7 +2698,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * view hierarchy so the WebView can never obscure them - can be left showing
      * (or showing stale progress) on top of a screen that isn't an actual webpage.
      */
-    private void hideRefreshAndProgressOverlays() {
+    private fun hideRefreshAndProgressOverlays() {
         if (refreshState != null) {
             refreshState.setRefreshing(false);
             refreshState.setPullProgress(0f);
@@ -2785,7 +2713,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void resetRefreshState() {
+    open fun resetRefreshState() {
         runOnUiThread(() -> {
             if (refreshState != null) {
                 refreshState.setRefreshing(false);
@@ -2793,7 +2721,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         });
     }
-    public void initSearch() {
+    open fun initSearch() {
         RecordAction action = new RecordAction(this);
         List<Record> list = action.listEntries(activity);
         adapterSearch = new AdapterSearch(this, R.layout.item_list, list);
@@ -2815,7 +2743,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    public void showOverview() {
+    open fun showOverview() {
         try {
             captureBrowserMainPreview();
             View bottomNav = findViewById(R.id.bottom_nav_compose);
@@ -2847,16 +2775,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void hideSearch() {
+    open fun hideSearch() {
         dialogSearch.cancel();
         try {dialogCustomSearches.cancel();} catch (Exception e) {Log.i(TAG, "dialogCustomSearches:" + e);}
     }
 
-    public void hideOverview() {
+    open fun hideOverview() {
         dialogOverview.cancel();
     }
 
-    private void setSelectedTab() {
+    private fun setSelectedTab() {
         if (overViewTab.equals(getString(R.string.album_title_tab))) bottom_navigation.setSelectedItemId(R.id.page_0);
         else if (overViewTab.equals(getString(R.string.album_title_bookmarks))) bottom_navigation.setSelectedItemId(R.id.page_2);
         else if (overViewTab.equals(getString(R.string.album_title_history))) bottom_navigation.setSelectedItemId(R.id.page_3);
@@ -2883,7 +2811,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return selected;
     }
 
-    public void removeItemByName(String name, List<MenuItem> selectedItemsList, AdapterMenu adapter) {
+    open fun removeItemByName(String name, List<MenuItem> selectedItemsList, AdapterMenu adapter) {
         int indexToRemove = -1;
         // 1. Position des Elements in der aktuellen Grid-Liste finden
         for (int i = 0; i < selectedItemsList.size(); i++) {
@@ -2901,196 +2829,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void showOverflowMenu(View anchorView) {
-        boolean isBookmarked = false;
-        if (ninjaWebView != null && ninjaWebView.getUrl() != null) {
-            RecordAction action = new RecordAction(this);
-            action.open(false);
-            isBookmarked = action.checkBookmark(ninjaWebView.getUrl());
-            action.close();
-        }
-        boolean canGoBack = ninjaWebView != null && ninjaWebView.canGoBack();
-        boolean canGoForward = ninjaWebView != null && ninjaWebView.canGoForward();
-        String profile = NinjaWebView.getProfile();
-        boolean isDesktopSite = sp.getBoolean(profile + "_desktop", false);
-        boolean isAdBlock = sp.getBoolean("sp_ad_block", sp.getBoolean(profile + "_adBlock", true));
-
-        boolean isMediaActive = isMediaPlaying || (customView != null || fullscreenHolder != null || videoView != null);
-
-        com.petal.browser.ui.components.PetalOverflowBridge.showOverflowMenu(
-            this,
-            ninjaWebView != null && ninjaWebView.getTitle() != null ? ninjaWebView.getTitle() : "",
-            ninjaWebView != null && ninjaWebView.getUrl() != null ? ninjaWebView.getUrl() : "",
-            isBookmarked,
-            canGoBack,
-            canGoForward,
-            isDesktopSite,
-            isAdBlock,
-            isMediaActive,
-            new com.petal.browser.ui.components.PetalOverflowMenuActionHandler() {
-                @Override
-                public void onGoBack() {
-                    if (ninjaWebView != null && ninjaWebView.canGoBack()) {
-                        ninjaWebView.goBack();
-                    }
-                }
-
-                @Override
-                public void onGoForward() {
-                    if (ninjaWebView != null && ninjaWebView.canGoForward()) {
-                        ninjaWebView.goForward();
-                    }
-                }
-
-                @Override
-                public void onToggleBookmark() {
-                    if (ninjaWebView != null && ninjaWebView.getUrl() != null) {
-                        saveBookmark(ninjaWebView.getTitle(), ninjaWebView.getUrl());
-                    }
-                }
-
-                @Override
-                public void onOpenDownloadsShortcut() {
-                    showDownloads();
-                }
-
-                @Override
-                public void onOpenPageInfo() {
-                    if (ninjaWebView != null && fab_menu != null) {
-                        showDialogFastToggle(HelperUnit.domain(ninjaWebView.getUrl()), ninjaWebView.getUrl(), fab_menu);
-                    }
-                }
-
-                @Override
-                public void onReload() {
-                    if (ninjaWebView != null) {
-                        ninjaWebView.reload();
-                    }
-                }
-
-                @Override
-                public void onToggleDesktopSite(boolean enabled) {
-                    sp.edit().putBoolean(profile + "_desktop", enabled).apply();
-                    sp.edit().putBoolean("profileStandard_desktop", enabled).apply();
-                    if (ninjaWebView != null) {
-                        ninjaWebView.setDesktopMode(enabled);
-                    }
-                    NinjaToast.show(BrowserActivity.this, enabled ? "Desktop site requested" : "Mobile site requested");
-                }
-
-                @Override
-                public void onToggleAdBlock(boolean enabled) {
-                    sp.edit().putBoolean("sp_ad_block", enabled)
-                            .putBoolean(profile + "_adBlock", enabled)
-                            .putBoolean("profileStandard_adBlock", enabled)
-                            .apply();
-                    if (ninjaWebView != null) {
-                        ninjaWebView.initPreferences(ninjaWebView.getUrl());
-                        ninjaWebView.reload();
-                    }
-                    NinjaToast.show(BrowserActivity.this, enabled ? "AdBlocker Enabled" : "AdBlocker Disabled");
-                }
-
-                @Override
-                public void onNewTab() {
-                    addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
-                }
-
-                @Override
-                public void onNewIncognitoTab() {
-                    addAlbum("Incognito Tab", sp.getString("favoriteURL", "about:blank"), true, true);
-                    NinjaToast.show(BrowserActivity.this, "Opened Incognito Tab");
-                }
-
-                @Override
-                public void onOpenHistory() {
-                    showHistoryScreen();
-                }
-
-                @Override
-                public void onDeleteBrowsingData() {
-                    startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class));
-                }
-
-                @Override
-                public void onOpenDownloads() {
-                    showDownloads();
-                }
-
-                @Override
-                public void onOpenBookmarks() {
-                    showBookmarksPage();
-                }
-
-                @Override
-                public void onInstallPwa() {
-                    savePageOffline();
-                }
-
-                @Override
-                public void onSearchOnSite() {
-                    searchOnSite();
-                }
-
-                @Override
-                public void onPrintPdf() {
-                    try {
-                        createWebPrintJob(ninjaWebView);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onSavePage() {
-                    try {
-                        saveBookmark(ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onShareLink() {
-                    if (ninjaWebView != null) {
-                        shareLink(ninjaWebView.getTitle(), ninjaWebView.getUrl());
-                    }
-                }
-
-                @Override
-                public void onViewSource() {
-                    if (ninjaWebView != null && ninjaWebView.getUrl() != null) {
-                        ninjaWebView.loadUrl("view-source:" + ninjaWebView.getUrl());
-                    }
-                }
-
-                @Override
-                public void onOpenSettings() {
-                    openSettingsScreen();
-                }
-
-                @Override
-                public void onOpenPetalAi() {
-                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(BrowserActivity.this, "");
-                }
-
-                @Override
-                public void onTriggerMediaMode() {
-                    boolean isPipSupported = getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE);
-                    boolean isAutoPipEnabled = sp.getBoolean("sp_auto_pip", true);
-                    boolean isBgPlayEnabled = sp.getBoolean("sp_background_play", false);
-
-                    if (isPipSupported && isAutoPipEnabled) {
-                        triggerSystemPipMode();
-                    } else if (isBgPlayEnabled) {
-                        NinjaToast.show(BrowserActivity.this, "Playing media in background mode");
-                        moveTaskToBack(true);
-                    } else {
-                        com.petal.browser.media.PetalMediaBridge.enterPipIfSupported(BrowserActivity.this, customView);
-                    }
-                }
-            }
-        );
+    open fun showOverflowMenu(View anchorView) {
+        com.petal.browser.ui.components.BrowserNavigationDelegate.showOverflowMenu(this);
     }
 
     /**
@@ -3100,7 +2840,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * gets the same predictive-back gesture handling as every other full-screen surface
      * instead of living in a separate dialog window.
      */
-    public void showOmniboxPage(String initialQuery) {
+    open fun showOmniboxPage(String initialQuery) {
         try {
             if (BrowserContainer.size() == 0) {
                 addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
@@ -3156,7 +2896,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void showDownloads() {
+    open fun showDownloads() {
         try {
             captureBrowserMainPreview();
             contentFrame.removeAllViews();
@@ -3180,7 +2920,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void showHistoryScreen() {
+    open fun showHistoryScreen() {
         try {
             captureBrowserMainPreview();
             contentFrame.removeAllViews();
@@ -3214,7 +2954,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void showBookmarksPage() {
+    open fun showBookmarksPage() {
         try {
             captureBrowserMainPreview();
             contentFrame.removeAllViews();
@@ -3247,15 +2987,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void showBookmarksSheet() {
+    open fun showBookmarksSheet() {
         showBookmarksPage();
     }
 
-    public void showBookmarks() {
+    open fun showBookmarks() {
         showBookmarksPage();
     }
 
-    public void savePageOffline() {
+    open fun savePageOffline() {
         if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
         String url = ninjaWebView.getUrl();
         if (url.startsWith("about:") || url.startsWith("petal://") || url.startsWith("file://")) {
@@ -3291,7 +3031,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void showAccountSyncScreen() {
+    open fun showAccountSyncScreen() {
         try {
             captureBrowserMainPreview();
             contentFrame.removeAllViews();
@@ -3325,15 +3065,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void captureBrowserMainPreview() {
+    open fun captureBrowserMainPreview() {
         // No-op preview snapshot placeholder for screen transition previews
     }
 
-    public void showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final AdapterRecord adapterRecord, List<Record> recordList, int location) {
+    open fun showOverflow(Dialog dialog, View view, int hideMenu, String title, String url, final AdapterRecord adapterRecord, List<Record> recordList, int location) {
         showOverflowMenu(view != null ? view : findViewById(R.id.bottom_nav_compose));
     }
 
-    public void showDialogFastToggle(String title, String url, FloatingActionButton floatingActionButton) {
+    open fun showDialogFastToggle(String title, String url, FloatingActionButton floatingActionButton) {
 
         listStandard = new List_standard(context);
         ninjaWebView = (NinjaWebView) currentAlbumController;
@@ -3852,110 +3592,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    private void showDialogFilter() {
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
-        View dialogView = View.inflate(context, R.layout.dialog_menu, null);
-        builder.setTitle(R.string.setting_filter);
-        builder.setIcon(R.drawable.icon_filter);
-        builder.setView(dialogView);
-        AlertDialog dialog = builder.create();
-        dialog.show();
-        HelperUnit.setupDialog(context, dialog);
-        CardView cardView = dialogView.findViewById(R.id.item_CardViewItem);
-        cardView.setVisibility(GONE);
-
-        GridView menu_grid = dialogView.findViewById(R.id.menu_grid);
-        final List<GridItem> gridList = new LinkedList<>();
-        sp.edit().putString("showFilterDialogX", "true").apply();
-        HelperUnit.addFilterItems(activity, gridList);
-
-        GridAdapter gridAdapter = new GridAdapter(context, gridList);
-        menu_grid.setNumColumns(2);
-        menu_grid.setHorizontalSpacing(20);
-        menu_grid.setVerticalSpacing(20);
-        menu_grid.setAdapter(gridAdapter);
-
-        if (menu_grid.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
-            ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams) menu_grid.getLayoutParams();
-            p.setMargins(56, 56, 56, 56);
-            menu_grid.requestLayout();
-        }
-
-        gridAdapter.notifyDataSetChanged();
-        menu_grid.setOnItemClickListener((parent, view, position, id) -> {
-            filter = true;
-            filterBy = gridList.get(position).getData();
-            dialog.cancel();
-            bottom_navigation.setSelectedItemId(R.id.page_2);
-        });
-        dialog.setOnCancelListener(dialogInterface -> sp.edit().putString("showFilterDialogX", "false").apply());
+    private fun showDialogFilter() {
+        com.petal.browser.ui.components.BrowserDialogManager.showDialogFilter(this);
     }
 
-    private void showDialogCustomSearches(String url) {
-        search_input.clearFocus();
-        if (dialogOverview.isShowing()) {
-            dialogOverview.cancel();
-        }
-        ninjaWebView.stopLoading();
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
-        View dialogView = View.inflate(context, R.layout.custom_redirects_list, null);
-        RecyclerView recyclerView = dialogView.findViewById(R.id.redirects_recycler);
-        recyclerView.setLayoutManager(new LinearLayoutManager(context));
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-        ArrayList<CustomRedirect> redirects = new ArrayList<>();
-        try {
-            redirects = CustomSearchesHelper.getRedirects(sp);
-        } catch (JSONException e) {
-            Log.e("Searches parsing", e.toString());
-        }
-        AdapterCustomSearches adapter = new AdapterCustomSearches(context, url, redirects);
-        recyclerView.setAdapter(adapter);
-        if (url.length() > 150) {
-            url = url.substring(0, 150) + " [...]";
-        }
-        String text = "-> " + url;
-        builder.setTitle(R.string.custom_searches_title);
-        builder.setMessage(text);
-        builder.setIcon(R.drawable.icon_search);
-        builder.setNegativeButton(R.string.create_new, ((dialogInterface, i) -> {
-            MaterialAlertDialogBuilder builderAddCustom = new MaterialAlertDialogBuilder(context);
-            View dialogViewAddCustom = View.inflate(context, R.layout.create_new_searches, null);
-            TextInputEditText source = dialogViewAddCustom.findViewById(R.id.source);
-            TextInputEditText target = dialogViewAddCustom.findViewById(R.id.target);
-            builderAddCustom.setTitle(R.string.custom_searches_title);
-            builderAddCustom.setIcon(R.drawable.icon_search);
-            builderAddCustom.setPositiveButton(R.string.app_cancel, null);
-            builderAddCustom.setNegativeButton(R.string.app_ok, ((dialogInterface2, i2) -> {
-                String sourceText = Objects.requireNonNull(source.getText()).toString();
-                String targetText = Objects.requireNonNull(target.getText()).toString();
-                if (targetText.isEmpty() || sourceText.isEmpty()) return;
-                adapter.addRedirect(new CustomRedirect(sourceText, targetText));
-                try {
-                    CustomSearchesHelper.saveRedirects(adapter.getRedirects());
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
-            }));
-            builderAddCustom.setView(dialogViewAddCustom);
-            AlertDialog dialogCustomSearchesNew = builderAddCustom.create();
-            dialogCustomSearchesNew.show();
-            HelperUnit.setupDialog(context, dialogCustomSearchesNew);
-        }));
-        builder.setPositiveButton(R.string.app_cancel, ((dialogInterface, i) -> dialogCustomSearches.cancel()));
-        builder.setView(dialogView);
-        dialogCustomSearches = builder.create();
-        dialogCustomSearches.show();
-        dialogCustomSearches.setCancelable(false);
-        HelperUnit.setupDialog(context, dialogCustomSearches);
+    private fun showDialogCustomSearches(String url) {
+        com.petal.browser.ui.components.BrowserDialogManager.showDialogCustomSearches(this, url);
     }
-    private void doubleTapsQuit() {
+    private fun doubleTapsQuit() {
         if (!sp.getBoolean("sp_close_browser_confirm", true)) {
             finishAndRemoveTask();
         } else {
             com.petal.browser.ui.components.PetalConfirmSheetBridge.showQuitBrowserConfirmation(this, this::finishAndRemoveTask);
         }
     }
-    private void saveOpenedTabs() {
+    private fun saveOpenedTabs() {
         ArrayList<String> openTabs = new ArrayList<>();
         for (int i = 0; i < BrowserContainer.size(); i++) {
             if (currentAlbumController == BrowserContainer.get(i))
@@ -3965,7 +3616,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         sp.edit().putString("openTabs", TextUtils.join("‚‗‚", openTabs)).apply();
         com.petal.browser.unit.TabSessionManager.saveSession(this);
     }
-    private void setCustomFullscreen(boolean fullscreen) {
+    private fun setCustomFullscreen(boolean fullscreen) {
         if (fullscreen) {
             if (SDK_INT >= Build.VERSION_CODES.R) {
                 final WindowInsetsController insetsController = getWindow().getInsetsController();
@@ -3984,14 +3635,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             else getWindow().setFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN, WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN); }
     }
-    private void copyLink(String url) {
+    private fun copyLink(String url) {
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("text", url);
         Objects.requireNonNull(clipboard).setPrimaryClip(clip);
         NinjaToast.show(this, getString(R.string.app_done));
     }
 
-    public void shareLink(String title, String url) {
+    open fun shareLink(String title, String url) {
 
         hideOverview();
         List_standard listStandard = new List_standard(context);
@@ -4133,7 +3784,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    private void postLink(String data, Dialog dialogParent) {
+    private fun postLink(String data, Dialog dialogParent) {
         String urlForPosting = sp.getString("urlForPosting", "");
 
         if (!urlForPosting.isEmpty()) {
@@ -4182,7 +3833,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
         }
     }
-    private void searchOnSite() {
+    private fun searchOnSite() {
         if (appBar != null) appBar.setVisibility(GONE);
         if (searchOnSiteLayout != null) {
             searchOnSiteLayout.setVisibility(VISIBLE);
@@ -4192,7 +3843,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
     }
-    private void saveBookmark(String title, String url) {
+    private fun saveBookmark(String title, String url) {
         if (url == null || url.trim().isEmpty() || isHomePage(url)) {
             NinjaToast.show(this, "Home page cannot be bookmarked");
             return;
@@ -4208,118 +3859,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         action.close();
     }
 
-    private void performGesture(String gesture, String url) {
-        String gestureAction = Objects.requireNonNull(sp.getString(gesture, "0"));
-        switch (gestureAction) {
-            case "01":
-                break;
-            case "02":
-                if (ninjaWebView.canGoForward()) {
-                    ninjaWebView.stopLoading();
-                    WebBackForwardList mWebBackForwardList = ninjaWebView.copyBackForwardList();
-                    String historyUrl = mWebBackForwardList.getItemAtIndex(mWebBackForwardList.getCurrentIndex() + 1).getUrl();
-                    ninjaWebView.initPreferences(historyUrl);
-                    ninjaWebView.goForward();
-                }
-                else NinjaToast.show(this, R.string.toast_webview_forward);
-                break;
-            case "03":
-                if (fullscreenHolder != null || customView != null || videoView != null) {
-                    Log.v(TAG, "Petal in fullscreen mode");
-                } else if (ninjaWebView.canGoBack()){
-                    sp.edit().putBoolean("backPressed", true).apply();
-                    ninjaWebView.goBack();
-                } else removeAlbum(currentAlbumController);
-                break;
-            case "04":
-                ninjaWebView.pageUp(true);
-                break;
-            case "05":
-                ninjaWebView.pageDown(true);
-                break;
-            case "06":
-                showAlbum(nextAlbumController(false));
-                break;
-            case "07":
-                showAlbum(nextAlbumController(true));
-                break;
-            case "08":
-                showOverview();
-                break;
-            case "09":
-                addAlbum(getString(R.string.app_name), Objects.requireNonNull(sp.getString("favoriteURL", "about:blank")), true);
-                break;
-            case "10":
-                removeAlbum(currentAlbumController);
-                break;
-            case "11":
-                overViewTab = getString(R.string.album_title_tab);
-                setSelectedTab();
-                showOverview();
-                break;
-            case "12":
-                shareLink(ninjaWebView.getTitle(), Objects.requireNonNull(ninjaWebView.getUrl()));
-                break;
-            case "13":
-                searchOnSite();
-                break;
-            case "14":
-                saveBookmark(ninjaWebView.getTitle(), url);
-                break;
-            case "16":
-                ninjaWebView.reload();
-                break;
-            case "17":
-                ninjaWebView.loadUrl(Objects.requireNonNull(sp.getString("favoriteURL", "about:blank")));
-                showAlbum(currentAlbumController, sp.getString("favoriteURL", "about:blank"));
-                break;
-            case "18":
-                bottom_navigation.setSelectedItemId(R.id.page_2);
-                showOverview();
-                showDialogFilter();
-                break;
-            case "19":
-                showDialogFastToggle(ninjaWebView.getTitle(), ninjaWebView.getUrl(), fab_menu);
-                break;
-            case "22":
-                sp.edit().putBoolean("sp_screenOn", !sp.getBoolean("sp_screenOn", false)).apply();
-                triggerRebirth(context);
-                break;
-            case "24":
-                copyLink(ninjaWebView.getUrl());
-                break;
-            case "25":
-                Intent settings = new Intent(BrowserActivity.this, Settings_Activity.class);
-                startActivity(settings);
-                break;
-            case "26":
-                doubleTapsQuit();
-                break;
-            case "27":
-                sp.edit().putString("profile", "profileStandard").apply();
-                ninjaWebView.reload();
-                break;
-            case "29":
-                showDownloads();
-                break;
-            case "30":
-                overViewTab = getString(R.string.album_title_bookmarks);
-                setSelectedTab();
-                showOverview();
-                break;
-            case "31":
-                overViewTab = getString(R.string.album_title_history);
-                setSelectedTab();
-                showOverview();
-                break;
-            case "32":
-                ninjaWebView.loadUrl(sp.getString("favoriteURL", "about:blank"));
-                showAlbum(currentAlbumController, sp.getString("favoriteURL", "about:blank"));
-                break;
-        }
+    private fun performGesture(String gesture, String url) {
+        com.petal.browser.util.BrowserGestureHandler.performGesture(this, gesture, url);
     }
 
-    private void closeTabConfirmation(final Runnable okAction) {
+    private fun closeTabConfirmation(final Runnable okAction) {
         if (!sp.getBoolean("sp_close_tab_confirm", false)) {
             okAction.run();
         } else {
@@ -4327,28 +3871,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.ui.components.PetalConfirmSheetBridge.showTabCloseConfirmation(this, tabTitle, okAction);
         }
     }
-    private File copyHtmlToCache(Context context, Uri uri) {
-        try {
-            InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            if (inputStream == null) return null;
-            File cacheFile = new File(context.getCacheDir(), "temp_preview.html");
-            FileOutputStream outputStream = new FileOutputStream(cacheFile);
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            inputStream.close();
-            outputStream.close();
-            return cacheFile;
-        } catch (Exception e) {
-            String text = context.getString(R.string.app_error) + ": " + e;
-            NinjaToast.show(context, text);
-            return null;
-        }
-    }
 
-    public void closeAllIncognitoTabs() {
+
+    open fun closeAllIncognitoTabs() {
         try {
             List<AlbumController> toRemove = new ArrayList<>();
             for (AlbumController album : BrowserContainer.list()) {
@@ -4367,7 +3892,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private void dispatchIntent(Intent intent) {
+    private fun dispatchIntent(Intent intent) {
         if (intent == null) return;
 
         // Tapping a download notification (see PetalLiveAlertManager) launches
@@ -4461,11 +3986,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             String displayPath = filePath != null ? filePath : dataUri.toString();
             // Die virtuelle oder echte Datei-URL für die WebView (wichtig für webView.getUrl())
             String virtualFileUrl = filePath != null ? "file://" + filePath : dataUri.toString();
-            String fileContent = readTextFromUri(this, dataUri);
+            String fileContent = com.petal.browser.util.BrowserIntentHandler.readTextFromUri(this, dataUri);
             if (!fileContent.trim().isEmpty()) {
                 if (mimeType != null && mimeType.contains("html")) {
                     // HTML über die sichere Cache-Methode laden (damit CSS/Bilder funktionieren)
-                    File localHtmlFile = copyHtmlToCache(this, dataUri);
+                    File localHtmlFile = com.petal.browser.util.BrowserIntentHandler.copyHtmlToCache(this, dataUri);
                     if (localHtmlFile != null && localHtmlFile.exists()) {
                         addAlbum(fileName, "file://" + localHtmlFile.getAbsolutePath(), true);
                         ninjaWebView.loadUrl("file://" + localHtmlFile.getAbsolutePath());
@@ -4673,7 +4198,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * cold start or not, so the omnibox reliably shows on top of whatever's current rather
      * than getting shown-then-hidden underneath a dialog.
      */
-    private void runOrDeferPendingWidgetAction() {
+    private fun runOrDeferPendingWidgetAction() {
         if (contentFrame == null) return;
         if (hasWindowFocus()) {
             // Already focused and interactive (e.g. the widget was tapped while Petal was
@@ -4685,7 +4210,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // Otherwise leave it queued; onWindowFocusChanged(true) will run it.
     }
 
-    private void consumePendingWidgetAction() {
+    private fun consumePendingWidgetAction() {
         Runnable action = pendingWidgetAction;
         pendingWidgetAction = null;
         if (action != null) {
@@ -4694,99 +4219,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
+    open fun onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus && pendingWidgetAction != null && contentFrame != null) {
             contentFrame.post(this::consumePendingWidgetAction);
         }
     }
-    private String readTextFromUri(Context context, Uri uri) {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            if (inputStream != null) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    stringBuilder.append(line).append("\n");
-                }
-                inputStream.close();
-            }
-        } catch (Exception ignored) {}
-        return stringBuilder.toString();
-    }
 
-    private void setWebView(String title, final String url, final boolean foreground) {
+
+    private fun setWebView(String title, final String url, final boolean foreground) {
         setWebView(title, url, foreground, false);
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito) {
-        ninjaWebView = new NinjaWebView(context);
-        if (isIncognito) {
-            ninjaWebView.setIncognito(true);
-        }
-
-        com.petal.browser.media.PetalMediaBridge bridge = new com.petal.browser.media.PetalMediaBridge(
-                context,
-                ninjaWebView,
-                new com.petal.browser.media.PetalMediaBridge.MediaStateListener() {
-                    @Override
-                    public void onMediaPlay(String title, long positionMs, long durationMs) {
-                        isMediaPlaying = true;
-                        updatePipParams(true);
-                        if (mediaService != null) {
-                            mediaService.updateMediaState(title, ninjaWebView.getTitle(), true, positionMs, durationMs);
-                        }
-                    }
-
-                    @Override
-                    public void onMediaPause(long positionMs, long durationMs) {
-                        isMediaPlaying = false;
-                        updatePipParams(false);
-                        if (mediaService != null) {
-                            mediaService.updateMediaState(ninjaWebView.getTitle(), ninjaWebView.getTitle(), false, positionMs, durationMs);
-                        }
-                    }
-
-                    @Override
-                    public void onMediaProgress(long positionMs, long durationMs) {
-                        // Progress update handler
-                    }
-
-                    @Override
-                    public void onMediaPlayingStateChanged(boolean playing) {
-                        isMediaPlaying = playing;
-                        updatePipParams(playing);
-                    }
-
-                    @Override
-                    public void onVideoDimensionsChanged(int width, int height) {
-                        updateVideoDimensions(width, height);
-                    }
-                }
+    private fun setWebView(String title, final String url, final boolean foreground, final boolean isIncognito) {
+        ninjaWebView = com.petal.browser.controller.BrowserWebViewController.createAndConfigureWebView(
+            this, title, url, foreground, isIncognito
         );
-        ninjaWebView.setMediaBridge(bridge);
-
-        com.petal.browser.pwa.PetalPwaManager pwaManager = new com.petal.browser.pwa.PetalPwaManager(
-                context,
-                ninjaWebView,
-                manifest -> runOnUiThread(() -> {
-                    // Show PWA installation banner/notification when detected
-                })
-        );
-        ninjaWebView.setPwaManager(pwaManager);
-        ninjaWebView.setOnScrollChangeListener(new NinjaWebView.OnScrollChangeListener() {
-            @Override
-            public void onScrollDown() {
-                runOnUiThread(() -> animateAddressBarCollapse(true));
-            }
-
-            @Override
-            public void onScrollUp() {
-                runOnUiThread(() -> animateAddressBarCollapse(false));
-            }
-        });
 
         ninjaWebView.setOnLongClickListener(v -> {
             WebView.HitTestResult result = ninjaWebView.getHitTestResult();
@@ -4795,238 +4244,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (type == WebView.HitTestResult.IMAGE_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
                 final String imageURL = result.getExtra();
                 v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
-                com.petal.browser.compose.menu.PetalLinkContextMenuBridge.show(
-                    BrowserActivity.this,
-                    HelperUnit.domain(imageURL),
-                    imageURL,
-                    imageURL,
-                    true, // isImage
-                    false, // isVideo
-                    new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
-                        @Override
-                        public void onOpenInNewTab() {
-                            addAlbum(HelperUnit.domain(imageURL), imageURL, false);
-                        }
-
-                        @Override
-                        public void onOpenImageInNewTab() {
-                            addAlbum(HelperUnit.domain(imageURL), imageURL, false);
-                        }
-
-                        @Override
-                        public void onOpenInNewTabInGroup() {
-                            addAlbum(HelperUnit.domain(imageURL), imageURL, false);
-                        }
-
-                        @Override
-                        public void onOpenInIncognitoTab() {
-                            addAlbum(HelperUnit.domain(imageURL), imageURL, false, true);
-                        }
-
-                        @Override
-                        public void onOpenInNewWindow() {
-                            addAlbum(HelperUnit.domain(imageURL), imageURL, true);
-                        }
-
-                        @Override
-                        public void onPreviewPage() {
-                            addAlbum(HelperUnit.domain(imageURL), imageURL, true);
-                        }
-
-                        @Override
-                        public void onCopyLinkAddress() {
-                            HelperUnit.copy(BrowserActivity.this, imageURL);
-                            NinjaToast.show(BrowserActivity.this, "Image URL copied");
-                        }
-
-                        @Override
-                        public void onCopyImage() {
-                            HelperUnit.copy(BrowserActivity.this, imageURL);
-                            NinjaToast.show(BrowserActivity.this, "Image copied to clipboard");
-                        }
-
-                        @Override
-                        public void onCopyLinkText() {
-                            HelperUnit.copy(BrowserActivity.this, HelperUnit.domain(imageURL));
-                            NinjaToast.show(BrowserActivity.this, "Domain copied");
-                        }
-
-                        @Override
-                        public void onDownloadLink() {
-                            try {
-                                String fileName = android.webkit.URLUtil.guessFileName(imageURL, null, null);
-                                com.petal.browser.unit.BrowserUnit.download(BrowserActivity.this, imageURL, fileName, null);
-                                NinjaToast.show(BrowserActivity.this, "Download started");
-                            } catch (Exception e) {
-                                NinjaToast.show(BrowserActivity.this, "Failed to start download");
-                            }
-                        }
-
-                        @Override
-                        public void onDownloadImage() {
-                            if (imageURL != null && !imageURL.trim().isEmpty()) {
-                                com.petal.browser.unit.ImageActionHelper.downloadImage(BrowserActivity.this, imageURL);
-                            } else {
-                                NinjaToast.show(BrowserActivity.this, "No valid image URL found");
-                            }
-                        }
-
-                        @Override
-                        public void onAddToReadingList() {
-                            try {
-                                RecordAction action = new RecordAction(BrowserActivity.this);
-                                action.open(true);
-                                action.addBookmark(new Record(HelperUnit.domain(imageURL), imageURL, System.currentTimeMillis(), 0));
-                                action.close();
-                                NinjaToast.show(BrowserActivity.this, "Added to reading list");
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        @Override
-                        public void onScanImage() {
-                            if (imageURL != null && !imageURL.trim().isEmpty()) {
-                                com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(BrowserActivity.this, imageURL);
-                            } else {
-                                NinjaToast.show(BrowserActivity.this, "No valid image URL found");
-                            }
-                        }
-
-                        @Override
-                        public void onSearchWithGoogleLens() {
-                            if (imageURL != null && !imageURL.trim().isEmpty()) {
-                                String lensUrl = "https://lens.google.com/uploadbyurl?url=" + android.net.Uri.encode(imageURL);
-                                addAlbum(null, lensUrl, true);
-                            } else {
-                                NinjaToast.show(BrowserActivity.this, "No valid image URL found");
-                            }
-                        }
-
-                        @Override
-                        public void onShareImage() {
-                            if (imageURL != null && !imageURL.trim().isEmpty()) {
-                                com.petal.browser.unit.ImageActionHelper.shareImage(BrowserActivity.this, imageURL);
-                            } else {
-                                NinjaToast.show(BrowserActivity.this, "No valid image URL found");
-                            }
-                        }
-
-                        @Override
-                        public void onShareLink() {
-                            shareLink(HelperUnit.domain(imageURL), imageURL);
-                        }
-                    }
-                );
+                com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(BrowserActivity.this, imageURL);
                 return true;
             }
             if (type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
                 final String urlResult = result.getExtra();
                 v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
-                com.petal.browser.compose.menu.PetalLinkContextMenuBridge.show(
-                    BrowserActivity.this,
-                    HelperUnit.domain(urlResult),
-                    urlResult,
-                    urlResult + "/favicon.ico",
-                    false, // isImage
-                    false, // isVideo
-                    new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
-                        @Override
-                        public void onOpenInNewTab() {
-                            addAlbum(HelperUnit.domain(urlResult), urlResult, false);
-                        }
-
-                        @Override
-                        public void onOpenInNewTabInGroup() {
-                            addAlbum(HelperUnit.domain(urlResult), urlResult, false);
-                        }
-
-                        @Override
-                        public void onOpenInIncognitoTab() {
-                            addAlbum(HelperUnit.domain(urlResult), urlResult, false, true);
-                        }
-
-                        @Override
-                        public void onOpenInNewWindow() {
-                            addAlbum(HelperUnit.domain(urlResult), urlResult, true);
-                        }
-
-                        @Override
-                        public void onPreviewPage() {
-                            addAlbum(getString(R.string.app_name), urlResult, true);
-                        }
-
-                        @Override
-                        public void onCopyLinkAddress() {
-                            HelperUnit.copy(BrowserActivity.this, urlResult);
-                            NinjaToast.show(BrowserActivity.this, "Link copied");
-                        }
-
-                        @Override
-                        public void onCopyLinkText() {
-                            HelperUnit.copy(BrowserActivity.this, HelperUnit.domain(urlResult));
-                            NinjaToast.show(BrowserActivity.this, "Link text copied");
-                        }
-
-                        @Override
-                        public void onDownloadLink() {
-                            try {
-                                String fileName = android.webkit.URLUtil.guessFileName(urlResult, null, null);
-                                com.petal.browser.unit.BrowserUnit.download(BrowserActivity.this, urlResult, fileName, null);
-                                NinjaToast.show(BrowserActivity.this, "Download started");
-                            } catch (Exception e) {
-                                NinjaToast.show(BrowserActivity.this, "Failed to start download");
-                            }
-                        }
-
-                        @Override
-                        public void onDownloadImage() {
-                            if (urlResult != null && !urlResult.trim().isEmpty()) {
-                                com.petal.browser.unit.ImageActionHelper.downloadImage(BrowserActivity.this, urlResult);
-                            }
-                        }
-
-                        @Override
-                        public void onAddToReadingList() {
-                            try {
-                                RecordAction action = new RecordAction(BrowserActivity.this);
-                                action.open(true);
-                                action.addBookmark(new Record(HelperUnit.domain(urlResult), urlResult, System.currentTimeMillis(), 0));
-                                action.close();
-                                NinjaToast.show(BrowserActivity.this, "Added to reading list");
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        @Override
-                        public void onScanImage() {
-                            if (urlResult != null && !urlResult.trim().isEmpty()) {
-                                com.petal.browser.compose.mlkit.PetalImageScannerBridge.show(BrowserActivity.this, urlResult);
-                            }
-                        }
-
-                        @Override
-                        public void onShareImage() {
-                            if (urlResult != null && !urlResult.trim().isEmpty()) {
-                                com.petal.browser.unit.ImageActionHelper.shareImage(BrowserActivity.this, urlResult);
-                            }
-                        }
-
-                        @Override
-                        public void onShareLink() {
-                            shareLink(HelperUnit.domain(urlResult), urlResult);
-                        }
-
-                        @Override
-                        public void onSearchWithGoogleLens() {
-                            if (urlResult != null && !urlResult.trim().isEmpty()) {
-                                String lensUrl = "https://lens.google.com/uploadbyurl?url=" + android.net.Uri.encode(urlResult);
-                                addAlbum(null, lensUrl, true);
-                            }
-                        }
-                    }
-                );
+                com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(BrowserActivity.this, urlResult);
                 return true;
             }
 
@@ -5045,53 +4269,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         String cleanVideoUrl = videoSrc.replace("\"", "").trim();
                         if (!cleanVideoUrl.isEmpty()) {
                             v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
-                            com.petal.browser.compose.menu.PetalLinkContextMenuBridge.show(
-                                BrowserActivity.this,
-                                HelperUnit.domain(cleanVideoUrl),
-                                cleanVideoUrl,
-                                null,
-                                false, // isImage
-                                true,  // isVideo
-                                new com.petal.browser.compose.menu.PetalLinkContextMenuHandler() {
-                                    @Override
-                                    public void onOpenInNewTab() {
-                                        addAlbum(HelperUnit.domain(cleanVideoUrl), cleanVideoUrl, false);
-                                    }
-
-                                    @Override
-                                    public void onDownloadVideo() {
-                                        try {
-                                            String fileName = android.webkit.URLUtil.guessFileName(cleanVideoUrl, null, "video/mp4");
-                                            com.petal.browser.unit.BrowserUnit.download(BrowserActivity.this, cleanVideoUrl, fileName, null);
-                                            NinjaToast.show(BrowserActivity.this, "Video download started");
-                                        } catch (Exception e) {
-                                            NinjaToast.show(BrowserActivity.this, "Failed to start video download");
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onCopyLinkAddress() {
-                                        HelperUnit.copy(BrowserActivity.this, cleanVideoUrl);
-                                        NinjaToast.show(BrowserActivity.this, "Video link copied");
-                                    }
-
-                                    @Override
-                                    public void onShareLink() {
-                                        shareLink(HelperUnit.domain(cleanVideoUrl), cleanVideoUrl);
-                                    }
-
-                                    @Override public void onOpenInNewTabInGroup() {}
-                                    @Override public void onOpenInIncognitoTab() {}
-                                    @Override public void onOpenInNewWindow() {}
-                                    @Override public void onPreviewPage() {}
-                                    @Override public void onCopyLinkText() {}
-                                    @Override public void onDownloadLink() {}
-                                    @Override public void onDownloadImage() {}
-                                    @Override public void onAddToReadingList() {}
-                                    @Override public void onShareImage() {}
-                                    @Override public void onScanImage() {}
-                                }
-                            );
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showVideoContextMenu(BrowserActivity.this, cleanVideoUrl);
                         }
                     }
                 }
@@ -5155,7 +4333,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         setWebView(title, url, foreground, isIncognito);
     }
 
-    private void triggerRebirth(Context context) {
+    private fun triggerRebirth(Context context) {
         sp.edit().putInt("restart_changed", 0).apply();
         sp.edit().putBoolean("restoreOnRestart", true).apply();
         Snackbar snackbar = Snackbar.make(ninjaWebView, R.string.toast_restart, Snackbar.LENGTH_SHORT);
@@ -5172,7 +4350,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         snackbar.show();
     }
 
-    public void installPwaShortcut() {
+    open fun installPwaShortcut() {
         if (ninjaWebView != null && ninjaWebView.getPwaManager() != null) {
             ninjaWebView.getPwaManager().installCurrentPwa(this);
             return;
@@ -5215,15 +4393,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public void openApiIntegrationsHub() {
+    open fun openApiIntegrationsHub() {
         openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS);
     }
 
-    private void openSettingsScreen() {
+    private fun openSettingsScreen() {
         openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.OVERVIEW);
     }
 
-    private void openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory initialCategory) {
+    private fun openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory initialCategory) {
         try {
             captureBrowserMainPreview();
             contentFrame.removeAllViews();
@@ -5251,7 +4429,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return ninjaWebView != null ? ninjaWebView.getRootView() : null;
     }
 
-    public void createWebPrintJob(WebView webView) {
+    open fun createWebPrintJob(WebView webView) {
         if (webView == null) return;
         try {
             PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
@@ -5266,7 +4444,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
-    protected void onPause() {
+    override fun onPause() {
         super.onPause();
         boolean backgroundPlay = sp != null && sp.getBoolean("sp_background_play", false);
         if (!backgroundPlay && ninjaWebView != null) {

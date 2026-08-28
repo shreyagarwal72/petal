@@ -226,6 +226,21 @@ private fun ContextMenuItem(
     onClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val itemShape = remember(label) {
+        val hash = kotlin.math.abs(label.hashCode())
+        val shapes = listOf(
+            com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape(),
+            com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
+            com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape(),
+            com.petal.browser.ui.theme.PetalMaterialShapes.Hexagon.toShape(),
+            com.petal.browser.ui.theme.PetalMaterialShapes.Octagon.toShape(),
+            com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape(),
+            com.petal.browser.ui.theme.PetalMaterialShapes.SoftScallop.toShape(),
+            com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()
+        )
+        shapes[hash % shapes.size]
+    }
+
     Surface(
         onClick = {
             com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
@@ -233,20 +248,28 @@ private fun ContextMenuItem(
             onClick()
         },
         color = androidx.compose.ui.graphics.Color.Transparent,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Icon(
-                imageVector = leadingIcon,
-                contentDescription = label,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(22.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(itemShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = leadingIcon,
+                    contentDescription = label,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
