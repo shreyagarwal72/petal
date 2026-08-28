@@ -1,0 +1,5 @@
+v1.9.7 Release Highlights:
+- Complete Kotlin Migration of BrowserActivity, PetalApplication, and ActivityShare into 8 modular Kotlin subsystem delegates (BrowserContextMenuManager, BrowserNavigationDelegate, BrowserWebViewController, BrowserIntentHandler, BrowserMediaDelegate, BrowserDialogManager, BrowserGestureHandler, BrowserActivityExtensions).
+- Integrated 35 Material 3 Expressive Shapes Catalog (RoundedSquare, Cookie6Sided, Arch, Hexagon, Octagon, Pill, SoftScallop, Clover4Leaf) across Jetpack Compose UI sheets and icon containers.
+- Fixed PetalLinkContextMenuHandler interface compilation and missing method overrides across Web context menu handlers.
+- Refactored View, Context, and Activity operations to use idiomatic Kotlin extension functions.

@@ -1,4 +1,4 @@
-### v1.9.5
+### v1.9.7
 
 - **⚡ Complete Kotlin Migration & Subsystem Decoupling**:
   - Fully converted `BrowserActivity.java`, `PetalApplication.java`, and `ActivityShare.java` to Kotlin.
