@@ -1381,41 +1381,6 @@ fun PetalSettingsScreen(
                                          }
                                      }
 
-                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                     // Download Engine Mode Switcher
-                                     Text(
-                                         "Download & Torrent Engine:",
-                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                         color = MaterialTheme.colorScheme.onSurfaceVariant
-                                     )
-
-                                     val engineScrollState = rememberScrollState()
-                                     com.petal.browser.ui.components.ScrollFadeRow(
-                                         scrollState = engineScrollState,
-                                         edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                                     ) {
-                                         Row(
-                                             modifier = Modifier
-                                                 .fillMaxWidth()
-                                                 .horizontalScroll(engineScrollState),
-                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                         ) {
-                                             com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().forEach { mode ->
-                                                 FilterChip(
-                                                     selected = torrentEngineMode.equals(mode.key, ignoreCase = true),
-                                                     onClick = {
-                                                         torrentEngineMode = mode.key
-                                                         com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(context, mode)
-                                                     },
-                                                     label = { Text(mode.title) },
-                                                     leadingIcon = if (torrentEngineMode.equals(mode.key, ignoreCase = true)) {
-                                                         @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                                     } else null
-                                                 )
-                                             }
-                                         }
-                                     }
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
@@ -1918,7 +1883,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 7. Accessibility & Scaling (using PetalSlider)
-                            if ((scaffoldCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom")) {
+                            if ((scaffoldCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom download torrent engine 1dm manager")) {
                                 SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
                                     ToggleRow(
                                         title = "Predictive Back Animations",
@@ -2156,6 +2121,41 @@ fun PetalSettingsScreen(
                                                     }
                                                 }
                                             }
+                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                     // Download Engine Mode Switcher
+                                     Text(
+                                         "Download & Torrent Engine:",
+                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                                     )
+
+                                     val engineScrollStateAcc = rememberScrollState()
+                                     com.petal.browser.ui.components.ScrollFadeRow(
+                                         scrollState = engineScrollStateAcc,
+                                         edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                     ) {
+                                         Row(
+                                             modifier = Modifier
+                                                 .fillMaxWidth()
+                                                 .horizontalScroll(engineScrollStateAcc),
+                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                         ) {
+                                             com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().forEach { mode ->
+                                                 FilterChip(
+                                                     selected = torrentEngineMode.equals(mode.key, ignoreCase = true),
+                                                     onClick = {
+                                                         torrentEngineMode = mode.key
+                                                         com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(context, mode)
+                                                     },
+                                                     label = { Text(mode.title) },
+                                                     leadingIcon = if (torrentEngineMode.equals(mode.key, ignoreCase = true)) {
+                                                         @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                     } else null
+                                                 )
+                                             }
+                                         }
+                                     }
                                         }
                                     }
                                 }
