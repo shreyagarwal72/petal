@@ -164,6 +164,15 @@ object PetalFetchDownloadBridge {
     }
 
     @JvmStatic
+    fun retry(context: Context, id: Long) {
+        ensureInitialized(context)
+        fetchInstance(context).retry(id.toInt())
+        val item = _downloadItems.value.firstOrNull { it.id == id }
+        val fileName = item?.fileName ?: "File"
+        PetalLiveAlertManager.trackDownload(context, id, fileName)
+    }
+
+    @JvmStatic
     fun cancel(context: Context, id: Long) {
         ensureInitialized(context)
         fetchInstance(context).cancel(id.toInt())
