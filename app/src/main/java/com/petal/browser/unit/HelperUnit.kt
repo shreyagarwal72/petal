@@ -12,7 +12,7 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with the browser webview app.
+    aval with the browser webview app.
 
     If not, see <http://www.gnu.org/licenses/>.
  */
@@ -107,63 +107,67 @@ import com.petal.browser.view.MenuItem;
 import com.petal.browser.view.NinjaToast;
 import com.petal.browser.view.NinjaWebView;
 
-public class HelperUnit {
+object HelperUnit {
 
-    private static final int REQUEST_CODE_ASK_PERMISSIONS_1 = 1234;
-    private static final int REQUEST_CODE_ASK_PERMISSIONS_2 = 12345;
-    private static final int REQUEST_CODE_ASK_PERMISSIONS_3 = 123456;
+    private const val REQUEST_CODE_ASK_PERMISSIONS_1 = 1234
+    private const val REQUEST_CODE_ASK_PERMISSIONS_2 = 12345
+    private const val REQUEST_CODE_ASK_PERMISSIONS_3 = 123456
     private static SharedPreferences sp;
 
-    public static void grantPermissionsLoc(final Activity activity) {
-        int hasACCESS_FINE_LOCATION = activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+    @JvmStatic
+    fun grantPermissionsLoc(val activity) {
+        val hasACCESS_FINE_LOCATION = activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
         if (hasACCESS_FINE_LOCATION != PackageManager.PERMISSION_GRANTED) {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+            MaterialAlertDialogBuilder builder = MaterialAlertDialogBuilder(activity);
             builder.setIcon(R.drawable.icon_alert);
             builder.setTitle(R.string.setting_title_location);
             builder.setMessage(R.string.app_permission);
             builder.setPositiveButton(R.string.app_ok, (dialog, whichButton) -> activity.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE_ASK_PERMISSIONS_1));
             builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
-            AlertDialog dialog = builder.create();
-            dialog.show();
+            AlertDialog dialog = builder.create()
+            dialog.show()
             HelperUnit.setupDialog(activity, dialog);
         }
     }
 
-    public static void grantPermissionsCamera(final Activity activity) {
-        int camera = activity.checkSelfPermission(Manifest.permission.CAMERA);
+    @JvmStatic
+    fun grantPermissionsCamera(val activity) {
+        val camera = activity.checkSelfPermission(Manifest.permission.CAMERA);
         if (camera != PackageManager.PERMISSION_GRANTED) {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+            MaterialAlertDialogBuilder builder = MaterialAlertDialogBuilder(activity);
             builder.setIcon(R.drawable.icon_alert);
             builder.setTitle(R.string.setting_title_camera);
             builder.setMessage(R.string.app_permission);
             builder.setPositiveButton(R.string.app_ok, (dialog, whichButton) -> activity.requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_ASK_PERMISSIONS_2));
             builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
-            AlertDialog dialog = builder.create();
-            dialog.show();
+            AlertDialog dialog = builder.create()
+            dialog.show()
             HelperUnit.setupDialog(activity, dialog);
         }
     }
 
-    public static void grantPermissionsMic(final Activity activity) {
-        int mic = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO);
+    @JvmStatic
+    fun grantPermissionsMic(val activity) {
+        val mic = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO);
         if (mic != PackageManager.PERMISSION_GRANTED) {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+            MaterialAlertDialogBuilder builder = MaterialAlertDialogBuilder(activity);
             builder.setIcon(R.drawable.icon_alert);
             builder.setTitle(R.string.setting_title_microphone);
             builder.setMessage(R.string.app_permission);
             builder.setPositiveButton(R.string.app_ok, (dialog, whichButton) -> activity.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_CODE_ASK_PERMISSIONS_3));
             builder.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
-            AlertDialog dialog = builder.create();
-            dialog.show();
+            AlertDialog dialog = builder.create()
+            dialog.show()
             HelperUnit.setupDialog(activity, dialog);
         }
     }
 
-    public static void saveAs(final Activity activity, final String url, final String name, Dialog dialogParent) {
+    @JvmStatic
+    fun saveAs(val activity, val url, val name, Dialog dialogParent) {
         if (BackupUnit.checkPermissionStorage(activity)) {
 
             try {
-                MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+                MaterialAlertDialogBuilder builder = MaterialAlertDialogBuilder(activity);
 
                 View dialogView = View.inflate(activity, R.layout.dialog_edit, null);
                 TextInputLayout editBottomLayout = dialogView.findViewById(R.id.editBottomLayout);
@@ -173,10 +177,10 @@ public class HelperUnit {
                 EditText editTop = dialogView.findViewById(R.id.editTop);
                 EditText editBottom = dialogView.findViewById(R.id.editBottom);
 
-                String filename = name != null ? name : resolveFileName(url, null, null);
-                int lastDot = filename.lastIndexOf(".");
-                String prefix = lastDot > 0 ? filename.substring(0, lastDot) : filename;
-                String extension = lastDot > 0 ? filename.substring(lastDot) : "";
+                val filename = name != null ? name : resolveFileName(url, null, null);
+                val lastDot = filename.lastIndexOf(".");
+                val prefix = lastDot > 0 ? filename.substring(0, lastDot) : filename;
+                val extension = lastDot > 0 ? filename.substring(lastDot) : "";
 
                 editTop.setText(prefix);
                 editBottom.setText(extension);
@@ -185,8 +189,8 @@ public class HelperUnit {
                 builder.setIcon(R.drawable.icon_menu_save);
                 builder.setView(dialogView);
 
-                AlertDialog dialog = builder.create();
-                dialog.show();
+                AlertDialog dialog = builder.create()
+                dialog.show()
                 HelperUnit.setupDialog(activity, dialog);
 
                 Button ib_cancel = dialogView.findViewById(R.id.editCancel);
@@ -194,9 +198,9 @@ public class HelperUnit {
                 Button ib_ok = dialogView.findViewById(R.id.editOK);
                 ib_ok.setOnClickListener(view12 -> {
 
-                    String title = editTop.getText().toString().trim();
-                    String extension1 = editBottom.getText().toString().trim();
-                    String finalFileName = title + extension1;
+                    val title = editTop.getText().toString().trim()
+                    val extension1 = editBottom.getText().toString().trim()
+                    val finalFileName = title + extension1;
 
                     if (title.isEmpty() || !extension1.startsWith(".")) {
                         NinjaToast.show(activity, activity.getString(R.string.toast_input_empty));
@@ -204,24 +208,24 @@ public class HelperUnit {
                         try {
                             if (url.startsWith("data:")) {
                                 DataURIParser dataURIParser = new DataURIParser(url);
-                                File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), finalFileName);
+                                File file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), finalFileName);
                                 FileOutputStream fos = new FileOutputStream(file);
                                 fos.write(dataURIParser.getImagedata());
-                                fos.flush();
-                                fos.close();
-                                String text = activity.getString(R.string.app_done) + ". " + activity.getString(R.string.menu_download) +"?";
+                                fos.flush()
+                                fos.close()
+                                val text = activity.getString(R.string.app_done) + ". " + activity.getString(R.string.menu_download) +"?";
                                 Snackbar snackbar = Snackbar.make(BrowserActivity.getView(), text, Snackbar.LENGTH_LONG);
                                 snackbar.setAction(activity.getString(R.string.app_ok), v -> {
                                     if (activity instanceof com.petal.browser.activity.BrowserActivity) {
-                                        ((com.petal.browser.activity.BrowserActivity) activity).showDownloads();
+                                        ((com.petal.browser.activity.BrowserActivity) activity).showDownloads()
                                     }
                                 });
-                                snackbar.show();
+                                snackbar.show()
                             } else {
-                                String userAgent = WebSettings.getDefaultUserAgent(activity);
-                                CookieManager cookieManager = CookieManager.getInstance();
-                                String cookie = cookieManager.getCookie(url);
-                                java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
+                                val userAgent = WebSettings.getDefaultUserAgent(activity);
+                                CookieManager cookieManager = CookieManager.getInstance()
+                                val cookie = cookieManager.getCookie(url);
+                                java.util.Map<String, String> extraHeaders = new java.util.HashMap<>()
                                 extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
                                 extraHeaders.put("Accept-Language", Locale.getDefault().toLanguageTag());
                                 extraHeaders.put("Accept-Encoding", "gzip, deflate, br, identity");
@@ -237,15 +241,15 @@ public class HelperUnit {
                             }
                         } catch (Exception e) {
                             System.out.println("Error Downloading File: " + e);
-                            Toast.makeText(activity, activity.getString(R.string.app_error) + e.toString().substring(e.toString().indexOf(":")), Toast.LENGTH_LONG).show();
+                            Toast.makeText(activity, activity.getString(R.string.app_error) + e.toString().substring(e.toString().indexOf(":")), Toast.LENGTH_LONG).show()
                             Log.i(TAG, "shouldOverrideUrlLoading Exception:" + e);
                         }
                         try {
-                            dialog.cancel();
+                            dialog.cancel()
                         } catch (Exception e) {
                             Log.i("Petal", "SaveAs:" + e);
                         }
-                        dialogParent.cancel();
+                        dialogParent.cancel()
                     }
                 });
             } catch (Exception e) {
@@ -254,14 +258,15 @@ public class HelperUnit {
         } else BackupUnit.requestPermission(activity);
     }
 
-    public static void createShortcut(Context context, String title, String url) {
+    @JvmStatic
+    fun createShortcut(Context context, val title, val url) {
         Icon icon;
         FaviconHelper faviconHelper = new FaviconHelper(context);
         Bitmap favicon = faviconHelper.getFavicon(url);
         if (favicon != null && !favicon.isRecycled()) {
             icon = Icon.createWithBitmap(favicon);
         } else {
-            int appIconResId = context.getApplicationInfo().icon;
+            val appIconResId = context.getApplicationInfo().icon;
             if (appIconResId == 0) {
                 appIconResId = android.R.drawable.sym_def_app_icon;
             }
@@ -269,23 +274,24 @@ public class HelperUnit {
         }
 
         ShortcutManager shortcutManager = context.getSystemService(ShortcutManager.class);
-        assert shortcutManager != null;
+        assert shortcutManager != null
         if (shortcutManager.isRequestPinShortcutSupported()) {
             ShortcutInfo pinShortcutInfo =
                     new ShortcutInfo.Builder(context, url)
                             .setShortLabel(title)
                             .setLongLabel(title)
                             .setIcon(icon)
-                            .setIntent(new Intent(context, BrowserActivity.class).setAction(Intent.ACTION_VIEW).setData(Uri.parse(url)))
-                            .build();
+                            .setIntent(Intent(context, BrowserActivity.class).setAction(Intent.ACTION_VIEW).setData(Uri.parse(url)))
+                            .build()
             shortcutManager.requestPinShortcut(pinShortcutInfo, null);
         } else System.out.println("failed_to_add");
     }
 
-    public static String resolveFileName(String url, String contentDisposition, String mimeType) {
+    @JvmStatic
+    fun resolveFileName(val url, val contentDisposition, val mimeType): val {
         try {
             if (contentDisposition != null && !contentDisposition.trim().isEmpty()) {
-                String guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
+                val guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
                 if (guessed != null && !guessed.endsWith(".bin") && !guessed.equals("downloadfile")) {
                     return guessed;
                 }
@@ -293,22 +299,22 @@ public class HelperUnit {
 
             if (url != null && !url.trim().isEmpty() && !url.startsWith("data:") && !url.startsWith("blob:")) {
                 try {
-                    String decodedUrl = Uri.decode(url);
+                    val decodedUrl = Uri.decode(url);
                     Uri uri = Uri.parse(decodedUrl);
-                    String path = uri.getPath();
+                    val path = uri.getPath()
                     if (path != null) {
-                        int lastSlash = path.lastIndexOf('/');
-                        String rawName = (lastSlash >= 0) ? path.substring(lastSlash + 1) : path;
+                        val lastSlash = path.lastIndexOf('/');
+                        val rawName = (lastSlash >= 0) ? path.substring(lastSlash + 1) : path;
                         if (!rawName.trim().isEmpty() && !rawName.equalsIgnoreCase("downloadfile") && !rawName.equalsIgnoreCase("download")) {
-                            int dotIndex = rawName.lastIndexOf('.');
+                            val dotIndex = rawName.lastIndexOf('.');
                             if (dotIndex > 0 && dotIndex < rawName.length() - 1) {
-                                String ext = rawName.substring(dotIndex + 1);
+                                val ext = rawName.substring(dotIndex + 1);
                                 if (!ext.contains("/") && !ext.contains("?") && !ext.contains("&") && ext.length() <= 10) {
                                     return rawName;
                                 }
                             } else if (dotIndex < 0) {
                                 // Direct filename without dot in URL path (e.g. main.kt without ext or custom endpoint)
-                                String guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
+                                val guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
                                 if (guessed != null && !guessed.endsWith(".bin")) {
                                     return guessed;
                                 }
@@ -317,9 +323,9 @@ public class HelperUnit {
                     }
 
                     // Check query parameters for file or filename parameter
-                    for (String queryParam : uri.getQueryParameterNames()) {
+                    for (val queryParam : uri.getQueryParameterNames()) {
                         if (queryParam.equalsIgnoreCase("filename") || queryParam.equalsIgnoreCase("file") || queryParam.equalsIgnoreCase("name")) {
-                            String val = uri.getQueryParameter(queryParam);
+                            val val = uri.getQueryParameter(queryParam);
                             if (val != null && val.contains(".")) {
                                 return val;
                             }
@@ -328,10 +334,10 @@ public class HelperUnit {
                 } catch (Exception ignored) {}
             }
 
-            String guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
+            val guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
             if (guessed != null && guessed.endsWith(".bin")) {
                 if (mimeType != null && !mimeType.isEmpty() && !mimeType.equalsIgnoreCase("application/octet-stream")) {
-                    String ext = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
+                    val ext = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
                     if (ext != null && !ext.isEmpty()) {
                         return guessed.substring(0, guessed.length() - 4) + "." + ext;
                     }
@@ -339,13 +345,13 @@ public class HelperUnit {
                 // Try deriving extension directly from URL path segment if available
                 if (url != null && url.contains(".")) {
                     try {
-                        String pathOnly = Uri.parse(url).getPath();
+                        val pathOnly = Uri.parse(url).getPath()
                         if (pathOnly != null) {
-                            int dot = pathOnly.lastIndexOf('.');
+                            val dot = pathOnly.lastIndexOf('.');
                             if (dot > 0 && dot < pathOnly.length() - 1) {
-                                String urlExt = pathOnly.substring(dot + 1);
+                                val urlExt = pathOnly.substring(dot + 1);
                                 if (urlExt.matches("^[a-zA-Z0-9]{1,8}$")) {
-                                    String base = guessed.substring(0, guessed.length() - 4);
+                                    val base = guessed.substring(0, guessed.length() - 4);
                                     return base + "." + urlExt;
                                 }
                             }
@@ -359,31 +365,34 @@ public class HelperUnit {
         }
     }
 
-    public static String domain(String url) {
+    @JvmStatic
+    fun domain(val url): val {
         if (url == null) {
             return "";
         } else {
             try {
-                return Objects.requireNonNull(Uri.parse(url).getHost()).replace("www.", "").trim();
+                return Objects.requireNonNull(Uri.parse(url).getHost()).replace("www.", "").trim()
             } catch (Exception e) {
                 return "";
             }
         }
     }
-    public static void initTheme(Activity context) {
+    @JvmStatic
+    fun initTheme(Activity context) {
         try {
             sp = PreferenceManager.getDefaultSharedPreferences(context);
             context.setTheme(R.style.AppTheme);
-            boolean isDynamicSupported = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S;
+            val isDynamicSupported = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S;
             if (sp.getBoolean("useDynamicColor", isDynamicSupported) && isDynamicSupported) {
                 com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(context);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace()
         }
     }
 
-    public static void addFilterItems(Activity activity, List<GridItem> gridList) {
+    @JvmStatic
+    fun addFilterItems(Activity activity, List<GridItem> gridList) {
         GridItem item_01 = new GridItem(sp.getString("icon_01", activity.getResources().getString(R.string.color_red)), 11);
         GridItem item_02 = new GridItem(sp.getString("icon_02", activity.getResources().getString(R.string.color_pink)), 10);
         GridItem item_03 = new GridItem(sp.getString("icon_03", activity.getResources().getString(R.string.color_purple)), 9);
@@ -411,7 +420,8 @@ public class HelperUnit {
         if (sp.getBoolean("filter_12", true)) gridList.add(gridList.size(), item_12);
     }
 
-    public static void setFilterIcons(Context context, MaterialCardView ib_icon, long newIcon) {
+    @JvmStatic
+    fun setFilterIcons(Context context, MaterialCardView ib_icon, val newIcon) {
         newIcon = newIcon & 15;
         if (newIcon == 11) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.red, null));
         else if (newIcon == 10) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.pink, null));
@@ -425,19 +435,20 @@ public class HelperUnit {
         else if (newIcon == 2) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.brown, null));
         else if (newIcon == 1) ib_icon.setCardBackgroundColor(ResourcesCompat.getColor(context.getResources(), R.color.grey, null));
         else if (newIcon == 0) {
-            TypedValue typedValue = new TypedValue();
+            TypedValue typedValue = new TypedValue()
             context.getTheme().resolveAttribute(R.attr.colorSecondaryContainer, typedValue, true);
-            int color = typedValue.data;
+            val color = typedValue.data;
             ib_icon.setCardBackgroundColor(color);
         }
     }
 
-    public static void saveDataURI(Activity activity, DataURIParser dataUriParser, Dialog dialogParent) {
+    @JvmStatic
+    fun saveDataURI(Activity activity, DataURIParser dataUriParser, Dialog dialogParent) {
 
-        byte[] imagedata = dataUriParser.getImagedata();
-        String filename = dataUriParser.getFilename();
+        byte[] imagedata = dataUriParser.getImagedata()
+        val filename = dataUriParser.getFilename()
 
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+        MaterialAlertDialogBuilder builder = MaterialAlertDialogBuilder(activity);
         View dialogView = View.inflate(activity, R.layout.dialog_edit, null);
         TextInputLayout editBottomLayout = dialogView.findViewById(R.id.editBottomLayout);
         TextInputLayout editTopLayout = dialogView.findViewById(R.id.editTopLayout);
@@ -445,9 +456,9 @@ public class HelperUnit {
         editTopLayout.setHint(activity.getString(R.string.dialog_title_hint));
         EditText editTop = dialogView.findViewById(R.id.editTop);
         EditText editBottom = dialogView.findViewById(R.id.editBottom);
-        int lastDot = filename != null ? filename.lastIndexOf(".") : -1;
-        String prefix = (filename != null && lastDot > 0) ? filename.substring(0, lastDot) : (filename != null ? filename : "download");
-        String extension = (filename != null && lastDot > 0) ? filename.substring(lastDot) : "";
+        val lastDot = filename != null ? filename.lastIndexOf(".") : -1;
+        val prefix = (filename != null && lastDot > 0) ? filename.substring(0, lastDot) : (filename != null ? filename : "download");
+        val extension = (filename != null && lastDot > 0) ? filename.substring(lastDot) : "";
 
         editTop.setText(prefix);
         editBottom.setText(extension);
@@ -455,8 +466,8 @@ public class HelperUnit {
         builder.setTitle(R.string.menu_save_as);
         builder.setIcon(R.drawable.icon_menu_save);
 
-        AlertDialog dialog = builder.create();
-        dialog.show();
+        AlertDialog dialog = builder.create()
+        dialog.show()
         HelperUnit.setupDialog(activity, dialog);
 
         Button ib_cancel = dialogView.findViewById(R.id.editCancel);
@@ -464,15 +475,15 @@ public class HelperUnit {
         Button ib_ok = dialogView.findViewById(R.id.editOK);
         ib_ok.setOnClickListener(view12 -> {
 
-            String title = editTop.getText().toString().trim();
-            String extension1 = editBottom.getText().toString().trim();
-            String filename1 = title + extension1;
+            val title = editTop.getText().toString().trim()
+            val extension1 = editBottom.getText().toString().trim()
+            val filename1 = title + extension1;
 
             if (title.isEmpty() || !extension1.startsWith(".")) {
                 NinjaToast.show(activity, activity.getString(R.string.toast_input_empty));
             } else {
                 if (BackupUnit.checkPermissionStorage(activity)) {
-                    File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename1);
+                    File file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename1);
                     try {
                         try(FileOutputStream fos = new FileOutputStream(file)) {
                             fos.write(imagedata);
@@ -483,28 +494,30 @@ public class HelperUnit {
                 } else {
                     BackupUnit.requestPermission(activity);
                 }
-                dialog.cancel();
-                dialogParent.cancel();
+                dialog.cancel()
+                dialogParent.cancel()
             }
         });
     }
-    public static void showSoftKeyboard(EditText editText) {
-        editText.requestFocus();
+    @JvmStatic
+    fun showSoftKeyboard(EditText editText) {
+        editText.requestFocus()
         new Handler().postDelayed(() -> {
             editText.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 0f, 0f, 0));
             editText.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, 0f, 0f, 0));
-            editText.selectAll();
+            editText.selectAll()
         }, 500);
     }
 
-    public static void hideSoftKeyboard(Context context, View view) {
+    @JvmStatic
+    fun hideSoftKeyboard(Context context, View view) {
         if (context == null) return;
         InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
             if (view != null) {
                 imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
             } else if (context instanceof android.app.Activity) {
-                View currentFocus = ((android.app.Activity) context).getCurrentFocus();
+                View currentFocus = ((android.app.Activity) context).getCurrentFocus()
                 if (currentFocus != null) {
                     imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
                 }
@@ -512,19 +525,20 @@ public class HelperUnit {
         }
     }
 
-    public static void setupDialog(Context context, Dialog dialog) {
+    @JvmStatic
+    fun setupDialog(Context context, Dialog dialog) {
         try {
             if (dialog == null) return;
-            TypedValue typedValue = new TypedValue();
+            TypedValue typedValue = new TypedValue()
             context.getTheme().resolveAttribute(R.attr.colorPrimary, typedValue, true);
-            int primaryColor = typedValue.data;
+            val primaryColor = typedValue.data;
 
-            TypedValue surfaceValue = new TypedValue();
+            TypedValue surfaceValue = new TypedValue()
             context.getTheme().resolveAttribute(R.attr.colorSurfaceContainerHigh, surfaceValue, true);
             if (surfaceValue.data == 0) {
                 context.getTheme().resolveAttribute(R.attr.colorSurface, surfaceValue, true);
             }
-            int surfaceColor = surfaceValue.data;
+            val surfaceColor = surfaceValue.data;
 
             ImageView imageView = dialog.findViewById(android.R.id.icon);
             if (imageView != null && primaryColor != 0) {
@@ -532,7 +546,7 @@ public class HelperUnit {
             }
 
             if (dialog.getWindow() != null) {
-                android.graphics.drawable.GradientDrawable backgroundDrawable = new android.graphics.drawable.GradientDrawable();
+                android.graphics.drawable.GradientDrawable backgroundDrawable = new android.graphics.drawable.GradientDrawable()
                 backgroundDrawable.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
                 backgroundDrawable.setColor(surfaceColor != 0 ? surfaceColor : android.graphics.Color.parseColor("#1C1B1F"));
                 backgroundDrawable.setCornerRadius(HelperUnit.convertDpToPixel(28f, context));
@@ -546,28 +560,30 @@ public class HelperUnit {
      *
      * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
      * @param context Context to get resources and device specific display metrics
-     * @return A float value to represent px equivalent to dp depending on device density
+     * @return A val value to represent px equivalent to dp depending on device density
      */
-    public static int convertDpToPixel(float dp, Context context){
+    @JvmStatic
+    fun convertDpToPixel(val dp, Context context): Int {
         return Math.round(dp * ((float) context.getResources().getDisplayMetrics().densityDpi / DisplayMetrics.DENSITY_DEFAULT));
     }
 
-    public static void setHighLightedText(Context context, TextView tv, String url, String textToHighlight) {
-        String tvt = tv.getText().toString().toLowerCase();
-        int ofe = tvt.indexOf(textToHighlight.toLowerCase());
+    @JvmStatic
+    fun setHighLightedText(Context context, TextView tv, val url, val textToHighlight) {
+        val tvt = tv.getText().toString().toLowerCase()
+        val ofe = tvt.indexOf(textToHighlight.toLowerCase());
         Spannable wordToSpan = new SpannableString(tv.getText());
         List_standard listStandard = new List_standard(context);
-        for (int ofs = 0; ofs < tvt.length() && ofe != -1; ofs = ofe + 1) {
+        for (val ofs = 0; ofs < tvt.length() && ofe != -1; ofs = ofe + 1) {
             ofe = tvt.indexOf(textToHighlight, ofs);
             if (ofe == -1)
                 break;
             else {
-                TypedValue typedValue = new TypedValue();
+                TypedValue typedValue = new TypedValue()
                 context.getTheme().resolveAttribute(R.attr.colorError, typedValue, true);
-                int color = typedValue.data;
-                TypedValue typedValue2 = new TypedValue();
+                val color = typedValue.data;
+                TypedValue typedValue2 = new TypedValue()
                 context.getTheme().resolveAttribute(R.attr.colorOnSurface, typedValue2, true);
-                int color2 = typedValue2.data;
+                val color2 = typedValue2.data;
                 wordToSpan.setSpan(new ForegroundColorSpan(color2), ofe, ofe + textToHighlight.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 tv.setText(wordToSpan, TextView.BufferType.SPANNABLE);
                 try {
@@ -584,18 +600,18 @@ public class HelperUnit {
         tv.setSingleLine(true);
     }
 
-    public static void setHighLightedTextSearch (Context context, TextView tv, String textToHighlight) {
-        String tvt = tv.getText().toString().toLowerCase();
-        int ofe = tvt.indexOf(textToHighlight.toLowerCase());
+    public static void setHighLightedTextSearch (Context context, TextView tv, val textToHighlight) {
+        val tvt = tv.getText().toString().toLowerCase()
+        val ofe = tvt.indexOf(textToHighlight.toLowerCase());
         Spannable wordToSpan = new SpannableString(tv.getText());
-        for (int ofs = 0; ofs < tvt.length() && ofe != -1; ofs = ofe + 1) {
+        for (val ofs = 0; ofs < tvt.length() && ofe != -1; ofs = ofe + 1) {
             ofe = tvt.indexOf(textToHighlight, ofs);
             if (ofe == -1)
                 break;
             else {
-                TypedValue typedValue = new TypedValue();
+                TypedValue typedValue = new TypedValue()
                 context.getTheme().resolveAttribute(R.attr.colorError, typedValue, true);
-                int color = typedValue.data;
+                val color = typedValue.data;
                 // set color here
                 wordToSpan.setSpan(new ForegroundColorSpan(color), ofe, ofe + textToHighlight.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 tv.setText(wordToSpan, TextView.BufferType.SPANNABLE);
@@ -604,13 +620,14 @@ public class HelperUnit {
         tv.setEllipsize(TextUtils.TruncateAt.END);
         tv.setSingleLine(true);
     }
-    public static void initAndLoadMenu(Context context) {
+    @JvmStatic
+    fun initAndLoadMenu(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(Settings_Menu.PREF_NAME, Context.MODE_PRIVATE);
-        String json = sharedPreferences.getString(Settings_Menu.KEY_LIST, null);
-        Type type = new TypeToken<ArrayList<MenuItem>>() {}.getType();
+        val json = sharedPreferences.getString(Settings_Menu.KEY_LIST, null);
+        Type type = new TypeToken<ArrayList<MenuItem>>() {}.getType()
         List<MenuItem> list = new Gson().fromJson(json, type);
         if (list == null || list.isEmpty()) {
-            list = new ArrayList<>();
+            list = ArrayList()
             list.add(new MenuItem(context.getString(R.string.menu_openFav), R.drawable.icon_fav, true));
             list.add(new MenuItem(context.getString(R.string.menu_fav), R.drawable.icon_fav_plus, true));
             list.add(new MenuItem(context.getString(R.string.main_menu_new_tabOpen), R.drawable.icon_tab_plus, true));
@@ -634,24 +651,24 @@ public class HelperUnit {
             list.add(new MenuItem(context.getString(R.string.menu_delete), R.drawable.icon_delete, true));
             list.add(new MenuItem(context.getString(R.string.menu_delete_entry), R.drawable.icon_delete_alt, true));
             list.add(new MenuItem(context.getString(R.string.app_help), R.drawable.icon_help, true));
-            SharedPreferences.Editor editor = sharedPreferences.edit();
+            SharedPreferences.Editor editor = sharedPreferences.edit()
             editor.putString(Settings_Menu.KEY_LIST, new Gson().toJson(list));
-            editor.apply();
+            editor.apply()
         }
     }
     public static void showCustomSnackbarWithTwoActions(
             Context context,
             View parentView,
             View anchorView,
-            String title,
-            String text,
-            String link,
-            int firstIconResId,
+            val title,
+            val text,
+            val link,
+            val firstIconResId,
             BooleanSupplier firstActionListener,
-            int secondIconResId,
+            val secondIconResId,
             BooleanSupplier secondActionListener) {
 
-        SpannableStringBuilder snackbarText = new SpannableStringBuilder();
+        SpannableStringBuilder snackbarText = new SpannableStringBuilder()
         if (title != null && !title.isEmpty()) {
             snackbarText.append(title);
             snackbarText.setSpan(
@@ -671,15 +688,15 @@ public class HelperUnit {
         // Pull colors straight from the active app theme (day/night, and any
         // custom/dynamic theme the user has picked) instead of hardcoding hex
         // values, so this box always matches the rest of the browser chrome.
-        TypedValue typedValue = new TypedValue();
+        TypedValue typedValue = new TypedValue()
         context.getTheme().resolveAttribute(R.attr.colorPrimaryInverse, typedValue, true);
-        int color = typedValue.data;
+        val color = typedValue.data;
 
-        TypedValue surfaceValue = new TypedValue();
+        TypedValue surfaceValue = new TypedValue()
         context.getTheme().resolveAttribute(R.attr.colorSurfaceContainerHigh, surfaceValue, true);
-        int backgroundColor = surfaceValue.data;
+        val backgroundColor = surfaceValue.data;
 
-        TypedValue onSurfaceValue = new TypedValue();
+        TypedValue onSurfaceValue = new TypedValue()
         context.getTheme().resolveAttribute(R.attr.colorOnSurface, onSurfaceValue, true);
         ColorStateList contentColor = ColorStateList.valueOf(onSurfaceValue.data);
 
@@ -687,7 +704,7 @@ public class HelperUnit {
         @SuppressLint("InflateParams")
         View customView = inflater.inflate(R.layout.custom_snackbar, null);
 
-        GradientDrawable shape = new GradientDrawable();
+        GradientDrawable shape = new GradientDrawable()
         shape.setShape(GradientDrawable.RECTANGLE);
         shape.setColor(backgroundColor);
         shape.setCornerRadius(60f);
@@ -699,15 +716,15 @@ public class HelperUnit {
                 snackbarText.append("\n\n");
             }
             snackbarText.append(link);
-            int linkStart = snackbarText.length() - link.length();
-            int linkEnd = snackbarText.length();
+            val linkStart = snackbarText.length() - link.length()
+            val linkEnd = snackbarText.length()
 
             ClickableSpan clickableSpan = new ClickableSpan() {
                 @Override
                 public void onClick(@NonNull View widget) {}
 
                 @Override
-                public void updateDrawState(@NonNull TextPaint ds) {
+                public void updateDrawState(@NonNull TextPaval ds) {
                     super.updateDrawState(ds);
                     ds.setColor(color);
                     ds.setUnderlineText(true);
@@ -721,8 +738,8 @@ public class HelperUnit {
         Snackbar snackbar = Snackbar.make(parentView, "", Snackbar.LENGTH_LONG);
         if (anchorView != null) {snackbar.setAnchorView(anchorView);}
 
-        ViewGroup layout = (ViewGroup) snackbar.getView();
-        layout.removeAllViews();
+        ViewGroup layout = (ViewGroup) snackbar.getView()
+        layout.removeAllViews()
         layout.setPadding(0, 0, 0, 0);
         layout.setBackgroundColor(Color.TRANSPARENT);
 
@@ -734,22 +751,22 @@ public class HelperUnit {
             textView.setTextIsSelectable(true);
 
             if (scrollView != null) {
-                int screenHeight = textView.getContext().getResources().getDisplayMetrics().heightPixels;
-                int maxPx = (screenHeight * 2) / 3;
+                val screenHeight = textView.getContext().getResources().getDisplayMetrics().heightPixels;
+                val maxPx = (screenHeight * 2) / 3;
                 scrollView.post(() -> {
                     if (scrollView.getHeight() > maxPx) {
                         scrollView.getLayoutParams().height = maxPx;
-                        scrollView.requestLayout();
+                        scrollView.requestLayout()
                     }
                 });
             }
 
             if (link != null && !link.isEmpty() && !link.startsWith("data:")) {
                 textView.setOnClickListener(v -> {
-                    BrowserController browserController = NinjaWebView.getBrowserController();
-                    browserController.hideOverflow();
+                    BrowserController browserController = NinjaWebView.getBrowserController()
+                    browserController.hideOverflow()
                     browserController.showOverflow(null, textView, 1, title, link, null, null, 0);
-                    snackbar.dismiss();
+                    snackbar.dismiss()
                 });
             }
         }
@@ -761,7 +778,7 @@ public class HelperUnit {
             if (firstActionListener != null) {
                 firstButton.setOnClickListener(v -> {
                     if (firstActionListener.getAsBoolean()) {
-                        snackbar.dismiss();
+                        snackbar.dismiss()
                     }
                 });
             }
@@ -774,29 +791,29 @@ public class HelperUnit {
             if (secondActionListener != null) {
                 secondButton.setOnClickListener(v -> {
                     if (secondActionListener.getAsBoolean()) {
-                        snackbar.dismiss();
+                        snackbar.dismiss()
                     }
                 });
             }
         }
 
         layout.addView(customView, 0);
-        snackbar.show();
+        snackbar.show()
     }
     public static void makeSnackbarRound (Snackbar snackbar) {
-        View snackbarView = snackbar.getView();
-        Context context = snackbarView.getContext();
+        View snackbarView = snackbar.getView()
+        Context context = snackbarView.getContext()
 
-        TypedValue surfaceValue = new TypedValue();
+        TypedValue surfaceValue = new TypedValue()
         context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHighest, surfaceValue, true);
         if (surfaceValue.data == 0) {
             context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHigh, surfaceValue, true);
         }
-        int backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : Color.parseColor("#2B2D30");
+        val backgroundColor = surfaceValue.data != 0 ? surfaceValue.data : Color.parseColor("#2B2D30");
 
-        TypedValue onSurfaceValue = new TypedValue();
+        TypedValue onSurfaceValue = new TypedValue()
         context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface, onSurfaceValue, true);
-        int textColor = onSurfaceValue.data != 0 ? onSurfaceValue.data : Color.WHITE;
+        val textColor = onSurfaceValue.data != 0 ? onSurfaceValue.data : Color.WHITE;
 
         TextView textView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_text);
         if (textView != null) {
@@ -807,7 +824,7 @@ public class HelperUnit {
 
         TextView actionView = snackbarView.findViewById(com.google.android.material.R.id.snackbar_action);
         if (actionView != null) {
-            TypedValue primaryValue = new TypedValue();
+            TypedValue primaryValue = new TypedValue()
             context.getTheme().resolveAttribute(android.R.attr.colorPrimary, primaryValue, true);
             if (primaryValue.data == 0) {
                 context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSecondary, primaryValue, true);
@@ -818,9 +835,9 @@ public class HelperUnit {
             }
         }
 
-        GradientDrawable background = new GradientDrawable();
+        GradientDrawable background = new GradientDrawable()
         background.setShape(GradientDrawable.RECTANGLE);
-        float radiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 28, context.getResources().getDisplayMetrics());
+        val radiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 28, context.getResources().getDisplayMetrics());
         background.setCornerRadius(radiusPx);
         background.setColor(backgroundColor);
         snackbarView.setBackground(background);
@@ -828,7 +845,8 @@ public class HelperUnit {
         snackbar.setTextMaxLines(100);
     }
 
-    public static void copy(Context context, String text) {
+    @JvmStatic
+    fun copy(Context context, val text) {
         if (context == null || text == null) return;
         try {
             android.content.ClipboardManager clipboard = (android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -837,18 +855,19 @@ public class HelperUnit {
                 clipboard.setPrimaryClip(clip);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace()
         }
     }
 
     /**
      * Applies bouncy scale-down and spring-back touch feedback to any Android View.
      */
-    public static void applyBouncyTouchFeedback(android.view.View view, float scaleDown) {
+    @JvmStatic
+    fun applyBouncyTouchFeedback(android.view.View view, val scaleDown) {
         if (view == null) return;
         view.setOnTouchListener(new android.view.View.OnTouchListener() {
             @Override
-            public boolean onTouch(android.view.View v, android.view.MotionEvent event) {
+            public val onTouch(android.view.View v, android.view.MotionEvent event) {
                 switch (event.getAction()) {
                     case android.view.MotionEvent.ACTION_DOWN:
                         v.animate()
@@ -856,7 +875,7 @@ public class HelperUnit {
                                 .scaleY(scaleDown)
                                 .setDuration(100)
                                 .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                                .start();
+                                .start()
                         break;
                     case android.view.MotionEvent.ACTION_UP:
                     case android.view.MotionEvent.ACTION_CANCEL:
@@ -865,7 +884,7 @@ public class HelperUnit {
                                 .scaleY(1.0f)
                                 .setDuration(200)
                                 .setInterpolator(new android.view.animation.OvershootInterpolator(2.0f))
-                                .start();
+                                .start()
                         break;
                 }
                 return false;
@@ -873,14 +892,16 @@ public class HelperUnit {
         });
     }
 
-    public static void applyBouncyTouchFeedback(android.view.View view) {
+    @JvmStatic
+    fun applyBouncyTouchFeedback(android.view.View view) {
         applyBouncyTouchFeedback(view, 0.94f);
     }
 
-    public static Context applyLanguage(Context context) {
-        if (context == null) return null;
+    @JvmStatic
+    fun applyLanguage(Context context): Context {
+        if (context == null) return null
         SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-        String lang = sp.getString("sp_app_language", "system");
+        val lang = sp.getString("sp_app_language", "system");
         if (lang != null && !lang.equals("system")) {
             Locale locale = Locale.forLanguageTag(lang);
             Locale.setDefault(locale);
@@ -892,31 +913,33 @@ public class HelperUnit {
         return context;
     }
 
-    public static void setAppLanguage(Context context, String langTag) {
+    @JvmStatic
+    fun setAppLanguage(Context context, val langTag) {
         if (context == null) return;
         SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-        sp.edit().putString("sp_app_language", langTag).apply();
+        sp.edit().putString("sp_app_language", langTag).apply()
 
         androidx.core.os.LocaleListCompat localeList = "system".equals(langTag)
                 ? androidx.core.os.LocaleListCompat.getEmptyLocaleList()
                 : androidx.core.os.LocaleListCompat.forLanguageTags(langTag);
         androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList);
 
-        Activity activity = null;
+        Activity activity = null
         Context current = context;
         while (current instanceof android.content.ContextWrapper) {
             if (current instanceof Activity) {
                 activity = (Activity) current;
                 break;
             }
-            current = ((android.content.ContextWrapper) current).getBaseContext();
+            current = ((android.content.ContextWrapper) current).getBaseContext()
         }
         if (activity != null) {
-            activity.recreate();
+            activity.recreate()
         }
     }
 
-    public static String getSafeString(SharedPreferences sp, String key, String defaultValue) {
+    @JvmStatic
+    fun getSafeString(SharedPreferences sp, val key, val defaultValue): val {
         try {
             return sp.getString(key, defaultValue);
         } catch (ClassCastException e) {
@@ -929,7 +952,8 @@ public class HelperUnit {
         }
     }
 
-    public static boolean getSafeBoolean(SharedPreferences sp, String key, boolean defaultValue) {
+    @JvmStatic
+    fun getSafeBoolean(SharedPreferences sp, val key, val defaultValue): Boolean {
         try {
             return sp.getBoolean(key, defaultValue);
         } catch (ClassCastException e) {
@@ -945,13 +969,14 @@ public class HelperUnit {
         }
     }
 
-    public static int getSafeInt(SharedPreferences sp, String key, int defaultValue) {
+    @JvmStatic
+    fun getSafeInt(SharedPreferences sp, val key, val defaultValue): Int {
         try {
             return sp.getInt(key, defaultValue);
         } catch (ClassCastException e) {
             try {
                 Object val = sp.getAll().get(key);
-                if (val instanceof Number) return ((Number) val).intValue();
+                if (val instanceof Number) return ((Number) val).intValue()
                 if (val instanceof String) {
                     try { return Integer.parseInt((String) val); } catch (Exception ignored) {}
                 }
