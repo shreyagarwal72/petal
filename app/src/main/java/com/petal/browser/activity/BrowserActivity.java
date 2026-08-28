@@ -166,59 +166,59 @@ import com.petal.browser.view.NinjaWebView;
 import com.petal.browser.view.AdapterRecord;
 import com.petal.browser.view.SwipeTouchListener;
 
-open class BrowserActivity : AppCompatActivity(), BrowserController {
+public class BrowserActivity extends AppCompatActivity implements BrowserController {
 
     // Menus
-    private const val INPUT_FILE_REQUEST_CODE: Int = 1
-    private AdapterRecord adapter;
-    private ImageButton fab_overview;
-    private ListView listView;
+    public static final int INPUT_FILE_REQUEST_CODE = 1;
+    public AdapterRecord adapter;
+    public ImageButton fab_overview;
+    public ListView listView;
 
     // Views
-    private TextInputEditText search_input;
-    private TextView appBar_title;
-    private EditText searchOnSiteInput;
+    public TextInputEditText search_input;
+    public TextView appBar_title;
+    public EditText searchOnSiteInput;
     @SuppressLint("StaticFieldLeak")
-    private static NinjaWebView ninjaWebView;
-    private View customView;
-    private VideoView videoView;
-    private boolean isMediaPlaying = false;
-    private FloatingActionButton fab_menu;
-    private BadgeDrawable badgeDrawable;
-    private AdapterSearch adapterSearch;
-    private MaterialCardView searchOnSiteLayout;
+    public static NinjaWebView ninjaWebView;
+    public View customView;
+    public VideoView videoView;
+    public boolean isMediaPlaying = false;
+    public FloatingActionButton fab_menu;
+    public BadgeDrawable badgeDrawable;
+    public AdapterSearch adapterSearch;
+    public MaterialCardView searchOnSiteLayout;
 
     // Layouts
-    private LinearProgressIndicator progressBar;
-    private com.petal.browser.ui.components.PullToRefreshFrameLayout contentFrame;
-    private LinearLayout tab_container;
-    private FrameLayout fullscreenHolder;
-    private com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
-    private ListView list_search;
+    public LinearProgressIndicator progressBar;
+    public com.petal.browser.ui.components.PullToRefreshFrameLayout contentFrame;
+    public LinearLayout tab_container;
+    public FrameLayout fullscreenHolder;
+    public com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
+    public ListView list_search;
 
     // Others
-    private BottomNavigationView bottom_navigation;
-    private String overViewTab;
-    private Activity activity;
+    public BottomNavigationView bottom_navigation;
+    public String overViewTab;
+    public Activity activity;
     @SuppressLint("StaticFieldLeak")
-    private static Context context;
-    private SharedPreferences sp;
-    private List_standard listStandard;
-    private long newIcon;
-    private long filterBy;
-    private boolean filter;
-    private ValueCallback<Uri[]> filePathCallback = null;
-    private AlbumController currentAlbumController = null;
-    private ValueCallback<Uri[]> mFilePathCallback;
-    private com.petal.browser.media.PetalMediaSessionService mediaService;
-    private boolean isMediaBound = false;
+    public static Context context;
+    public SharedPreferences sp;
+    public List_standard listStandard;
+    public long newIcon;
+    public long filterBy;
+    public boolean filter;
+    public ValueCallback<Uri[]> filePathCallback = null;
+    public AlbumController currentAlbumController = null;
+    public ValueCallback<Uri[]> mFilePathCallback;
+    public com.petal.browser.media.PetalMediaSessionService mediaService;
+    public boolean isMediaBound = false;
     /**
      * True during the very first onResume() that immediately follows onCreate().
      * dispatchIntent() is called at the end of onCreate() (after all tabs are ready),
      * so we must skip the redundant call in onResume() to avoid a double-dispatch
      * or, worse, a no-op because setAction("") already cleared the intent action.
      */
-    private boolean suppressResumeDispatch = false;
+    public boolean suppressResumeDispatch = false;
     /**
      * A widget action (ACTION_OPEN_SEARCH / _AI_SEARCH / _VOICE) waiting to run once the
      * window has genuine input focus. See {@link #runOrDeferPendingWidgetAction()}.
@@ -2351,8 +2351,8 @@ open class BrowserActivity : AppCompatActivity(), BrowserController {
         );
     }
 
-    private int currentVideoWidth = 0;
-    private int currentVideoHeight = 0;
+    public int currentVideoWidth = 0;
+    public int currentVideoHeight = 0;
 
     open fun updateVideoDimensions(int width, int height) {
         if (width > 0 && height > 0) {
@@ -2464,7 +2464,7 @@ open class BrowserActivity : AppCompatActivity(), BrowserController {
         }
     }
 
-    private fun springTranslateY(View view, float endValue, float stiffness, float dampingRatio) {
+    public fun springTranslateY(View view, float endValue, float stiffness, float dampingRatio) {
         new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.TRANSLATION_Y)
                 .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
                         .setStiffness(stiffness)
@@ -2472,7 +2472,7 @@ open class BrowserActivity : AppCompatActivity(), BrowserController {
                 .start();
     }
 
-    private fun springScale(View view, float endValue, float stiffness, float dampingRatio) {
+    public fun springScale(View view, float endValue, float stiffness, float dampingRatio) {
         new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.SCALE_X)
                 .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
                         .setStiffness(stiffness)
@@ -2485,7 +2485,7 @@ open class BrowserActivity : AppCompatActivity(), BrowserController {
                 .start();
     }
 
-    private fun springAlpha(View view, float endValue, float stiffness, float dampingRatio) {
+    public fun springAlpha(View view, float endValue, float stiffness, float dampingRatio) {
         new androidx.dynamicanimation.animation.SpringAnimation(view, androidx.dynamicanimation.animation.DynamicAnimation.ALPHA)
                 .setSpring(new androidx.dynamicanimation.animation.SpringForce(endValue)
                         .setStiffness(stiffness)
@@ -3599,7 +3599,7 @@ open class BrowserActivity : AppCompatActivity(), BrowserController {
     private fun showDialogCustomSearches(String url) {
         com.petal.browser.ui.components.BrowserDialogManager.showDialogCustomSearches(this, url);
     }
-    private fun doubleTapsQuit() {
+    public fun doubleTapsQuit() {
         if (!sp.getBoolean("sp_close_browser_confirm", true)) {
             finishAndRemoveTask();
         } else {
@@ -3892,7 +3892,7 @@ open class BrowserActivity : AppCompatActivity(), BrowserController {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun dispatchIntent(Intent intent) {
+    public fun dispatchIntent(Intent intent) {
         if (intent == null) return;
 
         // Tapping a download notification (see PetalLiveAlertManager) launches
@@ -4333,7 +4333,7 @@ open class BrowserActivity : AppCompatActivity(), BrowserController {
         setWebView(title, url, foreground, isIncognito);
     }
 
-    private fun triggerRebirth(Context context) {
+    public fun triggerRebirth(Context context) {
         sp.edit().putInt("restart_changed", 0).apply();
         sp.edit().putBoolean("restoreOnRestart", true).apply();
         Snackbar snackbar = Snackbar.make(ninjaWebView, R.string.toast_restart, Snackbar.LENGTH_SHORT);
