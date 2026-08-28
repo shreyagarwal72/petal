@@ -115,9 +115,6 @@ public class PetalMediaSessionService extends Service {
                     stopForeground(true);
                     stopSelf();
                     break;
-                case ACTION_SKIP_FORWARD:
-                    if (controlListener != null) controlListener.onSeekTo(currentPosition + 10000);
-                    break;
                 case ACTION_SKIP_BACKWARD:
                     if (controlListener != null) controlListener.onSkip(-10);
                     break;
