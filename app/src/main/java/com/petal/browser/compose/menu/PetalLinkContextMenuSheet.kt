@@ -36,22 +36,22 @@ import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 
 interface PetalLinkContextMenuHandler {
-    fun onOpenInNewTab()
-    fun onOpenInNewTabInGroup()
-    fun onOpenInIncognitoTab()
-    fun onOpenInNewWindow()
-    fun onPreviewPage()
-    fun onCopyLinkAddress()
-    fun onCopyLinkText()
-    fun onDownloadLink()
+    fun onOpenInNewTab() {}
+    fun onOpenInNewTabInGroup() {}
+    fun onOpenInIncognitoTab() {}
+    fun onOpenInNewWindow() {}
+    fun onPreviewPage() {}
+    fun onCopyLinkAddress() {}
+    fun onCopyLinkText() {}
+    fun onDownloadLink() {}
     fun onOpenImageInNewTab() {}
     fun onCopyImage() {}
-    fun onDownloadImage()
+    fun onDownloadImage() {}
     fun onDownloadVideo() {}
-    fun onAddToReadingList()
-    fun onShareLink()
-    fun onShareImage()
-    fun onScanImage()
+    fun onAddToReadingList() {}
+    fun onShareLink() {}
+    fun onShareImage() {}
+    fun onScanImage() {}
     fun onSearchWithGoogleLens() {}
 }
 
