@@ -37,7 +37,6 @@ import androidx.compose.material3.*
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
-import com.petal.browser.ui.components.PetalExpressiveLinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -806,23 +805,22 @@ private fun DownloadRowItem(
                     label = "Progress"
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                com.petal.browser.ui.components.PetalExpressiveLinearProgressIndicator(
+                LinearRipplingWavyProgressIndicator(
                     progress = animatedProgress,
-                    modifier = Modifier.fillMaxWidth(),
-                    height = 8.dp,
-                    isWaveActive = true
+                    modifier = Modifier.fillMaxWidth()
                 )
             } else if (item.status == DownloadManager.STATUS_PAUSED) {
                 // A frozen, muted bar (no wave motion) makes "paused" visually distinct from
                 // an actively downloading file, matching how Chrome dims a paused download.
                 Spacer(modifier = Modifier.height(6.dp))
-                PetalExpressiveLinearProgressIndicator(
+                LinearProgressIndicator(
                     progress = item.progress ?: 0f,
-                    modifier = Modifier.fillMaxWidth(),
-                    height = 6.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.5.dp)
+                        .clip(RoundedCornerShape(50)),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
-                    isWaveActive = false
                 )
             }
         }
