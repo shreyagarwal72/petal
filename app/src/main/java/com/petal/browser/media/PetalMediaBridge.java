@@ -80,6 +80,8 @@ public class PetalMediaBridge {
         void onMediaProgress(long positionMs, long durationMs);
         default void onMediaPlayingStateChanged(boolean isPlaying) {}
         default void onVideoDimensionsChanged(int width, int height) {}
+        default void onSpeedChanged(float speed) {}
+        default void onMuteChanged(boolean muted) {}
     }
 
     public PetalMediaBridge(Context context, WebView webView, MediaStateListener listener) {
@@ -108,6 +110,30 @@ public class PetalMediaBridge {
         if (webView != null) {
             webView.evaluateJavascript(
                     "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].pause(); }", null
+            );
+        }
+    }
+
+    public void changeSpeed(float speed) {
+        if (webView != null) {
+            webView.evaluateJavascript(
+                    "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].playbackRate = " + speed + "; }", null
+            );
+        }
+    }
+
+    public void toggleMute() {
+        if (webView != null) {
+            webView.evaluateJavascript(
+                    "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].muted = !els[i].muted; }", null
+            );
+        }
+    }
+
+    public void skip(int deltaSeconds) {
+        if (webView != null) {
+            webView.evaluateJavascript(
+                    "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].currentTime += " + deltaSeconds + "; }", null
             );
         }
     }

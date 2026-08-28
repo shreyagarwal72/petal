@@ -259,6 +259,27 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             ninjaWebView.getMediaBridge().seekMediaTo(positionMs);
                         }
                     }
+
+                    @Override
+                    public void onSpeedToggle(float newSpeed) {
+                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
+                            ninjaWebView.getMediaBridge().changeSpeed(newSpeed);
+                        }
+                    }
+
+                    @Override
+                    public void onMuteToggle() {
+                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
+                            ninjaWebView.getMediaBridge().toggleMute();
+                        }
+                    }
+
+                    @Override
+                    public void onSkip(int deltaSeconds) {
+                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
+                            ninjaWebView.getMediaBridge().skip(deltaSeconds);
+                        }
+                    }
                 });
             }
         }
