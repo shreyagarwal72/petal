@@ -1042,19 +1042,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     pipBuilder.setAutoEnterEnabled(isAutoPipEnabled && enableAutoEnter);
                 }
                 View targetView = customView != null ? customView : (videoView != null ? videoView : (ninjaWebView != null ? ninjaWebView : contentFrame));
-                if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
-                    int width = targetView.getWidth();
-                    int height = targetView.getHeight();
+                int width = 0;
+                int height = 0;
+                if (currentVideoWidth > 0 && currentVideoHeight > 0) {
+                    width = currentVideoWidth;
+                    height = currentVideoHeight;
+                } else if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
+                    width = targetView.getWidth();
+                    height = targetView.getHeight();
+                }
+
+                if (width > 0 && height > 0) {
                     float ratio = (float) width / (float) height;
                     if (ratio > 2.39f) ratio = 2.39f;
                     if (ratio < 0.418f) ratio = 0.418f;
                     android.util.Rational aspectRatio = new android.util.Rational((int) (ratio * 1000), 1000);
                     pipBuilder.setAspectRatio(aspectRatio);
 
-                    android.graphics.Rect rect = new android.graphics.Rect();
-                    targetView.getGlobalVisibleRect(rect);
-                    if (!rect.isEmpty()) {
-                        pipBuilder.setSourceRectHint(rect);
+                    if (targetView != null) {
+                        android.graphics.Rect rect = new android.graphics.Rect();
+                        targetView.getGlobalVisibleRect(rect);
+                        if (!rect.isEmpty()) {
+                            pipBuilder.setSourceRectHint(rect);
+                        }
                     }
                 }
                 setPictureInPictureParams(pipBuilder.build());
@@ -1071,19 +1081,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     pipBuilder.setAutoEnterEnabled(isAutoPipEnabled);
                 }
                 View targetView = customView != null ? customView : (videoView != null ? videoView : (ninjaWebView != null ? ninjaWebView : contentFrame));
-                if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
-                    int width = targetView.getWidth();
-                    int height = targetView.getHeight();
+                int width = 0;
+                int height = 0;
+                if (currentVideoWidth > 0 && currentVideoHeight > 0) {
+                    width = currentVideoWidth;
+                    height = currentVideoHeight;
+                } else if (targetView != null && targetView.getWidth() > 0 && targetView.getHeight() > 0) {
+                    width = targetView.getWidth();
+                    height = targetView.getHeight();
+                }
+
+                if (width > 0 && height > 0) {
                     float ratio = (float) width / (float) height;
                     if (ratio > 2.39f) ratio = 2.39f;
                     if (ratio < 0.418f) ratio = 0.418f;
                     android.util.Rational aspectRatio = new android.util.Rational((int) (ratio * 1000), 1000);
                     pipBuilder.setAspectRatio(aspectRatio);
 
-                    android.graphics.Rect rect = new android.graphics.Rect();
-                    targetView.getGlobalVisibleRect(rect);
-                    if (!rect.isEmpty()) {
-                        pipBuilder.setSourceRectHint(rect);
+                    if (targetView != null) {
+                        android.graphics.Rect rect = new android.graphics.Rect();
+                        targetView.getGlobalVisibleRect(rect);
+                        if (!rect.isEmpty()) {
+                            pipBuilder.setSourceRectHint(rect);
+                        }
                     }
                 }
                 enterPictureInPictureMode(pipBuilder.build());
@@ -1102,12 +1122,36 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
             View mainProgressBar = findViewById(R.id.main_progress_bar_compose);
 
+            View fabMenu = findViewById(R.id.fab_menu);
+            View fabShare = findViewById(R.id.fab_share);
+            View fabBubble = findViewById(R.id.fab_bubble);
+
             if (isInPictureInPictureMode) {
                 if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
                 if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
                 if (refreshBarCompose != null) refreshBarCompose.setVisibility(GONE);
                 if (mainProgressBar != null) mainProgressBar.setVisibility(GONE);
                 if (appBar != null) appBar.setVisibility(GONE);
+                if (fabMenu != null) fabMenu.setVisibility(GONE);
+                if (fabShare != null) fabShare.setVisibility(GONE);
+                if (fabBubble != null) fabBubble.setVisibility(GONE);
+
+                // Inject CSS into active webview to isolate video frame & remove webpage headers/sidebars/popups in PiP mode
+                if (ninjaWebView != null && customView == null) {
+                    ninjaWebView.evaluateJavascript(
+                        "(function() {" +
+                        "   var style = document.getElementById('petal-pip-style');" +
+                        "   if (!style) {" +
+                        "       style = document.createElement('style');" +
+                        "       style.id = 'petal-pip-style';" +
+                        "       style.innerHTML = 'body { background: #000 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; } ' +" +
+                        "                         'video { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999999 !important; object-fit: contain !important; background: #000 !important; } ' +" +
+                        "                         'header, footer, nav, sidebar, .ytp-chrome-top, .ytp-gradient-top, .ytp-show-cards-title, .html5-video-player > *:not(video) { display: none !important; opacity: 0 !important; }';" +
+                        "       (document.head || document.documentElement).appendChild(style);" +
+                        "   }" +
+                        "})();", null
+                    );
+                }
             } else {
                 if (composeAddressBar != null) composeAddressBar.setVisibility(VISIBLE);
                 if (bottomNavContainer != null) bottomNavContainer.setVisibility(VISIBLE);
@@ -1115,6 +1159,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (mainProgressBar != null) mainProgressBar.setVisibility(VISIBLE);
                 if (appBar != null && currentAlbumController != null && !isHomePage(ninjaWebView != null ? ninjaWebView.getUrl() : "")) {
                     appBar.setVisibility(VISIBLE);
+                }
+
+                // Remove PiP video isolation CSS upon exiting PiP mode
+                if (ninjaWebView != null) {
+                    ninjaWebView.evaluateJavascript(
+                        "(function() {" +
+                        "   var style = document.getElementById('petal-pip-style');" +
+                        "   if (style) style.remove();" +
+                        "})();", null
+                    );
                 }
             }
         } catch (Exception e) {
@@ -2346,6 +2400,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 );
             }
         );
+    }
+
+    private int currentVideoWidth = 0;
+    private int currentVideoHeight = 0;
+
+    public void updateVideoDimensions(int width, int height) {
+        if (width > 0 && height > 0) {
+            this.currentVideoWidth = width;
+            this.currentVideoHeight = height;
+            updatePipParams(isMediaPlaying);
+        }
     }
 
     private boolean isAddressBarCollapsed = false;
@@ -4672,6 +4737,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     public void onMediaPlayingStateChanged(boolean playing) {
                         isMediaPlaying = playing;
                         updatePipParams(playing);
+                    }
+
+                    @Override
+                    public void onVideoDimensionsChanged(int width, int height) {
+                        updateVideoDimensions(width, height);
                     }
                 }
         );
