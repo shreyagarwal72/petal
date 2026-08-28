@@ -14,11 +14,11 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.adapter.AdapterCustomSearches
-import com.petal.browser.adapter.GridAdapter
-import com.petal.browser.database.CustomSearchesHelper
-import com.petal.browser.item.CustomRedirect
-import com.petal.browser.item.GridItem
+import com.petal.browser.view.AdapterCustomSearches
+import com.petal.browser.view.GridAdapter
+import com.petal.browser.objects.CustomSearchesHelper
+import com.petal.browser.objects.CustomRedirect
+import com.petal.browser.view.GridItem
 import com.petal.browser.unit.HelperUnit
 import org.json.JSONException
 import java.util.LinkedList
