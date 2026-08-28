@@ -136,6 +136,11 @@ object PetalLiveAlertManager {
     }
 
     @JvmStatic
+    fun resumeDownload(context: Context, downloadId: Long) {
+        PetalFetchDownloadBridge.resume(context, downloadId)
+    }
+
+    @JvmStatic
     fun retryDownload(context: Context, downloadId: Long) {
         PetalFetchDownloadBridge.retry(context, downloadId)
     }
