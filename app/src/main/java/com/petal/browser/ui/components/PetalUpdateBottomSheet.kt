@@ -346,10 +346,11 @@ fun PetalUpdateSheetContent(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    PetalExpressiveLinearProgressIndicator(
+                    LinearRipplingWavyProgressIndicator(
                         progress = null,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        height = 8.dp
+                        height = 6.dp,
+                        strokeWidth = 3.5.dp
                     )
                 }
             } else if (notesToDisplay.isNotBlank()) {
@@ -391,11 +392,11 @@ fun PetalUpdateSheetContent(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        PetalExpressiveLinearProgressIndicator(
+                        LinearRipplingWavyProgressIndicator(
                             progress = downloadProgress / 100f,
                             modifier = Modifier.fillMaxWidth(),
                             height = 8.dp,
-                            isWaveActive = true
+                            strokeWidth = 4.dp
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(

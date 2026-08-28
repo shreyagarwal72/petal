@@ -951,11 +951,8 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         }
     }
 
-    val greetingTagShape = remember { PetalMaterialShapes.Arch.toShape() }
-    val greetingIconShape = remember { PetalMaterialShapes.Clover4Leaf.toShape() }
-
     Surface(
-        shape = greetingTagShape,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 10.dp, bottomEnd = 28.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
         shadowElevation = 2.dp,
@@ -972,10 +969,10 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
             horizontalArrangement = Arrangement.Center
         ) {
             Surface(
-                shape = greetingIconShape,
+                shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
