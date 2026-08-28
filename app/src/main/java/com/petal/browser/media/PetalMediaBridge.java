@@ -51,6 +51,19 @@ public class PetalMediaBridge {
             "                   window." + JS_INTERFACE_NAME + ".onMediaProgress(this.currentTime * 1000, (this.duration || 0) * 1000);" +
             "               }" +
             "           });" +
+            "           el.addEventListener('loadedmetadata', function() {" +
+            "               if (window." + JS_INTERFACE_NAME + ") {" +
+            "                   window." + JS_INTERFACE_NAME + ".onVideoDimensions(this.videoWidth || 0, this.videoHeight || 0);" +
+            "               }" +
+            "           });" +
+            "           el.addEventListener('resize', function() {" +
+            "               if (window." + JS_INTERFACE_NAME + ") {" +
+            "                   window." + JS_INTERFACE_NAME + ".onVideoDimensions(this.videoWidth || 0, this.videoHeight || 0);" +
+            "               }" +
+            "           });" +
+            "           if (el.videoWidth && el.videoHeight && window." + JS_INTERFACE_NAME + ") {" +
+            "               window." + JS_INTERFACE_NAME + ".onVideoDimensions(el.videoWidth, el.videoHeight);" +
+            "           }" +
             "       }" +
             "   }" +
             "   document.addEventListener('DOMNodeInserted', hookMediaElements);" +
@@ -66,6 +79,7 @@ public class PetalMediaBridge {
         void onMediaPause(long positionMs, long durationMs);
         void onMediaProgress(long positionMs, long durationMs);
         default void onMediaPlayingStateChanged(boolean isPlaying) {}
+        default void onVideoDimensionsChanged(int width, int height) {}
     }
 
     public PetalMediaBridge(Context context, WebView webView, MediaStateListener listener) {
@@ -159,6 +173,18 @@ public class PetalMediaBridge {
         public void onMediaProgress(double positionMs, double durationMs) {
             if (listener != null) {
                 listener.onMediaProgress((long) positionMs, (long) durationMs);
+            }
+        }
+
+        @JavascriptInterface
+        public void onVideoDimensions(int width, int height) {
+            if (context instanceof Activity) {
+                Activity act = (Activity) context;
+                act.runOnUiThread(() -> {
+                    if (listener != null) {
+                        listener.onVideoDimensionsChanged(width, height);
+                    }
+                });
             }
         }
     }
