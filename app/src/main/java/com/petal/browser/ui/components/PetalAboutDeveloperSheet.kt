@@ -332,7 +332,7 @@ fun DeveloperHeroCard(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
-                            text = "SA",
+                            text = "VA",
                             style = MaterialTheme.typography.headlineMedium.copy(
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 28.sp
@@ -347,7 +347,7 @@ fun DeveloperHeroCard(
 
             // Developer Name & Handle
             Text(
-                text = "Shrey Agarwal",
+                text = "Vanshu Agarwal",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
