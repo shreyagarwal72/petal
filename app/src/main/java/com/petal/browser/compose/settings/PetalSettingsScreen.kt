@@ -2124,127 +2124,109 @@ fun PetalSettingsScreen(
                                      HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                                      Column(
-                                         modifier = Modifier
-                                             .fillMaxWidth()
-                                             .padding(vertical = 4.dp),
-                                         verticalArrangement = Arrangement.spacedBy(8.dp)
-                                     ) {
-                                         Text(
-                                             text = "Download & Torrent Engine",
-                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                             color = MaterialTheme.colorScheme.onSurfaceVariant
-                                         )
+                                          modifier = Modifier
+                                              .fillMaxWidth()
+                                              .padding(vertical = 4.dp),
+                                          verticalArrangement = Arrangement.spacedBy(10.dp)
+                                      ) {
+                                          Row(
+                                              verticalAlignment = Alignment.CenterVertically,
+                                              horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                          ) {
+                                              Icon(
+                                                  imageVector = Icons.Rounded.Download,
+                                                  contentDescription = null,
+                                                  tint = MaterialTheme.colorScheme.primary,
+                                                  modifier = Modifier.size(20.dp)
+                                              )
+                                              Text(
+                                                  text = "Download & Torrent Engine",
+                                                  style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                  color = MaterialTheme.colorScheme.onSurface
+                                              )
+                                          }
+                                          Text(
+                                              text = "Select your preferred engine for downloads, torrents, and magnet links:",
+                                              style = MaterialTheme.typography.bodySmall,
+                                              color = MaterialTheme.colorScheme.onSurfaceVariant
+                                          )
 
-                                         val engineScrollStateAcc = rememberScrollState()
-                                         com.petal.browser.ui.components.ScrollFadeRow(
-                                             scrollState = engineScrollStateAcc,
-                                             edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                                         ) {
-                                             Row(
-                                                 modifier = Modifier
-                                                     .fillMaxWidth()
-                                                     .horizontalScroll(engineScrollStateAcc),
-                                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                             ) {
-                                                 com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().forEach { mode ->
-                                                     FilterChip(
-                                                         selected = torrentEngineMode.equals(mode.key, ignoreCase = true),
-                                                         onClick = {
-                                                             torrentEngineMode = mode.key
-                                                             com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(context, mode)
-                                                         },
-                                                         label = { Text(mode.title) },
-                                                         leadingIcon = if (torrentEngineMode.equals(mode.key, ignoreCase = true)) {
-                                                             @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                                         } else null
-                                                     )
-                                                 }
-                                             }
-                                         }
+                                          val engineItems = com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().map { mode ->
+                                              com.petal.browser.ui.components.ExpressiveSegmentItem(
+                                                  id = mode.key,
+                                                  label = mode.title,
+                                                  icon = when (mode) {
+                                                      com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM -> Icons.Rounded.Speed
+                                                      com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_EMBEDDED -> Icons.Rounded.Download
+                                                      com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_SYSTEM -> Icons.Rounded.Android
+                                                  }
+                                              )
+                                          }
 
-                                         val activeEngineMode = com.petal.browser.torrent.PetalTorrentEngineManager.getSelectedEngineMode(context)
-                                         Surface(
-                                             shape = RoundedCornerShape(12.dp),
-                                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                                             modifier = Modifier.fillMaxWidth()
-                                         ) {
-                                             Column(modifier = Modifier.padding(12.dp)) {
-                                                 Text(
-                                                     text = activeEngineMode.title,
-                                                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                     color = MaterialTheme.colorScheme.primary
-                                                 )
-                                                 Spacer(Modifier.height(4.dp))
-                                                 Text(
-                                                     text = activeEngineMode.description,
-                                                     style = MaterialTheme.typography.bodySmall,
-                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                 )
-                                             }
-                                         }
-                                     }
+                                          com.petal.browser.ui.components.ExpressiveButtonGroup(
+                                              items = engineItems,
+                                              selectedId = torrentEngineMode,
+                                              onItemSelected = { selectedKey ->
+                                                  torrentEngineMode = selectedKey
+                                                  val mode = com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().firstOrNull { it.key.equals(selectedKey, ignoreCase = true) }
+                                                      ?: com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM
+                                                  com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(context, mode)
+                                              },
+                                              modifier = Modifier.fillMaxWidth()
+                                          )
+
+                                          val activeEngineMode = com.petal.browser.torrent.PetalTorrentEngineManager.getSelectedEngineMode(context)
+                                          Surface(
+                                              shape = RoundedCornerShape(16.dp),
+                                              color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
+                                              border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                              modifier = Modifier.fillMaxWidth()
+                                          ) {
+                                              Row(
+                                                  modifier = Modifier.padding(14.dp),
+                                                  verticalAlignment = Alignment.CenterVertically,
+                                                  horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                              ) {
+                                                  Surface(
+                                                      shape = CircleShape,
+                                                      color = MaterialTheme.colorScheme.primaryContainer,
+                                                      modifier = Modifier.size(38.dp)
+                                                  ) {
+                                                      Box(contentAlignment = Alignment.Center) {
+                                                          Icon(
+                                                              imageVector = when (activeEngineMode) {
+                                                                  com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM -> Icons.Rounded.Speed
+                                                                  com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_EMBEDDED -> Icons.Rounded.Download
+                                                                  com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_SYSTEM -> Icons.Rounded.Android
+                                                              },
+                                                              contentDescription = null,
+                                                              tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                              modifier = Modifier.size(20.dp)
+                                                          )
+                                                      }
+                                                  }
+
+                                                  Column(modifier = Modifier.weight(1f)) {
+                                                      Text(
+                                                          text = activeEngineMode.title,
+                                                          style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                          color = MaterialTheme.colorScheme.onSurface
+                                                      )
+                                                      Spacer(Modifier.height(2.dp))
+                                                      Text(
+                                                          text = activeEngineMode.description,
+                                                          style = MaterialTheme.typography.bodySmall,
+                                                          color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                      )
+                                                  }
+                                              }
+                                          }
+                                      }
+
                                         }
                                     }
                                 }
 
-                                if ((scaffoldCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Torrent Engine", "torrent magnet 1dm p2p download engine bittorrent webseed fast downloader")) {
-                                     SettingsCategoryCard(title = "High-Speed Torrent & Magnet Engine", icon = Icons.Rounded.Download) {
-                                         Text(
-                                             "Select how Magnet links and .torrent files are downloaded:",
-                                             style = MaterialTheme.typography.bodySmall,
-                                             color = MaterialTheme.colorScheme.onSurfaceVariant
-                                         )
-
-                                         val engineScrollState = rememberScrollState()
-                                         com.petal.browser.ui.components.ScrollFadeRow(
-                                             scrollState = engineScrollState,
-                                             edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                                         ) {
-                                             Row(
-                                                 modifier = Modifier
-                                                     .fillMaxWidth()
-                                                     .horizontalScroll(engineScrollState),
-                                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                             ) {
-                                                 com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().forEach { mode ->
-                                                     FilterChip(
-                                                         selected = torrentEngineMode.equals(mode.key, ignoreCase = true),
-                                                         onClick = {
-                                                             torrentEngineMode = mode.key
-                                                             com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(context, mode)
-                                                         },
-                                                         label = { Text(mode.title) },
-                                                         leadingIcon = if (torrentEngineMode.equals(mode.key, ignoreCase = true)) {
-                                                             @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                                         } else null
-                                                     )
-                                                 }
-                                             }
-                                         }
-
-                                         val activeMode = com.petal.browser.torrent.PetalTorrentEngineManager.getSelectedEngineMode(context)
-                                         Surface(
-                                             shape = RoundedCornerShape(12.dp),
-                                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                             modifier = Modifier.fillMaxWidth()
-                                         ) {
-                                             Column(modifier = Modifier.padding(12.dp)) {
-                                                 Text(
-                                                     text = activeMode.title,
-                                                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                     color = MaterialTheme.colorScheme.primary
-                                                 )
-                                                 Spacer(Modifier.height(4.dp))
-                                                 Text(
-                                                     text = activeMode.description,
-                                                     style = MaterialTheme.typography.bodySmall,
-                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                 )
-                                             }
-                                         }
-                                     }
-                                 }
                             }
 
                             // 8. Full Backup & Sync Section

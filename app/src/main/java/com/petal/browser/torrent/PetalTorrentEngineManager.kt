@@ -22,9 +22,9 @@ import java.io.File
 object PetalTorrentEngineManager {
 
     enum class TorrentEngineMode(val key: String, val title: String, val description: String) {
-        ENGINE_1DM("1DM", "1DM High-Speed Engine (Official)", "Fastest multi-threaded P2P engine with DHT & peer scraping"),
-        ENGINE_EMBEDDED("EMBEDDED", "In-App Native Torrent Downloader", "Direct in-app Magnet & .torrent stream downloader"),
-        ENGINE_SYSTEM("SYSTEM", "Standard Android Downloader", "Default system download manager or app chooser")
+        ENGINE_1DM("1DM", "1DM High-Speed Engine", "Fastest multi-threaded P2P engine with DHT & peer scraping"),
+        ENGINE_EMBEDDED("EMBEDDED", "In-App Downloader", "Direct in-app Magnet & .torrent stream downloader"),
+        ENGINE_SYSTEM("SYSTEM", "System Downloader", "Default Android system download manager or app chooser")
     }
 
     @JvmStatic
