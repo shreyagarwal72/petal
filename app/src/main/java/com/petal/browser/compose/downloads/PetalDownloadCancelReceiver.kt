@@ -29,6 +29,10 @@ class PetalDownloadCancelReceiver : BroadcastReceiver() {
                 PetalLiveAlertManager.resumeDownload(context, downloadId)
                 Log.d("PetalLiveAlert", "Download $downloadId resumed by user action")
             }
+            ACTION_RETRY_DOWNLOAD -> {
+                PetalLiveAlertManager.retryDownload(context, downloadId)
+                Log.d("PetalLiveAlert", "Download $downloadId retry initiated by user action")
+            }
         }
     }
 
@@ -36,6 +40,7 @@ class PetalDownloadCancelReceiver : BroadcastReceiver() {
         const val ACTION_CANCEL_DOWNLOAD = "com.petal.browser.action.CANCEL_DOWNLOAD"
         const val ACTION_PAUSE_DOWNLOAD = "com.petal.browser.action.PAUSE_DOWNLOAD"
         const val ACTION_RESUME_DOWNLOAD = "com.petal.browser.action.RESUME_DOWNLOAD"
+        const val ACTION_RETRY_DOWNLOAD = "com.petal.browser.action.RETRY_DOWNLOAD"
         const val EXTRA_DOWNLOAD_ID = "extra_download_id"
     }
 }

@@ -136,8 +136,34 @@ object PetalLiveAlertManager {
     }
 
     @JvmStatic
-    fun resumeDownload(context: Context, downloadId: Long) {
-        PetalFetchDownloadBridge.resume(context, downloadId)
+    fun retryDownload(context: Context, downloadId: Long) {
+        PetalFetchDownloadBridge.retry(context, downloadId)
+    }
+
+    private fun showFailureNotification(context: Context, downloadId: Long, fileName: String) {
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+
+        val retryIntent = Intent(context, PetalDownloadCancelReceiver::class.java).apply {
+            action = PetalDownloadCancelReceiver.ACTION_RETRY_DOWNLOAD
+            putExtra(PetalDownloadCancelReceiver.EXTRA_DOWNLOAD_ID, downloadId)
+        }
+        val retryPendingIntent = PendingIntent.getBroadcast(
+            context,
+            downloadId.toInt() + 40000,
+            retryIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.icon_alert)
+            .setContentTitle("Download Stopped / Failed")
+            .setContentText("Failed to download $fileName. Tap Retry to restart.")
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .addAction(R.drawable.icon_refresh, "Retry Download", retryPendingIntent)
+
+        nm.notify(downloadId.toInt(), builder.build())
     }
 
     private fun showPausedNotification(context: Context, downloadId: Long) {
@@ -331,17 +357,7 @@ object PetalLiveAlertManager {
         nm.notify(downloadId.toInt(), builder.build())
     }
 
-    private fun showFailureNotification(context: Context, downloadId: Long, fileName: String) {
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.icon_alert)
-            .setContentTitle("Download Failed")
-            .setContentText("Could not download $fileName")
-            .setOngoing(false)
-            .setAutoCancel(true)
 
-        nm.notify(downloadId.toInt(), builder.build())
-    }
 
     @JvmStatic
     fun trackOfflinePage(context: Context, title: String, url: String, filePath: String) {

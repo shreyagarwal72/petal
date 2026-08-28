@@ -655,6 +655,7 @@ private fun DownloadRowItem(
                         when (item.status) {
                             DownloadManager.STATUS_RUNNING -> PetalLiveAlertManager.pauseDownload(context, item.id)
                             DownloadManager.STATUS_PAUSED -> PetalLiveAlertManager.resumeDownload(context, item.id)
+                            DownloadManager.STATUS_FAILED -> PetalLiveAlertManager.retryDownload(context, item.id)
                             else -> {}
                         }
                     }
@@ -749,6 +750,16 @@ private fun DownloadRowItem(
                                 onClick = {
                                     menuExpanded = false
                                     PetalLiveAlertManager.resumeDownload(context, item.id)
+                                }
+                            )
+                        }
+                        if (item.status == DownloadManager.STATUS_FAILED) {
+                            DropdownMenuItem(
+                                text = { Text("Retry") },
+                                leadingIcon = { Icon(Icons.Rounded.Refresh, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    PetalLiveAlertManager.retryDownload(context, item.id)
                                 }
                             )
                         }
