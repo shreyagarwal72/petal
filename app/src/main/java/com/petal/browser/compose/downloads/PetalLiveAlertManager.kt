@@ -25,6 +25,9 @@ object PetalLiveAlertManager {
     private val trackingJobs = ConcurrentHashMap<Long, Job>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    @Volatile
+    private var isGlobalCollectorStarted = false
+
     @JvmOverloads
     @JvmStatic
     fun trackDownload(context: Context, downloadId: Long, fileName: String, startService: Boolean = true) {
@@ -34,67 +37,64 @@ object PetalLiveAlertManager {
         ensureNotificationChannel(appContext)
         PetalFetchDownloadBridge.ensureInitialized(appContext)
 
-        // Only start service if requested and not already tracking actively
+        // Only start service if requested
         if (startService) {
-            val existing = trackingJobs[downloadId]
-            if (existing == null || !existing.isActive) {
-                try {
-                    PetalDownloadService.start(appContext, downloadId, fileName)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to start PetalDownloadService: ${e.message}")
-                }
+            try {
+                PetalDownloadService.start(appContext, downloadId, fileName)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start PetalDownloadService: ${e.message}")
             }
         }
 
-        // Avoid re-launching tracking job if it's already active for the same download
-        val existingJob = trackingJobs[downloadId]
-        if (existingJob != null && existingJob.isActive) {
-            return
-        }
+        startGlobalDownloadObserver(appContext)
+    }
 
-        val job = scope.launch {
-            while (isActive) {
-                val item = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { it.id == downloadId }
-                if (item == null) {
-                    delay(500L)
-                    continue
+    @JvmStatic
+    private fun startGlobalDownloadObserver(context: Context) {
+        if (isGlobalCollectorStarted) return
+        synchronized(this) {
+            if (isGlobalCollectorStarted) return
+            isGlobalCollectorStarted = true
+
+            scope.launch {
+                PetalFetchDownloadBridge.downloadItems.collect { items ->
+                    val activeItems = items.filter {
+                        it.status == DownloadManager.STATUS_RUNNING ||
+                        it.status == DownloadManager.STATUS_PENDING ||
+                        it.status == DownloadManager.STATUS_PAUSED
+                    }
+
+                    if (activeItems.isEmpty()) {
+                        PetalDownloadService.stopIfNoActiveDownloads(context)
+                    }
+
+                    items.forEach { item ->
+                        when (item.status) {
+                            DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
+                                showLiveNotification(
+                                    context,
+                                    downloadId = item.id,
+                                    fileName = item.fileName,
+                                    soFar = item.bytesDownloaded,
+                                    total = item.totalSize,
+                                    speedBytesPerSec = item.speedBytesPerSec,
+                                    etaSeconds = item.etaSeconds
+                                )
+                            }
+                            DownloadManager.STATUS_PAUSED -> {
+                                showPausedNotification(context, item.id)
+                            }
+                            DownloadManager.STATUS_SUCCESSFUL -> {
+                                showCompletionNotification(context, item.id, item.fileName, item.totalSize)
+                            }
+                            DownloadManager.STATUS_FAILED -> {
+                                showFailureNotification(context, item.id, item.fileName)
+                            }
+                        }
+                    }
                 }
-
-                val displayTitle = item.fileName.ifBlank { fileName }
-
-                when (item.status) {
-                    DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
-                        showLiveNotification(
-                            appContext,
-                            downloadId = downloadId,
-                            fileName = displayTitle,
-                            soFar = item.bytesDownloaded,
-                            total = item.totalSize,
-                            speedBytesPerSec = item.speedBytesPerSec,
-                            etaSeconds = item.etaSeconds
-                        )
-                    }
-                    DownloadManager.STATUS_PAUSED -> {
-                        showPausedNotification(appContext, downloadId)
-                    }
-                    DownloadManager.STATUS_SUCCESSFUL -> {
-                        showCompletionNotification(appContext, downloadId, displayTitle, item.totalSize)
-                        PetalDownloadService.stopIfNoActiveDownloads(appContext)
-                        break
-                    }
-                    DownloadManager.STATUS_FAILED -> {
-                        showFailureNotification(appContext, downloadId, displayTitle)
-                        PetalDownloadService.stopIfNoActiveDownloads(appContext)
-                        break
-                    }
-                }
-
-                delay(750L)
             }
-            trackingJobs.remove(downloadId)
         }
-
-        trackingJobs[downloadId] = job
     }
 
     @JvmStatic
@@ -176,10 +176,13 @@ object PetalLiveAlertManager {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val item = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { it.id == downloadId }
+        val titleText = if (item != null && item.fileName.isNotBlank()) "Paused: ${item.fileName}" else "Download Paused"
+
         val builderNotif = LiveUpdateNotificationManager.buildLiveNotification(
             context,
             downloadId,
-            "Download Paused",
+            titleText,
             "Tap to resume downloading",
             0,
             false,
