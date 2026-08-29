@@ -130,19 +130,47 @@ object PetalWebAuthnBridge {
             cb.reject(new DOMException(errorMessage || 'Passkey operation cancelled or failed', errorName || 'NotAllowedError'));
         };
 
-        if (window.PublicKeyCredential) {
-            window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = function() {
-                return Promise.resolve(true);
-            };
-            window.PublicKeyCredential.isConditionalMediationAvailable = function() {
-                return Promise.resolve(true);
-            };
+        // 1. Ensure PublicKeyCredential constructor and static methods exist
+        if (typeof window.PublicKeyCredential === 'undefined') {
+            window.PublicKeyCredential = function PublicKeyCredential() {};
+        }
+        window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = function() {
+            return Promise.resolve(true);
+        };
+        window.PublicKeyCredential.isConditionalMediationAvailable = function() {
+            return Promise.resolve(true);
+        };
+        window.PublicKeyCredential.getClientCapabilities = function() {
+            return Promise.resolve({
+                conditionalCreate: true,
+                conditionalGet: true,
+                hybridTransport: true,
+                passkeyPlatformAuthenticator: true,
+                userVerification: true,
+                relatedOrigins: true
+            });
+        };
+
+        // 2. Ensure AuthenticatorResponse types exist
+        if (typeof window.AuthenticatorResponse === 'undefined') {
+            window.AuthenticatorResponse = function AuthenticatorResponse() {};
+        }
+        if (typeof window.AuthenticatorAttestationResponse === 'undefined') {
+            window.AuthenticatorAttestationResponse = function AuthenticatorAttestationResponse() {};
+            window.AuthenticatorAttestationResponse.prototype = Object.create(window.AuthenticatorResponse.prototype);
+        }
+        if (typeof window.AuthenticatorAssertionResponse === 'undefined') {
+            window.AuthenticatorAssertionResponse = function AuthenticatorAssertionResponse() {};
+            window.AuthenticatorAssertionResponse.prototype = Object.create(window.AuthenticatorResponse.prototype);
         }
 
+        // 3. Ensure navigator.credentials exists
+        if (!navigator.credentials) {
+            navigator.credentials = {};
+        }
         const origCredentials = navigator.credentials;
-        if (origCredentials) {
-            const origCreate = origCredentials.create.bind(origCredentials);
-            const origGet = origCredentials.get.bind(origCredentials);
+        const origCreate = typeof origCredentials.create === 'function' ? origCredentials.create.bind(origCredentials) : null;
+        const origGet = typeof origCredentials.get === 'function' ? origCredentials.get.bind(origCredentials) : null;
 
             navigator.credentials.create = function(options) {
                 if (options && options.publicKey && window.PetalWebAuthn) {
@@ -180,42 +208,41 @@ object PetalWebAuthnBridge {
                         }
                     });
                 }
-                return origCreate(options);
-            };
+                    return origCreate ? origCreate(options) : Promise.reject(new DOMException('Non-publicKey credential creation not supported', 'NotSupportedError'));
+                };
 
-            navigator.credentials.get = function(options) {
-                if (options && options.publicKey && window.PetalWebAuthn) {
-                    return new Promise(function(resolve, reject) {
-                        try {
-                            const pk = options.publicKey;
-                            const req = {
-                                challenge: bufferSourceToBase64url(pk.challenge),
-                                rpId: pk.rpId || window.location.hostname,
-                                timeout: pk.timeout || 60000,
-                                userVerification: pk.userVerification || 'preferred'
-                            };
-                            if (pk.allowCredentials && Array.isArray(pk.allowCredentials)) {
-                                req.allowCredentials = pk.allowCredentials.map(function(c) {
-                                    return {
-                                        id: bufferSourceToBase64url(c.id),
-                                        type: c.type || 'public-key',
-                                        transports: c.transports || []
-                                    };
-                                });
+                navigator.credentials.get = function(options) {
+                    if (options && options.publicKey && window.PetalWebAuthn) {
+                        return new Promise(function(resolve, reject) {
+                            try {
+                                const pk = options.publicKey;
+                                const req = {
+                                    challenge: bufferSourceToBase64url(pk.challenge),
+                                    rpId: pk.rpId || window.location.hostname,
+                                    timeout: pk.timeout || 60000,
+                                    userVerification: pk.userVerification || 'preferred'
+                                };
+                                if (pk.allowCredentials && Array.isArray(pk.allowCredentials)) {
+                                    req.allowCredentials = pk.allowCredentials.map(function(c) {
+                                        return {
+                                            id: bufferSourceToBase64url(c.id),
+                                            type: c.type || 'public-key',
+                                            transports: c.transports || []
+                                        };
+                                    });
+                                }
+
+                                const callbackId = 'petal_get_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+                                callbacks.set(callbackId, { resolve: resolve, reject: reject, isCreate: false });
+                                window.PetalWebAuthn.getPasskey(JSON.stringify(req), callbackId);
+                            } catch (err) {
+                                reject(new DOMException(err.message || 'Passkey assertion failed', 'NotSupportedError'));
                             }
-
-                            const callbackId = 'petal_get_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-                            callbacks.set(callbackId, { resolve: resolve, reject: reject, isCreate: false });
-                            window.PetalWebAuthn.getPasskey(JSON.stringify(req), callbackId);
-                        } catch (err) {
-                            reject(new DOMException(err.message || 'Passkey assertion failed', 'NotSupportedError'));
-                        }
-                    });
-                }
-                return origGet(options);
-            };
-        }
-    })();
+                        });
+                    }
+                    return origGet ? origGet(options) : Promise.reject(new DOMException('Non-publicKey credential assertion not supported', 'NotSupportedError'));
+                };
+        })();
     """
 
     class WebAuthnJavascriptInterface(private val webView: WebView) {
