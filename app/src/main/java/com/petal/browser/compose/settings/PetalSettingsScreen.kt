@@ -26,6 +26,7 @@ import com.petal.browser.activity.BrowserActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -1027,6 +1028,94 @@ fun PetalSettingsScreen(
                                             }
                                             }
                                         }
+                                    }
+
+                                    // --- Live Mini Browser Skeleton Preview ---
+                                    Text(
+                                        "Palette Theme Live Preview:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    val currentPalette = remember(selectedPaletteId) {
+                                        PetalPalettes.firstOrNull { it.id == selectedPaletteId } ?: PetalPalettes.first()
+                                    }
+                                    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+                                    val activeBaseScheme = if (isSystemDark) currentPalette.dark else currentPalette.light
+                                    val activePreviewScheme = remember(activeBaseScheme, selectedColorStyle) {
+                                        activeBaseScheme.applyStyle(selectedColorStyle)
+                                    }
+                                    val styleSchemes = remember(activeBaseScheme) {
+                                        ColorStyle.entries.associateWith { style ->
+                                            activeBaseScheme.applyStyle(style)
+                                        }
+                                    }
+
+                                    MiniBrowserSkeletonPreview(
+                                        scheme = activePreviewScheme,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                    )
+
+                                    Spacer(Modifier.height(6.dp))
+
+                                    // --- Palette Style Swatches (Imported from PixelPlayer) ---
+                                    Text(
+                                        "Palette Style:",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        "Select dynamic color harmony style for accent roles and surfaces",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    val paletteStyleScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = paletteStyleScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(paletteStyleScrollState)
+                                                .padding(vertical = 6.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            ColorStyle.entries.forEach { style ->
+                                                val swatchScheme = styleSchemes[style] ?: activePreviewScheme
+                                                PaletteSwatchSquare(
+                                                    scheme = swatchScheme,
+                                                    selected = selectedColorStyle == style,
+                                                    onClick = {
+                                                        selectedColorStyle = style
+                                                        sp.edit().putString("sp_color_style", style.name).apply()
+                                                        com.petal.browser.widget.PetalSearchWidgetProvider.updateAllWidgets(context)
+                                                    },
+                                                    modifier = Modifier.size(68.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = selectedColorStyle.label,
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                        color = activePreviewScheme.onSurface
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = activePreviewScheme.tertiaryContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = selectedColorStyle.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = activePreviewScheme.onTertiaryContainer,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                        )
                                     }
 
                                     // --- Custom Font File Picker & Tier Customizer UI ---
@@ -3139,6 +3228,240 @@ private fun Modifier.petalShimmerEffect(): Modifier = composed {
             end = androidx.compose.ui.geometry.Offset(x = translateAnim, y = translateAnim),
         ),
     )
+}
+
+@Composable
+private fun PaletteSwatchSquare(
+    scheme: ColorScheme,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BoxWithConstraints(
+        modifier = modifier.aspectRatio(1f)
+    ) {
+        val circleRadius = maxWidth / 2
+        val innerCorner by animateDpAsState(
+            targetValue = if (selected) 12.dp else circleRadius,
+            label = "paletteInnerCorner"
+        )
+        val outerCorner by animateDpAsState(
+            targetValue = if (selected) 16.dp else circleRadius,
+            label = "paletteOuterCorner"
+        )
+        val outlinePadding by animateDpAsState(
+            targetValue = if (selected) 4.dp else 0.dp,
+            label = "paletteOutlinePadding"
+        )
+        val borderWidth by animateDpAsState(
+            targetValue = if (selected) 2.dp else 0.dp,
+            label = "paletteBorderWidth"
+        )
+
+        Surface(
+            onClick = onClick,
+            color = scheme.surfaceContainerHighest,
+            shape = RoundedCornerShape(outerCorner),
+            border = if (borderWidth > 0.dp) BorderStroke(borderWidth, scheme.primary) else null,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(outlinePadding)
+            ) {
+                Surface(
+                    color = scheme.surface,
+                    shape = RoundedCornerShape(innerCorner),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxSize()
+                                    .background(scheme.primary)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxSize()
+                                    .background(scheme.secondary)
+                            )
+                        }
+                        Row(modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxSize()
+                                    .background(scheme.tertiary)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxSize()
+                                    .background(scheme.surfaceContainerHighest)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniBrowserSkeletonPreview(
+    scheme: ColorScheme,
+    modifier: Modifier = Modifier
+) {
+    val sizeFactor = 0.85f
+    fun scaled(dp: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp = (dp.value * sizeFactor).dp
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Surface(
+            color = scheme.surfaceContainerLow,
+            shape = RoundedCornerShape(scaled(24.dp)),
+            border = BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = 0.5f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(scaled(14.dp)),
+                verticalArrangement = Arrangement.spacedBy(scaled(10.dp))
+            ) {
+                // Mini Omnibox Top Bar
+                Surface(
+                    shape = RoundedCornerShape(scaled(20.dp)),
+                    color = scheme.surfaceContainerHigh,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(scaled(38.dp))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = scaled(10.dp)),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(scaled(6.dp))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(scaled(14.dp))
+                                    .clip(CircleShape)
+                                    .background(scheme.primary)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .width(scaled(100.dp))
+                                    .height(scaled(10.dp))
+                                    .clip(RoundedCornerShape(scaled(6.dp)))
+                                    .background(scheme.onSurfaceVariant.copy(alpha = 0.35f))
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(scaled(20.dp))
+                                .clip(CircleShape)
+                                .background(scheme.secondaryContainer)
+                        )
+                    }
+                }
+
+                // Mini Web / Tab Content Card
+                Surface(
+                    shape = RoundedCornerShape(scaled(16.dp)),
+                    color = scheme.primaryContainer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(scaled(85.dp))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(scaled(12.dp)),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(scaled(110.dp))
+                                    .height(scaled(14.dp))
+                                    .clip(RoundedCornerShape(scaled(6.dp)))
+                                    .background(scheme.onPrimaryContainer.copy(alpha = 0.6f))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(scaled(18.dp))
+                                    .clip(CircleShape)
+                                    .background(scheme.tertiary)
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.6f)
+                                .height(scaled(8.dp))
+                                .clip(RoundedCornerShape(scaled(4.dp)))
+                                .background(scheme.onPrimaryContainer.copy(alpha = 0.3f))
+                        )
+                    }
+                }
+
+                // Mini Floating Bottom Bar
+                Surface(
+                    shape = RoundedCornerShape(scaled(50.dp)),
+                    color = scheme.surfaceContainerHighest,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(scaled(34.dp))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = scaled(14.dp)),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(scaled(20.dp))
+                                .clip(RoundedCornerShape(scaled(10.dp)))
+                                .background(scheme.primary)
+                        )
+                        Spacer(Modifier.width(scaled(8.dp)))
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(scaled(20.dp))
+                                .clip(RoundedCornerShape(scaled(10.dp)))
+                                .background(scheme.secondary)
+                        )
+                        Spacer(Modifier.width(scaled(8.dp)))
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(scaled(20.dp))
+                                .clip(RoundedCornerShape(scaled(10.dp)))
+                                .background(scheme.tertiary)
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 
