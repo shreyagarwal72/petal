@@ -359,7 +359,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         float zoomScale = sp.getFloat("sp_zoom_level_scale", 1.0f);
         com.petal.browser.accessibility.PetalAccessibilityEngine.applyZoomToWebView(this, url);
 
-        fingerPrintProtection = sp.getBoolean(profile + "_fingerPrintProtection", false);
+        fingerPrintProtection = sp.getBoolean("sp_fingerprint_protection", sp.getBoolean(profile + "_fingerPrintProtection", true));
         history = sp.getBoolean("sp_history", sp.getBoolean(profile + "_saveHistory", true));
         adBlock = sp.getBoolean("sp_ad_block", sp.getBoolean(profile + "_adBlock", true));
         saveData = sp.getBoolean(profile + "_saveData", true);
@@ -367,9 +367,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
         try {
             CookieManager manager = CookieManager.getInstance();
+            boolean blockThirdParty = sp.getBoolean("sp_block_third_party_cookies", false);
             boolean globalSso = sp.getBoolean("sp_global_google_login", true);
             boolean acceptCookies = globalSso || sp.getBoolean(profile + "_cookies", true);
-            boolean acceptThirdParty = globalSso || sp.getBoolean(profile + "_cookiesThirdParty", true);
+            boolean acceptThirdParty = !blockThirdParty && (globalSso || sp.getBoolean(profile + "_cookiesThirdParty", true));
 
             manager.setAcceptCookie(acceptCookies);
             manager.setAcceptThirdPartyCookies(this, acceptThirdParty);

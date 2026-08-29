@@ -449,6 +449,11 @@ fun PetalSettingsScreen(
 
     // Protection & WebView States
     var isAdBlock by remember { mutableStateOf(sp.getBoolean("sp_ad_block", true)) }
+    var isFingerprintProtection by remember { mutableStateOf(sp.getBoolean("sp_fingerprint_protection", true)) }
+    var isWebRtcProtection by remember { mutableStateOf(sp.getBoolean("sp_webrtc_protection", true)) }
+    var isBlockThirdPartyCookies by remember { mutableStateOf(sp.getBoolean("sp_block_third_party_cookies", false)) }
+    var isDntGpc by remember { mutableStateOf(sp.getBoolean("sp_dnt_gpc", true)) }
+    var isTrimReferrers by remember { mutableStateOf(sp.getBoolean("sp_trim_referrers", true)) }
     var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
     var isJavaScript by remember { mutableStateOf(sp.getBoolean("sp_javascript", true)) }
     var isBlockPopups by remember { mutableStateOf(sp.getBoolean("sp_block_popups", true)) }
@@ -1858,6 +1863,73 @@ fun PetalSettingsScreen(
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                                     ToggleRow(
+                                        title = "Block Third-Party Tracking Cookies",
+                                        subtitle = "Isolate and block cross-site cookies used for ad tracking",
+                                        icon = Icons.Rounded.Cookie,
+                                        checked = isBlockThirdPartyCookies,
+                                        onCheckedChange = { newValue ->
+                                            isBlockThirdPartyCookies = newValue
+                                            sp.edit().putBoolean("sp_block_third_party_cookies", newValue)
+                                                .putBoolean("profileStandard_cookiesThirdParty", !newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Canvas, Audio & Font Fingerprint Shield",
+                                        subtitle = "Randomize canvas, WebGL, AudioContext, and font geometry to defeat browser fingerprinting",
+                                        icon = Icons.Rounded.Fingerprint,
+                                        checked = isFingerprintProtection,
+                                        onCheckedChange = { newValue ->
+                                            isFingerprintProtection = newValue
+                                            sp.edit().putBoolean("sp_fingerprint_protection", newValue)
+                                                .putBoolean("profileStandard_fingerPrintProtection", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "WebRTC IP Leak Shield",
+                                        subtitle = "Prevent WebRTC peer connections from exposing your local or real IP address",
+                                        icon = Icons.Rounded.VpnLock,
+                                        checked = isWebRtcProtection,
+                                        onCheckedChange = { newValue ->
+                                            isWebRtcProtection = newValue
+                                            sp.edit().putBoolean("sp_webrtc_protection", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Do Not Track & Global Privacy Control (GPC)",
+                                        subtitle = "Broadcast DNT: 1 and Sec-GPC: 1 signals requesting websites not to sell or share your data",
+                                        icon = Icons.Rounded.Security,
+                                        checked = isDntGpc,
+                                        onCheckedChange = { newValue ->
+                                            isDntGpc = newValue
+                                            sp.edit().putBoolean("sp_dnt_gpc", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Strict Referrer Trimming",
+                                        subtitle = "Strip cross-origin URL paths from referrer headers to protect browsing privacy",
+                                        icon = Icons.Rounded.LinkOff,
+                                        checked = isTrimReferrers,
+                                        onCheckedChange = { newValue ->
+                                            isTrimReferrers = newValue
+                                            sp.edit().putBoolean("sp_trim_referrers", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
                                         title = "Block Popup Windows",
                                         subtitle = "Prevent unwanted popups and redirect windows",
                                         icon = Icons.Rounded.OpenInNew,
@@ -1905,7 +1977,8 @@ fun PetalSettingsScreen(
                                             isJavaScript = newValue
                                             sp.edit().putBoolean("sp_javascript", newValue).putBoolean("profileStandard_javascript", newValue).apply()
                                         }
-                                    )                                }
+                                    )
+                                }
                             }
 
                             // 7. Accessibility & Scaling (using PetalSlider)
