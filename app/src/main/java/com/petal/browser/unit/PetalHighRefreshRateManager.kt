@@ -99,12 +99,11 @@ object PetalHighRefreshRateManager {
                 }
             }
 
-            // Android 11+ (API 30+) explicit refresh rate bounding
+            // Android 11+ (API 30+) explicit refresh rate bounding via reflection / layout params
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val maxRate = getMaxSupportedRefreshRate(activity)
                 if (maxRate >= 90f) {
-                    layoutParams.preferredMinDisplayRefreshRate = maxRate
-                    layoutParams.preferredMaxDisplayRefreshRate = maxRate
+                    setRefreshRateBounds(layoutParams, maxRate)
                 }
             }
 
@@ -131,8 +130,7 @@ object PetalHighRefreshRateManager {
                 layoutParams.preferredDisplayModeId = 0
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                layoutParams.preferredMinDisplayRefreshRate = 0f
-                layoutParams.preferredMaxDisplayRefreshRate = 0f
+                setRefreshRateBounds(layoutParams, 0f)
             }
             window.attributes = layoutParams
         } catch (e: Exception) {
@@ -150,11 +148,26 @@ object PetalHighRefreshRateManager {
             try {
                 val rate = if (targetFrameRate >= 90f) targetFrameRate else getMaxSupportedRefreshRate(view.context)
                 if (rate >= 90f) {
-                    view.setFrameRate(rate, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT)
+                    val method = View::class.java.getMethod("setFrameRate", Float::class.javaPrimitiveType, Int::class.javaPrimitiveType)
+                    method.invoke(view, rate, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT)
                 }
             } catch (e: Exception) {
                 Log.d(TAG, "Surface frame rate hint not supported or failed: ${e.message}")
             }
+        }
+    }
+
+    private fun setRefreshRateBounds(layoutParams: WindowManager.LayoutParams, rate: Float) {
+        try {
+            val minField = WindowManager.LayoutParams::class.java.getField("preferredMinDisplayRefreshRate")
+            val maxField = WindowManager.LayoutParams::class.java.getField("preferredMaxDisplayRefreshRate")
+            minField.setFloat(layoutParams, rate)
+            maxField.setFloat(layoutParams, rate)
+        } catch (ignored: Exception) {
+            try {
+                val prefField = WindowManager.LayoutParams::class.java.getField("preferredRefreshRate")
+                prefField.setFloat(layoutParams, rate)
+            } catch (ignored2: Exception) {}
         }
     }
 
