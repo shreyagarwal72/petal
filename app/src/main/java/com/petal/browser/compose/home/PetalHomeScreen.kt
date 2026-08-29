@@ -887,9 +887,9 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
 // ── 6b. Greeting Tagline ─────────────────────────────────────────────────────
 // Replaces the old quick-shortcuts row (bookmarks/history/downloads/new tab).
 // Shows a rotating, personalized greeting where the search bar used to sit.
-// A random line is picked once per composition of the home screen, which in
-// practice means a fresh line each time the app process is (re)started —
-// normal recomposition/navigation within the same session does not reroll it.
+// Holds a process-singleton greeting template chosen when the app starts,
+// ensuring the greeting stays identical across all tabs and only changes when
+// the app is restarted.
 
 private val generalGreetingTaglines = listOf(
     "Welcome back, %s—the web is ready whenever you are.",
@@ -919,6 +919,24 @@ private val eveningGreetingTaglines = listOf(
     "Good evening, %s—time to unwind and explore."
 )
 
+private object PetalSessionGreeting {
+    private var sessionTemplate: String? = null
+
+    fun getSessionTemplate(): String {
+        if (sessionTemplate == null) {
+            val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+            val timeSpecificTaglines = when {
+                hour in 4..11 -> morningGreetingTaglines
+                hour in 12..16 -> afternoonGreetingTaglines
+                else -> eveningGreetingTaglines
+            }
+            val pool = generalGreetingTaglines + timeSpecificTaglines
+            sessionTemplate = pool.random()
+        }
+        return sessionTemplate!!
+    }
+}
+
 @Composable
 private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserProfile) {
     val context = LocalContext.current
@@ -940,18 +958,11 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         }
     }
 
-    val tagline = rememberSaveable(username, updateWelcomeMessage) {
+    val tagline = remember(username, updateWelcomeMessage) {
         if (!updateWelcomeMessage.isNullOrBlank()) {
             updateWelcomeMessage!!
         } else {
-            val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-            val timeSpecificTaglines = when {
-                hour in 4..11 -> morningGreetingTaglines
-                hour in 12..16 -> afternoonGreetingTaglines
-                else -> eveningGreetingTaglines
-            }
-            val pool = generalGreetingTaglines + timeSpecificTaglines
-            pool.random().format(username)
+            PetalSessionGreeting.getSessionTemplate().format(username)
         }
     }
 

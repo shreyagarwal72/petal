@@ -35,8 +35,11 @@ object PetalGreetingManager {
         "Good evening, {username}; time to unwind and explore something fun."
     )
 
+    @Volatile
+    private var sessionGreetingTemplate: String? = null
+
     /**
-     * Returns a random time-appropriate greeting populated with the user's name (or "Petal Explorer" if empty).
+     * Returns the process-singleton time-appropriate greeting populated with the user's name (or "Petal Explorer" if empty).
      */
     fun getRandomGreeting(context: Context): String {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -48,15 +51,16 @@ object PetalGreetingManager {
 
         val username = if (!rawName.isNullOrBlank()) rawName.trim() else "Petal Explorer"
 
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val timeTemplates = when {
-            hour in 4..11 -> MORNING_TEMPLATES
-            hour in 12..16 -> AFTERNOON_TEMPLATES
-            else -> EVENING_TEMPLATES
+        if (sessionGreetingTemplate == null) {
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val timeTemplates = when {
+                hour in 4..11 -> MORNING_TEMPLATES
+                hour in 12..16 -> AFTERNOON_TEMPLATES
+                else -> EVENING_TEMPLATES
+            }
+            val pool = GENERAL_TEMPLATES + timeTemplates
+            sessionGreetingTemplate = pool[Random.nextInt(pool.size)]
         }
-
-        val pool = GENERAL_TEMPLATES + timeTemplates
-        val template = pool[Random.nextInt(pool.size)]
-        return template.replace("{username}", username)
+        return sessionGreetingTemplate!!.replace("{username}", username)
     }
 }
