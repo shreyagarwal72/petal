@@ -227,21 +227,39 @@ public class BrowserUnit {
         action.close();
     }
 
-    public static void clearBrowserData(Context context) {
+    public static void clearOnExit(Context context) {
+        if (context == null) return;
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         boolean clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false);
+        if (!clearQuit) return;
+
+        // 1. Session-scoped history cleanup: ONLY delete history URLs/records from THIS session
+        PetalSessionHistoryManager.clearSessionHistory(context);
+
+        // 2. Clear render cache if explicitly enabled (never touching cookies, logins, or auth tokens)
+        boolean clearCache = sp.getBoolean("sp_clear_cache", false);
+        if (clearCache) {
+            try {
+                CacheManager.clearAllCache(context, null);
+            } catch (Exception exception) {
+                Log.w("browser", "Error clearing cache on exit", exception);
+            }
+        }
+
+        // 3. Clear session tab thumbnails
+        try {
+            TabThumbnailCache.evictAll();
+        } catch (Exception ignored) {}
+    }
+
+    public static void clearBrowserData(Context context) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         boolean clearCache = sp.getBoolean("sp_clear_cache", false);
         boolean clearCookie = sp.getBoolean("sp_clear_cookie", false);
         boolean clearHistory = sp.getBoolean("sp_clear_history", false);
         boolean clearIndexedDB = sp.getBoolean("sp_clearIndexedDB", false);
         boolean clearDB = sp.getBoolean("sp_deleteDatabase", false);
         boolean clearSettings = sp.getBoolean("sp_clear_settings", false);
-
-        if (clearQuit && !clearCache && !clearCookie && !clearHistory && !clearIndexedDB && !clearDB && !clearSettings) {
-            clearCache = true;
-            clearCookie = true;
-            clearHistory = true;
-        }
 
         if (clearHistory) BrowserUnit.clearHistory(context);
         if (clearCache)  {
@@ -256,6 +274,7 @@ public class BrowserUnit {
             List_standard listStandard = new List_standard(context);
             listStandard.clearDomains();
         }
+        // ONLY clear cookies and logins if the user explicitly commanded manual cookie deletion
         if (clearCookie) {
             CookieManager cookieManager = CookieManager.getInstance();
             cookieManager.flush();

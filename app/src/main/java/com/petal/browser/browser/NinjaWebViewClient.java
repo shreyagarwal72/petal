@@ -132,6 +132,7 @@ public class NinjaWebViewClient extends WebViewClient {
             if (action.checkUrl(ninjaWebView.getUrl(), RecordUnit.TABLE_HISTORY)) action.deleteURL(ninjaWebView.getUrl(), RecordUnit.TABLE_HISTORY);
             action.addHistory(new Record(ninjaWebView.getTitle(), ninjaWebView.getUrl(), System.currentTimeMillis(), 0));
             action.close();
+            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(ninjaWebView.getUrl());
         }
 
         if (ninjaWebView.isAdBlock()) {

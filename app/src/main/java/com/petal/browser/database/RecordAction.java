@@ -300,4 +300,27 @@ public class RecordAction {
             e.printStackTrace();
         }
     }
+
+    public void deleteSessionHistory(long sessionStartTime, java.util.Set<String> sessionUrls) {
+        if (database == null || !database.isOpen()) return;
+        try {
+            database.beginTransaction();
+            // Delete all history records created at or after the session start time
+            database.delete(RecordUnit.TABLE_HISTORY, RecordUnit.COLUMN_TIME + " >= ?", new String[]{String.valueOf(sessionStartTime)});
+            if (sessionUrls != null && !sessionUrls.isEmpty()) {
+                for (String url : sessionUrls) {
+                    if (url != null && !url.trim().isEmpty()) {
+                        database.delete(RecordUnit.TABLE_HISTORY, RecordUnit.COLUMN_URL + " = ?", new String[]{url.trim()});
+                    }
+                }
+            }
+            database.setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.e("RecordAction", "Error deleting session history", e);
+        } finally {
+            try {
+                database.endTransaction();
+            } catch (Exception ignored) {}
+        }
+    }
 }
