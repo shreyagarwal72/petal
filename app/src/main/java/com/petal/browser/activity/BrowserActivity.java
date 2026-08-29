@@ -2971,7 +2971,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     showAlbum(currentAlbumController, url);
                 },
-                () -> startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class)),
+                () -> {
+                    View rootView = findViewById(android.R.id.content) != null ? findViewById(android.R.id.content) : getWindow().getDecorView();
+                    com.petal.browser.predictive.PetalContentSnapshot.capture(rootView);
+                    startActivity(new Intent(BrowserActivity.this, com.petal.browser.activity.Settings_Delete.class));
+                },
                 () -> {
                     showAlbum(currentAlbumController);
                     return kotlin.Unit.INSTANCE;
