@@ -123,9 +123,12 @@ fun PetalTabGridSwitcher(
     onTabVisible: (PetalTabItem) -> Unit = {},
     onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
-) {
+    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     var searchQuery by remember { mutableStateOf("") }
-    var displayMode by remember { mutableStateOf(TabDisplayMode.GRID) }
+    var displayMode by remember {
+        val savedMode = sp.getString("sp_tab_display_mode", "GRID") ?: "GRID"
+        mutableStateOf(try { TabDisplayMode.valueOf(savedMode) } catch (e: Exception) { TabDisplayMode.GRID })
+    }
     var isOverflowMenuExpanded by remember { mutableStateOf(false) }
     val initialCategory = remember {
         if (tabs.any { it.isSelected && it.isIncognito }) TabCategory.INCOGNITO else TabCategory.REGULAR
@@ -135,7 +138,6 @@ fun PetalTabGridSwitcher(
     val gridState = rememberLazyGridState()
     val listState = rememberLazyListState()
 
-    val context = LocalContext.current
     val effectiveOnBack: () -> Unit = remember(onBack, context) {
         onBack ?: {
             (context as? androidx.activity.ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
@@ -260,7 +262,9 @@ fun PetalTabGridSwitcher(
                             icon = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
                             contentDescription = "Toggle layout",
                             onClick = {
-                                displayMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
+                                val nextMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
+                                displayMode = nextMode
+                                sp.edit().putString("sp_tab_display_mode", nextMode.name).apply()
                             }
                         )
 
@@ -458,17 +462,30 @@ fun PetalTabGridSwitcher(
                                     exit = fadeOut() + scaleOut(targetScale = 0.9f),
                                     modifier = Modifier.animateItem()
                                 ) {
-                                    PetalTabListItem(
-                                        tab = tab,
-                                        accentColor = accentColor,
-                                        onTabSelect = {
-                                            // Same reasoning as the grid card above: commit any
-                                            // pending "Undo" closes before switching tabs.
-                                            commitPendingRemovals()
-                                            onTabSelect(tab)
-                                        },
-                                        onTabClose = { requestOptimisticClose(tab) }
+                                    val dismissState = rememberSwipeToDismissBoxState(
+                                        confirmValueChange = { dismissValue ->
+                                            if (dismissValue != SwipeToDismissBoxValue.Settled) {
+                                                requestOptimisticClose(tab)
+                                                true
+                                            } else false
+                                        }
                                     )
+                                    SwipeToDismissBox(
+                                        state = dismissState,
+                                        enableDismissFromStartToEnd = true,
+                                        enableDismissFromEndToStart = true,
+                                        backgroundContent = { SwipeToCloseBackground(dismissState) }
+                                    ) {
+                                        PetalTabListItem(
+                                            tab = tab,
+                                            accentColor = accentColor,
+                                            onTabSelect = {
+                                                commitPendingRemovals()
+                                                onTabSelect(tab)
+                                            },
+                                            onTabClose = { requestOptimisticClose(tab) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -865,14 +882,14 @@ private fun PetalTabListItem(
         border = borderStroke,
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
+            .height(72.dp)
             .bouncyClickable(onClick = onTabSelect)
             .entrance()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 14.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -881,7 +898,28 @@ private fun PetalTabListItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                TabFavicon(tab = tab, accentColor = accentColor, size = 24.dp)
+                // Cached preview thumbnail or favicon container
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    modifier = Modifier.size(54.dp, 48.dp)
+                ) {
+                    if (tab.previewBitmap != null && !tab.previewBitmap.isRecycled) {
+                        Image(
+                            bitmap = tab.previewBitmap.asImageBitmap(),
+                            contentDescription = "Thumbnail",
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            TabFavicon(tab = tab, accentColor = accentColor, size = 22.dp)
+                        }
+                    }
+                }
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
