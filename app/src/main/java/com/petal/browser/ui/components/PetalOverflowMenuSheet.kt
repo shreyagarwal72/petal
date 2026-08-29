@@ -380,7 +380,7 @@ fun PetalOverflowMenuSheet(
                         icon = Icons.Rounded.OfflinePin,
                         contentDescription = "Install site offline",
                         enabled = !isHomePageUrl,
-                        onClick = onInstallPwa
+                        onClick = onSavePage
                     )
                     CircularIconButton(
                         icon = Icons.Rounded.Refresh,
@@ -476,9 +476,9 @@ fun PetalOverflowMenuSheet(
                         onClick = onToggleBookmark
                     )
                     MenuRowItem(
-                        icon = Icons.Rounded.OfflinePin,
-                        title = "Install site offline",
-                        subtitle = "Save website to view completely offline",
+                        icon = Icons.Rounded.InstallMobile,
+                        title = "Install as App",
+                        subtitle = "Install as standalone PWA app with home screen icon",
                         onClick = onInstallPwa
                     )
 

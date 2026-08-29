@@ -128,7 +128,7 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onInstallPwa() {
-                    activity.savePageOffline()
+                    activity.installPwaShortcut()
                 }
 
                 override fun onSearchOnSite() {
@@ -145,7 +145,7 @@ object BrowserNavigationDelegate {
 
                 override fun onSavePage() {
                     try {
-                        activity.saveBookmark(webView?.title ?: "", webView?.url ?: "")
+                        activity.savePageOffline()
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }

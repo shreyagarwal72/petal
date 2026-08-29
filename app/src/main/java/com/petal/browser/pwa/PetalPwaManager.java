@@ -145,66 +145,50 @@ public class PetalPwaManager {
     }
 
     /**
-     * Installs PWA to Android Home Screen as a dynamic shortcut or pinned app.
+     * Installs PWA to Android Home Screen as a dynamic standalone shortcut or pinned app with website favicon.
      */
     public void installCurrentPwa(Activity activity) {
         if (activity == null) return;
-        
-        if (currentManifest == null) {
-            String targetUrl = webView != null ? webView.getUrl() : null;
-            if (targetUrl == null || targetUrl.isEmpty()) return;
-            String rawTitle = webView != null && webView.getTitle() != null ? webView.getTitle() : HelperUnit.domain(targetUrl);
-            final String title = rawTitle;
-
-            try {
-                Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
-                shortcutIntent.setComponent(new android.content.ComponentName(activity, BrowserActivity.class));
-                shortcutIntent.putExtra("pwa_mode", true);
-                shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    ShortcutManager shortcutManager = activity.getSystemService(ShortcutManager.class);
-                    if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported()) {
-                        Icon icon = Icon.createWithResource(activity, R.mipmap.ic_launcher);
-                        ShortcutInfo pinShortcutInfo = new ShortcutInfo.Builder(activity, "pwa_" + Math.abs(targetUrl.hashCode()))
-                                .setShortLabel(title)
-                                .setLongLabel(title)
-                                .setIcon(icon)
-                                .setIntent(shortcutIntent)
-                                .build();
-
-                        shortcutManager.requestPinShortcut(pinShortcutInfo, null);
-                        activity.runOnUiThread(() -> Toast.makeText(activity, "Added " + title + " to Home screen", Toast.LENGTH_SHORT).show());
-                        return;
-                    }
-                }
-
-                Intent addIntent = new Intent();
-                addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-                addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
-                addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(activity, R.mipmap.ic_launcher));
-                addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-                activity.sendBroadcast(addIntent);
-                activity.runOnUiThread(() -> Toast.makeText(activity, "Added " + title + " to Home screen", Toast.LENGTH_SHORT).show());
-            } catch (Exception e) {
-                Log.e(TAG, "Error installing shortcut fallback", e);
-            }
-            return;
-        }
 
         new Thread(() -> {
             try {
-                String rawTitle = !currentManifest.shortName.isEmpty() ? currentManifest.shortName : currentManifest.name;
-                if (rawTitle.isEmpty()) rawTitle = webView.getTitle();
+                String targetUrl = webView != null ? webView.getUrl() : null;
+                if (targetUrl == null || targetUrl.isEmpty()) return;
+
+                String rawTitle;
+                if (currentManifest != null && (!currentManifest.shortName.isEmpty() || !currentManifest.name.isEmpty())) {
+                    rawTitle = !currentManifest.shortName.isEmpty() ? currentManifest.shortName : currentManifest.name;
+                } else {
+                    rawTitle = webView != null && webView.getTitle() != null ? webView.getTitle() : HelperUnit.domain(targetUrl);
+                }
                 final String title = rawTitle;
 
-                String targetUrl = !currentManifest.startUrl.isEmpty() ? currentManifest.startUrl : webView.getUrl();
-                Bitmap iconBitmap = fetchBitmap(currentManifest.iconUrl);
+                if (currentManifest != null && !currentManifest.startUrl.isEmpty()) {
+                    targetUrl = currentManifest.startUrl;
+                }
+
+                Bitmap iconBitmap = null;
+                if (currentManifest != null && !currentManifest.iconUrl.isEmpty()) {
+                    iconBitmap = fetchBitmap(currentManifest.iconUrl);
+                }
+                if (iconBitmap == null && webView instanceof com.petal.browser.view.NinjaWebView) {
+                    iconBitmap = ((com.petal.browser.view.NinjaWebView) webView).getFavicon();
+                }
+                if (iconBitmap == null) {
+                    com.petal.browser.database.FaviconHelper helper = new com.petal.browser.database.FaviconHelper(activity);
+                    iconBitmap = helper.getFavicon(targetUrl);
+                }
+                if (iconBitmap == null) {
+                    String domain = HelperUnit.domain(targetUrl);
+                    if (domain != null && !domain.isEmpty()) {
+                        iconBitmap = fetchBitmap(com.petal.browser.unit.FaviconGrabberManager.getFaviconGrabberUrl(domain));
+                    }
+                }
 
                 Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
                 shortcutIntent.setComponent(new android.content.ComponentName(activity, BrowserActivity.class));
                 shortcutIntent.putExtra("pwa_mode", true);
-                shortcutIntent.putExtra("pwa_display", currentManifest.display);
+                shortcutIntent.putExtra("pwa_display", currentManifest != null ? currentManifest.display : "standalone");
                 shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -213,13 +197,13 @@ public class PetalPwaManager {
                         Icon icon = iconBitmap != null ? Icon.createWithBitmap(iconBitmap) : Icon.createWithResource(activity, R.mipmap.ic_launcher);
                         ShortcutInfo pinShortcutInfo = new ShortcutInfo.Builder(activity, "pwa_" + Math.abs(targetUrl.hashCode()))
                                 .setShortLabel(title)
-                                .setLongLabel(currentManifest.name.isEmpty() ? title : currentManifest.name)
+                                .setLongLabel(currentManifest != null && !currentManifest.name.isEmpty() ? currentManifest.name : title)
                                 .setIcon(icon)
                                 .setIntent(shortcutIntent)
                                 .build();
 
                         shortcutManager.requestPinShortcut(pinShortcutInfo, null);
-                        activity.runOnUiThread(() -> Toast.makeText(activity, "Installed " + title + " to Home screen", Toast.LENGTH_SHORT).show());
+                        activity.runOnUiThread(() -> Toast.makeText(activity, "Installed " + title + " as App", Toast.LENGTH_SHORT).show());
                         return;
                     }
                 }
@@ -235,7 +219,7 @@ public class PetalPwaManager {
                 }
                 addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
                 activity.sendBroadcast(addIntent);
-                activity.runOnUiThread(() -> Toast.makeText(activity, "Installed " + title + " to Home screen", Toast.LENGTH_SHORT).show());
+                activity.runOnUiThread(() -> Toast.makeText(activity, "Installed " + title + " as App", Toast.LENGTH_SHORT).show());
             } catch (Exception e) {
                 Log.e(TAG, "Error installing PWA shortcut", e);
             }

@@ -1386,6 +1386,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void updatePersistentBottomNav() {
         try {
+            if (getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false)) {
+                View bnc = findViewById(R.id.bottom_nav_container);
+                View bnv = findViewById(R.id.bottom_nav_compose);
+                if (bnc != null) bnc.setVisibility(GONE);
+                if (bnv != null) bnv.setVisibility(GONE);
+                return;
+            }
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
             if (bottomNavContainer != null) {
                 bottomNavContainer.setTranslationY(0f);
@@ -1445,6 +1452,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void applyAddressBarPosition() {
         try {
+            if (getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false)) {
+                View addressBar = findViewById(R.id.compose_address_bar);
+                View mainContent = findViewById(R.id.main_content);
+                View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+                View bottomNav = findViewById(R.id.bottom_nav_compose);
+                View fabBubble = findViewById(R.id.fab_bubble);
+                if (addressBar != null) addressBar.setVisibility(GONE);
+                if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
+                if (bottomNav != null) bottomNav.setVisibility(GONE);
+                if (fabBubble != null) fabBubble.setVisibility(GONE);
+                if (mainContent != null && mainContent.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                    RelativeLayout.LayoutParams contentParams = (RelativeLayout.LayoutParams) mainContent.getLayoutParams();
+                    contentParams.removeRule(RelativeLayout.BELOW);
+                    contentParams.removeRule(RelativeLayout.ABOVE);
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    contentParams.topMargin = 0;
+                    contentParams.bottomMargin = 0;
+                    mainContent.setLayoutParams(contentParams);
+                }
+                return;
+            }
+
             String pos = sp.getString("sp_address_bar_position", "TOP");
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
 
@@ -4398,31 +4428,42 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             shortcutIntent.putExtra("pwa_mode", true);
             shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
+            Bitmap iconBitmap = ninjaWebView != null ? ninjaWebView.getFavicon() : null;
+            if (iconBitmap == null) {
+                com.petal.browser.database.FaviconHelper helper = new com.petal.browser.database.FaviconHelper(this);
+                iconBitmap = helper.getFavicon(url);
+            }
+
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 android.content.pm.ShortcutManager shortcutManager = getSystemService(android.content.pm.ShortcutManager.class);
                 if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported()) {
+                    android.graphics.drawable.Icon icon = iconBitmap != null ? android.graphics.drawable.Icon.createWithBitmap(iconBitmap) : android.graphics.drawable.Icon.createWithResource(this, R.mipmap.ic_launcher);
                     android.content.pm.ShortcutInfo pinShortcutInfo = new android.content.pm.ShortcutInfo.Builder(this, "pwa_" + Math.abs(url.hashCode()))
                             .setShortLabel(title)
                             .setLongLabel(title)
-                            .setIcon(android.graphics.drawable.Icon.createWithResource(this, R.mipmap.ic_launcher))
+                            .setIcon(icon)
                             .setIntent(shortcutIntent)
                             .build();
 
                     shortcutManager.requestPinShortcut(pinShortcutInfo, null);
-                    NinjaToast.show(this, "Added to Home screen");
+                    NinjaToast.show(this, "Installed " + title + " as App");
                     return;
                 }
             }
             Intent addIntent = new Intent();
             addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
             addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
-            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.mipmap.ic_launcher));
+            if (iconBitmap != null) {
+                addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, iconBitmap);
+            } else {
+                addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.mipmap.ic_launcher));
+            }
             addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
             sendBroadcast(addIntent);
-            NinjaToast.show(this, "Added to Home screen");
+            NinjaToast.show(this, "Installed " + title + " as App");
         } catch (Exception e) {
             e.printStackTrace();
-            NinjaToast.show(this, "Failed to create PWA shortcut");
+            NinjaToast.show(this, "Failed to install app");
         }
     }
 
