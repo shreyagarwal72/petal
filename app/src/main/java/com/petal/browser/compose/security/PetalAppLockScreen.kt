@@ -160,14 +160,18 @@ fun PetalAppLockScreen(
     ) {
         com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
             Scaffold(
-                containerColor = MaterialTheme.colorScheme.background
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0)
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    M3ExpressiveVariableBackground(pageSeed = "security_app_lock")
+                    M3ExpressiveVariableBackground(
+                        modifier = Modifier.fillMaxSize(),
+                        pageSeed = "security_app_lock"
+                    )
 
                     Column(
                         modifier = Modifier

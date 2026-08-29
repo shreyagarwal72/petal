@@ -263,6 +263,7 @@ fun PetalUserProfileScreen(
                 com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
                     com.petal.browser.compose.security.PetalAppLockConfigScreen(
                         onBack = { showAppLockConfigPage = false },
+                        wrapPredictive = false
                     )
                 }
             }
