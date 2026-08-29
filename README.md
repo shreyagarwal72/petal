@@ -6,64 +6,118 @@
 
   <h2>Petal Browser</h2>
 
-  <h3>Fast, Ultra-Lightweight & Privacy-Focused Android Browser built with Material 3 Expressive Design & Jetpack Compose</h3>
+  <p><strong>Fast, Ultra-Lightweight & Privacy-Focused Android Web Browser built with Jetpack Compose & Material 3 Expressive Design</strong></p>
 
   [![Latest Release](https://img.shields.io/github/v/release/shreyagarwal72/petal?color=0075ff&style=for-the-badge)](https://github.com/shreyagarwal72/petal/releases/latest)
   [![Build Status](https://img.shields.io/github/actions/workflow/status/shreyagarwal72/petal/build.yml?branch=main&style=for-the-badge)](https://github.com/shreyagarwal72/petal/actions)
+  [![Telegram Channel](https://img.shields.io/badge/Telegram-Champion%20Workspace-blue?style=for-the-badge&logo=telegram)](https://t.me/championworkspace)
   [![License](https://img.shields.io/github/license/shreyagarwal72/petal?color=purple&style=for-the-badge)](LICENSE.md)
 
 </div>
 
 ---
 
-## ✨ Features & Highlights
+## 🌟 At a Glance
 
-### 🎨 Material 3 Expressive & Stride Motion UI
-- **5-Petal Bloom Ring Shortcuts**: Radial interactive home screen layout with spring-physics micro-interactions and custom shape, color, and site brand icons.
-- **Chrome & Cromite Style Omnibox**: Responsive top address bar with SSL lock security badges, domain highlighting, and instant site fast-toggles.
-- **Scroll-Linked Address Bar Collapse**: Smooth scroll-to-hide address bar replacing full bar with a floating action bubble (`fab_bubble`) with spring physics (`OvershootInterpolator`).
-- **10 Palette Styles & AMOLED Pure Black**: Customizable themes including Material You dynamic wallpaper colors (Android 12+) and AMOLED black (`#000000`).
-
-### ⚡ Ultra-Fast & Modern Jetpack Compose Architecture
-- **60fps Tab Grid Switcher**: Chrome-inspired 2-column live tab switcher grid with instant tab selection, swipe-to-dismiss, and spring animations.
-- **Async AdBlock & Tracker Shield**: Multi-threaded host blocking engine for zero-delay tab creation and high-speed page loading.
-- **Zero-Lag Instant Popup Menu**: High-performance 270dp `PopupWindow` with window dimming and quick tool shortcuts.
-
-### 🛡️ Privacy & Security First
-- **Built-in Tracker & Ad Shield**: Automatic domain filtering with custom host list support.
-- **Multi-Engine Search Selector**: Quick onboarding & settings modal to select your preferred search engine (Google, DuckDuckGo, Startpage, Brave, SearXNG, Bing, Qwant, Ecosia).
-- **Chrome Account & Sync Integration**: Integrated Google account profile sync state management.
-- **Zero Data Telemetry**: Absolutely no data tracking, analytics, or background telemetry.
-
-### 📦 Integrated Download Manager & Telegram Bot Sync
-- Full Jetpack Compose Download Manager with real-time download speed, progress indicators, pausing, resuming, and file opening.
-- **Telegram Topic Bot Integration**: Automated GitHub Actions workflow for real-time Telegram group topic routing (Topic #225) on pushes and build outcomes.
+| 🎨 **Design System** | ⚡ **Performance** | 🛡️ **Privacy & Security** | 🤖 **AI & Intelligence** |
+| :--- | :--- | :--- | :--- |
+| **Material 3 Expressive** with 35 dynamic polygon shapes | **Hardware-accelerated** WebKit rendering engine | **Multi-threaded AdBlock** & tracking protection | **Petal AI Hub** supporting Gemini, Grok, GPT & Claude |
+| **Living background mesh** with dynamic palette theming | **Staggered spring animations** & fluid gesture physics | **Zero telemetry**, zero analytics, 100% private | **AI Search & Research**, smart summaries & page Q&A |
+| **Predictive Back** dual-surface depth blur | **Low RAM consumption** with instant tab switching | **Granular site permissions** & secure cookie isolation | **Integrated Download Manager** with background fetch |
 
 ---
 
-## 🛠️ Requirements & Tech Stack
+## ✨ Key Features & Highlights
 
-- **Min SDK**: Android 8.0 (API 26)
-- **Target SDK**: Android 15 (API 35)
-- **Language**: Kotlin 2.0+
-- **UI Framework**: Jetpack Compose (BOM 2026.06.01) with Material 3 Expressive (`1.5.0-alpha17`)
-- **Build System**: Gradle 8.11+ / AGP 8.7+
+### 🎨 Material 3 Expressive Design & Fluid Motion
+- **35 Material 3 Expressive Shapes**: Every shortcut icon, search pill, and floating component renders with distinct dynamic polygon geometry (squircle, petal, diamond, flower, pill, and more).
+- **Living Variable Background**: Dynamic procedural ambient backdrop responding smoothly to daylight and palette shifts.
+- **Predictive Back & Depth Blur Physics**: Smooth back gesture with real-time GPU background scaling and dual-surface depth blur.
+- **Dynamic Theming & AMOLED Pure Black**: Full support for Android 12+ wallpaper dynamic color extraction, tonal palettes, and true AMOLED `#000000` pitch black mode.
+- **GS Flex & Expressive Typography**: Customizable variable font system with real-time preview and instant layout switching.
+
+### 🌐 Smart Omnibox & Browsing Experience
+- **Chrome & Edge Style Omnibox**: Responsive address bar featuring security lock indicators, instant domain breakdown, and fast site settings.
+- **Scroll-Linked Collapse**: Auto-collapsing address bar with floating action bubble (`fab_bubble`) and spring physics.
+- **60fps Tab Grid Switcher**: 2-column live tab grid with swipe-to-dismiss, instant thumbnail caching, and incognito tab segregation.
+- **Custom Shortcut Manager**: Pin and customize your favorite web shortcuts with color palettes, custom icons, and auto-visited recommendations.
+
+### 🤖 Petal AI Hub & Smart Assistant
+- **Universal Multi-Model Integration**: Connect your own API keys for **Google Gemini**, **Groq**, **OpenAI**, **xAI Grok**, or **OpenRouter**.
+- **Page Summaries & Deep Research**: Summarize complex web pages or run in-depth research queries with citations in a single tap.
+- **Contextual AI Actions**: Select any text on a page to translate, explain, rephrase, or query AI without leaving your tab.
+
+### 🛡️ Uncompromising Privacy & Content Protection
+- **Multi-Threaded Ad & Tracker Shield**: Fast asynchronous domain filtering engine with customizable hostlists.
+- **Zero Telemetry Guarantee**: No background metrics, user tracking, advertising SDKs, or server analytics.
+- **Multi-Engine Search Selector**: Instant switching between DuckDuckGo, Brave, Startpage, SearXNG, Google, Bing, Qwant, and Ecosia.
+- **Granular Site Controls**: Instant toggling of JavaScript, cookies, location permissions, images, and desktop mode per tab.
+
+### ⚡ Power Tools & Integrations
+- **Resumable Download Manager**: Multi-threaded background file download engine with pause, resume, real-time speed monitoring, and auto-categorization.
+- **Chrome Account & Cloud Sync**: Profile avatar integration with secure sync preference state management.
+- **Dedicated Open Source Credits**: Built-in attribution hub honoring upstream projects, frameworks, and contributing developers.
+- **Termux & Android Power User Ready**: Optimized build workflow and lightweight footprint designed for both standard Android and power-user environments.
+
+---
+
+## 🛠️ Architecture & Tech Stack
+
+```mermaid
+graph TD
+    A[Petal Browser Core] --> B[Jetpack Compose M3 Expressive UI]
+    A --> C[Ninja WebKit Engine]
+    A --> D[Fetch2 Download Pipeline]
+    A --> E[Petal AI Hub]
+    B --> F[Predictive Back Surface & Blur]
+    B --> G[35 Dynamic M3 Shapes]
+    C --> H[Async AdBlock Rule Filter]
+    E --> I[Gemini / Grok / OpenAI / Groq]
+```
+
+- **Languages**: Kotlin 2.0+ & Java 17
+- **UI Toolkit**: Jetpack Compose (BOM 2026.06.01) with Material 3 Expressive (`1.5.0-alpha17`)
+- **Image Pipeline**: Coil Kotlin Coroutines
+- **Download Engine**: Fetch2 Multi-threaded Downloader
+- **Minimum OS**: Android 8.0 (API 26)
+- **Target OS**: Android 15 (API 35)
+- **Build System**: Gradle 8.11+ with Android Gradle Plugin 8.7+
 
 ---
 
 ## 💻 Build & Install
 
-Run the following command in the root repository directory to compile the debug APK:
+To build the debug APK locally:
 
 ```bash
-gradle assembleDebug
+# Clone the repository
+git clone https://github.com/shreyagarwal72/petal.git
+cd petal
+
+# Compile debug build
+./gradlew assembleDebug
 ```
 
-Output APK will be generated at:
-`app/build/outputs/apk/debug/app-debug.apk`
+The APK will be generated at:
+```
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+---
+
+## 💖 Open Source Credits & Upstream Projects
+
+Petal Browser is built on the shoulders of giants. We express our gratitude to:
+- **[Ninja Browser](https://github.com/mikan/Ninja)** by *Mikan* — Base WebKit architecture & privacy engine.
+- **[RvSystem-Monitor](https://github.com/duxtami/RvSystem-Monitor)** by *duxtami* — Predictive back physics & depth blur framework.
+- **[Ever-Haptics](https://github.com/duxtami/Ever-Haptics)** by *duxtami* — Waveform haptic vibration synthesis.
+- **[Cromite](https://github.com/uazo/cromite)** by *uazo* — AdBlock filtering rules and privacy paradigms.
+- **[Fetch](https://github.com/tonyofrancis/Fetch)** by *tonyofrancis* — Background download engine.
+- **[Coil](https://github.com/coil-kt/coil)** by *coil-kt* — Image and favicon caching pipeline.
 
 ---
 
 ## 📜 License
 
-Licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See [`LICENSE.md`](LICENSE.md) for details.
+Licensed under the **[GNU General Public License v3.0 (GPL-3.0)](LICENSE.md)**.
+Free and Open Source Software. You are welcome to redistribute and modify it under the terms of the GPL-3.0.

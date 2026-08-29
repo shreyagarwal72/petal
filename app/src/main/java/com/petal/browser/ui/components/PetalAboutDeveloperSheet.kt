@@ -237,7 +237,20 @@ fun PetalAboutDeveloperSheetContent(
                         DeveloperActionsCard(
                             onOpenUrl = { url ->
                                 try {
-                                    BrowserUnit.intentURL(context, Uri.parse(url))
+                                    if (url == "petal://credits") {
+                                        (context as? ComponentActivity)?.let { act ->
+                                            PetalCreditsBridge.show(act)
+                                        }
+                                    } else {
+                                        val activity = context as? com.petal.browser.activity.BrowserActivity
+                                        if (activity != null && activity.ninjaWebView != null) {
+                                            onClose()
+                                            activity.ninjaWebView.loadUrl(url)
+                                            activity.showAlbum(activity.currentAlbumController, url)
+                                        } else {
+                                            BrowserUnit.intentURL(context, Uri.parse(url))
+                                        }
+                                    }
                                 } catch (e: Exception) {
                                     e.printStackTrace()
                                 }
@@ -684,6 +697,22 @@ fun DeveloperActionsCard(
                     Text("Issues", maxLines = 1)
                 }
             }
+
+            // ── Dedicated Credits Button ────────────────────────────────────
+            Button(
+                onClick = { onOpenUrl("petal://credits") },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                ),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Rounded.Favorite, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Open Source Credits & Developers", fontWeight = FontWeight.Bold, maxLines = 1)
+            }
         }
     }
 }
@@ -717,3 +746,437 @@ private fun ExpressivePillChip(
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Dedicated Open Source Credits & Developers Architecture ──────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+
+data class AppCreditItem(
+    val title: String,
+    val developer: String,
+    val role: String,
+    val description: String,
+    val url: String,
+    val icon: ImageVector,
+    val containerColor: Color,
+    val tags: List<String>
+)
+
+val petalAppCredits = listOf(
+    AppCreditItem(
+        title = "Ninja Browser",
+        developer = "Mikan",
+        role = "Original Base Engine Architecture",
+        description = "Lightweight, privacy-focused open source browser foundation engineered with pure Android WebKit.",
+        url = "https://github.com/mikan/Ninja",
+        icon = Icons.Rounded.Public,
+        containerColor = Color(0xFF4285F4),
+        tags = listOf("Browser Base", "GPL-3.0", "Core Engine")
+    ),
+    AppCreditItem(
+        title = "RvSystem-Monitor",
+        developer = "duxtami (LastWave-native)",
+        role = "Predictive Back & Depth Blur Physics",
+        description = "Material 3 Expressive motion physics, live dual-surface 24dp depth blur, and full gesture junction framework.",
+        url = "https://github.com/duxtami/RvSystem-Monitor",
+        icon = Icons.Rounded.AutoAwesome,
+        containerColor = Color(0xFF9C27B0),
+        tags = listOf("Motion Physics", "Predictive Back", "Depth Blur")
+    ),
+    AppCreditItem(
+        title = "Ever-Haptics",
+        developer = "duxtami (LastWave-native)",
+        role = "Tactile Scroll & Interaction Haptics",
+        description = "Ultra-responsive high-fidelity waveform vibration synthesis for page scrolling, switches, and gesture locks.",
+        url = "https://github.com/duxtami/Ever-Haptics",
+        icon = Icons.Rounded.Vibration,
+        containerColor = Color(0xFF00BCD4),
+        tags = listOf("Haptic Engine", "Waveforms", "Feedback")
+    ),
+    AppCreditItem(
+        title = "Cromite Browser",
+        developer = "uazo",
+        role = "AdBlock Filters & Chrome Flags Paradigm",
+        description = "Powerful content filtering engine rules, site permission controls, and advanced Chrome feature flag toggles.",
+        url = "https://github.com/uazo/cromite",
+        icon = Icons.Rounded.Shield,
+        containerColor = Color(0xFF34A853),
+        tags = listOf("AdBlock", "Privacy", "Content Filter")
+    ),
+    AppCreditItem(
+        title = "Fetch / Android Fetch2",
+        developer = "tonyofrancis",
+        role = "Multi-threaded Download Engine",
+        description = "High-performance background download orchestration with pause, resume, progress streaming, and retry policies.",
+        url = "https://github.com/tonyofrancis/Fetch",
+        icon = Icons.Rounded.Download,
+        containerColor = Color(0xFFFBBC05),
+        tags = listOf("Downloads", "Multi-thread", "Resumable")
+    ),
+    AppCreditItem(
+        title = "Coil Image Loader",
+        developer = "coil-kt",
+        role = "Asynchronous Favicon & Image Rendering",
+        description = "Coroutines-first image loading pipeline for instant favicon caching, site icons, and fluid thumbnail displays.",
+        url = "https://github.com/coil-kt/coil",
+        icon = Icons.Rounded.Image,
+        containerColor = Color(0xFFEA4335),
+        tags = listOf("Image Loader", "Kotlin Coroutines", "Memory Cache")
+    ),
+    AppCreditItem(
+        title = "Material 3 Expressive",
+        developer = "Google Android Jetpack Team",
+        role = "Design Language & Dynamic Shape Morphing",
+        description = "Next-generation Material 3 Expressive components, 35 dynamic polygon shapes, and ColorStyle palette generators.",
+        url = "https://m3.material.io",
+        icon = Icons.Rounded.ColorLens,
+        containerColor = Color(0xFF6750A4),
+        tags = listOf("Material 3", "Compose UI", "Expressive Shapes")
+    )
+)
+
+object PetalCreditsBridge {
+    @JvmStatic
+    @JvmOverloads
+    fun show(activity: ComponentActivity, onDismiss: Runnable? = null) {
+        try {
+            val dialog = BottomSheetDialog(activity)
+            dialog.behavior.isDraggable = false
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            dialog.setCancelable(true)
+            dialog.setCanceledOnTouchOutside(true)
+            dialog.window?.let { window ->
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
+                window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            }
+            dialog.setOnShowListener {
+                try {
+                    val container = dialog.findViewById<android.view.View>(com.google.android.material.R.id.container)
+                    container?.let { root ->
+                        root.fitsSystemWindows = false
+                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
+                    }
+
+                    val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
+                    coordinator?.let { root ->
+                        root.fitsSystemWindows = false
+                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
+                    }
+
+                    val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
+                    bottomSheet?.let { sheet ->
+                        sheet.fitsSystemWindows = false
+                        sheet.background = null
+                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets -> insets }
+
+                        val behavior = BottomSheetBehavior.from(sheet)
+                        behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                        behavior.skipCollapsed = true
+                        behavior.isDraggable = false
+                        sheet.layoutParams?.height = ViewGroup.LayoutParams.MATCH_PARENT
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+            val composeView = ComposeView(activity).apply {
+                setViewTreeLifecycleOwner(activity)
+                setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setContent {
+                    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            com.petal.browser.predictive.PetalContentSnapshot.clear()
+                        }
+                    }
+                    val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                    val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                    val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                    val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                    val appFont = remember(fontName) {
+                        com.petal.browser.ui.theme.AppFont.fromName(fontName)
+                    }
+                    val colorStyle = remember(styleName) {
+                        try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                    }
+
+                    PetalExpressiveTheme(
+                        dynamicColor = dynamicColor,
+                        useAmoled = isAmoled,
+                        appFont = appFont,
+                        colorStyle = colorStyle,
+                        paletteId = paletteId
+                    ) {
+                        PetalCreditsSheetContent(
+                            backgroundSnapshot = snapshotBitmap,
+                            onClose = {
+                                try { dialog.dismiss() } catch (_: Exception) {}
+                                onDismiss?.run()
+                            }
+                        )
+                    }
+                }
+            }
+            dialog.setContentView(composeView)
+            dialog.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}
+
+@Composable
+fun PetalCreditsSheetContent(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
+    onClose: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onClose
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0)
+            ) { innerPadding ->
+                Box(
+                    modifier = modifier.fillMaxSize()
+                ) {
+                    M3ExpressiveVariableBackground(pageSeed = "credits_page")
+
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        ExpressiveHeader(
+                            title = "Open Source Credits",
+                            subtitle = "Standing on the Shoulders of Giants",
+                            onBack = onClose,
+                            enableLiquidGlass = true
+                        )
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            // Intro Mission Card
+                            Surface(
+                                shape = RoundedCornerShape(24.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                tonalElevation = 2.dp,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .entrance()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(18.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Favorite,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
+                                        Text(
+                                            text = "Gratitude & Attribution",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                    Text(
+                                        text = "Petal Browser is built upon phenomenal open source projects, libraries, and design frameworks created by visionary developers across the globe. We gratefully acknowledge and credit their outstanding work.",
+                                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            // Credit List Cards
+                            petalAppCredits.forEachIndexed { index, credit ->
+                                CreditCardItem(
+                                    credit = credit,
+                                    onClick = {
+                                        try {
+                                            val activity = context as? com.petal.browser.activity.BrowserActivity
+                                            if (activity != null) {
+                                                onClose()
+                                                activity.ninjaWebView?.let { wv ->
+                                                    wv.loadUrl(credit.url)
+                                                    activity.showAlbum(activity.currentAlbumController, credit.url)
+                                                } ?: run {
+                                                    BrowserUnit.intentURL(context, Uri.parse(credit.url))
+                                                }
+                                            } else {
+                                                BrowserUnit.intentURL(context, Uri.parse(credit.url))
+                                            }
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Footer
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "All trademarks and open-source licenses belong to their respective owners.",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CreditCardItem(
+    credit: AppCreditItem,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .bouncyClickable(onClick = onClick)
+            .entrance()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = credit.containerColor.copy(alpha = 0.16f),
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = credit.icon,
+                            contentDescription = null,
+                            tint = credit.containerColor,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = credit.title,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "by ${credit.developer}",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                IconButton(
+                    onClick = onClick,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.OpenInNew,
+                        contentDescription = "Open Project",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = credit.role,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                )
+            }
+
+            Text(
+                text = credit.description,
+                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            OptIn(ExperimentalLayoutApi::class)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                credit.tags.forEach { tag ->
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    ) {
+                        Text(
+                            text = tag,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
