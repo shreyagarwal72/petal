@@ -700,15 +700,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             float scaleX = (float) targetWidth / w;
             float scaleY = (float) targetHeight / h;
             canvas.scale(scaleX, scaleY);
-
-            // If this tab is currently showing the Home Screen / overlay view attached to parent,
-            // draw the parent container or content frame to faithfully capture the home screen UI
-            android.view.ViewParent parentView = getParent();
-            if (parentView instanceof android.view.View && getVisibility() != View.VISIBLE) {
-                ((android.view.View) parentView).draw(canvas);
-            } else {
-                draw(canvas);
-            }
+            draw(canvas);
             return bitmap;
         } catch (Exception e) {
             return null;
@@ -716,35 +708,17 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     /**
-     * Captures a live, GPU-accurate thumbnail of this tab's current rendered frame using
-     * {@link PixelCopy}, which (unlike a software {@code Canvas.draw()}) faithfully reflects
-     * hardware-accelerated WebView content. {@code PixelCopy.request(View, ...)} is only
-     * available from API 31 (Android 12); on older devices this falls back to the software
-     * {@link #capturePreviewBitmap()} snapshot, delivered on the same callback so callers don't
-     * need to branch on SDK level.
-     * <p>
-     * The callback always runs on the main thread. It may be invoked synchronously (older
-     * devices) or asynchronously (API 31+, once the compositor delivers the copied frame).
+     * Unique key for tab thumbnail caching, strictly scoped to this tab instance.
      */
     public String getThumbnailKey() {
-        String currentUrl = getUrl();
-        if (currentUrl != null && !currentUrl.isEmpty() && !"about:blank".equals(currentUrl)) {
-            return currentUrl;
-        }
         return String.valueOf(hashCode());
     }
 
     public void capturePreviewBitmapAsync(@NonNull java.util.function.Consumer<Bitmap> callback) {
-        // Wrap the caller's callback so every capture path - PixelCopy success, PixelCopy
-        // failure fallback, and the pre-API-31/detached-view software fallback - writes
-        // into the bounded LRU cache before the bitmap reaches the caller. This is what
-        // makes "on page load and tab switch" (see updatePreviewCache() below) actually
-        // populate the cache, not just the grid's own onTabVisible capture.
         final String tabId = getThumbnailKey();
         java.util.function.Consumer<Bitmap> cachingCallback = bitmap -> {
             if (bitmap != null) {
                 TabThumbnailCache.put(tabId, bitmap);
-                TabThumbnailCache.put(String.valueOf(hashCode()), bitmap);
             }
             callback.accept(bitmap);
         };
@@ -760,11 +734,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             return;
         }
 
-        // PixelCopy has no overload that accepts an arbitrary View (only SurfaceView, Surface,
-        // or Window), so a hardware-accurate capture requires going through this WebView's
-        // containing Window and cropping to the WebView's on-screen bounds. That only works
-        // when we actually have an Activity Window to copy from and the view is attached and
-        // visible; otherwise fall back to the software draw() capture below.
         Window window = getHostWindow();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && window != null && isAttachedToWindow()
                 && getVisibility() == View.VISIBLE) {
@@ -784,9 +753,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                             if (copyResult == PixelCopy.SUCCESS) {
                                 cachingCallback.accept(bitmap);
                             } else {
-                                // Compositor couldn't service the copy (e.g. view detached
-                                // mid-request) - fall back to the software snapshot instead
-                                // of dropping the preview entirely.
                                 cachingCallback.accept(capturePreviewBitmap());
                             }
                         },
@@ -796,9 +762,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                 cachingCallback.accept(capturePreviewBitmap());
             }
         } else {
-            // Pre-API 31, no reachable Window, or the view isn't currently on-screen: PixelCopy
-            // can't be used, so fall back to the software draw() capture, which is still a
-            // faithful "live" snapshot for the vast majority of WebView content.
             cachingCallback.accept(capturePreviewBitmap());
         }
     }
@@ -820,7 +783,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         if (bitmap != null && !bitmap.isRecycled()) {
             return bitmap;
         }
-        return TabThumbnailCache.get(String.valueOf(hashCode()));
+        return null;
     }
 
     /**

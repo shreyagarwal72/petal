@@ -14,7 +14,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -125,7 +127,13 @@ fun PetalTabGridSwitcher(
     var searchQuery by remember { mutableStateOf("") }
     var displayMode by remember { mutableStateOf(TabDisplayMode.GRID) }
     var isOverflowMenuExpanded by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf(TabCategory.REGULAR) }
+    val initialCategory = remember {
+        if (tabs.any { it.isSelected && it.isIncognito }) TabCategory.INCOGNITO else TabCategory.REGULAR
+    }
+    var selectedCategory by remember { mutableStateOf(initialCategory) }
+
+    val gridState = rememberLazyGridState()
+    val listState = rememberLazyListState()
 
     val context = LocalContext.current
     val effectiveOnBack: () -> Unit = remember(onBack, context) {
@@ -195,6 +203,18 @@ fun PetalTabGridSwitcher(
     }
     val regularTabCount = tabs.count { !it.isIncognito }
     val incognitoTabCount = tabs.count { it.isIncognito }
+
+    var hasScrolledToSelected by remember { mutableStateOf(false) }
+    LaunchedEffect(filteredTabs) {
+        if (!hasScrolledToSelected && filteredTabs.isNotEmpty()) {
+            val targetIndex = filteredTabs.indexOfFirst { it.isSelected }
+            if (targetIndex >= 0) {
+                gridState.scrollToItem(targetIndex)
+                listState.scrollToItem(targetIndex)
+                hasScrolledToSelected = true
+            }
+        }
+    }
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val topBarColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -373,6 +393,7 @@ fun PetalTabGridSwitcher(
                         )
 
                         displayMode == TabDisplayMode.GRID -> LazyVerticalGrid(
+                            state = gridState,
                             columns = GridCells.Fixed(2),
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -423,6 +444,7 @@ fun PetalTabGridSwitcher(
                         }
 
                         else -> LazyColumn(
+                            state = listState,
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
                             modifier = Modifier.fillMaxSize()

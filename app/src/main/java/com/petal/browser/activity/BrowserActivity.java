@@ -1152,7 +1152,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public synchronized void showAlbum(AlbumController controller, String overrideUrl) {
         View av = (View) controller;
-        if (currentAlbumController != null) currentAlbumController.deactivate();
+        if (currentAlbumController != null) {
+            if (currentAlbumController instanceof NinjaWebView) {
+                ((NinjaWebView) currentAlbumController).updatePreviewCache();
+            }
+            currentAlbumController.deactivate();
+        }
         currentAlbumController = controller;
         if (currentAlbumController instanceof NinjaWebView) {
             ninjaWebView = (NinjaWebView) currentAlbumController;
