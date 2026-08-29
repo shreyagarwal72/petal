@@ -396,6 +396,18 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             com.petal.browser.accessibility.PetalAccessibilityEngine.JS_BRIDGE_NAME
         );
 
+        try {
+            if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
+                    this,
+                    com.petal.browser.passkey.PetalWebAuthnBridge.WEBAUTHN_POLYFILL_JS,
+                    java.util.Collections.singleton("*")
+                );
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Document start script not supported: " + t.getMessage());
+        }
+
         profile = profileOriginal;
     }
 
