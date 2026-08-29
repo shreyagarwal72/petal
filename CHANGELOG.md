@@ -1,4 +1,4 @@
-### v2.0.0
+### v1.9.9
 
 - **🎨 Material 3 Expressive Color Container System (Zenith Parity)**:
   - Aligned Expressive Container Colors with Zenith's high-contrast container elevation model: toned-down soft background (`surfaceContainerLow`) with crisp floating white containers (`Color.White`) in Light mode, and elevated container tones (`surfaceContainerHigh` / AMOLED contrast ladder) in Dark mode.
@@ -14,7 +14,10 @@
   - Added `attachBaseContext` in `PetalApplication.kt` and improved `HelperUnit.applyLanguage()` with `Locale.Builder` script configuration and `LocaleList` support.
   - Added full, conversational Hinglish (Hindi in English) translations across all 174 string resources in `res/values-b+hi+Latn/strings.xml` following GRAMLY's natural phrasing.
 
-### v1.9.9
+- **📑 Tab Manager Thumbnail Isolation & Auto-Scroll**:
+  - Fixed tab preview thumbnails getting stuck on a single screenshot: scoped thumbnail cache keys strictly per tab instance (`hashCode()`) and prevented background tabs from capturing the parent container.
+  - Added real-time snapshot capture of outgoing tabs before switching away in `BrowserActivity.java`.
+  - Added automatic smooth scrolling in `PetalTabGridSwitcher.kt` (`LazyVerticalGrid` and `LazyColumn`) to jump straight to the active tab upon opening the tab manager.
 
 - **⚡ High Refresh Rate (120Hz/144Hz+) Native Hardware Synchronization**:
   - Added [PetalHighRefreshRateManager.kt](file:///data/data/com.termux/files/home/petal/app/src/main/java/com/petal/browser/unit/PetalHighRefreshRateManager.kt) to lock the highest available hardware display mode (`Display.Mode`), preferred refresh rate bounds (`preferredMinDisplayRefreshRate` & `preferredMaxDisplayRefreshRate`), and `Surface.setFrameRate()` on supported devices.

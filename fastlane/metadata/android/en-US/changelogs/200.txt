@@ -1,5 +1,0 @@
-v2.0.0 Release Highlights:
-- Material 3 Expressive Color Container System (inspired by Zenith) with high-contrast elevated container surfaces and toned-down backgrounds.
-- Universal Touch Haptics Engine fixes across the entire app with direct vibrator execution and reactive Compose haptic feedback.
-- Seamless Per-App Language switching with Android 13+ localeConfig and AppCompat AppLocalesMetadataHolderService.
-- Comprehensive Hinglish (Hindi in English) language support inspired by GRAMLY with natural, conversational translations.
