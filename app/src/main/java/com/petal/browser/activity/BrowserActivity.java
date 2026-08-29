@@ -210,6 +210,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public ValueCallback<Uri[]> filePathCallback = null;
     public AlbumController currentAlbumController = null;
     public ValueCallback<Uri[]> mFilePathCallback;
+    public String mCameraPhotoPath = null;
     public com.petal.browser.media.PetalMediaSessionService mediaService;
     public boolean isMediaBound = false;
     /**
@@ -661,28 +662,35 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             return;
         }
-        if (requestCode != INPUT_FILE_REQUEST_CODE || mFilePathCallback == null) {
-            super.onActivityResult(requestCode, resultCode, data);
-            return;
-        }
-        Uri[] results = null;
-        if (resultCode == Activity.RESULT_OK) {
-            if (data != null) {
-                String dataString = data.getDataString();
-                if (dataString != null) {
-                    results = new Uri[]{Uri.parse(dataString)};
-                } else if (data.getClipData() != null) {
-                    final int count = data.getClipData().getItemCount();
-                    results = new Uri[count];
-                    for (int i = 0; i < count; i++) {
-                        results[i] = data.getClipData().getItemAt(i).getUri();
+        if (requestCode == INPUT_FILE_REQUEST_CODE) {
+            if (mFilePathCallback != null) {
+                Uri[] results = null;
+                if (resultCode == Activity.RESULT_OK) {
+                    if (data != null && (data.getDataString() != null || data.getClipData() != null || data.getData() != null)) {
+                        String dataString = data.getDataString();
+                        if (dataString != null) {
+                            results = new Uri[]{Uri.parse(dataString)};
+                        } else if (data.getData() != null) {
+                            results = new Uri[]{data.getData()};
+                        } else if (data.getClipData() != null) {
+                            final int count = data.getClipData().getItemCount();
+                            results = new Uri[count];
+                            for (int i = 0; i < count; i++) {
+                                results[i] = data.getClipData().getItemAt(i).getUri();
+                            }
+                        }
+                    } else if (mCameraPhotoPath != null) {
+                        java.io.File file = new java.io.File(mCameraPhotoPath);
+                        if (file.exists() && file.length() > 0) {
+                            results = new Uri[]{Uri.fromFile(file)};
+                        }
                     }
                 }
+                mFilePathCallback.onReceiveValue(results);
+                mFilePathCallback = null;
             }
+            return;
         }
-        mFilePathCallback.onReceiveValue(results);
-        mFilePathCallback = null;
-    }
 
     @Override
     public void onNewIntent(Intent intent) {
@@ -1720,41 +1728,85 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showFileChooser(ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
         if (mFilePathCallback != null) {
             mFilePathCallback.onReceiveValue(null);
+            mFilePathCallback = null;
         }
         mFilePathCallback = filePathCallback;
+        mCameraPhotoPath = null;
 
-        Intent chooserIntent = null;
-        if (fileChooserParams != null) {
-            try {
-                chooserIntent = fileChooserParams.createIntent();
-            } catch (Exception ignored) {}
-        }
-
-        if (chooserIntent == null) {
-            Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
-            contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
-            contentSelectionIntent.setType("*/*");
-            if (fileChooserParams != null && fileChooserParams.getAcceptTypes() != null && fileChooserParams.getAcceptTypes().length > 0) {
-                String[] acceptTypes = fileChooserParams.getAcceptTypes();
-                if (acceptTypes.length == 1 && !acceptTypes[0].trim().isEmpty()) {
-                    contentSelectionIntent.setType(acceptTypes[0]);
-                } else if (acceptTypes.length > 1) {
-                    contentSelectionIntent.setType("*/*");
-                    contentSelectionIntent.putExtra(Intent.EXTRA_MIME_TYPES, acceptTypes);
+        boolean isImageRequest = false;
+        if (fileChooserParams != null && fileChooserParams.getAcceptTypes() != null) {
+            for (String type : fileChooserParams.getAcceptTypes()) {
+                if (type != null && (type.contains("image/") || type.contains("image/*") || type.contains(".jpg") || type.contains(".png"))) {
+                    isImageRequest = true;
+                    break;
                 }
             }
-            if (fileChooserParams != null && fileChooserParams.getMode() == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
-                contentSelectionIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-            }
+        }
 
-            chooserIntent = new Intent(Intent.ACTION_CHOOSER);
-            chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
-            chooserIntent.putExtra(Intent.EXTRA_TITLE, "File Chooser");
+        Intent takePictureIntent = null;
+        try {
+            Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            if (captureIntent.resolveActivity(getPackageManager()) != null) {
+                java.io.File photoFile = null;
+                try {
+                    String timeStamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(new java.util.Date());
+                    String imageFileName = "JPEG_" + timeStamp + "_";
+                    java.io.File storageDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
+                    photoFile = java.io.File.createTempFile(imageFileName, ".jpg", storageDir);
+                    mCameraPhotoPath = photoFile.getAbsolutePath();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unable to create Image File", ex);
+                }
+
+                if (photoFile != null) {
+                    Uri photoURI = androidx.core.content.FileProvider.getUriForFile(
+                            this,
+                            getPackageName() + ".fileprovider",
+                            photoFile
+                    );
+                    captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                    captureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    takePictureIntent = captureIntent;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting up camera capture intent", e);
+        }
+
+        Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
+        contentSelectionIntent.setType(isImageRequest ? "image/*" : "*/*");
+        if (fileChooserParams != null && fileChooserParams.getAcceptTypes() != null && fileChooserParams.getAcceptTypes().length > 0) {
+            String[] acceptTypes = fileChooserParams.getAcceptTypes();
+            if (acceptTypes.length == 1 && !acceptTypes[0].trim().isEmpty()) {
+                contentSelectionIntent.setType(acceptTypes[0]);
+            } else if (acceptTypes.length > 1) {
+                contentSelectionIntent.setType("*/*");
+                contentSelectionIntent.putExtra(Intent.EXTRA_MIME_TYPES, acceptTypes);
+            }
+        }
+        if (fileChooserParams != null && fileChooserParams.getMode() == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
+            contentSelectionIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        }
+
+        Intent[] intentArray;
+        if (takePictureIntent != null) {
+            intentArray = new Intent[]{takePictureIntent};
+        } else {
+            intentArray = new Intent[0];
+        }
+
+        Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
+        chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
+        chooserIntent.putExtra(Intent.EXTRA_TITLE, "Upload or Capture Image");
+        if (intentArray.length > 0) {
+            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
         }
 
         try {
             startActivityForResult(chooserIntent, INPUT_FILE_REQUEST_CODE);
         } catch (Exception e) {
+            Log.e(TAG, "Error starting file chooser activity", e);
             if (mFilePathCallback != null) {
                 mFilePathCallback.onReceiveValue(null);
                 mFilePathCallback = null;
