@@ -55,7 +55,6 @@ interface PetalLinkContextMenuHandler {
     fun onSearchWithGoogleLens() {}
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalLinkContextMenuSheet(
     linkTitle: String?,
@@ -66,27 +65,34 @@ fun PetalLinkContextMenuSheet(
     onDismiss: () -> Unit,
     handler: PetalLinkContextMenuHandler
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
+    Surface(
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-        }
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+            // Drag Handle Bar
+            Box(
+                modifier = Modifier
+                    .width(36.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                    .align(Alignment.CenterHorizontally)
+            )
+
+            Spacer(Modifier.height(14.dp))
+
             // Header with Favicon, Title, and Truncated URL
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
