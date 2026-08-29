@@ -184,8 +184,8 @@ object PetalAccessibilityEngine {
     @JvmStatic
     fun applyCaretBrowsing(webView: WebView?, enabled: Boolean) {
         if (webView == null) return
-        val js = if (enabled) {
-            """
+        if (enabled) {
+            val js = """
                 (function() {
                     try {
                         document.designMode = 'on';
@@ -193,17 +193,20 @@ object PetalAccessibilityEngine {
                     } catch(e) {}
                 })();
             """.trimIndent()
+            webView.evaluateJavascript(js, null)
         } else {
-            """
+            val js = """
                 (function() {
                     try {
-                        document.designMode = 'off';
-                        window.__petal_caret_mode = false;
+                        if (window.__petal_caret_mode) {
+                            document.designMode = 'off';
+                            window.__petal_caret_mode = false;
+                        }
                     } catch(e) {}
                 })();
             """.trimIndent()
+            webView.evaluateJavascript(js, null)
         }
-        webView.evaluateJavascript(js, null)
     }
 
     // ── 5. System Caption Settings Launcher ─────────────────────────────────

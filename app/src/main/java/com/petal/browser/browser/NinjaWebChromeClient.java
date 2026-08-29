@@ -110,34 +110,21 @@ public class NinjaWebChromeClient extends WebChromeClient {
     @Override
     public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, android.os.Message resultMsg) {
         if (!userGesture) {
-            // Block popups/ad redirects that fire without a real tap. Do NOT
-            // also gate this on isAdBlock(): that flag just means "ad
-            // blocking is on for this tab" and is true for most profiles by
-            // default, so it was silently killing every new-window request -
-            // including legitimate ones a user gesture opens, e.g. a
-            // "Download"/"Copy" button on a site that opens a new tab to
-            // hand off the file. The userGesture check above already covers
-            // unwanted automatic popups.
             return false;
         }
         Context context = view.getContext();
-        NinjaWebView newWebView = new NinjaWebView(context);
-        view.addView(newWebView);
-        WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
-        transport.setWebView(newWebView);
-        resultMsg.sendToTarget();
-        newWebView.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                try {
-                    BrowserUnit.intentURL(context, request.getUrl());
-                } catch (Exception e) {
-                    Log.i(TAG, "shouldOverrideUrlLoading Exception:" + e);
-                }
+        if (context instanceof com.petal.browser.activity.BrowserActivity) {
+            com.petal.browser.activity.BrowserActivity activity = (com.petal.browser.activity.BrowserActivity) context;
+            activity.addAlbum(activity.getString(R.string.app_name), "about:blank", true);
+            NinjaWebView newTabWebView = com.petal.browser.activity.BrowserActivity.ninjaWebView;
+            if (newTabWebView != null) {
+                WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                transport.setWebView(newTabWebView);
+                resultMsg.sendToTarget();
                 return true;
             }
-        });
-        return true;
+        }
+        return false;
     }
     @Override
     public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
