@@ -176,8 +176,13 @@ public class BrowserUnit {
                 extraHeaders.put("Cache-Control", "no-transform");
                 extraHeaders.put("Referer", verifiedUrl);
 
-                // If 1DM / 1DM+ / 1DM Lite is installed, hand off the download directly to 1DM
-                if (context instanceof Activity && Util1DM.is1DMInstalled(context)) {
+                // Check user selected download engine
+                com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode engineMode =
+                        com.petal.browser.torrent.PetalTorrentEngineManager.getSelectedEngineMode(context);
+
+                // If 1DM engine is selected and 1DM / 1DM+ / 1DM Lite is installed, hand off to 1DM
+                if (engineMode == com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM
+                        && context instanceof Activity && Util1DM.is1DMInstalled(context)) {
                     try {
                         Util1DM.downloadFile((Activity) context, verifiedUrl, verifiedUrl, fileName, userAgent, cookie, extraHeaders, false, false);
                         return;

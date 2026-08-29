@@ -22,9 +22,8 @@ import java.io.File
 object PetalTorrentEngineManager {
 
     enum class TorrentEngineMode(val key: String, val title: String, val description: String) {
-        ENGINE_1DM("1DM", "1DM High-Speed Engine", "Fastest multi-threaded P2P engine with DHT & peer scraping"),
-        ENGINE_EMBEDDED("EMBEDDED", "In-App Downloader", "Direct in-app Magnet & .torrent stream downloader"),
-        ENGINE_SYSTEM("SYSTEM", "System Downloader", "Default Android system download manager or app chooser")
+        ENGINE_1DM("1DM", "1DM High-Speed", "Fastest multi-threaded engine with 1DM/1DM+ integration & DHT P2P scraping"),
+        ENGINE_EMBEDDED("EMBEDDED", "In-App Downloader", "Direct in-app multi-threaded downloader with Live Alerts & stream support")
     }
 
     @JvmStatic
@@ -33,7 +32,6 @@ object PetalTorrentEngineManager {
         val modeStr = sp.getString("sp_torrent_engine", "1DM") ?: "1DM"
         return when (modeStr.uppercase()) {
             "EMBEDDED" -> TorrentEngineMode.ENGINE_EMBEDDED
-            "SYSTEM", "NATIVE" -> TorrentEngineMode.ENGINE_SYSTEM
             else -> TorrentEngineMode.ENGINE_1DM
         }
     }
@@ -58,28 +56,28 @@ object PetalTorrentEngineManager {
 
         val mode = getSelectedEngineMode(activity)
 
-        when (mode) {
+        return when (mode) {
             TorrentEngineMode.ENGINE_1DM -> {
-                try {
-                    if (isMagnet) {
-                        Util1DM.downloadMagnet(activity, url, true)
-                    } else {
-                        Util1DM.downloadTorrent(activity, url, true)
+                if (Util1DM.is1DMInstalled(activity)) {
+                    try {
+                        if (isMagnet) {
+                            Util1DM.downloadMagnet(activity, url, true)
+                        } else {
+                            Util1DM.downloadTorrent(activity, url, true)
+                        }
+                        NinjaToast.show(activity, "Opening 1DM Torrent Downloader...")
+                        true
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        NinjaToast.show(activity, "1DM Engine unavailable. Opening in-app handler...")
+                        launchNativeInAppTorrent(activity, url, fileName)
                     }
-                    NinjaToast.show(activity, "Opening 1DM Torrent Downloader...")
-                    return true
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    NinjaToast.show(activity, "1DM Engine unavailable. Falling back to native handler...")
-                    return launchNativeInAppTorrent(activity, url, fileName)
+                } else {
+                    launchNativeInAppTorrent(activity, url, fileName)
                 }
             }
             TorrentEngineMode.ENGINE_EMBEDDED -> {
-                return launchNativeInAppTorrent(activity, url, fileName)
-            }
-            TorrentEngineMode.ENGINE_SYSTEM -> {
-                BrowserUnit.download(activity, url, fileName ?: "file.torrent", mimeType ?: "application/x-bittorrent")
-                return true
+                launchNativeInAppTorrent(activity, url, fileName)
             }
         }
     }
