@@ -179,7 +179,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public TextView appBar_title;
     public EditText searchOnSiteInput;
     @SuppressLint("StaticFieldLeak")
-    public NinjaWebView ninjaWebView;
+    public static NinjaWebView ninjaWebView;
     public View customView;
     public VideoView videoView;
     public boolean isMediaPlaying = false;
