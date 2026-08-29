@@ -476,44 +476,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
-            public void handleOnBackStarted(@NonNull BackEventCompat backEvent) {
-                boolean isPredictiveEnabled = sp != null && sp.getBoolean("sp_predictive_back_junction_enabled", true);
-                // Only take over the gesture visually when predictive back is enabled in settings
-                // and there's actual in-page web history to reveal
-                predictiveBackGestureActive = isPredictiveEnabled && ninjaWebView != null && ninjaWebView.canGoBack();
-                if (predictiveBackGestureActive) {
-                    com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playTick(BrowserActivity.this);
-                    predictiveBackSwipeEdge = backEvent.getSwipeEdge();
-                    beginPredictiveBackGesture();
-                    applyPredictiveBackTransform(backEvent.getProgress(), predictiveBackSwipeEdge);
-                }
-            }
-
-            @Override
-            public void handleOnBackProgressed(@NonNull BackEventCompat backEvent) {
-                if (predictiveBackGestureActive) {
-                    predictiveBackSwipeEdge = backEvent.getSwipeEdge();
-                    applyPredictiveBackTransform(backEvent.getProgress(), predictiveBackSwipeEdge);
-                }
-            }
-
-            @Override
-            public void handleOnBackCancelled() {
-                if (predictiveBackGestureActive) {
-                    predictiveBackGestureActive = false;
-                    settlePredictiveBackGesture(false);
-                }
-            }
-
-            @Override
             public void handleOnBackPressed() {
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                if (predictiveBackGestureActive) {
-                    predictiveBackGestureActive = false;
-                    settlePredictiveBackGesture(true);
-                } else {
-                    performBackNavigation();
-                }
+                performBackNavigation();
             }
         });
         setContentView(R.layout.activity_main);
