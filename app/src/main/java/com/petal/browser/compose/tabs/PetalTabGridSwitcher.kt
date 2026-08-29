@@ -248,7 +248,6 @@ fun PetalTabGridSwitcher(
                 ExpressiveHeader(
                     title = if (selectedCategory == TabCategory.INCOGNITO) "Incognito Tabs" else "Tab Manager",
                     subtitle = if (selectedCategory == TabCategory.INCOGNITO) "$incognitoTabCount private tabs open" else "$regularTabCount active tabs open",
-                    onBack = effectiveOnBack,
                     enableLiquidGlass = true,
                     actions = {
                         HeaderActionIcon(
