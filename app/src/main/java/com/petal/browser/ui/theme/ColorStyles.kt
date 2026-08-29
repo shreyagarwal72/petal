@@ -6,12 +6,25 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 
-enum class ColorStyle(val label: String) {
-    TONAL_SPOT("Tonal Spot"),
-    NEUTRAL("Neutral"),
-    MONOCHROME("Monochrome"),
-    VIBRANT("Vibrant"),
-    EXPRESSIVE("Expressive")
+enum class ColorStyle(
+    val storageKey: String,
+    val label: String,
+    val description: String
+) {
+    TONAL_SPOT("tonal_spot", "Tonal Spot", "Default Material 3 palette with balanced saturation and contrast"),
+    VIBRANT("vibrant", "Vibrant", "Punches up colors with enhanced chroma and vivid accents"),
+    EXPRESSIVE("expressive", "Expressive", "Creative color shifts across secondary and tertiary tones"),
+    FRUIT_SALAD("fruit_salad", "Fruit Salad", "Playful, energetic complementary color variety"),
+    NEUTRAL("neutral", "Neutral", "Subtle and relaxed tones with softened chroma"),
+    MONOCHROME("monochrome", "Monochrome", "Clean grayscale palette for distraction-free browsing");
+
+    companion object {
+        val default: ColorStyle = TONAL_SPOT
+
+        fun fromStorageKey(value: String?): ColorStyle {
+            return entries.firstOrNull { it.storageKey.equals(value, ignoreCase = true) || it.name.equals(value, ignoreCase = true) } ?: default
+        }
+    }
 }
 
 data class PetalPalette(
@@ -81,15 +94,27 @@ private fun ColorScheme.mapAll(transform: (Color) -> Color): ColorScheme =
 fun ColorScheme.applyStyle(style: ColorStyle): ColorScheme = try {
     when (style) {
         ColorStyle.TONAL_SPOT -> this
-        ColorStyle.NEUTRAL -> mapAccents { it.saturate(0.35f) }
-        ColorStyle.MONOCHROME -> mapAll { it.saturate(0f) }
-        ColorStyle.VIBRANT -> mapAccents { it.saturate(1.45f) }
-        ColorStyle.EXPRESSIVE -> mapAccents { it.saturate(1.2f) }
+        ColorStyle.VIBRANT -> mapAccents { it.saturate(1.5f) }
+            .copy(
+                primaryContainer = primaryContainer.saturate(1.35f),
+                secondaryContainer = secondaryContainer.saturate(1.3f),
+                tertiaryContainer = tertiaryContainer.saturate(1.3f)
+            )
+        ColorStyle.EXPRESSIVE -> mapAccents { it.saturate(1.25f) }
             .mapTertiary { it.hueShift(-45f) }
             .copy(
-                secondary = secondary.hueShift(30f).saturate(1.25f),
-                secondaryContainer = secondaryContainer.hueShift(30f).saturate(1.2f)
+                secondary = secondary.hueShift(35f).saturate(1.3f),
+                secondaryContainer = secondaryContainer.hueShift(35f).saturate(1.25f)
             )
+        ColorStyle.FRUIT_SALAD -> mapAccents { it.saturate(1.35f) }
+            .mapTertiary { it.hueShift(60f) }
+            .copy(
+                primary = primary.hueShift(-15f),
+                secondary = secondary.hueShift(45f).saturate(1.4f),
+                secondaryContainer = secondaryContainer.hueShift(45f).saturate(1.3f)
+            )
+        ColorStyle.NEUTRAL -> mapAccents { it.saturate(0.35f) }
+        ColorStyle.MONOCHROME -> mapAll { it.saturate(0f) }
     }
 } catch (e: Throwable) {
     this
