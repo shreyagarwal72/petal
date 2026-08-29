@@ -183,6 +183,9 @@ public class NinjaWebViewClient extends WebViewClient {
             }
 
         String profile = NinjaWebView.getProfile();
+        if (sp.getBoolean("sp_webauthn_enabled", true)) {
+            view.evaluateJavascript(com.petal.browser.passkey.PetalWebAuthnBridge.WEBAUTHN_POLYFILL_JS, null);
+        }
         if (sp.getBoolean(profile + "_deny_cookie_banners",false)){
             //click opt-out if possible
             String bannerBlockScript = BannerBlock.getBannerBlockScriptPageStarted();
@@ -485,6 +488,9 @@ public class NinjaWebViewClient extends WebViewClient {
             // Clean JS execution for anti-bot / captcha compliance
             if (!ninjaWebView.isCamera()) {
                 // Safe non-destructive media device protection
+            }
+            if (sp.getBoolean("sp_webauthn_enabled", true)) {
+                view.evaluateJavascript(com.petal.browser.passkey.PetalWebAuthnBridge.WEBAUTHN_POLYFILL_JS, null);
             }
             view.evaluateJavascript(com.petal.browser.media.PetalMediaBridge.MEDIA_JS_INJECTION, null);
             }

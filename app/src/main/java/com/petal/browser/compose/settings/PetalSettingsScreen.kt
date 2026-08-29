@@ -455,6 +455,7 @@ fun PetalSettingsScreen(
     var isBlockThirdPartyCookies by remember { mutableStateOf(sp.getBoolean("sp_block_third_party_cookies", false)) }
     var isDntGpc by remember { mutableStateOf(sp.getBoolean("sp_dnt_gpc", true)) }
     var isTrimReferrers by remember { mutableStateOf(sp.getBoolean("sp_trim_referrers", true)) }
+    var isWebAuthnEnabled by remember { mutableStateOf(sp.getBoolean("sp_webauthn_enabled", true)) }
     var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
     var isJavaScript by remember { mutableStateOf(sp.getBoolean("sp_javascript", true)) }
     var isBlockPopups by remember { mutableStateOf(sp.getBoolean("sp_block_popups", true)) }
@@ -2013,6 +2014,19 @@ fun PetalSettingsScreen(
                                         onCheckedChange = { newValue ->
                                             isTrimReferrers = newValue
                                             sp.edit().putBoolean("sp_trim_referrers", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "WebAuthn & Passkey Support",
+                                        subtitle = "Allow websites to authenticate passwordless sign-ins using biometric passkeys, hardware tokens & Google Password Manager",
+                                        icon = Icons.Rounded.Key,
+                                        checked = isWebAuthnEnabled,
+                                        onCheckedChange = { newValue ->
+                                            isWebAuthnEnabled = newValue
+                                            sp.edit().putBoolean("sp_webauthn_enabled", newValue).apply()
                                         }
                                     )
 
