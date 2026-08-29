@@ -180,7 +180,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public EditText searchOnSiteInput;
     @SuppressLint("StaticFieldLeak")
     public static NinjaWebView ninjaWebView;
-    public NinjaWebView getCurrentNinjaWebView() { return ninjaWebView; }
+
+    /**
+     * Kotlin-friendly accessor (exposed as the `currentNinjaWebView` property) for the
+     * currently active NinjaWebView instance.
+     */
+    public NinjaWebView getCurrentNinjaWebView() {
+        return ninjaWebView;
+    }
+
     public View customView;
     public VideoView videoView;
     public boolean isMediaPlaying = false;
