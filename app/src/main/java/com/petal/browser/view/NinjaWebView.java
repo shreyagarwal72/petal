@@ -382,6 +382,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         }
         this.addJavascriptInterface(new WebAppInterface(context), "AndroidInterface");
         this.addJavascriptInterface(
+            new com.petal.browser.passkey.PetalWebAuthnBridge.WebAuthnJavascriptInterface(this),
+            "PetalWebAuthn"
+        );
+        this.addJavascriptInterface(
             new com.petal.browser.accessibility.PetalAccessibilityEngine.AccessibilityJavascriptInterface(title -> {
                 if (context instanceof com.petal.browser.activity.BrowserActivity) {
                     ((com.petal.browser.activity.BrowserActivity) context).runOnUiThread(() -> {
