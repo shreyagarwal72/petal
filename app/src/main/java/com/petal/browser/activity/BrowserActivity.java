@@ -3113,6 +3113,50 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    public void showReaderMode() {
+        if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
+        String url = ninjaWebView.getUrl();
+        if (url.startsWith("about:") || url.startsWith("petal://") || url.startsWith("file://")) {
+            NinjaToast.show(this, "Reader mode is not available for internal pages");
+            return;
+        }
+
+        try {
+            captureBrowserMainPreview();
+            com.petal.browser.compose.reader.PetalReaderBridge.extractArticle(ninjaWebView, article -> {
+                if (article != null && article.getContentText() != null && !article.getContentText().trim().isEmpty()) {
+                    contentFrame.removeAllViews();
+                    if (appBar != null) appBar.setVisibility(GONE);
+                    LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+                    if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+                    View bottomNav = findViewById(R.id.bottom_nav_compose);
+                    if (bottomNav != null) bottomNav.setVisibility(GONE);
+                    if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+                    if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+                    View fab_bubble = findViewById(R.id.fab_bubble);
+                    if (fab_bubble != null) fab_bubble.setVisibility(GONE);
+                    hideRefreshAndProgressOverlays();
+
+                    View readerView = com.petal.browser.compose.reader.PetalReaderBridge.createReaderView(
+                        BrowserActivity.this,
+                        article,
+                        () -> {
+                            showAlbum(currentAlbumController);
+                            return kotlin.Unit.INSTANCE;
+                        }
+                    );
+                    presentComposeScreen(readerView);
+                } else {
+                    NinjaToast.show(BrowserActivity.this, "Could not extract article content for Reading mode");
+                }
+                return kotlin.Unit.INSTANCE;
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Error launching reader mode", e);
+            NinjaToast.show(this, "Failed to load Reading mode");
+        }
+    }
+
     public void showAccountSyncScreen() {
         try {
             captureBrowserMainPreview();

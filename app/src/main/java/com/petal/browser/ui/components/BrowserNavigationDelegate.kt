@@ -135,6 +135,10 @@ object BrowserNavigationDelegate {
                     activity.searchOnSite()
                 }
 
+                override fun onShowReadingMode() {
+                    activity.showReaderMode()
+                }
+
                 override fun onPrintPdf() {
                     try {
                         activity.createWebPrintJob(webView)
