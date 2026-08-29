@@ -141,49 +141,49 @@ fun PetalPredictiveBackSurface(
     val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
     val isUnderlayPreview = LocalIsUnderlayPreview.current
 
-    val isFullyEnabled = enabled && junctionPredictiveEnabled && !isUnderlayPreview
-
-    var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
-    val progressAnim = remember { Animatable(0f) }
-
-    if (isFullyEnabled) {
-        PredictiveBackHandler(enabled = true) { progressFlow ->
-            try {
-                progressFlow.collect { backEvent ->
-                    progressAnim.snapTo(backEvent.progress)
-                    backState = PredictiveBackState(
-                        isActive = true,
-                        progress = backEvent.progress,
-                        swipeEdge = backEvent.swipeEdge,
-                    )
+    if (!isUnderlayPreview && enabled) {
+        if (junctionPredictiveEnabled) {
+            PredictiveBackHandler(enabled = true) { progressFlow ->
+                try {
+                    progressFlow.collect { backEvent ->
+                        progressAnim.snapTo(backEvent.progress)
+                        backState = PredictiveBackState(
+                            isActive = true,
+                            progress = backEvent.progress,
+                            swipeEdge = backEvent.swipeEdge,
+                        )
+                    }
+                    progressAnim.snapTo(backState.progress)
+                    progressAnim.animateTo(
+                        targetValue = 1f,
+                        animationSpec = spring(
+                            stiffness = Spring.StiffnessMedium,
+                            dampingRatio = Spring.DampingRatioNoBouncy
+                        )
+                    ) {
+                        backState = backState.copy(isActive = true, progress = value)
+                    }
+                    backState = backState.copy(isActive = true, progress = 1f)
+                    onBack()
+                    kotlinx.coroutines.delay(200)
+                    backState = PredictiveBackState.Idle
+                } catch (e: CancellationException) {
+                    progressAnim.snapTo(backState.progress)
+                    progressAnim.animateTo(
+                        targetValue = 0f,
+                        animationSpec = spring(
+                            stiffness = Spring.StiffnessMediumLow,
+                            dampingRatio = Spring.DampingRatioLowBouncy
+                        )
+                    ) {
+                        backState = backState.copy(isActive = true, progress = value)
+                    }
+                    backState = PredictiveBackState.Idle
                 }
-                progressAnim.snapTo(backState.progress)
-                progressAnim.animateTo(
-                    targetValue = 1f,
-                    animationSpec = spring(
-                        stiffness = Spring.StiffnessMedium,
-                        dampingRatio = Spring.DampingRatioNoBouncy
-                    )
-                ) {
-                    backState = backState.copy(isActive = true, progress = value)
-                }
-                backState = backState.copy(isActive = true, progress = 1f)
-                onBack()
-                kotlinx.coroutines.delay(200)
-                backState = PredictiveBackState.Idle
-            } catch (e: CancellationException) {
-                progressAnim.snapTo(backState.progress)
-                progressAnim.animateTo(
-                    targetValue = 0f,
-                    animationSpec = spring(
-                        stiffness = Spring.StiffnessMediumLow,
-                        dampingRatio = Spring.DampingRatioLowBouncy
-                    )
-                ) {
-                    backState = backState.copy(isActive = true, progress = value)
-                }
-                backState = PredictiveBackState.Idle
             }
+        } else {
+            // Instant, standard back navigation when predictive animations are toggled off
+            androidx.activity.compose.BackHandler(enabled = true, onBack = onBack)
         }
     }
 
