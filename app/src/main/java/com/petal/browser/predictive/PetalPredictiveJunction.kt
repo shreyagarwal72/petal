@@ -140,7 +140,6 @@ fun PetalPredictiveBackSurface(
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
     val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
     val isUnderlayPreview = LocalIsUnderlayPreview.current
-
     val progressAnim = remember { Animatable(0f) }
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
 

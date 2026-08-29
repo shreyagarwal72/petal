@@ -103,6 +103,11 @@ public final class TabThumbnailCache {
         deleteFromDiskAsync(safeKey);
     }
 
+    /** Call when all tabs are closed at once so cached thumbnails don't linger. Alias for evictAll(). */
+    public static void clear() {
+        evictAll();
+    }
+
     /** Call on incognito session teardown so private-tab thumbnails don't linger in memory/disk. */
     public static void evictAll() {
         cache.evictAll();
