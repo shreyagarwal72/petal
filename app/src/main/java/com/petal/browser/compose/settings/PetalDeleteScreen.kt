@@ -49,15 +49,13 @@ import com.petal.browser.unit.BrowserUnit
 object PetalDeleteBridge {
     @JvmStatic
     fun createDeleteView(activity: ComponentActivity, onBackPress: Runnable): ComposeView {
-        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+        val snapshotBitmap = com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap()
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
                 DisposableEffect(Unit) {
                     onDispose {
                         com.petal.browser.predictive.PetalContentSnapshot.clear()
@@ -260,7 +258,7 @@ fun PetalDeleteScreen(
                             DeleteOptionItem(
                                 title = context.getString(R.string.clear_title_cache),
                                 subtitle = "Frees up space by clearing cached images and files",
-                                icon = Icons.Rounded.Storage,
+                                icon = Icons.Rounded.CleaningServices,
                                 checked = clearCache,
                                 onCheckedChange = {
                                     clearCache = it
@@ -271,7 +269,7 @@ fun PetalDeleteScreen(
                             DeleteOptionItem(
                                 title = context.getString(R.string.setting_title_dom),
                                 subtitle = "Local website data and offline storage",
-                                icon = Icons.Rounded.FolderZip,
+                                icon = Icons.Rounded.Storage,
                                 checked = clearIndexedDB,
                                 onCheckedChange = {
                                     clearIndexedDB = it
@@ -293,7 +291,7 @@ fun PetalDeleteScreen(
                             DeleteOptionItem(
                                 title = context.getString(R.string.title_appDatabase),
                                 subtitle = context.getString(R.string.setting_backup_sumDatabase),
-                                icon = Icons.Rounded.Backup,
+                                icon = Icons.Rounded.FolderSpecial,
                                 checked = clearDatabase,
                                 onCheckedChange = {
                                     clearDatabase = it
@@ -304,7 +302,7 @@ fun PetalDeleteScreen(
                             DeleteOptionItem(
                                 title = context.getString(R.string.setting_label),
                                 subtitle = context.getString(R.string.setting_backup_sumSettings),
-                                icon = Icons.Rounded.Settings,
+                                icon = Icons.Rounded.Tune,
                                 checked = clearSettings,
                                 onCheckedChange = {
                                     clearSettings = it
@@ -314,8 +312,8 @@ fun PetalDeleteScreen(
 
                             DeleteOptionItem(
                                 title = context.getString(R.string.clear_title_quit),
-                                subtitle = "Automatically clear selected data when exiting Petal",
-                                icon = Icons.Rounded.ExitToApp,
+                                subtitle = "Automatically clear selected session data when exiting Petal",
+                                icon = Icons.Rounded.PowerSettingsNew,
                                 checked = clearQuit,
                                 onCheckedChange = {
                                     clearQuit = it
@@ -370,11 +368,53 @@ private fun DeleteOptionItem(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    com.petal.browser.ui.components.PetalMonitorToggleTile(
-        title = title,
-        subtitle = subtitle,
-        icon = icon,
-        checked = checked,
-        onCheckedChange = onCheckedChange,
-    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onCheckedChange(!checked) }
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+        }
+        IconSwitch(
+            checked = checked,
+            icon = icon,
+            onCheckedChange = onCheckedChange
+        )
+    }
 }
