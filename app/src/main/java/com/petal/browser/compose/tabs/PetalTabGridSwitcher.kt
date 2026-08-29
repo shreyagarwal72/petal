@@ -231,84 +231,86 @@ fun PetalTabGridSwitcher(
     ) {
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            ExpressiveHeader(
-                title = if (selectedCategory == TabCategory.INCOGNITO) "Incognito Tabs" else "Tab Manager",
-                subtitle = if (selectedCategory == TabCategory.INCOGNITO) "$incognitoTabCount private tabs open" else "$regularTabCount active tabs open",
-                enableLiquidGlass = true,
-                actions = {
-                    HeaderActionIcon(
-                        icon = Icons.Rounded.Add,
-                        contentDescription = "New Tab",
-                        onClick = {
-                            commitPendingRemovals()
-                            onNewTab(selectedCategory == TabCategory.INCOGNITO)
-                        }
-                    )
-
-                    HeaderActionIcon(
-                        icon = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
-                        contentDescription = "Toggle layout",
-                        onClick = {
-                            displayMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
-                        }
-                    )
-
-                    Box {
-                        HeaderActionIcon(
-                            icon = Icons.Rounded.MoreVert,
-                            contentDescription = "More options",
-                            onClick = { isOverflowMenuExpanded = true }
-                        )
-
-                        DropdownMenu(
-                            expanded = isOverflowMenuExpanded,
-                            onDismissRequest = { isOverflowMenuExpanded = false },
-                            shape = RoundedCornerShape(16.dp),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("New Tab") },
-                                leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
-                                onClick = {
-                                    isOverflowMenuExpanded = false
-                                    selectedCategory = TabCategory.REGULAR
-                                    commitPendingRemovals()
-                                    onNewTab(false)
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("New Incognito Tab") },
-                                leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
-                                onClick = {
-                                    isOverflowMenuExpanded = false
-                                    selectedCategory = TabCategory.INCOGNITO
-                                    commitPendingRemovals()
-                                    onNewTab(true)
-                                }
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text("Close All Tabs") },
-                                leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    isOverflowMenuExpanded = false
-                                    commitPendingRemovals()
-                                    onCloseAllTabs()
-                                }
-                            )
-                        }
-                    }
-                }
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
-            M3ExpressiveVariableBackground(pageSeed = "tabs_page")
+            M3ExpressiveVariableBackground(
+                modifier = Modifier.fillMaxSize(),
+                pageSeed = "tabs_page"
+            )
 
             Column(modifier = Modifier.fillMaxSize()) {
+                ExpressiveHeader(
+                    title = if (selectedCategory == TabCategory.INCOGNITO) "Incognito Tabs" else "Tab Manager",
+                    subtitle = if (selectedCategory == TabCategory.INCOGNITO) "$incognitoTabCount private tabs open" else "$regularTabCount active tabs open",
+                    onBack = effectiveOnBack,
+                    enableLiquidGlass = true,
+                    actions = {
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.Add,
+                            contentDescription = "New Tab",
+                            onClick = {
+                                commitPendingRemovals()
+                                onNewTab(selectedCategory == TabCategory.INCOGNITO)
+                            }
+                        )
+
+                        HeaderActionIcon(
+                            icon = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
+                            contentDescription = "Toggle layout",
+                            onClick = {
+                                displayMode = if (displayMode == TabDisplayMode.GRID) TabDisplayMode.LIST else TabDisplayMode.GRID
+                            }
+                        )
+
+                        Box {
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.MoreVert,
+                                contentDescription = "More options",
+                                onClick = { isOverflowMenuExpanded = true }
+                            )
+
+                            DropdownMenu(
+                                expanded = isOverflowMenuExpanded,
+                                onDismissRequest = { isOverflowMenuExpanded = false },
+                                shape = RoundedCornerShape(16.dp),
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("New Tab") },
+                                    leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        selectedCategory = TabCategory.REGULAR
+                                        commitPendingRemovals()
+                                        onNewTab(false)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("New Incognito Tab") },
+                                    leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        selectedCategory = TabCategory.INCOGNITO
+                                        commitPendingRemovals()
+                                        onNewTab(true)
+                                    }
+                                )
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = { Text("Close All Tabs") },
+                                    leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        commitPendingRemovals()
+                                        onCloseAllTabs()
+                                    }
+                                )
+                            }
+                        }
+                    }
+                )
 
                 Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)) {
                     // ── Regular / Incognito segmented pill switcher ─────────────

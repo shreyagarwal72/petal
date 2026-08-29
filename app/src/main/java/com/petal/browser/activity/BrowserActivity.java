@@ -2805,9 +2805,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showOverview() {
         try {
             captureBrowserMainPreview();
+            contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
             View bottomNav = findViewById(R.id.bottom_nav_compose);
             if (bottomNav != null) bottomNav.setVisibility(GONE);
-            com.petal.browser.ui.components.PetalTabSwitcherBridge.showTabSwitcherSheet(
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble = findViewById(R.id.fab_bubble);
+            if (fab_bubble != null) fab_bubble.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
+
+            View tabSwitcherView = com.petal.browser.ui.components.PetalTabSwitcherBridge.createTabSwitcherView(
                 this,
                 currentAlbumController,
                 album -> {
@@ -2824,11 +2834,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     saveOpenedTabs();
                     return kotlin.Unit.INSTANCE;
                 },
+                isIncognito -> {
+                    addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true, isIncognito);
+                    return kotlin.Unit.INSTANCE;
+                },
                 () -> {
-                    addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
+                    showAlbum(currentAlbumController);
                     return kotlin.Unit.INSTANCE;
                 }
             );
+            presentComposeScreen(tabSwitcherView);
         } catch (Exception e) {
             Log.e(TAG, "Error showing tabs overview", e);
         }

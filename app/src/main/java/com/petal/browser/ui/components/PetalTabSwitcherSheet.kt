@@ -59,6 +59,138 @@ data class TabModel(
 
 object PetalTabSwitcherBridge {
     @JvmStatic
+    fun createTabSwitcherView(
+        activity: ComponentActivity,
+        currentAlbum: AlbumController?,
+        onSelectTab: (AlbumController) -> Unit,
+        onCloseTab: (AlbumController) -> Unit,
+        onCloseAllTabs: () -> Unit,
+        onNewTab: (Boolean) -> Unit,
+        onBackPress: () -> Unit
+    ): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+        return ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
+                val context = LocalContext.current
+                val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                val isAmoled = sp.getBoolean("sp_amoled", false)
+                val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+
+                val appFont = remember(fontName) {
+                    com.petal.browser.ui.theme.AppFont.fromName(fontName)
+                }
+                val colorStyle = remember(styleName) {
+                    try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                }
+
+                PetalExpressiveTheme(
+                    dynamicColor = dynamicColor,
+                    useAmoled = isAmoled,
+                    appFont = appFont,
+                    colorStyle = colorStyle,
+                    paletteId = paletteId
+                ) {
+                    val tabItems = remember {
+                        mutableStateListOf<com.petal.browser.compose.tabs.PetalTabItem>().apply {
+                            addAll(
+                                BrowserContainer.list().map { album: AlbumController ->
+                                    val rawTitle = try { album.getTitle() } catch (_: Exception) { null }
+                                    val rawUrl = try { album.getUrl() } catch (_: Exception) { null }
+                                    val isIncognitoTab = (album is com.petal.browser.view.NinjaWebView) && album.isIncognito()
+                                    val faviconBitmap = if (album is com.petal.browser.view.NinjaWebView) album.getFavicon() else null
+                                    val previewBitmap = if (album is com.petal.browser.view.NinjaWebView) {
+                                        album.getCachedPreviewBitmap() ?: album.capturePreviewBitmap()
+                                    } else null
+
+                                    val displayTitle = when {
+                                        !rawTitle.isNullOrBlank() && !rawTitle.equals("about:blank", ignoreCase = true) && !rawTitle.equals("Petal Start", ignoreCase = true) -> rawTitle
+                                        !rawUrl.isNullOrBlank() && !rawUrl.equals("about:blank", ignoreCase = true) && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
+                                        else -> "Petal Home"
+                                    }
+                                    val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equals("about:blank", ignoreCase = true) || rawUrl.startsWith("file:///android_asset/")) "Petal Home" else rawUrl
+                                    com.petal.browser.compose.tabs.PetalTabItem(
+                                        id = album.hashCode().toString(),
+                                        title = displayTitle,
+                                        url = displayUrl,
+                                        faviconBitmap = faviconBitmap,
+                                        previewBitmap = previewBitmap,
+                                        isIncognito = isIncognitoTab,
+                                        isSelected = (album == currentAlbum)
+                                    )
+                                }
+                            )
+                        }
+                    }
+
+                    com.petal.browser.compose.tabs.PetalTabGridSwitcher(
+                        backgroundSnapshot = snapshotBitmap,
+                        tabs = tabItems,
+                        onBack = onBackPress,
+                        onTabSelect = { tabItem ->
+                            val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
+                            if (targetAlbum != null) {
+                                onSelectTab(targetAlbum)
+                            }
+                        },
+                        onTabClose = { tabItem ->
+                            val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
+                            if (targetAlbum != null) {
+                                tabItems.removeAll { it.id == tabItem.id }
+                                com.petal.browser.unit.TabThumbnailCache.remove(tabItem.id)
+                                onCloseTab(targetAlbum)
+                                com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
+                            }
+                        },
+                        onNewTab = { isIncognito ->
+                            onNewTab(isIncognito)
+                        },
+                        onCloseAllTabs = {
+                            val count = tabItems.size
+                            PetalConfirmSheetBridge.showCloseAllTabsConfirmation(activity, count) {
+                                tabItems.clear()
+                                com.petal.browser.unit.TabThumbnailCache.clear()
+                                onCloseAllTabs()
+                                com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
+                            }
+                        },
+                        onOpenSettings = {
+                            (activity as? BrowserActivity)?.showOverflow(null, null, 0, "", "", null, null, 0)
+                        },
+                        onTabVisible = { tabItem ->
+                            val targetAlbum = BrowserContainer.list()
+                                .find { it.hashCode().toString() == tabItem.id }
+                            if (targetAlbum is com.petal.browser.view.NinjaWebView) {
+                                targetAlbum.capturePreviewBitmapAsync { bitmap ->
+                                    if (bitmap != null) {
+                                        val index = tabItems.indexOfFirst { it.id == tabItem.id }
+                                        if (index >= 0) {
+                                            tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    @JvmStatic
     fun showTabSwitcherSheet(
         activity: ComponentActivity,
         currentAlbum: AlbumController?,
@@ -67,209 +199,8 @@ object PetalTabSwitcherBridge {
         onCloseAllTabs: () -> Unit,
         onNewTab: () -> Unit
     ) {
-        try {
-            val dialog = BottomSheetDialog(activity)
-            // Full-screen, non-swipeable presentation: this is a dedicated tab-manager
-            // screen, not a peekable/collapsible sheet, so the drag-to-dismiss gesture is
-            // disabled and the sheet is forced to occupy the entire window the moment it's
-            // shown (rather than the default "expanded to content height" bottom sheet).
-            dialog.behavior.isDraggable = false
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-            dialog.setCancelable(true)
-            dialog.setCanceledOnTouchOutside(false)
-            dialog.window?.let { window ->
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-                window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
-                window.setBackgroundDrawableResource(android.R.color.transparent)
-                window.statusBarColor = android.graphics.Color.TRANSPARENT
-                window.navigationBarColor = android.graphics.Color.TRANSPARENT
-            }
-            // NOTE: only ONE setOnShowListener is registered on a Dialog — a second call
-            // would silently replace this one. The insets pass-through set up here is what
-            // lets ExpressiveHeader's statusBarsPadding() actually receive the status bar
-            // height, so this logic must stay merged with the "force full height" logic
-            // below rather than living in a separate setOnShowListener call.
-            dialog.setOnShowListener {
-                try {
-                    val container = dialog.findViewById<android.view.View>(com.google.android.material.R.id.container)
-                    container?.let { root ->
-                        root.fitsSystemWindows = false
-                        root.setPadding(0, 0, 0, 0)
-                        if (root is android.view.ViewGroup) root.clipToPadding = false
-                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
-                    }
-
-                    val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
-                    coordinator?.let { root ->
-                        root.fitsSystemWindows = false
-                        root.setPadding(0, 0, 0, 0)
-                        if (root is android.view.ViewGroup) root.clipToPadding = false
-                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
-                    }
-
-                    val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    bottomSheet?.let { sheet ->
-                        sheet.fitsSystemWindows = false
-                        sheet.setPadding(0, 0, 0, 0)
-                        sheet.background = null
-                        if (sheet is android.view.ViewGroup) sheet.clipToPadding = false
-                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets -> insets }
-
-                        val params = sheet.layoutParams
-                        params.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                        sheet.layoutParams = params
-
-                        val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
-                        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-                        behavior.skipCollapsed = true
-                        behavior.isDraggable = false
-                    }
-
-                    androidx.core.view.ViewCompat.requestApplyInsets(dialog.window!!.decorView)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-                setContent {
-                    val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
-                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                    val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
-                    val isAmoled = sp.getBoolean("sp_amoled", false)
-                    val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
-
-                    val appFont = remember(fontName) {
-                        com.petal.browser.ui.theme.AppFont.fromName(fontName)
-                    }
-                    val colorStyle = remember(styleName) {
-                        try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
-                    }
-
-                    PetalExpressiveTheme(
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = appFont,
-                        colorStyle = colorStyle,
-                        paletteId = paletteId
-                    ) {
-                        val tabItems = remember {
-                            mutableStateListOf<com.petal.browser.compose.tabs.PetalTabItem>().apply {
-                                addAll(
-                                    BrowserContainer.list().map { album: AlbumController ->
-                                        val rawTitle = try { album.getTitle() } catch (_: Exception) { null }
-                                        val rawUrl = try { album.getUrl() } catch (_: Exception) { null }
-                                        val isIncognitoTab = (album is com.petal.browser.view.NinjaWebView) && album.isIncognito()
-                                        val faviconBitmap = if (album is com.petal.browser.view.NinjaWebView) album.getFavicon() else null
-                                        // Prefer the LRU-cached thumbnail (kept warm by page-load and
-                                        // tab-switch hooks) so opening the switcher doesn't need a fresh
-                                        // synchronous draw; only fall back to that draw on a cache miss.
-                                        val previewBitmap = if (album is com.petal.browser.view.NinjaWebView) {
-                                            album.getCachedPreviewBitmap() ?: album.capturePreviewBitmap()
-                                        } else null
-
-                                        val displayTitle = when {
-                                            !rawTitle.isNullOrBlank() && !rawTitle.equals("about:blank", ignoreCase = true) && !rawTitle.equals("Petal Start", ignoreCase = true) -> rawTitle
-                                            !rawUrl.isNullOrBlank() && !rawUrl.equals("about:blank", ignoreCase = true) && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
-                                            else -> "Petal Home"
-                                        }
-                                        val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equals("about:blank", ignoreCase = true) || rawUrl.startsWith("file:///android_asset/")) "Petal Home" else rawUrl
-                                        com.petal.browser.compose.tabs.PetalTabItem(
-                                            id = album.hashCode().toString(),
-                                            title = displayTitle,
-                                            url = displayUrl,
-                                            faviconBitmap = faviconBitmap,
-                                            previewBitmap = previewBitmap,
-                                            isIncognito = isIncognitoTab,
-                                            isSelected = (album == currentAlbum)
-                                        )
-                                    }
-                                )
-                            }
-                        }
-
-                        com.petal.browser.compose.tabs.PetalTabGridSwitcher(
-                            tabs = tabItems,
-                            onBack = { try { dialog.dismiss() } catch (_: Exception) {} },
-                            onTabSelect = { tabItem ->
-                                try { dialog.dismiss() } catch (ignored: Exception) {}
-                                val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
-                                if (targetAlbum != null) {
-                                    onSelectTab(targetAlbum)
-                                }
-                            },
-                            onTabClose = { tabItem ->
-                                val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
-                                if (targetAlbum != null) {
-                                    tabItems.removeAll { it.id == tabItem.id }
-                                    com.petal.browser.unit.TabThumbnailCache.remove(tabItem.id)
-                                    onCloseTab(targetAlbum)
-                                    com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
-                                    // Don't auto-dismiss when the last tab closes - like Chrome,
-                                    // stay open and let PetalTabGridSwitcher show its empty-state
-                                    // fallback ("You'll find your tabs here") instead of kicking
-                                    // the user out of the switcher.
-                                }
-                            },
-                            onNewTab = { isIncognito ->
-                                try { dialog.dismiss() } catch (ignored: Exception) {}
-                                if (isIncognito) {
-                                    (activity as? BrowserActivity)?.addAlbum("Incognito Tab", "about:blank", true, true)
-                                } else {
-                                    onNewTab()
-                                }
-                            },
-                            onCloseAllTabs = {
-                                val count = tabItems.size
-                                try { dialog.dismiss() } catch (ignored: Exception) {}
-                                PetalConfirmSheetBridge.showCloseAllTabsConfirmation(activity, count) {
-                                    onCloseAllTabs()
-                                }
-                            },
-                            onOpenSettings = {
-                                try { dialog.dismiss() } catch (ignored: Exception) {}
-                                (activity as? BrowserActivity)?.showOverflow(null, null, 0, "", "", null, null, 0)
-                            },
-                            onTabVisible = { tabItem ->
-                                // Live PixelCopy thumbnail refresh: the tabItems list is
-                                // seeded above with a cheap synchronous snapshot so cards
-                                // never render blank, then upgraded here - per card, the
-                                // first time it's actually shown in the grid - with a
-                                // GPU-accurate PixelCopy capture (falls back to the same
-                                // software snapshot on pre-API 31 devices). The callback
-                                // always lands on the main thread, so mutating the
-                                // Compose-observed tabItems list directly is safe.
-                                val targetAlbum = BrowserContainer.list()
-                                    .find { it.hashCode().toString() == tabItem.id }
-                                if (targetAlbum is com.petal.browser.view.NinjaWebView) {
-                                    targetAlbum.capturePreviewBitmapAsync { bitmap ->
-                                        if (bitmap != null) {
-                                            val index = tabItems.indexOfFirst { it.id == tabItem.id }
-                                            if (index >= 0) {
-                                                tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-            dialog.setContentView(composeView)
-            dialog.setOnDismissListener {
-                (activity as? BrowserActivity)?.apply {
-                    runOnUiThread { updatePersistentBottomNav() }
-                }
-            }
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
+        if (activity is BrowserActivity) {
+            activity.showOverview()
         }
     }
 }
