@@ -67,7 +67,7 @@ object BrowserDialogManager {
         gridAdapter.notifyDataSetChanged()
         menuGrid.setOnItemClickListener { _, _, position, _ ->
             activity.filter = true
-            activity.filterBy = gridList[position].data
+            activity.filterBy = gridList[position].data.toLong()
             dialog.cancel()
             activity.bottom_navigation.selectedItemId = R.id.page_2
         }

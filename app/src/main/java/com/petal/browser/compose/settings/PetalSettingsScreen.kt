@@ -428,6 +428,7 @@ fun PetalSettingsScreen(
     var isFloatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
+    var isExpressiveBgShapes by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
     var isHighRefreshRate by remember { mutableStateOf(sp.getBoolean("sp_high_refresh_rate", true)) }
     val maxDetectedRefreshRate = remember(context) { com.petal.browser.unit.PetalHighRefreshRateManager.getMaxSupportedRefreshRate(context) }
     var bgShapeChangeMode by remember { mutableStateOf(sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS") }
