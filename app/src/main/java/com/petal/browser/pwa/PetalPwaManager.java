@@ -35,11 +35,16 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
+import androidx.core.graphics.drawable.IconCompat;
+import java.io.File;
+
 /**
  * PetalPwaManager
  * Dynamic Progressive Web App (PWA) manager providing manifest detection & parsing via JS injection,
  * Service Worker lifecycle control, native installation prompts with dynamic shortcut creation,
- * and Web API delegation (Web Share, WebAuthn/Passkeys, Push Notifications).
+ * offline webpage web archive saving, and Web API delegation (Web Share, WebAuthn/Passkeys, Push Notifications).
  */
 public class PetalPwaManager {
 
@@ -95,7 +100,7 @@ public class PetalPwaManager {
         webSettings.setGeolocationEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
-        webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
     }
 
@@ -106,7 +111,7 @@ public class PetalPwaManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
                 ServiceWorkerController controller = ServiceWorkerController.getInstance();
-                controller.getServiceWorkerWebSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                controller.getServiceWorkerWebSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
                 controller.getServiceWorkerWebSettings().setAllowContentAccess(true);
                 controller.setServiceWorkerClient(new ServiceWorkerClient() {
                     @Override
@@ -145,7 +150,8 @@ public class PetalPwaManager {
     }
 
     /**
-     * Installs PWA to Android Home Screen as a dynamic standalone shortcut or pinned app with website favicon.
+     * Installs PWA / offline website to Android Home Screen via ShortcutManagerCompat
+     * with website favicon and saves full webpage archive for offline use.
      */
     public void installCurrentPwa(Activity activity) {
         if (activity == null) return;
@@ -185,41 +191,46 @@ public class PetalPwaManager {
                     }
                 }
 
+                File archiveDir = new File(activity.getFilesDir(), "offline_web_archives");
+                if (!archiveDir.exists()) archiveDir.mkdirs();
+                String filename = "archive_" + Math.abs(targetUrl.hashCode()) + ".mht";
+                File archiveFile = new File(archiveDir, filename);
+
+                activity.runOnUiThread(() -> {
+                    try {
+                        if (webView != null) {
+                            webView.saveWebArchive(archiveFile.getAbsolutePath(), false, null);
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "saveWebArchive: " + e.getMessage());
+                    }
+                });
+
                 Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
                 shortcutIntent.setComponent(new android.content.ComponentName(activity, BrowserActivity.class));
                 shortcutIntent.putExtra("pwa_mode", true);
                 shortcutIntent.putExtra("pwa_display", currentManifest != null ? currentManifest.display : "standalone");
+                shortcutIntent.putExtra("offline_archive_path", archiveFile.getAbsolutePath());
                 shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    ShortcutManager shortcutManager = activity.getSystemService(ShortcutManager.class);
-                    if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported()) {
-                        Icon icon = iconBitmap != null ? Icon.createWithBitmap(iconBitmap) : Icon.createWithResource(activity, R.mipmap.ic_launcher);
-                        ShortcutInfo pinShortcutInfo = new ShortcutInfo.Builder(activity, "pwa_" + Math.abs(targetUrl.hashCode()))
-                                .setShortLabel(title)
-                                .setLongLabel(currentManifest != null && !currentManifest.name.isEmpty() ? currentManifest.name : title)
-                                .setIcon(icon)
-                                .setIntent(shortcutIntent)
-                                .build();
+                IconCompat iconCompat = iconBitmap != null ? IconCompat.createWithBitmap(iconBitmap) : IconCompat.createWithResource(activity, R.mipmap.ic_launcher);
+                ShortcutInfoCompat pinShortcutInfo = new ShortcutInfoCompat.Builder(activity, "pwa_" + Math.abs(targetUrl.hashCode()))
+                        .setShortLabel(title)
+                        .setLongLabel(currentManifest != null && !currentManifest.name.isEmpty() ? currentManifest.name : title)
+                        .setIcon(iconCompat)
+                        .setIntent(shortcutIntent)
+                        .build();
 
-                        shortcutManager.requestPinShortcut(pinShortcutInfo, null);
-                        activity.runOnUiThread(() -> Toast.makeText(activity, "Installed " + title + " as App", Toast.LENGTH_SHORT).show());
-                        return;
+                if (ShortcutManagerCompat.isRequestPinShortcutSupported(activity)) {
+                    ShortcutManagerCompat.requestPinShortcut(activity, pinShortcutInfo, null);
+                } else {
+                    Intent addIntent = ShortcutManagerCompat.createShortcutResultIntent(activity, pinShortcutInfo);
+                    if (addIntent != null) {
+                        addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+                        activity.sendBroadcast(addIntent);
                     }
                 }
-
-                // Fallback broadcast shortcut
-                Intent addIntent = new Intent();
-                addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-                addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
-                if (iconBitmap != null) {
-                    addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, iconBitmap);
-                } else {
-                    addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(activity, R.mipmap.ic_launcher));
-                }
-                addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-                activity.sendBroadcast(addIntent);
-                activity.runOnUiThread(() -> Toast.makeText(activity, "Installed " + title + " as App", Toast.LENGTH_SHORT).show());
+                activity.runOnUiThread(() -> Toast.makeText(activity, "Installed " + title + " for Offline Use", Toast.LENGTH_SHORT).show());
             } catch (Exception e) {
                 Log.e(TAG, "Error installing PWA shortcut", e);
             }
