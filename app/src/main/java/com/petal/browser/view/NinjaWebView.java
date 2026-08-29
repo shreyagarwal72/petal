@@ -609,6 +609,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         requestFocus();
         foreground = true;
         album.activate();
+        try {
+            onResume();
+            resumeTimers();
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -617,6 +621,9 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         foreground = false;
         album.deactivate();
         updatePreviewCache();
+        try {
+            onPause();
+        } catch (Exception ignored) {}
     }
 
     public synchronized void updateTitle(int progress) {

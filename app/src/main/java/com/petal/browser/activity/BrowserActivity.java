@@ -604,16 +604,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     boolean isForegroundTab = record.isActive || (i == 0 && BrowserContainer.size() == 0);
                     NinjaWebView restoredWebView = new NinjaWebView(context);
                     restoredWebView.initPreferences(record.url);
-
-                    // Must be set before loadUrl(): browserController is a static field
-                    // that is null on a cold process start, and loadUrl() can trigger
-                    // Chromium's onProgressChanged callback (-> updateTitle()) almost
-                    // immediately on the main looper, before this restoration loop or
-                    // showAlbum() would otherwise get a chance to set it. Without this,
-                    // restoring the active tab on app relaunch can NPE crash the app.
-                    if (isForegroundTab) {
-                        restoredWebView.setBrowserController(this);
-                    }
+                    restoredWebView.setBrowserController(this);
 
                     if (record.url != null && !record.url.isEmpty()) {
                         restoredWebView.loadUrl(record.url);
@@ -1340,6 +1331,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
         } else {
+            if (av.getParent() != null) {
+                ((android.view.ViewGroup) av.getParent()).removeView(av);
+            }
             av.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -1349,6 +1343,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View downloadBanner = findViewById(R.id.download_banner_compose);
             if (downloadBanner != null) downloadBanner.setVisibility(VISIBLE);
             if (ninjaWebView != null) {
+                ninjaWebView.setBrowserController(this);
+                String currentUrl = ninjaWebView.getUrl();
+                String albumSavedUrl = null;
+                try {
+                    albumSavedUrl = ninjaWebView.getAlbumTitle();
+                } catch (Exception ignored) {}
+
+                // If website was never loaded (e.g. background tab or blank after restore/tab switch), trigger loading
+                if ((currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl)) &&
+                    (albumSavedUrl != null && !albumSavedUrl.isEmpty() && !isHomePage(albumSavedUrl) && !"about:blank".equalsIgnoreCase(albumSavedUrl))) {
+                    ninjaWebView.loadUrl(albumSavedUrl);
+                } else if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl)) {
+                    ninjaWebView.onResume();
+                    ninjaWebView.resumeTimers();
+                }
+
                 // Refresh this tab's thumbnail cache entry on switch, so cards that were
                 // last captured a while ago (e.g. after background JS updated the page)
                 // don't show a stale preview when the tab manager is next opened.
@@ -4440,10 +4450,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         else BrowserContainer.add(ninjaWebView);
 
+        ninjaWebView.setBrowserController(this);
         if (!foreground) ninjaWebView.deactivate();
         else {
             hideOverview();
-            ninjaWebView.setBrowserController(this);
             ninjaWebView.activate();
             if (dialogOverview != null) dialogOverview.cancel();
             showAlbum(ninjaWebView);
