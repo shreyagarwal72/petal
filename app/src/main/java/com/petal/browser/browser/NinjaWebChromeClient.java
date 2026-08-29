@@ -138,9 +138,16 @@ public class NinjaWebChromeClient extends WebChromeClient {
     }
     @Override
     public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
-        if (NinjaWebView.getBrowserController() != null) {
+        Context context = ninjaWebView.getContext();
+        if (context instanceof com.petal.browser.activity.BrowserActivity) {
+            ((com.petal.browser.activity.BrowserActivity) context).showFileChooser(filePathCallback, fileChooserParams);
+            return true;
+        } else if (NinjaWebView.getBrowserController() != null) {
             NinjaWebView.getBrowserController().showFileChooser(filePathCallback, fileChooserParams);
             return true;
+        }
+        if (filePathCallback != null) {
+            filePathCallback.onReceiveValue(null);
         }
         return false;
     }
