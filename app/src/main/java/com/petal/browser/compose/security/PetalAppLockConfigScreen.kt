@@ -49,6 +49,7 @@ import kotlinx.coroutines.launch
 fun PetalAppLockConfigScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onBack: () -> Unit,
+    wrapPredictive: Boolean = true,
 ) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -72,33 +73,37 @@ fun PetalAppLockConfigScreen(
             .apply()
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onBack,
-    ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Scaffold(
-                topBar = {
+    val content = @Composable {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                M3ExpressiveVariableBackground(
+                    modifier = Modifier.fillMaxSize(),
+                    pageSeed = "app_lock_config"
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
                     ExpressiveHeader(
                         title = "App & Profile Lock",
                         subtitle = "Configure protection options",
                         onBack = onBack
                     )
-                },
-                snackbarHost = { SnackbarHost(snackbarHostState) },
-                containerColor = MaterialTheme.colorScheme.background
-            ) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                ) {
-                    M3ExpressiveVariableBackground(pageSeed = "app_lock_config")
 
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(20.dp),
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         // Main Master Lock Toggle Card
@@ -386,5 +391,18 @@ fun PetalAppLockConfigScreen(
                 }
             }
         }
+    }
+
+    if (wrapPredictive) {
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = true,
+            onBack = onBack,
+        ) {
+            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+                content()
+            }
+        }
+    } else {
+        content()
     }
 }
