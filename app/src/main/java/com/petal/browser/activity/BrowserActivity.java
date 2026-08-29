@@ -691,6 +691,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             return;
         }
+    }
 
     @Override
     public void onNewIntent(Intent intent) {
