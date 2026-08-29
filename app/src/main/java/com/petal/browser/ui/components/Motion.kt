@@ -32,28 +32,29 @@ object PetalLaunchTracker {
  */
 @Composable
 fun Modifier.homeLaunchEntrance(index: Int = 0): Modifier {
-    if (PetalLaunchTracker.isHomeLaunchAnimated) {
-        return this
+    val isAlreadyAnimated = PetalLaunchTracker.isHomeLaunchAnimated
+    val animProgress = remember { Animatable(if (isAlreadyAnimated) 1f else 0f) }
+
+    LaunchedEffect(index) {
+        if (!isAlreadyAnimated && animProgress.value < 1f) {
+            if (index > 0) {
+                kotlinx.coroutines.delay((index * 35L).coerceAtMost(280L))
+            }
+            animProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            )
+        } else if (animProgress.value < 1f) {
+            animProgress.snapTo(1f)
+        }
+        PetalLaunchTracker.isHomeLaunchAnimated = true
     }
 
-    val animProgress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        if (index > 0) {
-            kotlinx.coroutines.delay((index * 35L).coerceAtMost(280L))
-        }
-        animProgress.animateTo(
-            targetValue = 1f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        )
-        if (index == 0) {
-            PetalLaunchTracker.isHomeLaunchAnimated = true
-        }
-    }
     return graphicsLayer {
-        val progress = animProgress.value
+        val progress = if (PetalLaunchTracker.isHomeLaunchAnimated) 1f else animProgress.value
         val currentScale = 0.93f + (0.07f * progress)
         alpha = progress
         scaleX = currentScale

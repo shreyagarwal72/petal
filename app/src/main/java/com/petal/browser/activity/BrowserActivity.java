@@ -1510,11 +1510,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         progComposeParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
                     }
 
+                    boolean isAddressBarVisible = addressBar.getVisibility() != GONE;
                     contentParams.removeRule(RelativeLayout.BELOW);
                     contentParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                     contentParams.removeRule(RelativeLayout.ABOVE);
                     contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    contentParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
+                    if (isAddressBarVisible) {
+                        contentParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
+                    } else if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
+                        contentParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
+                    } else {
+                        contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    }
 
                     if (downloadBanner != null && downloadBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                         RelativeLayout.LayoutParams bannerParams = (RelativeLayout.LayoutParams) downloadBanner.getLayoutParams();
@@ -1546,9 +1553,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         progComposeParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
                     }
 
-                    contentParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    contentParams.removeRule(RelativeLayout.ABOVE);
-                    contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                    boolean isAddressBarVisible = addressBar.getVisibility() != GONE;
+                    if (isAddressBarVisible) {
+                        contentParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                        contentParams.removeRule(RelativeLayout.ABOVE);
+                        contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                    } else {
+                        contentParams.removeRule(RelativeLayout.BELOW);
+                        contentParams.removeRule(RelativeLayout.ABOVE);
+                        contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    }
                     if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
                         contentParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
                     } else {
