@@ -37,7 +37,7 @@ fun Modifier.homeLaunchEntrance(index: Int = 0): Modifier {
     }
 
     val animProgress = remember { Animatable(0f) }
-    LaunchedEffect(index) {
+    LaunchedEffect(Unit) {
         if (index > 0) {
             kotlinx.coroutines.delay((index * 35L).coerceAtMost(280L))
         }
@@ -48,7 +48,9 @@ fun Modifier.homeLaunchEntrance(index: Int = 0): Modifier {
                 stiffness = Spring.StiffnessMediumLow
             )
         )
-        PetalLaunchTracker.isHomeLaunchAnimated = true
+        if (index == 0) {
+            PetalLaunchTracker.isHomeLaunchAnimated = true
+        }
     }
     return graphicsLayer {
         val progress = animProgress.value
