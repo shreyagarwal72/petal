@@ -180,6 +180,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public EditText searchOnSiteInput;
     @SuppressLint("StaticFieldLeak")
     public static NinjaWebView ninjaWebView;
+    public NinjaWebView getCurrentNinjaWebView() { return ninjaWebView; }
     public View customView;
     public VideoView videoView;
     public boolean isMediaPlaying = false;
@@ -1604,6 +1605,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     refreshBarComposeView.bringToFront();
                     refreshBarComposeView.requestLayout();
                 }
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error applying address bar position", e);
         }
