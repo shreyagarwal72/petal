@@ -340,8 +340,6 @@ object PetalComposeBridge {
         tabCount: Int,
         handler: PetalHomeActionHandler
     ): ComposeView {
-        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setupExpressiveHomeScreen(
                 activity = activity,
@@ -377,12 +375,6 @@ fun ComposeView.setupExpressiveHomeScreen(
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
     setContent {
-        val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
-        DisposableEffect(Unit) {
-            onDispose {
-                com.petal.browser.predictive.PetalContentSnapshot.clear()
-            }
-        }
         val accountViewModel = viewModel<AccountViewModel>(activity)
         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
         var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
@@ -410,7 +402,7 @@ fun ComposeView.setupExpressiveHomeScreen(
             expressiveColors = isExpressiveColors
         ) {
             PetalHomeScreen(
-                backgroundSnapshot = snapshotBitmap,
+                backgroundSnapshot = null,
                 accountViewModel = accountViewModel,
                 onSearch = onSearch,
                 onOpenShortcutUrl = onOpenShortcutUrl,
