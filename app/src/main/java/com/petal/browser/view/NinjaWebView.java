@@ -15,6 +15,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.PixelCopy;
 import android.view.View;
 import android.view.Window;
@@ -392,6 +393,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                         // Reader mode available
                     });
                 }
+                return kotlin.Unit.INSTANCE;
             }),
             com.petal.browser.accessibility.PetalAccessibilityEngine.JS_BRIDGE_NAME
         );
@@ -619,6 +621,12 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
     public void setAlbumTitle(String title, String url) {
         album.setAlbumTitle(title, url);
+    }
+
+    /** Returns the URL currently displayed for this tab's row in the tab switcher/list. */
+    public String getAlbumUrl() {
+        Object url = album.getUrl();
+        return url != null ? url.toString() : null;
     }
 
     @Override

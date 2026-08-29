@@ -51,6 +51,7 @@ import android.os.Handler;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
+import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.speech.RecognizerIntent;
 import android.text.Editable;
@@ -993,7 +994,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return true;
             case KeyEvent.KEYCODE_F7:
                 boolean caretState = com.petal.browser.accessibility.PetalAccessibilityEngine.toggleCaretBrowsing(this, ninjaWebView);
-                com.petal.browser.unit.NinjaToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
+                com.petal.browser.view.NinjaToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
                 return true;
             case KeyEvent.KEYCODE_BACK:
                 performBackNavigation();
@@ -1330,7 +1331,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 String currentUrl = ninjaWebView.getUrl();
                 String albumSavedUrl = null;
                 try {
-                    albumSavedUrl = ninjaWebView.getAlbumTitle();
+                    albumSavedUrl = ninjaWebView.getAlbumUrl();
                 } catch (Exception ignored) {}
 
                 // If website was never loaded (e.g. background tab or blank after restore/tab switch), trigger loading
