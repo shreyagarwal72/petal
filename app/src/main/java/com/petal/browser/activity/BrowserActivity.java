@@ -4015,14 +4015,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme) || "about".equalsIgnoreCase(scheme)) {
                 sp.edit().putBoolean("show_overview", false).apply();
                 getIntent().setAction("");
-                addAlbum(null, dataUri.toString(), true);
+
+                String targetLoadUrl = dataUri.toString();
+                String offlineArchivePath = intent.getStringExtra("offline_archive_path");
+                if (offlineArchivePath != null && !HelperUnit.isNetworkAvailable(this)) {
+                    java.io.File archiveFile = new java.io.File(offlineArchivePath);
+                    if (archiveFile.exists()) {
+                        targetLoadUrl = "file://" + archiveFile.getAbsolutePath();
+                    }
+                }
+
+                addAlbum(null, targetLoadUrl, true);
                 if (isPwaMode) {
                     View composeAddr = findViewById(R.id.compose_address_bar);
                     View bottomNav = findViewById(R.id.bottom_nav_compose);
                     if (composeAddr != null) composeAddr.setVisibility(GONE);
                     if (bottomNav != null) bottomNav.setVisibility(GONE);
                 } else if (currentAlbumController != null) {
-                    showAlbum(currentAlbumController, dataUri.toString());
+                    showAlbum(currentAlbumController, targetLoadUrl);
                 }
                 return;
             }

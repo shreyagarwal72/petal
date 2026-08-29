@@ -282,6 +282,25 @@ public class HelperUnit {
         } else System.out.println("failed_to_add");
     }
 
+    public static boolean isNetworkAvailable(Context context) {
+        if (context == null) return false;
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) return false;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                android.net.Network net = cm.getActiveNetwork();
+                if (net == null) return false;
+                android.net.NetworkCapabilities caps = cm.getNetworkCapabilities(net);
+                return caps != null && caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            } else {
+                android.net.NetworkInfo info = cm.getActiveNetworkInfo();
+                return info != null && info.isConnected();
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public static String resolveFileName(String url, String contentDisposition, String mimeType) {
         try {
             if (contentDisposition != null && !contentDisposition.trim().isEmpty()) {
