@@ -27,6 +27,10 @@ class PetalApplication : Application() {
         }
     }
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(com.petal.browser.unit.HelperUnit.applyLanguage(base))
+    }
+
     override fun onCreate() {
         super.onCreate()
         try {

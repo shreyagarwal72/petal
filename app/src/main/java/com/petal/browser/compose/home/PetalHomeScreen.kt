@@ -388,6 +388,7 @@ fun ComposeView.setupExpressiveHomeScreen(
         var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
         var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
         var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+        var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
 
         DisposableEffect(sp) {
             val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -395,6 +396,7 @@ fun ComposeView.setupExpressiveHomeScreen(
                     "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                     "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
                     "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                    "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
                 }
             }
             sp.registerOnSharedPreferenceChangeListener(listener)
@@ -404,7 +406,8 @@ fun ComposeView.setupExpressiveHomeScreen(
         PetalExpressiveTheme(
             paletteId = currentPaletteId,
             useAmoled = isAmoled,
-            dynamicColor = useDynamic
+            dynamicColor = useDynamic,
+            expressiveColors = isExpressiveColors
         ) {
             PetalHomeScreen(
                 backgroundSnapshot = snapshotBitmap,

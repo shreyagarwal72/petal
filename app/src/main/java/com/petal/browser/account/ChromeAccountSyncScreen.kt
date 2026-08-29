@@ -982,6 +982,7 @@ object PetalAccountSyncBridge {
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                 var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
                 var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
                 var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
@@ -994,6 +995,7 @@ object PetalAccountSyncBridge {
                         when (key) {
                             "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                            "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
                             "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
                             "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                             "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -1017,6 +1019,7 @@ object PetalAccountSyncBridge {
                     paletteId = currentPaletteId,
                     useAmoled = isAmoled,
                     dynamicColor = useDynamic,
+                    expressiveColors = isExpressiveColors,
                     appFont = appFont,
                     colorStyle = colorStyle,
                     fontWidth = fontWidthVal,

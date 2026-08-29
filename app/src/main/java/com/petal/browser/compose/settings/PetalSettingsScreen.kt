@@ -108,6 +108,7 @@ object PetalSettingsBridge {
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
                 var themeConfigName by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
                 var customFontSettingsState by remember { mutableStateOf(getCustomFontSettings(sp)) }
                 var customFontPathState by remember { mutableStateOf(sp.getString("sp_custom_font_path", null)) }
@@ -130,7 +131,7 @@ object PetalSettingsBridge {
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
                             "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
                             "sp_theme_config" -> themeConfigName = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-                            "sp_expressive_colors" -> {}
+                            "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
                             "sp_expressive_feature_tiles" -> {}
                         }
                     }
@@ -165,6 +166,7 @@ object PetalSettingsBridge {
                     darkTheme = isDarkTheme,
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
+                    expressiveColors = isExpressiveColors,
                     appFont = appFont,
                     customFontPath = customFontPathState,
                     customFontSettings = customFontSettingsState,
@@ -1685,10 +1687,7 @@ fun PetalSettingsScreen(
                                                 onClick = {
                                                     if (appLanguage != tag) {
                                                         appLanguage = tag
-                                                        sp.edit().putString("sp_app_language", tag).apply()
-                                                        val localeList = if (tag == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
-                                                        AppCompatDelegate.setApplicationLocales(localeList)
-                                                        (context as? androidx.activity.ComponentActivity)?.recreate()
+                                                        com.petal.browser.unit.HelperUnit.setAppLanguage(context, tag)
                                                     }
                                                 },
                                                 label = { Text(label) },

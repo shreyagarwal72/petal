@@ -1,3 +1,19 @@
+### v2.0.0
+
+- **🎨 Material 3 Expressive Color Container System (Zenith Parity)**:
+  - Aligned Expressive Container Colors with Zenith's high-contrast container elevation model: toned-down soft background (`surfaceContainerLow`) with crisp floating white containers (`Color.White`) in Light mode, and elevated container tones (`surfaceContainerHigh` / AMOLED contrast ladder) in Dark mode.
+  - Bound `expressiveColors` dynamically to SharedPreferences `sp_expressive_colors` default in `PetalTheme.kt` and reactive listeners across `PetalHomeScreen.kt`, `PetalSettingsScreen.kt`, `PetalBottomNavBridge.kt`, and `PetalAddressBarBridge.kt`.
+
+- **📳 Universal Touch Haptics Engine Fix**:
+  - Removed restrictive OS-level `HAPTIC_FEEDBACK_ENABLED` blocking from `PetalHapticEngine.java` that was disabling app haptics when system touch sounds were off.
+  - Switched to direct, multi-tiered vibration execution for reliable tactile feedback on all Android devices.
+  - Made `LocalHapticEnabled` and `PetalHapticFeedback` in `PetalTheme.kt` fully reactive to real-time `sp_touch_haptics` preference changes.
+
+- **🌐 Dynamic Per-App Language & Natural Hinglish Support (GRAMLY Inspired)**:
+  - Added Android 13+ `res/xml/locales_config.xml` declaring supported in-app locales and registered `AppLocalesMetadataHolderService` in `AndroidManifest.xml`.
+  - Added `attachBaseContext` in `PetalApplication.kt` and improved `HelperUnit.applyLanguage()` with `Locale.Builder` script configuration and `LocaleList` support.
+  - Added full, conversational Hinglish (Hindi in English) translations across all 174 string resources in `res/values-b+hi+Latn/strings.xml` following GRAMLY's natural phrasing.
+
 ### v1.9.9
 
 - **⚡ High Refresh Rate (120Hz/144Hz+) Native Hardware Synchronization**:
