@@ -882,10 +882,23 @@ public class HelperUnit {
         SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
         String lang = sp.getString("sp_app_language", "system");
         if (lang != null && !lang.equals("system")) {
-            Locale locale = Locale.forLanguageTag(lang);
+            Locale locale;
+            if ("hi-Latn".equalsIgnoreCase(lang) || "hinglish".equalsIgnoreCase(lang)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    locale = new Locale.Builder().setLanguage("hi").setScript("Latn").build();
+                } else {
+                    locale = Locale.forLanguageTag("hi-Latn");
+                }
+            } else {
+                locale = Locale.forLanguageTag(lang);
+            }
             Locale.setDefault(locale);
             Configuration config = new Configuration(context.getResources().getConfiguration());
-            config.setLocale(locale);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                config.setLocales(new android.os.LocaleList(locale, Locale.ENGLISH));
+            } else {
+                config.setLocale(locale);
+            }
             config.setLayoutDirection(locale);
             return context.createConfigurationContext(config);
         }
@@ -901,6 +914,21 @@ public class HelperUnit {
                 ? androidx.core.os.LocaleListCompat.getEmptyLocaleList()
                 : androidx.core.os.LocaleListCompat.forLanguageTags(langTag);
         androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList);
+
+        Locale targetLocale;
+        if ("system".equals(langTag)) {
+            targetLocale = Locale.getDefault();
+        } else if ("hi-Latn".equalsIgnoreCase(langTag) || "hinglish".equalsIgnoreCase(langTag)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                targetLocale = new Locale.Builder().setLanguage("hi").setScript("Latn").build();
+            } else {
+                targetLocale = Locale.forLanguageTag("hi-Latn");
+            }
+            Locale.setDefault(targetLocale);
+        } else {
+            targetLocale = Locale.forLanguageTag(langTag);
+            Locale.setDefault(targetLocale);
+        }
 
         Activity activity = null;
         Context current = context;

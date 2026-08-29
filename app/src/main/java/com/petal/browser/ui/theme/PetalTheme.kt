@@ -78,7 +78,10 @@ fun PetalExpressiveTheme(
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
         sp.getBoolean("sp_amoled", false)
     },
-    expressiveColors: Boolean = false,
+    expressiveColors: Boolean = run {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
+        sp.getBoolean("sp_expressive_colors", false)
+    },
     appFont: AppFont = run {
         val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(LocalContext.current)
         val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
@@ -150,34 +153,35 @@ fun PetalExpressiveTheme(
             if (useAmoled) {
                 // When AMOLED is active with expressive colors, surface containers use high contrast dark ladder
                 colorScheme.copy(
-                    background = Color(0xFF0F0F0F),
-                    surface = Color(0xFF0F0F0F),
-                    surfaceContainerLowest = Color(0xFF0A0A0A),
-                    surfaceContainerLow = Color(0xFF141414),
-                    surfaceContainer = Color(0xFF1E1E1E),
-                    surfaceContainerHigh = Color(0xFF262626),
-                    surfaceContainerHighest = Color(0xFF303030)
+                    background = Color.Black,
+                    surface = Color.Black,
+                    surfaceContainerLowest = Color.Black,
+                    surfaceContainerLow = Color(0xFF0B0B0B),
+                    surfaceContainer = Color(0xFF181818),
+                    surfaceContainerHigh = Color(0xFF1E1E1E),
+                    surfaceContainerHighest = Color(0xFF262626),
+                    surfaceVariant = Color(0xFF1C1C1C)
                 )
             } else {
                 colorScheme.copy(
-                    background = colorScheme.surfaceContainerLowest,
-                    surface = colorScheme.surfaceContainerLowest,
-                    surfaceContainerLowest = colorScheme.surfaceContainerLowest,
-                    surfaceContainerLow = colorScheme.surfaceContainerLow,
-                    surfaceContainer = colorScheme.surfaceContainer,
+                    background = colorScheme.surfaceContainerLow,
+                    surface = colorScheme.surfaceContainerLow,
+                    surfaceContainer = colorScheme.surfaceContainerHigh,
+                    surfaceContainerLow = colorScheme.surfaceContainerHigh,
                     surfaceContainerHigh = colorScheme.surfaceContainerHigh,
-                    surfaceContainerHighest = colorScheme.surfaceContainerHighest
+                    surfaceContainerHighest = colorScheme.surfaceContainerHigh,
+                    surfaceContainerLowest = colorScheme.surfaceContainerHigh
                 )
             }
         } else {
             colorScheme.copy(
-                background = Color(0xFFF6F8FC),
-                surface = Color(0xFFF6F8FC),
-                surfaceContainerLowest = Color(0xFFFFFFFF),
-                surfaceContainerLow = Color(0xFFF1F4F9),
-                surfaceContainer = Color(0xFFEBEFF5),
-                surfaceContainerHigh = Color(0xFFE3E8F0),
-                surfaceContainerHighest = Color(0xFFDAE1EC)
+                background = colorScheme.surfaceContainerLow,
+                surface = colorScheme.surfaceContainerLow,
+                surfaceContainer = Color.White,
+                surfaceContainerLow = Color.White,
+                surfaceContainerHigh = Color.White,
+                surfaceContainerHighest = Color.White,
+                surfaceContainerLowest = Color.White
             )
         }
     }
@@ -201,7 +205,19 @@ fun PetalExpressiveTheme(
 
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     val hapticFeedback = androidx.compose.runtime.remember(context) { PetalHapticFeedback(context) }
-    val hapticsEnabled = androidx.compose.runtime.remember(sp) { sp.getBoolean("sp_touch_haptics", true) }
+    var hapticsEnabled by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(sp.getBoolean("sp_touch_haptics", true))
+    }
+
+    androidx.compose.runtime.DisposableEffect(sp) {
+        val hapticListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sp_touch_haptics") {
+                hapticsEnabled = sp.getBoolean("sp_touch_haptics", true)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(hapticListener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(hapticListener) }
+    }
 
     CompositionLocalProvider(
         LocalPetalBlurEffectEnabled provides blurEffectEnabled,

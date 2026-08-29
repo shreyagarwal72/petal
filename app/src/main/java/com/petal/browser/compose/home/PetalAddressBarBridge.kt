@@ -48,6 +48,7 @@ object PetalAddressBarBridge {
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId) }
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
                 var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
                 var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
                 var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
@@ -60,6 +61,7 @@ object PetalAddressBarBridge {
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                             "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                            "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
                             "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
@@ -79,6 +81,7 @@ object PetalAddressBarBridge {
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
+                    expressiveColors = isExpressiveColors,
                     appFont = appFont,
                     fontWidth = fontWidthVal,
                     fontWeight = fontWeightVal,
