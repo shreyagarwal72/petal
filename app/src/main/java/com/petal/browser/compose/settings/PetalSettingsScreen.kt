@@ -2144,108 +2144,106 @@ fun PetalSettingsScreen(
                                                     }
                                                 }
                                             }
-                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                        }
+                                    }
 
-                                     Column(
-                                          modifier = Modifier
-                                              .fillMaxWidth()
-                                              .padding(vertical = 4.dp),
-                                          verticalArrangement = Arrangement.spacedBy(10.dp)
-                                      ) {
-                                          Row(
-                                              verticalAlignment = Alignment.CenterVertically,
-                                              horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                          ) {
-                                              Icon(
-                                                  imageVector = Icons.Rounded.Download,
-                                                  contentDescription = null,
-                                                  tint = MaterialTheme.colorScheme.primary,
-                                                  modifier = Modifier.size(20.dp)
-                                              )
-                                              Text(
-                                                  text = "Download & Torrent Engine",
-                                                  style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                                  color = MaterialTheme.colorScheme.onSurface
-                                              )
-                                          }
-                                          Text(
-                                              text = "Select your preferred engine for downloads, torrents, and magnet links:",
-                                              style = MaterialTheme.typography.bodySmall,
-                                              color = MaterialTheme.colorScheme.onSurfaceVariant
-                                          )
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                                          val engineItems = com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().map { mode ->
-                                              com.petal.browser.ui.components.ExpressiveSegmentItem(
-                                                  id = mode.key,
-                                                  label = mode.title,
-                                                  icon = when (mode) {
-                                                      com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM -> Icons.Rounded.Speed
-                                                      com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_EMBEDDED -> Icons.Rounded.Download
-                                                      com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_SYSTEM -> Icons.Rounded.Android
-                                                  }
-                                              )
-                                          }
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Download,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Text(
+                                                text = "Download Engine",
+                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                        Text(
+                                            text = "Select your preferred engine for downloads, torrents, and magnet links:",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
 
-                                          com.petal.browser.ui.components.ExpressiveButtonGroup(
-                                              items = engineItems,
-                                              selectedId = torrentEngineMode,
-                                              onItemSelected = { selectedKey ->
-                                                  torrentEngineMode = selectedKey
-                                                  val mode = com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().firstOrNull { it.key.equals(selectedKey, ignoreCase = true) }
-                                                      ?: com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM
-                                                  com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(context, mode)
-                                              },
-                                              modifier = Modifier.fillMaxWidth()
-                                          )
+                                        val engineItems = com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().map { mode ->
+                                            com.petal.browser.ui.components.ExpressiveSegmentItem(
+                                                id = mode.key,
+                                                label = mode.title,
+                                                icon = when (mode) {
+                                                    com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM -> Icons.Rounded.Speed
+                                                    com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_EMBEDDED -> Icons.Rounded.Download
+                                                }
+                                            )
+                                        }
 
-                                          val activeEngineMode = com.petal.browser.torrent.PetalTorrentEngineManager.getSelectedEngineMode(context)
-                                          Surface(
-                                              shape = RoundedCornerShape(16.dp),
-                                              color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
-                                              border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-                                              modifier = Modifier.fillMaxWidth()
-                                          ) {
-                                              Row(
-                                                  modifier = Modifier.padding(14.dp),
-                                                  verticalAlignment = Alignment.CenterVertically,
-                                                  horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                              ) {
-                                                  Surface(
-                                                      shape = CircleShape,
-                                                      color = MaterialTheme.colorScheme.primaryContainer,
-                                                      modifier = Modifier.size(38.dp)
-                                                  ) {
-                                                      Box(contentAlignment = Alignment.Center) {
-                                                          Icon(
-                                                              imageVector = when (activeEngineMode) {
-                                                                  com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM -> Icons.Rounded.Speed
-                                                                  com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_EMBEDDED -> Icons.Rounded.Download
-                                                                  com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_SYSTEM -> Icons.Rounded.Android
-                                                              },
-                                                              contentDescription = null,
-                                                              tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                              modifier = Modifier.size(20.dp)
-                                                          )
-                                                      }
-                                                  }
+                                        com.petal.browser.ui.components.ExpressiveButtonGroup(
+                                            items = engineItems,
+                                            selectedId = torrentEngineMode,
+                                            onItemSelected = { selectedKey ->
+                                                torrentEngineMode = selectedKey
+                                                val mode = com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.values().firstOrNull { it.key.equals(selectedKey, ignoreCase = true) }
+                                                    ?: com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM
+                                                com.petal.browser.torrent.PetalTorrentEngineManager.setEngineMode(context, mode)
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
 
-                                                  Column(modifier = Modifier.weight(1f)) {
-                                                      Text(
-                                                          text = activeEngineMode.title,
-                                                          style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                                          color = MaterialTheme.colorScheme.onSurface
-                                                      )
-                                                      Spacer(Modifier.height(2.dp))
-                                                      Text(
-                                                          text = activeEngineMode.description,
-                                                          style = MaterialTheme.typography.bodySmall,
-                                                          color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                      )
-                                                  }
-                                              }
-                                          }
-                                      }
+                                        val activeEngineMode = com.petal.browser.torrent.PetalTorrentEngineManager.getSelectedEngineMode(context)
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(14.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                            ) {
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                                    modifier = Modifier.size(38.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            imageVector = when (activeEngineMode) {
+                                                                com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM -> Icons.Rounded.Speed
+                                                                com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_EMBEDDED -> Icons.Rounded.Download
+                                                            },
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+                                                }
 
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = activeEngineMode.title,
+                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Spacer(Modifier.height(2.dp))
+                                                    Text(
+                                                        text = activeEngineMode.description,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
