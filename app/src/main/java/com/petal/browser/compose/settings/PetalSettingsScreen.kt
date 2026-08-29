@@ -2859,7 +2859,6 @@ fun PetalSettingsScreen(
                                 )
 
                                 com.petal.browser.ui.components.DeveloperMissionCard()
-
                                 com.petal.browser.ui.components.DeveloperMetricsGrid()
 
                                 com.petal.browser.ui.components.DeveloperTechStackCard()
@@ -2867,7 +2866,13 @@ fun PetalSettingsScreen(
                                 com.petal.browser.ui.components.DeveloperActionsCard(
                                     onOpenUrl = { url ->
                                         try {
-                                            com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(url))
+                                            if (url == "petal://credits") {
+                                                (context as? androidx.activity.ComponentActivity)?.let { act ->
+                                                    com.petal.browser.ui.components.PetalCreditsBridge.show(act)
+                                                }
+                                            } else {
+                                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(url))
+                                            }
                                         } catch (e: Exception) { e.printStackTrace() }
                                     }
                                 )
