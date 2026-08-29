@@ -123,6 +123,8 @@ fun PetalTabGridSwitcher(
     onTabVisible: (PetalTabItem) -> Unit = {},
     onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     var searchQuery by remember { mutableStateOf("") }
     var displayMode by remember {

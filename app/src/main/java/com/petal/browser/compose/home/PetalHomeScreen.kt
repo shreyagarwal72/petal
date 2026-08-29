@@ -685,16 +685,16 @@ private fun ShortcutTile(
     val faviconUrl = remember(shortcut.url) { getFaviconUrl(shortcut.url) }
     var isImageError by remember(shortcut.url) { mutableStateOf(false) }
 
-    // Pick a unique Material 3 Expressive shape based on tile index and shortcut label
-    val uniqueShapeIndex = remember(shortcut.label, index) {
-        val hash = (shortcut.label.hashCode() * 31 + index * 17)
-        Math.abs(hash) % PetalMaterialShapes.allShapes.size
+    // Pick a guaranteed unique Material 3 Expressive shape across all homescreen tiles
+    val totalShapes = PetalMaterialShapes.allShapes.size
+    val uniqueShapeIndex = remember(index) {
+        (index % totalShapes)
     }
     val tileShape = remember(uniqueShapeIndex) {
         PetalMaterialShapes.allShapes[uniqueShapeIndex].toShape()
     }
     val fallbackShape = remember(uniqueShapeIndex) {
-        val offsetIndex = (uniqueShapeIndex + 7) % PetalMaterialShapes.allShapes.size
+        val offsetIndex = (uniqueShapeIndex + 17) % totalShapes
         PetalMaterialShapes.allShapes[offsetIndex].toShape()
     }
 
@@ -727,7 +727,7 @@ private fun ShortcutTile(
                     onError = { isImageError = true },
                     modifier = Modifier
                         .size(34.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(fallbackShape)
                 )
             } else {
                 Box(
@@ -767,7 +767,9 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
             .homeLaunchEntrance(3 + index)
             .clickable(onClick = onClick)
     ) {
-        val addTileShape = remember { PetalMaterialShapes.Scallop.toShape() }
+        val totalShapes = PetalMaterialShapes.allShapes.size
+        val addShapeIndex = remember(index) { index % totalShapes }
+        val addTileShape = remember(addShapeIndex) { PetalMaterialShapes.allShapes[addShapeIndex].toShape() }
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -1188,7 +1190,19 @@ private fun EditShortcutDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Live Preview with automatic thumbnail
+                // Live Preview with automatic thumbnail showcasing Material 3 Expressive shapes
+                val previewShapeIndex = remember(nameText, urlText) {
+                    val hash = (nameText.hashCode() * 31 + urlText.hashCode()).let { if (it == Int.MIN_VALUE) 0 else Math.abs(it) }
+                    hash % PetalMaterialShapes.allShapes.size
+                }
+                val previewTileShape = remember(previewShapeIndex) {
+                    PetalMaterialShapes.allShapes[previewShapeIndex].toShape()
+                }
+                val previewFallbackShape = remember(previewShapeIndex) {
+                    val offsetIndex = (previewShapeIndex + 17) % PetalMaterialShapes.allShapes.size
+                    PetalMaterialShapes.allShapes[offsetIndex].toShape()
+                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1204,8 +1218,8 @@ private fun EditShortcutDialog(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .size(48.dp)
-                            .shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp))
+                            .shadow(elevation = 2.dp, shape = previewTileShape)
+                            .clip(previewTileShape)
                             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     ) {
                         if (!currentFaviconUrl.isNullOrEmpty() && !isImageError) {
@@ -1216,7 +1230,7 @@ private fun EditShortcutDialog(
                                 onError = { isImageError = true },
                                 modifier = Modifier
                                     .size(28.dp)
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(previewFallbackShape)
                             )
                         } else {
                             Text(
