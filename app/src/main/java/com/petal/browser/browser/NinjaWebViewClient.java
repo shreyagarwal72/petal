@@ -189,15 +189,22 @@ public class NinjaWebViewClient extends WebViewClient {
             if (bannerBlockScript != null) view.evaluateJavascript(bannerBlockScript,null);
         }
 
-        if (ninjaWebView.isFingerPrintProtection()) {
-            //Block WebRTC requests which can reveal local IP address
-            //Tested with https://diafygi.github.io/webrtc-ips/
-            view.evaluateJavascript("['createOffer', 'createAnswer','setLocalDescription', 'setRemoteDescription'].forEach(function(method) {\n" +
-                    "    webkitRTCPeerConnection.prototype[method] = function() {\n" +
-                    "      console.log('webRTC snoop');\n" +
-                    "      return null;\n" +
-                    "    };\n" +
-                    "  });", null);
+        boolean webrtcProtection = sp.getBoolean("sp_webrtc_protection", true);
+        if (webrtcProtection) {
+            // Block WebRTC requests which can reveal local or public IP address
+            view.evaluateJavascript("if (window.RTCPeerConnection) { " +
+                    "  ['createOffer', 'createAnswer','setLocalDescription', 'setRemoteDescription'].forEach(function(method) {\n" +
+                    "    if (window.RTCPeerConnection.prototype[method]) RTCPeerConnection.prototype[method] = function() { return Promise.reject(new Error('WebRTC blocked by Petal Shield')); };\n" +
+                    "  });\n" +
+                    "} " +
+                    "if (window.webkitRTCPeerConnection) {\n" +
+                    "  ['createOffer', 'createAnswer','setLocalDescription', 'setRemoteDescription'].forEach(function(method) {\n" +
+                    "    if (window.webkitRTCPeerConnection.prototype[method]) webkitRTCPeerConnection.prototype[method] = function() { return null; };\n" +
+                    "  });\n" +
+                    "}", null);
+        }
+
+        if (ninjaWebView.isFingerPrintProtection() || sp.getBoolean("sp_fingerprint_protection", true)) {
 
             //Prevent canvas fingerprinting by randomizing
             //can be tested e.g. at https://webbrowsertools.com
@@ -488,7 +495,9 @@ public class NinjaWebViewClient extends WebViewClient {
 
     @Override
     public void onLoadResource(WebView view, String url) {
-        if (ninjaWebView.isFingerPrintProtection()) {
+        boolean dntGpc = sp.getBoolean("sp_dnt_gpc", true);
+        boolean fingerprint = ninjaWebView.isFingerPrintProtection() || sp.getBoolean("sp_fingerprint_protection", true);
+        if (fingerprint || dntGpc) {
             view.evaluateJavascript("var test=document.querySelector(\"a[ping]\"); if(test!==null){test.removeAttribute('ping')};", null);
             //do not allow ping on http only pages (tested with http://tests.caniuse.com)
             if (view.getSettings().getUseWideViewPort() && (view.getWidth() < 1300)){
