@@ -463,6 +463,10 @@ fun PetalSettingsScreen(
     var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
+    var isForceZoom by remember { mutableStateOf(sp.getBoolean("sp_force_enable_zoom", true)) }
+    var isReaderModeDetection by remember { mutableStateOf(sp.getBoolean("sp_reader_mode_detection", true)) }
+    var isCaretBrowsing by remember { mutableStateOf(sp.getBoolean("sp_caret_browsing", false)) }
+    var isTouchpadSwipeNav by remember { mutableStateOf(sp.getBoolean("sp_touchpad_swipe_nav", true)) }
     var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
     var torrentEngineMode by remember { mutableStateOf(sp.getString("sp_torrent_engine", "1DM") ?: "1DM") }
     var showEngineSheet by remember { mutableStateOf(false) }
@@ -2144,6 +2148,102 @@ fun PetalSettingsScreen(
                                                     }
                                                 }
                                             }
+                                        }
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Force Enable Zoom (Override Viewport)",
+                                        subtitle = "Override website viewport locks (user-scalable=no) to allow pinch-to-zoom on all pages",
+                                        icon = Icons.Rounded.ZoomIn,
+                                        checked = isForceZoom,
+                                        onCheckedChange = { newValue ->
+                                            isForceZoom = newValue
+                                            sp.edit().putBoolean("sp_force_enable_zoom", newValue).apply()
+                                        }
+                                    )
+
+                                    ToggleRow(
+                                        title = "Simplified View for Webpages",
+                                        subtitle = "Detect article content and enable reader mode prompts for clean distraction-free reading",
+                                        icon = Icons.Rounded.Article,
+                                        checked = isReaderModeDetection,
+                                        onCheckedChange = { newValue ->
+                                            isReaderModeDetection = newValue
+                                            sp.edit().putBoolean("sp_reader_mode_detection", newValue).apply()
+                                        }
+                                    )
+
+                                    ToggleRow(
+                                        title = "Caret Browsing (F7 Shortcut)",
+                                        subtitle = "Navigate and select text within webpages using a movable keyboard cursor (toggle anytime via F7)",
+                                        icon = Icons.Rounded.TextFormat,
+                                        checked = isCaretBrowsing,
+                                        onCheckedChange = { newValue ->
+                                            isCaretBrowsing = newValue
+                                            com.petal.browser.accessibility.PetalAccessibilityEngine.setCaretBrowsing(context, null, newValue)
+                                        }
+                                    )
+
+                                    ToggleRow(
+                                        title = "Touchpad Two-Finger Navigation",
+                                        subtitle = "Swipe horizontally with two fingers on a touchpad or trackpad to navigate back and forward in history",
+                                        icon = Icons.Rounded.Swipe,
+                                        checked = isTouchpadSwipeNav,
+                                        onCheckedChange = { newValue ->
+                                            isTouchpadSwipeNav = newValue
+                                            sp.edit().putBoolean("sp_touchpad_swipe_nav", newValue).apply()
+                                        }
+                                    )
+
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainer,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                            .clickable {
+                                                com.petal.browser.accessibility.PetalAccessibilityEngine.launchCaptionSettings(context)
+                                            }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                        ) {
+                                            Surface(
+                                                 shape = CircleShape,
+                                                 color = MaterialTheme.colorScheme.primaryContainer,
+                                                 modifier = Modifier.size(40.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.ClosedCaption,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                        modifier = Modifier.size(22.dp)
+                                                    )
+                                                }
+                                            }
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = "System Captions Preferences",
+                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = "Configure system-level closed captioning, subtitles, and text styling",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            Icon(
+                                                imageVector = Icons.Rounded.OpenInNew,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
                                         }
                                     }
 

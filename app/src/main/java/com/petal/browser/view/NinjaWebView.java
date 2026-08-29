@@ -357,8 +357,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
         float fontScale = sp.getFloat("sp_font_size_scale", 1.0f);
         float zoomScale = sp.getFloat("sp_zoom_level_scale", 1.0f);
-        int totalTextZoom = (int) (fontScale * zoomScale * 100);
-        webSettings.setTextZoom(totalTextZoom);
+        com.petal.browser.accessibility.PetalAccessibilityEngine.applyZoomToWebView(this, url);
 
         fingerPrintProtection = sp.getBoolean(profile + "_fingerPrintProtection", false);
         history = sp.getBoolean("sp_history", sp.getBoolean(profile + "_saveHistory", true));
@@ -381,8 +380,26 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             Log.i(TAG, "Error loading cookies:" + e);
         }
         this.addJavascriptInterface(new WebAppInterface(context), "AndroidInterface");
+        this.addJavascriptInterface(
+            new com.petal.browser.accessibility.PetalAccessibilityEngine.AccessibilityJavascriptInterface(title -> {
+                if (context instanceof com.petal.browser.activity.BrowserActivity) {
+                    ((com.petal.browser.activity.BrowserActivity) context).runOnUiThread(() -> {
+                        // Reader mode available
+                    });
+                }
+            }),
+            com.petal.browser.accessibility.PetalAccessibilityEngine.JS_BRIDGE_NAME
+        );
 
         profile = profileOriginal;
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (com.petal.browser.accessibility.PetalAccessibilityEngine.handleGenericMotion(this, event)) {
+            return true;
+        }
+        return super.onGenericMotionEvent(event);
     }
 
     public static String getDerivedDesktopUserAgent(Context context) {

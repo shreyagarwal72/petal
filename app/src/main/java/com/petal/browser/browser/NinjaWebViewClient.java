@@ -153,6 +153,12 @@ public class NinjaWebViewClient extends WebViewClient {
             com.petal.browser.unit.TabSessionManager.saveSession(context);
         }
 
+        // Apply Accessibility hooks (per-site zoom, force viewport zoom, reader mode detector, caret browsing)
+        com.petal.browser.accessibility.PetalAccessibilityEngine.applyZoomToWebView(view, url);
+        com.petal.browser.accessibility.PetalAccessibilityEngine.applyForceZoom(view);
+        com.petal.browser.accessibility.PetalAccessibilityEngine.injectReaderModeDetector(view);
+        com.petal.browser.accessibility.PetalAccessibilityEngine.applyCaretBrowsing(view, com.petal.browser.accessibility.PetalAccessibilityEngine.isCaretBrowsingEnabled(context));
+
         // Refresh the tab manager's LRU thumbnail cache so the grid shows an up-to-date
         // preview for this tab the next time it's opened, without the switcher having to
         // capture on the spot.

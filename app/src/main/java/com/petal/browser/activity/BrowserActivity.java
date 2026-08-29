@@ -1017,6 +1017,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             case KeyEvent.KEYCODE_MENU:
                 showOverflow(null, null, 0, ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "", null, null, 0);
                 return true;
+            case KeyEvent.KEYCODE_F7:
+                boolean caretState = com.petal.browser.accessibility.PetalAccessibilityEngine.toggleCaretBrowsing(this, ninjaWebView);
+                com.petal.browser.unit.NinjaToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
+                return true;
             case KeyEvent.KEYCODE_BACK:
                 performBackNavigation();
                 return true;
