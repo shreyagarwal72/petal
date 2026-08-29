@@ -477,10 +477,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull BackEventCompat backEvent) {
-                // Only take over the gesture visually when there's actual in-page web
-                // history to reveal - otherwise fall through untouched so the system's
-                // own predictive-back-to-home/exit preview isn't fought with ours.
-                predictiveBackGestureActive = ninjaWebView != null && ninjaWebView.canGoBack();
+                boolean isPredictiveEnabled = sp != null && sp.getBoolean("sp_predictive_back_junction_enabled", true);
+                // Only take over the gesture visually when predictive back is enabled in settings
+                // and there's actual in-page web history to reveal
+                predictiveBackGestureActive = isPredictiveEnabled && ninjaWebView != null && ninjaWebView.canGoBack();
                 if (predictiveBackGestureActive) {
                     com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playTick(BrowserActivity.this);
                     predictiveBackSwipeEdge = backEvent.getSwipeEdge();
