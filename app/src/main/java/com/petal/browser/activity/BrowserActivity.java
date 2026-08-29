@@ -1374,6 +1374,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
         updateOmniBox();
+        applyAddressBarPosition();
         updatePersistentBottomNav();
         View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         if (refreshBarCompose != null) {
@@ -1449,8 +1450,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View addressBar = findViewById(R.id.compose_address_bar);
             View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
             View mainContent = findViewById(R.id.main_content);
+            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
             View bottomNav = findViewById(R.id.bottom_nav_compose);
             View fabBubble = findViewById(R.id.fab_bubble);
+            View downloadBanner = findViewById(R.id.download_banner_compose);
 
             if (addressBar != null && mainContent != null && addressBar.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                 RelativeLayout.LayoutParams addrParams = (RelativeLayout.LayoutParams) addressBar.getLayoutParams();
@@ -1460,26 +1463,37 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (isBottom) {
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                    if (bottomNav != null) {
-                        addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_compose);
+                    addrParams.removeRule(RelativeLayout.ABOVE);
+                    addrParams.removeRule(RelativeLayout.BELOW);
+
+                    boolean hasBottomNav = bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE;
+                    if (hasBottomNav) {
+                        addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
                     } else {
                         addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                     }
                     addrParams.topMargin = 0;
-                    addrParams.bottomMargin = (int) HelperUnit.convertDpToPixel(4f, context);
+                    addrParams.bottomMargin = (int) HelperUnit.convertDpToPixel(2f, context);
 
                     if (progComposeParams != null) {
                         progComposeParams.removeRule(RelativeLayout.BELOW);
+                        progComposeParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                         progComposeParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
                     }
 
                     contentParams.removeRule(RelativeLayout.BELOW);
                     contentParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                    contentParams.removeRule(RelativeLayout.ABOVE);
                     contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    // Content is anchored to the address bar only. The progress bar overlays
-                    // it and must never affect main_content's position (its height changes
-                    // on every load, which raced the WebView's own layout pass).
                     contentParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
+
+                    if (downloadBanner != null && downloadBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams bannerParams = (RelativeLayout.LayoutParams) downloadBanner.getLayoutParams();
+                        bannerParams.removeRule(RelativeLayout.BELOW);
+                        bannerParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                        bannerParams.topMargin = (int) HelperUnit.convertDpToPixel(8f, context);
+                        downloadBanner.setLayoutParams(bannerParams);
+                    }
 
                     if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                         RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
@@ -1492,19 +1506,33 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } else {
                     addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                     addrParams.removeRule(RelativeLayout.ABOVE);
+                    addrParams.removeRule(RelativeLayout.BELOW);
                     addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
                     addrParams.topMargin = 0;
                     addrParams.bottomMargin = 0;
 
                     if (progComposeParams != null) {
                         progComposeParams.removeRule(RelativeLayout.ABOVE);
+                        progComposeParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                         progComposeParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
                     }
 
-                    contentParams.removeRule(RelativeLayout.ABOVE);
                     contentParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    contentParams.removeRule(RelativeLayout.ABOVE);
                     contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                    if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
+                        contentParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
+                    } else {
+                        contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    }
+
+                    if (downloadBanner != null && downloadBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams bannerParams = (RelativeLayout.LayoutParams) downloadBanner.getLayoutParams();
+                        bannerParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                        bannerParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                        bannerParams.topMargin = 0;
+                        downloadBanner.setLayoutParams(bannerParams);
+                    }
 
                     if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                         RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
@@ -1516,8 +1544,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                 }
 
-                // Bottom Nav Container is ALWAYS anchored at the bottom of the screen
-                View bottomNavContainer = findViewById(R.id.bottom_nav_container);
                 if (bottomNavContainer != null && bottomNavContainer.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                     RelativeLayout.LayoutParams containerParams = (RelativeLayout.LayoutParams) bottomNavContainer.getLayoutParams();
                     containerParams.removeRule(RelativeLayout.ABOVE);
@@ -1537,9 +1563,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     bottomNav.bringToFront();
                 }
 
-                // Do not resize/pad pages that don't have bottom navbar or when floating navbar is active
                 boolean hasNav = bottomNav != null && bottomNav.getVisibility() == VISIBLE;
-                int paddingBottom = (hasNav && !isFloating) ? (int) HelperUnit.convertDpToPixel(80f, context) : 0;
+                int paddingBottom = (hasNav && !isFloating && !isBottom) ? (int) HelperUnit.convertDpToPixel(80f, context) : 0;
                 mainContent.setPadding(0, 0, 0, paddingBottom);
 
                 addressBar.setLayoutParams(addrParams);
@@ -1550,8 +1575,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addressBar.requestLayout();
                 mainContent.requestLayout();
 
-                // Progress bar must be explicitly raised above main_content too — elevation
-                // alone was not reliably winning the draw order on-device.
                 if (progressBarCompose != null) {
                     progressBarCompose.bringToFront();
                     progressBarCompose.requestLayout();
@@ -1562,7 +1585,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     refreshBarComposeView.bringToFront();
                     refreshBarComposeView.requestLayout();
                 }
-            }
         } catch (Exception e) {
             Log.e(TAG, "Error applying address bar position", e);
         }
