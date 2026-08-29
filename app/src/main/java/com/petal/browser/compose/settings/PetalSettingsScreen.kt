@@ -2006,6 +2006,7 @@ fun PetalSettingsScreen(
                                                 selected = addressBarPosition == "TOP",
                                                 onClick = {
                                                     addressBarPosition = "TOP"
+                                                    sp.edit().putString("sp_address_bar_position", "TOP").apply()
                                                     (context as? BrowserActivity)?.applyAddressBarPosition()
                                                 },
                                                 label = { Text("Top (Default)") },
