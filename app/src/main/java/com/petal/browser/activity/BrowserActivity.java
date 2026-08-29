@@ -401,6 +401,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         
         sp = PreferenceManager.getDefaultSharedPreferences(context);
+        com.petal.browser.unit.PetalSessionHistoryManager.initSession();
 
         try {
             Intent mediaServiceIntent = new Intent(this, com.petal.browser.media.PetalMediaSessionService.class);
@@ -791,7 +792,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             BrowserContainer.clear();
             if (sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
-                BrowserUnit.clearBrowserData(this);
+                BrowserUnit.clearOnExit(this);
             }
             if (sp != null && sp.getBoolean("sp_backup_quit", false)) {
                 Fragment_settings_Backup.backup(activity);
@@ -809,7 +810,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onStop() {
         try {
             if (isFinishing() && sp != null && (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))) {
-                BrowserUnit.clearBrowserData(this);
+                BrowserUnit.clearOnExit(this);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error in BrowserActivity.onStop", e);
