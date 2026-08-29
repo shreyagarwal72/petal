@@ -63,7 +63,9 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.components.LinearRipplingWavyProgressIndicator
 import kotlinx.coroutines.delay
@@ -816,22 +818,23 @@ private fun DownloadRowItem(
                     label = "Progress"
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                LinearRipplingWavyProgressIndicator(
-                    progress = animatedProgress,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            } else if (item.status == DownloadManager.STATUS_PAUSED) {
-                // A frozen, muted bar (no wave motion) makes "paused" visually distinct from
-                // an actively downloading file, matching how Chrome dims a paused download.
-                Spacer(modifier = Modifier.height(6.dp))
-                LinearProgressIndicator(
-                    progress = item.progress ?: 0f,
+                LinearWavyProgressIndicator(
+                    progress = { animatedProgress },
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(4.5.dp)
-                        .clip(RoundedCornerShape(50)),
+                        .height(8.dp)
+                )
+            } else if (item.status == DownloadManager.STATUS_PAUSED) {
+                Spacer(modifier = Modifier.height(6.dp))
+                LinearWavyProgressIndicator(
+                    progress = { item.progress ?: 0f },
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
                 )
             }
         }
@@ -839,14 +842,14 @@ private fun DownloadRowItem(
 }
 
 /**
- * Chrome/Play Store-style leading control: a circular ring that sweeps around the icon to
+ * Chrome/Play Store-style leading control: a circular wavy ring that sweeps around the icon to
  * show progress, with the icon itself doubling as a tappable pause/resume/status glyph.
- * - Running: filled progress arc (or an indeterminate spinning arc while size is unknown),
- *   Pause glyph in the center. Tap to pause.
- * - Paused: a frozen ring at the current progress, Play glyph in the center. Tap to resume.
- * - Failed: a plain error glyph, no ring.
- * - Completed/other: falls back to the original file-type icon, no ring.
+ * - Running: filled CircularWavyProgressIndicator with Pause glyph in center. Tap to pause.
+ * - Paused: frozen CircularWavyProgressIndicator with Play glyph in center. Tap to resume.
+ * - Failed: error glyph, no ring.
+ * - Completed/other: falls back to the original expressive file-type icon.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadProgressRing(
     item: DownloadItem,
@@ -860,40 +863,13 @@ private fun DownloadProgressRing(
     val isFailed = item.status == DownloadManager.STATUS_FAILED
     val showRing = (isRunning || isPaused || isPending) && !isSelected
 
-    val ringColor = MaterialTheme.colorScheme.primary
-    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
+    val ringColor = if (isPaused) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary
+    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
 
     val animatedProgress by animateFloatAsState(
         targetValue = item.progress ?: 0f,
         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         label = "RingProgress"
-    )
-
-    val infiniteTransition = rememberInfiniteTransition(label = "RingSpin")
-    val indeterminateRotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1100, easing = LinearEasing)
-        ),
-        label = "RingRotation"
-    )
-    val wavePhase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 2f * Math.PI.toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(1100, easing = LinearEasing)
-        ),
-        label = "RingWavePhase"
-    )
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.55f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(700, easing = FastOutSlowInEasing),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-        ),
-        label = "RingPulse"
     )
 
     val avatarShape = remember(item.id) {
@@ -913,7 +889,7 @@ private fun DownloadProgressRing(
         shape = if (showRing) CircleShape else avatarShape,
         color = expressiveBgColor,
         modifier = Modifier
-            .size(44.dp)
+            .size(46.dp)
             .then(
                 if (showRing && !isSelectionMode) {
                     Modifier.clickable(
@@ -923,71 +899,27 @@ private fun DownloadProgressRing(
                 } else Modifier
             )
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             if (showRing) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val waveAmplitudePx = 2.0.dp.toPx()
-                    val strokeWidthPx = waveAmplitudePx * 2f + 2.6.dp.toPx()
-                    val diameter = size.minDimension - strokeWidthPx
-                    val topLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f)
-                    val arcSize = Size(diameter, diameter)
-
-                    // Track ring
-                    drawArc(
-                        color = trackColor,
-                        startAngle = 0f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round)
+                if (item.progress != null) {
+                    CircularWavyProgressIndicator(
+                        progress = { animatedProgress },
+                        color = ringColor,
+                        trackColor = trackColor,
+                        wavelength = 14.dp,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(2.dp)
                     )
-
-                    if (item.progress != null) {
-                        val alpha = if (isPaused) pulseAlpha else 1f
-                        val waveCount = 10
-                        val sweepDeg = 360f * animatedProgress
-                        val startAngleDeg = -90f
-                        val center = Offset(size.width / 2f, size.height / 2f)
-                        val baseRadius = arcSize.width / 2f
-                        val path = Path()
-                        var first = true
-                        var t = 0f
-                        while (t <= sweepDeg) {
-                            val angleRad = Math.toRadians((startAngleDeg + t).toDouble()).toFloat()
-                            val waveOffset = if (isPaused) 0f else sin((t / 360f) * waveCount * 2f * Math.PI.toFloat() + wavePhase) * waveAmplitudePx
-                            val r = baseRadius + waveOffset
-                            val x = center.x + r * cos(angleRad)
-                            val y = center.y + r * sin(angleRad)
-                            if (first) {
-                                path.moveTo(x, y)
-                                first = false
-                            } else {
-                                path.lineTo(x, y)
-                            }
-                            t += 1f
-                        }
-                        drawPath(
-                            path = path,
-                            color = ringColor.copy(alpha = ringColor.alpha * alpha),
-                            style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round)
-                        )
-
-                    } else {
-
-                        // Unknown total size: an indeterminate spinning arc instead of a sweep.
-                        rotate(indeterminateRotation) {
-                            drawArc(
-                                color = ringColor,
-                                startAngle = 0f,
-                                sweepAngle = 100f,
-                                useCenter = false,
-                                topLeft = topLeft,
-                                size = arcSize,
-                                style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
-                            )
-                        }
-                    }
+                } else {
+                    CircularWavyProgressIndicator(
+                        color = ringColor,
+                        trackColor = trackColor,
+                        wavelength = 14.dp,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(2.dp)
+                    )
                 }
             }
 
@@ -1006,7 +938,7 @@ private fun DownloadProgressRing(
                     isPaused -> "Resume download"
                     else -> null
                 },
-                tint = expressiveIconTint,
+                tint = if (showRing) ringColor else expressiveIconTint,
                 modifier = Modifier.size(if (showRing) 20.dp else 22.dp)
             )
         }
