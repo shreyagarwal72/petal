@@ -59,6 +59,7 @@ interface PetalOverflowMenuActionHandler {
     fun onOpenBookmarks()
     fun onInstallPwa()
     fun onSearchOnSite()
+    fun onShowReadingMode() {}
     fun onPrintPdf()
     fun onSavePage()
     fun onShareLink()
@@ -193,6 +194,10 @@ object PetalOverflowBridge {
                                 dialog.dismiss()
                                 handler.onSearchOnSite()
                             },
+                            onShowReadingMode = {
+                                dialog.dismiss()
+                                handler.onShowReadingMode()
+                            },
                             onPrintPdf = {
                                 dialog.dismiss()
                                 handler.onPrintPdf()
@@ -260,6 +265,7 @@ fun PetalOverflowMenuSheet(
     onOpenBookmarks: () -> Unit,
     onInstallPwa: () -> Unit,
     onSearchOnSite: () -> Unit,
+    onShowReadingMode: () -> Unit = {},
     onPrintPdf: () -> Unit,
     onSavePage: () -> Unit,
     onShareLink: () -> Unit,
@@ -634,6 +640,13 @@ fun PetalOverflowMenuSheet(
                             title = "Search on site",
                             isSubItem = true,
                             onClick = onSearchOnSite
+                        )
+                        MenuRowItem(
+                            icon = Icons.Rounded.MenuBook,
+                            title = "Show Reading mode",
+                            subtitle = "Distraction-free article view with custom fonts",
+                            isSubItem = true,
+                            onClick = onShowReadingMode
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.Print,
