@@ -535,15 +535,6 @@ fun PetalHomeScreen(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
-    androidx.activity.compose.BackHandler(enabled = true) {
-        val activity = context as? com.petal.browser.activity.BrowserActivity
-        if (activity != null) {
-            activity.moveTaskToBack(true)
-        } else {
-            (context as? androidx.activity.ComponentActivity)?.moveTaskToBack(true)
-        }
-    }
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
