@@ -148,18 +148,26 @@ fun PetalPredictiveBackSurface(
             PredictiveBackHandler(enabled = true) { progressFlow ->
                 try {
                     progressFlow.collect { backEvent ->
-                        progressAnim.snapTo(backEvent.progress)
-                        backState = PredictiveBackState(
-                            isActive = true,
-                            progress = backEvent.progress,
-                            swipeEdge = backEvent.swipeEdge,
-                        )
+                        // Smoothly interpolate towards the incoming progress to prevent touch-sampling micro-stutter
+                        progressAnim.animateTo(
+                            targetValue = backEvent.progress,
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessHigh,
+                                dampingRatio = Spring.DampingRatioNoBouncy
+                            )
+                        ) {
+                            backState = PredictiveBackState(
+                                isActive = true,
+                                progress = value,
+                                swipeEdge = backEvent.swipeEdge,
+                            )
+                        }
                     }
-                    progressAnim.snapTo(backState.progress)
+                    // Gesture committed: animate smoothly to 1f with natural spring momentum
                     progressAnim.animateTo(
                         targetValue = 1f,
                         animationSpec = spring(
-                            stiffness = Spring.StiffnessMedium,
+                            stiffness = Spring.StiffnessMediumLow,
                             dampingRatio = Spring.DampingRatioNoBouncy
                         )
                     ) {
@@ -167,10 +175,10 @@ fun PetalPredictiveBackSurface(
                     }
                     backState = backState.copy(isActive = true, progress = 1f)
                     onBack()
-                    kotlinx.coroutines.delay(200)
+                    kotlinx.coroutines.delay(180)
                     backState = PredictiveBackState.Idle
                 } catch (e: CancellationException) {
-                    progressAnim.snapTo(backState.progress)
+                    // Gesture cancelled / aborted: spring back to 0f with fluid damping
                     progressAnim.animateTo(
                         targetValue = 0f,
                         animationSpec = spring(
