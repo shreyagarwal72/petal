@@ -361,6 +361,40 @@ public class BrowserUnit {
 
     public static void intentURL(Context context, Uri uri) {
         if (context == null || uri == null) return;
+        String uriStr = uri.toString();
+        if (uriStr.startsWith("petal://settings") || uriStr.startsWith("petal://flags") || uriStr.startsWith("petal://extensions") || uriStr.startsWith("petal://credits")) {
+            if (context instanceof Activity) {
+                Activity activity = (Activity) context;
+                if (uriStr.startsWith("petal://settings")) {
+                    if (activity instanceof com.petal.browser.activity.BrowserActivity) {
+                        if (uriStr.contains("category=api_integrations") || uriStr.contains("category=ai_research")) {
+                            ((com.petal.browser.activity.BrowserActivity) activity).openApiIntegrationsHub();
+                        } else {
+                            ((com.petal.browser.activity.BrowserActivity) activity).openSettingsScreen();
+                        }
+                    } else {
+                        Intent intent = new Intent(activity, com.petal.browser.activity.Settings_Activity.class);
+                        if (uriStr.contains("category=api_integrations") || uriStr.contains("category=ai_research")) {
+                            intent.putExtra(
+                                com.petal.browser.activity.Settings_Activity.EXTRA_SETTINGS_CATEGORY,
+                                com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS.name()
+                            );
+                        }
+                        activity.startActivity(intent);
+                    }
+                    return;
+                } else if (uriStr.startsWith("petal://flags") && activity instanceof androidx.activity.ComponentActivity) {
+                    com.petal.browser.flags.PetalChromeFlagsBridge.showFlags((androidx.activity.ComponentActivity) activity, null);
+                    return;
+                } else if (uriStr.startsWith("petal://extensions") && activity instanceof androidx.activity.ComponentActivity) {
+                    com.petal.browser.extensions.PetalExtensionsBridge.showExtensions((androidx.activity.ComponentActivity) activity);
+                    return;
+                } else if (uriStr.startsWith("petal://credits") && activity instanceof com.petal.browser.activity.BrowserActivity) {
+                    ((com.petal.browser.activity.BrowserActivity) activity).showCreditsScreen();
+                    return;
+                }
+            }
+        }
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             PackageManager pm = context.getPackageManager();
