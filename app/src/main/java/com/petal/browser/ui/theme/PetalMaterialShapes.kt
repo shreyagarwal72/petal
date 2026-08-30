@@ -1,8 +1,11 @@
 package com.petal.browser.ui.theme
 
 import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Shapes
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposePath
+import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.circle
@@ -554,21 +557,21 @@ object MaterialShapes {
 }
 
 /**
- * Material 3 Expressive Shapes Extensions on [androidx.compose.material3.Shapes].
+ * Material 3 Expressive Shapes Extensions on [Shapes].
  * Provides extended token properties for Expressive design scale.
  */
-val androidx.compose.material3.Shapes.extraSmallIncreased: androidx.compose.ui.graphics.Shape
-    get() = androidx.compose.foundation.shape.RoundedCornerShape(8.androidx.compose.ui.unit.dp)
+val Shapes.extraSmallIncreased: Shape
+    get() = RoundedCornerShape(8.dp)
 
-val androidx.compose.material3.Shapes.smallIncreased: androidx.compose.ui.graphics.Shape
-    get() = androidx.compose.foundation.shape.RoundedCornerShape(12.androidx.compose.ui.unit.dp)
+val Shapes.smallIncreased: Shape
+    get() = RoundedCornerShape(12.dp)
 
-val androidx.compose.material3.Shapes.mediumIncreased: androidx.compose.ui.graphics.Shape
-    get() = androidx.compose.foundation.shape.RoundedCornerShape(16.androidx.compose.ui.unit.dp)
+val Shapes.mediumIncreased: Shape
+    get() = RoundedCornerShape(16.dp)
 
-val androidx.compose.material3.Shapes.largeIncreased: androidx.compose.ui.graphics.Shape
-    get() = androidx.compose.foundation.shape.RoundedCornerShape(24.androidx.compose.ui.unit.dp)
+val Shapes.largeIncreased: Shape
+    get() = RoundedCornerShape(24.dp)
 
-val androidx.compose.material3.Shapes.extraLargeIncreased: androidx.compose.ui.graphics.Shape
-    get() = androidx.compose.foundation.shape.RoundedCornerShape(28.androidx.compose.ui.unit.dp)
+val Shapes.extraLargeIncreased: Shape
+    get() = RoundedCornerShape(28.dp)
 
