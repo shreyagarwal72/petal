@@ -392,12 +392,6 @@ fun PetalSettingsScreen(
 
     var currentCategory by remember(initialCategory) { mutableStateOf(initialCategory) }
     var searchQuery by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(true) }
-
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(800L)
-        isLoading = false
-    }
 
     // Saved Preference States
     var selectedFont by remember {
@@ -577,14 +571,9 @@ fun PetalSettingsScreen(
             ) {
                 M3ExpressiveVariableBackground(pageSeed = "settings_page")
 
-                if (isLoading) {
-                    com.petal.browser.compose.composable.ContainedLoadingIndicator(
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
                         key(scaffoldCategory) {
                             val categoryScrollState = rememberScrollState()
                             LaunchedEffect(scaffoldCategory) {
@@ -2969,8 +2958,6 @@ fun PetalSettingsScreen(
             }
         )
     }
-}
-
 
     PetalExpressiveTheme(
         darkTheme = isDarkTheme,
