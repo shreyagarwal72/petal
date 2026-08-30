@@ -43,6 +43,7 @@ import com.petal.browser.compose.home.PetalShortcut
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.PetalAboutDeveloperBridge
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
+import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -359,60 +360,80 @@ private fun RenderUserProfileContent(
             // Main User Profile Hero Card
             Surface(
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 2.dp,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(contentAlignment = Alignment.BottomEnd) {
-                        ProfileAvatarDisplay(profile = profile, sizeDp = 84)
+                        ProfileAvatarDisplay(profile = profile, sizeDp = 88)
                         if (profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty()) {
-                            IconButton(
+                            Surface(
                                 onClick = {
                                     pendingCropUri = Uri.parse(profile.customAvatarUri)
                                     showCropDialog = true
                                 },
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
-                                    .size(28.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary)
+                                    .size(30.dp)
+                                    .bouncyClickable {
+                                        pendingCropUri = Uri.parse(profile.customAvatarUri)
+                                        showCropDialog = true
+                                    }
                             ) {
-                                Icon(
-                                    Icons.Rounded.Crop,
-                                    contentDescription = "Crop Profile Picture",
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Rounded.Crop,
+                                        contentDescription = "Crop Profile Picture",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
                             }
                         }
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(14.dp))
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
                             text = profile.displayName,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        IconButton(onClick = {
-                            nameInput = profile.displayName
-                            showEditNameDialog = true
-                        }) {
-                            Icon(
-                                Icons.Rounded.Edit,
-                                contentDescription = "Edit User Name",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                        Surface(
+                            onClick = {
+                                nameInput = profile.displayName
+                                showEditNameDialog = true
+                            },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier
+                                .size(30.dp)
+                                .bouncyClickable {
+                                    nameInput = profile.displayName
+                                    showEditNameDialog = true
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.Edit,
+                                    contentDescription = "Edit User Name",
+                                    modifier = Modifier.size(15.dp)
+                                )
+                            }
                         }
                     }
+
+                    Spacer(Modifier.height(2.dp))
 
                     Text(
                         text = if (profile.isSignedIn) profile.email else "Petal Explorer Profile",
@@ -420,7 +441,7 @@ private fun RenderUserProfileContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(18.dp))
 
                     // Avatar Selection Section (Built-in Presets vs Gallery)
                     Text(
@@ -430,13 +451,13 @@ private fun RenderUserProfileContent(
                         modifier = Modifier.align(Alignment.Start)
                     )
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Gallery / Crop Button
@@ -444,13 +465,16 @@ private fun RenderUserProfileContent(
                             onClick = { galleryLauncher.launch("image/*") },
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.secondaryContainer,
-                            modifier = Modifier.size(52.dp)
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                            modifier = Modifier
+                                .size(52.dp)
+                                .bouncyClickable { galleryLauncher.launch("image/*") }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Rounded.AddPhotoAlternate,
                                     contentDescription = "Select from Gallery & Crop",
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -462,9 +486,11 @@ private fun RenderUserProfileContent(
                             Surface(
                                 onClick = { GoogleAccountManager.updateAvatarPreset(context, presetId) },
                                 shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                                border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-                                modifier = Modifier.size(52.dp)
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                border = if (isSelected) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .bouncyClickable { GoogleAccountManager.updateAvatarPreset(context, presetId) }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     if (presetId == "app_icon") {
@@ -501,13 +527,22 @@ private fun RenderUserProfileContent(
 
             // Tappable-only Google Web Accounts SSO card
             Surface(
+                onClick = {
+                    onOpenOAuth(
+                        PetalShortcut(
+                            "Google Accounts SSO",
+                            "https://accounts.google.com/ServiceLogin?hl=en",
+                            "https://accounts.google.com/ServiceLogin?hl=en",
+                            Color(0xFF4285F4)
+                        )
+                    )
+                },
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 2.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
+                    .bouncyClickable {
                         onOpenOAuth(
                             PetalShortcut(
                                 "Google Accounts SSO",
@@ -566,8 +601,8 @@ private fun RenderUserProfileContent(
             // Section 1: 🛡️ Security & Privacy Center
             Surface(
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 2.dp,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
@@ -575,12 +610,20 @@ private fun RenderUserProfileContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            Icons.Rounded.Security,
-                            contentDescription = "Security Center",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.Security,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                         Text(
                             text = "Security & Privacy Center",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -613,7 +656,7 @@ private fun RenderUserProfileContent(
 
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                     )
 
                     // Auto-Clear on Exit Preference
@@ -656,19 +699,19 @@ private fun RenderUserProfileContent(
 
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                     )
 
                     // HTTPS-Only Mode Status
                     var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
                     AccountActionRow(
                         title = "HTTPS-Only Mode",
-                        subtitle = "Automatically upgrade HTTP requests to secure HTTPS connection",
-                        icon = Icons.Rounded.VerifiedUser,
+                        subtitle = if (isHttpsOnly) "Active • HTTP automatically upgraded to HTTPS" else "Disabled • Insecure connections allowed",
+                        icon = Icons.Rounded.Lock,
                         trailing = {
                             IconSwitch(
                                 checked = isHttpsOnly,
-                                icon = Icons.Rounded.VerifiedUser,
+                                icon = Icons.Rounded.Lock,
                                 onCheckedChange = { checked ->
                                     isHttpsOnly = checked
                                     sp.edit().putBoolean("sp_https_only", checked).apply()
@@ -728,8 +771,8 @@ private fun RenderUserProfileContent(
 
             Surface(
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 2.dp,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
@@ -737,12 +780,20 @@ private fun RenderUserProfileContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            Icons.Rounded.Storage,
-                            contentDescription = "Data Storage Audit",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.Storage,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                         Column {
                             Text(
                                 text = "Storage & Data Audit",
@@ -761,8 +812,9 @@ private fun RenderUserProfileContent(
 
                     // Storage Consumption Summary Card
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -810,14 +862,14 @@ private fun RenderUserProfileContent(
                                 }
 
                                 Surface(
-                                    shape = RoundedCornerShape(10.dp),
+                                    shape = RoundedCornerShape(12.dp),
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                 ) {
                                     Text(
                                         text = cacheSizeMb,
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                     )
                                 }
                             }
@@ -844,15 +896,17 @@ private fun RenderUserProfileContent(
                                         containerColor = MaterialTheme.colorScheme.errorContainer,
                                         contentColor = MaterialTheme.colorScheme.onErrorContainer
                                     ),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(20.dp),
+                                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                                    modifier = Modifier.bouncyClickable()
                                 ) {
                                     Icon(
                                         Icons.Rounded.DeleteSweep,
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp)
                                     )
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Clear Web Cache", fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Clear Web Cache", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
                                 }
                             }
                         }
@@ -873,27 +927,40 @@ private fun RenderUserProfileContent(
             if (showEditNameDialog) {
                 AlertDialog(
                     onDismissRequest = { showEditNameDialog = false },
-                    title = { Text("Edit User Name") },
+                    title = { Text("Edit User Name", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                     text = {
                         OutlinedTextField(
                             value = nameInput,
                             onValueChange = { if (it.length <= 15) nameInput = it },
                             label = { Text("User Name (max 15 chars)") },
                             singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth()
                         )
                     },
                     confirmButton = {
-                        Button(onClick = {
-                            GoogleAccountManager.updateDisplayName(context, nameInput)
-                            showEditNameDialog = false
-                        }) {
-                            Text("Save")
+                        Button(
+                            onClick = {
+                                GoogleAccountManager.updateDisplayName(context, nameInput)
+                                showEditNameDialog = false
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.bouncyClickable()
+                        ) {
+                            Text("Save", fontWeight = FontWeight.Bold)
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showEditNameDialog = false }) {
-                            Text("Cancel")
+                        TextButton(
+                            onClick = { showEditNameDialog = false },
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.bouncyClickable()
+                        ) {
+                            Text("Cancel", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 )
@@ -930,7 +997,7 @@ private fun AccountActionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .bouncyClickable(scaleDown = 0.98f, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp)
@@ -1127,16 +1194,41 @@ private fun ProfilePictureCropDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        IconButton(onClick = { rotation = (rotation + 90f) % 360f }) {
-                            Icon(Icons.Rounded.RotateRight, contentDescription = "Rotate 90°")
+                        Surface(
+                            onClick = { rotation = (rotation + 90f) % 360f },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .bouncyClickable { rotation = (rotation + 90f) % 360f }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Rounded.RotateRight, contentDescription = "Rotate 90°", modifier = Modifier.size(22.dp))
+                            }
                         }
-                        IconButton(onClick = {
-                            scale = 1f
-                            offsetX = 0f
-                            offsetY = 0f
-                            rotation = 0f
-                        }) {
-                            Icon(Icons.Rounded.RestartAlt, contentDescription = "Reset Crop")
+                        Surface(
+                            onClick = {
+                                scale = 1f
+                                offsetX = 0f
+                                offsetY = 0f
+                                rotation = 0f
+                            },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .bouncyClickable {
+                                    scale = 1f
+                                    offsetX = 0f
+                                    offsetY = 0f
+                                    rotation = 0f
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Rounded.RestartAlt, contentDescription = "Reset Crop", modifier = Modifier.size(22.dp))
+                            }
                         }
                     }
                 }
@@ -1156,16 +1248,27 @@ private fun ProfilePictureCropDialog(
                     if (croppedUri != null) {
                         onCropSuccess(croppedUri)
                     }
-                }
+                },
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                modifier = Modifier.bouncyClickable()
             ) {
                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Apply Crop")
+                Spacer(Modifier.width(8.dp))
+                Text("Apply Crop", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+            TextButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.bouncyClickable()
+            ) {
+                Text("Cancel", fontWeight = FontWeight.SemiBold)
             }
         }
     )
