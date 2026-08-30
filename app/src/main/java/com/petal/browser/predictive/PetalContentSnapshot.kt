@@ -43,8 +43,25 @@ import java.util.concurrent.TimeUnit
  */
 object PetalContentSnapshot {
     @Volatile
-    var current: Bitmap? = null
-        private set
+    private var _current: Bitmap? = null
+
+    /**
+     * Guarded read: every caller across the 15+ screens that use this (Settings,
+     * History, Downloads, Tab Switcher, Bookmarks, Account Sync, etc.) was reading
+     * the raw field and handing it straight to Compose's Image() with no recycled
+     * check - the same class of bug TabThumbnailCache already guards against on
+     * its own bitmap reads. A crash log showed "Canvas: trying to use a recycled
+     * bitmap" (FATAL, kills the whole app) with no app frame in the trace, which
+     * is consistent with exactly this: some caller drawing a bitmap that became
+     * invalid between capture and draw. Returning null instead of a recycled
+     * bitmap means the Image() call sites just skip drawing that frame instead
+     * of crashing the process.
+     */
+    val current: Bitmap?
+        get() {
+            val bmp = _current
+            return if (bmp != null && !bmp.isRecycled()) bmp else null
+        }
 
     @JvmStatic
     fun capture(rootView: View): Bitmap {
@@ -99,13 +116,13 @@ object PetalContentSnapshot {
             }
         }
 
-        current = captured
+        _current = captured
         return captured
     }
 
     @JvmStatic
     fun clear() {
-        current = null
+        _current = null
     }
 
     private fun findWindow(view: View): Window? {
