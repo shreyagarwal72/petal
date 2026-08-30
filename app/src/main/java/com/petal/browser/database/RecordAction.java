@@ -227,6 +227,13 @@ public class RecordAction {
         database.execSQL("DELETE FROM " + table + " WHERE " + RecordUnit.COLUMN_URL + " = " + "\"" + domain.trim() + "\"");
     }
 
+    public void deleteHistoryByTitle(String title) {
+        if (title == null || title.trim().isEmpty()) {
+            return;
+        }
+        database.delete(RecordUnit.TABLE_HISTORY, RecordUnit.COLUMN_TITLE + " = ? OR " + RecordUnit.COLUMN_URL + " = ?", new String[]{title.trim(), title.trim()});
+    }
+
     public void clearTable(String table) {
         database.execSQL("DELETE FROM " + table);
     }

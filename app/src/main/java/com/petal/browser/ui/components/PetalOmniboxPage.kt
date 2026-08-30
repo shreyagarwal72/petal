@@ -37,10 +37,11 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -56,6 +57,7 @@ import androidx.compose.material.icons.rounded.CenterFocusWeak
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -184,8 +186,10 @@ fun PetalOmniboxPage(
     onBackPress: () -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    val snackbarHostState = remember { SnackbarHostState() }
     val cleanedInitialQuery = remember(initialQuery) {
         val trimmed = initialQuery.trim()
         if (trimmed.equals("about:blank", ignoreCase = true) || trimmed.startsWith("about:", ignoreCase = true)) {
@@ -198,6 +202,10 @@ fun PetalOmniboxPage(
         mutableStateOf(TextFieldValue(cleanedInitialQuery, TextRange(cleanedInitialQuery.length)))
     }
     var suggestions by remember { mutableStateOf<List<OmniboxSuggestion>>(emptyList()) }
+    var suggestionToRemove by remember { mutableStateOf<OmniboxSuggestion?>(null) }
+    var removedSuggestions by remember {
+        mutableStateOf(sp.getStringSet("sp_removed_suggestions", emptySet())?.toMutableSet() ?: mutableSetOf())
+    }
     val focusRequester = remember { FocusRequester() }
 
     val cleanPageUrl = remember(pageUrl) {
@@ -252,22 +260,29 @@ fun PetalOmniboxPage(
         list.distinct()
     }
 
-    // Debounced search query handler
-    LaunchedEffect(queryState.text) {
+    // Debounced search query handler with robust long multi-word query support
+    LaunchedEffect(queryState.text, removedSuggestions) {
         val currentText = queryState.text.trim()
         if (currentText.isEmpty()) {
-            suggestions = localHistoryList.take(8).map { OmniboxSuggestion(it, isHistory = true) }
+            suggestions = localHistoryList
+                .filter { !removedSuggestions.contains(it) }
+                .take(8)
+                .map { OmniboxSuggestion(it, isHistory = true) }
         } else {
+            val queryTokens = currentText.lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
             val localMatches = localHistoryList
-                .filter { it.contains(currentText, ignoreCase = true) }
-                .take(3)
+                .filter { title ->
+                    val lower = title.lowercase()
+                    (lower.contains(currentText.lowercase()) || queryTokens.all { lower.contains(it) }) && !removedSuggestions.contains(title)
+                }
+                .take(4)
                 .map { OmniboxSuggestion(it, isHistory = true) }
 
             suggestions = localMatches
 
             val liveSuggestionsEnabled = sp.getBoolean("sp_enable_live_suggestions", true)
             if (liveSuggestionsEnabled) {
-                delay(250)
+                delay(200)
                 val searchEngine = sp.getString("sp_search_engine", "0")
                 val fetch: (String, SearchSuggestionsManager.SuggestionCallback) -> Unit = when (searchEngine) {
                     "1" -> SearchSuggestionsManager::fetchDuckDuckGoSuggestions
@@ -278,11 +293,20 @@ fun PetalOmniboxPage(
                     val combined = mutableListOf<OmniboxSuggestion>()
                     combined.addAll(localMatches)
                     engineResults.forEach { res ->
-                        if (combined.none { it.query.equals(res, ignoreCase = true) }) {
-                            combined.add(OmniboxSuggestion(res, isHistory = false))
+                        val trimmedRes = res.trim()
+                        if (trimmedRes.isNotEmpty() && !removedSuggestions.contains(trimmedRes) && combined.none { it.query.equals(trimmedRes, ignoreCase = true) }) {
+                            combined.add(OmniboxSuggestion(trimmedRes, isHistory = false))
                         }
                     }
+                    // For longer searches, ensure the exact query is presented as an actionable direct search row if not already present
+                    if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && combined.none { it.query.equals(currentText, ignoreCase = true) }) {
+                        combined.add(0, OmniboxSuggestion(currentText, isHistory = false))
+                    }
                     suggestions = combined
+                }
+            } else {
+                if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && localMatches.none { it.query.equals(currentText, ignoreCase = true) }) {
+                    suggestions = listOf(OmniboxSuggestion(currentText, isHistory = false)) + localMatches
                 }
             }
         }
@@ -324,7 +348,8 @@ fun PetalOmniboxPage(
         com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.background,
-                contentWindowInsets = WindowInsets(0)
+                contentWindowInsets = WindowInsets(0),
+                snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) }
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
@@ -814,12 +839,20 @@ fun PetalOmniboxPage(
                                                         )
                                                     )
                                                     .clip(RoundedCornerShape(16.dp))
-                                                    .clickable {
-                                                        val trimmed = item.query.trim()
-                                                        if (trimmed.isNotEmpty()) {
-                                                            onQuerySubmitted(trimmed)
+                                                    .combinedClickable(
+                                                        onClick = {
+                                                            val trimmed = item.query.trim()
+                                                            if (trimmed.isNotEmpty()) {
+                                                                onQuerySubmitted(trimmed)
+                                                            }
+                                                        },
+                                                        onLongClick = {
+                                                            try {
+                                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.LONG_PRESS, 0.9f)
+                                                            } catch (ignored: Exception) {}
+                                                            suggestionToRemove = item
                                                         }
-                                                    }
+                                                    )
                                             ) {
                                                 Row(
                                                     modifier = Modifier
@@ -881,5 +914,89 @@ fun PetalOmniboxPage(
                 }
             }
         }
+    }
+
+    if (suggestionToRemove != null) {
+        val item = suggestionToRemove!!
+        AlertDialog(
+            onDismissRequest = { suggestionToRemove = null },
+            shape = RoundedCornerShape(28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            icon = {
+                Icon(
+                    imageVector = if (item.isHistory) Icons.Rounded.DeleteSweep else Icons.Rounded.RemoveCircleOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Remove Suggestion?",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    text = "Remove \"${item.query}\" from search suggestions? ${if (item.isHistory) "This will also delete it from your browsing history." else ""}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val targetQuery = item.query
+                        suggestionToRemove = null
+                        val newSet = removedSuggestions.toMutableSet().apply { add(targetQuery) }
+                        removedSuggestions = newSet
+                        sp.edit().putStringSet("sp_removed_suggestions", newSet).apply()
+                        suggestions = suggestions.filter { it.query != targetQuery }
+
+                        if (item.isHistory) {
+                            Thread {
+                                try {
+                                    val action = RecordAction(context)
+                                    action.open(true)
+                                    action.deleteHistoryByTitle(targetQuery)
+                                    action.close()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }.start()
+                        }
+
+                        coroutineScope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = "Removed \"$targetQuery\"",
+                                actionLabel = "Undo",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                val restoredSet = removedSuggestions.toMutableSet().apply { remove(targetQuery) }
+                                removedSuggestions = restoredSet
+                                sp.edit().putStringSet("sp_removed_suggestions", restoredSet).apply()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Remove", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { suggestionToRemove = null },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
