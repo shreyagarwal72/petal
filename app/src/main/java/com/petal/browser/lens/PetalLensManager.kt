@@ -48,6 +48,8 @@ object PetalLensManager {
     @JvmStatic
     fun launchLensForImageUri(context: Context, imageUri: Uri) {
         PetalHapticEngine.getInstance(context).playClick(context)
+
+        // 1. Try Google Lens direct attachment intent via Google App
         try {
             val intent = Intent("lens.intent.action.LENS_ATTACHMENT").apply {
                 setPackage("com.google.android.googlequicksearchbox")
@@ -57,21 +59,54 @@ object PetalLensManager {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
-        } catch (_: Exception) {
-            try {
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "image/*"
-                    putExtra(Intent.EXTRA_STREAM, imageUri)
-                    clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
-                    setPackage("com.google.android.googlequicksearchbox")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(shareIntent)
-            } catch (_: Exception) {
-                launchGoogleLensApp(context)
+            return
+        } catch (_: Exception) {}
+
+        // 2. Try Google Lens standalone app via ACTION_SEND
+        try {
+            val standaloneIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                putExtra(Intent.EXTRA_STREAM, imageUri)
+                clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
+                setPackage("com.google.ar.lens")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-        }
+            context.startActivity(standaloneIntent)
+            return
+        } catch (_: Exception) {}
+
+        // 3. Try Google QuickSearchBox ACTION_SEND
+        try {
+            val gsbIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                putExtra(Intent.EXTRA_STREAM, imageUri)
+                clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
+                setPackage("com.google.android.googlequicksearchbox")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(gsbIntent)
+            return
+        } catch (_: Exception) {}
+
+        // 4. Try generic image chooser
+        try {
+            val chooserIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                putExtra(Intent.EXTRA_STREAM, imageUri)
+                clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(Intent.createChooser(chooserIntent, "Search image with Google Lens").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            return
+        } catch (_: Exception) {}
+
+        // 5. Fallback to Google Lens app / web
+        launchGoogleLensApp(context)
     }
 
     /**
@@ -81,7 +116,7 @@ object PetalLensManager {
     fun createTempCameraUri(context: Context): Uri? {
         return try {
             val timeStamp = System.currentTimeMillis()
-            val storageDir = context.cacheDir
+            val storageDir = File(context.cacheDir, "lens_photos").apply { mkdirs() }
             val imageFile = File.createTempFile("petal_lens_${timeStamp}", ".jpg", storageDir)
             FileProvider.getUriForFile(
                 context,
