@@ -146,7 +146,32 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onOpenInNewTabInGroup() {
-                    activity.addAlbum(HelperUnit.domain(urlResult), urlResult, false)
+                    val currentWebView = activity.currentAlbumController as? com.petal.browser.view.NinjaWebView
+                    val currentTabId = currentWebView?.hashCode()?.toString()
+                    val existingGroup = if (currentTabId != null) {
+                        com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(activity, currentTabId)
+                    } else null
+
+                    if (existingGroup != null) {
+                        activity.addAlbumInGroup(HelperUnit.domain(urlResult), urlResult, false, existingGroup.id, existingGroup.title)
+                    } else {
+                        // Create a new group for current tab + new tab
+                        val currentTab = com.petal.browser.compose.tabs.PetalTabItem(
+                            id = currentTabId ?: "current_${System.currentTimeMillis()}",
+                            title = currentWebView?.title ?: "Tab",
+                            url = currentWebView?.url ?: "about:blank"
+                        )
+                        val newTabDummyId = "temp_${System.currentTimeMillis()}"
+                        val newTabDummy = com.petal.browser.compose.tabs.PetalTabItem(
+                            id = newTabDummyId,
+                            title = HelperUnit.domain(urlResult),
+                            url = urlResult
+                        )
+                        val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, newTabDummy)
+                        currentWebView?.tabGroupId = newGroup.id
+                        currentWebView?.tabGroupTitle = newGroup.title
+                        activity.addAlbumInGroup(HelperUnit.domain(urlResult), urlResult, false, newGroup.id, newGroup.title)
+                    }
                 }
 
                 override fun onOpenInIncognitoTab() {

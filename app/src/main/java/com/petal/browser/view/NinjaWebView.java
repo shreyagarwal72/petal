@@ -919,6 +919,25 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         return isIncognito;
     }
 
+    private String tabGroupId = null;
+    private String tabGroupTitle = null;
+
+    public String getTabGroupId() {
+        return tabGroupId;
+    }
+
+    public void setTabGroupId(String tabGroupId) {
+        this.tabGroupId = tabGroupId;
+    }
+
+    public String getTabGroupTitle() {
+        return tabGroupTitle;
+    }
+
+    public void setTabGroupTitle(String tabGroupTitle) {
+        this.tabGroupTitle = tabGroupTitle;
+    }
+
     public void setIncognito(boolean incognito) {
         this.isIncognito = incognito;
         if (incognito) {

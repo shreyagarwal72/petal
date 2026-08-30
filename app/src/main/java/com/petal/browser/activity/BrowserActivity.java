@@ -591,6 +591,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     if (record.title != null && !record.title.isEmpty()) {
                         restoredWebView.setAlbumTitle(record.title, record.url);
                     }
+                    if (record.tabGroupId != null && !record.tabGroupId.isEmpty()) {
+                        restoredWebView.setTabGroupId(record.tabGroupId);
+                        restoredWebView.setTabGroupTitle(record.tabGroupTitle);
+                    }
                     if (record.scrollX > 0 || record.scrollY > 0) {
                         restoredWebView.post(() -> restoredWebView.scrollTo(record.scrollX, record.scrollY));
                     }
@@ -4600,6 +4604,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public synchronized void addAlbum(String title, final String url, final boolean foreground, final boolean isIncognito) {
         setWebView(title, url, foreground, isIncognito);
+    }
+
+    public synchronized void addAlbumInGroup(String title, final String url, final boolean foreground, final String groupId, final String groupTitle) {
+        setWebView(title, url, foreground, false);
+        if (ninjaWebView != null) {
+            ninjaWebView.setTabGroupId(groupId);
+            ninjaWebView.setTabGroupTitle(groupTitle);
+        }
     }
 
     public void triggerRebirth(Context context) {
