@@ -1611,9 +1611,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     bottomNav.bringToFront();
                 }
 
-                boolean hasNav = bottomNav != null && bottomNav.getVisibility() == VISIBLE;
-                int paddingBottom = (hasNav && !isFloating && !isBottom) ? (int) HelperUnit.convertDpToPixel(80f, context) : 0;
-                mainContent.setPadding(0, 0, 0, paddingBottom);
+                boolean hasNav = bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE;
+                mainContent.setPadding(0, 0, 0, 0);
 
                 addressBar.setLayoutParams(addrParams);
                 if (progressBarCompose != null) progressBarCompose.setLayoutParams(progComposeParams);
