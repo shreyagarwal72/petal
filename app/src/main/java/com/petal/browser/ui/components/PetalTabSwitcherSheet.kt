@@ -124,6 +124,12 @@ object PetalTabSwitcherBridge {
                                         else -> "Petal Home"
                                     }
                                     val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equals("about:blank", ignoreCase = true) || rawUrl.startsWith("file:///android_asset/")) "Petal Home" else rawUrl
+                                    val group = com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(context, album.hashCode().toString())
+                                    val webViewGroupId = if (album is com.petal.browser.view.NinjaWebView) album.tabGroupId else null
+                                    val effectiveGroupId = group?.id ?: webViewGroupId
+                                    val effectiveGroupTitle = group?.title ?: (if (album is com.petal.browser.view.NinjaWebView) album.tabGroupTitle else null)
+                                    val effectiveGroupColor = group?.colorHex
+
                                     com.petal.browser.compose.tabs.PetalTabItem(
                                         id = album.hashCode().toString(),
                                         title = displayTitle,
@@ -131,7 +137,10 @@ object PetalTabSwitcherBridge {
                                         faviconBitmap = faviconBitmap,
                                         previewBitmap = previewBitmap,
                                         isIncognito = isIncognitoTab,
-                                        isSelected = (album == currentAlbum)
+                                        isSelected = (album == currentAlbum),
+                                        groupId = effectiveGroupId,
+                                        groupTitle = effectiveGroupTitle,
+                                        groupColorHex = effectiveGroupColor
                                     )
                                 }
                             )

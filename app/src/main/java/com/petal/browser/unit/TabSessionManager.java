@@ -38,11 +38,19 @@ public class TabSessionManager {
         public boolean isActive;
         public String webViewStateBase64;
         public long timestamp;
+        public String tabGroupId;
+        public String tabGroupTitle;
 
         public TabStateRecord() {}
 
         public TabStateRecord(long tabId, String title, String url, int scrollX, int scrollY,
                               boolean isIncognito, boolean isActive, String webViewStateBase64, long timestamp) {
+            this(tabId, title, url, scrollX, scrollY, isIncognito, isActive, webViewStateBase64, timestamp, null, null);
+        }
+
+        public TabStateRecord(long tabId, String title, String url, int scrollX, int scrollY,
+                              boolean isIncognito, boolean isActive, String webViewStateBase64, long timestamp,
+                              String tabGroupId, String tabGroupTitle) {
             this.tabId = tabId;
             this.title = title;
             this.url = url;
@@ -52,6 +60,8 @@ public class TabSessionManager {
             this.isActive = isActive;
             this.webViewStateBase64 = webViewStateBase64;
             this.timestamp = timestamp;
+            this.tabGroupId = tabGroupId;
+            this.tabGroupTitle = tabGroupTitle;
         }
     }
 
@@ -138,10 +148,12 @@ public class TabSessionManager {
                 int scrollX = webView.getScrollX();
                 int scrollY = webView.getScrollY();
                 boolean isActive = webView.isForeground();
+                String tabGroupId = webView.getTabGroupId();
+                String tabGroupTitle = webView.getTabGroupTitle();
 
-                // Store URL, title, scroll positions & metadata safely. Avoid webView.saveState() Base64
+                // Store URL, title, scroll positions, tab group & metadata safely. Avoid webView.saveState() Base64
                 // serialization as restoring corrupt webViewState bundles causes native Chromium crashes.
-                records.add(new TabStateRecord(i, title, url, scrollX, scrollY, false, isActive, "", now));
+                records.add(new TabStateRecord(i, title, url, scrollX, scrollY, false, isActive, "", now, tabGroupId, tabGroupTitle));
             }
         }
 
