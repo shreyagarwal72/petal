@@ -32,7 +32,8 @@ data class GoogleUserProfile(
     val avatarPresetId: String = "app_icon",
     val customAvatarUri: String? = null,
     val isSignedIn: Boolean = false,
-    val globalGoogleLogin: Boolean = true
+    val globalGoogleLogin: Boolean = true,
+    val avatarTimestamp: Long = System.currentTimeMillis()
 )
 
 sealed class GoogleSignInResult {
@@ -122,7 +123,8 @@ object GoogleAccountManager {
                 avatarPresetId = avatarPresetId,
                 customAvatarUri = customAvatarUri,
                 isSignedIn = isSignedIn,
-                globalGoogleLogin = globalGoogleLogin
+                globalGoogleLogin = globalGoogleLogin,
+                avatarTimestamp = System.currentTimeMillis()
             )
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -134,7 +136,7 @@ object GoogleAccountManager {
             val trimmed = newName.trim().take(15).ifEmpty { "Petal Explorer" }
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
             sp.edit().putString(KEY_DISPLAY_NAME, trimmed).apply()
-            currentProfile = currentProfile.copy(displayName = trimmed)
+            currentProfile = currentProfile.copy(displayName = trimmed, avatarTimestamp = System.currentTimeMillis())
         } catch (e: Throwable) {
             e.printStackTrace()
         }
@@ -142,6 +144,7 @@ object GoogleAccountManager {
 
     fun updateAvatarPreset(context: Context, presetId: String) {
         try {
+            val now = System.currentTimeMillis()
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
             sp.edit()
                 .putString(KEY_AVATAR_TYPE, AvatarType.PRESET.name)
@@ -149,7 +152,8 @@ object GoogleAccountManager {
                 .apply()
             currentProfile = currentProfile.copy(
                 avatarType = AvatarType.PRESET,
-                avatarPresetId = presetId
+                avatarPresetId = presetId,
+                avatarTimestamp = now
             )
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -158,10 +162,12 @@ object GoogleAccountManager {
 
     fun saveCroppedAvatar(context: Context, croppedBitmap: android.graphics.Bitmap) {
         try {
+            val now = System.currentTimeMillis()
             val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
             java.io.FileOutputStream(permanentFile).use { out ->
                 croppedBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
             }
+            permanentFile.setLastModified(now)
             val persistentUriString = android.net.Uri.fromFile(permanentFile).toString()
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
             sp.edit()
@@ -171,7 +177,8 @@ object GoogleAccountManager {
 
             currentProfile = currentProfile.copy(
                 avatarType = AvatarType.GALLERY_URI,
-                customAvatarUri = persistentUriString
+                customAvatarUri = persistentUriString,
+                avatarTimestamp = now
             )
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -180,6 +187,7 @@ object GoogleAccountManager {
 
     fun updateAvatarGalleryUri(context: Context, uriString: String) {
         try {
+            val now = System.currentTimeMillis()
             val uri = android.net.Uri.parse(uriString)
             val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
 
@@ -199,7 +207,7 @@ object GoogleAccountManager {
                 }
             }
 
-            permanentFile.setLastModified(System.currentTimeMillis())
+            permanentFile.setLastModified(now)
             val persistentUriString = android.net.Uri.fromFile(permanentFile).toString()
 
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -210,10 +218,12 @@ object GoogleAccountManager {
 
             currentProfile = currentProfile.copy(
                 avatarType = AvatarType.GALLERY_URI,
-                customAvatarUri = persistentUriString
+                customAvatarUri = persistentUriString,
+                avatarTimestamp = now
             )
         } catch (e: Throwable) {
             e.printStackTrace()
+            val now = System.currentTimeMillis()
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
             sp.edit()
                 .putString(KEY_AVATAR_TYPE, AvatarType.GALLERY_URI.name)
@@ -221,7 +231,8 @@ object GoogleAccountManager {
                 .apply()
             currentProfile = currentProfile.copy(
                 avatarType = AvatarType.GALLERY_URI,
-                customAvatarUri = uriString
+                customAvatarUri = uriString,
+                avatarTimestamp = now
             )
         }
     }
@@ -237,6 +248,7 @@ object GoogleAccountManager {
     }
 
     private fun persistSignedInProfile(context: Context, email: String, displayName: String, avatarUrl: String?) {
+        val now = System.currentTimeMillis()
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val effectiveAvatarType = if (!avatarUrl.isNullOrEmpty()) AvatarType.GOOGLE_URL else currentProfile.avatarType
         sp.edit()
@@ -252,7 +264,8 @@ object GoogleAccountManager {
             displayName = displayName,
             avatarUrl = avatarUrl,
             avatarType = effectiveAvatarType,
-            isSignedIn = true
+            isSignedIn = true,
+            avatarTimestamp = now
         )
     }
 
