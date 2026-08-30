@@ -967,11 +967,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
             android.view.ViewGroup.LayoutParams.MATCH_PARENT
         ));
+        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+        View bottomNav = findViewById(R.id.bottom_nav_compose);
+        if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
+        if (bottomNav != null) bottomNav.setVisibility(GONE);
         if (animate) {
-            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-            View bottomNav = findViewById(R.id.bottom_nav_compose);
-            if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
-            if (bottomNav != null) bottomNav.setVisibility(GONE);
             screen.setAlpha(0f);
             contentFrame.addView(screen);
             screen.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
@@ -1404,6 +1404,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void updatePersistentBottomNav() {
         try {
             if (getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false)) {
+                View bnc = findViewById(R.id.bottom_nav_container);
+                View bnv = findViewById(R.id.bottom_nav_compose);
+                if (bnc != null) bnc.setVisibility(GONE);
+                if (bnv != null) bnv.setVisibility(GONE);
+                return;
+            }
+            if (contentFrame != null && contentFrame.getChildCount() > 0) {
                 View bnc = findViewById(R.id.bottom_nav_container);
                 View bnv = findViewById(R.id.bottom_nav_compose);
                 if (bnc != null) bnc.setVisibility(GONE);
