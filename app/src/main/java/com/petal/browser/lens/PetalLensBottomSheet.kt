@@ -1,8 +1,11 @@
 package com.petal.browser.lens
 
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,13 +54,17 @@ fun PetalLensBottomSheet(
     onDismissRequest: () -> Unit
 ) {
     val context = LocalContext.current
-    var cameraTempUri by remember { mutableStateOf<Uri?>(null) }
+    var cameraTempUriString by rememberSaveable { mutableStateOf<String?>(null) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            PetalLensManager.launchLensForImageUri(context, uri)
+            try {
+                PetalLensManager.launchLensForImageUri(context, uri)
+            } catch (e: Exception) {
+                PetalLensManager.launchGoogleLensApp(context)
+            }
             onDismissRequest()
         }
     }
@@ -64,9 +72,41 @@ fun PetalLensBottomSheet(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success: Boolean ->
-        if (success && cameraTempUri != null) {
-            PetalLensManager.launchLensForImageUri(context, cameraTempUri!!)
+        val uri = cameraTempUriString?.let { Uri.parse(it) }
+        if (success && uri != null) {
+            try {
+                PetalLensManager.launchLensForImageUri(context, uri)
+            } catch (e: Exception) {
+                PetalLensManager.launchGoogleLensApp(context)
+            }
             onDismissRequest()
+        }
+    }
+
+    fun launchCameraInternal() {
+        val uri = PetalLensManager.createTempCameraUri(context)
+        if (uri != null) {
+            cameraTempUriString = uri.toString()
+            try {
+                cameraLauncher.launch(uri)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Unable to launch camera app", Toast.LENGTH_SHORT).show()
+                PetalLensManager.launchGoogleLensApp(context)
+                onDismissRequest()
+            }
+        } else {
+            PetalLensManager.launchGoogleLensApp(context)
+            onDismissRequest()
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            launchCameraInternal()
+        } else {
+            Toast.makeText(context, "Camera permission is required to snap a photo", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -139,13 +179,15 @@ fun PetalLensBottomSheet(
                     icon = Icons.Rounded.PhotoCamera,
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
-                        val uri = PetalLensManager.createTempCameraUri(context)
-                        if (uri != null) {
-                            cameraTempUri = uri
-                            cameraLauncher.launch(uri)
+                        val hasCameraPermission = ContextCompat.checkSelfPermission(
+                            context,
+                            android.Manifest.permission.CAMERA
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (hasCameraPermission) {
+                            launchCameraInternal()
                         } else {
-                            PetalLensManager.launchGoogleLensApp(context)
-                            onDismissRequest()
+                            permissionLauncher.launch(android.Manifest.permission.CAMERA)
                         }
                     }
                 )
@@ -158,7 +200,12 @@ fun PetalLensBottomSheet(
                     icon = Icons.Rounded.PhotoLibrary,
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
-                        galleryLauncher.launch("image/*")
+                        try {
+                            galleryLauncher.launch("image/*")
+                        } catch (e: Exception) {
+                            PetalLensManager.launchGoogleLensApp(context)
+                            onDismissRequest()
+                        }
                     }
                 )
             }
