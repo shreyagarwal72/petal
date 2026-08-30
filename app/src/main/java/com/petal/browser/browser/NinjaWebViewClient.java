@@ -65,11 +65,14 @@ public class NinjaWebViewClient extends WebViewClient {
 
     @Override
     public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
-        if (detail != null && detail.didCrash()) {
-            NinjaToast.show(context, context.getString(R.string.app_error));
-            if (view != null && view.isAttachedToWindow()) {
-                view.post(view::reload);
-            }
+        if (view != null) {
+            view.post(() -> {
+                try {
+                    if (view.isAttachedToWindow()) {
+                        view.reload();
+                    }
+                } catch (Exception ignored) {}
+            });
         }
         return true;
     }
