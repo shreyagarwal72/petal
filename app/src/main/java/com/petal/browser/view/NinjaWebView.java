@@ -248,8 +248,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
     public synchronized void initPreferences(String url) {
 
-        this.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, true);
-        this.setLayerType(View.LAYER_TYPE_NONE, null);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            this.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, false);
+        }
+        this.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         this.setBackgroundColor(android.graphics.Color.WHITE);
 
         WebSettings webSettings = getSettings();
@@ -259,6 +261,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         }
         webSettings.setDefaultTextEncodingName("utf-8");
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        webSettings.setLoadsImagesAutomatically(true);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
 
         // Async Safe Browsing initialization to eliminate main thread blocking latency

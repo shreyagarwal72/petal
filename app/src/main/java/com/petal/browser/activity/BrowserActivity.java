@@ -1112,6 +1112,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             View composeAddressBar = findViewById(R.id.compose_address_bar);
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+            View bottomNavCompose = findViewById(R.id.bottom_nav_compose);
             View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
             View mainProgressBar = findViewById(R.id.main_progress_bar_compose);
             View downloadBannerCompose = findViewById(R.id.download_banner_compose);
@@ -1125,6 +1126,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (isInPictureInPictureMode) {
                 if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
                 if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
+                if (bottomNavCompose != null) bottomNavCompose.setVisibility(GONE);
                 if (refreshBarCompose != null) refreshBarCompose.setVisibility(GONE);
                 if (mainProgressBar != null) mainProgressBar.setVisibility(GONE);
                 if (downloadBannerCompose != null) downloadBannerCompose.setVisibility(GONE);
@@ -1157,6 +1159,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else {
                 if (composeAddressBar != null) composeAddressBar.setVisibility(VISIBLE);
                 if (bottomNavContainer != null) bottomNavContainer.setVisibility(VISIBLE);
+                if (bottomNavCompose != null) bottomNavCompose.setVisibility(VISIBLE);
                 if (refreshBarCompose != null) refreshBarCompose.setVisibility(VISIBLE);
                 if (mainProgressBar != null) mainProgressBar.setVisibility(VISIBLE);
                 if (appBar != null && currentAlbumController != null && !isHomePage(ninjaWebView != null ? ninjaWebView.getUrl() : "")) {
@@ -1172,6 +1175,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         "})();", null
                     );
                 }
+                updatePersistentBottomNav();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1219,9 +1223,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         isOverlayScreenShowing = false;
 
         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+        View bottomNavCompose = findViewById(R.id.bottom_nav_compose);
+        boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
         if (bottomNavContainer != null) {
             bottomNavContainer.setTranslationY(0f);
-            bottomNavContainer.setVisibility(VISIBLE);
+            bottomNavContainer.setVisibility(inPip ? GONE : VISIBLE);
+        }
+        if (bottomNavCompose != null) {
+            bottomNavCompose.setTranslationY(0f);
+            bottomNavCompose.setVisibility(inPip ? GONE : VISIBLE);
         }
 
         String url = overrideUrl != null ? overrideUrl : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
@@ -1458,6 +1468,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void updatePersistentBottomNav() {
         try {
+            boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
+            if (inPip) {
+                View bnc = findViewById(R.id.bottom_nav_container);
+                View bnv = findViewById(R.id.bottom_nav_compose);
+                if (bnc != null) bnc.setVisibility(GONE);
+                if (bnv != null) bnv.setVisibility(GONE);
+                return;
+            }
             if (getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false)) {
                 View bnc = findViewById(R.id.bottom_nav_container);
                 View bnv = findViewById(R.id.bottom_nav_compose);
@@ -1531,6 +1549,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void applyAddressBarPosition() {
         try {
+            boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
+            if (inPip) {
+                View addressBar = findViewById(R.id.compose_address_bar);
+                View mainContent = findViewById(R.id.main_content);
+                View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+                View bottomNav = findViewById(R.id.bottom_nav_compose);
+                View fabBubble = findViewById(R.id.fab_bubble);
+                if (addressBar != null) addressBar.setVisibility(GONE);
+                if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
+                if (bottomNav != null) bottomNav.setVisibility(GONE);
+                if (fabBubble != null) fabBubble.setVisibility(GONE);
+                if (mainContent != null && mainContent.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                    RelativeLayout.LayoutParams contentParams = (RelativeLayout.LayoutParams) mainContent.getLayoutParams();
+                    contentParams.removeRule(RelativeLayout.BELOW);
+                    contentParams.removeRule(RelativeLayout.ABOVE);
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    contentParams.topMargin = 0;
+                    contentParams.bottomMargin = 0;
+                    mainContent.setLayoutParams(contentParams);
+                }
+                return;
+            }
             if (getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false)) {
                 View addressBar = findViewById(R.id.compose_address_bar);
                 View mainContent = findViewById(R.id.main_content);
