@@ -144,6 +144,8 @@ fun PetalAiHubScreen(
         ) {
         com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 com.petal.browser.ui.components.ExpressiveHeader(
                     title = "Petal AI Hub",
