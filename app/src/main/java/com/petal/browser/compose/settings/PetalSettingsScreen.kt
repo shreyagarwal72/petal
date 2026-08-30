@@ -194,6 +194,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val icon: I
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", Icons.Rounded.Search),
     DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", Icons.Rounded.Accessibility),
+    EXPERIMENTAL("Experimental", "App language, experimental features and advanced settings", Icons.Rounded.Science),
     DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", Icons.Rounded.Backup),
     UPDATER("App Updates", "Check for updates and auto-check on launch", Icons.Rounded.SystemUpdate),
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", Icons.Rounded.Info)
@@ -461,7 +462,6 @@ fun PetalSettingsScreen(
     var isAppLockEnabled by remember { mutableStateOf(sp.getBoolean("sp_app_lock_enabled", false)) }
     var showPasscodeDialog by remember { mutableStateOf(false) }
     var isDoubleBackExit by remember { mutableStateOf(sp.getBoolean("sp_double_back_exit", true)) }
-    var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
     var isForceZoom by remember { mutableStateOf(sp.getBoolean("sp_force_enable_zoom", true)) }
@@ -599,6 +599,7 @@ fun PetalSettingsScreen(
                                     SettingsCategory.PRIVACY,
                                     SettingsCategory.SEARCH_HOMEPAGE,
                                     SettingsCategory.DISPLAY_ZOOM,
+                                    SettingsCategory.EXPERIMENTAL,
                                     SettingsCategory.DATA_STORAGE,
                                     SettingsCategory.UPDATER,
                                     SettingsCategory.ABOUT
@@ -1616,8 +1617,8 @@ fun PetalSettingsScreen(
                                 }
                             }
 
-                            // 4. Popular Languages Selector
-                            if ((scaffoldCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english hinglish spanish hindi french german chinese arabic portuguese russian japanese")) {
+                            // 4. Popular Languages Selector (Under Experimental Category)
+                            if ((scaffoldCategory == SettingsCategory.EXPERIMENTAL || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english hinglish spanish hindi french german chinese arabic portuguese russian japanese experimental")) {
                                 SettingsCategoryCard(title = "App Language", icon = Icons.Rounded.Language) {
                                     Text(
                                         "Choose your preferred display language:",
@@ -1956,7 +1957,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 7. Accessibility & Scaling (using PetalSlider)
-                            if ((scaffoldCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur address bar top bottom download torrent engine 1dm manager")) {
+                            if ((scaffoldCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur download torrent engine 1dm manager")) {
                                 SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
                                     ToggleRow(
                                         title = "Predictive Back Animations",
@@ -2032,51 +2033,6 @@ fun PetalSettingsScreen(
                                                 }
                                             }
                                             }
-                                        }
-                                    }
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    Text(
-                                        "Address Bar Location:",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    val addressBarScrollState = rememberScrollState()
-                                    com.petal.browser.ui.components.ScrollFadeRow(
-                                        scrollState = addressBarScrollState,
-                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .horizontalScroll(addressBarScrollState),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            FilterChip(
-                                                selected = addressBarPosition == "TOP",
-                                                onClick = {
-                                                    addressBarPosition = "TOP"
-                                                    sp.edit().putString("sp_address_bar_position", "TOP").apply()
-                                                    (context as? BrowserActivity)?.applyAddressBarPosition()
-                                                },
-                                                label = { Text("Top (Default)") },
-                                                leadingIcon = if (addressBarPosition == "TOP") {
-                                                    @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                                } else null
-                                            )
-                                            FilterChip(
-                                                selected = addressBarPosition == "BOTTOM",
-                                                onClick = {
-                                                    addressBarPosition = "BOTTOM"
-                                                    sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
-                                                    (context as? BrowserActivity)?.applyAddressBarPosition()
-                                                },
-                                                label = { Text("Bottom") },
-                                                leadingIcon = if (addressBarPosition == "BOTTOM") {
-                                                    @Composable { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                                } else null
-                                            )
                                         }
                                     }
 
