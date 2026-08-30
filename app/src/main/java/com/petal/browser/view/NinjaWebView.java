@@ -283,7 +283,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         webSettings.setSupportZoom(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
-        webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
+        webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
 
         setVerticalScrollBarEnabled(true);
         setHorizontalScrollBarEnabled(true);
