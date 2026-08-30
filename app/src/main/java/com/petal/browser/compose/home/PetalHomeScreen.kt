@@ -375,43 +375,46 @@ fun ComposeView.setupExpressiveHomeScreen(
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
     setContent {
-        val accountViewModel = viewModel<AccountViewModel>(activity)
-        val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-        var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
-        var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-        var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
-        var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
+        // DIAGNOSTIC: the home screen was going fully black with no crash and
+        // nothing in logcat. The previous version of this boundary only wrapped
+        // PetalHomeScreen() *inside* PetalExpressiveTheme's content lambda -
+        // which meant a throw during AccountViewModel construction, palette/
+        // SharedPreferences reads, or PetalExpressiveTheme's own color-scheme /
+        // typography resolution happened *above* that catch and still produced
+        // a silent black screen. This boundary now wraps that entire setup
+        // (theme resolution included), and the fallback below is deliberately
+        // plain Compose with no MaterialTheme dependency, since theming itself
+        // may be what failed.
+        var renderError by remember { mutableStateOf<Throwable?>(null) }
 
-        DisposableEffect(sp) {
-            val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                when (key) {
-                    "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                    "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
-                    "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                    "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
+        if (renderError == null) {
+            runCatching {
+                val accountViewModel = viewModel<AccountViewModel>(activity)
+                val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
+                var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
+                var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+                var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
+
+                DisposableEffect(sp) {
+                    val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                        when (key) {
+                            "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                            "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                            "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                            "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
+                        }
+                    }
+                    sp.registerOnSharedPreferenceChangeListener(listener)
+                    onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
                 }
-            }
-            sp.registerOnSharedPreferenceChangeListener(listener)
-            onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-        }
 
-        PetalExpressiveTheme(
-            paletteId = currentPaletteId,
-            useAmoled = isAmoled,
-            dynamicColor = useDynamic,
-            expressiveColors = isExpressiveColors
-        ) {
-            // DIAGNOSTIC: the home screen was going fully black with no crash and
-            // nothing in logcat, which means something in PetalHomeScreen's
-            // composition was throwing and getting silently dropped instead of
-            // hitting PetalAppLogger's global handler. Catching it here logs the
-            // real exception (visible in the aLogcat / diagnostic zip export) and
-            // shows a visible error screen instead of a blank one, so the next
-            // occurrence is diagnosable instead of just "black page".
-            var renderError by remember { mutableStateOf<Throwable?>(null) }
-
-            if (renderError == null) {
-                runCatching {
+                PetalExpressiveTheme(
+                    paletteId = currentPaletteId,
+                    useAmoled = isAmoled,
+                    dynamicColor = useDynamic,
+                    expressiveColors = isExpressiveColors
+                ) {
                     PetalHomeScreen(
                         backgroundSnapshot = null,
                         accountViewModel = accountViewModel,
@@ -424,45 +427,60 @@ fun ComposeView.setupExpressiveHomeScreen(
                         onNewTabAction = onNewTab,
                         onOpenTabSwitcher = onOpenTabSwitcher
                     )
-                }.onFailure { e ->
-                    com.petal.browser.logger.PetalAppLogger.e(
-                        "PetalHomeScreen",
-                        "Home screen composition failed - showing fallback instead of black screen",
-                        e
-                    )
-                    renderError = e
                 }
+            }.onFailure { e ->
+                com.petal.browser.logger.PetalAppLogger.e(
+                    "PetalHomeScreen",
+                    "Home screen setup/composition failed - showing fallback instead of black screen",
+                    e
+                )
+                renderError = e
             }
+        }
 
-            val error = renderError
-            if (error != null) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
+        val error = renderError
+        if (error != null) {
+            // Plain Compose fallback - intentionally NOT wrapped in
+            // PetalExpressiveTheme/MaterialTheme, since theme resolution itself
+            // is one of the things that can throw and land here.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF1B1B1F))
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Home screen failed to load",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = error.javaClass.simpleName + ": " + (error.message ?: "no message"),
+                        color = Color(0xFFCCCCCC),
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    error.stackTrace.take(6).forEach { frame ->
                         Text(
-                            text = "Home screen failed to load",
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = error.javaClass.simpleName + ": " + (error.message ?: "no message"),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp,
+                            text = "  at $frame",
+                            color = Color(0xFF8A8A8A),
+                            fontSize = 10.sp,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(Modifier.height(20.dp))
+                    }
+                    Spacer(Modifier.height(20.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(onClick = { renderError = null }) {
                             Text("Retry")
+                        }
+                        OutlinedButton(onClick = {
+                            com.petal.browser.logger.PetalAppLogger.shareLogsZip(activity)
+                        }) {
+                            Text("Export logs")
                         }
                     }
                 }
