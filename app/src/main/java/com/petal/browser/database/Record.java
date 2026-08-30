@@ -8,12 +8,16 @@ public class Record {
     private String title;
     private String url;
     private long time;
+    private String filename;
+    private int ordinal;
 
     public Record() {
         this.title = null;
         this.url = null;
         this.time = 0L;
         this.iconColor = 0L;
+        this.filename = null;
+        this.ordinal = 0;
     }
 
     public Record(String title, String url, long time, long iconColor) {
@@ -21,6 +25,17 @@ public class Record {
         this.url = url;
         this.time = time;
         this.iconColor = iconColor;
+        this.filename = null;
+        this.ordinal = 0;
+    }
+
+    public Record(String title, String url, String filename, int ordinal) {
+        this.title = title;
+        this.url = url;
+        this.time = 0L;
+        this.iconColor = 0L;
+        this.filename = filename;
+        this.ordinal = ordinal;
     }
 
     public long getIconColor() {
@@ -57,5 +72,21 @@ public class Record {
 
     public void setTime(long time) {
         this.time = time;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
+
+    public int getOrdinal() {
+        return ordinal;
+    }
+
+    public void setOrdinal(int ordinal) {
+        this.ordinal = ordinal;
     }
 }
