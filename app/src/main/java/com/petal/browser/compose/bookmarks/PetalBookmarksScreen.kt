@@ -232,8 +232,9 @@ fun PetalBookmarksScreen(
                     }
                 } else if (filteredBookmarks.isEmpty()) {
                     com.petal.browser.ui.components.EmptyStateBlob(
-                        icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Rounded.BookmarkBorder),
-                        title = if (searchQuery.isEmpty()) "No bookmarks saved yet" else "No matching bookmarks found"
+                        illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.BOOKMARKS,
+                        title = if (searchQuery.isEmpty()) "No Bookmarks Saved Yet" else "No Matching Bookmarks",
+                        description = if (searchQuery.isEmpty()) "Tap the star icon on web pages to save them for quick access" else "Try searching with a different URL or keyword"
                     )
                 } else {
                     LazyColumn(

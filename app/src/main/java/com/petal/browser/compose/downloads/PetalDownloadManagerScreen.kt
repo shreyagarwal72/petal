@@ -1180,7 +1180,7 @@ private fun deleteMultipleFiles(context: Context, items: List<DownloadItem>) {
 @Composable
 private fun DownloadsEmptyState() {
     com.petal.browser.ui.components.EmptyStateBlob(
-        icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Rounded.Download),
+        illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.DOWNLOADS,
         title = "No Downloads Yet",
         description = "Files you download will appear here"
     )
