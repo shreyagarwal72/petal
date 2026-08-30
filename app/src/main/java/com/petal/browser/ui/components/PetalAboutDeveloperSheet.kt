@@ -791,6 +791,26 @@ val petalAppCredits = listOf(
         tags = listOf("Browser Base", "GPL-3.0", "Core Engine")
     ),
     AppCreditItem(
+        title = "Zenith",
+        developer = "1372Slash",
+        role = "Material 3 Expressive Design & Digital Wellbeing",
+        description = "Smart digital wellbeing assistant built with Material Design 3 Expressive, proactive intervention, and fluid motion.",
+        url = "https://github.com/1372Slash/Zenith",
+        icon = Icons.Rounded.AutoAwesome,
+        containerColor = Color(0xFF6750A4),
+        tags = listOf("Material 3 Expressive", "Wellbeing", "Motion Rich")
+    ),
+    AppCreditItem(
+        title = "LastWave",
+        developer = "duxtami",
+        role = "Hi-Res Audio Streaming & Dynamic Discovery",
+        description = "High-resolution lossless music streaming and player with real-time synced lyrics and smart discovery.",
+        url = "https://github.com/duxtami/LastWave-native",
+        icon = Icons.Rounded.PlayArrow,
+        containerColor = Color(0xFF00E5FF),
+        tags = listOf("Lossless Audio", "Streaming", "Material 3")
+    ),
+    AppCreditItem(
         title = "Aurora Store",
         developer = "whyorean (Rahul Patel)",
         role = "Material Design Patterns & Architecture",
@@ -802,30 +822,30 @@ val petalAppCredits = listOf(
     ),
     AppCreditItem(
         title = "RvSystem-Monitor",
-        developer = "duxtami (LastWave-native)",
-        role = "Predictive Back & Depth Blur Physics",
-        description = "Material 3 Expressive motion physics, live dual-surface 24dp depth blur, and full gesture junction framework.",
-        url = "https://github.com/duxtami/RvSystem-Monitor",
+        developer = "Rve27",
+        role = "System Monitor & Hardware Insights",
+        description = "High-performance system monitoring solution for Android merging Jetpack Compose with raw efficiency.",
+        url = "https://github.com/Rve27/RvSystem-Monitor",
         icon = Icons.Rounded.AutoAwesome,
         containerColor = Color(0xFF9C27B0),
-        tags = listOf("Motion Physics", "Predictive Back", "Depth Blur")
+        tags = listOf("System Monitor", "Hardware Insights", "Compose UI")
     ),
     AppCreditItem(
         title = "Ever-Haptics",
-        developer = "duxtami (LastWave-native)",
+        developer = "hari161008",
         role = "Tactile Scroll & Interaction Haptics",
-        description = "Ultra-responsive high-fidelity waveform vibration synthesis for page scrolling, switches, and gesture locks.",
-        url = "https://github.com/duxtami/Ever-Haptics",
+        description = "Ultra-responsive high-fidelity waveform vibration synthesis for page scrolling, switches, and tactile feedback.",
+        url = "https://github.com/hari161008/Ever-Haptics",
         icon = Icons.Rounded.Vibration,
         containerColor = Color(0xFF00BCD4),
         tags = listOf("Haptic Engine", "Waveforms", "Feedback")
     ),
     AppCreditItem(
         title = "PixelPlayer",
-        developer = "duxtami (LastWave-native)",
+        developer = "PixelPlayerHQ",
         role = "Dynamic Palette & Squircle Motion Framework",
         description = "Dynamic multi-style color palette system, 4-quadrant morphing squircle swatches, and expressive media controls.",
-        url = "https://github.com/duxtami/PixelPlayer",
+        url = "https://github.com/PixelPlayerHQ/PixelPlayer",
         icon = Icons.Rounded.Palette,
         containerColor = Color(0xFFFF6D00),
         tags = listOf("Dynamic Color", "Squircle Motion", "Expressive Theme")
