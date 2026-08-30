@@ -66,6 +66,7 @@ object PetalAboutDeveloperBridge {
                 androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
                 window.statusBarColor = android.graphics.Color.TRANSPARENT
                 window.navigationBarColor = android.graphics.Color.TRANSPARENT
+                window.setWindowAnimations(0)
             }
             dialog.setOnShowListener {
                 try {
@@ -179,29 +180,23 @@ fun PetalAboutDeveloperSheetContent(
         }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onClose
-    ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Scaffold(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0)
-            ) { innerPadding ->
-                Box(
-                    modifier = modifier.fillMaxSize()
-                ) {
-                    M3ExpressiveVariableBackground(pageSeed = "about_developer_page")
-
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        ExpressiveHeader(
-                            title = "About Developer",
-                            subtitle = "Crafted with ❤ for Android & Termux",
-                            onBack = onClose,
-                            enableLiquidGlass = true,
-                            actions = {
+    androidx.activity.compose.BackHandler(enabled = true, onBack = onClose)
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { innerPadding ->
+        Box(
+            modifier = modifier.fillMaxSize()
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                ExpressiveHeader(
+                    title = "About Developer",
+                    subtitle = "Crafted with ❤ for Android & Termux",
+                    onBack = onClose,
+                    enableLiquidGlass = true,
+                    actions = {
                                 HeaderActionIcon(
                                     icon = Icons.Rounded.Share,
                                     contentDescription = "Share Profile",
@@ -283,14 +278,13 @@ fun PetalAboutDeveloperSheetContent(
                 }
 
                 // Floating Material 3 Toast / Snackbar Host
-                    PetalThemedSnackbarHost(
-                        hostState = snackbarHostState,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(16.dp),
-                        actionColor = primaryColor
-                    )
-                }
+                PetalThemedSnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp),
+                    actionColor = primaryColor
+                )
             }
         }
     }
