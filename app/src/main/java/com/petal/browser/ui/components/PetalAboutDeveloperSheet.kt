@@ -781,14 +781,24 @@ data class AppCreditItem(
 
 val petalAppCredits = listOf(
     AppCreditItem(
-        title = "Ninja Browser",
-        developer = "Mikan",
-        role = "Original Base Engine Architecture",
-        description = "Lightweight, privacy-focused open source browser foundation engineered with pure Android WebKit.",
-        url = "https://github.com/mikan/Ninja",
+        title = "FOSS Browser",
+        developer = "scoute-dich",
+        role = "Core Browser Engine & Android Architecture",
+        description = "Fully open source, lightweight web browser built on Android WebKit with clean navigation controls.",
+        url = "https://github.com/scoute-dich/browser",
         icon = Icons.Rounded.Public,
         containerColor = Color(0xFF4285F4),
         tags = listOf("Browser Base", "GPL-3.0", "Core Engine")
+    ),
+    AppCreditItem(
+        title = "Aurora Store",
+        developer = "whyorean (Rahul Patel)",
+        role = "Material Design Patterns & Architecture",
+        description = "Privacy-respecting Google Play client demonstrating exquisite Material 3 design and robust app architecture.",
+        url = "https://github.com/whyorean/AuroraStore",
+        icon = Icons.Rounded.Android,
+        containerColor = Color(0xFF00C853),
+        tags = listOf("Material 3", "App Architecture", "Open Source")
     ),
     AppCreditItem(
         title = "RvSystem-Monitor",
@@ -811,14 +821,14 @@ val petalAppCredits = listOf(
         tags = listOf("Haptic Engine", "Waveforms", "Feedback")
     ),
     AppCreditItem(
-        title = "Cromite Browser",
-        developer = "uazo",
-        role = "AdBlock Filters & Chrome Flags Paradigm",
-        description = "Powerful content filtering engine rules, site permission controls, and advanced Chrome feature flag toggles.",
-        url = "https://github.com/uazo/cromite",
-        icon = Icons.Rounded.Shield,
-        containerColor = Color(0xFF34A853),
-        tags = listOf("AdBlock", "Privacy", "Content Filter")
+        title = "PixelPlayer",
+        developer = "duxtami (LastWave-native)",
+        role = "Dynamic Palette & Squircle Motion Framework",
+        description = "Dynamic multi-style color palette system, 4-quadrant morphing squircle swatches, and expressive media controls.",
+        url = "https://github.com/duxtami/PixelPlayer",
+        icon = Icons.Rounded.Palette,
+        containerColor = Color(0xFFFF6D00),
+        tags = listOf("Dynamic Color", "Squircle Motion", "Expressive Theme")
     ),
     AppCreditItem(
         title = "Fetch / Android Fetch2",
@@ -856,98 +866,67 @@ object PetalCreditsBridge {
     @JvmStatic
     @JvmOverloads
     fun show(activity: ComponentActivity, onDismiss: Runnable? = null) {
+        val browserActivity = activity as? com.petal.browser.activity.BrowserActivity
+        if (browserActivity != null) {
+            browserActivity.showCreditsScreen()
+            return
+        }
         try {
-            val dialog = BottomSheetDialog(activity)
-            dialog.behavior.isDraggable = false
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            dialog.setCancelable(true)
-            dialog.setCanceledOnTouchOutside(true)
-            dialog.window?.let { window ->
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-                window.statusBarColor = android.graphics.Color.TRANSPARENT
-                window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            val creditsView = createCreditsView(activity) {
+                onDismiss?.run()
             }
-            dialog.setOnShowListener {
-                try {
-                    val container = dialog.findViewById<android.view.View>(com.google.android.material.R.id.container)
-                    container?.let { root ->
-                        root.fitsSystemWindows = false
-                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
-                    }
-
-                    val coordinator = dialog.findViewById<android.view.View>(com.google.android.material.R.id.coordinator)
-                    coordinator?.let { root ->
-                        root.fitsSystemWindows = false
-                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets -> insets }
-                    }
-
-                    val bottomSheet = dialog.findViewById<android.view.View>(com.google.android.material.R.id.design_bottom_sheet)
-                    bottomSheet?.let { sheet ->
-                        sheet.fitsSystemWindows = false
-                        sheet.background = null
-                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets -> insets }
-
-                        val behavior = BottomSheetBehavior.from(sheet)
-                        behavior.state = BottomSheetBehavior.STATE_EXPANDED
-                        behavior.skipCollapsed = true
-                        behavior.isDraggable = false
-                        sheet.layoutParams?.height = ViewGroup.LayoutParams.MATCH_PARENT
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-
-            val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-            com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-                setContent {
-                    val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
-                    DisposableEffect(Unit) {
-                        onDispose {
-                            com.petal.browser.predictive.PetalContentSnapshot.clear()
-                        }
-                    }
-                    val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
-                    val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                    val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                    val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                    val isAmoled = sp.getBoolean("sp_amoled", false)
-
-                    val appFont = remember(fontName) {
-                        com.petal.browser.ui.theme.AppFont.fromName(fontName)
-                    }
-                    val colorStyle = remember(styleName) {
-                        try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
-                    }
-
-                    PetalExpressiveTheme(
-                        dynamicColor = dynamicColor,
-                        useAmoled = isAmoled,
-                        appFont = appFont,
-                        colorStyle = colorStyle,
-                        paletteId = paletteId
-                    ) {
-                        PetalCreditsSheetContent(
-                            backgroundSnapshot = snapshotBitmap,
-                            onClose = {
-                                try { dialog.dismiss() } catch (_: Exception) {}
-                                onDismiss?.run()
-                            }
-                        )
-                    }
-                }
-            }
-            dialog.setContentView(composeView)
-            dialog.show()
+            activity.setContentView(creditsView)
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    @JvmStatic
+    fun createCreditsView(
+        activity: ComponentActivity,
+        onBackPress: () -> Unit
+    ): ComposeView {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+        return ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
+                DisposableEffect(Unit) {
+                    onDispose {
+                        com.petal.browser.predictive.PetalContentSnapshot.clear()
+                    }
+                }
+                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                val appFont = remember(fontName) {
+                    com.petal.browser.ui.theme.AppFont.fromName(fontName)
+                }
+                val colorStyle = remember(styleName) {
+                    try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                }
+
+                PetalExpressiveTheme(
+                    dynamicColor = dynamicColor,
+                    useAmoled = isAmoled,
+                    appFont = appFont,
+                    colorStyle = colorStyle,
+                    paletteId = paletteId
+                ) {
+                    PetalCreditsSheetContent(
+                        backgroundSnapshot = snapshotBitmap,
+                        onClose = onBackPress
+                    )
+                }
+            }
         }
     }
 }

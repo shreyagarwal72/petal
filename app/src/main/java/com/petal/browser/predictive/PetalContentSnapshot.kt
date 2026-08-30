@@ -99,22 +99,13 @@ object PetalContentSnapshot {
             }
         }
 
-        val old = current
-        if (old != null && old != captured && !old.isRecycled) {
-            old.recycle()
-        }
-
         current = captured
         return captured
     }
 
     @JvmStatic
     fun clear() {
-        val old = current
         current = null
-        if (old != null && !old.isRecycled) {
-            old.recycle()
-        }
     }
 
     private fun findWindow(view: View): Window? {

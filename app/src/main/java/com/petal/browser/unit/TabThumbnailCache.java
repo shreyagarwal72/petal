@@ -23,14 +23,7 @@ public final class TabThumbnailCache {
     private static final int MAX_ENTRIES = 24;
     private static File diskCacheDir = null;
 
-    private static final LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(MAX_ENTRIES) {
-        @Override
-        protected void entryRemoved(boolean evicted, String key, Bitmap oldValue, Bitmap newValue) {
-            if (oldValue != null && oldValue != newValue && !oldValue.isRecycled()) {
-                oldValue.recycle();
-            }
-        }
-    };
+    private static final LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(MAX_ENTRIES);
 
     private TabThumbnailCache() {}
 

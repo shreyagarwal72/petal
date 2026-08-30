@@ -66,7 +66,7 @@
 ```mermaid
 graph TD
     A[Petal Browser Core] --> B[Jetpack Compose M3 Expressive UI]
-    A --> C[Ninja WebKit Engine]
+    A --> C[FOSS WebKit Engine]
     A --> D[Fetch2 Download Pipeline]
     A --> E[Petal AI Hub]
     B --> F[Predictive Back Surface & Blur]
@@ -107,13 +107,15 @@ app/build/outputs/apk/debug/app-debug.apk
 
 ## 💖 Open Source Credits & Upstream Projects
 
-Petal Browser is built on the shoulders of giants. We express our gratitude to:
-- **[Ninja Browser](https://github.com/mikan/Ninja)** by *Mikan* — Base WebKit architecture & privacy engine.
-- **[RvSystem-Monitor](https://github.com/duxtami/RvSystem-Monitor)** by *duxtami* — Predictive back physics & depth blur framework.
-- **[Ever-Haptics](https://github.com/duxtami/Ever-Haptics)** by *duxtami* — Waveform haptic vibration synthesis.
-- **[Cromite](https://github.com/uazo/cromite)** by *uazo* — AdBlock filtering rules and privacy paradigms.
-- **[Fetch](https://github.com/tonyofrancis/Fetch)** by *tonyofrancis* — Background download engine.
+Petal Browser is built on the shoulders of giants. We express our deepest gratitude to:
+- **[FOSS Browser](https://github.com/scoute-dich/browser)** by *scoute-dich* — Core Android browser engine & clean WebKit architecture.
+- **[Aurora Store](https://github.com/whyorean/AuroraStore)** by *whyorean (Rahul Patel)* — Modern Material design patterns & elegant app architecture.
+- **[RvSystem-Monitor](https://github.com/duxtami/RvSystem-Monitor)** by *duxtami (LastWave-native)* — Predictive back physics & depth blur framework.
+- **[Ever-Haptics](https://github.com/duxtami/Ever-Haptics)** by *duxtami (LastWave-native)* — Waveform haptic vibration synthesis.
+- **[PixelPlayer](https://github.com/duxtami/PixelPlayer)** by *duxtami (LastWave-native)* — Dynamic palette styling and morphing squircle motion framework.
+- **[Fetch](https://github.com/tonyofrancis/Fetch)** by *tonyofrancis* — Multi-threaded background download engine.
 - **[Coil](https://github.com/coil-kt/coil)** by *coil-kt* — Image and favicon caching pipeline.
+- **[Material 3 Expressive](https://m3.material.io)** by *Google Android Jetpack Team* — Expressive component geometry and dynamic color palettes.
 
 ---
 

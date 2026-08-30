@@ -1196,6 +1196,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         openApiIntegrationsHub();
                         return;
                     }
+                    if (u != null && (u.equals("petal://credits") || u.startsWith("petal://credits"))) {
+                        showCreditsScreen();
+                        return;
+                    }
                     if (ninjaWebView != null) {
                         String targetUrl = u;
                         if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
@@ -1708,6 +1712,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             currentUrl.startsWith("petal://history") ||
             currentUrl.startsWith("petal://account") ||
             currentUrl.startsWith("petal://downloads") ||
+            currentUrl.startsWith("petal://credits") ||
             currentUrl.startsWith("about:blank") ||
             isHomePage(currentUrl)
         );
@@ -3128,6 +3133,33 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void showBookmarks() {
         showBookmarksPage();
+    }
+
+    public void showCreditsScreen() {
+        try {
+            captureBrowserMainPreview();
+            contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_credits = findViewById(R.id.fab_bubble);
+            if (fab_bubble_credits != null) fab_bubble_credits.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
+            View creditsView = com.petal.browser.ui.components.PetalCreditsBridge.createCreditsView(
+                BrowserActivity.this,
+                () -> {
+                    showAlbum(currentAlbumController);
+                    return kotlin.Unit.INSTANCE;
+                }
+            );
+            presentComposeScreen(creditsView);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void savePageOffline() {
