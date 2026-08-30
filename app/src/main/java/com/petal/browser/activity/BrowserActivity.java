@@ -4691,53 +4691,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void installPwaShortcut() {
-        if (ninjaWebView != null && ninjaWebView.getPwaManager() != null) {
-            ninjaWebView.getPwaManager().installCurrentPwa(this);
-            return;
-        }
         try {
-            if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
-            String url = ninjaWebView.getUrl();
-            String title = ninjaWebView.getTitle() != null && !ninjaWebView.getTitle().isEmpty() ? ninjaWebView.getTitle() : HelperUnit.domain(url);
-
-            Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            shortcutIntent.setComponent(new android.content.ComponentName(this, BrowserActivity.class));
-            shortcutIntent.putExtra("pwa_mode", true);
-            shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-            Bitmap iconBitmap = ninjaWebView != null ? ninjaWebView.getFavicon() : null;
-            if (iconBitmap == null) {
-                com.petal.browser.database.FaviconHelper helper = new com.petal.browser.database.FaviconHelper(this);
-                iconBitmap = helper.getFavicon(url);
+            if (ninjaWebView == null || ninjaWebView.getUrl() == null || "about:blank".equalsIgnoreCase(ninjaWebView.getUrl())) {
+                NinjaToast.show(this, "No active web page to install");
+                return;
             }
-
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                android.content.pm.ShortcutManager shortcutManager = getSystemService(android.content.pm.ShortcutManager.class);
-                if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported()) {
-                    android.graphics.drawable.Icon icon = iconBitmap != null ? android.graphics.drawable.Icon.createWithBitmap(iconBitmap) : android.graphics.drawable.Icon.createWithResource(this, R.mipmap.ic_launcher);
-                    android.content.pm.ShortcutInfo pinShortcutInfo = new android.content.pm.ShortcutInfo.Builder(this, "pwa_" + Math.abs(url.hashCode()))
-                            .setShortLabel(title)
-                            .setLongLabel(title)
-                            .setIcon(icon)
-                            .setIntent(shortcutIntent)
-                            .build();
-
-                    shortcutManager.requestPinShortcut(pinShortcutInfo, null);
-                    NinjaToast.show(this, "Installed " + title + " as App");
-                    return;
-                }
+            if (ninjaWebView.getPwaManager() == null) {
+                ninjaWebView.setPwaManager(new com.petal.browser.pwa.PetalPwaManager(this, ninjaWebView, null));
             }
-            Intent addIntent = new Intent();
-            addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-            addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
-            if (iconBitmap != null) {
-                addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, iconBitmap);
-            } else {
-                addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.mipmap.ic_launcher));
-            }
-            addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-            sendBroadcast(addIntent);
-            NinjaToast.show(this, "Installed " + title + " as App");
+            ninjaWebView.getPwaManager().installCurrentPwa(this);
         } catch (Exception e) {
             e.printStackTrace();
             NinjaToast.show(this, "Failed to install app");
