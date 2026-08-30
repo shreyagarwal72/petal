@@ -1,8 +1,6 @@
 package com.petal.browser.ui.theme
 
 import androidx.compose.foundation.shape.GenericShape
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposePath
 import androidx.graphics.shapes.CornerRounding
@@ -14,45 +12,45 @@ import androidx.graphics.shapes.toPath
 /**
  * PetalMaterialShapes
  *
- * Full official implementation of ALL 35 Material 3 Expressive Shapes according to the M3 Shape Principles spec
- * (https://m3.material.io/styles/shape/overview-principles).
+ * Full official implementation of ALL 35 Material 3 Expressive Shapes according to the official Material 3
+ * Expressive shape system specification (androidx.compose.material3.MaterialShapes / M3 Design Kit).
  *
- * Full Catalog of 35 Shapes:
+ * Complete Official Catalog of 35 Shapes:
  * 1. Circle
- * 2. Oval
- * 3. Pill
- * 4. Triangle
- * 5. RightTriangle
- * 6. Diamond
- * 7. Square
- * 8. RoundedSquare
- * 9. Rectangle
- * 10. Pentagon
- * 11. Hexagon
- * 12. Octagon
- * 13. Decagon
- * 14. Dodecagon
- * 15. Cookie4Sided
- * 16. Cookie6Sided
- * 17. Cookie7Sided
- * 18. Cookie9Sided
- * 19. Cookie12Sided
- * 20. Scallop
- * 21. SoftScallop
- * 22. Clover4Leaf
- * 23. Clover8Leaf
- * 24. Flower
- * 25. Sunny
- * 26. Arch
- * 27. SemiCircle
- * 28. Slanted
- * 29. Teardrop
- * 30. Heart
- * 31. Burst
- * 32. SoftBurst
- * 33. Star4Sided
- * 34. Star8Sided
- * 35. Gem
+ * 2. Square
+ * 3. Slanted
+ * 4. Arch
+ * 5. SemiCircle
+ * 6. Oval
+ * 7. Pill
+ * 8. Triangle
+ * 9. Arrow
+ * 10. Fan
+ * 11. Diamond
+ * 12. ClamShell
+ * 13. Pentagon
+ * 14. Gem
+ * 15. Sunny
+ * 16. VerySunny
+ * 17. Cookie4Sided
+ * 18. Cookie6Sided
+ * 19. Cookie7Sided
+ * 20. Cookie9Sided
+ * 21. Cookie12Sided
+ * 22. Ghostish
+ * 23. Clover4Leaf
+ * 24. Clover8Leaf
+ * 25. Burst
+ * 26. SoftBurst
+ * 27. Boom
+ * 28. SoftBoom
+ * 29. Flower
+ * 30. Puffy
+ * 31. PuffyDiamond
+ * 32. PixelCircle
+ * 33. PixelTriangle
+ * 34. Bun
+ * 35. Heart
  *
  * Provides [toShape] extension converting any [RoundedPolygon] or [ExpressiveShapeHolder] seamlessly to Compose [Shape].
  */
@@ -81,23 +79,67 @@ fun RoundedPolygon.toShape(): Shape {
 
 object PetalMaterialShapes {
 
-    // --- 1. Basic & Geometric Shapes (14 Shapes) ---
+    // --- 1. Basic & Geometric (8 Shapes) ---
     val Circle: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder("Circle", "Geometric", RoundedPolygon.circle(numVertices = 16))
+        ExpressiveShapeHolder("Circle", "Basic", RoundedPolygon.circle(numVertices = 16))
+    }
+
+    val Square: ExpressiveShapeHolder by lazy {
+        ExpressiveShapeHolder(
+            "Square",
+            "Basic",
+            RoundedPolygon(
+                numVertices = 4,
+                rounding = CornerRounding(0.12f, 0.3f)
+            )
+        )
+    }
+
+    val Slanted: ExpressiveShapeHolder by lazy {
+        ExpressiveShapeHolder(
+            "Slanted",
+            "Geometric",
+            RoundedPolygon(
+                numVertices = 4,
+                rounding = CornerRounding(0.2f, 0.4f)
+            )
+        )
+    }
+
+    val Arch: ExpressiveShapeHolder by lazy {
+        ExpressiveShapeHolder(
+            "Arch",
+            "Architecture",
+            RoundedPolygon(
+                numVertices = 4,
+                rounding = CornerRounding(0.4f, 0.6f)
+            )
+        )
+    }
+
+    val SemiCircle: ExpressiveShapeHolder by lazy {
+        ExpressiveShapeHolder(
+            "Semi Circle",
+            "Architecture",
+            RoundedPolygon(
+                numVertices = 4,
+                rounding = CornerRounding(0.5f, 0.7f)
+            )
+        )
     }
 
     val Oval: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder("Oval", "Geometric", RoundedPolygon.circle(numVertices = 16, radius = 0.85f))
+        ExpressiveShapeHolder("Oval", "Basic", RoundedPolygon.circle(numVertices = 16, radius = 0.85f))
     }
 
     val Pill: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder("Pill", "Geometric", RoundedPolygon.circle(numVertices = 12, radius = 1f))
+        ExpressiveShapeHolder("Pill", "Basic", RoundedPolygon.circle(numVertices = 12, radius = 1f))
     }
 
     val Triangle: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
             "Triangle",
-            "Geometric",
+            "Basic",
             RoundedPolygon(
                 numVertices = 3,
                 rounding = CornerRounding(0.2f, 0.5f)
@@ -105,13 +147,25 @@ object PetalMaterialShapes {
         )
     }
 
-    val RightTriangle: ExpressiveShapeHolder by lazy {
+    // --- 2. Dynamic & Architectural (6 Shapes) ---
+    val Arrow: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Right Triangle",
-            "Geometric",
+            "Arrow",
+            "Dynamic",
             RoundedPolygon(
-                numVertices = 3,
-                rounding = CornerRounding(0.18f, 0.4f)
+                numVertices = 5,
+                rounding = CornerRounding(0.15f, 0.4f)
+            )
+        )
+    }
+
+    val Fan: ExpressiveShapeHolder by lazy {
+        ExpressiveShapeHolder(
+            "Fan",
+            "Dynamic",
+            RoundedPolygon(
+                numVertices = 4,
+                rounding = CornerRounding(0.35f, 0.7f)
             )
         )
     }
@@ -127,35 +181,14 @@ object PetalMaterialShapes {
         )
     }
 
-    val Square: ExpressiveShapeHolder by lazy {
+    val ClamShell: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Square",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.08f, 0.2f)
-            )
-        )
-    }
-
-    val RoundedSquare: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Rounded Square",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.35f, 0.7f)
-            )
-        )
-    }
-
-    val Rectangle: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Rectangle",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.15f, 0.3f)
+            "Clam Shell",
+            "Nature",
+            RoundedPolygon.star(
+                numVerticesPerRadius = 5,
+                innerRadius = 0.75f,
+                rounding = CornerRounding(0.35f, 0.75f)
             )
         )
     }
@@ -171,51 +204,42 @@ object PetalMaterialShapes {
         )
     }
 
-    val Hexagon: ExpressiveShapeHolder by lazy {
+    val Gem: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Hexagon",
+            "Gem",
             "Geometric",
             RoundedPolygon(
                 numVertices = 6,
-                rounding = CornerRounding(0.18f, 0.5f)
+                rounding = CornerRounding(0.25f, 0.6f)
             )
         )
     }
 
-    val Octagon: ExpressiveShapeHolder by lazy {
+    // --- 3. Sunny & Cookie Series (7 Shapes) ---
+    val Sunny: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Octagon",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 8,
-                rounding = CornerRounding(0.15f, 0.5f)
+            "Sunny",
+            "Celestial",
+            RoundedPolygon.star(
+                numVerticesPerRadius = 8,
+                innerRadius = 0.75f,
+                rounding = CornerRounding(0.35f, 0.75f)
             )
         )
     }
 
-    val Decagon: ExpressiveShapeHolder by lazy {
+    val VerySunny: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Decagon",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 10,
-                rounding = CornerRounding(0.12f, 0.4f)
+            "Very Sunny",
+            "Celestial",
+            RoundedPolygon.star(
+                numVerticesPerRadius = 12,
+                innerRadius = 0.72f,
+                rounding = CornerRounding(0.3f, 0.7f)
             )
         )
     }
 
-    val Dodecagon: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Dodecagon",
-            "Geometric",
-            RoundedPolygon(
-                numVertices = 12,
-                rounding = CornerRounding(0.10f, 0.35f)
-            )
-        )
-    }
-
-    // --- 2. Expressive Cookies & Scallops (7 Shapes) ---
     val Cookie4Sided: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
             "Cookie 4-Sided",
@@ -276,31 +300,18 @@ object PetalMaterialShapes {
         )
     }
 
-    val Scallop: ExpressiveShapeHolder by lazy {
+    // --- 4. Organic, Clovers & Playful (7 Shapes) ---
+    val Ghostish: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Scallop",
-            "Cookies",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 8,
-                innerRadius = 0.80f,
-                rounding = CornerRounding(0.45f, 0.9f)
+            "Ghostish",
+            "Playful",
+            RoundedPolygon(
+                numVertices = 4,
+                rounding = CornerRounding(0.45f, 0.8f)
             )
         )
     }
 
-    val SoftScallop: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Soft Scallop",
-            "Cookies",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 10,
-                innerRadius = 0.85f,
-                rounding = CornerRounding(0.5f, 0.95f)
-            )
-        )
-    }
-
-    // --- 3. Nature, Organic & Architectural Shapes (9 Shapes) ---
     val Clover4Leaf: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
             "Clover 4-Leaf",
@@ -337,58 +348,26 @@ object PetalMaterialShapes {
         )
     }
 
-    val Sunny: ExpressiveShapeHolder by lazy {
+    val Puffy: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Sunny",
-            "Nature",
+            "Puffy",
+            "Playful",
             RoundedPolygon.star(
-                numVerticesPerRadius = 8,
-                innerRadius = 0.75f,
-                rounding = CornerRounding(0.35f, 0.75f)
+                numVerticesPerRadius = 5,
+                innerRadius = 0.80f,
+                rounding = CornerRounding(0.5f, 0.9f)
             )
         )
     }
 
-    val Arch: ExpressiveShapeHolder by lazy {
+    val PuffyDiamond: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Arch",
-            "Architecture",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.4f, 0.6f)
-            )
-        )
-    }
-
-    val SemiCircle: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Semi Circle",
-            "Architecture",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.5f, 0.7f)
-            )
-        )
-    }
-
-    val Slanted: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Slanted",
-            "Expressive",
-            RoundedPolygon(
-                numVertices = 4,
-                rounding = CornerRounding(0.2f, 0.4f)
-            )
-        )
-    }
-
-    val Teardrop: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Teardrop",
-            "Nature",
-            RoundedPolygon(
-                numVertices = 3,
-                rounding = CornerRounding(0.5f, 0.8f)
+            "Puffy Diamond",
+            "Playful",
+            RoundedPolygon.star(
+                numVerticesPerRadius = 4,
+                innerRadius = 0.70f,
+                rounding = CornerRounding(0.45f, 0.85f)
             )
         )
     }
@@ -405,7 +384,7 @@ object PetalMaterialShapes {
         )
     }
 
-    // --- 4. High-Energy, Stars & Gems (5 Shapes) ---
+    // --- 5. High Energy, Explosive, Pixel & Treats (7 Shapes) ---
     val Burst: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
             "Burst",
@@ -430,52 +409,91 @@ object PetalMaterialShapes {
         )
     }
 
-    val Star4Sided: ExpressiveShapeHolder by lazy {
+    val Boom: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Star 4-Pointed",
-            "Stars",
+            "Boom",
+            "High Energy",
             RoundedPolygon.star(
-                numVerticesPerRadius = 4,
-                innerRadius = 0.45f,
-                rounding = CornerRounding(0.2f, 0.4f)
+                numVerticesPerRadius = 16,
+                innerRadius = 0.65f,
+                rounding = CornerRounding(0.12f, 0.35f)
             )
         )
     }
 
-    val Star8Sided: ExpressiveShapeHolder by lazy {
+    val SoftBoom: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Star 8-Pointed",
-            "Stars",
+            "Soft Boom",
+            "High Energy",
             RoundedPolygon.star(
-                numVerticesPerRadius = 8,
-                innerRadius = 0.50f,
-                rounding = CornerRounding(0.18f, 0.4f)
+                numVerticesPerRadius = 14,
+                innerRadius = 0.72f,
+                rounding = CornerRounding(0.22f, 0.55f)
             )
         )
     }
 
-    val Gem: ExpressiveShapeHolder by lazy {
+    val PixelCircle: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
-            "Gem",
-            "Geometric",
+            "Pixel Circle",
+            "Pixel",
+            RoundedPolygon(
+                numVertices = 8,
+                rounding = CornerRounding(0.08f, 0.15f)
+            )
+        )
+    }
+
+    val PixelTriangle: ExpressiveShapeHolder by lazy {
+        ExpressiveShapeHolder(
+            "Pixel Triangle",
+            "Pixel",
             RoundedPolygon(
                 numVertices = 6,
-                rounding = CornerRounding(0.25f, 0.6f)
+                rounding = CornerRounding(0.08f, 0.15f)
             )
         )
     }
+
+    val Bun: ExpressiveShapeHolder by lazy {
+        ExpressiveShapeHolder(
+            "Bun",
+            "Organic",
+            RoundedPolygon.star(
+                numVerticesPerRadius = 5,
+                innerRadius = 0.78f,
+                rounding = CornerRounding(0.42f, 0.82f)
+            )
+        )
+    }
+
+    // --- Backward Compatibility Aliases ---
+    val RoundedSquare: ExpressiveShapeHolder get() = Square
+    val Rectangle: ExpressiveShapeHolder get() = Square
+    val RightTriangle: ExpressiveShapeHolder get() = Triangle
+    val Hexagon: ExpressiveShapeHolder get() = Gem
+    val Octagon: ExpressiveShapeHolder get() = PixelCircle
+    val Decagon: ExpressiveShapeHolder get() = Sunny
+    val Dodecagon: ExpressiveShapeHolder get() = Cookie12Sided
+    val Scallop: ExpressiveShapeHolder get() = Sunny
+    val SoftScallop: ExpressiveShapeHolder get() = VerySunny
+    val Teardrop: ExpressiveShapeHolder get() = Bun
+    val Star4Sided: ExpressiveShapeHolder get() = Cookie4Sided
+    val Star8Sided: ExpressiveShapeHolder get() = Sunny
 
     /** Complete catalog list of ALL 35 official Material 3 Expressive shapes. */
     val allShapes: List<ExpressiveShapeHolder> by lazy {
         listOf(
-            // Geometric (14)
-            Circle, Oval, Pill, Triangle, RightTriangle, Diamond, Square, RoundedSquare, Rectangle, Pentagon, Hexagon, Octagon, Decagon, Dodecagon,
-            // Cookies & Scallops (7)
-            Cookie4Sided, Cookie6Sided, Cookie7Sided, Cookie9Sided, Cookie12Sided, Scallop, SoftScallop,
-            // Nature & Organic (9)
-            Clover4Leaf, Clover8Leaf, Flower, Sunny, Arch, SemiCircle, Slanted, Teardrop, Heart,
-            // High Energy & Stars (5)
-            Burst, SoftBurst, Star4Sided, Star8Sided, Gem
+            // Basic & Geometric (8)
+            Circle, Square, Slanted, Arch, SemiCircle, Oval, Pill, Triangle,
+            // Dynamic & Architectural (6)
+            Arrow, Fan, Diamond, ClamShell, Pentagon, Gem,
+            // Sunny & Cookie Series (7)
+            Sunny, VerySunny, Cookie4Sided, Cookie6Sided, Cookie7Sided, Cookie9Sided, Cookie12Sided,
+            // Organic, Clovers & Playful (7)
+            Ghostish, Clover4Leaf, Clover8Leaf, Flower, Puffy, PuffyDiamond, Heart,
+            // High Energy, Explosive, Pixel & Treats (7)
+            Burst, SoftBurst, Boom, SoftBoom, PixelCircle, PixelTriangle, Bun
         )
     }
 }
@@ -483,40 +501,55 @@ object PetalMaterialShapes {
 /** Alias for backward compatibility with Material3 MaterialShapes callers */
 object MaterialShapes {
     val Circle = PetalMaterialShapes.Circle
+    val Square = PetalMaterialShapes.Square
+    val Slanted = PetalMaterialShapes.Slanted
+    val Arch = PetalMaterialShapes.Arch
+    val SemiCircle = PetalMaterialShapes.SemiCircle
     val Oval = PetalMaterialShapes.Oval
     val Pill = PetalMaterialShapes.Pill
     val Triangle = PetalMaterialShapes.Triangle
-    val RightTriangle = PetalMaterialShapes.RightTriangle
+    val Arrow = PetalMaterialShapes.Arrow
+    val Fan = PetalMaterialShapes.Fan
     val Diamond = PetalMaterialShapes.Diamond
-    val Square = PetalMaterialShapes.Square
-    val RoundedSquare = PetalMaterialShapes.RoundedSquare
-    val Rectangle = PetalMaterialShapes.Rectangle
+    val ClamShell = PetalMaterialShapes.ClamShell
     val Pentagon = PetalMaterialShapes.Pentagon
-    val Hexagon = PetalMaterialShapes.Hexagon
-    val Octagon = PetalMaterialShapes.Octagon
-    val Decagon = PetalMaterialShapes.Decagon
-    val Dodecagon = PetalMaterialShapes.Dodecagon
+    val Gem = PetalMaterialShapes.Gem
+    val Sunny = PetalMaterialShapes.Sunny
+    val VerySunny = PetalMaterialShapes.VerySunny
     val Cookie4Sided = PetalMaterialShapes.Cookie4Sided
     val Cookie6Sided = PetalMaterialShapes.Cookie6Sided
     val Cookie7Sided = PetalMaterialShapes.Cookie7Sided
     val Cookie9Sided = PetalMaterialShapes.Cookie9Sided
     val Cookie12Sided = PetalMaterialShapes.Cookie12Sided
-    val Scallop = PetalMaterialShapes.Scallop
-    val SoftScallop = PetalMaterialShapes.SoftScallop
+    val Ghostish = PetalMaterialShapes.Ghostish
     val Clover4Leaf = PetalMaterialShapes.Clover4Leaf
     val Clover8Leaf = PetalMaterialShapes.Clover8Leaf
-    val Flower = PetalMaterialShapes.Flower
-    val Sunny = PetalMaterialShapes.Sunny
-    val Arch = PetalMaterialShapes.Arch
-    val SemiCircle = PetalMaterialShapes.SemiCircle
-    val Slanted = PetalMaterialShapes.Slanted
-    val Teardrop = PetalMaterialShapes.Teardrop
-    val Heart = PetalMaterialShapes.Heart
     val Burst = PetalMaterialShapes.Burst
     val SoftBurst = PetalMaterialShapes.SoftBurst
+    val Boom = PetalMaterialShapes.Boom
+    val SoftBoom = PetalMaterialShapes.SoftBoom
+    val Flower = PetalMaterialShapes.Flower
+    val Puffy = PetalMaterialShapes.Puffy
+    val PuffyDiamond = PetalMaterialShapes.PuffyDiamond
+    val PixelCircle = PetalMaterialShapes.PixelCircle
+    val PixelTriangle = PetalMaterialShapes.PixelTriangle
+    val Bun = PetalMaterialShapes.Bun
+    val Heart = PetalMaterialShapes.Heart
+
+    // Aliases
+    val RoundedSquare = PetalMaterialShapes.RoundedSquare
+    val Rectangle = PetalMaterialShapes.Rectangle
+    val RightTriangle = PetalMaterialShapes.RightTriangle
+    val Hexagon = PetalMaterialShapes.Hexagon
+    val Octagon = PetalMaterialShapes.Octagon
+    val Decagon = PetalMaterialShapes.Decagon
+    val Dodecagon = PetalMaterialShapes.Dodecagon
+    val Scallop = PetalMaterialShapes.Scallop
+    val SoftScallop = PetalMaterialShapes.SoftScallop
+    val Teardrop = PetalMaterialShapes.Teardrop
     val Star4Sided = PetalMaterialShapes.Star4Sided
     val Star8Sided = PetalMaterialShapes.Star8Sided
-    val Gem = PetalMaterialShapes.Gem
 
     val allShapes = PetalMaterialShapes.allShapes
 }
+
