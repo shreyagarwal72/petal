@@ -109,10 +109,12 @@ app/build/outputs/apk/debug/app-debug.apk
 
 Petal Browser is built on the shoulders of giants. We express our deepest gratitude to:
 - **[FOSS Browser](https://github.com/scoute-dich/browser)** by *scoute-dich* — Core Android browser engine & clean WebKit architecture.
+- **[Zenith](https://github.com/1372Slash/Zenith)** by *1372Slash* — Material Design 3 Expressive motion physics & digital wellbeing framework.
+- **[LastWave](https://github.com/duxtami/LastWave-native)** by *duxtami* — Hi-Res lossless audio streaming architecture & Material 3 design.
 - **[Aurora Store](https://github.com/whyorean/AuroraStore)** by *whyorean (Rahul Patel)* — Modern Material design patterns & elegant app architecture.
-- **[RvSystem-Monitor](https://github.com/duxtami/RvSystem-Monitor)** by *duxtami (LastWave-native)* — Predictive back physics & depth blur framework.
-- **[Ever-Haptics](https://github.com/duxtami/Ever-Haptics)** by *duxtami (LastWave-native)* — Waveform haptic vibration synthesis.
-- **[PixelPlayer](https://github.com/duxtami/PixelPlayer)** by *duxtami (LastWave-native)* — Dynamic palette styling and morphing squircle motion framework.
+- **[RvSystem-Monitor](https://github.com/Rve27/RvSystem-Monitor)** by *Rve27* — Real-time system monitoring & Compose hardware insights.
+- **[Ever-Haptics](https://github.com/hari161008/Ever-Haptics)** by *hari161008* — Waveform haptic vibration synthesis & tactile interaction.
+- **[PixelPlayer](https://github.com/PixelPlayerHQ/PixelPlayer)** by *PixelPlayerHQ* — Dynamic palette styling and morphing squircle motion framework.
 - **[Fetch](https://github.com/tonyofrancis/Fetch)** by *tonyofrancis* — Multi-threaded background download engine.
 - **[Coil](https://github.com/coil-kt/coil)** by *coil-kt* — Image and favicon caching pipeline.
 - **[Material 3 Expressive](https://m3.material.io)** by *Google Android Jetpack Team* — Expressive component geometry and dynamic color palettes.
