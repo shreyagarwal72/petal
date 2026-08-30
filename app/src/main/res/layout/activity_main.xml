@@ -29,12 +29,12 @@
             android:layout_height="wrap_content" />
     </RelativeLayout>
 
-    <!-- Main Web Content Container: anchored directly below the address bar, independent of the progress bar's size -->
+    <!-- Main Web Content Container: starts from top by default when address bar is GONE (home screen), and adjusted programmatically in applyAddressBarPosition() when address bar is shown -->
     <com.petal.browser.ui.components.PullToRefreshFrameLayout
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/compose_address_bar"
+        android:layout_alignParentTop="true"
         android:layout_above="@id/bottom_nav_container"/>
 
     <!-- Fancy Rippling Wavy Top Loading Progress Line: now a true overlay drawn AFTER main_content, so it never gets painted over -->
