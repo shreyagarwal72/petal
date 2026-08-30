@@ -158,23 +158,12 @@ fun PetalTabGridSwitcher(
     fun requestOptimisticClose(tab: PetalTabItem) {
         if (tab.id in pendingRemovalIds) return
         pendingRemovalIds.add(tab.id)
+        onTabClose(tab)
         coroutineScope.launch {
-            val result = snackbarHostState.showSnackbar(
+            snackbarHostState.showSnackbar(
                 message = "Closed ${tab.title.ifBlank { "Tab" }}",
-                actionLabel = "Undo",
                 duration = SnackbarDuration.Short
             )
-            if (result == SnackbarResult.ActionPerformed) {
-                // Undo: the tab was never actually closed, just visually hidden - restore it.
-                pendingRemovalIds.remove(tab.id)
-            } else if (tab.id in pendingRemovalIds) {
-                // Snackbar timed out without Undo: commit the close for real. The
-                // membership check guards against double-closing a tab that
-                // commitPendingRemovals() already force-closed while this snackbar was
-                // still showing (e.g. the user tapped + before the timeout).
-                onTabClose(tab)
-                pendingRemovalIds.remove(tab.id)
-            }
         }
     }
 

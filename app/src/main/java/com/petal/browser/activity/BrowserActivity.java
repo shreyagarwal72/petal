@@ -1696,11 +1696,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (tab_container != null && controller.getAlbumView() != null) {
                 tab_container.removeView(controller.getAlbumView());
             }
+            if (controller instanceof NinjaWebView) {
+                ((NinjaWebView) controller).destroy();
+            }
             boolean isClosingCurrent = (controller == currentAlbumController);
             BrowserContainer.remove(controller);
             com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
             if (isClosingCurrent && BrowserContainer.size() > 0) {
                 showAlbum(BrowserContainer.get(Math.max(0, BrowserContainer.size() - 1)));
+            } else if (BrowserContainer.size() == 0) {
+                currentAlbumController = null;
+                ninjaWebView = null;
             }
             updatePersistentBottomNav();
             saveOpenedTabs();
@@ -2897,7 +2903,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 },
                 () -> {
+                    for (AlbumController album : BrowserContainer.list()) {
+                        if (album != null) {
+                            if (tab_container != null && album.getAlbumView() != null) {
+                                tab_container.removeView(album.getAlbumView());
+                            }
+                            if (album instanceof NinjaWebView) {
+                                ((NinjaWebView) album).destroy();
+                            }
+                        }
+                    }
                     BrowserContainer.clear();
+                    com.petal.browser.unit.TabThumbnailCache.clear();
+                    com.petal.browser.unit.TabSessionManager.clearSession(BrowserActivity.this);
+                    sp.edit().remove("openTabs").apply();
                     addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
                     saveOpenedTabs();
                     return kotlin.Unit.INSTANCE;
@@ -3832,6 +3851,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
     public void saveOpenedTabs() {
+        if (BrowserContainer.size() == 0) {
+            sp.edit().remove("openTabs").apply();
+            com.petal.browser.unit.TabSessionManager.clearSession(this);
+            return;
+        }
         ArrayList<String> openTabs = new ArrayList<>();
         for (int i = 0; i < BrowserContainer.size(); i++) {
             if (currentAlbumController == BrowserContainer.get(i))
