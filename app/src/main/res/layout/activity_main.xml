@@ -29,13 +29,13 @@
             android:layout_height="wrap_content" />
     </RelativeLayout>
 
-    <!-- Main Web Content Container: starts from top by default when address bar is GONE (home screen), and adjusted programmatically in applyAddressBarPosition() when address bar is shown -->
+    <!-- Main Web Content Container: fills viewport (top and bottom aligned), and dynamically offset by address bar / bottom bar via paddings and layout rules -->
     <com.petal.browser.ui.components.PullToRefreshFrameLayout
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentTop="true"
-        android:layout_above="@id/bottom_nav_container"/>
+        android:layout_alignParentBottom="true"/>
 
     <!-- Fancy Rippling Wavy Top Loading Progress Line: now a true overlay drawn AFTER main_content, so it never gets painted over -->
     <androidx.compose.ui.platform.ComposeView
