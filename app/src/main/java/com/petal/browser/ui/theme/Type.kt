@@ -300,24 +300,14 @@ fun petalTypography(
             val file = if (validPath != null) java.io.File(validPath) else null
 
             if (file != null && file.exists() && file.canRead()) {
-                val displayFont = try {
-                    FontFamily(Font(file, variationSettings = customFontSettings.display.toVariationSettings(), weight = FontWeight(customFontSettings.display.weight.toInt().coerceIn(1, 1000))))
+                val customFont = try {
+                    FontFamily(Font(file))
                 } catch (_: Throwable) {
                     try { FontFamily(android.graphics.Typeface.createFromFile(file)) } catch (_: Throwable) { null }
                 }
-                val headlineFont = try {
-                    FontFamily(Font(file, variationSettings = customFontSettings.headline.toVariationSettings(), weight = FontWeight(customFontSettings.headline.weight.toInt().coerceIn(1, 1000))))
-                } catch (_: Throwable) {
-                    displayFont
-                }
-                val bodyFont = try {
-                    FontFamily(Font(file, variationSettings = customFontSettings.body.toVariationSettings(), weight = FontWeight(customFontSettings.body.weight.toInt().coerceIn(1, 1000))))
-                } catch (_: Throwable) {
-                    displayFont
-                }
 
-                if (displayFont != null) {
-                    buildTypography(Tiers(displayFont, headlineFont ?: displayFont, headlineFont ?: displayFont, bodyFont ?: displayFont, bodyFont ?: displayFont))
+                if (customFont != null) {
+                    buildTypography(Tiers(customFont, customFont, customFont, customFont, customFont))
                 } else {
                     petalTypography(AppFont.PETAL, fontWidth, fontWeight, fontRoundness, gsFlexSettings)
                 }
