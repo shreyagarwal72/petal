@@ -111,14 +111,12 @@ object PetalAccessibilityEngine {
                         var meta = document.querySelector('meta[name="viewport"]');
                         if (meta) {
                             var content = meta.getAttribute('content') || '';
-                            if (content.indexOf('user-scalable=no') !== -1 || content.indexOf('maximum-scale=1') !== -1 || content.indexOf('user-scalable=0') !== -1) {
-                                meta.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, user-scalable=yes');
+                            var updated = content
+                                .replace(/user-scalable\s*=\s*(no|0)/gi, 'user-scalable=yes')
+                                .replace(/maximum-scale\s*=\s*(1(\.0+)?)(\b|\s*,)/gi, 'maximum-scale=5.0$3');
+                            if (updated !== content) {
+                                meta.setAttribute('content', updated);
                             }
-                        } else {
-                            var m = document.createElement('meta');
-                            m.name = 'viewport';
-                            m.content = 'width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, user-scalable=yes';
-                            document.head.appendChild(m);
                         }
                     } catch(e) {}
                 })();
