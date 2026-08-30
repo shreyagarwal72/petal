@@ -177,8 +177,6 @@ fun PetalAppLockScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    val animatedShapeIndex by remember { mutableIntStateOf(0) }
-                    val headerShape: Shape = ExpressivePasswordShapes[animatedShapeIndex % ExpressivePasswordShapes.size].toShape()
                     val avatarScale = remember { androidx.compose.animation.core.Animatable(0.8f) }
                     LaunchedEffect(isUnlockedSuccess) {
                         avatarScale.animateTo(
@@ -190,26 +188,28 @@ fun PetalAppLockScreen(
                         )
                     }
 
-                    Box(
-                        contentAlignment = Alignment.Center,
+                    Surface(
+                        shape = com.petal.browser.ui.theme.PetalMaterialShapes.Bun.toShape(),
                         modifier = Modifier
-                            .size(96.dp)
-                            .scale(avatarScale.value)
-                            .clip(headerShape)
-                            .background(
-                                if (isUnlockedSuccess) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceContainerHighest
-                            )
+                            .size(112.dp)
+                            .scale(avatarScale.value),
+                        color = if (isUnlockedSuccess) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
+                        tonalElevation = 6.dp
                     ) {
-                        Icon(
-                            imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
-                            contentDescription = "App Lock",
-                            tint = if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(48.dp)
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
+                                contentDescription = "App Lock",
+                                tint = if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
                         text = if (isUnlockedSuccess) "Unlocked Successfully" else "App Protected",
