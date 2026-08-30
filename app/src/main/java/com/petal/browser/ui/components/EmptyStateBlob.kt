@@ -131,7 +131,7 @@ fun BookmarksEmptyIllustration(
                 verticalArrangement = Arrangement.Center
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.StarRounded,
+                    imageVector = Icons.Rounded.Star,
                     contentDescription = null,
                     tint = contentColor,
                     modifier = Modifier.size(24.dp)
