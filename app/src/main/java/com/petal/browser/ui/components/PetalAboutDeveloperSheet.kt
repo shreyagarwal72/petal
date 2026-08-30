@@ -923,12 +923,34 @@ object PetalCreditsBridge {
                         com.petal.browser.predictive.PetalContentSnapshot.clear()
                     }
                 }
-                val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
-                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                val isAmoled = sp.getBoolean("sp_amoled", false)
+                val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
+                var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
+                var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
+                var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+                var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
+                var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
+                var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
+                var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
+
+                DisposableEffect(sp) {
+                    val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                        when (key) {
+                            "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                            "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                            "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
+                            "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                            "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                            "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
+                            "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
+                            "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
+                        }
+                    }
+                    sp.registerOnSharedPreferenceChangeListener(listener)
+                    onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+                }
 
                 val appFont = remember(fontName) {
                     com.petal.browser.ui.theme.AppFont.fromName(fontName)
@@ -938,11 +960,15 @@ object PetalCreditsBridge {
                 }
 
                 PetalExpressiveTheme(
-                    dynamicColor = dynamicColor,
+                    paletteId = currentPaletteId,
                     useAmoled = isAmoled,
+                    dynamicColor = useDynamic,
+                    expressiveColors = isExpressiveColors,
                     appFont = appFont,
                     colorStyle = colorStyle,
-                    paletteId = paletteId
+                    fontWidth = fontWidthVal,
+                    fontWeight = fontWeightVal,
+                    fontRoundness = fontRoundnessVal
                 ) {
                     PetalCreditsSheetContent(
                         backgroundSnapshot = snapshotBitmap,
