@@ -726,12 +726,12 @@ private fun ShortcutTile(
     var isImageError by remember(shortcut.url) { mutableStateOf(false) }
 
     // Pick a guaranteed unique Material 3 Expressive shape across all homescreen tiles
-    val totalShapes = PetalMaterialShapes.allShapes.size
+    val totalShapes = PetalMaterialShapes.homescreenShapes.size
     val uniqueShapeIndex = remember(index) {
         (index % totalShapes)
     }
     val tileShape = remember(uniqueShapeIndex) {
-        PetalMaterialShapes.allShapes[uniqueShapeIndex].toShape()
+        PetalMaterialShapes.homescreenShapes[uniqueShapeIndex].toShape()
     }
 
     Column(
@@ -808,9 +808,9 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
             .homeLaunchEntrance(3 + index)
             .clickable(onClick = onClick)
     ) {
-        val totalShapes = PetalMaterialShapes.allShapes.size
+        val totalShapes = PetalMaterialShapes.homescreenShapes.size
         val addShapeIndex = remember(index) { index % totalShapes }
-        val addTileShape = remember(addShapeIndex) { PetalMaterialShapes.allShapes[addShapeIndex].toShape() }
+        val addTileShape = remember(addShapeIndex) { PetalMaterialShapes.homescreenShapes[addShapeIndex].toShape() }
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -1239,10 +1239,10 @@ private fun EditShortcutDialog(
                 // Live Preview with automatic thumbnail showcasing Material 3 Expressive shapes
                 val previewShapeIndex = remember(nameText, urlText) {
                     val hash = (nameText.hashCode() * 31 + urlText.hashCode()).let { if (it == Int.MIN_VALUE) 0 else Math.abs(it) }
-                    hash % PetalMaterialShapes.allShapes.size
+                    hash % PetalMaterialShapes.homescreenShapes.size
                 }
                 val previewTileShape = remember(previewShapeIndex) {
-                    PetalMaterialShapes.allShapes[previewShapeIndex].toShape()
+                    PetalMaterialShapes.homescreenShapes[previewShapeIndex].toShape()
                 }
 
                 Row(

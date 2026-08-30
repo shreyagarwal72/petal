@@ -231,6 +231,18 @@ object PetalMaterialShapes {
         )
     }
 
+    val Sun: ExpressiveShapeHolder by lazy {
+        ExpressiveShapeHolder(
+            "Sun",
+            "Celestial",
+            RoundedPolygon.star(
+                numVerticesPerRadius = 8,
+                innerRadius = 0.58f,
+                rounding = CornerRounding(0.18f, 0.45f)
+            )
+        )
+    }
+
     val VerySunny: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder(
             "Very Sunny",
@@ -287,6 +299,18 @@ object PetalMaterialShapes {
                 numVerticesPerRadius = 9,
                 innerRadius = 0.86f,
                 rounding = CornerRounding(0.28f, 0.8f)
+            )
+        )
+    }
+
+    val Cookie10Sided: ExpressiveShapeHolder by lazy {
+        ExpressiveShapeHolder(
+            "Cookie 10-Sided",
+            "Cookies",
+            RoundedPolygon.star(
+                numVerticesPerRadius = 10,
+                innerRadius = 0.87f,
+                rounding = CornerRounding(0.26f, 0.8f)
             )
         )
     }
@@ -484,15 +508,44 @@ object PetalMaterialShapes {
     val Star4Sided: ExpressiveShapeHolder get() = Cookie4Sided
     val Star8Sided: ExpressiveShapeHolder get() = Sunny
 
-    /** Complete catalog list of ALL 35 official Material 3 Expressive shapes. */
+    /**
+     * Curated list of 17 distinct Material 3 Expressive shapes for homescreen icon tiles
+     * ensuring every homescreen shortcut icon tile has a completely unique shape:
+     * 1. Arrow, 2. Fan, 3. Diamond, 4. Clamshell, 5. Pentagon, 6. Gem, 7. Very Sunny,
+     * 8. Sunny, 9. 4-Sided Cookie, 10. 6-Sided Cookie, 11. 7-Sided Cookie, 12. 9-Sided Cookie,
+     * 13. 10-Sided Cookie, 14. 4-Leaf Clover, 15. Flower, 16. Burst, 17. Sun.
+     */
+    val homescreenShapes: List<ExpressiveShapeHolder> by lazy {
+        listOf(
+            Arrow,
+            Fan,
+            Diamond,
+            ClamShell,
+            Pentagon,
+            Gem,
+            VerySunny,
+            Sunny,
+            Cookie4Sided,
+            Cookie6Sided,
+            Cookie7Sided,
+            Cookie9Sided,
+            Cookie10Sided,
+            Clover4Leaf,
+            Flower,
+            Burst,
+            Sun
+        )
+    }
+
+    /** Complete catalog list of ALL official Material 3 Expressive shapes. */
     val allShapes: List<ExpressiveShapeHolder> by lazy {
         listOf(
             // Basic & Geometric (8)
             Circle, Square, Slanted, Arch, SemiCircle, Oval, Pill, Triangle,
             // Dynamic & Architectural (6)
             Arrow, Fan, Diamond, ClamShell, Pentagon, Gem,
-            // Sunny & Cookie Series (7)
-            Sunny, VerySunny, Cookie4Sided, Cookie6Sided, Cookie7Sided, Cookie9Sided, Cookie12Sided,
+            // Sunny & Cookie Series (9)
+            Sunny, Sun, VerySunny, Cookie4Sided, Cookie6Sided, Cookie7Sided, Cookie9Sided, Cookie10Sided, Cookie12Sided,
             // Organic, Clovers & Playful (7)
             Ghostish, Clover4Leaf, Clover8Leaf, Flower, Puffy, PuffyDiamond, Heart,
             // High Energy, Explosive, Pixel & Treats (7)
@@ -518,11 +571,13 @@ object MaterialShapes {
     val Pentagon = PetalMaterialShapes.Pentagon
     val Gem = PetalMaterialShapes.Gem
     val Sunny = PetalMaterialShapes.Sunny
+    val Sun = PetalMaterialShapes.Sun
     val VerySunny = PetalMaterialShapes.VerySunny
     val Cookie4Sided = PetalMaterialShapes.Cookie4Sided
     val Cookie6Sided = PetalMaterialShapes.Cookie6Sided
     val Cookie7Sided = PetalMaterialShapes.Cookie7Sided
     val Cookie9Sided = PetalMaterialShapes.Cookie9Sided
+    val Cookie10Sided = PetalMaterialShapes.Cookie10Sided
     val Cookie12Sided = PetalMaterialShapes.Cookie12Sided
     val Ghostish = PetalMaterialShapes.Ghostish
     val Clover4Leaf = PetalMaterialShapes.Clover4Leaf
@@ -553,6 +608,7 @@ object MaterialShapes {
     val Star4Sided = PetalMaterialShapes.Star4Sided
     val Star8Sided = PetalMaterialShapes.Star8Sided
 
+    val homescreenShapes = PetalMaterialShapes.homescreenShapes
     val allShapes = PetalMaterialShapes.allShapes
 }
 
