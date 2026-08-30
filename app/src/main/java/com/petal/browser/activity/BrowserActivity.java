@@ -1359,10 +1359,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     public void onScrollDown() {
                         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
                         if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
-                            bottomNavContainer.animate()
-                                .translationY(bottomNavContainer.getHeight())
-                                .setDuration(220)
-                                .start();
+                            springTranslateY(bottomNavContainer, bottomNavContainer.getHeight(), androidx.dynamicanimation.animation.SpringForce.STIFFNESS_MEDIUM, androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY);
                         }
                     }
 
@@ -1370,10 +1367,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     public void onScrollUp() {
                         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
                         if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
-                            bottomNavContainer.animate()
-                                .translationY(0f)
-                                .setDuration(220)
-                                .start();
+                            springTranslateY(bottomNavContainer, 0f, androidx.dynamicanimation.animation.SpringForce.STIFFNESS_MEDIUM, androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY);
                         }
                     }
                 });
