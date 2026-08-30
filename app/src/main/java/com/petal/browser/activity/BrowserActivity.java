@@ -3136,6 +3136,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void showCreditsScreen() {
+        showCreditsScreen(null);
+    }
+
+    public void showCreditsScreen(final Runnable onBackAction) {
         try {
             captureBrowserMainPreview();
             contentFrame.removeAllViews();
@@ -3152,7 +3156,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View creditsView = com.petal.browser.ui.components.PetalCreditsBridge.createCreditsView(
                 BrowserActivity.this,
                 () -> {
-                    showAlbum(currentAlbumController);
+                    if (onBackAction != null) {
+                        onBackAction.run();
+                    } else {
+                        showAlbum(currentAlbumController);
+                    }
                     return kotlin.Unit.INSTANCE;
                 }
             );

@@ -2868,7 +2868,16 @@ fun PetalSettingsScreen(
                                         try {
                                             if (url == "petal://credits") {
                                                 (context as? androidx.activity.ComponentActivity)?.let { act ->
-                                                    com.petal.browser.ui.components.PetalCreditsBridge.show(act)
+                                                    val browserActivity = act as? com.petal.browser.activity.BrowserActivity
+                                                    if (browserActivity != null) {
+                                                        browserActivity.showCreditsScreen {
+                                                            browserActivity.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.DEVELOPER)
+                                                        }
+                                                    } else {
+                                                        com.petal.browser.ui.components.PetalCreditsBridge.show(act) {
+                                                            onBackPress()
+                                                        }
+                                                    }
                                                 }
                                             } else {
                                                 com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(url))

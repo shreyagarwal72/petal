@@ -239,7 +239,9 @@ fun PetalAboutDeveloperSheetContent(
                                 try {
                                     if (url == "petal://credits") {
                                         (context as? ComponentActivity)?.let { act ->
-                                            PetalCreditsBridge.show(act)
+                                            PetalCreditsBridge.show(act) {
+                                                PetalAboutDeveloperBridge.show(act)
+                                            }
                                         }
                                     } else {
                                         val activity = context as? com.petal.browser.activity.BrowserActivity
@@ -888,7 +890,7 @@ object PetalCreditsBridge {
     fun show(activity: ComponentActivity, onDismiss: Runnable? = null) {
         val browserActivity = activity as? com.petal.browser.activity.BrowserActivity
         if (browserActivity != null) {
-            browserActivity.showCreditsScreen()
+            browserActivity.showCreditsScreen(onDismiss)
             return
         }
         try {
