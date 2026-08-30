@@ -63,6 +63,8 @@ fun ProfileAvatarDisplay(
     modifier: Modifier = Modifier
 ) {
     val size = sizeDp.dp
+    val context = LocalContext.current
+
     Box(
         modifier = modifier
             .size(size)
@@ -79,34 +81,37 @@ fun ProfileAvatarDisplay(
                     contentScale = ContentScale.Crop
                 )
             }
-            profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty() -> {
-                val context = LocalContext.current
+            profile.avatarType == AvatarType.GALLERY_URI -> {
                 val avatarFile = remember(profile.customAvatarUri, profile.avatarTimestamp) {
-                    java.io.File(context.filesDir, "petal_user_avatar.png")
+                    val file = java.io.File(context.filesDir, "petal_user_avatar.png")
+                    if (file.exists() && file.length() > 0) file else null
                 }
-                val imageModel = remember(profile.customAvatarUri, profile.avatarTimestamp, avatarFile.lastModified(), avatarFile.length()) {
-                    if (avatarFile.exists() && avatarFile.length() > 0) {
+
+                val imageSource: Any? = avatarFile ?: profile.customAvatarUri
+
+                if (imageSource != null) {
+                    val imageModel = remember(imageSource, profile.avatarTimestamp, avatarFile?.lastModified(), avatarFile?.length()) {
                         coil.request.ImageRequest.Builder(context)
-                            .data(avatarFile)
-                            .memoryCacheKey("avatar_${profile.avatarTimestamp}_${avatarFile.lastModified()}_${avatarFile.length()}")
-                            .diskCacheKey("avatar_${profile.avatarTimestamp}_${avatarFile.lastModified()}_${avatarFile.length()}")
-                            .crossfade(true)
-                            .build()
-                    } else {
-                        coil.request.ImageRequest.Builder(context)
-                            .data(profile.customAvatarUri)
-                            .memoryCacheKey("avatar_${profile.avatarTimestamp}")
-                            .diskCacheKey("avatar_${profile.avatarTimestamp}")
+                            .data(imageSource)
+                            .memoryCacheKey("avatar_${profile.avatarTimestamp}_${avatarFile?.lastModified() ?: 0}_${avatarFile?.length() ?: 0}")
+                            .diskCacheKey("avatar_${profile.avatarTimestamp}_${avatarFile?.lastModified() ?: 0}_${avatarFile?.length() ?: 0}")
                             .crossfade(true)
                             .build()
                     }
+                    AsyncImage(
+                        model = imageModel,
+                        contentDescription = "Custom Photo",
+                        modifier = Modifier.size(size).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    val initial = profile.displayName.trim().take(1).ifEmpty { "P" }.uppercase()
+                    Text(
+                        text = initial,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
-                AsyncImage(
-                    model = imageModel,
-                    contentDescription = "Custom Photo",
-                    modifier = Modifier.size(size).clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
             }
             profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == "app_icon" -> {
                 AsyncImage(
@@ -312,6 +317,7 @@ private fun RenderUserProfileContent(
 
     var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
     var showCropDialog by remember { mutableStateOf(false) }
+    var showMediaPickerSheet by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -336,6 +342,27 @@ private fun RenderUserProfileContent(
                 pendingCropUri = uri
                 showCropDialog = true
             }
+        }
+    }
+
+    val requestMediaPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val granted = results.values.any { it }
+        if (granted) {
+            showMediaPickerSheet = true
+        } else {
+            // If permissions denied, fall back seamlessly to system file picker
+            galleryLauncher.launch("image/*")
+        }
+    }
+
+    fun openAvatarMediaPicker() {
+        if (com.petal.browser.media.PetalMediaPickerManager.hasMediaPermissions(context)) {
+            showMediaPickerSheet = true
+        } else {
+            val perms = com.petal.browser.media.PetalMediaPickerManager.getRequiredMediaPermissions()
+            requestMediaPermissionLauncher.launch(perms)
         }
     }
 
@@ -393,7 +420,7 @@ private fun RenderUserProfileContent(
                                 pendingCropUri = Uri.fromFile(permanentFile)
                                 showCropDialog = true
                             } else {
-                                galleryLauncher.launch("image/*")
+                                openAvatarMediaPicker()
                             }
                         }
                     ) {
@@ -474,7 +501,7 @@ private fun RenderUserProfileContent(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Gallery / Crop Button
+                        // Gallery / Built-in Media Picker & Crop Button
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.secondaryContainer,
@@ -482,12 +509,12 @@ private fun RenderUserProfileContent(
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                             modifier = Modifier
                                 .size(52.dp)
-                                .bouncyClickable { galleryLauncher.launch("image/*") }
+                                .bouncyClickable { openAvatarMediaPicker() }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Rounded.AddPhotoAlternate,
-                                    contentDescription = "Select from Gallery & Crop",
+                                    contentDescription = "Select Photo & Crop",
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -991,6 +1018,51 @@ private fun RenderUserProfileContent(
                         }
                     }
                 )
+            }
+
+            // Built-in In-App Photo & Video Media Picker Bottom Sheet
+            if (showMediaPickerSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showMediaPickerSheet = false },
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    dragHandle = null
+                ) {
+                    com.petal.browser.media.PetalMediaPickerBottomSheet(
+                        allowMultiple = false,
+                        acceptTypes = arrayOf("image/*"),
+                        onMediaSelected = { uris ->
+                            showMediaPickerSheet = false
+                            val uri = uris.firstOrNull()
+                            if (uri != null) {
+                                try {
+                                    val tempFile = java.io.File(context.cacheDir, "temp_avatar_crop.png")
+                                    context.contentResolver.openInputStream(uri)?.use { input ->
+                                        java.io.FileOutputStream(tempFile).use { output ->
+                                            input.copyTo(output)
+                                        }
+                                    }
+                                    if (tempFile.exists() && tempFile.length() > 0) {
+                                        pendingCropUri = Uri.fromFile(tempFile)
+                                        showCropDialog = true
+                                    } else {
+                                        pendingCropUri = uri
+                                        showCropDialog = true
+                                    }
+                                } catch (e: Exception) {
+                                    android.util.Log.e("PetalProfile", "Error caching media picker avatar uri", e)
+                                    pendingCropUri = uri
+                                    showCropDialog = true
+                                }
+                            }
+                        },
+                        onDismissRequest = { showMediaPickerSheet = false },
+                        onBrowseSystemFiles = {
+                            showMediaPickerSheet = false
+                            galleryLauncher.launch("image/*")
+                        }
+                    )
+                }
             }
         }
     }
