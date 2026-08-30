@@ -52,6 +52,7 @@ object PetalLensManager {
             val intent = Intent("lens.intent.action.LENS_ATTACHMENT").apply {
                 setPackage("com.google.android.googlequicksearchbox")
                 setDataAndType(imageUri, "image/*")
+                clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -59,8 +60,9 @@ object PetalLensManager {
         } catch (_: Exception) {
             try {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    setType("image/*")
+                    type = "image/*"
                     putExtra(Intent.EXTRA_STREAM, imageUri)
+                    clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
                     setPackage("com.google.android.googlequicksearchbox")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

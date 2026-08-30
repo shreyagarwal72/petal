@@ -80,20 +80,22 @@ fun ProfileAvatarDisplay(
             }
             profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty() -> {
                 val context = LocalContext.current
-                val avatarFile = remember(profile.customAvatarUri) {
+                val avatarFile = remember(profile.customAvatarUri, profile.avatarTimestamp) {
                     java.io.File(context.filesDir, "petal_user_avatar.png")
                 }
-                val imageModel = remember(profile.customAvatarUri, avatarFile.lastModified(), avatarFile.length()) {
+                val imageModel = remember(profile.customAvatarUri, profile.avatarTimestamp, avatarFile.lastModified(), avatarFile.length()) {
                     if (avatarFile.exists() && avatarFile.length() > 0) {
                         coil.request.ImageRequest.Builder(context)
                             .data(avatarFile)
-                            .memoryCacheKey("avatar_${avatarFile.lastModified()}_${avatarFile.length()}")
-                            .diskCacheKey("avatar_${avatarFile.lastModified()}_${avatarFile.length()}")
+                            .memoryCacheKey("avatar_${profile.avatarTimestamp}_${avatarFile.lastModified()}_${avatarFile.length()}")
+                            .diskCacheKey("avatar_${profile.avatarTimestamp}_${avatarFile.lastModified()}_${avatarFile.length()}")
                             .crossfade(true)
                             .build()
                     } else {
                         coil.request.ImageRequest.Builder(context)
                             .data(profile.customAvatarUri)
+                            .memoryCacheKey("avatar_${profile.avatarTimestamp}")
+                            .diskCacheKey("avatar_${profile.avatarTimestamp}")
                             .crossfade(true)
                             .build()
                     }
@@ -1178,14 +1180,35 @@ private fun cropAndSaveAvatarBitmap(
     rotation: Float
 ): String? {
     return try {
-        val inputStream = context.contentResolver.openInputStream(sourceUri) ?: return null
-        val originalBitmap = BitmapFactory.decodeStream(inputStream)
-        inputStream.close()
-        if (originalBitmap == null) return null
+        val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.contentResolver.openInputStream(sourceUri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, boundsOptions)
+        }
+        val origW = boundsOptions.outWidth
+        val origH = boundsOptions.outHeight
+        if (origW <= 0 || origH <= 0) return null
+
+        var sampleSize = 1
+        val maxDim = Math.max(origW, origH)
+        while (maxDim / (sampleSize * 2) >= 1024) {
+            sampleSize *= 2
+        }
+
+        val decodeOptions = BitmapFactory.Options().apply {
+            inSampleSize = sampleSize
+            inPreferredConfig = Bitmap.Config.ARGB_8888
+        }
+        val originalBitmap = context.contentResolver.openInputStream(sourceUri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, decodeOptions)
+        } ?: return null
 
         val size = 512
         val croppedBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(croppedBitmap)
+
+        val density = context.resources.displayMetrics.density
+        val previewPx = 200f * density
+        val offsetScale = if (previewPx > 0) size / previewPx else 1f
 
         val matrix = Matrix()
         val srcWidth = originalBitmap.width.toFloat()
@@ -1195,7 +1218,7 @@ private fun cropAndSaveAvatarBitmap(
         matrix.postTranslate(-srcWidth / 2f, -srcHeight / 2f)
         matrix.postRotate(rotation)
         matrix.postScale(baseScale * scale, baseScale * scale)
-        matrix.postTranslate(size / 2f + offsetX, size / 2f + offsetY)
+        matrix.postTranslate(size / 2f + offsetX * offsetScale, size / 2f + offsetY * offsetScale)
 
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         canvas.drawBitmap(originalBitmap, matrix, paint)
@@ -1204,6 +1227,7 @@ private fun cropAndSaveAvatarBitmap(
         java.io.FileOutputStream(permanentFile).use { out ->
             croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
+        permanentFile.setLastModified(System.currentTimeMillis())
         Uri.fromFile(permanentFile).toString()
     } catch (e: Exception) {
         android.util.Log.e("PetalCrop", "Error cropping avatar bitmap", e)
