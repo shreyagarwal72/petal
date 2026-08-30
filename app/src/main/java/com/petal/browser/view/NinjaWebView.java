@@ -150,9 +150,9 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         String profile = sp.getString("profile", "standard");
         this.context = context;
         this.foreground = false;
-        this.fingerPrintProtection = sp.getBoolean(profile + "_fingerPrintProtection", true);
-        this.history = sp.getBoolean(profile + "_history", true);
-        this.adBlock = sp.getBoolean(profile + "_adBlock", false);
+        this.fingerPrintProtection = sp.getBoolean("sp_fingerprint_protection", sp.getBoolean(profile + "_fingerPrintProtection", true));
+        this.history = sp.getBoolean("sp_history", sp.getBoolean(profile + "_history", true));
+        this.adBlock = sp.getBoolean("sp_ad_block", sp.getBoolean(profile + "_adBlock", true));
         this.saveData = sp.getBoolean(profile + "_saveData", false);
         this.camera = sp.getBoolean(profile + "_camera", false);
 
