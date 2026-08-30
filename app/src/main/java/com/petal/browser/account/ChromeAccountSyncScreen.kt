@@ -83,16 +83,19 @@ fun ProfileAvatarDisplay(
                 val avatarFile = remember(profile.customAvatarUri) {
                     java.io.File(context.filesDir, "petal_user_avatar.png")
                 }
-                val imageModel = remember(profile.customAvatarUri, avatarFile.lastModified()) {
+                val imageModel = remember(profile.customAvatarUri, avatarFile.lastModified(), avatarFile.length()) {
                     if (avatarFile.exists() && avatarFile.length() > 0) {
                         coil.request.ImageRequest.Builder(context)
                             .data(avatarFile)
-                            .memoryCacheKey("${avatarFile.absolutePath}_${avatarFile.lastModified()}")
-                            .diskCacheKey("${avatarFile.absolutePath}_${avatarFile.lastModified()}")
+                            .memoryCacheKey("avatar_${avatarFile.lastModified()}_${avatarFile.length()}")
+                            .diskCacheKey("avatar_${avatarFile.lastModified()}_${avatarFile.length()}")
                             .crossfade(true)
                             .build()
                     } else {
-                        profile.customAvatarUri
+                        coil.request.ImageRequest.Builder(context)
+                            .data(profile.customAvatarUri)
+                            .crossfade(true)
+                            .build()
                     }
                 }
                 AsyncImage(
@@ -410,7 +413,7 @@ private fun RenderUserProfileContent(
                     }
 
                     Text(
-                        text = if (profile.isSignedIn) profile.email else "Local Petal Explorer Profile",
+                        text = if (profile.isSignedIn) profile.email else "Petal Explorer Profile",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
