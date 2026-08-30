@@ -333,12 +333,9 @@ fun PetalTabGridSwitcher(
                 )
 
                 Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)) {
-                    // ── 3-Segment Switcher: Regular [N] | Groups [N] | Incognito [N] ──
+                    // ── 3-Segment Switcher: Regular | Groups | Incognito ─────────────
                     TabCategorySwitcher(
                         selected = selectedCategory,
-                        regularCount = regularTabCount,
-                        groupsCount = groupsCount,
-                        incognitoCount = incognitoTabCount,
                         accentColor = accentColor,
                         onSelect = { selectedCategory = it }
                     )
@@ -448,22 +445,19 @@ fun PetalTabGridSwitcher(
                             title = if (selectedCategory == TabCategory.INCOGNITO)
                                 "You've gone Incognito"
                             else
-                                "You'll find your tabs here",
+                                "No open tabs",
                             subtitle = if (selectedCategory == TabCategory.INCOGNITO)
-                                "Pages you view here won't be saved to your history, cache, or search suggestions"
+                                "Pages you view in incognito tabs won't be saved in your browser history."
                             else
-                                "Open tabs to visit different pages at the same time",
-                            onNewTab = {
-                                commitPendingRemovals()
-                                onNewTab(selectedCategory == TabCategory.INCOGNITO)
-                            }
+                                "Open a new tab to start browsing the web.",
+                            onNewTab = { onNewTab(selectedCategory == TabCategory.INCOGNITO) }
                         )
 
                         filteredTabs.isEmpty() -> TabManagerEmptyState(
                             accentColor = accentColor,
                             textColor = textColor,
                             title = "No matching tabs",
-                            subtitle = "Try a different search",
+                            subtitle = "Try searching for a different title or web address",
                             onNewTab = null
                         )
 
@@ -480,6 +474,15 @@ fun PetalTabGridSwitcher(
                                 val isCurrentDragging = (draggingTabId == tab.id)
                                 val isTargetHovered = (hoverTargetTabId == tab.id)
 
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { dismissValue ->
+                                        if (dismissValue != SwipeToDismissBoxValue.Settled) {
+                                            requestOptimisticClose(tab)
+                                            true
+                                        } else false
+                                    }
+                                )
+
                                 Box(
                                     modifier = Modifier
                                         .animateItem()
@@ -525,18 +528,31 @@ fun PetalTabGridSwitcher(
                                             )
                                         }
                                 ) {
-                                    PetalTabCard(
-                                        tab = tab,
-                                        accentColor = accentColor,
-                                        isDragging = isCurrentDragging,
-                                        dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
-                                        isHoveredForMerge = isTargetHovered,
-                                        onTabSelect = {
-                                            commitPendingRemovals()
-                                            onTabSelect(tab)
+                                    SwipeToDismissBox(
+                                        state = dismissState,
+                                        enableDismissFromStartToEnd = draggingTabId == null,
+                                        enableDismissFromEndToStart = draggingTabId == null,
+                                        backgroundContent = {
+                                            SwipeToCloseBackground(
+                                                dismissState = dismissState,
+                                                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 10.dp, bottomEnd = 24.dp, bottomStart = 10.dp)
+                                            )
                                         },
-                                        onTabClose = { requestOptimisticClose(tab) }
-                                    )
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        PetalTabCard(
+                                            tab = tab,
+                                            accentColor = accentColor,
+                                            isDragging = isCurrentDragging,
+                                            dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
+                                            isHoveredForMerge = isTargetHovered,
+                                            onTabSelect = {
+                                                commitPendingRemovals()
+                                                onTabSelect(tab)
+                                            },
+                                            onTabClose = { requestOptimisticClose(tab) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -552,6 +568,15 @@ fun PetalTabGridSwitcher(
                                 val isCurrentDragging = (draggingTabId == tab.id)
                                 val isTargetHovered = (hoverTargetTabId == tab.id)
 
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { dismissValue ->
+                                        if (dismissValue != SwipeToDismissBoxValue.Settled) {
+                                            requestOptimisticClose(tab)
+                                            true
+                                        } else false
+                                    }
+                                )
+
                                 Box(
                                     modifier = Modifier
                                         .animateItem()
@@ -597,18 +622,31 @@ fun PetalTabGridSwitcher(
                                             )
                                         }
                                 ) {
-                                    PetalTabListItem(
-                                        tab = tab,
-                                        accentColor = accentColor,
-                                        isDragging = isCurrentDragging,
-                                        dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
-                                        isHoveredForMerge = isTargetHovered,
-                                        onTabSelect = {
-                                            commitPendingRemovals()
-                                            onTabSelect(tab)
+                                    SwipeToDismissBox(
+                                        state = dismissState,
+                                        enableDismissFromStartToEnd = draggingTabId == null,
+                                        enableDismissFromEndToStart = draggingTabId == null,
+                                        backgroundContent = {
+                                            SwipeToCloseBackground(
+                                                dismissState = dismissState,
+                                                shape = RoundedCornerShape(18.dp)
+                                            )
                                         },
-                                        onTabClose = { requestOptimisticClose(tab) }
-                                    )
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        PetalTabListItem(
+                                            tab = tab,
+                                            accentColor = accentColor,
+                                            isDragging = isCurrentDragging,
+                                            dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
+                                            isHoveredForMerge = isTargetHovered,
+                                            onTabSelect = {
+                                                commitPendingRemovals()
+                                                onTabSelect(tab)
+                                            },
+                                            onTabClose = { requestOptimisticClose(tab) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -660,13 +698,10 @@ fun PetalTabGridSwitcher(
     }
 }
 
-/** Top segmented pill switcher: Regular [N] vs Groups [N] vs Incognito [N], full-width. */
+/** Top segmented pill switcher: Regular vs Groups vs Incognito, full-width. */
 @Composable
 private fun TabCategorySwitcher(
     selected: TabCategory,
-    regularCount: Int,
-    groupsCount: Int,
-    incognitoCount: Int,
     accentColor: Color,
     onSelect: (TabCategory) -> Unit
 ) {
@@ -681,7 +716,6 @@ private fun TabCategorySwitcher(
         ) {
             TabCategoryPill(
                 label = "Regular",
-                count = regularCount,
                 icon = Icons.Rounded.Public,
                 selected = selected == TabCategory.REGULAR,
                 accentColor = accentColor,
@@ -690,7 +724,6 @@ private fun TabCategorySwitcher(
             )
             TabCategoryPill(
                 label = "Groups",
-                count = groupsCount,
                 icon = Icons.Rounded.FolderCopy,
                 selected = selected == TabCategory.GROUPS,
                 accentColor = accentColor,
@@ -699,7 +732,6 @@ private fun TabCategorySwitcher(
             )
             TabCategoryPill(
                 label = "Incognito",
-                count = incognitoCount,
                 icon = Icons.Rounded.VisibilityOff,
                 selected = selected == TabCategory.INCOGNITO,
                 accentColor = accentColor,
@@ -713,7 +745,6 @@ private fun TabCategorySwitcher(
 @Composable
 private fun TabCategoryPill(
     label: String,
-    count: Int,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     selected: Boolean,
     accentColor: Color,
@@ -736,7 +767,7 @@ private fun TabCategoryPill(
             Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "$label [$count]",
+                text = label,
                 style = MaterialTheme.typography.labelLarge.copy(
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                 ),
@@ -748,10 +779,13 @@ private fun TabCategoryPill(
 }
 
 /**
- * Delete-intent background revealed as a grid card is swiped.
+ * Delete-intent background revealed as a grid card or list row is swiped.
  */
 @Composable
-private fun SwipeToCloseBackground(dismissState: SwipeToDismissBoxState) {
+private fun SwipeToCloseBackground(
+    dismissState: SwipeToDismissBoxState,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(topStart = 24.dp, topEnd = 10.dp, bottomEnd = 24.dp, bottomStart = 10.dp)
+) {
     val isActive = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd ||
         dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
     val alignment = when (dismissState.dismissDirection) {
@@ -762,7 +796,7 @@ private fun SwipeToCloseBackground(dismissState: SwipeToDismissBoxState) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 10.dp, bottomEnd = 24.dp, bottomStart = 10.dp))
+            .clip(shape)
             .background(if (isActive) MaterialTheme.colorScheme.errorContainer else Color.Transparent)
             .padding(horizontal = 20.dp),
         contentAlignment = alignment
