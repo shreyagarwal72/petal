@@ -963,6 +963,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             android.view.ViewGroup.LayoutParams.MATCH_PARENT
         ));
         if (animate) {
+            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
             screen.setAlpha(0f);
             contentFrame.addView(screen);
             screen.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {

@@ -24,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -162,42 +163,73 @@ fun PetalBottomNavBar(
             }
         }
     } else {
-        NavigationBar(
-            containerColor = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surface,
+        androidx.compose.material3.Surface(
+            color = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surface,
+            tonalElevation = 3.dp,
+            shadowElevation = 4.dp,
             modifier = modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
         ) {
-            NavigationBarItem(
-                icon = { Icon(imageVector = Icons.Rounded.Home, contentDescription = "Home", modifier = Modifier.size(24.dp)) },
-                label = { Text("Home", style = MaterialTheme.typography.labelMedium) },
-                selected = selectedTab == PetalNavTab.HOME,
-                onClick = onHomeClick
-            )
-            NavigationBarItem(
-                icon = { Icon(imageVector = Icons.Rounded.Add, contentDescription = "New Tab", modifier = Modifier.size(24.dp)) },
-                label = { Text(newTabLabel, style = MaterialTheme.typography.labelMedium) },
-                selected = selectedTab == PetalNavTab.NEW_TAB,
-                onClick = onNewTabClick
-            )
-            NavigationBarItem(
-                icon = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Home Button
+                IconButton(
+                    onClick = onHomeClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Home,
+                        contentDescription = "Home",
+                        tint = if (selectedTab == PetalNavTab.HOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // New Tab Button
+                IconButton(
+                    onClick = onNewTabClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "New Tab",
+                        tint = if (selectedTab == PetalNavTab.NEW_TAB) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // Tabs Switcher Counter Button
+                IconButton(
+                    onClick = onTabsClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
                     TabCountBadge(
-                        color = if (selectedTab == PetalNavTab.TABS) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (selectedTab == PetalNavTab.TABS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         count = animatedCount,
                         scale = badgeScale.value
                     )
-                },
-                label = { Text(tabsLabel, style = MaterialTheme.typography.labelMedium) },
-                selected = selectedTab == PetalNavTab.TABS,
-                onClick = onTabsClick
-            )
-            NavigationBarItem(
-                icon = { Icon(imageVector = Icons.Rounded.MoreVert, contentDescription = "Menu", modifier = Modifier.size(24.dp)) },
-                label = { Text("Menu", style = MaterialTheme.typography.labelMedium) },
-                selected = selectedTab == PetalNavTab.MENU,
-                onClick = onMenuClick
-            )
+                }
+
+                // Menu Button
+                IconButton(
+                    onClick = onMenuClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = "Menu",
+                        tint = if (selectedTab == PetalNavTab.MENU) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
     }
 }
