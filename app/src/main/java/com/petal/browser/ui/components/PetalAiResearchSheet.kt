@@ -278,12 +278,36 @@ fun PetalAiResearchSheet(
                             ) {
                                 Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Get ${selectedProvider.displayName} API Key")
+                                Text("Get API Key")
                             }
 
-                            if (apiKey.isNotBlank()) {
-                                Button(onClick = { showApiKeyConfig = false }) {
-                                    Text("Save")
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                TextButton(
+                                    onClick = {
+                                        onDismiss()
+                                        val browserActivity = context as? com.petal.browser.activity.BrowserActivity
+                                        if (browserActivity != null) {
+                                            browserActivity.openApiIntegrationsHub()
+                                        } else {
+                                            val intent = Intent(context, com.petal.browser.activity.Settings_Activity::class.java).apply {
+                                                putExtra(
+                                                    com.petal.browser.activity.Settings_Activity.EXTRA_SETTINGS_CATEGORY,
+                                                    com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS.name
+                                                )
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                    }
+                                ) {
+                                    Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("All AI Keys")
+                                }
+
+                                if (apiKey.isNotBlank()) {
+                                    Button(onClick = { showApiKeyConfig = false }) {
+                                        Text("Save")
+                                    }
                                 }
                             }
                         }

@@ -324,9 +324,18 @@ fun PetalAiSearchResultSheet(
                     IconButton(
                         onClick = {
                             onDismiss()
-                            try {
-                                com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("petal://settings?category=ai_research"))
-                            } catch (e: Exception) { e.printStackTrace() }
+                            val browserActivity = context as? com.petal.browser.activity.BrowserActivity
+                            if (browserActivity != null) {
+                                browserActivity.openApiIntegrationsHub()
+                            } else {
+                                val intent = Intent(context, com.petal.browser.activity.Settings_Activity::class.java).apply {
+                                    putExtra(
+                                        com.petal.browser.activity.Settings_Activity.EXTRA_SETTINGS_CATEGORY,
+                                        com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS.name
+                                    )
+                                }
+                                context.startActivity(intent)
+                            }
                         },
                         modifier = Modifier.size(32.dp)
                     ) {
@@ -417,9 +426,18 @@ fun PetalAiSearchResultSheet(
                             OutlinedButton(
                                 onClick = {
                                     onDismiss()
-                                    try {
-                                        com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse("petal://settings?category=ai_research"))
-                                    } catch (e: Exception) { e.printStackTrace() }
+                                    val browserActivity = context as? com.petal.browser.activity.BrowserActivity
+                                    if (browserActivity != null) {
+                                        browserActivity.openApiIntegrationsHub()
+                                    } else {
+                                        val intent = Intent(context, com.petal.browser.activity.Settings_Activity::class.java).apply {
+                                            putExtra(
+                                                com.petal.browser.activity.Settings_Activity.EXTRA_SETTINGS_CATEGORY,
+                                                com.petal.browser.compose.settings.SettingsCategory.API_INTEGRATIONS.name
+                                            )
+                                        }
+                                        context.startActivity(intent)
+                                    }
                                 },
                                 modifier = Modifier.weight(1f)
                             ) {
