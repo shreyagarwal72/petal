@@ -201,6 +201,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     // Layouts
     public LinearProgressIndicator progressBar;
     public com.petal.browser.ui.components.PullToRefreshFrameLayout contentFrame;
+    public boolean isOverlayScreenShowing = false;
     public LinearLayout tab_container;
     public FrameLayout fullscreenHolder;
     public com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
@@ -841,8 +842,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             onHideCustomView();
         } else if (dialogOverview != null && dialogOverview.isShowing()) {
             hideOverview();
-        } else if (contentFrame != null && contentFrame.getChildCount() > 0) {
+        } else if (isOverlayScreenShowing) {
+            isOverlayScreenShowing = false;
             contentFrame.removeAllViews();
+            showAlbum(currentAlbumController);
             updatePersistentBottomNav();
             updateOmniBox();
         } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
@@ -999,10 +1002,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
             android.view.ViewGroup.LayoutParams.MATCH_PARENT
         ));
-        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-        View bottomNav = findViewById(R.id.bottom_nav_compose);
-        if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
-        if (bottomNav != null) bottomNav.setVisibility(GONE);
+        if (isOverlayScreenShowing) {
+            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+        }
         if (animate) {
             screen.setAlpha(0f);
             contentFrame.addView(screen);
@@ -1194,6 +1199,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         currentAlbumController.activate();
         contentFrame.removeAllViews();
+        isOverlayScreenShowing = false;
 
         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
         if (bottomNavContainer != null) {
@@ -1442,7 +1448,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (bnv != null) bnv.setVisibility(GONE);
                 return;
             }
-            if (contentFrame != null && contentFrame.getChildCount() > 0) {
+            if (isOverlayScreenShowing) {
                 View bnc = findViewById(R.id.bottom_nav_container);
                 View bnv = findViewById(R.id.bottom_nav_compose);
                 if (bnc != null) bnc.setVisibility(GONE);
@@ -1575,8 +1581,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
                     if (isAddressBarVisible) {
                         contentParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
-                    } else if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
-                        contentParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
                     } else {
                         contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                     }
@@ -1621,17 +1625,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         contentParams.removeRule(RelativeLayout.ABOVE);
                         contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
                     }
-                    boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
-                    if (isFloating) {
-                        contentParams.removeRule(RelativeLayout.ABOVE);
-                        contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    } else if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
-                        contentParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                        contentParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
-                    } else {
-                        contentParams.removeRule(RelativeLayout.ABOVE);
-                        contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    }
+                    contentParams.removeRule(RelativeLayout.ABOVE);
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
 
                     if (downloadBanner != null && downloadBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                         RelativeLayout.LayoutParams bannerParams = (RelativeLayout.LayoutParams) downloadBanner.getLayoutParams();
@@ -2932,6 +2927,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showOverview() {
         try {
             captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -3060,6 +3056,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
             }
             captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -3113,6 +3110,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showDownloads() {
         try {
             captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -3137,6 +3135,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showHistoryScreen() {
         try {
             captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -3175,6 +3174,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showBookmarksPage() {
         try {
             captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -3220,6 +3220,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showCreditsScreen(final Runnable onBackAction) {
         try {
             captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -3296,6 +3297,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             captureBrowserMainPreview();
             com.petal.browser.compose.reader.PetalReaderBridge.extractArticle(ninjaWebView, article -> {
                 if (article != null && article.getContentText() != null && !article.getContentText().trim().isEmpty()) {
+                    isOverlayScreenShowing = true;
                     contentFrame.removeAllViews();
                     if (appBar != null) appBar.setVisibility(GONE);
                     LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -3331,6 +3333,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void showAccountSyncScreen() {
         try {
             captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -4735,6 +4738,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory initialCategory) {
         try {
             captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
