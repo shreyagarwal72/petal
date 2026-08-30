@@ -542,6 +542,11 @@ public class NinjaWebViewClient extends WebViewClient {
             view.evaluateJavascript("if (window.doNotTrack === undefined) { Object.defineProperty(window, 'doNotTrack', { value: 1, writable: false,configurable: false});} else {try { window.doNotTrack = 1;} catch (e) { console.error('doNotTrack is not writable: ', e); }};", null);
             view.evaluateJavascript("if (navigator.msDoNotTrack === undefined) { Object.defineProperty(navigator, 'msDoNotTrack', { value: 1, writable: false,configurable: false});} else {try { navigator.msDoNotTrack = 1;} catch (e) { console.error('msDoNotTrack is not writable: ', e); }};", null);
         }
+
+        boolean trimReferrers = sp.getBoolean("sp_trim_referrers", true);
+        if (trimReferrers) {
+            view.evaluateJavascript("try { var meta = document.querySelector('meta[name=\"referrer\"]'); if (!meta) { meta = document.createElement('meta'); meta.name = 'referrer'; meta.content = 'strict-origin-when-cross-origin'; document.head.appendChild(meta); } else { meta.content = 'strict-origin-when-cross-origin'; } } catch(e) {}", null);
+        }
     }
 
     @Override
