@@ -1879,6 +1879,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             mFilePathCallback.onReceiveValue(null);
             mFilePathCallback = null;
         }
+
+        // Launch in-browser Material 3 Expressive Media Picker with permissions and camera support
+        com.petal.browser.media.PetalMediaPickerBridge.showMediaPicker(
+            this,
+            filePathCallback,
+            fileChooserParams,
+            () -> {
+                launchSystemFileChooserFallback(filePathCallback, fileChooserParams);
+                return kotlin.Unit.INSTANCE;
+            }
+        );
+    }
+
+    public void launchSystemFileChooserFallback(ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
         mFilePathCallback = filePathCallback;
         mCameraPhotoPath = null;
 
