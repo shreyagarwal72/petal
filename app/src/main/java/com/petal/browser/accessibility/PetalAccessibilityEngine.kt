@@ -37,7 +37,14 @@ object PetalAccessibilityEngine {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val defaultScale = sp.getFloat("sp_zoom_level_scale", 1.0f)
         val defaultTextScale = sp.getFloat("sp_font_size_scale", 1.0f)
-        val baseDefaultZoom = (defaultScale * defaultTextScale * 100).toInt().coerceIn(50, 300)
+        val legacyFontSize = try {
+            val legacyStr = HelperUnit.getSafeString(sp, "sp_fontSize", "100")
+            legacyStr.toInt().toFloat() / 100f
+        } catch (e: Exception) {
+            1.0f
+        }
+        val effectiveTextScale = if (sp.contains("sp_font_size_scale")) defaultTextScale else legacyFontSize
+        val baseDefaultZoom = (defaultScale * effectiveTextScale * 100).toInt().coerceIn(50, 300)
 
         val domain = getCleanDomain(url) ?: return baseDefaultZoom
         return sp.getInt("sp_site_zoom_${domain}", baseDefaultZoom)
