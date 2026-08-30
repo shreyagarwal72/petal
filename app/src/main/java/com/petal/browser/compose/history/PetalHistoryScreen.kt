@@ -303,8 +303,9 @@ fun PetalHistoryScreen(
                             if (filteredHistory.isEmpty()) {
                                 item(key = "empty_state") {
                                     com.petal.browser.ui.components.EmptyStateBlob(
-                                        icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(Icons.Rounded.HistoryToggleOff),
-                                        title = if (searchQuery.isNotEmpty()) "No matching history" else "No browsing history yet"
+                                        illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.HISTORY,
+                                        title = if (searchQuery.isNotEmpty()) "No Matching History" else "No Browsing History Yet",
+                                        description = if (searchQuery.isNotEmpty()) "Try searching with a different URL or keyword" else "Websites and pages you visit will appear here"
                                     )
                                 }
                             } else {
