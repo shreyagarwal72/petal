@@ -4,11 +4,14 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Message;
 import android.text.InputType;
+import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.HttpAuthHandler;
@@ -21,6 +24,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
+
+import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.webkit.WebViewFeature;
@@ -555,25 +560,16 @@ public class NinjaWebViewClient extends WebViewClient {
             return true;
         }
 
+        // Handle custom non-standard schemes (intent://, market://, tel:, mailto:, whatsapp://, etc.)
+        if (handleCustomScheme(view, url)) {
+            return true;
+        }
+
+        // If Auto Open External Apps is enabled, route external app URLs / App Links directly to native apps
         boolean autoOpenApps = sp.getBoolean("sp_auto_open_apps", false);
-        if (autoOpenApps) {
-            if (url.startsWith("intent://") || url.startsWith("market://") || url.startsWith("whatsapp://") ||
-                url.startsWith("tg://") || url.startsWith("tel:") || url.startsWith("mailto:")) {
-                try {
-                    Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
-                    if (intent != null) {
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        context.startActivity(intent);
-                        return true;
-                    }
-                } catch (Exception e) {
-                    try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        context.startActivity(intent);
-                        return true;
-                    } catch (Exception ignored) {}
-                }
+        if (autoOpenApps && shouldOpenInExternalApp(context, uri)) {
+            if (openInExternalApp(context, uri)) {
+                return true;
             }
         }
 
@@ -582,10 +578,178 @@ public class NinjaWebViewClient extends WebViewClient {
         } else {
             try {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(Intent.createChooser(intent, url));
             } catch (Exception ignored) {}
             return true;
         }
+    }
+
+    private boolean handleCustomScheme(WebView view, String url) {
+        if (url == null) return false;
+        if (url.startsWith("intent://")) {
+            try {
+                Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+                if (intent != null) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    PackageManager pm = context.getPackageManager();
+                    if (pm != null && intent.resolveActivity(pm) != null) {
+                        context.startActivity(intent);
+                        return true;
+                    }
+                    String fallbackUrl = intent.getStringExtra("browser_fallback_url");
+                    if (fallbackUrl != null && !fallbackUrl.isEmpty()) {
+                        view.loadUrl(fallbackUrl);
+                        return true;
+                    }
+                    String pkg = intent.getPackage();
+                    if (pkg != null && !pkg.isEmpty()) {
+                        try {
+                            Intent marketIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkg));
+                            marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            context.startActivity(marketIntent);
+                            return true;
+                        } catch (Exception ignored) {}
+                    }
+                }
+            } catch (Exception e) {
+                Log.w("NinjaWebViewClient", "Error handling intent scheme: " + url, e);
+            }
+            return true;
+        }
+
+        if (url.startsWith("market://") || url.startsWith("whatsapp://") || url.startsWith("tg://") ||
+            url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") ||
+            url.startsWith("geo:") || url.startsWith("spotify:") || url.startsWith("viber:") ||
+            url.startsWith("zoommtg:") || url.startsWith("slack:") || url.startsWith("fb:") ||
+            url.startsWith("twitter:") || url.startsWith("instagram:") || url.startsWith("threads:")) {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                PackageManager pm = context.getPackageManager();
+                if (pm != null && intent.resolveActivity(pm) != null) {
+                    context.startActivity(intent);
+                    return true;
+                }
+            } catch (Exception ignored) {}
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean shouldOpenInExternalApp(Context context, Uri uri) {
+        if (uri == null) return false;
+        String scheme = uri.getScheme();
+        if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+            return false;
+        }
+        String host = uri.getHost();
+        if (host == null) return false;
+        host = host.toLowerCase(java.util.Locale.ROOT);
+        String path = uri.getPath();
+        if (path == null) path = "";
+
+        // YouTube
+        if (host.equals("youtube.com") || host.endsWith(".youtube.com") || host.equals("youtu.be")) {
+            return true;
+        }
+        // Google Play Store
+        if (host.equals("play.google.com") && (path.startsWith("/store") || path.startsWith("/apps"))) {
+            return true;
+        }
+        // Google Maps
+        if (host.equals("maps.google.com") || host.equals("maps.app.goo.gl") || (host.endsWith("google.com") && path.startsWith("/maps"))) {
+            return true;
+        }
+        // Social Media & Media Apps
+        if (host.equals("twitter.com") || host.equals("x.com") || host.equals("mobile.twitter.com") ||
+            host.equals("instagram.com") || host.endsWith(".instagram.com") ||
+            host.equals("reddit.com") || host.equals("www.reddit.com") || host.equals("redd.it") ||
+            host.equals("open.spotify.com") || host.equals("spotify.link") ||
+            host.equals("t.me") || host.equals("telegram.me") ||
+            host.equals("wa.me") || host.equals("api.whatsapp.com") ||
+            host.equals("amazon.com") || host.endsWith(".amazon.com")) {
+            return true;
+        }
+
+        // Generic app link verification
+        try {
+            PackageManager pm = context.getPackageManager();
+            if (pm != null) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                List<ResolveInfo> list = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                if (list != null && !list.isEmpty()) {
+                    String myPackage = context.getPackageName();
+                    for (ResolveInfo info : list) {
+                        if (info.activityInfo != null && info.activityInfo.packageName != null) {
+                            String pkg = info.activityInfo.packageName;
+                            if (!pkg.equals(myPackage) && !isGenericBrowser(pkg)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        return false;
+    }
+
+    private boolean openInExternalApp(Context context, Uri uri) {
+        if (context == null || uri == null) return false;
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            PackageManager pm = context.getPackageManager();
+            if (pm == null) return false;
+
+            List<ResolveInfo> activities = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+            if (activities == null || activities.isEmpty()) {
+                activities = pm.queryIntentActivities(intent, 0);
+            }
+
+            String myPackage = context.getPackageName();
+            ResolveInfo targetApp = null;
+
+            if (activities != null) {
+                for (ResolveInfo info : activities) {
+                    if (info.activityInfo != null && info.activityInfo.packageName != null) {
+                        String pkg = info.activityInfo.packageName;
+                        if (!pkg.equals(myPackage) && !isGenericBrowser(pkg)) {
+                            targetApp = info;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (targetApp != null && targetApp.activityInfo != null) {
+                intent.setPackage(targetApp.activityInfo.packageName);
+                context.startActivity(intent);
+                return true;
+            }
+        } catch (Exception e) {
+            Log.w("NinjaWebViewClient", "Failed to launch external app for " + uri, e);
+        }
+        return false;
+    }
+
+    private static boolean isGenericBrowser(String packageName) {
+        if (packageName == null) return false;
+        return packageName.equals("com.android.browser") ||
+               packageName.equals("com.google.android.browser") ||
+               packageName.equals("com.chrome.canary") ||
+               packageName.equals("com.chrome.beta") ||
+               packageName.equals("com.chrome.dev") ||
+               packageName.equals("com.android.chrome") ||
+               packageName.equals("org.mozilla.firefox") ||
+               packageName.equals("org.mozilla.fenix") ||
+               packageName.equals("com.opera.browser") ||
+               packageName.equals("com.brave.browser") ||
+               packageName.equals("com.microsoft.emmx") ||
+               packageName.equals("com.sec.android.app.sbrowser") ||
+               packageName.equals("com.duckduckgo.mobile.android");
     }
 
     @Override
