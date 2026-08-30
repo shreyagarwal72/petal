@@ -713,6 +713,23 @@ fun DeveloperActionsCard(
                 Spacer(Modifier.width(8.dp))
                 Text("Open Source Credits & Developers", fontWeight = FontWeight.Bold, maxLines = 1)
             }
+
+            // ── Diagnostic Logs Export Button ──────────────────────────────
+            val context = LocalContext.current
+            FilledTonalButton(
+                onClick = { com.petal.browser.logger.PetalAppLogger.shareLogsZip(context) },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Export Diagnostic Logs (.zip)", fontWeight = FontWeight.SemiBold, maxLines = 1)
+            }
         }
     }
 }

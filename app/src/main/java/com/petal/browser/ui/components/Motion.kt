@@ -56,7 +56,7 @@ fun Modifier.homeLaunchEntrance(index: Int = 0): Modifier {
     return graphicsLayer {
         val progress = if (PetalLaunchTracker.isHomeLaunchAnimated) 1f else animProgress.value
         val currentScale = 0.93f + (0.07f * progress)
-        alpha = progress
+        alpha = 1f
         scaleX = currentScale
         scaleY = currentScale
         translationY = (1f - progress) * 20.dp.toPx()
