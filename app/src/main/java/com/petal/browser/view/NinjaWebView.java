@@ -280,6 +280,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         webSettings.setSupportZoom(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
+        webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
 
         setVerticalScrollBarEnabled(true);
         setHorizontalScrollBarEnabled(true);
@@ -288,6 +289,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
         webSettings.setSupportMultipleWindows(true);
         webSettings.setAllowFileAccess(true);
+        webSettings.setAllowContentAccess(true);
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
         String fontSizeStr = HelperUnit.getSafeString(sp, "sp_fontSize", "100");
@@ -328,13 +330,13 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
         if (sp.getBoolean(profile + "_desktop", false) || sp.getBoolean("sp_desktop_site", false)) {
             webSettings.setUserAgentString(desktopUserAgent);
-            getSettings().setUseWideViewPort(true);
-            getSettings().setLoadWithOverviewMode(true);
-            this.setInitialScale(100);
+            webSettings.setUseWideViewPort(true);
+            webSettings.setLoadWithOverviewMode(true);
+            this.setInitialScale(0);
         } else {
             webSettings.setUserAgentString(mobileUserAgent);
-            getSettings().setUseWideViewPort(true);
-            getSettings().setLoadWithOverviewMode(true);
+            webSettings.setUseWideViewPort(true);
+            webSettings.setLoadWithOverviewMode(true);
             this.setInitialScale(0);
         }
 
@@ -455,7 +457,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             getSettings().setUserAgentString(desktopUserAgent);
             getSettings().setUseWideViewPort(true);
             getSettings().setLoadWithOverviewMode(true);
-            setInitialScale(100);
+            setInitialScale(0);
         } else {
             getSettings().setUserAgentString(mobileUserAgent);
             getSettings().setUseWideViewPort(true);
