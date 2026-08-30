@@ -899,19 +899,30 @@ public class HelperUnit {
 
     public static Context applyLanguage(Context context) {
         if (context == null) return null;
-        SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-        String lang = sp.getString("sp_app_language", "system");
-        if (lang != null && !lang.equals("system")) {
-            Locale locale;
-            if ("hi-Latn".equalsIgnoreCase(lang) || "hinglish".equalsIgnoreCase(lang)) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    locale = new Locale.Builder().setLanguage("hi").setScript("Latn").build();
+
+        Locale locale = null;
+        androidx.core.os.LocaleListCompat appLocales = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales();
+        if (!appLocales.isEmpty()) {
+            locale = appLocales.get(0);
+        }
+
+        if (locale == null) {
+            SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+            String lang = sp.getString("sp_app_language", "system");
+            if (lang != null && !lang.equals("system")) {
+                if ("hi-Latn".equalsIgnoreCase(lang) || "hinglish".equalsIgnoreCase(lang)) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        locale = new Locale.Builder().setLanguage("hi").setScript("Latn").build();
+                    } else {
+                        locale = Locale.forLanguageTag("hi-Latn");
+                    }
                 } else {
-                    locale = Locale.forLanguageTag("hi-Latn");
+                    locale = Locale.forLanguageTag(lang);
                 }
-            } else {
-                locale = Locale.forLanguageTag(lang);
             }
+        }
+
+        if (locale != null) {
             Locale.setDefault(locale);
             Configuration config = new Configuration(context.getResources().getConfiguration());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -950,17 +961,22 @@ public class HelperUnit {
             Locale.setDefault(targetLocale);
         }
 
-        Activity activity = null;
-        Context current = context;
-        while (current instanceof android.content.ContextWrapper) {
-            if (current instanceof Activity) {
-                activity = (Activity) current;
-                break;
+        // On API 33+ (Android 13+), AppCompatDelegate.setApplicationLocales() automatically recreates active activities.
+        // Calling recreate() manually causes a second concurrent recreate loop that crashes the app.
+        // For API < 33, setApplicationLocales() does not auto-recreate, so manual recreate() is required.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            Activity activity = null;
+            Context current = context;
+            while (current instanceof android.content.ContextWrapper) {
+                if (current instanceof Activity) {
+                    activity = (Activity) current;
+                    break;
+                }
+                current = ((android.content.ContextWrapper) current).getBaseContext();
             }
-            current = ((android.content.ContextWrapper) current).getBaseContext();
-        }
-        if (activity != null) {
-            activity.recreate();
+            if (activity != null) {
+                activity.recreate();
+            }
         }
     }
 
