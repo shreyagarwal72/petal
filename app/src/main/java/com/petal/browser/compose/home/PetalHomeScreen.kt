@@ -643,8 +643,6 @@ fun PetalHomeScreen(
                             )
                         }
                     }
-                }
-            }
         }
     }
 }
