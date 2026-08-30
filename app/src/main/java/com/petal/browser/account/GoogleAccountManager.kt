@@ -199,6 +199,7 @@ object GoogleAccountManager {
                 }
             }
 
+            permanentFile.setLastModified(System.currentTimeMillis())
             val persistentUriString = android.net.Uri.fromFile(permanentFile).toString()
 
             val sp = PreferenceManager.getDefaultSharedPreferences(context)
