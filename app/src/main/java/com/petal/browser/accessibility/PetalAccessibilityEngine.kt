@@ -117,6 +117,11 @@ object PetalAccessibilityEngine {
                             if (updated !== content) {
                                 meta.setAttribute('content', updated);
                             }
+                        } else {
+                            var newMeta = document.createElement('meta');
+                            newMeta.name = 'viewport';
+                            newMeta.content = 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes';
+                            (document.head || document.documentElement).appendChild(newMeta);
                         }
                     } catch(e) {}
                 })();
