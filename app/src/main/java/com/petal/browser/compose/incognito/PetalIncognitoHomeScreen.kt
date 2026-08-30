@@ -62,11 +62,8 @@ fun PetalIncognitoHomeScreen(
     var blockThirdPartyCookies by remember { mutableStateOf(true) }
 
     PetalIncognitoTheme(useAmoled = isAmoled) {
-        com.petal.browser.predictive.PetalPredictiveBackSurface(
-            enabled = true,
-            onBack = onCloseIncognito,
-        ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+        androidx.activity.compose.BackHandler(enabled = true, onBack = onCloseIncognito)
+
         val incognitoSubtitles = remember {
             listOf(
                 "Off the grid. No traces, no history.",
@@ -139,88 +136,89 @@ fun PetalIncognitoHomeScreen(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.2.sp
                         ),
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.entrance(index = 1)
                     )
 
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(8.dp))
 
+                    // Hero Description
                     Text(
-                        text = "Now you can browse privately. Other people who use this device won't see your activity. Downloads, bookmarks and reading list items will be saved.",
-                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 16.sp),
+                        text = "Now you can browse privately, and other people who use this device won't see your activity.",
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
-                            .fillMaxWidth(0.92f)
+                            .padding(horizontal = 16.dp)
                             .entrance(index = 2)
                     )
 
-                Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(28.dp))
 
-                // Quick Search Bar Box
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = IncognitoSurfaceContainer,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .bouncyClickable(onClick = onSearchClick)
-                        .entrance(index = 3)
-                ) {
-                    Row(
+                    // Chrome-style Quick Search Decoy Bar
+                    Surface(
+                        shape = RoundedCornerShape(32.dp),
+                        color = IncognitoSurfaceContainer,
+                        tonalElevation = 2.dp,
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .entrance(index = 3)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = androidx.compose.foundation.LocalIndication.current
+                            ) { onSearchClick() }
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = "Search",
-                            tint = IncognitoPrimary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Text(
-                            text = "Search or type URL in Incognito...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Search,
+                                contentDescription = "Search",
+                                tint = IncognitoPrimary
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = "Search or type URL",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                }
 
-                Spacer(Modifier.height(28.dp))
+                    Spacer(Modifier.height(28.dp))
 
-                // Cards Row / Grid
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Card 1: What Incognito does
+                    // What Petal Won't Save Card
                     IncognitoInfoCard(
-                        title = "What Incognito does",
-                        icon = Icons.Rounded.Shield,
+                        title = "Petal won't save:",
+                        icon = Icons.Rounded.Block,
                         items = listOf(
-                            "Doesn't save your browsing history",
-                            "Doesn't save cookies and site data",
-                            "Doesn't save information entered in forms"
+                            "Your browsing history and search terms",
+                            "Cookies and site data (cleared on tab close)",
+                            "Information entered in web forms"
                         ),
                         modifier = Modifier.entrance(index = 4)
                     )
 
-                    // Card 2: Your activity might still be visible to
+                    Spacer(Modifier.height(16.dp))
+
+                    // Activity Still Visible Card
                     IncognitoInfoCard(
-                        title = "Your activity might still be visible to",
+                        title = "Your activity might still be visible to:",
                         icon = Icons.Rounded.Info,
                         items = listOf(
-                            "Websites you visit",
-                            "Your employer or school",
-                            "Your internet service provider"
+                            "Websites you visit and sign in to",
+                            "Your employer, school, or network admin",
+                            "Your internet service provider (ISP)"
                         ),
                         modifier = Modifier.entrance(index = 5)
                     )
 
-                    // Card 3: Cookie Blocking Switch Toggle
+                    Spacer(Modifier.height(24.dp))
+
+                    // Block 3rd Party Cookies Toggle Card
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = IncognitoSurfaceContainer,
@@ -229,10 +227,8 @@ fun PetalIncognitoHomeScreen(
                             .entrance(index = 6)
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(18.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(18.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Cookie,
@@ -269,9 +265,6 @@ fun PetalIncognitoHomeScreen(
             }
         }
     }
-}
-}
-}
 }
 
 @Composable
