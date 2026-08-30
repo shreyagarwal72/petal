@@ -9,8 +9,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
@@ -30,11 +32,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
@@ -60,6 +64,7 @@ import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import kotlinx.coroutines.launch
@@ -445,11 +450,11 @@ fun PetalTabGridSwitcher(
                             title = if (selectedCategory == TabCategory.INCOGNITO)
                                 "You've gone Incognito"
                             else
-                                "No open tabs",
+                                "You'll find your tabs here",
                             subtitle = if (selectedCategory == TabCategory.INCOGNITO)
                                 "Pages you view in incognito tabs won't be saved in your browser history."
                             else
-                                "Open a new tab to start browsing the web.",
+                                "Open tabs to visit different pages at the same time",
                             onNewTab = { onNewTab(selectedCategory == TabCategory.INCOGNITO) }
                         )
 
@@ -812,6 +817,61 @@ private fun SwipeToCloseBackground(
 }
 
 @Composable
+private fun RegularTabEmptyIllustration(
+    containerColor: Color,
+    phoneColor: Color
+) {
+    Box(
+        modifier = Modifier.size(90.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Back phone / tab outline (offset to bottom-right)
+        Canvas(
+            modifier = Modifier
+                .size(width = 46.dp, height = 66.dp)
+                .offset(x = 8.dp, y = 5.dp)
+        ) {
+            val cornerRadius = CornerRadius(12.dp.toPx())
+            val strokeWidth = 3.dp.toPx()
+            drawRoundRect(
+                color = phoneColor.copy(alpha = 0.55f),
+                size = size,
+                cornerRadius = cornerRadius,
+                style = Stroke(width = strokeWidth)
+            )
+        }
+
+        // Front phone / tab (main device card)
+        Box(
+            modifier = Modifier
+                .offset(x = (-5).dp, y = (-3).dp)
+                .size(width = 44.dp, height = 64.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(containerColor)
+                .border(3.2.dp, phoneColor, RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            // Speaker / Camera notch at top
+            Box(
+                modifier = Modifier
+                    .padding(top = 5.dp)
+                    .size(width = 12.dp, height = 2.5.dp)
+                    .clip(CircleShape)
+                    .background(phoneColor)
+            )
+            // Screen inner viewport preview
+            Box(
+                modifier = Modifier
+                    .padding(top = 13.dp, start = 5.dp, end = 5.dp, bottom = 6.dp)
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(phoneColor.copy(alpha = 0.2f))
+            )
+        }
+    }
+}
+
+@Composable
 private fun TabManagerEmptyState(
     accentColor: Color,
     textColor: Color,
@@ -821,20 +881,67 @@ private fun TabManagerEmptyState(
     isIncognito: Boolean = false
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        com.petal.browser.ui.components.EmptyStateBlob(
-            icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(
-                if (isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.TabUnselected
-            ),
-            title = title,
-            description = subtitle,
-            fraction = 0.6f
+        val badgeColor = if (isIncognito) MaterialTheme.colorScheme.tertiary else accentColor
+        Surface(
+            shape = PetalMaterialShapes.Bun.toShape(),
+            modifier = Modifier.size(112.dp),
+            color = badgeColor,
+            tonalElevation = 6.dp
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isIncognito) {
+                    Icon(
+                        imageVector = Icons.Rounded.VisibilityOff,
+                        contentDescription = "Incognito",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                } else if (title.contains("group", ignoreCase = true)) {
+                    Icon(
+                        imageVector = Icons.Rounded.FolderCopy,
+                        contentDescription = "Tab Groups",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                } else {
+                    RegularTabEmptyIllustration(
+                        containerColor = badgeColor,
+                        phoneColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color = textColor,
+            textAlign = TextAlign.Center
         )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
         if (onNewTab != null) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
             Button(
                 onClick = onNewTab,
                 shape = RoundedCornerShape(20.dp),
