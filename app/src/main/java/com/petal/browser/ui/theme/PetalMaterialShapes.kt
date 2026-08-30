@@ -553,3 +553,22 @@ object MaterialShapes {
     val allShapes = PetalMaterialShapes.allShapes
 }
 
+/**
+ * Material 3 Expressive Shapes Extensions on [androidx.compose.material3.Shapes].
+ * Provides extended token properties for Expressive design scale.
+ */
+val androidx.compose.material3.Shapes.extraSmallIncreased: androidx.compose.ui.graphics.Shape
+    get() = androidx.compose.foundation.shape.RoundedCornerShape(8.androidx.compose.ui.unit.dp)
+
+val androidx.compose.material3.Shapes.smallIncreased: androidx.compose.ui.graphics.Shape
+    get() = androidx.compose.foundation.shape.RoundedCornerShape(12.androidx.compose.ui.unit.dp)
+
+val androidx.compose.material3.Shapes.mediumIncreased: androidx.compose.ui.graphics.Shape
+    get() = androidx.compose.foundation.shape.RoundedCornerShape(16.androidx.compose.ui.unit.dp)
+
+val androidx.compose.material3.Shapes.largeIncreased: androidx.compose.ui.graphics.Shape
+    get() = androidx.compose.foundation.shape.RoundedCornerShape(24.androidx.compose.ui.unit.dp)
+
+val androidx.compose.material3.Shapes.extraLargeIncreased: androidx.compose.ui.graphics.Shape
+    get() = androidx.compose.foundation.shape.RoundedCornerShape(28.androidx.compose.ui.unit.dp)
+
