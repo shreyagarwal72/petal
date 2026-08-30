@@ -204,7 +204,9 @@ fun PetalOmniboxPage(
     var suggestions by remember { mutableStateOf<List<OmniboxSuggestion>>(emptyList()) }
     var suggestionToRemove by remember { mutableStateOf<OmniboxSuggestion?>(null) }
     var removedSuggestions by remember {
-        mutableStateOf(sp.getStringSet("sp_removed_suggestions", emptySet())?.toMutableSet() ?: mutableSetOf())
+        mutableStateOf<Set<String>>(
+            sp.getStringSet("sp_removed_suggestions", null)?.toSet() ?: emptySet()
+        )
     }
     val focusRequester = remember { FocusRequester() }
 
@@ -848,7 +850,7 @@ fun PetalOmniboxPage(
                                                         },
                                                         onLongClick = {
                                                             try {
-                                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.LONG_PRESS, 0.9f)
+                                                                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
                                                             } catch (ignored: Exception) {}
                                                             suggestionToRemove = item
                                                         }
@@ -949,7 +951,7 @@ fun PetalOmniboxPage(
                     onClick = {
                         val targetQuery = item.query
                         suggestionToRemove = null
-                        val newSet = removedSuggestions.toMutableSet().apply { add(targetQuery) }
+                        val newSet = (removedSuggestions + targetQuery).toSet()
                         removedSuggestions = newSet
                         sp.edit().putStringSet("sp_removed_suggestions", newSet).apply()
                         suggestions = suggestions.filter { it.query != targetQuery }
@@ -974,7 +976,7 @@ fun PetalOmniboxPage(
                                 duration = SnackbarDuration.Short
                             )
                             if (result == SnackbarResult.ActionPerformed) {
-                                val restoredSet = removedSuggestions.toMutableSet().apply { remove(targetQuery) }
+                                val restoredSet = (removedSuggestions - targetQuery).toSet()
                                 removedSuggestions = restoredSet
                                 sp.edit().putStringSet("sp_removed_suggestions", restoredSet).apply()
                             }
