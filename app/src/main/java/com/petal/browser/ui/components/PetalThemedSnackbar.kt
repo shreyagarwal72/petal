@@ -1,15 +1,13 @@
 package com.petal.browser.ui.components
 
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarData
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -43,7 +41,9 @@ fun PetalThemedSnackbar(
 
 /**
  * Shared Material 3 Expressive themed [SnackbarHost] wrapper component.
+ * Features full slide-to-hide support via horizontal swipe and downward drag gestures.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalThemedSnackbarHost(
     hostState: SnackbarHostState,
@@ -57,12 +57,34 @@ fun PetalThemedSnackbarHost(
         hostState = hostState,
         modifier = modifier
     ) { data ->
-        PetalThemedSnackbar(
-            snackbarData = data,
-            shape = shape,
-            containerColor = containerColor,
-            contentColor = contentColor,
-            actionColor = actionColor
+        val dismissState = rememberSwipeToDismissBoxState(
+            confirmValueChange = { value ->
+                if (value != SwipeToDismissBoxValue.Settled) {
+                    data.dismiss()
+                    true
+                } else {
+                    false
+                }
+            }
         )
+        SwipeToDismissBox(
+            state = dismissState,
+            backgroundContent = {},
+            modifier = Modifier.pointerInput(data) {
+                detectVerticalDragGestures { _, dragAmount ->
+                    if (dragAmount > 12f) { // Swiped downwards to dismiss
+                        data.dismiss()
+                    }
+                }
+            }
+        ) {
+            PetalThemedSnackbar(
+                snackbarData = data,
+                shape = shape,
+                containerColor = containerColor,
+                contentColor = contentColor,
+                actionColor = actionColor
+            )
+        }
     }
 }
