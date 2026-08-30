@@ -856,157 +856,84 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
 @Composable
 private fun PetalSearchBar(onSearch: (String) -> Unit) {
     // This is a decoy bar, matching Chrome's home-screen search box behavior.
-    // It never accepts typed input itself - tapping anywhere on the search pill
-    // hands off immediately to the real full-screen omnibox (PetalOmniboxPage,
-    // opened via onSearch("") -> showOmniboxPage("") in BrowserActivity).
+    // It never accepts typed input itself - tapping anywhere on it (including
+    // the placeholder text area) hands off immediately to the real full-screen
+    // omnibox (PetalOmniboxPage, opened via onSearch("") -> showOmniboxPage("")
+    // in BrowserActivity), which is where live suggestions/history/voice/engine
+    // preference all actually live. Do not reintroduce a local TextField or
+    // local suggestion-fetching here - that previously duplicated and shadowed
+    // the omnibox page instead of opening it.
     val context = LocalContext.current
     val activity = context as? ComponentActivity
 
-    // Outer Surface styled with extraLargeIncreased, elevated surface container coloring,
-    // dynamic tonal elevation, and horizontal layout containment.
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.98f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "search_bar_press_scale"
+    )
+
     Surface(
-        shape = MaterialTheme.shapes.extraLargeIncreased,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 3.dp,
-        shadowElevation = 4.dp,
+        shape = RoundedCornerShape(32.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        tonalElevation = 4.dp,
+        shadowElevation = 6.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
+            .heightIn(min = 64.dp)
             .homeLaunchEntrance(2)
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.foundation.LocalIndication.current
+            ) { onSearch("") },
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(horizontal = 18.dp),
         ) {
-            // Flexible-width pill search trigger with largeIncreased shape & bouncy physics press feedback
-            val searchInteractionSource = remember { MutableInteractionSource() }
-            val searchPressed by searchInteractionSource.collectIsPressedAsState()
-            val searchScale by animateFloatAsState(
-                targetValue = if (searchPressed) 0.94f else 1.0f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                ),
-                label = "search_pill_press_scale"
+            Icon(
+                imageVector = Icons.Rounded.Search,
+                contentDescription = "Search",
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = "Search or type URL",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
             )
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .graphicsLayer {
-                        scaleX = searchScale
-                        scaleY = searchScale
-                    }
-                    .clip(MaterialTheme.shapes.largeIncreased)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                    .clickable(
-                        interactionSource = searchInteractionSource,
-                        indication = androidx.compose.foundation.LocalIndication.current
-                    ) { onSearch("") },
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Text(
-                    text = "Search",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+            IconButton(onClick = {
+                if (activity != null) {
+                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, "")
+                }
+            }) {
+                Icon(
+                    Icons.Rounded.AutoAwesome,
+                    contentDescription = "Petal AI",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            // AI Action Button (Sparkles) - primaryContainer
-            PetalSquircleActionButton(
-                icon = Icons.Rounded.AutoAwesome,
-                contentDescription = "AI Assistant",
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                onClick = {
-                    if (activity != null) {
-                        com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, "")
+            IconButton(onClick = {
+                if (activity != null) {
+                    com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
+                        if (result.isNotBlank()) onSearch(result)
                     }
                 }
-            )
-
-            // Incognito Action Button (Privacy) - secondaryContainer
-            PetalSquircleActionButton(
-                icon = Icons.Rounded.VisibilityOff,
-                contentDescription = "Incognito Mode",
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                onClick = {
-                    if (activity is com.petal.browser.activity.BrowserActivity) {
-                        activity.addAlbum(null, "petal://home", true, true)
-                    }
-                }
-            )
-
-            // Lens / Scanner Action Button - tertiaryContainer
-            PetalSquircleActionButton(
-                icon = Icons.Rounded.CenterFocusWeak,
-                contentDescription = "Visual Lens",
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                onClick = {
-                    if (activity != null) {
-                        com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(activity)
-                    }
-                }
-            )
-        }
-    }
-}
-
-/**
- * Squircle action icon button with MaterialTheme.shapes.mediumIncreased,
- * dynamic M3 container tokens, and bouncy spring press animation.
- */
-@Composable
-private fun PetalSquircleActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    contentDescription: String,
-    containerColor: Color,
-    contentColor: Color,
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.88f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "action_btn_press_scale"
-    )
-
-    Box(
-        modifier = Modifier
-            .size(48.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
+            }) {
+                Icon(
+                    Icons.Rounded.Mic,
+                    contentDescription = "Voice Search",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
-            .clip(MaterialTheme.shapes.mediumIncreased)
-            .background(containerColor)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = androidx.compose.foundation.LocalIndication.current,
-                onClick = onClick
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = contentColor,
-            modifier = Modifier.size(24.dp)
-        )
+        }
     }
 }
 
