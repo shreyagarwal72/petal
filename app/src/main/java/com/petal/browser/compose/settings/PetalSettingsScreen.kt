@@ -462,6 +462,7 @@ fun PetalSettingsScreen(
     var isAppLockEnabled by remember { mutableStateOf(sp.getBoolean("sp_app_lock_enabled", false)) }
     var showPasscodeDialog by remember { mutableStateOf(false) }
     var isDoubleBackExit by remember { mutableStateOf(sp.getBoolean("sp_double_back_exit", true)) }
+    var addressBarPosition by remember { mutableStateOf(sp.getString("sp_address_bar_position", "TOP") ?: "TOP") }
     var fontSize by remember { mutableFloatStateOf(sp.getFloat("sp_font_size_scale", 1.0f)) }
     var zoomLevel by remember { mutableFloatStateOf(sp.getFloat("sp_zoom_level_scale", 1.0f)) }
     var isForceZoom by remember { mutableStateOf(sp.getBoolean("sp_force_enable_zoom", true)) }
@@ -1618,7 +1619,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 4. Popular Languages Selector (Under Experimental Category)
-                            if ((scaffoldCategory == SettingsCategory.EXPERIMENTAL || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english hinglish spanish hindi french german chinese arabic portuguese russian japanese experimental")) {
+                            if ((scaffoldCategory == SettingsCategory.EXPERIMENTAL || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english hinglish spanish hindi french german chinese arabic portuguese russian japanese experimental address bar top bottom position")) {
                                 SettingsCategoryCard(title = "App Language", icon = Icons.Rounded.Language) {
                                     Text(
                                         "Choose your preferred display language:",
@@ -1668,6 +1669,52 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                     }
+                                    }
+                                }
+
+                                SettingsCategoryCard(title = "Address Bar Position (Experimental)", icon = Icons.Rounded.Science) {
+                                    Text(
+                                        "Choose whether the URL search address bar appears at the top or bottom of the screen:",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    val addressBarScrollState = rememberScrollState()
+                                    com.petal.browser.ui.components.ScrollFadeRow(
+                                        scrollState = addressBarScrollState,
+                                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(addressBarScrollState),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            FilterChip(
+                                                selected = addressBarPosition == "TOP",
+                                                onClick = {
+                                                    addressBarPosition = "TOP"
+                                                    sp.edit().putString("sp_address_bar_position", "TOP").apply()
+                                                    (context as? BrowserActivity)?.applyAddressBarPosition()
+                                                },
+                                                label = { Text("Top (Default)") },
+                                                leadingIcon = if (addressBarPosition == "TOP") {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                            FilterChip(
+                                                selected = addressBarPosition == "BOTTOM",
+                                                onClick = {
+                                                    addressBarPosition = "BOTTOM"
+                                                    sp.edit().putString("sp_address_bar_position", "BOTTOM").apply()
+                                                    (context as? BrowserActivity)?.applyAddressBarPosition()
+                                                },
+                                                label = { Text("Bottom") },
+                                                leadingIcon = if (addressBarPosition == "BOTTOM") {
+                                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                                } else null
+                                            )
+                                        }
                                     }
                                 }
                             }

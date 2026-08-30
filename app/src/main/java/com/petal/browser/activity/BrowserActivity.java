@@ -1595,6 +1595,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 return;
             }
 
+            String pos = sp.getString("sp_address_bar_position", "TOP");
+            boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
+
             View addressBar = findViewById(R.id.compose_address_bar);
             View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
             View mainContent = findViewById(R.id.main_content);
@@ -1608,50 +1611,97 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 RelativeLayout.LayoutParams contentParams = (RelativeLayout.LayoutParams) mainContent.getLayoutParams();
                 RelativeLayout.LayoutParams progComposeParams = progressBarCompose != null && progressBarCompose.getLayoutParams() instanceof RelativeLayout.LayoutParams ? (RelativeLayout.LayoutParams) progressBarCompose.getLayoutParams() : null;
 
+                addrParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                 addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 addrParams.removeRule(RelativeLayout.ABOVE);
                 addrParams.removeRule(RelativeLayout.BELOW);
-                addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                addrParams.topMargin = 0;
-                addrParams.bottomMargin = 0;
 
-                if (progComposeParams != null) {
-                    progComposeParams.removeRule(RelativeLayout.ABOVE);
-                    progComposeParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    progComposeParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
-                }
-
-                boolean isAddressBarVisible = addressBar.getVisibility() != GONE;
                 contentParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                 contentParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 contentParams.removeRule(RelativeLayout.ABOVE);
                 contentParams.removeRule(RelativeLayout.BELOW);
 
-                if (isAddressBarVisible) {
-                    contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
-                } else {
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                if (progComposeParams != null) {
+                    progComposeParams.removeRule(RelativeLayout.ABOVE);
+                    progComposeParams.removeRule(RelativeLayout.BELOW);
+                    progComposeParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                 }
-                contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+
+                boolean isAddressBarVisible = addressBar.getVisibility() != GONE;
+
+                if (isBottom) {
+                    boolean hasBottomNav = bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE;
+                    if (hasBottomNav) {
+                        addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
+                    } else {
+                        addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    }
+                    addrParams.topMargin = 0;
+                    addrParams.bottomMargin = (int) HelperUnit.convertDpToPixel(2f, context);
+
+                    if (progComposeParams != null) {
+                        progComposeParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
+                    }
+
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    if (isAddressBarVisible) {
+                        contentParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
+                    } else {
+                        contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    }
+
+                    if (downloadBanner != null && downloadBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams bannerParams = (RelativeLayout.LayoutParams) downloadBanner.getLayoutParams();
+                        bannerParams.removeRule(RelativeLayout.BELOW);
+                        bannerParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                        bannerParams.topMargin = (int) HelperUnit.convertDpToPixel(8f, context);
+                        downloadBanner.setLayoutParams(bannerParams);
+                    }
+
+                    if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
+                        bubbleParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                        bubbleParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                        bubbleParams.bottomMargin = (int) HelperUnit.convertDpToPixel(140f, context);
+                        bubbleParams.topMargin = 0;
+                        fabBubble.setLayoutParams(bubbleParams);
+                    }
+                } else {
+                    addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    addrParams.topMargin = 0;
+                    addrParams.bottomMargin = 0;
+
+                    if (progComposeParams != null) {
+                        progComposeParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                    }
+
+                    if (isAddressBarVisible) {
+                        contentParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                    } else {
+                        contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    }
+                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+
+                    if (downloadBanner != null && downloadBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams bannerParams = (RelativeLayout.LayoutParams) downloadBanner.getLayoutParams();
+                        bannerParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                        bannerParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
+                        bannerParams.topMargin = 0;
+                        downloadBanner.setLayoutParams(bannerParams);
+                    }
+
+                    if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                        RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
+                        bubbleParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                        bubbleParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                        bubbleParams.topMargin = (int) HelperUnit.convertDpToPixel(16f, context);
+                        bubbleParams.bottomMargin = 0;
+                        fabBubble.setLayoutParams(bubbleParams);
+                    }
+                }
+
                 contentParams.topMargin = 0;
                 contentParams.bottomMargin = 0;
-
-                if (downloadBanner != null && downloadBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                    RelativeLayout.LayoutParams bannerParams = (RelativeLayout.LayoutParams) downloadBanner.getLayoutParams();
-                    bannerParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    bannerParams.addRule(RelativeLayout.BELOW, R.id.compose_address_bar);
-                    bannerParams.topMargin = 0;
-                    downloadBanner.setLayoutParams(bannerParams);
-                }
-
-                if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                    RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
-                    bubbleParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                    bubbleParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    bubbleParams.topMargin = (int) HelperUnit.convertDpToPixel(16f, context);
-                    bubbleParams.bottomMargin = 0;
-                    fabBubble.setLayoutParams(bubbleParams);
-                }
 
                 if (bottomNavContainer != null && bottomNavContainer.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                     RelativeLayout.LayoutParams containerParams = (RelativeLayout.LayoutParams) bottomNavContainer.getLayoutParams();
@@ -2599,9 +2649,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (collapse && !isAddressBarCollapsed) {
             isAddressBarCollapsed = true;
+            String pos = sp.getString("sp_address_bar_position", "TOP");
+            boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
             float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
-            float targetY = -(barHeight + HelperUnit.convertDpToPixel(40f, context));
-            float contentTargetY = -barHeight;
+            float targetY = isBottom ? (barHeight + HelperUnit.convertDpToPixel(40f, context)) : -(barHeight + HelperUnit.convertDpToPixel(40f, context));
+            float contentTargetY = isBottom ? 0f : -barHeight;
 
             springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
 
