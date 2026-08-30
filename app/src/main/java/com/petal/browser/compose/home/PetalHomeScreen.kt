@@ -97,14 +97,6 @@ data class PetalShortcut(
     val contentColor: Color = Color.White
 )
 
-val defaultPetalShortcuts = listOf(
-    PetalShortcut("YouTube", "https://www.youtube.com", "youtube", Color(0xFFFF0000)),
-    PetalShortcut("GitHub", "https://github.com", "github", Color(0xFF24292E)),
-    PetalShortcut("Wikipedia", "https://wikipedia.org", "wikipedia", Color(0xFF43464E)),
-    PetalShortcut("DuckDuckGo", "https://duckduckgo.com", "duckduckgo", Color(0xFFDE5833)),
-    PetalShortcut("Weather", "https://www.google.com/search?q=weather", "weather", Color(0xFF4285F4))
-)
-
 fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val jsonStr = sp.getString("sp_custom_home_shortcuts_json_v3", null)
@@ -125,19 +117,11 @@ fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
                 }
                 list.add(PetalShortcut(label, url, siteId, parsedColor))
             }
-            if (list.isNotEmpty()) return list
+            return list
         } catch (_: Throwable) { }
     }
 
-    // Auto-populate from top visited sites in local history database
-    val visitedShortcuts = fetchTopVisitedShortcuts(context)
-    if (visitedShortcuts.isNotEmpty()) {
-        val merged = (visitedShortcuts + defaultPetalShortcuts).distinctBy { it.url }.take(5)
-        saveHomeShortcuts(context, merged)
-        return merged
-    }
-
-    return defaultPetalShortcuts
+    return emptyList()
 }
 
 fun fetchTopVisitedShortcuts(context: Context): List<PetalShortcut> {
@@ -153,15 +137,16 @@ fun fetchTopVisitedShortcuts(context: Context): List<PetalShortcut> {
             Color(0xFFFBBC05), Color(0xFF9C27B0), Color(0xFF00BCD4)
         )
 
-        // Group history records by domain host to find top visited sites
+        // Group history records by domain host to find sites visited more than 3 times
         val topSites = records
             .filter { !it.url.isNullOrBlank() && !it.url.startsWith("about:") && !it.url.startsWith("petal://") }
             .groupBy {
                 try { Uri.parse(it.url).host ?: it.url } catch (e: Exception) { it.url }
             }
             .entries
+            .filter { it.value.size > 3 }
             .sortedByDescending { it.value.size }
-            .take(10)
+            .take(12)
 
         topSites.forEachIndexed { idx, entry ->
             val host = entry.key
