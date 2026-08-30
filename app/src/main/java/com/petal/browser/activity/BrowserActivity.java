@@ -775,6 +775,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (sp != null && (!sp.getBoolean("sp_reloadTabs", false) || sp.getInt("restart_changed", 1) == 1)) {
                 sp.edit().putString("openTabs", "").apply();
             }
+            com.petal.browser.media.BrowserMediaDelegate.unregisterPipReceiver(this);
         } catch (Exception e) {
             Log.e(TAG, "Error in BrowserActivity.onDestroy", e);
         }
@@ -1055,6 +1056,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
             View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
             View mainProgressBar = findViewById(R.id.main_progress_bar_compose);
+            View downloadBannerCompose = findViewById(R.id.download_banner_compose);
+            View searchOnSiteLayout = findViewById(R.id.searchOnSiteLayout);
+            View fabShowAppBar = findViewById(R.id.fab_showAppBar);
 
             View fabMenu = findViewById(R.id.fab_menu);
             View fabShare = findViewById(R.id.fab_share);
@@ -1065,10 +1069,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
                 if (refreshBarCompose != null) refreshBarCompose.setVisibility(GONE);
                 if (mainProgressBar != null) mainProgressBar.setVisibility(GONE);
+                if (downloadBannerCompose != null) downloadBannerCompose.setVisibility(GONE);
+                if (searchOnSiteLayout != null) searchOnSiteLayout.setVisibility(GONE);
+                if (fabShowAppBar != null) fabShowAppBar.setVisibility(GONE);
                 if (appBar != null) appBar.setVisibility(GONE);
                 if (fabMenu != null) fabMenu.setVisibility(GONE);
                 if (fabShare != null) fabShare.setVisibility(GONE);
                 if (fabBubble != null) fabBubble.setVisibility(GONE);
+
+                // Update PiP actions on entry
+                updatePipParams(isMediaPlaying);
 
                 // Inject CSS into active webview to isolate video frame & remove webpage headers/sidebars/popups in PiP mode
                 if (ninjaWebView != null && customView == null) {
@@ -4716,8 +4726,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onPause() {
         super.onPause();
+        boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
         boolean backgroundPlay = sp != null && sp.getBoolean("sp_background_play", false);
-        if (!backgroundPlay && ninjaWebView != null) {
+        if (!backgroundPlay && !inPip && ninjaWebView != null) {
             try {
                 ninjaWebView.onPause();
                 ninjaWebView.pauseTimers();

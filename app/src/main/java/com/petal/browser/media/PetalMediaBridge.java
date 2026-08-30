@@ -41,7 +41,17 @@ public class PetalMediaBridge {
             "                   window." + JS_INTERFACE_NAME + ".onMediaStateChanged(true, this.title || document.title, this.currentTime * 1000, (this.duration || 0) * 1000);" +
             "               }" +
             "           });" +
+            "           el.addEventListener('playing', function() {" +
+            "               if (window." + JS_INTERFACE_NAME + ") {" +
+            "                   window." + JS_INTERFACE_NAME + ".onMediaStateChanged(true, this.title || document.title, this.currentTime * 1000, (this.duration || 0) * 1000);" +
+            "               }" +
+            "           });" +
             "           el.addEventListener('pause', function() {" +
+            "               if (window." + JS_INTERFACE_NAME + ") {" +
+            "                   window." + JS_INTERFACE_NAME + ".onMediaStateChanged(false, this.title || document.title, this.currentTime * 1000, (this.duration || 0) * 1000);" +
+            "               }" +
+            "           });" +
+            "           el.addEventListener('ended', function() {" +
             "               if (window." + JS_INTERFACE_NAME + ") {" +
             "                   window." + JS_INTERFACE_NAME + ".onMediaStateChanged(false, this.title || document.title, this.currentTime * 1000, (this.duration || 0) * 1000);" +
             "               }" +
@@ -64,9 +74,28 @@ public class PetalMediaBridge {
             "           if (el.videoWidth && el.videoHeight && window." + JS_INTERFACE_NAME + ") {" +
             "               window." + JS_INTERFACE_NAME + ".onVideoDimensions(el.videoWidth, el.videoHeight);" +
             "           }" +
+            "           if (!el.paused && el.currentTime > 0 && !el.ended && window." + JS_INTERFACE_NAME + ") {" +
+            "               window." + JS_INTERFACE_NAME + ".onMediaStateChanged(true, el.title || document.title, el.currentTime * 1000, (el.duration || 0) * 1000);" +
+            "           }" +
             "       }" +
             "   }" +
-            "   document.addEventListener('DOMNodeInserted', hookMediaElements);" +
+            "   var observer = new MutationObserver(function() { hookMediaElements(); });" +
+            "   observer.observe(document.documentElement || document.body, { childList: true, subtree: true });" +
+            "   window.addEventListener('yt-navigate-finish', hookMediaElements);" +
+            "   window.addEventListener('load', hookMediaElements);" +
+            "   setInterval(function() {" +
+            "       var vids = document.querySelectorAll('video');" +
+            "       var anyPlaying = false;" +
+            "       for (var j = 0; j < vids.length; j++) {" +
+            "           if (!vids[j].paused && vids[j].currentTime > 0 && !vids[j].ended) {" +
+            "               anyPlaying = true;" +
+            "               if (vids[j].videoWidth && vids[j].videoHeight && window." + JS_INTERFACE_NAME + ") {" +
+            "                   window." + JS_INTERFACE_NAME + ".onVideoDimensions(vids[j].videoWidth, vids[j].videoHeight);" +
+            "               }" +
+            "               break;" +
+            "           }" +
+            "       }" +
+            "   }, 1500);" +
             "   hookMediaElements();" +
             "})();";
 
