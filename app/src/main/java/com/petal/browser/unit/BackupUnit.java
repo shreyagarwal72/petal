@@ -709,73 +709,56 @@ public class BackupUnit {
                         Log.e("Petal", "Error restoring tab session", e);
                     }
                 }
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
-                }
-                reader.close();
 
-                org.json.JSONObject backupJson = new org.json.JSONObject(sb.toString());
-
-                if (restoreBookmarks && backupJson.has("bookmarks")) {
-                    try {
-                        org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
-                        RecordAction action = new RecordAction(context);
-                        action.open(true);
-                        for (int i = 0; i < bookmarksArray.length(); i++) {
-                            org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
-                            String title = obj.optString("title", "");
-                            String url = obj.optString("url", "");
-                            long time = obj.optLong("time", System.currentTimeMillis());
-                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
-                                Record record = new Record();
-                                record.setTitle(title);
-                                record.setURL(url);
-                                record.setTime(time);
-                                record.setIconColor(1);
-                                action.addBookmark(record);
+                if (restoreSavedSites) {
+                    if (backupJson.has("saved_sites")) {
+                        try {
+                            org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
+                            RecordAction action = new RecordAction(context);
+                            List_standard listStandard = new List_standard(context);
+                            action.open(true);
+                            for (int i = 0; i < sitesArray.length(); i++) {
+                                String domain = sitesArray.optString(i, "");
+                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
+                                    listStandard.addDomain(domain);
+                                }
                             }
+                            action.close();
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring saved sites", e);
                         }
-                        action.close();
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error restoring bookmarks", e);
                     }
-                }
-
-                if (restoreHistory && backupJson.has("history")) {
-                    try {
-                        org.json.JSONArray historyArray = backupJson.getJSONArray("history");
-                        RecordAction action = new RecordAction(context);
-                        action.open(true);
-                        for (int i = 0; i < historyArray.length(); i++) {
-                            org.json.JSONObject obj = historyArray.getJSONObject(i);
-                            String title = obj.optString("title", "");
-                            String url = obj.optString("url", "");
-                            long time = obj.optLong("time", System.currentTimeMillis());
-                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
-                                action.addHistory(new Record(title, url, time, 0L));
+                    if (backupJson.has("trusted_sites")) {
+                        try {
+                            org.json.JSONArray trustedArray = backupJson.getJSONArray("trusted_sites");
+                            RecordAction action = new RecordAction(context);
+                            action.open(true);
+                            for (int i = 0; i < trustedArray.length(); i++) {
+                                String domain = trustedArray.optString(i, "");
+                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_TRUSTED)) {
+                                    action.addDomain(domain, RecordUnit.TABLE_TRUSTED);
+                                }
                             }
+                            action.close();
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring trusted sites", e);
                         }
-                        action.close();
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error restoring history", e);
                     }
-                }
-
-                if (restoreSavedSites && backupJson.has("saved_sites")) {
-                    try {
-                        org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
-                        RecordAction action = new RecordAction(context);
-                        List_standard listStandard = new List_standard(context);
-                        action.open(true);
-                        for (int i = 0; i < sitesArray.length(); i++) {
-                            String domain = sitesArray.optString(i, "");
-                            if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
-                                listStandard.addDomain(domain);
+                    if (backupJson.has("protected_sites")) {
+                        try {
+                            org.json.JSONArray protectArray = backupJson.getJSONArray("protected_sites");
+                            RecordAction action = new RecordAction(context);
+                            action.open(true);
+                            for (int i = 0; i < protectArray.length(); i++) {
+                                String domain = protectArray.optString(i, "");
+                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_PROTECTED)) {
+                                    action.addDomain(domain, RecordUnit.TABLE_PROTECTED);
+                                }
                             }
+                            action.close();
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring protected sites", e);
                         }
-                        action.close();
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error restoring saved sites", e);
                     }
                 }
 
