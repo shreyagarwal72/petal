@@ -113,12 +113,16 @@ public class BackupUnit {
     }
 
     public static void backupToJson(Activity context, boolean backupBookmarks, boolean backupHistory, boolean backupSavedSites, boolean backupSettings) {
+        backupToJson(context, backupBookmarks, backupHistory, true, true, backupSavedSites, backupSettings);
+    }
+
+    public static void backupToJson(Activity context, boolean backupBookmarks, boolean backupHistory, boolean backupStartSites, boolean backupTabSessions, boolean backupSavedSites, boolean backupSettings) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try {
                 org.json.JSONObject backupJson = new org.json.JSONObject();
-                backupJson.put("version", 1);
+                backupJson.put("version", 2);
                 backupJson.put("timestamp", System.currentTimeMillis());
 
                 RecordAction action = new RecordAction(context);
@@ -155,9 +159,37 @@ public class BackupUnit {
                     backupJson.put("history", historyArray);
                 }
 
+                if (backupStartSites) {
+                    action.open(false);
+                    List<Record> startSites = action.listStartSites();
+                    action.close();
+
+                    org.json.JSONArray startArray = new org.json.JSONArray();
+                    for (Record r : startSites) {
+                        org.json.JSONObject obj = new org.json.JSONObject();
+                        obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                        obj.put("url", r.getURL() != null ? r.getURL() : "");
+                        obj.put("filename", r.getFilename() != null ? r.getFilename() : "");
+                        obj.put("ordinal", r.getOrdinal());
+                        startArray.put(obj);
+                    }
+                    backupJson.put("start_sites", startArray);
+                }
+
+                if (backupTabSessions) {
+                    action.open(false);
+                    String sessionJson = action.getSessionStateJson();
+                    action.close();
+                    if (sessionJson != null && !sessionJson.trim().isEmpty()) {
+                        backupJson.put("tab_sessions", sessionJson);
+                    }
+                }
+
                 if (backupSavedSites) {
                     action.open(false);
                     List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
+                    List<String> trusted = action.listDomains(RecordUnit.TABLE_TRUSTED);
+                    List<String> protect = action.listDomains(RecordUnit.TABLE_PROTECTED);
                     action.close();
 
                     org.json.JSONArray sitesArray = new org.json.JSONArray();
@@ -165,6 +197,18 @@ public class BackupUnit {
                         sitesArray.put(domain);
                     }
                     backupJson.put("saved_sites", sitesArray);
+
+                    org.json.JSONArray trustedArray = new org.json.JSONArray();
+                    for (String domain : trusted) {
+                        trustedArray.put(domain);
+                    }
+                    backupJson.put("trusted_sites", trustedArray);
+
+                    org.json.JSONArray protectArray = new org.json.JSONArray();
+                    for (String domain : protect) {
+                        protectArray.put(domain);
+                    }
+                    backupJson.put("protected_sites", protectArray);
                 }
 
                 if (backupSettings) {
@@ -200,12 +244,16 @@ public class BackupUnit {
     }
 
     public static void backupToUri(Context context, android.net.Uri uri, boolean backupBookmarks, boolean backupHistory, boolean backupSavedSites, boolean backupSettings) {
+        backupToUri(context, uri, backupBookmarks, backupHistory, true, true, backupSavedSites, backupSettings);
+    }
+
+    public static void backupToUri(Context context, android.net.Uri uri, boolean backupBookmarks, boolean backupHistory, boolean backupStartSites, boolean backupTabSessions, boolean backupSavedSites, boolean backupSettings) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try {
                 org.json.JSONObject backupJson = new org.json.JSONObject();
-                backupJson.put("version", 1);
+                backupJson.put("version", 2);
                 backupJson.put("timestamp", System.currentTimeMillis());
 
                 RecordAction action = new RecordAction(context);
@@ -242,9 +290,37 @@ public class BackupUnit {
                     backupJson.put("history", historyArray);
                 }
 
+                if (backupStartSites) {
+                    action.open(false);
+                    List<Record> startSites = action.listStartSites();
+                    action.close();
+
+                    org.json.JSONArray startArray = new org.json.JSONArray();
+                    for (Record r : startSites) {
+                        org.json.JSONObject obj = new org.json.JSONObject();
+                        obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                        obj.put("url", r.getURL() != null ? r.getURL() : "");
+                        obj.put("filename", r.getFilename() != null ? r.getFilename() : "");
+                        obj.put("ordinal", r.getOrdinal());
+                        startArray.put(obj);
+                    }
+                    backupJson.put("start_sites", startArray);
+                }
+
+                if (backupTabSessions) {
+                    action.open(false);
+                    String sessionJson = action.getSessionStateJson();
+                    action.close();
+                    if (sessionJson != null && !sessionJson.trim().isEmpty()) {
+                        backupJson.put("tab_sessions", sessionJson);
+                    }
+                }
+
                 if (backupSavedSites) {
                     action.open(false);
                     List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
+                    List<String> trusted = action.listDomains(RecordUnit.TABLE_TRUSTED);
+                    List<String> protect = action.listDomains(RecordUnit.TABLE_PROTECTED);
                     action.close();
 
                     org.json.JSONArray sitesArray = new org.json.JSONArray();
@@ -252,6 +328,18 @@ public class BackupUnit {
                         sitesArray.put(domain);
                     }
                     backupJson.put("saved_sites", sitesArray);
+
+                    org.json.JSONArray trustedArray = new org.json.JSONArray();
+                    for (String domain : trusted) {
+                        trustedArray.put(domain);
+                    }
+                    backupJson.put("trusted_sites", trustedArray);
+
+                    org.json.JSONArray protectArray = new org.json.JSONArray();
+                    for (String domain : protect) {
+                        protectArray.put(domain);
+                    }
+                    backupJson.put("protected_sites", protectArray);
                 }
 
                 if (backupSettings) {
@@ -286,6 +374,10 @@ public class BackupUnit {
     }
 
     public static void restoreFromUri(Context context, android.net.Uri uri, boolean restoreBookmarks, boolean restoreHistory, boolean restoreSavedSites, boolean restoreSettings) {
+        restoreFromUri(context, uri, restoreBookmarks, restoreHistory, true, true, restoreSavedSites, restoreSettings);
+    }
+
+    public static void restoreFromUri(Context context, android.net.Uri uri, boolean restoreBookmarks, boolean restoreHistory, boolean restoreStartSites, boolean restoreTabSessions, boolean restoreSavedSites, boolean restoreSettings) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
@@ -351,21 +443,95 @@ public class BackupUnit {
                     }
                 }
 
-                if (restoreSavedSites && backupJson.has("saved_sites")) {
+                if (restoreStartSites && backupJson.has("start_sites")) {
                     try {
-                        org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
+                        org.json.JSONArray startArray = backupJson.getJSONArray("start_sites");
                         RecordAction action = new RecordAction(context);
-                        List_standard listStandard = new List_standard(context);
                         action.open(true);
-                        for (int i = 0; i < sitesArray.length(); i++) {
-                            String domain = sitesArray.optString(i, "");
-                            if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
-                                listStandard.addDomain(domain);
+                        for (int i = 0; i < startArray.length(); i++) {
+                            org.json.JSONObject obj = startArray.getJSONObject(i);
+                            String title = obj.optString("title", "");
+                            String url = obj.optString("url", "");
+                            String filename = obj.optString("filename", "");
+                            int ordinal = obj.optInt("ordinal", i);
+                            if (!url.isEmpty() && !action.checkStartSite(url)) {
+                                Record record = new Record();
+                                record.setTitle(title);
+                                record.setURL(url);
+                                record.setFilename(filename);
+                                record.setOrdinal(ordinal);
+                                action.addStartSite(record);
                             }
                         }
                         action.close();
                     } catch (Exception e) {
-                        Log.e("Petal", "Error restoring saved sites", e);
+                        Log.e("Petal", "Error restoring start sites", e);
+                    }
+                }
+
+                if (restoreTabSessions && backupJson.has("tab_sessions")) {
+                    try {
+                        String sessionJson = backupJson.getString("tab_sessions");
+                        if (sessionJson != null && !sessionJson.trim().isEmpty()) {
+                            RecordAction action = new RecordAction(context);
+                            action.open(true);
+                            action.saveSessionStateJson(sessionJson);
+                            action.close();
+                        }
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring tab session", e);
+                    }
+                }
+
+                if (restoreSavedSites) {
+                    if (backupJson.has("saved_sites")) {
+                        try {
+                            org.json.JSONArray sitesArray = backupJson.getJSONArray("saved_sites");
+                            RecordAction action = new RecordAction(context);
+                            List_standard listStandard = new List_standard(context);
+                            action.open(true);
+                            for (int i = 0; i < sitesArray.length(); i++) {
+                                String domain = sitesArray.optString(i, "");
+                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_STANDARD)) {
+                                    listStandard.addDomain(domain);
+                                }
+                            }
+                            action.close();
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring saved sites", e);
+                        }
+                    }
+                    if (backupJson.has("trusted_sites")) {
+                        try {
+                            org.json.JSONArray trustedArray = backupJson.getJSONArray("trusted_sites");
+                            RecordAction action = new RecordAction(context);
+                            action.open(true);
+                            for (int i = 0; i < trustedArray.length(); i++) {
+                                String domain = trustedArray.optString(i, "");
+                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_TRUSTED)) {
+                                    action.addDomain(domain, RecordUnit.TABLE_TRUSTED);
+                                }
+                            }
+                            action.close();
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring trusted sites", e);
+                        }
+                    }
+                    if (backupJson.has("protected_sites")) {
+                        try {
+                            org.json.JSONArray protectArray = backupJson.getJSONArray("protected_sites");
+                            RecordAction action = new RecordAction(context);
+                            action.open(true);
+                            for (int i = 0; i < protectArray.length(); i++) {
+                                String domain = protectArray.optString(i, "");
+                                if (!domain.isEmpty() && !action.checkDomain(domain, RecordUnit.TABLE_PROTECTED)) {
+                                    action.addDomain(domain, RecordUnit.TABLE_PROTECTED);
+                                }
+                            }
+                            action.close();
+                        } catch (Exception e) {
+                            Log.e("Petal", "Error restoring protected sites", e);
+                        }
                     }
                 }
 
@@ -434,6 +600,10 @@ public class BackupUnit {
     }
 
     public static void restoreFromJson(Activity context, boolean restoreBookmarks, boolean restoreHistory, boolean restoreSavedSites, boolean restoreSettings) {
+        restoreFromJson(context, restoreBookmarks, restoreHistory, true, true, restoreSavedSites, restoreSettings);
+    }
+
+    public static void restoreFromJson(Activity context, boolean restoreBookmarks, boolean restoreHistory, boolean restoreStartSites, boolean restoreTabSessions, boolean restoreSavedSites, boolean restoreSettings) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
@@ -448,6 +618,97 @@ public class BackupUnit {
                 BufferedReader reader = new BufferedReader(new FileReader(jsonFile));
                 StringBuilder sb = new StringBuilder();
                 String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+                reader.close();
+
+                org.json.JSONObject backupJson = new org.json.JSONObject(sb.toString());
+
+                if (restoreBookmarks && backupJson.has("bookmarks")) {
+                    try {
+                        org.json.JSONArray bookmarksArray = backupJson.getJSONArray("bookmarks");
+                        RecordAction action = new RecordAction(context);
+                        action.open(true);
+                        for (int i = 0; i < bookmarksArray.length(); i++) {
+                            org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
+                            String title = obj.optString("title", "");
+                            String url = obj.optString("url", "");
+                            long time = obj.optLong("time", System.currentTimeMillis());
+                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
+                                Record record = new Record();
+                                record.setTitle(title);
+                                record.setURL(url);
+                                record.setTime(time);
+                                record.setIconColor(1);
+                                action.addBookmark(record);
+                            }
+                        }
+                        action.close();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring bookmarks", e);
+                    }
+                }
+
+                if (restoreHistory && backupJson.has("history")) {
+                    try {
+                        org.json.JSONArray historyArray = backupJson.getJSONArray("history");
+                        RecordAction action = new RecordAction(context);
+                        action.open(true);
+                        for (int i = 0; i < historyArray.length(); i++) {
+                            org.json.JSONObject obj = historyArray.getJSONObject(i);
+                            String title = obj.optString("title", "");
+                            String url = obj.optString("url", "");
+                            long time = obj.optLong("time", System.currentTimeMillis());
+                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
+                                action.addHistory(new Record(title, url, time, 0L));
+                            }
+                        }
+                        action.close();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring history", e);
+                    }
+                }
+
+                if (restoreStartSites && backupJson.has("start_sites")) {
+                    try {
+                        org.json.JSONArray startArray = backupJson.getJSONArray("start_sites");
+                        RecordAction action = new RecordAction(context);
+                        action.open(true);
+                        for (int i = 0; i < startArray.length(); i++) {
+                            org.json.JSONObject obj = startArray.getJSONObject(i);
+                            String title = obj.optString("title", "");
+                            String url = obj.optString("url", "");
+                            String filename = obj.optString("filename", "");
+                            int ordinal = obj.optInt("ordinal", i);
+                            if (!url.isEmpty() && !action.checkStartSite(url)) {
+                                Record record = new Record();
+                                record.setTitle(title);
+                                record.setURL(url);
+                                record.setFilename(filename);
+                                record.setOrdinal(ordinal);
+                                action.addStartSite(record);
+                            }
+                        }
+                        action.close();
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring start sites", e);
+                    }
+                }
+
+                if (restoreTabSessions && backupJson.has("tab_sessions")) {
+                    try {
+                        String sessionJson = backupJson.getString("tab_sessions");
+                        if (sessionJson != null && !sessionJson.trim().isEmpty()) {
+                            RecordAction action = new RecordAction(context);
+                            action.open(true);
+                            action.saveSessionStateJson(sessionJson);
+                            action.close();
+                        }
+                    } catch (Exception e) {
+                        Log.e("Petal", "Error restoring tab session", e);
+                    }
+                }
                 while ((line = reader.readLine()) != null) {
                     sb.append(line);
                 }
@@ -611,7 +872,11 @@ public class BackupUnit {
                 action.open(false);
                 List<Record> bookmarks = action.listBookmark(context, false, 0);
                 List<Record> history = action.listHistory(context);
+                List<Record> startSites = action.listStartSites();
+                String sessionJson = action.getSessionStateJson();
                 List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
+                List<String> trusted = action.listDomains(RecordUnit.TABLE_TRUSTED);
+                List<String> protect = action.listDomains(RecordUnit.TABLE_PROTECTED);
                 action.close();
 
                 org.json.JSONArray bookmarksArray = new org.json.JSONArray();
@@ -634,11 +899,38 @@ public class BackupUnit {
                 }
                 backupJson.put("history", historyArray);
 
+                org.json.JSONArray startArray = new org.json.JSONArray();
+                for (Record r : startSites) {
+                    org.json.JSONObject obj = new org.json.JSONObject();
+                    obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                    obj.put("url", r.getURL() != null ? r.getURL() : "");
+                    obj.put("filename", r.getFilename() != null ? r.getFilename() : "");
+                    obj.put("ordinal", r.getOrdinal());
+                    startArray.put(obj);
+                }
+                backupJson.put("start_sites", startArray);
+
+                if (sessionJson != null && !sessionJson.trim().isEmpty()) {
+                    backupJson.put("tab_sessions", sessionJson);
+                }
+
                 org.json.JSONArray sitesArray = new org.json.JSONArray();
                 for (String domain : domains) {
                     sitesArray.put(domain);
                 }
                 backupJson.put("saved_sites", sitesArray);
+
+                org.json.JSONArray trustedArray = new org.json.JSONArray();
+                for (String domain : trusted) {
+                    trustedArray.put(domain);
+                }
+                backupJson.put("trusted_sites", trustedArray);
+
+                org.json.JSONArray protectArray = new org.json.JSONArray();
+                for (String domain : protect) {
+                    protectArray.put(domain);
+                }
+                backupJson.put("protected_sites", protectArray);
 
                 org.json.JSONObject settingsObj = new org.json.JSONObject();
                 for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
