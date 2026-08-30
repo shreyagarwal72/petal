@@ -277,6 +277,7 @@ fun PetalAboutDeveloperSheetContent(
                             )
                         }
                     }
+                }
 
                 // Floating Material 3 Toast / Snackbar Host
                 PetalThemedSnackbarHost(

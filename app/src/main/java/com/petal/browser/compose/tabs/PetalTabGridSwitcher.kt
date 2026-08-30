@@ -477,86 +477,66 @@ fun PetalTabGridSwitcher(
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }
-                                AnimatedVisibility(
-                                    visible = tab.id !in pendingRemovalIds,
-                                    exit = fadeOut() + scaleOut(targetScale = 0.85f),
-                                    modifier = Modifier.animateItem()
-                                ) {
-                                    val isCurrentDragging = (draggingTabId == tab.id)
-                                    val isTargetHovered = (hoverTargetTabId == tab.id)
+                                val isCurrentDragging = (draggingTabId == tab.id)
+                                val isTargetHovered = (hoverTargetTabId == tab.id)
 
-                                    val dismissState = rememberSwipeToDismissBoxState(
-                                        confirmValueChange = { dismissValue ->
-                                            if (dismissValue != SwipeToDismissBoxValue.Settled) {
-                                                requestOptimisticClose(tab)
-                                                true
-                                            } else false
+                                Box(
+                                    modifier = Modifier
+                                        .animateItem()
+                                        .onGloballyPositioned { coordinates ->
+                                            tabCardBounds[tab.id] = coordinates.boundsInWindow()
                                         }
-                                    )
-                                    SwipeToDismissBox(
-                                        state = dismissState,
-                                        enableDismissFromStartToEnd = draggingTabId == null,
-                                        enableDismissFromEndToStart = draggingTabId == null,
-                                        backgroundContent = { SwipeToCloseBackground(dismissState) }
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .onGloballyPositioned { coordinates ->
-                                                    tabCardBounds[tab.id] = coordinates.boundsInWindow()
-                                                }
-                                                .pointerInput(tab.id) {
-                                                    detectDragGesturesAfterLongPress(
-                                                        onDragStart = {
-                                                            draggingTabId = tab.id
-                                                            dragOffset = Offset.Zero
-                                                        },
-                                                        onDrag = { change, dragAmount ->
-                                                            change.consume()
-                                                            dragOffset += dragAmount
-                                                            val myBounds = tabCardBounds[tab.id]
-                                                            if (myBounds != null) {
-                                                                val currentCenter = myBounds.center + dragOffset
-                                                                val hovered = tabCardBounds.entries.find { (id, bounds) ->
-                                                                    id != tab.id && bounds.contains(currentCenter)
-                                                                }
-                                                                hoverTargetTabId = hovered?.key
-                                                            }
-                                                        },
-                                                        onDragEnd = {
-                                                            val targetId = hoverTargetTabId
-                                                            if (targetId != null) {
-                                                                val targetTab = tabs.find { it.id == targetId }
-                                                                if (targetTab != null) {
-                                                                    PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
-                                                                    refreshGroups()
-                                                                }
-                                                            }
-                                                            draggingTabId = null
-                                                            hoverTargetTabId = null
-                                                            dragOffset = Offset.Zero
-                                                        },
-                                                        onDragCancel = {
-                                                            draggingTabId = null
-                                                            hoverTargetTabId = null
-                                                            dragOffset = Offset.Zero
-                                                        }
-                                                    )
-                                                }
-                                        ) {
-                                            PetalTabCard(
-                                                tab = tab,
-                                                accentColor = accentColor,
-                                                isDragging = isCurrentDragging,
-                                                dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
-                                                isHoveredForMerge = isTargetHovered,
-                                                onTabSelect = {
-                                                    commitPendingRemovals()
-                                                    onTabSelect(tab)
+                                        .pointerInput(tab.id) {
+                                            detectDragGesturesAfterLongPress(
+                                                onDragStart = {
+                                                    draggingTabId = tab.id
+                                                    dragOffset = Offset.Zero
                                                 },
-                                                onTabClose = { requestOptimisticClose(tab) }
+                                                onDrag = { change, dragAmount ->
+                                                    change.consume()
+                                                    dragOffset += dragAmount
+                                                    val myBounds = tabCardBounds[tab.id]
+                                                    if (myBounds != null) {
+                                                        val currentCenter = myBounds.center + dragOffset
+                                                        val hovered = tabCardBounds.entries.find { (id, bounds) ->
+                                                            id != tab.id && bounds.contains(currentCenter)
+                                                        }
+                                                        hoverTargetTabId = hovered?.key
+                                                    }
+                                                },
+                                                onDragEnd = {
+                                                    val targetId = hoverTargetTabId
+                                                    if (targetId != null) {
+                                                        val targetTab = tabs.find { it.id == targetId }
+                                                        if (targetTab != null) {
+                                                            PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
+                                                            refreshGroups()
+                                                        }
+                                                    }
+                                                    draggingTabId = null
+                                                    hoverTargetTabId = null
+                                                    dragOffset = Offset.Zero
+                                                },
+                                                onDragCancel = {
+                                                    draggingTabId = null
+                                                    hoverTargetTabId = null
+                                                    dragOffset = Offset.Zero
+                                                }
                                             )
                                         }
-                                    }
+                                ) {
+                                    PetalTabCard(
+                                        tab = tab,
+                                        accentColor = accentColor,
+                                        isDragging = isCurrentDragging,
+                                        dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
+                                        isHoveredForMerge = isTargetHovered,
+                                        onTabSelect = {
+                                            commitPendingRemovals()
+                                            onTabSelect(tab)
+                                        },
+                                        onTabClose = { requestOptimisticClose(tab) }
+                                    )
                                 }
                             }
                         }
@@ -569,86 +549,66 @@ fun PetalTabGridSwitcher(
                         ) {
                             items(filteredTabs, key = { it.id }) { tab ->
                                 LaunchedEffect(tab.id) { onTabVisible(tab) }
-                                AnimatedVisibility(
-                                    visible = tab.id !in pendingRemovalIds,
-                                    exit = fadeOut() + scaleOut(targetScale = 0.9f),
-                                    modifier = Modifier.animateItem()
-                                ) {
-                                    val isCurrentDragging = (draggingTabId == tab.id)
-                                    val isTargetHovered = (hoverTargetTabId == tab.id)
+                                val isCurrentDragging = (draggingTabId == tab.id)
+                                val isTargetHovered = (hoverTargetTabId == tab.id)
 
-                                    val dismissState = rememberSwipeToDismissBoxState(
-                                        confirmValueChange = { dismissValue ->
-                                            if (dismissValue != SwipeToDismissBoxValue.Settled) {
-                                                requestOptimisticClose(tab)
-                                                true
-                                            } else false
+                                Box(
+                                    modifier = Modifier
+                                        .animateItem()
+                                        .onGloballyPositioned { coordinates ->
+                                            tabCardBounds[tab.id] = coordinates.boundsInWindow()
                                         }
-                                    )
-                                    SwipeToDismissBox(
-                                        state = dismissState,
-                                        enableDismissFromStartToEnd = draggingTabId == null,
-                                        enableDismissFromEndToStart = draggingTabId == null,
-                                        backgroundContent = { SwipeToCloseBackground(dismissState) }
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .onGloballyPositioned { coordinates ->
-                                                    tabCardBounds[tab.id] = coordinates.boundsInWindow()
-                                                }
-                                                .pointerInput(tab.id) {
-                                                    detectDragGesturesAfterLongPress(
-                                                        onDragStart = {
-                                                            draggingTabId = tab.id
-                                                            dragOffset = Offset.Zero
-                                                        },
-                                                        onDrag = { change, dragAmount ->
-                                                            change.consume()
-                                                            dragOffset += dragAmount
-                                                            val myBounds = tabCardBounds[tab.id]
-                                                            if (myBounds != null) {
-                                                                val currentCenter = myBounds.center + dragOffset
-                                                                val hovered = tabCardBounds.entries.find { (id, bounds) ->
-                                                                    id != tab.id && bounds.contains(currentCenter)
-                                                                }
-                                                                hoverTargetTabId = hovered?.key
-                                                            }
-                                                        },
-                                                        onDragEnd = {
-                                                            val targetId = hoverTargetTabId
-                                                            if (targetId != null) {
-                                                                val targetTab = tabs.find { it.id == targetId }
-                                                                if (targetTab != null) {
-                                                                    PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
-                                                                    refreshGroups()
-                                                                }
-                                                            }
-                                                            draggingTabId = null
-                                                            hoverTargetTabId = null
-                                                            dragOffset = Offset.Zero
-                                                        },
-                                                        onDragCancel = {
-                                                            draggingTabId = null
-                                                            hoverTargetTabId = null
-                                                            dragOffset = Offset.Zero
-                                                        }
-                                                    )
-                                                }
-                                        ) {
-                                            PetalTabListItem(
-                                                tab = tab,
-                                                accentColor = accentColor,
-                                                isDragging = isCurrentDragging,
-                                                dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
-                                                isHoveredForMerge = isTargetHovered,
-                                                onTabSelect = {
-                                                    commitPendingRemovals()
-                                                    onTabSelect(tab)
+                                        .pointerInput(tab.id) {
+                                            detectDragGesturesAfterLongPress(
+                                                onDragStart = {
+                                                    draggingTabId = tab.id
+                                                    dragOffset = Offset.Zero
                                                 },
-                                                onTabClose = { requestOptimisticClose(tab) }
+                                                onDrag = { change, dragAmount ->
+                                                    change.consume()
+                                                    dragOffset += dragAmount
+                                                    val myBounds = tabCardBounds[tab.id]
+                                                    if (myBounds != null) {
+                                                        val currentCenter = myBounds.center + dragOffset
+                                                        val hovered = tabCardBounds.entries.find { (id, bounds) ->
+                                                            id != tab.id && bounds.contains(currentCenter)
+                                                        }
+                                                        hoverTargetTabId = hovered?.key
+                                                    }
+                                                },
+                                                onDragEnd = {
+                                                    val targetId = hoverTargetTabId
+                                                    if (targetId != null) {
+                                                        val targetTab = tabs.find { it.id == targetId }
+                                                        if (targetTab != null) {
+                                                            PetalTabGroupManager.createGroupWithTabs(context, tab, targetTab)
+                                                            refreshGroups()
+                                                        }
+                                                    }
+                                                    draggingTabId = null
+                                                    hoverTargetTabId = null
+                                                    dragOffset = Offset.Zero
+                                                },
+                                                onDragCancel = {
+                                                    draggingTabId = null
+                                                    hoverTargetTabId = null
+                                                    dragOffset = Offset.Zero
+                                                }
                                             )
                                         }
-                                    }
+                                ) {
+                                    PetalTabListItem(
+                                        tab = tab,
+                                        accentColor = accentColor,
+                                        isDragging = isCurrentDragging,
+                                        dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
+                                        isHoveredForMerge = isTargetHovered,
+                                        onTabSelect = {
+                                            commitPendingRemovals()
+                                            onTabSelect(tab)
+                                        },
+                                        onTabClose = { requestOptimisticClose(tab) }
+                                    )
                                 }
                             }
                         }
