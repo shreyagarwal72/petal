@@ -164,21 +164,24 @@ fun PetalBottomNavBar(
         }
     } else {
         androidx.compose.material3.Surface(
-            color = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surface,
+            color = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainer,
             tonalElevation = 3.dp,
             shadowElevation = 4.dp,
-            modifier = modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
+            modifier = modifier.fillMaxWidth()
         ) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
+                    .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 // Home Button
                 IconButton(
                     onClick = onHomeClick,

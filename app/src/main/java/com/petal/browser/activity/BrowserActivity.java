@@ -531,7 +531,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
             if (bottomNavContainer != null) {
-                bottomNavContainer.setPadding(0, 0, 0, isKeyboardVisible ? 0 : systemBars.bottom);
+                bottomNavContainer.setPadding(0, 0, 0, 0);
                 bottomNavContainer.setVisibility(isKeyboardVisible ? View.GONE : View.VISIBLE);
             }
             return insets;
