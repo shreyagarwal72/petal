@@ -249,17 +249,11 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     public synchronized void initPreferences(String url) {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            this.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, false);
+            try {
+                this.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, false);
+            } catch (Exception ignored) {}
         }
-        // NOTE: do NOT force LAYER_TYPE_HARDWARE here. initPreferences() runs on
-        // every tab creation, page load, reload, and history restore, so calling
-        // setLayerType repeatedly keeps tearing down and recreating the WebView's
-        // hardware layer. On many devices the compositor can end up presenting a
-        // stale/blank frame during that hand-off instead of the freshly composited
-        // page, which shows up as a solid black content area. Leaving layer type
-        // at its default (as NestedScrollWebView already does deliberately) avoids
-        // that stale-layer window entirely.
-        this.setBackgroundColor(android.graphics.Color.WHITE);
+        // Let Chromium handle the window/canvas background naturally without forced opaque paint
 
         WebSettings webSettings = getSettings();
         com.petal.browser.flags.ChromeFlagsManager.applyFlagsToWebSettings(context, webSettings);
