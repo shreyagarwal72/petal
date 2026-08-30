@@ -21,6 +21,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -189,6 +191,7 @@ object PetalDownloadBannerBridge {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalDownloadBanner(
     bannerData: ActiveBannerData,
@@ -206,6 +209,23 @@ fun PetalDownloadBanner(
         }
     }
 
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value != SwipeToDismissBoxValue.Settled) {
+                onDismiss()
+                true
+            } else {
+                false
+            }
+        }
+    )
+
+    LaunchedEffect(bannerData.downloadId, bannerData.state) {
+        if (visible) {
+            dismissState.reset()
+        }
+    }
+
     AnimatedVisibility(
         visible = visible,
         enter = slideInVertically(
@@ -217,6 +237,19 @@ fun PetalDownloadBanner(
             animationSpec = tween(durationMillis = 300)
         ) + fadeOut(animationSpec = tween(300))
     ) {
+        SwipeToDismissBox(
+            state = dismissState,
+            backgroundContent = {},
+            modifier = Modifier
+                .fillMaxWidth()
+                .pointerInput(bannerData.downloadId, bannerData.state) {
+                    detectVerticalDragGestures { _, dragAmount ->
+                        if (dragAmount < -12f) {
+                            onDismiss()
+                        }
+                    }
+                }
+        ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -379,6 +412,7 @@ fun PetalDownloadBanner(
                     )
                 }
             }
+        }
         }
     }
 }

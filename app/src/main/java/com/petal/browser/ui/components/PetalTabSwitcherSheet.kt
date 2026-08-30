@@ -18,6 +18,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -34,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -480,7 +482,22 @@ fun PetalTabSwitcherContent(
                 }
             }
 
-            // ── 4. Undo Close Snackbar: Anchored near bottom ──────────────
+            // ── 4. Undo Close Snackbar: Anchored near bottom with Slide-to-Hide ──────────────
+            val undoDismissState = rememberSwipeToDismissBoxState(
+                confirmValueChange = { value ->
+                    if (value != SwipeToDismissBoxValue.Settled) {
+                        lastClosedTab = null
+                        true
+                    } else false
+                }
+            )
+
+            LaunchedEffect(lastClosedTab) {
+                if (lastClosedTab != null) {
+                    undoDismissState.reset()
+                }
+            }
+
             AnimatedVisibility(
                 visible = lastClosedTab != null,
                 enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -490,41 +507,55 @@ fun PetalTabSwitcherContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    tonalElevation = 6.dp,
-                    shadowElevation = 8.dp,
-                    modifier = Modifier.fillMaxWidth().entrance()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Tab closed",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        TextButton(
-                            onClick = {
-                                lastClosedTab?.let { restoredTab ->
-                                    if (!tabs.contains(restoredTab)) {
-                                        tabs.add(restoredTab)
-                                    }
+                SwipeToDismissBox(
+                    state = undoDismissState,
+                    backgroundContent = {},
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(lastClosedTab) {
+                            detectVerticalDragGestures { _, dragAmount ->
+                                if (dragAmount > 12f) { // Swiped downwards to dismiss
                                     lastClosedTab = null
                                 }
                             }
+                        }
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        tonalElevation = 6.dp,
+                        shadowElevation = 8.dp,
+                        modifier = Modifier.fillMaxWidth().entrance()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Undo",
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
+                                text = "Tab closed",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.onSurface
                             )
+                            TextButton(
+                                onClick = {
+                                    lastClosedTab?.let { restoredTab ->
+                                        if (!tabs.contains(restoredTab)) {
+                                            tabs.add(restoredTab)
+                                        }
+                                        lastClosedTab = null
+                                    }
+                                }
+                            ) {
+                                Text(
+                                    text = "Undo",
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }
