@@ -316,9 +316,26 @@ private fun RenderUserProfileContent(
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let {
-            pendingCropUri = it
-            showCropDialog = true
+        if (uri != null) {
+            try {
+                val tempFile = java.io.File(context.cacheDir, "temp_avatar_crop.png")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    java.io.FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                if (tempFile.exists() && tempFile.length() > 0) {
+                    pendingCropUri = Uri.fromFile(tempFile)
+                    showCropDialog = true
+                } else {
+                    pendingCropUri = uri
+                    showCropDialog = true
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PetalProfile", "Error caching selected avatar uri", e)
+                pendingCropUri = uri
+                showCropDialog = true
+            }
         }
     }
 
@@ -368,31 +385,32 @@ private fun RenderUserProfileContent(
                     modifier = Modifier.padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(contentAlignment = Alignment.BottomEnd) {
+                    Box(
+                        contentAlignment = Alignment.BottomEnd,
+                        modifier = Modifier.bouncyClickable {
+                            val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
+                            if (profile.avatarType == AvatarType.GALLERY_URI && permanentFile.exists() && permanentFile.length() > 0) {
+                                pendingCropUri = Uri.fromFile(permanentFile)
+                                showCropDialog = true
+                            } else {
+                                galleryLauncher.launch("image/*")
+                            }
+                        }
+                    ) {
                         ProfileAvatarDisplay(profile = profile, sizeDp = 88)
-                        if (profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty()) {
-                            Surface(
-                                onClick = {
-                                    pendingCropUri = Uri.parse(profile.customAvatarUri)
-                                    showCropDialog = true
-                                },
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .bouncyClickable {
-                                        pendingCropUri = Uri.parse(profile.customAvatarUri)
-                                        showCropDialog = true
-                                    }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Rounded.Crop,
-                                        contentDescription = "Crop Profile Picture",
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            border = BorderStroke(2.dp, MaterialTheme.colorScheme.surfaceContainerLow),
+                            modifier = Modifier.size(30.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = if (profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty()) Icons.Rounded.Crop else Icons.Rounded.AddPhotoAlternate,
+                                    contentDescription = "Change Profile Picture",
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
                     }
@@ -409,10 +427,6 @@ private fun RenderUserProfileContent(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Surface(
-                            onClick = {
-                                nameInput = profile.displayName
-                                showEditNameDialog = true
-                            },
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -462,7 +476,6 @@ private fun RenderUserProfileContent(
                     ) {
                         // Gallery / Crop Button
                         Surface(
-                            onClick = { galleryLauncher.launch("image/*") },
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -484,7 +497,6 @@ private fun RenderUserProfileContent(
                         GoogleAccountManager.builtinAvatarPresets.forEach { (presetId, label) ->
                             val isSelected = profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == presetId
                             Surface(
-                                onClick = { GoogleAccountManager.updateAvatarPreset(context, presetId) },
                                 shape = CircleShape,
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
                                 border = if (isSelected) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
@@ -1283,8 +1295,18 @@ private fun cropAndSaveAvatarBitmap(
     rotation: Float
 ): String? {
     return try {
+        val openStream: () -> java.io.InputStream? = {
+            if (sourceUri.scheme == "file" || sourceUri.path?.startsWith("/") == true) {
+                val filePath = sourceUri.path ?: ""
+                val f = java.io.File(filePath)
+                if (f.exists()) java.io.FileInputStream(f) else context.contentResolver.openInputStream(sourceUri)
+            } else {
+                context.contentResolver.openInputStream(sourceUri)
+            }
+        }
+
         val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.contentResolver.openInputStream(sourceUri)?.use { input ->
+        openStream()?.use { input ->
             BitmapFactory.decodeStream(input, null, boundsOptions)
         }
         val origW = boundsOptions.outWidth
@@ -1301,7 +1323,7 @@ private fun cropAndSaveAvatarBitmap(
             inSampleSize = sampleSize
             inPreferredConfig = Bitmap.Config.ARGB_8888
         }
-        val originalBitmap = context.contentResolver.openInputStream(sourceUri)?.use { input ->
+        val originalBitmap = openStream()?.use { input ->
             BitmapFactory.decodeStream(input, null, decodeOptions)
         } ?: return null
 
