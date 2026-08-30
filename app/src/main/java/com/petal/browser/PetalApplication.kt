@@ -1,15 +1,18 @@
 package com.petal.browser
 
+import android.app.Activity
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.os.Bundle
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.petal.browser.engine.ChromiumNativeEngineCore
 import com.petal.browser.predictive.PetalPredictiveJunction
+import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.TabThumbnailCache
 import com.petal.browser.widget.PetalSearchWidgetProvider
 
@@ -20,6 +23,7 @@ import com.petal.browser.widget.PetalSearchWidgetProvider
 class PetalApplication : Application() {
 
     private var lastNightModeBits: Int = 0
+    private var startedActivityCount: Int = 0
 
     private val wallpaperChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -44,6 +48,33 @@ class PetalApplication : Application() {
         } catch (e: Exception) {
             Log.e(TAG, "Failed early Chromium Native Engine init", e)
         }
+
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+            override fun onActivityStarted(activity: Activity) {
+                startedActivityCount++
+            }
+            override fun onActivityResumed(activity: Activity) {}
+            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityStopped(activity: Activity) {
+                startedActivityCount = maxOf(0, startedActivityCount - 1)
+                if (startedActivityCount == 0 && activity.isFinishing) {
+                    val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
+                    if (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) {
+                        BrowserUnit.clearOnExit(this@PetalApplication)
+                    }
+                }
+            }
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+            override fun onActivityDestroyed(activity: Activity) {
+                if (activity.isFinishing) {
+                    val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
+                    if (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) {
+                        BrowserUnit.clearOnExit(this@PetalApplication)
+                    }
+                }
+            }
+        })
 
         lastNightModeBits = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 

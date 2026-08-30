@@ -317,7 +317,7 @@ fun PetalDeleteScreen(
                                 checked = clearQuit,
                                 onCheckedChange = {
                                     clearQuit = it
-                                    sp.edit().putBoolean("sp_clear_quit", it).apply()
+                                    sp.edit().putBoolean("sp_clear_quit", it).putBoolean("sp_clear_on_exit", it).apply()
                                 }
                             )
                         }
