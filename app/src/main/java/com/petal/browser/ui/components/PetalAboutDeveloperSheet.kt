@@ -188,6 +188,8 @@ fun PetalAboutDeveloperSheetContent(
         Box(
             modifier = modifier.fillMaxSize()
         ) {
+            M3ExpressiveVariableBackground(pageSeed = "about_developer_page")
+
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
