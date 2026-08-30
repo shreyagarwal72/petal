@@ -117,16 +117,16 @@ private fun PetalExpressiveWidgetContent(isTall: Boolean) {
     val context = LocalContext.current
     val searchAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     val aiAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
-    val voiceAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_VOICE))
     val incognitoAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO))
     val lensAction = actionStartActivity(widgetIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_LENS))
     val greetingText = remember { PetalGreetingManager.getRandomGreeting(context) }
 
+    // Outer Surface Container styled with extraLargeIncreased (28dp) corners & elevated surface coloring
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(28.dp)
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(GlanceTheme.colors.surface)
             .padding(10.dp)
     ) {
         if (isTall) {
@@ -156,22 +156,20 @@ private fun PetalExpressiveWidgetContent(isTall: Boolean) {
 
                 Spacer(modifier = GlanceModifier.height(6.dp))
 
-                ExpressiveSearchBarCapsule(
+                ExpressiveSearchBarRow(
                     modifier = GlanceModifier.fillMaxWidth().height(56.dp),
                     searchAction = searchAction,
                     aiAction = aiAction,
                     incognitoAction = incognitoAction,
-                    voiceAction = voiceAction,
                     lensAction = lensAction
                 )
             }
         } else {
-            ExpressiveSearchBarCapsule(
+            ExpressiveSearchBarRow(
                 modifier = GlanceModifier.fillMaxSize(),
                 searchAction = searchAction,
                 aiAction = aiAction,
                 incognitoAction = incognitoAction,
-                voiceAction = voiceAction,
                 lensAction = lensAction
             )
         }
@@ -179,192 +177,99 @@ private fun PetalExpressiveWidgetContent(isTall: Boolean) {
 }
 
 @Composable
-private fun ExpressiveSearchBarCapsule(
+private fun ExpressiveSearchBarRow(
     modifier: GlanceModifier,
     searchAction: androidx.glance.action.Action,
     aiAction: androidx.glance.action.Action,
     incognitoAction: androidx.glance.action.Action,
-    voiceAction: androidx.glance.action.Action,
     lensAction: androidx.glance.action.Action
 ) {
     val context = LocalContext.current
-    val emblemColorInt = GlanceTheme.colors.primary.getColor(context).toArgb()
-    val emblemBgColorInt = GlanceTheme.colors.primaryContainer.getColor(context).toArgb()
 
-    val scallopedEmblemBitmap = remember(emblemBgColorInt, emblemColorInt) {
-        createExpressiveEmblemBitmap(
-            bgSizeDp = 44,
-            bgColorInt = emblemBgColorInt,
-            fgColorInt = emblemColorInt,
-            context = context
-        )
-    }
-
-    Box(
-        modifier = modifier
-            .cornerRadius(30.dp)
-            .background(GlanceTheme.colors.surfaceVariant)
-            .clickable(searchAction)
+    Row(
+        modifier = modifier.fillMaxSize(),
+        verticalAlignment = Alignment.Vertical.CenterVertically
     ) {
-        Row(
+        // Flexible-width Pill Search Trigger (largeIncreased shape / 24dp)
+        Box(
             modifier = GlanceModifier
-                .fillMaxSize()
-                .padding(start = 8.dp, end = 6.dp),
-            verticalAlignment = Alignment.Vertical.CenterVertically
+                .fillMaxHeight()
+                .defaultWeight()
+                .cornerRadius(24.dp)
+                .background(GlanceTheme.colors.surfaceVariant)
+                .clickable(searchAction)
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart
         ) {
-            // Material 3 Expressive Scallop Monogram Badge (Left Side 'G' / Petal Emblem)
-            Box(
-                modifier = GlanceModifier
-                    .size(44.dp)
-                    .clickable(searchAction),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    provider = ImageProvider(scallopedEmblemBitmap),
-                    contentDescription = "Search",
-                    modifier = GlanceModifier.fillMaxSize()
+            Text(
+                text = "Search",
+                maxLines = 1,
+                style = TextStyle(
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = GlanceTheme.colors.onSurfaceVariant
                 )
-            }
-
-            Spacer(modifier = GlanceModifier.width(10.dp))
-
-            // Search hint text area
-            Box(
-                modifier = GlanceModifier
-                    .fillMaxHeight()
-                    .defaultWeight()
-                    .clickable(searchAction),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Text(
-                    text = context.getString(R.string.widget_search_hint),
-                    maxLines = 1,
-                    style = TextStyle(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.onSurfaceVariant
-                    )
-                )
-            }
-
-            Spacer(modifier = GlanceModifier.width(6.dp))
-
-            // High-Contrast Expressive Action Island Pill (Incognito + AI Sparkle + Lens/Camera)
-            Box(
-                modifier = GlanceModifier
-                    .height(42.dp)
-                    .cornerRadius(21.dp)
-                    .background(GlanceTheme.colors.primaryContainer)
-                    .padding(horizontal = 4.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.Vertical.CenterVertically
-                ) {
-                    // Incognito Shortcut
-                    Box(
-                        modifier = GlanceModifier
-                            .size(34.dp)
-                            .cornerRadius(17.dp)
-                            .clickable(incognitoAction),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            provider = ImageProvider(R.drawable.icon_incognito),
-                            contentDescription = "Incognito Tab",
-                            modifier = GlanceModifier.size(18.dp),
-                            colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer)
-                        )
-                    }
-
-                    Spacer(modifier = GlanceModifier.width(2.dp))
-
-                    // AI Search / Sparkles Shortcut
-                    Box(
-                        modifier = GlanceModifier
-                            .size(34.dp)
-                            .cornerRadius(17.dp)
-                            .clickable(aiAction),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            provider = ImageProvider(R.drawable.ic_auto_awesome),
-                            contentDescription = "Ask Petal AI",
-                            modifier = GlanceModifier.size(18.dp),
-                            colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer)
-                        )
-                    }
-
-                    Spacer(modifier = GlanceModifier.width(2.dp))
-
-                    // Lens / Camera Search Shortcut
-                    Box(
-                        modifier = GlanceModifier
-                            .size(34.dp)
-                            .cornerRadius(17.dp)
-                            .clickable(lensAction),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            provider = ImageProvider(R.drawable.ic_lens),
-                            contentDescription = "Lens Search",
-                            modifier = GlanceModifier.size(18.dp),
-                            colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer)
-                        )
-                    }
-                }
-            }
+            )
         }
+
+        Spacer(modifier = GlanceModifier.width(8.dp))
+
+        // AI Action Squircle Button - primaryContainer
+        SquircleGlanceActionButton(
+            iconRes = R.drawable.ic_auto_awesome,
+            contentDescription = "AI Assistant",
+            containerColor = GlanceTheme.colors.primaryContainer,
+            contentColor = GlanceTheme.colors.onPrimaryContainer,
+            action = aiAction
+        )
+
+        Spacer(modifier = GlanceModifier.width(8.dp))
+
+        // Incognito Action Squircle Button - secondaryContainer
+        SquircleGlanceActionButton(
+            iconRes = R.drawable.icon_incognito,
+            contentDescription = "Incognito Mode",
+            containerColor = GlanceTheme.colors.secondaryContainer,
+            contentColor = GlanceTheme.colors.onSecondaryContainer,
+            action = incognitoAction
+        )
+
+        Spacer(modifier = GlanceModifier.width(8.dp))
+
+        // Lens Action Squircle Button - tertiaryContainer
+        SquircleGlanceActionButton(
+            iconRes = R.drawable.ic_lens,
+            contentDescription = "Visual Lens",
+            containerColor = GlanceTheme.colors.tertiaryContainer,
+            contentColor = GlanceTheme.colors.onTertiaryContainer,
+            action = lensAction
+        )
     }
 }
 
-/** Expressive Scallop Monogram Badge Generator with centered Google 'G' styling. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private fun createExpressiveEmblemBitmap(
-    bgSizeDp: Int = 44,
-    bgColorInt: Int,
-    fgColorInt: Int,
-    context: Context
-): Bitmap {
-    val density = context.resources.displayMetrics.density
-    val px = (bgSizeDp * density).toInt().coerceAtLeast(1)
-    val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-
-    val centerX = px / 2f
-    val centerY = px / 2f
-    val radius = px / 2f
-
-    // 12-vertex rounded scallop star shape
-    val polygon = RoundedPolygon.star(
-        numVerticesPerRadius = 12,
-        radius = radius,
-        innerRadius = radius * 0.84f,
-        rounding = CornerRounding(radius * 0.30f),
-        centerX = centerX,
-        centerY = centerY
-    )
-
-    val path = polygon.toPath()
-    val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = bgColorInt
-        style = Paint.Style.FILL
+@Composable
+private fun SquircleGlanceActionButton(
+    iconRes: Int,
+    contentDescription: String,
+    containerColor: androidx.glance.unit.ColorProvider,
+    contentColor: androidx.glance.unit.ColorProvider,
+    action: androidx.glance.action.Action
+) {
+    Box(
+        modifier = GlanceModifier
+            .size(46.dp)
+            .cornerRadius(16.dp)
+            .background(containerColor)
+            .clickable(action),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            provider = ImageProvider(iconRes),
+            contentDescription = contentDescription,
+            modifier = GlanceModifier.size(22.dp),
+            colorFilter = ColorFilter.tint(contentColor)
+        )
     }
-    canvas.drawPath(path, bgPaint)
-
-    // Draw centered crisp 'G' Monogram letter
-    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = fgColorInt
-        textSize = px * 0.52f
-        typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
-        textAlign = Paint.Align.CENTER
-    }
-
-    val fontMetrics = textPaint.fontMetrics
-    val baselineY = centerY - (fontMetrics.ascent + fontMetrics.descent) / 2f
-    canvas.drawText("G", centerX, baselineY, textPaint)
-
-    return bitmap
 }
 
 private fun widgetIntent(context: Context, action: String): Intent =

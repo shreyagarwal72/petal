@@ -741,10 +741,6 @@ private fun ShortcutTile(
     val tileShape = remember(uniqueShapeIndex) {
         PetalMaterialShapes.allShapes[uniqueShapeIndex].toShape()
     }
-    val fallbackShape = remember(uniqueShapeIndex) {
-        val offsetIndex = (uniqueShapeIndex + 17) % totalShapes
-        PetalMaterialShapes.allShapes[offsetIndex].toShape()
-    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -763,9 +759,14 @@ private fun ShortcutTile(
             modifier = Modifier
                 .size(60.dp)
                 .graphicsLayer { scaleX = scale; scaleY = scale }
-                .shadow(elevation = 3.dp, shape = tileShape, clip = false)
+                .shadow(elevation = 2.dp, shape = tileShape, clip = false)
                 .clip(tileShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                .border(
+                    width = 0.75.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                    shape = tileShape
+                )
         ) {
             if (!faviconUrl.isNullOrEmpty() && !isImageError) {
                 AsyncImage(
@@ -775,14 +776,14 @@ private fun ShortcutTile(
                     onError = { isImageError = true },
                     modifier = Modifier
                         .size(34.dp)
-                        .clip(fallbackShape)
+                        .clip(tileShape)
                 )
             } else {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(38.dp)
-                        .clip(fallbackShape)
+                        .clip(tileShape)
                         .background(shortcut.containerColor.copy(alpha = 0.18f))
                 ) {
                     SiteBrandIconTinted(
@@ -823,9 +824,10 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
             modifier = Modifier
                 .size(60.dp)
                 .clip(addTileShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .border(
-                    width = 1.5.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
                     shape = addTileShape
                 )
         ) {
@@ -853,84 +855,157 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
 @Composable
 private fun PetalSearchBar(onSearch: (String) -> Unit) {
     // This is a decoy bar, matching Chrome's home-screen search box behavior.
-    // It never accepts typed input itself - tapping anywhere on it (including
-    // the placeholder text area) hands off immediately to the real full-screen
-    // omnibox (PetalOmniboxPage, opened via onSearch("") -> showOmniboxPage("")
-    // in BrowserActivity), which is where live suggestions/history/voice/engine
-    // preference all actually live. Do not reintroduce a local TextField or
-    // local suggestion-fetching here - that previously duplicated and shadowed
-    // the omnibox page instead of opening it.
+    // It never accepts typed input itself - tapping anywhere on the search pill
+    // hands off immediately to the real full-screen omnibox (PetalOmniboxPage,
+    // opened via onSearch("") -> showOmniboxPage("") in BrowserActivity).
     val context = LocalContext.current
     val activity = context as? ComponentActivity
 
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.98f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "search_bar_press_scale"
-    )
-
+    // Outer Surface styled with extraLargeIncreased, elevated surface container coloring,
+    // dynamic tonal elevation, and horizontal layout containment.
     Surface(
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        tonalElevation = 4.dp,
-        shadowElevation = 6.dp,
+        shape = MaterialTheme.shapes.extraLargeIncreased,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 3.dp,
+        shadowElevation = 4.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
+            .height(72.dp)
             .homeLaunchEntrance(2)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clickable(
-                interactionSource = interactionSource,
-                indication = androidx.compose.foundation.LocalIndication.current
-            ) { onSearch("") },
     ) {
         Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(
-                text = "Search or type URL",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+            // Flexible-width pill search trigger with largeIncreased shape & bouncy physics press feedback
+            val searchInteractionSource = remember { MutableInteractionSource() }
+            val searchPressed by searchInteractionSource.collectIsPressedAsState()
+            val searchScale by animateFloatAsState(
+                targetValue = if (searchPressed) 0.94f else 1.0f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                ),
+                label = "search_pill_press_scale"
             )
 
-            IconButton(onClick = {
-                if (activity != null) {
-                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, "")
-                }
-            }) {
-                Icon(
-                    Icons.Rounded.AutoAwesome,
-                    contentDescription = "Petal AI",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .graphicsLayer {
+                        scaleX = searchScale
+                        scaleY = searchScale
+                    }
+                    .clip(MaterialTheme.shapes.largeIncreased)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .clickable(
+                        interactionSource = searchInteractionSource,
+                        indication = androidx.compose.foundation.LocalIndication.current
+                    ) { onSearch("") },
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(
+                    text = "Search",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
-            IconButton(onClick = {
-                if (activity != null) {
-                    com.petal.browser.ui.components.PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
-                        if (result.isNotBlank()) onSearch(result)
+            // AI Action Button (Sparkles) - primaryContainer
+            PetalSquircleActionButton(
+                icon = Icons.Rounded.AutoAwesome,
+                contentDescription = "AI Assistant",
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                onClick = {
+                    if (activity != null) {
+                        com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(activity, "")
                     }
                 }
-            }) {
-                Icon(
-                    Icons.Rounded.Mic,
-                    contentDescription = "Voice Search",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+            )
+
+            // Incognito Action Button (Privacy) - secondaryContainer
+            PetalSquircleActionButton(
+                icon = Icons.Rounded.VisibilityOff,
+                contentDescription = "Incognito Mode",
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                onClick = {
+                    if (activity is com.petal.browser.activity.BrowserActivity) {
+                        activity.addAlbum(null, "petal://home", true, true)
+                    }
+                }
+            )
+
+            // Lens / Scanner Action Button - tertiaryContainer
+            PetalSquircleActionButton(
+                icon = Icons.Rounded.CenterFocusWeak,
+                contentDescription = "Visual Lens",
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                onClick = {
+                    if (activity != null) {
+                        com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(activity)
+                    }
+                }
+            )
         }
+    }
+}
+
+/**
+ * Squircle action icon button with MaterialTheme.shapes.mediumIncreased,
+ * dynamic M3 container tokens, and bouncy spring press animation.
+ */
+@Composable
+private fun PetalSquircleActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    containerColor: Color,
+    contentColor: Color,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "action_btn_press_scale"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(MaterialTheme.shapes.mediumIncreased)
+            .background(containerColor)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.foundation.LocalIndication.current,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = contentColor,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 
@@ -1250,10 +1325,6 @@ private fun EditShortcutDialog(
                 val previewTileShape = remember(previewShapeIndex) {
                     PetalMaterialShapes.allShapes[previewShapeIndex].toShape()
                 }
-                val previewFallbackShape = remember(previewShapeIndex) {
-                    val offsetIndex = (previewShapeIndex + 17) % PetalMaterialShapes.allShapes.size
-                    PetalMaterialShapes.allShapes[offsetIndex].toShape()
-                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -1273,6 +1344,11 @@ private fun EditShortcutDialog(
                             .shadow(elevation = 2.dp, shape = previewTileShape)
                             .clip(previewTileShape)
                             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                            .border(
+                                width = 0.75.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                                shape = previewTileShape
+                            )
                     ) {
                         if (!currentFaviconUrl.isNullOrEmpty() && !isImageError) {
                             AsyncImage(
@@ -1282,7 +1358,7 @@ private fun EditShortcutDialog(
                                 onError = { isImageError = true },
                                 modifier = Modifier
                                     .size(28.dp)
-                                    .clip(previewFallbackShape)
+                                    .clip(previewTileShape)
                             )
                         } else {
                             Text(
