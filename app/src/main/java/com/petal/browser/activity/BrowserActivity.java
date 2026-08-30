@@ -487,9 +487,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
+            public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
+                predictiveBackSwipeEdge = backEvent.getSwipeEdge();
+                beginPredictiveBackGesture();
+            }
+
+            @Override
+            public void handleOnBackProgressed(@NonNull androidx.activity.BackEventCompat backEvent) {
+                applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
+            }
+
+            @Override
             public void handleOnBackPressed() {
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                 performBackNavigation();
+                resetPredictiveBackVisuals();
+            }
+
+            @Override
+            public void handleOnBackCancelled() {
+                settlePredictiveBackGesture(false);
             }
         });
         setContentView(R.layout.activity_main);
@@ -824,11 +841,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             onHideCustomView();
         } else if (dialogOverview != null && dialogOverview.isShowing()) {
             hideOverview();
+        } else if (contentFrame != null && contentFrame.getChildCount() > 0) {
+            contentFrame.removeAllViews();
+            updatePersistentBottomNav();
+            updateOmniBox();
         } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
             searchOnSiteInput.setText("");
             searchOnSiteLayout.setVisibility(GONE);
             appBar.setVisibility(VISIBLE);
         } else if (ninjaWebView != null && ninjaWebView.canGoBack()) {
+            WebBackForwardList list = ninjaWebView.copyBackForwardList();
+            if (list != null && list.getCurrentIndex() > 0) {
+                WebHistoryItem prevItem = list.getItemAtIndex(list.getCurrentIndex() - 1);
+                String prevUrl = prevItem != null ? prevItem.getUrl() : null;
+                if (prevUrl != null && isHomePage(prevUrl)) {
+                    ninjaWebView.loadUrl("about:blank");
+                    ninjaWebView.clearHistory();
+                    showAlbum(currentAlbumController, "about:blank");
+                    return;
+                }
+            }
             sp.edit().putBoolean("backPressed", true).apply();
             ninjaWebView.goBack();
         } else {
