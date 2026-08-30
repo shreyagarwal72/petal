@@ -620,7 +620,7 @@ private fun RenderUserProfileContent(
                     var isClearOnExit by remember { mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) }
                     AccountActionRow(
                         title = "Auto-Clear Data on Exit",
-                        subtitle = "Automatically purge cache, history, and cookies when leaving app",
+                        subtitle = "Automatically purge cache, history, and open tabs on exit (keeps account logins safe)",
                         icon = Icons.Rounded.CleaningServices,
                         trailing = {
                             IconSwitch(

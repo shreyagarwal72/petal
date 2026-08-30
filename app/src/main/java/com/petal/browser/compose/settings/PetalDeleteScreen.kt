@@ -312,7 +312,7 @@ fun PetalDeleteScreen(
 
                             DeleteOptionItem(
                                 title = context.getString(R.string.clear_title_quit),
-                                subtitle = "Automatically clear selected session data when exiting Petal",
+                                subtitle = "Automatically clear history, cache, and open tabs on exit (keeps account logins and credentials safe)",
                                 icon = Icons.Rounded.PowerSettingsNew,
                                 checked = clearQuit,
                                 onCheckedChange = {
