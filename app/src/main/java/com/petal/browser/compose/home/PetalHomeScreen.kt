@@ -401,18 +401,72 @@ fun ComposeView.setupExpressiveHomeScreen(
             dynamicColor = useDynamic,
             expressiveColors = isExpressiveColors
         ) {
-            PetalHomeScreen(
-                backgroundSnapshot = null,
-                accountViewModel = accountViewModel,
-                onSearch = onSearch,
-                onOpenShortcutUrl = onOpenShortcutUrl,
-                onOpenAccountSync = onOpenAccountSync,
-                onOpenBookmarksAction = onOpenBookmarks,
-                onOpenHistoryAction = onOpenHistory,
-                onOpenDownloadsAction = onOpenDownloads,
-                onNewTabAction = onNewTab,
-                onOpenTabSwitcher = onOpenTabSwitcher
-            )
+            // DIAGNOSTIC: the home screen was going fully black with no crash and
+            // nothing in logcat, which means something in PetalHomeScreen's
+            // composition was throwing and getting silently dropped instead of
+            // hitting PetalAppLogger's global handler. Catching it here logs the
+            // real exception (visible in the aLogcat / diagnostic zip export) and
+            // shows a visible error screen instead of a blank one, so the next
+            // occurrence is diagnosable instead of just "black page".
+            var renderError by remember { mutableStateOf<Throwable?>(null) }
+
+            if (renderError == null) {
+                runCatching {
+                    PetalHomeScreen(
+                        backgroundSnapshot = null,
+                        accountViewModel = accountViewModel,
+                        onSearch = onSearch,
+                        onOpenShortcutUrl = onOpenShortcutUrl,
+                        onOpenAccountSync = onOpenAccountSync,
+                        onOpenBookmarksAction = onOpenBookmarks,
+                        onOpenHistoryAction = onOpenHistory,
+                        onOpenDownloadsAction = onOpenDownloads,
+                        onNewTabAction = onNewTab,
+                        onOpenTabSwitcher = onOpenTabSwitcher
+                    )
+                }.onFailure { e ->
+                    com.petal.browser.logger.PetalAppLogger.e(
+                        "PetalHomeScreen",
+                        "Home screen composition failed - showing fallback instead of black screen",
+                        e
+                    )
+                    renderError = e
+                }
+            }
+
+            val error = renderError
+            if (error != null) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Home screen failed to load",
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = error.javaClass.simpleName + ": " + (error.message ?: "no message"),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(20.dp))
+                        Button(onClick = { renderError = null }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
         }
     }
 }
