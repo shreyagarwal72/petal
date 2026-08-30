@@ -99,8 +99,6 @@ object PetalAccessibilityEngine {
         if (!isForceZoomEnabled(context)) return
 
         try {
-            webView.settings.useWideViewPort = true
-            webView.settings.loadWithOverviewMode = true
             webView.settings.setSupportZoom(true)
             webView.settings.builtInZoomControls = true
             webView.settings.displayZoomControls = false
@@ -117,11 +115,6 @@ object PetalAccessibilityEngine {
                             if (updated !== content) {
                                 meta.setAttribute('content', updated);
                             }
-                        } else {
-                            var newMeta = document.createElement('meta');
-                            newMeta.name = 'viewport';
-                            newMeta.content = 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes';
-                            (document.head || document.documentElement).appendChild(newMeta);
                         }
                     } catch(e) {}
                 })();
