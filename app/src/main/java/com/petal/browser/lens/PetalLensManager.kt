@@ -77,6 +77,8 @@ object PetalLensManager {
             } catch (_: Exception) {}
         }
 
+        var launched = false
+
         // 1. Try Google Lens direct attachment intent via Google App
         try {
             val intent = Intent("lens.intent.action.LENS_ATTACHMENT").apply {
@@ -84,64 +86,90 @@ object PetalLensManager {
                 setDataAndType(imageUri, "image/*")
                 clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            if (intent.resolveActivity(context.packageManager) != null) {
+            val resolves = context.packageManager.queryIntentActivities(intent, 0)
+            if (resolves.isNotEmpty()) {
                 context.startActivity(intent)
+                launched = true
                 return
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.w("PetalLens", "Direct lens attachment failed", e)
+        }
 
         // 2. Try Google Lens standalone app via ACTION_SEND
-        try {
-            val standaloneIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/*"
-                putExtra(Intent.EXTRA_STREAM, imageUri)
-                clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
-                setPackage("com.google.ar.lens")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (!launched) {
+            try {
+                val standaloneIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/*"
+                    putExtra(Intent.EXTRA_STREAM, imageUri)
+                    clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
+                    setPackage("com.google.ar.lens")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                val resolves = context.packageManager.queryIntentActivities(standaloneIntent, 0)
+                if (resolves.isNotEmpty()) {
+                    context.startActivity(standaloneIntent)
+                    launched = true
+                    return
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("PetalLens", "Standalone lens send failed", e)
             }
-            if (standaloneIntent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(standaloneIntent)
-                return
-            }
-        } catch (_: Exception) {}
+        }
 
         // 3. Try Google QuickSearchBox ACTION_SEND
-        try {
-            val gsbIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/*"
-                putExtra(Intent.EXTRA_STREAM, imageUri)
-                clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
-                setPackage("com.google.android.googlequicksearchbox")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (!launched) {
+            try {
+                val gsbIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/*"
+                    putExtra(Intent.EXTRA_STREAM, imageUri)
+                    clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
+                    setPackage("com.google.android.googlequicksearchbox")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                val resolves = context.packageManager.queryIntentActivities(gsbIntent, 0)
+                if (resolves.isNotEmpty()) {
+                    context.startActivity(gsbIntent)
+                    launched = true
+                    return
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("PetalLens", "QuickSearchBox send failed", e)
             }
-            if (gsbIntent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(gsbIntent)
-                return
-            }
-        } catch (_: Exception) {}
+        }
 
         // 4. Try generic image chooser across installed photo/lens search handlers
-        try {
-            val chooserIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/*"
-                putExtra(Intent.EXTRA_STREAM, imageUri)
-                clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (!launched) {
+            try {
+                val chooserIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/*"
+                    putExtra(Intent.EXTRA_STREAM, imageUri)
+                    clipData = android.content.ClipData.newRawUri("Lens Image", imageUri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                val chooser = Intent.createChooser(chooserIntent, "Search image with Google Lens").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+                }
+                context.startActivity(chooser)
+                launched = true
+                return
+            } catch (e: Exception) {
+                android.util.Log.w("PetalLens", "Chooser send failed", e)
             }
-            val chooser = Intent.createChooser(chooserIntent, "Search image with Google Lens").apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(chooser)
-            return
-        } catch (_: Exception) {}
+        }
 
-        // 5. Fallback to Google Lens
+        // 5. Fallback to Google Lens web URL
         launchGoogleLensApp(context)
     }
 
