@@ -2403,11 +2403,15 @@ fun PetalSettingsScreen(
 
                             var backupBookmarks by remember { mutableStateOf(true) }
                             var backupHistory by remember { mutableStateOf(true) }
+                            var backupStartSites by remember { mutableStateOf(true) }
+                            var backupTabSessions by remember { mutableStateOf(true) }
                             var backupSavedSites by remember { mutableStateOf(true) }
                             var backupSettings by remember { mutableStateOf(true) }
 
                             var restoreBookmarks by remember { mutableStateOf(true) }
                             var restoreHistory by remember { mutableStateOf(true) }
+                            var restoreStartSites by remember { mutableStateOf(true) }
+                            var restoreTabSessions by remember { mutableStateOf(true) }
                             var restoreSavedSites by remember { mutableStateOf(true) }
                             var restoreSettings by remember { mutableStateOf(true) }
 
@@ -2420,6 +2424,8 @@ fun PetalSettingsScreen(
                                         uri,
                                         backupBookmarks,
                                         backupHistory,
+                                        backupStartSites,
+                                        backupTabSessions,
                                         backupSavedSites,
                                         backupSettings
                                     )
@@ -2435,6 +2441,8 @@ fun PetalSettingsScreen(
                                         uri,
                                         restoreBookmarks,
                                         restoreHistory,
+                                        restoreStartSites,
+                                        restoreTabSessions,
                                         restoreSavedSites,
                                         restoreSettings
                                     )
@@ -2458,15 +2466,25 @@ fun PetalSettingsScreen(
                                                 Spacer(Modifier.width(8.dp))
                                                 Text("Browsing History")
                                             }
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupStartSites = !backupStartSites }) {
+                                                Checkbox(checked = backupStartSites, onCheckedChange = { backupStartSites = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Home Screen Top Sites & Shortcuts")
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupTabSessions = !backupTabSessions }) {
+                                                Checkbox(checked = backupTabSessions, onCheckedChange = { backupTabSessions = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Open Tabs & Tab Groups")
+                                            }
                                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSavedSites = !backupSavedSites }) {
                                                 Checkbox(checked = backupSavedSites, onCheckedChange = { backupSavedSites = it })
                                                 Spacer(Modifier.width(8.dp))
-                                                Text("Saved Startsite Webpages")
+                                                Text("Site Whitelists & Profiles")
                                             }
                                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { backupSettings = !backupSettings }) {
                                                 Checkbox(checked = backupSettings, onCheckedChange = { backupSettings = it })
                                                 Spacer(Modifier.width(8.dp))
-                                                Text("Browser & Theme Settings")
+                                                Text("Browser, Themes & Accessibility Settings")
                                             }
                                         }
                                     },
@@ -2503,15 +2521,25 @@ fun PetalSettingsScreen(
                                                 Spacer(Modifier.width(8.dp))
                                                 Text("Browsing History")
                                             }
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreStartSites = !restoreStartSites }) {
+                                                Checkbox(checked = restoreStartSites, onCheckedChange = { restoreStartSites = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Home Screen Top Sites & Shortcuts")
+                                            }
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreTabSessions = !restoreTabSessions }) {
+                                                Checkbox(checked = restoreTabSessions, onCheckedChange = { restoreTabSessions = it })
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Open Tabs & Tab Groups")
+                                            }
                                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSavedSites = !restoreSavedSites }) {
                                                 Checkbox(checked = restoreSavedSites, onCheckedChange = { restoreSavedSites = it })
                                                 Spacer(Modifier.width(8.dp))
-                                                Text("Saved Startsite Webpages")
+                                                Text("Site Whitelists & Profiles")
                                             }
                                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { restoreSettings = !restoreSettings }) {
                                                 Checkbox(checked = restoreSettings, onCheckedChange = { restoreSettings = it })
                                                 Spacer(Modifier.width(8.dp))
-                                                Text("Browser & Theme Settings")
+                                                Text("Browser, Themes & Accessibility Settings")
                                             }
                                         }
                                     },

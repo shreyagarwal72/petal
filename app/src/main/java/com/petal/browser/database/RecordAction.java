@@ -201,6 +201,58 @@ public class RecordAction {
         return checkUrl(url, RecordUnit.TABLE_BOOKMARK);
     }
 
+    public void addStartSite(Record record) {
+        if (record == null
+                || record.getTitle() == null
+                || record.getTitle().trim().isEmpty()
+                || record.getURL() == null
+                || record.getURL().trim().isEmpty()) {
+            return;
+        }
+        ContentValues values = new ContentValues();
+        values.put(RecordUnit.COLUMN_TITLE, record.getTitle().trim());
+        values.put(RecordUnit.COLUMN_URL, record.getURL().trim());
+        values.put(RecordUnit.COLUMN_FILENAME, record.getFilename() != null ? record.getFilename() : "");
+        values.put(RecordUnit.COLUMN_ORDINAL, record.getOrdinal());
+        database.insert(RecordUnit.TABLE_START, null, values);
+    }
+
+    public List<Record> listStartSites() {
+        List<Record> list = new ArrayList<>();
+        Cursor cursor = database.query(
+                RecordUnit.TABLE_START,
+                new String[]{
+                        RecordUnit.COLUMN_TITLE,
+                        RecordUnit.COLUMN_URL,
+                        RecordUnit.COLUMN_FILENAME,
+                        RecordUnit.COLUMN_ORDINAL
+                },
+                null,
+                null,
+                null,
+                null,
+                RecordUnit.COLUMN_ORDINAL + " ASC"
+        );
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                do {
+                    Record record = new Record();
+                    record.setTitle(cursor.getString(0));
+                    record.setURL(cursor.getString(1));
+                    record.setFilename(cursor.getString(2));
+                    record.setOrdinal(cursor.getInt(3));
+                    list.add(record);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        }
+        return list;
+    }
+
+    public boolean checkStartSite(String url) {
+        return checkUrl(url, RecordUnit.TABLE_START);
+    }
+
     public boolean checkUrl(String url, String table) {
         if (url == null || url.trim().isEmpty()) {
             return false;
