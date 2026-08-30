@@ -240,10 +240,6 @@ public class BrowserUnit {
 
         boolean clearHistory = sp.getBoolean("sp_clear_history", false);
         boolean clearCache = sp.getBoolean("sp_clear_cache", false);
-        boolean clearCookie = sp.getBoolean("sp_clear_cookie", false);
-        boolean clearIndexedDB = sp.getBoolean("sp_clearIndexedDB", false);
-        boolean clearDB = sp.getBoolean("sp_deleteDatabase", false);
-        boolean clearSettings = sp.getBoolean("sp_clear_settings", false);
 
         // 1. History cleanup: full history table if clearHistory is true, otherwise session-scoped history
         if (clearHistory) {
@@ -260,47 +256,15 @@ public class BrowserUnit {
             }
         }
 
-        // 3. Clear cookies if selected
-        if (clearCookie) {
-            try {
-                CookieManager cookieManager = CookieManager.getInstance();
-                cookieManager.flush();
-                cookieManager.removeAllCookies(null);
-            } catch (Exception exception) {
-                Log.w("browser", "Error clearing cookies on exit", exception);
-            }
-        }
-
-        // 4. Clear IndexedDB / WebStorage if selected
-        if (clearIndexedDB) {
-            try {
-                WebStorage.getInstance().deleteAllData();
-            } catch (Exception ignored) {}
-        }
-
-        // 5. Clear Database if selected
-        if (clearDB) {
-            try {
-                context.deleteDatabase("Ninja4.db");
-                context.deleteDatabase("item_icon.db");
-                sp.edit().putInt("restart_changed", 1).apply();
-            } catch (Exception ignored) {}
-        }
-
-        // 6. Clear Settings if selected
-        if (clearSettings) {
-            clearSettingsSafely(sp);
-            List_standard listStandard = new List_standard(context);
-            listStandard.clearDomains();
-        }
-
-        // 7. Clear session tab thumbnails and open tabs state
+        // 3. Clear session tab thumbnails and reset open tabs state
         try {
             TabThumbnailCache.evictAll();
         } catch (Exception ignored) {}
         try {
             sp.edit().putString("openTabs", "").apply();
         } catch (Exception ignored) {}
+
+        // Note: NEVER remove account logins, Google credentials, saved passwords, or auth tokens on exit.
     }
 
     public static void clearBrowserData(Context context) {
@@ -358,12 +322,17 @@ public class BrowserUnit {
                 key.contains("token") ||
                 key.contains("login") ||
                 key.contains("pass") ||
+                key.contains("credential") ||
+                key.contains("sync") ||
+                key.contains("email") ||
+                key.contains("profile") ||
                 key.startsWith("sp_gemini") ||
                 key.startsWith("sp_openrouter") ||
                 key.startsWith("sp_openai") ||
                 key.startsWith("sp_grok") ||
                 key.startsWith("sp_groq") ||
                 key.startsWith("sp_google") ||
+                key.startsWith("sp_user_") ||
                 key.startsWith("sp_custom_font") ||
                 key.startsWith("sp_custom_")
             )) {
