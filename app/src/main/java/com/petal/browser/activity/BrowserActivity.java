@@ -1033,6 +1033,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                return true;
+            } else if (event.getAction() == KeyEvent.ACTION_UP) {
+                if (!event.isCanceled()) {
+                    com.petal.browser.haptics.PetalHapticEngine.getInstance(this).playClick(this);
+                    performBackNavigation();
+                    resetPredictiveBackVisuals();
+                }
+                return true;
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
             case KeyEvent.KEYCODE_MENU:
@@ -1043,7 +1060,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 com.petal.browser.view.NinjaToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
                 return true;
             case KeyEvent.KEYCODE_BACK:
-                performBackNavigation();
                 return true;
         }
         return super.onKeyDown(keyCode, event);

@@ -62,8 +62,6 @@ fun PetalIncognitoHomeScreen(
     var blockThirdPartyCookies by remember { mutableStateOf(true) }
 
     PetalIncognitoTheme(useAmoled = isAmoled) {
-        androidx.activity.compose.BackHandler(enabled = true, onBack = onCloseIncognito)
-
         val incognitoSubtitles = remember {
             listOf(
                 "Off the grid. No traces, no history.",
