@@ -462,132 +462,135 @@ fun PetalHomeScreen(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
-    // On back press from Home Screen, minimize the app
-    androidx.activity.compose.BackHandler(enabled = true) {
-        val activity = context as? com.petal.browser.activity.BrowserActivity
-        if (activity != null) {
-            activity.moveTaskToBack(true)
-        } else {
-            (context as? androidx.activity.ComponentActivity)?.moveTaskToBack(true)
-        }
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // ── Layer 0: living Material 3 Expressive background ───────────
-            if (isWelcomeShown) {
-                com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                    modifier = Modifier.fillMaxSize(),
-                    pageSeed = "home_page"
-                )
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = {
+            val activity = context as? com.petal.browser.activity.BrowserActivity
+            if (activity != null) {
+                activity.moveTaskToBack(true)
+            } else {
+                (context as? androidx.activity.ComponentActivity)?.moveTaskToBack(true)
             }
-
-            Column(
-                modifier = Modifier.fillMaxSize()
+        }
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
             ) {
-                com.petal.browser.ui.components.ExpressiveHeader(
-                    title = "Petal",
-                    subtitle = "Personal Window to the Web",
-                    actions = {
-                        IconButton(
-                            onClick = onOpenAccountSync,
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            ProfileAvatarDisplay(profile = profile, sizeDp = 36)
-                        }
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // ── Layer 0: living Material 3 Expressive background ───────────
+                    if (isWelcomeShown) {
+                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                            modifier = Modifier.fillMaxSize(),
+                            pageSeed = "home_page"
+                        )
                     }
-                )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Cap the content column width on large screens/tablets so the
-                    // hero search bar and grid don't stretch edge-to-edge.
                     Column(
-                        modifier = Modifier.widthIn(max = 640.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Spacer(Modifier.height(20.dp))
-
-                        // ── Greeting Tagline (replaces removed quick shortcuts row) ──
-                        PetalGreetingTagline(profile = profile)
-
-                        Spacer(Modifier.height(18.dp))
-
-                        // ── Hero Search Bar (moved down into former quick-actions slot) ──
-                        PetalSearchBar(onSearch = onSearch)
-
-                        Spacer(Modifier.height(26.dp))
-
-                        // ── Shortcuts Grid (4 columns, squircle tiles) ──────────
-                        PetalShortcutGrid(
-                            items = mergedItems,
-                            onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
-                            onEditShortcutSlot = { index -> editingSlotIndex = index },
-                            onAddShortcutClick = { isAddingNewShortcut = true }
+                        com.petal.browser.ui.components.ExpressiveHeader(
+                            title = "Petal",
+                            subtitle = "Personal Window to the Web",
+                            actions = {
+                                IconButton(
+                                    onClick = onOpenAccountSync,
+                                    modifier = Modifier.size(44.dp)
+                                ) {
+                                    ProfileAvatarDisplay(profile = profile, sizeDp = 36)
+                                }
+                            }
                         )
 
-                        Spacer(Modifier.height(96.dp))
-                    }
-                }
-            }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Cap the content column width on large screens/tablets so the
+                            // hero search bar and grid don't stretch edge-to-edge.
+                            Column(
+                                modifier = Modifier.widthIn(max = 640.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Spacer(Modifier.height(20.dp))
 
-            // ── Create New Shortcut Dialog ────────────────────────────────────
-            if (isAddingNewShortcut) {
-                EditShortcutDialog(
-                    dialogTitle = "Add Shortcut",
-                    initialName = "",
-                    initialUrl = "",
-                    initialColor = Color(0xFF4285F4),
-                    onDismiss = { isAddingNewShortcut = false },
-                    onSave = { newShortcut ->
-                        val newList = shortcuts.toMutableList()
-                        newList.add(newShortcut)
-                        shortcuts = newList
-                        saveHomeShortcuts(context, newList)
-                        isAddingNewShortcut = false
-                    },
-                    onDelete = null
-                )
-            }
+                                // ── Greeting Tagline (replaces removed quick shortcuts row) ──
+                                PetalGreetingTagline(profile = profile)
 
-            // ── Edit Existing Shortcut Dialog ─────────────────────────────────
-            editingSlotIndex?.let { slotIndex ->
-                val current = shortcuts.getOrNull(slotIndex)
-                if (current != null) {
-                    EditShortcutDialog(
-                        dialogTitle = "Edit Shortcut",
-                        initialName = current.label,
-                        initialUrl = current.url,
-                        initialColor = current.containerColor,
-                        onDismiss = { editingSlotIndex = null },
-                        onSave = { updatedShortcut ->
-                            val newList = shortcuts.toMutableList()
-                            if (slotIndex in newList.indices) {
-                                newList[slotIndex] = updatedShortcut
+                                Spacer(Modifier.height(18.dp))
+
+                                // ── Hero Search Bar (moved down into former quick-actions slot) ──
+                                PetalSearchBar(onSearch = onSearch)
+
+                                Spacer(Modifier.height(26.dp))
+
+                                // ── Shortcuts Grid (4 columns, squircle tiles) ──────────
+                                PetalShortcutGrid(
+                                    items = mergedItems,
+                                    onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
+                                    onEditShortcutSlot = { index -> editingSlotIndex = index },
+                                    onAddShortcutClick = { isAddingNewShortcut = true }
+                                )
+
+                                Spacer(Modifier.height(96.dp))
                             }
-                            shortcuts = newList
-                            saveHomeShortcuts(context, newList)
-                            editingSlotIndex = null
-                        },
-                        onDelete = {
-                            val newList = shortcuts.toMutableList()
-                            if (slotIndex in newList.indices) {
-                                newList.removeAt(slotIndex)
-                            }
-                            shortcuts = newList
-                            saveHomeShortcuts(context, newList)
-                            editingSlotIndex = null
                         }
-                    )
+                    }
+
+                    // ── Create New Shortcut Dialog ────────────────────────────────────
+                    if (isAddingNewShortcut) {
+                        EditShortcutDialog(
+                            dialogTitle = "Add Shortcut",
+                            initialName = "",
+                            initialUrl = "",
+                            initialColor = Color(0xFF4285F4),
+                            onDismiss = { isAddingNewShortcut = false },
+                            onSave = { newShortcut ->
+                                val newList = shortcuts.toMutableList()
+                                newList.add(newShortcut)
+                                shortcuts = newList
+                                saveHomeShortcuts(context, newList)
+                                isAddingNewShortcut = false
+                            },
+                            onDelete = null
+                        )
+                    }
+
+                    // ── Edit Existing Shortcut Dialog ─────────────────────────────────
+                    editingSlotIndex?.let { slotIndex ->
+                        val current = shortcuts.getOrNull(slotIndex)
+                        if (current != null) {
+                            EditShortcutDialog(
+                                dialogTitle = "Edit Shortcut",
+                                initialName = current.label,
+                                initialUrl = current.url,
+                                initialColor = current.containerColor,
+                                onDismiss = { editingSlotIndex = null },
+                                onSave = { updatedShortcut ->
+                                    val newList = shortcuts.toMutableList()
+                                    if (slotIndex in newList.indices) {
+                                        newList[slotIndex] = updatedShortcut
+                                    }
+                                    shortcuts = newList
+                                    saveHomeShortcuts(context, newList)
+                                    editingSlotIndex = null
+                                },
+                                onDelete = {
+                                    val newList = shortcuts.toMutableList()
+                                    if (slotIndex in newList.indices) {
+                                        newList.removeAt(slotIndex)
+                                    }
+                                    shortcuts = newList
+                                    saveHomeShortcuts(context, newList)
+                                    editingSlotIndex = null
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -596,7 +599,7 @@ fun PetalHomeScreen(
 
 // ── 5. Shortcut Grid ──────────────────────────────────────────────────────
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PetalShortcutGrid(
     items: List<Pair<PetalShortcut, Boolean>>, // shortcut to isEditable
@@ -604,26 +607,36 @@ private fun PetalShortcutGrid(
     onEditShortcutSlot: (Int) -> Unit,
     onAddShortcutClick: () -> Unit
 ) {
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        maxItemsInEachRow = 4,
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    // Calculate number of rows so we can give the non-scrollable grid a fixed height.
+    // Grid is 4 columns: items + 1 "add" tile.
+    val totalCells = items.size + 1
+    val rows = (totalCells + 3) / 4 // ceiling division
+    val tileSize = 60.dp
+    val labelHeight = 32.dp
+    val verticalSpacing = 16.dp
+    val gridHeight = (tileSize + labelHeight + verticalSpacing) * rows + verticalSpacing
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(4),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(gridHeight),
+        userScrollEnabled = false, // parent Column handles scrolling
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(verticalSpacing)
     ) {
-        items.forEachIndexed { index, (shortcut, isEditable) ->
-            Box(modifier = Modifier.width(68.dp)) {
-                ShortcutTile(
-                    shortcut = shortcut,
-                    isEditable = isEditable,
-                    index = index,
-                    onClick = { onOpenShortcut(shortcut) },
-                    onLongClick = { if (isEditable) onEditShortcutSlot(index) }
-                )
-            }
+        itemsIndexed(items) { index, (shortcut, isEditable) ->
+            ShortcutTile(
+                shortcut = shortcut,
+                isEditable = isEditable,
+                index = index,
+                onClick = { onOpenShortcut(shortcut) },
+                onLongClick = { if (isEditable) onEditShortcutSlot(index) }
+            )
         }
 
         // "+" Add tile at end
-        Box(modifier = Modifier.width(68.dp)) {
+        item {
             AddShortcutTile(index = items.size, onClick = onAddShortcutClick)
         }
     }
@@ -901,22 +914,18 @@ private val eveningGreetingTaglines = listOf(
 private object PetalSessionGreeting {
     private var sessionTemplate: String? = null
 
-    fun getGreeting(username: String): String {
-        return try {
-            if (sessionTemplate == null) {
-                val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-                val timeSpecificTaglines = when {
-                    hour in 4..11 -> morningGreetingTaglines
-                    hour in 12..16 -> afternoonGreetingTaglines
-                    else -> eveningGreetingTaglines
-                }
-                val pool = generalGreetingTaglines + timeSpecificTaglines
-                sessionTemplate = pool.randomOrNull() ?: "Welcome back, %s—the web is ready whenever you are."
+    fun getSessionTemplate(): String {
+        if (sessionTemplate == null) {
+            val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+            val timeSpecificTaglines = when {
+                hour in 4..11 -> morningGreetingTaglines
+                hour in 12..16 -> afternoonGreetingTaglines
+                else -> eveningGreetingTaglines
             }
-            (sessionTemplate ?: "Welcome back, %s").replace("%s", username)
-        } catch (_: Throwable) {
-            "Welcome back, $username"
+            val pool = generalGreetingTaglines + timeSpecificTaglines
+            sessionTemplate = pool.random()
         }
+        return sessionTemplate!!
     }
 }
 
@@ -930,13 +939,13 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
     LaunchedEffect(Unit) {
         try {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName
+            val currentVersion = context.packageManager.getPackageInfo(context.getPackageName(), 0).versionName
             val lastSeenVersion = sp.getString("sp_last_seen_welcome_version", "")
             if (!currentVersion.isNullOrBlank() && currentVersion != lastSeenVersion) {
                 sp.edit().putString("sp_last_seen_welcome_version", currentVersion).apply()
                 updateWelcomeMessage = "Welcome to Petal v$currentVersion! 🎉 Enjoy the latest updates."
             }
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
@@ -945,7 +954,7 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         if (!updateWelcomeMessage.isNullOrBlank()) {
             updateWelcomeMessage!!
         } else {
-            PetalSessionGreeting.getGreeting(username)
+            PetalSessionGreeting.getSessionTemplate().format(username)
         }
     }
 
