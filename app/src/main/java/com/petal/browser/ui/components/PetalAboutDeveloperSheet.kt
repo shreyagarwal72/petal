@@ -313,7 +313,6 @@ fun DeveloperHeroCard(
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(onClick = onCopyGithub)
-            .entrance()
     ) {
         Column(
             modifier = Modifier
@@ -412,7 +411,6 @@ fun DeveloperMissionCard() {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
-            .entrance()
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -497,7 +495,6 @@ private fun MetricBadgeCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
         modifier = modifier
             .fillMaxWidth()
-            .entrance()
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -546,7 +543,6 @@ fun DeveloperTechStackCard() {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
-            .entrance()
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -624,7 +620,6 @@ fun DeveloperActionsCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
-            .entrance()
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -1027,7 +1022,6 @@ fun PetalCreditsSheetContent(
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .entrance()
                             ) {
                                 Column(
                                     modifier = Modifier.padding(18.dp),
@@ -1124,7 +1118,6 @@ fun CreditCardItem(
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(onClick = onClick)
-            .entrance()
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
