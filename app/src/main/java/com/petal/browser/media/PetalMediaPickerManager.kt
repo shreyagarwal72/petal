@@ -31,19 +31,37 @@ data class MediaItem(
 object PetalMediaPickerManager {
 
     /**
-     * Returns required runtime permissions based on Android SDK level.
+     * Returns required runtime permissions based on Android SDK level and requested filter.
      */
-    fun getRequiredMediaPermissions(): Array<String> {
+    fun getRequiredMediaPermissions(filterType: MediaFilterType = MediaFilterType.ALL): Array<String> {
         return when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO,
-                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-            )
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO
-            )
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+                when (filterType) {
+                    MediaFilterType.PHOTOS -> arrayOf(
+                        Manifest.permission.READ_MEDIA_IMAGES,
+                        Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                    )
+                    MediaFilterType.VIDEOS -> arrayOf(
+                        Manifest.permission.READ_MEDIA_VIDEO,
+                        Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                    )
+                    MediaFilterType.ALL -> arrayOf(
+                        Manifest.permission.READ_MEDIA_IMAGES,
+                        Manifest.permission.READ_MEDIA_VIDEO,
+                        Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                    )
+                }
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                when (filterType) {
+                    MediaFilterType.PHOTOS -> arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+                    MediaFilterType.VIDEOS -> arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
+                    MediaFilterType.ALL -> arrayOf(
+                        Manifest.permission.READ_MEDIA_IMAGES,
+                        Manifest.permission.READ_MEDIA_VIDEO
+                    )
+                }
+            }
             else -> arrayOf(
                 Manifest.permission.READ_EXTERNAL_STORAGE
             )
@@ -51,20 +69,29 @@ object PetalMediaPickerManager {
     }
 
     /**
-     * Checks if media read permissions are granted.
+     * Checks if media read permissions are granted for the specified filter type.
      */
-    fun hasMediaPermissions(context: Context): Boolean {
+    fun hasMediaPermissions(context: Context, filterType: MediaFilterType = MediaFilterType.ALL): Boolean {
         return when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
                 val fullImages = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
                 val fullVideos = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
                 val partial = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) == PackageManager.PERMISSION_GRANTED
-                (fullImages && fullVideos) || partial
+                if (partial) return true
+                when (filterType) {
+                    MediaFilterType.PHOTOS -> fullImages
+                    MediaFilterType.VIDEOS -> fullVideos
+                    MediaFilterType.ALL -> fullImages || fullVideos
+                }
             }
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
                 val images = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
                 val videos = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
-                images || videos
+                when (filterType) {
+                    MediaFilterType.PHOTOS -> images
+                    MediaFilterType.VIDEOS -> videos
+                    MediaFilterType.ALL -> images || videos
+                }
             }
             else -> {
                 ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
