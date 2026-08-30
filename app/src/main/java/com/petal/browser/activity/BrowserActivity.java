@@ -3170,7 +3170,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 }
             );
-            presentComposeScreen(creditsView);
+            presentComposeScreen(creditsView, false);
         } catch (Exception e) {
             e.printStackTrace();
         }

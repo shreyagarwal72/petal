@@ -239,6 +239,7 @@ fun PetalAboutDeveloperSheetContent(
                                 try {
                                     if (url == "petal://credits") {
                                         (context as? ComponentActivity)?.let { act ->
+                                            onClose()
                                             PetalCreditsBridge.show(act) {
                                                 PetalAboutDeveloperBridge.show(act)
                                             }

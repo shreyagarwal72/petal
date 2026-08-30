@@ -45,7 +45,8 @@ import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 fun PetalAppLockScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     onUnlocked: () -> Unit = {},
-    onBackPress: () -> Unit = {}
+    onBackPress: () -> Unit = {},
+    wrapPredictive: Boolean = true,
 ) {
     val context = LocalContext.current
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
@@ -154,151 +155,159 @@ fun PetalAppLockScreen(
         )
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onBackPress,
-    ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Scaffold(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0)
-            ) { innerPadding ->
-                Box(
+    val content = @Composable {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                M3ExpressiveVariableBackground(
+                    modifier = Modifier.fillMaxSize(),
+                    pageSeed = "security_app_lock"
+                )
+
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    M3ExpressiveVariableBackground(
-                        modifier = Modifier.fillMaxSize(),
-                        pageSeed = "security_app_lock"
+                    val animatedShapeIndex by remember { mutableIntStateOf(0) }
+                    val headerShape: Shape = ExpressivePasswordShapes[animatedShapeIndex % ExpressivePasswordShapes.size].toShape()
+                    val avatarScale = remember { androidx.compose.animation.core.Animatable(0.8f) }
+                    LaunchedEffect(isUnlockedSuccess) {
+                        avatarScale.animateTo(
+                            1f,
+                            animationSpec = androidx.compose.animation.core.spring(
+                                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                            )
+                        )
+                    }
+
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(96.dp)
+                            .scale(avatarScale.value)
+                            .clip(headerShape)
+                            .background(
+                                if (isUnlockedSuccess) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceContainerHighest
+                            )
+                    ) {
+                        Icon(
+                            imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
+                            contentDescription = "App Lock",
+                            tint = if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text(
+                        text = if (isUnlockedSuccess) "Unlocked Successfully" else "App Protected",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Text(
+                        text = "Enter your passcode or use biometric authentication",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
+                    )
+
+                    PetalShapedPasswordInput(
+                        value = enteredPasscode,
+                        onValueChange = { newValue ->
+                            enteredPasscode = newValue
+                            if (errorMessage != null) errorMessage = null
+                            if (savedPasscode.isNotBlank() && newValue.trim() == savedPasscode.trim()) {
+                                verifyPasscode()
+                            }
+                        },
+                        hintText = "Enter App Password",
+                        isError = errorMessage != null,
+                        accentColor = MaterialTheme.colorScheme.primary,
+                        onUnlock = { verifyPasscode() },
+                        unlockButtonText = "Unlock"
+                    )
+
+                    AnimatedVisibility(
+                        visible = errorMessage != null,
+                        enter = fadeIn(),
+                        exit = fadeOut()
                     ) {
-                        val animatedShapeIndex by remember { mutableIntStateOf(0) }
-                        val headerShape: Shape = ExpressivePasswordShapes[animatedShapeIndex % ExpressivePasswordShapes.size].toShape()
-                        val avatarScale = remember { androidx.compose.animation.core.Animatable(0.8f) }
-                        LaunchedEffect(isUnlockedSuccess) {
-                            avatarScale.animateTo(
-                                1f,
-                                animationSpec = androidx.compose.animation.core.spring(
-                                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
-                                )
+                        if (errorMessage != null) {
+                            Text(
+                                text = errorMessage!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(top = 8.dp)
                             )
                         }
+                    }
 
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(96.dp)
-                                .scale(avatarScale.value)
-                                .clip(headerShape)
-                                .background(
-                                    if (isUnlockedSuccess) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.surfaceContainerHighest
-                                )
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    if (isBiometricAvailable) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                imageVector = if (isUnlockedSuccess) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
-                                contentDescription = "App Lock",
-                                tint = if (isUnlockedSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(48.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        Text(
-                            text = if (isUnlockedSuccess) "Unlocked Successfully" else "App Protected",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-
-                        Text(
-                            text = "Enter your passcode or use biometric authentication",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
-                        )
-
-                        PetalShapedPasswordInput(
-                            value = enteredPasscode,
-                            onValueChange = { newValue ->
-                                enteredPasscode = newValue
-                                if (errorMessage != null) errorMessage = null
-                                if (savedPasscode.isNotBlank() && newValue.trim() == savedPasscode.trim()) {
-                                    verifyPasscode()
-                                }
-                            },
-                            hintText = "Enter App Password",
-                            isError = errorMessage != null,
-                            accentColor = MaterialTheme.colorScheme.primary,
-                            onUnlock = { verifyPasscode() },
-                            unlockButtonText = "Unlock"
-                        )
-
-                        AnimatedVisibility(
-                            visible = errorMessage != null,
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            if (errorMessage != null) {
-                                Text(
-                                    text = errorMessage!!,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(top = 8.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        if (isBiometricAvailable) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            OutlinedButton(
+                                onClick = { triggerBiometricUnlock() },
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.weight(1f)
                             ) {
-                                OutlinedButton(
-                                    onClick = { triggerBiometricUnlock() },
-                                    shape = RoundedCornerShape(16.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Fingerprint", fontWeight = FontWeight.Bold)
-                                }
-
-                                IconButton(
-                                    onClick = { showChoiceDialog = true },
-                                    colors = IconButtonDefaults.filledTonalIconButtonColors(),
-                                    modifier = Modifier.size(48.dp)
-                                ) {
-                                    Icon(Icons.Rounded.Security, contentDescription = "Choose Lock Option")
-                                }
+                                Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Fingerprint", fontWeight = FontWeight.Bold)
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
 
-                        TextButton(
-                            onClick = {
-                                enteredPasscode = ""
-                                errorMessage = null
+                            IconButton(
+                                onClick = { showChoiceDialog = true },
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(),
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(Icons.Rounded.Security, contentDescription = "Choose Lock Option")
                             }
-                        ) {
-                            Text("Clear Input")
                         }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    TextButton(
+                        onClick = {
+                            enteredPasscode = ""
+                            errorMessage = null
+                        }
+                    ) {
+                        Text("Clear Input")
                     }
                 }
             }
         }
+    }
+
+    if (wrapPredictive) {
+        com.petal.browser.predictive.PetalPredictiveBackSurface(
+            enabled = true,
+            onBack = onBackPress,
+        ) {
+            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+                content()
+            }
+        }
+    } else {
+        content()
     }
 }
