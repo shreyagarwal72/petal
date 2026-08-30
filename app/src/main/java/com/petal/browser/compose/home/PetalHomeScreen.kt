@@ -505,7 +505,8 @@ fun PetalHomeScreen(
 
                         Column(
                             modifier = Modifier
-                                .fillMaxSize()
+                                .fillMaxWidth()
+                                .weight(1f)
                                 .verticalScroll(rememberScrollState())
                                 .padding(horizontal = 20.dp, vertical = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -599,7 +600,7 @@ fun PetalHomeScreen(
 
 // ── 5. Shortcut Grid ──────────────────────────────────────────────────────
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun PetalShortcutGrid(
     items: List<Pair<PetalShortcut, Boolean>>, // shortcut to isEditable
@@ -607,36 +608,26 @@ private fun PetalShortcutGrid(
     onEditShortcutSlot: (Int) -> Unit,
     onAddShortcutClick: () -> Unit
 ) {
-    // Calculate number of rows so we can give the non-scrollable grid a fixed height.
-    // Grid is 4 columns: items + 1 "add" tile.
-    val totalCells = items.size + 1
-    val rows = (totalCells + 3) / 4 // ceiling division
-    val tileSize = 60.dp
-    val labelHeight = 32.dp
-    val verticalSpacing = 16.dp
-    val gridHeight = (tileSize + labelHeight + verticalSpacing) * rows + verticalSpacing
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(4),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(gridHeight),
-        userScrollEnabled = false, // parent Column handles scrolling
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(verticalSpacing)
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        maxItemsInEachRow = 4,
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        itemsIndexed(items) { index, (shortcut, isEditable) ->
-            ShortcutTile(
-                shortcut = shortcut,
-                isEditable = isEditable,
-                index = index,
-                onClick = { onOpenShortcut(shortcut) },
-                onLongClick = { if (isEditable) onEditShortcutSlot(index) }
-            )
+        items.forEachIndexed { index, (shortcut, isEditable) ->
+            Box(modifier = Modifier.width(68.dp)) {
+                ShortcutTile(
+                    shortcut = shortcut,
+                    isEditable = isEditable,
+                    index = index,
+                    onClick = { onOpenShortcut(shortcut) },
+                    onLongClick = { if (isEditable) onEditShortcutSlot(index) }
+                )
+            }
         }
 
         // "+" Add tile at end
-        item {
+        Box(modifier = Modifier.width(68.dp)) {
             AddShortcutTile(index = items.size, onClick = onAddShortcutClick)
         }
     }
