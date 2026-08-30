@@ -1108,163 +1108,45 @@ fun PetalSettingsScreen(
                                         )
                                     }
 
-                                    // --- Custom Font File Picker & Tier Customizer UI ---
+                                    // --- Custom Font File Picker UI ---
                                     androidx.compose.animation.AnimatedVisibility(visible = selectedFont == AppFont.CUSTOM) {
-                                        var customFontSettings by remember { mutableStateOf(getCustomFontSettings(sp)) }
-                                        var selectedLevelTab by remember { mutableIntStateOf(0) }
                                         val customFontName = sp.getString("sp_custom_font_name", "No font file selected") ?: "No font file selected"
 
-                                        DisposableEffect(sp) {
-                                            val fontListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                                                if (key != null && key.startsWith("sp_custom_")) {
-                                                    customFontSettings = getCustomFontSettings(sp)
-                                                }
-                                            }
-                                            sp.registerOnSharedPreferenceChangeListener(fontListener)
-                                            onDispose { sp.unregisterOnSharedPreferenceChangeListener(fontListener) }
-                                        }
-
-                                        Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                                            Surface(
-                                                shape = RoundedCornerShape(16.dp),
-                                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                modifier = Modifier.fillMaxWidth()
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(14.dp),
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Row(
-                                                    modifier = Modifier.padding(14.dp),
-                                                    verticalAlignment = Alignment.CenterVertically
+                                                Icon(
+                                                    imageVector = Icons.Rounded.FontDownload,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(28.dp)
+                                                )
+                                                Spacer(Modifier.width(12.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = "Custom Font File",
+                                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Text(
+                                                        text = customFontName,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                                Button(
+                                                    onClick = { fontPickerLauncher.launch("*/*") },
+                                                    shape = RoundedCornerShape(12.dp)
                                                 ) {
-                                                    Icon(
-                                                        imageVector = Icons.Rounded.FontDownload,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.size(28.dp)
-                                                    )
-                                                    Spacer(Modifier.width(12.dp))
-                                                    Column(modifier = Modifier.weight(1f)) {
-                                                        Text(
-                                                            text = "Custom Font File",
-                                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                            color = MaterialTheme.colorScheme.onSurface
-                                                        )
-                                                        Text(
-                                                            text = customFontName,
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                        )
-                                                    }
-                                                    Button(
-                                                        onClick = { fontPickerLauncher.launch("*/*") },
-                                                        shape = RoundedCornerShape(12.dp)
-                                                    ) {
-                                                        Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                        Spacer(Modifier.width(6.dp))
-                                                        Text("Browse")
-                                                    }
-                                                }
-                                            }
-
-                                            Text(
-                                                "Fine-tune Custom Typography per Level:",
-                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-
-                                            PrimaryTabRow(
-                                                selectedTabIndex = selectedLevelTab,
-                                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                                modifier = Modifier.clip(RoundedCornerShape(16.dp))
-                                            ) {
-                                                Tab(selected = selectedLevelTab == 0, onClick = { selectedLevelTab = 0 }, text = { Text("Display") })
-                                                Tab(selected = selectedLevelTab == 1, onClick = { selectedLevelTab = 1 }, text = { Text("Headline") })
-                                                Tab(selected = selectedLevelTab == 2, onClick = { selectedLevelTab = 2 }, text = { Text("Body") })
-                                            }
-
-                                            val currentAxes = when (selectedLevelTab) {
-                                                0 -> customFontSettings.display
-                                                1 -> customFontSettings.headline
-                                                else -> customFontSettings.body
-                                            }
-
-                                            fun updateCurrentAxes(newAxes: FontAxes) {
-                                                val updatedSettings = when (selectedLevelTab) {
-                                                    0 -> customFontSettings.copy(display = newAxes)
-                                                    1 -> customFontSettings.copy(headline = newAxes)
-                                                    else -> customFontSettings.copy(body = newAxes)
-                                                }
-                                                customFontSettings = updatedSettings
-                                                saveCustomFontSettings(sp, updatedSettings)
-                                            }
-
-                                            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                                                // Weight
-                                                Column {
-                                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                                        Text("Weight", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                        Text("${currentAxes.weight.toInt()}", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                                                    }
-                                                    Spacer(Modifier.height(4.dp))
-                                                    PetalSlider(
-                                                        value = currentAxes.weight,
-                                                        onValueChange = { updateCurrentAxes(currentAxes.copy(weight = it)) },
-                                                        valueRange = 100f..1000f
-                                                    )
-                                                }
-
-                                                // Width
-                                                Column {
-                                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                                        Text("Width", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                        Text("${currentAxes.width.toInt()}%", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                                                    }
-                                                    Spacer(Modifier.height(4.dp))
-                                                    PetalSlider(
-                                                        value = currentAxes.width,
-                                                        onValueChange = { updateCurrentAxes(currentAxes.copy(width = it)) },
-                                                        valueRange = 25f..150f
-                                                    )
-                                                }
-
-                                                // Optical Size
-                                                Column {
-                                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                                        Text("Optical Size", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                        Text("${currentAxes.opsz.toInt()} pt", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                                                    }
-                                                    Spacer(Modifier.height(4.dp))
-                                                    PetalSlider(
-                                                        value = currentAxes.opsz,
-                                                        onValueChange = { updateCurrentAxes(currentAxes.copy(opsz = it)) },
-                                                        valueRange = 6f..72f
-                                                    )
-                                                }
-
-                                                // Slant
-                                                Column {
-                                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                                        Text("Slant", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                        Text("${currentAxes.slant.toInt()}°", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                                                    }
-                                                    Spacer(Modifier.height(4.dp))
-                                                    PetalSlider(
-                                                        value = currentAxes.slant,
-                                                        onValueChange = { updateCurrentAxes(currentAxes.copy(slant = it)) },
-                                                        valueRange = -10f..0f
-                                                    )
-                                                }
-
-                                                // Roundness
-                                                Column {
-                                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                                        Text("Roundness", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                        Text("${currentAxes.roundness.toInt()}%", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                                                    }
-                                                    Spacer(Modifier.height(4.dp))
-                                                    PetalSlider(
-                                                        value = currentAxes.roundness,
-                                                        onValueChange = { updateCurrentAxes(currentAxes.copy(roundness = it)) },
-                                                        valueRange = 0f..100f
-                                                    )
+                                                    Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                    Spacer(Modifier.width(6.dp))
+                                                    Text("Browse")
                                                 }
                                             }
                                         }
