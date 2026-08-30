@@ -340,8 +340,6 @@ object PetalComposeBridge {
         tabCount: Int,
         handler: PetalHomeActionHandler
     ): ComposeView {
-        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
-        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
         return ComposeView(activity).apply {
             setupExpressiveHomeScreen(
                 activity = activity,
@@ -377,12 +375,6 @@ fun ComposeView.setupExpressiveHomeScreen(
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
     setContent {
-        val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
-        DisposableEffect(Unit) {
-            onDispose {
-                com.petal.browser.predictive.PetalContentSnapshot.clear()
-            }
-        }
         val accountViewModel = viewModel<AccountViewModel>(activity)
         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
         var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
@@ -409,18 +401,72 @@ fun ComposeView.setupExpressiveHomeScreen(
             dynamicColor = useDynamic,
             expressiveColors = isExpressiveColors
         ) {
-            PetalHomeScreen(
-                backgroundSnapshot = snapshotBitmap,
-                accountViewModel = accountViewModel,
-                onSearch = onSearch,
-                onOpenShortcutUrl = onOpenShortcutUrl,
-                onOpenAccountSync = onOpenAccountSync,
-                onOpenBookmarksAction = onOpenBookmarks,
-                onOpenHistoryAction = onOpenHistory,
-                onOpenDownloadsAction = onOpenDownloads,
-                onNewTabAction = onNewTab,
-                onOpenTabSwitcher = onOpenTabSwitcher
-            )
+            // DIAGNOSTIC: the home screen was going fully black with no crash and
+            // nothing in logcat, which means something in PetalHomeScreen's
+            // composition was throwing and getting silently dropped instead of
+            // hitting PetalAppLogger's global handler. Catching it here logs the
+            // real exception (visible in the aLogcat / diagnostic zip export) and
+            // shows a visible error screen instead of a blank one, so the next
+            // occurrence is diagnosable instead of just "black page".
+            var renderError by remember { mutableStateOf<Throwable?>(null) }
+
+            if (renderError == null) {
+                runCatching {
+                    PetalHomeScreen(
+                        backgroundSnapshot = null,
+                        accountViewModel = accountViewModel,
+                        onSearch = onSearch,
+                        onOpenShortcutUrl = onOpenShortcutUrl,
+                        onOpenAccountSync = onOpenAccountSync,
+                        onOpenBookmarksAction = onOpenBookmarks,
+                        onOpenHistoryAction = onOpenHistory,
+                        onOpenDownloadsAction = onOpenDownloads,
+                        onNewTabAction = onNewTab,
+                        onOpenTabSwitcher = onOpenTabSwitcher
+                    )
+                }.onFailure { e ->
+                    com.petal.browser.logger.PetalAppLogger.e(
+                        "PetalHomeScreen",
+                        "Home screen composition failed - showing fallback instead of black screen",
+                        e
+                    )
+                    renderError = e
+                }
+            }
+
+            val error = renderError
+            if (error != null) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Home screen failed to load",
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = error.javaClass.simpleName + ": " + (error.message ?: "no message"),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(20.dp))
+                        Button(onClick = { renderError = null }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -470,138 +516,134 @@ fun PetalHomeScreen(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = {
-            val activity = context as? com.petal.browser.activity.BrowserActivity
-            if (activity != null) {
-                activity.moveTaskToBack(true)
-            } else {
-                (context as? androidx.activity.ComponentActivity)?.moveTaskToBack(true)
-            }
+    androidx.activity.compose.BackHandler(enabled = true) {
+        val activity = context as? com.petal.browser.activity.BrowserActivity
+        if (activity != null) {
+            activity.moveTaskToBack(true)
+        } else {
+            (context as? androidx.activity.ComponentActivity)?.moveTaskToBack(true)
         }
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // ── Layer 0: living Material 3 Expressive background ───────────
-            // Only display background after initial welcome setup is complete
-            if (isWelcomeShown) {
-                com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                    modifier = Modifier.fillMaxSize(),
-                    pageSeed = "home_page"
-                )
-            }
-
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                com.petal.browser.ui.components.ExpressiveHeader(
-                    title = "Petal",
-                    subtitle = "Personal Window to the Web",
-                    actions = {
-                        IconButton(
-                            onClick = onOpenAccountSync,
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            ProfileAvatarDisplay(profile = profile, sizeDp = 36)
-                        }
+                    // ── Layer 0: living Material 3 Expressive background ───────────
+                    if (isWelcomeShown) {
+                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                            modifier = Modifier.fillMaxSize(),
+                            pageSeed = "home_page"
+                        )
                     }
-                )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Cap the content column width on large screens/tablets so the
-                    // hero search bar and grid don't stretch edge-to-edge.
                     Column(
-                        modifier = Modifier.widthIn(max = 640.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.fillMaxSize()
                     ) {
+                        com.petal.browser.ui.components.ExpressiveHeader(
+                            title = "Petal",
+                            subtitle = "Personal Window to the Web",
+                            actions = {
+                                IconButton(
+                                    onClick = onOpenAccountSync,
+                                    modifier = Modifier.size(44.dp)
+                                ) {
+                                    ProfileAvatarDisplay(profile = profile, sizeDp = 36)
+                                }
+                            }
+                        )
 
-                    Spacer(Modifier.height(20.dp))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Cap the content column width on large screens/tablets so the
+                            // hero search bar and grid don't stretch edge-to-edge.
+                            Column(
+                                modifier = Modifier.widthIn(max = 640.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Spacer(Modifier.height(20.dp))
 
-                    // ── Greeting Tagline (replaces removed quick shortcuts row) ──
-                    PetalGreetingTagline(profile = profile)
+                                // ── Greeting Tagline (replaces removed quick shortcuts row) ──
+                                PetalGreetingTagline(profile = profile)
 
-                    Spacer(Modifier.height(18.dp))
+                                Spacer(Modifier.height(18.dp))
 
-                    // ── Hero Search Bar (moved down into former quick-actions slot) ──
-                    PetalSearchBar(onSearch = onSearch)
+                                // ── Hero Search Bar (moved down into former quick-actions slot) ──
+                                PetalSearchBar(onSearch = onSearch)
 
-                    Spacer(Modifier.height(26.dp))
+                                Spacer(Modifier.height(26.dp))
 
-                    // ── Shortcuts Grid (4 columns, squircle tiles) ──────────
-                    PetalShortcutGrid(
-                        items = mergedItems,
-                        onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
-                        onEditShortcutSlot = { index -> editingSlotIndex = index },
-                        onAddShortcutClick = { isAddingNewShortcut = true }
-                    )
+                                // ── Shortcuts Grid (4 columns, squircle tiles) ──────────
+                                PetalShortcutGrid(
+                                    items = mergedItems,
+                                    onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
+                                    onEditShortcutSlot = { index -> editingSlotIndex = index },
+                                    onAddShortcutClick = { isAddingNewShortcut = true }
+                                )
 
-                    Spacer(Modifier.height(96.dp))
-                }
-            }
-        }
-        }
-
-        // ── Create New Shortcut Dialog ────────────────────────────────────
-        if (isAddingNewShortcut) {
-            EditShortcutDialog(
-                dialogTitle = "Add Shortcut",
-                initialName = "",
-                initialUrl = "",
-                initialColor = Color(0xFF4285F4),
-                onDismiss = { isAddingNewShortcut = false },
-                onSave = { newShortcut ->
-                    val newList = shortcuts.toMutableList()
-                    newList.add(newShortcut)
-                    shortcuts = newList
-                    saveHomeShortcuts(context, newList)
-                    isAddingNewShortcut = false
-                },
-                onDelete = null
-            )
-        }
-
-        // ── Edit Existing Shortcut Dialog ─────────────────────────────────
-        editingSlotIndex?.let { slotIndex ->
-            val current = shortcuts.getOrNull(slotIndex)
-            if (current != null) {
-                EditShortcutDialog(
-                    dialogTitle = "Edit Shortcut",
-                    initialName = current.label,
-                    initialUrl = current.url,
-                    initialColor = current.containerColor,
-                    onDismiss = { editingSlotIndex = null },
-                    onSave = { updatedShortcut ->
-                        val newList = shortcuts.toMutableList()
-                        if (slotIndex in newList.indices) {
-                            newList[slotIndex] = updatedShortcut
+                                Spacer(Modifier.height(96.dp))
+                            }
                         }
-                        shortcuts = newList
-                        saveHomeShortcuts(context, newList)
-                        editingSlotIndex = null
-                    },
-                    onDelete = {
-                        val newList = shortcuts.toMutableList()
-                        if (slotIndex in newList.indices) {
-                            newList.removeAt(slotIndex)
-                        }
-                        shortcuts = newList
-                        saveHomeShortcuts(context, newList)
-                        editingSlotIndex = null
                     }
-                )
-            }
-        }
+
+                    // ── Create New Shortcut Dialog ────────────────────────────────────
+                    if (isAddingNewShortcut) {
+                        EditShortcutDialog(
+                            dialogTitle = "Add Shortcut",
+                            initialName = "",
+                            initialUrl = "",
+                            initialColor = Color(0xFF4285F4),
+                            onDismiss = { isAddingNewShortcut = false },
+                            onSave = { newShortcut ->
+                                val newList = shortcuts.toMutableList()
+                                newList.add(newShortcut)
+                                shortcuts = newList
+                                saveHomeShortcuts(context, newList)
+                                isAddingNewShortcut = false
+                            },
+                            onDelete = null
+                        )
+                    }
+
+                    // ── Edit Existing Shortcut Dialog ─────────────────────────────────
+                    editingSlotIndex?.let { slotIndex ->
+                        val current = shortcuts.getOrNull(slotIndex)
+                        if (current != null) {
+                            EditShortcutDialog(
+                                dialogTitle = "Edit Shortcut",
+                                initialName = current.label,
+                                initialUrl = current.url,
+                                initialColor = current.containerColor,
+                                onDismiss = { editingSlotIndex = null },
+                                onSave = { updatedShortcut ->
+                                    val newList = shortcuts.toMutableList()
+                                    if (slotIndex in newList.indices) {
+                                        newList[slotIndex] = updatedShortcut
+                                    }
+                                    shortcuts = newList
+                                    saveHomeShortcuts(context, newList)
+                                    editingSlotIndex = null
+                                },
+                                onDelete = {
+                                    val newList = shortcuts.toMutableList()
+                                    if (slotIndex in newList.indices) {
+                                        newList.removeAt(slotIndex)
+                                    }
+                                    shortcuts = newList
+                                    saveHomeShortcuts(context, newList)
+                                    editingSlotIndex = null
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -609,7 +651,7 @@ fun PetalHomeScreen(
 
 // ── 5. Shortcut Grid ──────────────────────────────────────────────────────
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun PetalShortcutGrid(
     items: List<Pair<PetalShortcut, Boolean>>, // shortcut to isEditable
@@ -617,36 +659,26 @@ private fun PetalShortcutGrid(
     onEditShortcutSlot: (Int) -> Unit,
     onAddShortcutClick: () -> Unit
 ) {
-    // Calculate number of rows so we can give the non-scrollable grid a fixed height.
-    // Grid is 4 columns: items + 1 "add" tile.
-    val totalCells = items.size + 1
-    val rows = (totalCells + 3) / 4 // ceiling division
-    val tileSize = 60.dp
-    val labelHeight = 32.dp
-    val verticalSpacing = 16.dp
-    val gridHeight = (tileSize + labelHeight + verticalSpacing) * rows + verticalSpacing
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(4),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(gridHeight),
-        userScrollEnabled = false, // parent Column handles scrolling
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(verticalSpacing)
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        maxItemsInEachRow = 4,
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        itemsIndexed(items) { index, (shortcut, isEditable) ->
-            ShortcutTile(
-                shortcut = shortcut,
-                isEditable = isEditable,
-                index = index,
-                onClick = { onOpenShortcut(shortcut) },
-                onLongClick = { if (isEditable) onEditShortcutSlot(index) }
-            )
+        items.forEachIndexed { index, (shortcut, isEditable) ->
+            Box(modifier = Modifier.width(68.dp)) {
+                ShortcutTile(
+                    shortcut = shortcut,
+                    isEditable = isEditable,
+                    index = index,
+                    onClick = { onOpenShortcut(shortcut) },
+                    onLongClick = { if (isEditable) onEditShortcutSlot(index) }
+                )
+            }
         }
 
         // "+" Add tile at end
-        item {
+        Box(modifier = Modifier.width(68.dp)) {
             AddShortcutTile(index = items.size, onClick = onAddShortcutClick)
         }
     }
@@ -685,16 +717,16 @@ private fun ShortcutTile(
     val faviconUrl = remember(shortcut.url) { getFaviconUrl(shortcut.url) }
     var isImageError by remember(shortcut.url) { mutableStateOf(false) }
 
-    // Pick a unique Material 3 Expressive shape based on tile index and shortcut label
-    val uniqueShapeIndex = remember(shortcut.label, index) {
-        val hash = (shortcut.label.hashCode() * 31 + index * 17)
-        Math.abs(hash) % PetalMaterialShapes.allShapes.size
+    // Pick a guaranteed unique Material 3 Expressive shape across all homescreen tiles
+    val totalShapes = PetalMaterialShapes.allShapes.size
+    val uniqueShapeIndex = remember(index) {
+        (index % totalShapes)
     }
     val tileShape = remember(uniqueShapeIndex) {
         PetalMaterialShapes.allShapes[uniqueShapeIndex].toShape()
     }
     val fallbackShape = remember(uniqueShapeIndex) {
-        val offsetIndex = (uniqueShapeIndex + 7) % PetalMaterialShapes.allShapes.size
+        val offsetIndex = (uniqueShapeIndex + 17) % totalShapes
         PetalMaterialShapes.allShapes[offsetIndex].toShape()
     }
 
@@ -727,7 +759,7 @@ private fun ShortcutTile(
                     onError = { isImageError = true },
                     modifier = Modifier
                         .size(34.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(fallbackShape)
                 )
             } else {
                 Box(
@@ -767,7 +799,9 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
             .homeLaunchEntrance(3 + index)
             .clickable(onClick = onClick)
     ) {
-        val addTileShape = remember { PetalMaterialShapes.Scallop.toShape() }
+        val totalShapes = PetalMaterialShapes.allShapes.size
+        val addShapeIndex = remember(index) { index % totalShapes }
+        val addTileShape = remember(addShapeIndex) { PetalMaterialShapes.allShapes[addShapeIndex].toShape() }
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -922,18 +956,22 @@ private val eveningGreetingTaglines = listOf(
 private object PetalSessionGreeting {
     private var sessionTemplate: String? = null
 
-    fun getSessionTemplate(): String {
-        if (sessionTemplate == null) {
-            val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-            val timeSpecificTaglines = when {
-                hour in 4..11 -> morningGreetingTaglines
-                hour in 12..16 -> afternoonGreetingTaglines
-                else -> eveningGreetingTaglines
+    fun getGreeting(username: String): String {
+        return try {
+            if (sessionTemplate == null) {
+                val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+                val timeSpecificTaglines = when {
+                    hour in 4..11 -> morningGreetingTaglines
+                    hour in 12..16 -> afternoonGreetingTaglines
+                    else -> eveningGreetingTaglines
+                }
+                val pool = generalGreetingTaglines + timeSpecificTaglines
+                sessionTemplate = pool.randomOrNull() ?: "Welcome back, %s—the web is ready whenever you are."
             }
-            val pool = generalGreetingTaglines + timeSpecificTaglines
-            sessionTemplate = pool.random()
+            (sessionTemplate ?: "Welcome back, %s").replace("%s", username)
+        } catch (_: Throwable) {
+            "Welcome back, $username"
         }
-        return sessionTemplate!!
     }
 }
 
@@ -947,13 +985,13 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
     LaunchedEffect(Unit) {
         try {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            val currentVersion = context.packageManager.getPackageInfo(context.getPackageName(), 0).versionName
+            val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName
             val lastSeenVersion = sp.getString("sp_last_seen_welcome_version", "")
             if (!currentVersion.isNullOrBlank() && currentVersion != lastSeenVersion) {
                 sp.edit().putString("sp_last_seen_welcome_version", currentVersion).apply()
                 updateWelcomeMessage = "Welcome to Petal v$currentVersion! 🎉 Enjoy the latest updates."
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             e.printStackTrace()
         }
     }
@@ -962,7 +1000,7 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         if (!updateWelcomeMessage.isNullOrBlank()) {
             updateWelcomeMessage!!
         } else {
-            PetalSessionGreeting.getSessionTemplate().format(username)
+            PetalSessionGreeting.getGreeting(username)
         }
     }
 
@@ -1188,7 +1226,19 @@ private fun EditShortcutDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Live Preview with automatic thumbnail
+                // Live Preview with automatic thumbnail showcasing Material 3 Expressive shapes
+                val previewShapeIndex = remember(nameText, urlText) {
+                    val hash = (nameText.hashCode() * 31 + urlText.hashCode()).let { if (it == Int.MIN_VALUE) 0 else Math.abs(it) }
+                    hash % PetalMaterialShapes.allShapes.size
+                }
+                val previewTileShape = remember(previewShapeIndex) {
+                    PetalMaterialShapes.allShapes[previewShapeIndex].toShape()
+                }
+                val previewFallbackShape = remember(previewShapeIndex) {
+                    val offsetIndex = (previewShapeIndex + 17) % PetalMaterialShapes.allShapes.size
+                    PetalMaterialShapes.allShapes[offsetIndex].toShape()
+                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1204,8 +1254,8 @@ private fun EditShortcutDialog(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .size(48.dp)
-                            .shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp))
+                            .shadow(elevation = 2.dp, shape = previewTileShape)
+                            .clip(previewTileShape)
                             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     ) {
                         if (!currentFaviconUrl.isNullOrEmpty() && !isImageError) {
@@ -1216,7 +1266,7 @@ private fun EditShortcutDialog(
                                 onError = { isImageError = true },
                                 modifier = Modifier
                                     .size(28.dp)
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(previewFallbackShape)
                             )
                         } else {
                             Text(
