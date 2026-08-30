@@ -140,7 +140,7 @@ fun PetalChromeFlagsScreen(
                 }
             }
         },
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
