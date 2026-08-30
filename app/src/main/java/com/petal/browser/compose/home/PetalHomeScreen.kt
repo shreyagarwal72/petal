@@ -914,18 +914,22 @@ private val eveningGreetingTaglines = listOf(
 private object PetalSessionGreeting {
     private var sessionTemplate: String? = null
 
-    fun getSessionTemplate(): String {
-        if (sessionTemplate == null) {
-            val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-            val timeSpecificTaglines = when {
-                hour in 4..11 -> morningGreetingTaglines
-                hour in 12..16 -> afternoonGreetingTaglines
-                else -> eveningGreetingTaglines
+    fun getGreeting(username: String): String {
+        return try {
+            if (sessionTemplate == null) {
+                val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+                val timeSpecificTaglines = when {
+                    hour in 4..11 -> morningGreetingTaglines
+                    hour in 12..16 -> afternoonGreetingTaglines
+                    else -> eveningGreetingTaglines
+                }
+                val pool = generalGreetingTaglines + timeSpecificTaglines
+                sessionTemplate = pool.randomOrNull() ?: "Welcome back, %s—the web is ready whenever you are."
             }
-            val pool = generalGreetingTaglines + timeSpecificTaglines
-            sessionTemplate = pool.random()
+            (sessionTemplate ?: "Welcome back, %s").replace("%s", username)
+        } catch (_: Throwable) {
+            "Welcome back, $username"
         }
-        return sessionTemplate!!
     }
 }
 
@@ -939,13 +943,13 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
     LaunchedEffect(Unit) {
         try {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            val currentVersion = context.packageManager.getPackageInfo(context.getPackageName(), 0).versionName
+            val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName
             val lastSeenVersion = sp.getString("sp_last_seen_welcome_version", "")
             if (!currentVersion.isNullOrBlank() && currentVersion != lastSeenVersion) {
                 sp.edit().putString("sp_last_seen_welcome_version", currentVersion).apply()
                 updateWelcomeMessage = "Welcome to Petal v$currentVersion! 🎉 Enjoy the latest updates."
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             e.printStackTrace()
         }
     }
@@ -954,7 +958,7 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.GoogleUserPr
         if (!updateWelcomeMessage.isNullOrBlank()) {
             updateWelcomeMessage!!
         } else {
-            PetalSessionGreeting.getSessionTemplate().format(username)
+            PetalSessionGreeting.getGreeting(username)
         }
     }
 

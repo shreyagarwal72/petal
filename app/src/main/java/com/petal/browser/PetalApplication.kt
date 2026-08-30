@@ -34,6 +34,7 @@ class PetalApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         try {
+            com.petal.browser.logger.PetalAppLogger.init(this)
             ChromiumNativeEngineCore.initialize(this)
             PetalPredictiveJunction.init(
                 PreferenceManager.getDefaultSharedPreferences(this)
