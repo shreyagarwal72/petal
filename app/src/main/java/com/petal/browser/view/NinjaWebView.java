@@ -218,6 +218,19 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         }
     }
 
+    private boolean isExclusionResetPending = false;
+    private final Runnable exclusionResetRunnable = () -> {
+        isExclusionResetPending = false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                java.util.List<android.graphics.Rect> currentRects = getSystemGestureExclusionRects();
+                if (currentRects != null && !currentRects.isEmpty()) {
+                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
+                }
+            } catch (Exception ignored) {}
+        }
+    };
+
     /**
      * Resets system gesture exclusion rects on API 29+ (Android 10+) so Android's system
      * predictive back edge swipes (left/right display edges) reach OnBackPressedCallback
@@ -225,11 +238,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
      */
     public void resetGestureExclusionRects() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            post(() -> {
-                try {
-                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
-                } catch (Exception ignored) {}
-            });
+            if (!isExclusionResetPending) {
+                isExclusionResetPending = true;
+                post(exclusionResetRunnable);
+            }
         }
     }
 
