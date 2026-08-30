@@ -108,15 +108,35 @@ fun PetalMediaPickerBottomSheet(
     }
 
     var selectedFilter by remember { mutableStateOf(initialFilter) }
-    var hasPermission by remember { mutableStateOf(PetalMediaPickerManager.hasMediaPermissions(context)) }
+    var hasPermission by remember(selectedFilter) { mutableStateOf(PetalMediaPickerManager.hasMediaPermissions(context, selectedFilter)) }
     var mediaItems by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val selectedUris = remember { mutableStateListOf<Uri>() }
 
     var cameraCaptureUriString by rememberSaveable { mutableStateOf<String?>(null) }
 
+    // System Photo Picker (Requires 0 permissions on Android 11+ and is guaranteed to work for Google Lens / photo search)
+    val systemPhotoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onMediaSelected(listOf(uri))
+            onDismissRequest()
+        }
+    }
+
+    val systemMultiplePhotoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            onMediaSelected(uris)
+            onDismissRequest()
+        }
+    }
+
     // Query MediaStore when permission or filter changes
     fun loadMedia() {
+        hasPermission = PetalMediaPickerManager.hasMediaPermissions(context, selectedFilter)
         if (hasPermission) {
             isLoading = true
             coroutineScope.launch(Dispatchers.IO) {
@@ -131,7 +151,7 @@ fun PetalMediaPickerBottomSheet(
         }
     }
 
-    LaunchedEffect(hasPermission, selectedFilter) {
+    LaunchedEffect(selectedFilter) {
         loadMedia()
     }
 
@@ -139,7 +159,7 @@ fun PetalMediaPickerBottomSheet(
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        val granted = results.values.any { it }
+        val granted = results.values.any { it } || PetalMediaPickerManager.hasMediaPermissions(context, selectedFilter)
         hasPermission = granted
         if (granted) {
             loadMedia()
@@ -234,7 +254,7 @@ fun PetalMediaPickerBottomSheet(
                 }
             }
 
-            // Quick Actions: Snap Photo + Browse System Files
+            // Quick Actions: Snap Camera + System Picker + Files
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -265,7 +285,7 @@ fun PetalMediaPickerBottomSheet(
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -275,11 +295,53 @@ fun PetalMediaPickerBottomSheet(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(6.dp))
                         Text(
                             text = "Camera",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1
+                        )
+                    }
+                }
+
+                // System Photo Picker Button
+                Surface(
+                    onClick = {
+                        PetalHapticEngine.getInstance(context).playClick(context)
+                        val mediaType = when (selectedFilter) {
+                            MediaFilterType.PHOTOS -> ActivityResultContracts.PickVisualMedia.ImageOnly
+                            MediaFilterType.VIDEOS -> ActivityResultContracts.PickVisualMedia.VideoOnly
+                            MediaFilterType.ALL -> ActivityResultContracts.PickVisualMedia.ImageAndVideo
+                        }
+                        val request = androidx.activity.result.PickVisualMediaRequest(mediaType)
+                        if (allowMultiple) {
+                            systemMultiplePhotoPickerLauncher.launch(request)
+                        } else {
+                            systemPhotoPickerLauncher.launch(request)
+                        }
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.weight(1.1f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.PhotoLibrary,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "Photo Picker",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1
                         )
                     }
                 }
@@ -295,7 +357,7 @@ fun PetalMediaPickerBottomSheet(
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -305,11 +367,12 @@ fun PetalMediaPickerBottomSheet(
                             tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(18.dp)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "Browse Files",
+                            text = "Files",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1
                         )
                     }
                 }
@@ -388,7 +451,7 @@ fun PetalMediaPickerBottomSheet(
                         Button(
                             onClick = {
                                 PetalHapticEngine.getInstance(context).playClick(context)
-                                permissionLauncher.launch(PetalMediaPickerManager.getRequiredMediaPermissions())
+                                permissionLauncher.launch(PetalMediaPickerManager.getRequiredMediaPermissions(selectedFilter))
                             },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -396,6 +459,29 @@ fun PetalMediaPickerBottomSheet(
                             Icon(Icons.Rounded.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
                             Text("Grant Access", fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                val mediaType = when (selectedFilter) {
+                                    MediaFilterType.PHOTOS -> ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    MediaFilterType.VIDEOS -> ActivityResultContracts.PickVisualMedia.VideoOnly
+                                    MediaFilterType.ALL -> ActivityResultContracts.PickVisualMedia.ImageAndVideo
+                                }
+                                val request = androidx.activity.result.PickVisualMediaRequest(mediaType)
+                                if (allowMultiple) {
+                                    systemMultiplePhotoPickerLauncher.launch(request)
+                                } else {
+                                    systemPhotoPickerLauncher.launch(request)
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Rounded.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Select via System Photo Picker", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
