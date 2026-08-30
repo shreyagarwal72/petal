@@ -77,6 +77,7 @@ import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.components.homeLaunchEntrance
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
+import com.petal.browser.ui.theme.mediumIncreased
 import com.petal.browser.ui.theme.toShape
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
