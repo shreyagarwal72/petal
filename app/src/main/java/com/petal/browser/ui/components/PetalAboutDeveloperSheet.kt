@@ -290,7 +290,6 @@ fun PetalAboutDeveloperSheetContent(
             }
         }
     }
-}
 
 /** Developer Hero Profile Card with glowing radial avatar ring and bio chips. */
 @Composable
