@@ -1338,10 +1338,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     albumSavedUrl = ninjaWebView.getAlbumUrl();
                 } catch (Exception ignored) {}
 
-                // If website was never loaded (e.g. background tab or blank after restore/tab switch), trigger loading
+                String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : albumSavedUrl;
+
                 if ((currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl)) &&
-                    (albumSavedUrl != null && !albumSavedUrl.isEmpty() && !isHomePage(albumSavedUrl) && !"about:blank".equalsIgnoreCase(albumSavedUrl))) {
-                    ninjaWebView.loadUrl(albumSavedUrl);
+                    (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl))) {
+                    ninjaWebView.loadUrl(targetUrl);
+                } else if (overrideUrl != null && !overrideUrl.isEmpty() && !overrideUrl.equalsIgnoreCase(currentUrl) && !isHomePage(overrideUrl) && !"about:blank".equalsIgnoreCase(overrideUrl)) {
+                    ninjaWebView.loadUrl(overrideUrl);
                 } else if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl)) {
                     ninjaWebView.onResume();
                     ninjaWebView.resumeTimers();
