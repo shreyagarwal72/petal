@@ -1568,9 +1568,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         contentParams.removeRule(RelativeLayout.ABOVE);
                         contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
                     }
-                    if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
+                    boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
+                    if (isFloating) {
+                        contentParams.removeRule(RelativeLayout.ABOVE);
+                        contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    } else if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
+                        contentParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                         contentParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
                     } else {
+                        contentParams.removeRule(RelativeLayout.ABOVE);
                         contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                     }
 
