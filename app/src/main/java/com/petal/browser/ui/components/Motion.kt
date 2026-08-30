@@ -98,10 +98,9 @@ fun Modifier.entrance(index: Int = 0): Modifier {
 fun Modifier.bouncyClickable(
     scaleDown: Float = 0.94f,
     enabled: Boolean = true,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
 ): Modifier {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     
@@ -120,19 +119,24 @@ fun Modifier.bouncyClickable(
         ),
         label = "bouncyPress",
     )
-    return graphicsLayer {
+    val base = graphicsLayer {
         scaleX = scale
         scaleY = scale
-    }.clickable(
-        interactionSource = interaction,
-        indication = null,
-        enabled = enabled,
-        onClick = {
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
-            onClick()
-        },
-    )
+    }
+    return if (onClick != null) {
+        base.clickable(
+            interactionSource = interaction,
+            indication = null,
+            enabled = enabled,
+            onClick = {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                onClick()
+            },
+        )
+    } else {
+        base
+    }
 }
 
 /** Gentle infinite breathing scale for active elements. */
