@@ -401,72 +401,18 @@ fun ComposeView.setupExpressiveHomeScreen(
             dynamicColor = useDynamic,
             expressiveColors = isExpressiveColors
         ) {
-            // DIAGNOSTIC: the home screen was going fully black with no crash and
-            // nothing in logcat, which means something in PetalHomeScreen's
-            // composition was throwing and getting silently dropped instead of
-            // hitting PetalAppLogger's global handler. Catching it here logs the
-            // real exception (visible in the aLogcat / diagnostic zip export) and
-            // shows a visible error screen instead of a blank one, so the next
-            // occurrence is diagnosable instead of just "black page".
-            var renderError by remember { mutableStateOf<Throwable?>(null) }
-
-            if (renderError == null) {
-                runCatching {
-                    PetalHomeScreen(
-                        backgroundSnapshot = null,
-                        accountViewModel = accountViewModel,
-                        onSearch = onSearch,
-                        onOpenShortcutUrl = onOpenShortcutUrl,
-                        onOpenAccountSync = onOpenAccountSync,
-                        onOpenBookmarksAction = onOpenBookmarks,
-                        onOpenHistoryAction = onOpenHistory,
-                        onOpenDownloadsAction = onOpenDownloads,
-                        onNewTabAction = onNewTab,
-                        onOpenTabSwitcher = onOpenTabSwitcher
-                    )
-                }.onFailure { e ->
-                    com.petal.browser.logger.PetalAppLogger.e(
-                        "PetalHomeScreen",
-                        "Home screen composition failed - showing fallback instead of black screen",
-                        e
-                    )
-                    renderError = e
-                }
-            }
-
-            val error = renderError
-            if (error != null) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "Home screen failed to load",
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = error.javaClass.simpleName + ": " + (error.message ?: "no message"),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(20.dp))
-                        Button(onClick = { renderError = null }) {
-                            Text("Retry")
-                        }
-                    }
-                }
-            }
+            PetalHomeScreen(
+                backgroundSnapshot = null,
+                accountViewModel = accountViewModel,
+                onSearch = onSearch,
+                onOpenShortcutUrl = onOpenShortcutUrl,
+                onOpenAccountSync = onOpenAccountSync,
+                onOpenBookmarksAction = onOpenBookmarks,
+                onOpenHistoryAction = onOpenHistory,
+                onOpenDownloadsAction = onOpenDownloads,
+                onNewTabAction = onNewTab,
+                onOpenTabSwitcher = onOpenTabSwitcher
+            )
         }
     }
 }
@@ -516,136 +462,132 @@ fun PetalHomeScreen(
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = {
-            val activity = context as? com.petal.browser.activity.BrowserActivity
-            if (activity != null) {
-                activity.moveTaskToBack(true)
-            } else {
-                (context as? androidx.activity.ComponentActivity)?.moveTaskToBack(true)
-            }
+    // On back press from Home Screen, minimize the app
+    androidx.activity.compose.BackHandler(enabled = true) {
+        val activity = context as? com.petal.browser.activity.BrowserActivity
+        if (activity != null) {
+            activity.moveTaskToBack(true)
+        } else {
+            (context as? androidx.activity.ComponentActivity)?.moveTaskToBack(true)
         }
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
+        Box(modifier = Modifier.fillMaxSize()) {
+            // ── Layer 0: living Material 3 Expressive background ───────────
+            if (isWelcomeShown) {
+                com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                    modifier = Modifier.fillMaxSize(),
+                    pageSeed = "home_page"
+                )
+            }
+
+            Column(
+                modifier = Modifier.fillMaxSize()
             ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // ── Layer 0: living Material 3 Expressive background ───────────
-                    if (isWelcomeShown) {
-                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                            modifier = Modifier.fillMaxSize(),
-                            pageSeed = "home_page"
-                        )
-                    }
-
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        com.petal.browser.ui.components.ExpressiveHeader(
-                            title = "Petal",
-                            subtitle = "Personal Window to the Web",
-                            actions = {
-                                IconButton(
-                                    onClick = onOpenAccountSync,
-                                    modifier = Modifier.size(44.dp)
-                                ) {
-                                    ProfileAvatarDisplay(profile = profile, sizeDp = 36)
-                                }
-                            }
-                        )
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                com.petal.browser.ui.components.ExpressiveHeader(
+                    title = "Petal",
+                    subtitle = "Personal Window to the Web",
+                    actions = {
+                        IconButton(
+                            onClick = onOpenAccountSync,
+                            modifier = Modifier.size(44.dp)
                         ) {
-                            // Cap the content column width on large screens/tablets so the
-                            // hero search bar and grid don't stretch edge-to-edge.
-                            Column(
-                                modifier = Modifier.widthIn(max = 640.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Spacer(Modifier.height(20.dp))
-
-                                // ── Greeting Tagline (replaces removed quick shortcuts row) ──
-                                PetalGreetingTagline(profile = profile)
-
-                                Spacer(Modifier.height(18.dp))
-
-                                // ── Hero Search Bar (moved down into former quick-actions slot) ──
-                                PetalSearchBar(onSearch = onSearch)
-
-                                Spacer(Modifier.height(26.dp))
-
-                                // ── Shortcuts Grid (4 columns, squircle tiles) ──────────
-                                PetalShortcutGrid(
-                                    items = mergedItems,
-                                    onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
-                                    onEditShortcutSlot = { index -> editingSlotIndex = index },
-                                    onAddShortcutClick = { isAddingNewShortcut = true }
-                                )
-
-                                Spacer(Modifier.height(96.dp))
-                            }
+                            ProfileAvatarDisplay(profile = profile, sizeDp = 36)
                         }
                     }
+                )
 
-                    // ── Create New Shortcut Dialog ────────────────────────────────────
-                    if (isAddingNewShortcut) {
-                        EditShortcutDialog(
-                            dialogTitle = "Add Shortcut",
-                            initialName = "",
-                            initialUrl = "",
-                            initialColor = Color(0xFF4285F4),
-                            onDismiss = { isAddingNewShortcut = false },
-                            onSave = { newShortcut ->
-                                val newList = shortcuts.toMutableList()
-                                newList.add(newShortcut)
-                                shortcuts = newList
-                                saveHomeShortcuts(context, newList)
-                                isAddingNewShortcut = false
-                            },
-                            onDelete = null
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Cap the content column width on large screens/tablets so the
+                    // hero search bar and grid don't stretch edge-to-edge.
+                    Column(
+                        modifier = Modifier.widthIn(max = 640.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(Modifier.height(20.dp))
+
+                        // ── Greeting Tagline (replaces removed quick shortcuts row) ──
+                        PetalGreetingTagline(profile = profile)
+
+                        Spacer(Modifier.height(18.dp))
+
+                        // ── Hero Search Bar (moved down into former quick-actions slot) ──
+                        PetalSearchBar(onSearch = onSearch)
+
+                        Spacer(Modifier.height(26.dp))
+
+                        // ── Shortcuts Grid (4 columns, squircle tiles) ──────────
+                        PetalShortcutGrid(
+                            items = mergedItems,
+                            onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
+                            onEditShortcutSlot = { index -> editingSlotIndex = index },
+                            onAddShortcutClick = { isAddingNewShortcut = true }
                         )
-                    }
 
-                    // ── Edit Existing Shortcut Dialog ─────────────────────────────────
-                    editingSlotIndex?.let { slotIndex ->
-                        val current = shortcuts.getOrNull(slotIndex)
-                        if (current != null) {
-                            EditShortcutDialog(
-                                dialogTitle = "Edit Shortcut",
-                                initialName = current.label,
-                                initialUrl = current.url,
-                                initialColor = current.containerColor,
-                                onDismiss = { editingSlotIndex = null },
-                                onSave = { updatedShortcut ->
-                                    val newList = shortcuts.toMutableList()
-                                    if (slotIndex in newList.indices) {
-                                        newList[slotIndex] = updatedShortcut
-                                    }
-                                    shortcuts = newList
-                                    saveHomeShortcuts(context, newList)
-                                    editingSlotIndex = null
-                                },
-                                onDelete = {
-                                    val newList = shortcuts.toMutableList()
-                                    if (slotIndex in newList.indices) {
-                                        newList.removeAt(slotIndex)
-                                    }
-                                    shortcuts = newList
-                                    saveHomeShortcuts(context, newList)
-                                    editingSlotIndex = null
-                                }
-                            )
-                        }
+                        Spacer(Modifier.height(96.dp))
                     }
+                }
+            }
+
+            // ── Create New Shortcut Dialog ────────────────────────────────────
+            if (isAddingNewShortcut) {
+                EditShortcutDialog(
+                    dialogTitle = "Add Shortcut",
+                    initialName = "",
+                    initialUrl = "",
+                    initialColor = Color(0xFF4285F4),
+                    onDismiss = { isAddingNewShortcut = false },
+                    onSave = { newShortcut ->
+                        val newList = shortcuts.toMutableList()
+                        newList.add(newShortcut)
+                        shortcuts = newList
+                        saveHomeShortcuts(context, newList)
+                        isAddingNewShortcut = false
+                    },
+                    onDelete = null
+                )
+            }
+
+            // ── Edit Existing Shortcut Dialog ─────────────────────────────────
+            editingSlotIndex?.let { slotIndex ->
+                val current = shortcuts.getOrNull(slotIndex)
+                if (current != null) {
+                    EditShortcutDialog(
+                        dialogTitle = "Edit Shortcut",
+                        initialName = current.label,
+                        initialUrl = current.url,
+                        initialColor = current.containerColor,
+                        onDismiss = { editingSlotIndex = null },
+                        onSave = { updatedShortcut ->
+                            val newList = shortcuts.toMutableList()
+                            if (slotIndex in newList.indices) {
+                                newList[slotIndex] = updatedShortcut
+                            }
+                            shortcuts = newList
+                            saveHomeShortcuts(context, newList)
+                            editingSlotIndex = null
+                        },
+                        onDelete = {
+                            val newList = shortcuts.toMutableList()
+                            if (slotIndex in newList.indices) {
+                                newList.removeAt(slotIndex)
+                            }
+                            shortcuts = newList
+                            saveHomeShortcuts(context, newList)
+                            editingSlotIndex = null
+                        }
+                    )
                 }
             }
         }
