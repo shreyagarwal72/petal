@@ -26,31 +26,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
 /**
- * Customizable, production-ready link context menu dialog component inspired by modern mobile browsers.
- * Features:
- * 1. Dark-themed floating card with heavily rounded corners (28dp).
- * 2. Header displaying website favicon / monogram avatar, page title, and clean truncated URL.
- * 3. Vertically scrollable list of actions:
- *    - Open in new tab
- *    - Open in new tab in group
- *    - Open in Incognito tab
- *    - Open in new window
- *    - Preview page
- *    - Copy link address
- *    - Copy link text
- *    - Download link
- *    - Add to reading list
- *    - Share link (with quick-share trailing app icon)
- * 4. Physics-based 60fps scale & fade opening and closing transitions.
+ * Customizable link context menu dialog component styled with RvSystemMonitor containment principles.
  */
 @Composable
 fun PetalLinkContextMenuDialog(
@@ -75,11 +58,6 @@ fun PetalLinkContextMenuDialog(
     LaunchedEffect(Unit) {
         isVisible = true
     }
-
-    val cardBg = if (isIncognito) Color(0xFF1C1D24) else MaterialTheme.colorScheme.surfaceContainerHigh
-    val textColor = if (isIncognito) Color.White else MaterialTheme.colorScheme.onSurface
-    val subtextColor = if (isIncognito) Color(0xFFA8C7FA) else MaterialTheme.colorScheme.primary
-    val dividerColor = if (isIncognito) Color(0xFF2E2F3A) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
 
     Dialog(
         onDismissRequest = {
@@ -109,240 +87,125 @@ fun PetalLinkContextMenuDialog(
                 exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh)) +
                         scaleOut(targetScale = 0.9f, animationSpec = spring(stiffness = Spring.StiffnessHigh))
             ) {
-                Surface(
+                Card(
                     shape = RoundedCornerShape(28.dp),
-                    color = cardBg,
-                    shadowElevation = 12.dp,
-                    tonalElevation = 6.dp,
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isIncognito) Color(0xFF1C1D24) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     modifier = Modifier
                         .widthIn(max = 360.dp)
-                        .fillMaxWidth(0.9f)
+                        .fillMaxWidth(0.92f)
                         .padding(16.dp)
                         .clickable(enabled = false) {}
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 16.dp)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // ── Header Section ───────────────────────────────────
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 18.dp)
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            if (favicon != null) {
-                                Image(
-                                    bitmap = favicon.asImageBitmap(),
-                                    contentDescription = "Site Favicon",
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Box(
                                     modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                )
-                            } else {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = if (isIncognito) Color(0xFF2D2F3C) else MaterialTheme.colorScheme.primaryContainer,
-                                    modifier = Modifier.size(36.dp)
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.primary),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Box(contentAlignment = Alignment.Center) {
+                                    if (favicon != null) {
+                                        Image(
+                                            bitmap = favicon.asImageBitmap(),
+                                            contentDescription = "Site Favicon",
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .clip(CircleShape)
+                                        )
+                                    } else {
                                         Text(
                                             text = title.take(1).uppercase().ifBlank { "L" },
                                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = if (isIncognito) Color(0xFFA8C7FA) else MaterialTheme.colorScheme.onPrimaryContainer
+                                            color = MaterialTheme.colorScheme.onPrimary
                                         )
                                     }
                                 }
-                            }
 
-                            Spacer(Modifier.width(12.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = title.ifBlank { "Link Options" },
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = textColor,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = url.ifBlank { "about:blank" },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = subtextColor,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = title.ifBlank { "Link Options" },
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = url.ifBlank { "about:blank" },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
                         }
 
-                        Spacer(Modifier.height(12.dp))
-                        HorizontalDivider(color = dividerColor)
-                        Spacer(Modifier.height(4.dp))
-
                         // ── Scrollable Menu Options ──────────────────────────
+                        val actions = listOf(
+                            Triple(Icons.Rounded.Tab, "Open in new tab") { onOpenInNewTab(); onDismiss() },
+                            Triple(Icons.Rounded.TabUnselected, "Open in new tab in group") { onOpenInNewTabGroup(); onDismiss() },
+                            Triple(Icons.Rounded.VisibilityOff, "Open in Incognito tab") { onOpenInIncognito(); onDismiss() },
+                            Triple(Icons.Rounded.OpenInNew, "Open in new window") { onOpenInNewWindow(); onDismiss() },
+                            Triple(Icons.Rounded.FindInPage, "Preview page") { onPreviewPage(); onDismiss() },
+                            Triple(Icons.Rounded.ContentCopy, "Copy link address") { onCopyLinkAddress(); onDismiss() },
+                            Triple(Icons.Rounded.TextFields, "Copy link text") { onCopyLinkText(); onDismiss() },
+                            Triple(Icons.Rounded.Download, "Download link") { onDownloadLink(); onDismiss() },
+                            Triple(Icons.Rounded.BookmarkBorder, "Add to reading list") { onAddToReadingList(); onDismiss() },
+                            Triple(Icons.Rounded.Share, "Share link") { onShareLink(); onDismiss() }
+                        )
+
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 420.dp)
-                                .verticalScroll(rememberScrollState())
+                                .heightIn(max = 380.dp)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            ContextMenuItem(
-                                icon = Icons.Rounded.Tab,
-                                label = "Open in new tab",
-                                textColor = textColor,
-                                onClick = {
-                                    onOpenInNewTab()
-                                    onDismiss()
-                                }
-                            )
-
-                            ContextMenuItem(
-                                icon = Icons.Rounded.TabUnselected,
-                                label = "Open in new tab in group",
-                                textColor = textColor,
-                                onClick = {
-                                    onOpenInNewTabGroup()
-                                    onDismiss()
-                                }
-                            )
-
-                            ContextMenuItem(
-                                icon = Icons.Rounded.VisibilityOff,
-                                label = "Open in Incognito tab",
-                                textColor = textColor,
-                                onClick = {
-                                    onOpenInIncognito()
-                                    onDismiss()
-                                }
-                            )
-
-                            ContextMenuItem(
-                                icon = Icons.Rounded.OpenInNew,
-                                label = "Open in new window",
-                                textColor = textColor,
-                                onClick = {
-                                    onOpenInNewWindow()
-                                    onDismiss()
-                                }
-                            )
-
-                            ContextMenuItem(
-                                icon = Icons.Rounded.FindInPage,
-                                label = "Preview page",
-                                textColor = textColor,
-                                onClick = {
-                                    onPreviewPage()
-                                    onDismiss()
-                                }
-                            )
-
-                            HorizontalDivider(
-                                color = dividerColor,
-                                modifier = Modifier.padding(vertical = 4.dp, horizontal = 16.dp)
-                            )
-
-                            ContextMenuItem(
-                                icon = Icons.Rounded.ContentCopy,
-                                label = "Copy link address",
-                                textColor = textColor,
-                                onClick = {
-                                    onCopyLinkAddress()
-                                    onDismiss()
-                                }
-                            )
-
-                            ContextMenuItem(
-                                icon = Icons.Rounded.TextFields,
-                                label = "Copy link text",
-                                textColor = textColor,
-                                onClick = {
-                                    onCopyLinkText()
-                                    onDismiss()
-                                }
-                            )
-
-                            ContextMenuItem(
-                                icon = Icons.Rounded.Download,
-                                label = "Download link",
-                                textColor = textColor,
-                                onClick = {
-                                    onDownloadLink()
-                                    onDismiss()
-                                }
-                            )
-
-                            ContextMenuItem(
-                                icon = Icons.Rounded.BookmarkBorder,
-                                label = "Add to reading list",
-                                textColor = textColor,
-                                onClick = {
-                                    onAddToReadingList()
-                                    onDismiss()
-                                }
-                            )
-
-                            // Share link with quick trailing share app icon
-                            ContextMenuItem(
-                                icon = Icons.Rounded.Share,
-                                label = "Share link",
-                                textColor = textColor,
-                                trailingIcon = Icons.Rounded.IosShare,
-                                onClick = {
-                                    onShareLink()
-                                    onDismiss()
-                                }
-                            )
+                            actions.forEachIndexed { index, (icon, label, onClick) ->
+                                SettingsItem(
+                                    title = label,
+                                    subtitle = "",
+                                    shape = getGroupItemShape(index, actions.size),
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    },
+                                    onClick = onClick
+                                )
+                            }
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ContextMenuItem(
-    icon: ImageVector,
-    label: String,
-    textColor: Color,
-    trailingIcon: ImageVector? = null,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        color = Color.Transparent,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 12.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = textColor.copy(alpha = 0.85f),
-                modifier = Modifier.size(20.dp)
-            )
-
-            Spacer(Modifier.width(14.dp))
-
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = textColor,
-                modifier = Modifier.weight(1f)
-            )
-
-            if (trailingIcon != null) {
-                Icon(
-                    imageVector = trailingIcon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
             }
         }
     }

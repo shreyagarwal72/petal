@@ -31,7 +31,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,14 +39,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
@@ -57,7 +52,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -68,16 +62,72 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 /**
- * Expressive Section Container with header label and optional icon.
- * Ported and adapted from PixelPlayer containment system.
+ * RvSystemMonitor position-aware shape calculation helper for items inside vertical groups/lists.
+ *
+ * Rules:
+ * - Single item (count <= 1): RoundedCornerShape(singleCorner) (default 24.dp)
+ * - First item (index == 0): RoundedCornerShape(topStart = topCorner, topEnd = topCorner, bottomStart = middleCorner, bottomEnd = middleCorner)
+ * - Last item (index == count - 1): RoundedCornerShape(topStart = middleCorner, topEnd = middleCorner, bottomStart = bottomCorner, bottomEnd = bottomCorner)
+ * - Middle item: RoundedCornerShape(middleCorner) (default 8.dp)
+ */
+fun getGroupItemShape(
+    index: Int,
+    count: Int,
+    topCorner: Dp = 24.dp,
+    bottomCorner: Dp = 24.dp,
+    middleCorner: Dp = 8.dp,
+    singleCorner: Dp = 24.dp
+): RoundedCornerShape {
+    return when {
+        count <= 1 -> RoundedCornerShape(singleCorner)
+        index == 0 -> RoundedCornerShape(
+            topStart = topCorner,
+            topEnd = topCorner,
+            bottomStart = middleCorner,
+            bottomEnd = middleCorner
+        )
+        index == count - 1 -> RoundedCornerShape(
+            topStart = middleCorner,
+            topEnd = middleCorner,
+            bottomStart = bottomCorner,
+            bottomEnd = bottomCorner
+        )
+        else -> RoundedCornerShape(middleCorner)
+    }
+}
+
+/**
+ * Reusable RvSystemMonitor position-aware shape computation helper function.
+ */
+fun rememberGroupItemShape(
+    index: Int,
+    count: Int,
+    topCorner: Dp = 24.dp,
+    bottomCorner: Dp = 24.dp,
+    middleCorner: Dp = 8.dp,
+    singleCorner: Dp = 24.dp
+): RoundedCornerShape = getGroupItemShape(
+    index = index,
+    count = count,
+    topCorner = topCorner,
+    bottomCorner = bottomCorner,
+    middleCorner = middleCorner,
+    singleCorner = singleCorner
+)
+
+/**
+ * Expressive Section Container with header label and optional icon matching RvSystemMonitor section headers.
  */
 @Composable
 fun SettingsSection(
@@ -89,12 +139,12 @@ fun SettingsSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+            modifier = Modifier.padding(start = 8.dp, bottom = 0.dp)
         ) {
             if (icon != null) {
                 Box(
@@ -108,17 +158,32 @@ fun SettingsSection(
             }
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
             )
         }
-        content()
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            content()
+        }
     }
 }
 
 /**
- * Standard Contained Settings Item.
- * Features rounded surface container, leading icon badge, title, subtitle, and trailing slot.
+ * Standard Contained Settings Item ported from RvSystemMonitor SettingsMenuItem / Card specification.
+ *
+ * Spec:
+ * - Card with 0.dp elevation
+ * - containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+ * - Row padding: 20.dp
+ * - Badge Box: 48.dp, clip RoundedCornerShape(12.dp), background MaterialTheme.colorScheme.primary
+ * - Icon tint: onPrimary
+ * - Title: MaterialTheme.typography.titleMedium, FontWeight.SemiBold, color onSurface
+ * - Subtitle: MaterialTheme.typography.bodyMedium, color onSurfaceVariant
+ * - Trailing chevron: 16.dp / 20.dp tint primary / onSurfaceVariant
  */
 @Composable
 fun SettingsItem(
@@ -130,53 +195,56 @@ fun SettingsItem(
         Icon(
             imageVector = Icons.Rounded.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp)
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
         )
     },
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    shape: Shape = RoundedCornerShape(24.dp),
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    Surface(
-        color = containerColor,
+    Card(
+        modifier = modifier.fillMaxWidth(),
         shape = shape,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .clickable(enabled = enabled, onClick = onClick)
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                .fillMaxWidth()
+                .clickable(enabled = enabled, onClick = onClick)
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (leadingIcon != null) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (enabled) 0.75f else 0.4f),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(40.dp)
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (enabled) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        leadingIcon()
-                    }
+                    leadingIcon()
                 }
             }
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -184,7 +252,7 @@ fun SettingsItem(
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -193,7 +261,6 @@ fun SettingsItem(
 
             if (trailingIcon != null) {
                 Box(
-                    modifier = Modifier.size(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     trailingIcon()
@@ -204,7 +271,45 @@ fun SettingsItem(
 }
 
 /**
- * Contained Switch Setting Item with PixelPlayer animated thumb icons and tactile styling.
+ * RvSystemMonitor-styled MenuItem convenience component.
+ */
+@Composable
+fun SettingsMenuItem(
+    title: String,
+    subtitle: String,
+    icon: Painter,
+    shape: Shape,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    SettingsItem(
+        title = title,
+        subtitle = subtitle,
+        modifier = modifier,
+        shape = shape,
+        enabled = enabled,
+        leadingIcon = {
+            Icon(
+                painter = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        onClick = onClick
+    )
+}
+
+/**
+ * Contained Switch Setting Item with RvSystemMonitor styling and animated thumb switch.
  */
 @Composable
 fun SwitchSettingItem(
@@ -214,59 +319,68 @@ fun SwitchSettingItem(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     leadingIcon: (@Composable () -> Unit)? = null,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    shape: Shape = RoundedCornerShape(24.dp),
     enabled: Boolean = true
 ) {
-    Surface(
-        color = containerColor,
+    Card(
+        modifier = modifier.fillMaxWidth(),
         shape = shape,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .clickable(enabled = enabled) { onCheckedChange(!checked) }
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                .fillMaxWidth()
+                .clickable(enabled = enabled) { onCheckedChange(!checked) }
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            if (leadingIcon != null) {
-                Surface(
-                    shape = CircleShape,
-                    color = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                if (leadingIcon != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (enabled) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
                         leadingIcon()
                     }
                 }
-            }
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (subtitle.isNotBlank()) {
+                Column(
+                    modifier = Modifier.padding(end = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        maxLines = 3,
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                    if (subtitle.isNotBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
 
@@ -290,10 +404,7 @@ fun SwitchSettingItem(
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                     checkedTrackColor = MaterialTheme.colorScheme.primary,
-                    checkedIconColor = MaterialTheme.colorScheme.primary,
-                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurface,
-                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    uncheckedIconColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    checkedIconColor = MaterialTheme.colorScheme.primary
                 )
             )
         }
@@ -301,29 +412,26 @@ fun SwitchSettingItem(
 }
 
 /**
- * Expressive Connected Group Container (PixelPlayer style)
- * Visually groups items inside a continuous rounded container.
+ * Expressive Connected Group Container (RvSystemMonitor style).
+ * Groups items inside a vertically stacked column with 4.dp spacing between items.
  */
 @Composable
 fun ExpressiveSettingsGroup(
     modifier: Modifier = Modifier,
-    shape: RoundedCornerShape = RoundedCornerShape(24.dp),
+    shape: Shape = RoundedCornerShape(24.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(Color.Transparent)
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         content()
     }
 }
 
 /**
- * Material 3 Expressive Category Navigation Tile (PixelPlayer style).
- * Features variable corner radius based on index position, elevated surface container,
- * expressive icon background badge, and title/subtitle typography.
+ * Material 3 Expressive Category Navigation Tile (RvSystemMonitor style).
+ * Features variable corner radius, 48dp rounded primary icon badge, and standard title/subtitle typography.
  */
 @Composable
 fun ExpressiveCategoryItem(
@@ -332,31 +440,33 @@ fun ExpressiveCategoryItem(
     icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(16.dp),
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-    badgeColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    iconColor: Color = MaterialTheme.colorScheme.onPrimaryContainer
+    shape: Shape = RoundedCornerShape(24.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    badgeColor: Color = MaterialTheme.colorScheme.primary,
+    iconColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {
-    Surface(
-        onClick = onClick,
+    Card(
+        modifier = modifier.fillMaxWidth(),
         shape = shape,
-        color = containerColor,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 82.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .clickable(onClick = onClick)
+                .padding(20.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(badgeColor)
             ) {
                 Icon(
@@ -369,29 +479,32 @@ fun ExpressiveCategoryItem(
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text = title,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
-                Text(
-                    text = subtitle,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2
-                )
+                if (subtitle.isNotBlank()) {
+                    Text(
+                        text = subtitle,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
+                    )
+                }
             }
 
             Icon(
                 imageVector = Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                modifier = Modifier.size(20.dp)
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
             )
         }
     }
@@ -405,37 +518,45 @@ fun SettingsCardContainer(
     title: String,
     icon: ImageVector,
     modifier: Modifier = Modifier,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
-    shape: RoundedCornerShape = RoundedCornerShape(24.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    shape: Shape = RoundedCornerShape(24.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
+    Card(
         shape = shape,
-        color = containerColor,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(38.dp)
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-                    }
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
                 Text(
                     title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -446,7 +567,7 @@ fun SettingsCardContainer(
 
 /**
  * Contained Item Card for lists (Bookmarks, History, Downloads, Tabs)
- * with animated selection scale, elevation, and rounded border.
+ * with animated selection scale, elevation = 0.dp, surfaceVariant container color, and rounded border.
  */
 @Composable
 fun ContainedSelectionCard(
@@ -454,8 +575,8 @@ fun ContainedSelectionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
-    containerColor: Color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-    shape: RoundedCornerShape = RoundedCornerShape(18.dp),
+    containerColor: Color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    shape: Shape = RoundedCornerShape(24.dp),
     content: @Composable () -> Unit
 ) {
     val scale by animateFloatAsState(
@@ -484,7 +605,11 @@ fun ContainedSelectionCard(
                 } else Modifier
             ),
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         content()
     }

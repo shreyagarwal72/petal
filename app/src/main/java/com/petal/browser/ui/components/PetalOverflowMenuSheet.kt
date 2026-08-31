@@ -1,11 +1,3 @@
-/*
- * PetalOverflowMenuSheet.kt
- * ─────────────────────────────────────────────────────────────────────────
- * Chrome for Android style compact floating options menu panel anchored to the top-right,
- * with continuous panel layout, circular header actions, fixed-width icon column alignment,
- * 1px inset dividers between logical groups, and dimmed backdrop overlay.
- */
-
 package com.petal.browser.ui.components
 
 import androidx.activity.ComponentActivity
@@ -89,7 +81,7 @@ object PetalOverflowBridge {
             dialog.window?.let { window ->
                 window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
                 window.setGravity(android.view.Gravity.TOP or android.view.Gravity.END)
-                window.setDimAmount(0.35f) // 35% background backdrop dimming
+                window.setDimAmount(0.35f)
                 window.setBackgroundDrawableResource(android.R.color.transparent)
             }
 
@@ -318,7 +310,6 @@ fun PetalOverflowMenuSheet(
         label = "MenuExpandAlpha"
     )
 
-    // Full screen outer box with dim backdrop overlay over rest of screen
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -330,19 +321,20 @@ fun PetalOverflowMenuSheet(
             .padding(top = 52.dp, end = 12.dp, start = 12.dp, bottom = 72.dp),
         contentAlignment = Alignment.BottomEnd
     ) {
-        // Compact floating panel anchored to bottom-right expanding out of bottom nav bar
-        Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            shadowElevation = 12.dp,
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier
-                .fillMaxWidth(0.88f)
-                .widthIn(max = 350.dp)
+                .fillMaxWidth(0.92f)
+                .widthIn(max = 360.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = {} // Consume clicks inside panel
+                    onClick = {}
                 )
                 .graphicsLayer {
                     scaleX = scale
@@ -356,239 +348,275 @@ fun PetalOverflowMenuSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-
-
-                // Top Header Circular Icon Action Buttons Row (evenly spaced)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .entrance(index = 0),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+                // Top Header Action Buttons Row
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    CircularIconButton(
-                        icon = Icons.Rounded.ArrowBack,
-                        contentDescription = "Back",
-                        enabled = canGoBack,
-                        onClick = onGoBack
-                    )
-                    val isHomePageUrl = pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("file:///android_asset/")
-                    CircularIconButton(
-                        icon = if (isBookmarked && !isHomePageUrl) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                        contentDescription = "Toggle Bookmark",
-                        enabled = !isHomePageUrl,
-                        tint = if (isBookmarked && !isHomePageUrl) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                        onClick = onToggleBookmark
-                    )
-                    CircularIconButton(
-                        icon = Icons.Rounded.OfflinePin,
-                        contentDescription = "Install site offline",
-                        enabled = !isHomePageUrl,
-                        onClick = onSavePage
-                    )
-                    CircularIconButton(
-                        icon = Icons.Rounded.Refresh,
-                        contentDescription = "Reload",
-                        onClick = onReload
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .entrance(index = 0),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularIconButton(
+                            icon = Icons.Rounded.ArrowBack,
+                            contentDescription = "Back",
+                            enabled = canGoBack,
+                            onClick = onGoBack
+                        )
+                        val isHomePageUrl = pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("file:///android_asset/")
+                        CircularIconButton(
+                            icon = if (isBookmarked && !isHomePageUrl) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                            contentDescription = "Toggle Bookmark",
+                            enabled = !isHomePageUrl,
+                            tint = if (isBookmarked && !isHomePageUrl) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                            onClick = onToggleBookmark
+                        )
+                        CircularIconButton(
+                            icon = Icons.Rounded.OfflinePin,
+                            contentDescription = "Install site offline",
+                            enabled = !isHomePageUrl,
+                            onClick = onSavePage
+                        )
+                        CircularIconButton(
+                            icon = Icons.Rounded.Refresh,
+                            contentDescription = "Reload",
+                            onClick = onReload
+                        )
+                    }
                 }
 
-                // Thin 1px horizontal divider line spanning row width minus panel horizontal padding
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
-
                 // Section 1: Tab actions
-                MenuRowItem(
-                    icon = Icons.Rounded.Add,
-                    title = "New tab",
-                    onClick = onNewTab
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.VisibilityOff,
-                    title = "New Private / Incognito tab",
-                    subtitle = "Browse without saving search history",
-                    onClick = onNewIncognitoTab
+                val tabActions = listOf(
+                    Triple(Icons.Rounded.Add, "New tab", onNewTab),
+                    Triple(Icons.Rounded.VisibilityOff, "New Private / Incognito tab", onNewIncognitoTab)
                 )
 
-                // Thin 1px horizontal divider line
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    tabActions.forEachIndexed { index, (icon, title, action) ->
+                        SettingsItem(
+                            title = title,
+                            subtitle = if (title.contains("Incognito")) "Browse without saving history" else "",
+                            shape = getGroupItemShape(index, tabActions.size),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            },
+                            onClick = action
+                        )
+                    }
+                }
 
+                // Section 2: Quick Toggles (AdBlocker & Desktop site)
                 val isHomePage = remember(pageUrl, pageTitle) {
                     pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("petal://") || pageUrl == "file:///android_asset/petal_home.html" || pageTitle == "Petal"
                 }
 
-                // Section 2: Quick Toggles (AdBlocker & Desktop site)
-                MenuRowSwitchItem(
-                    icon = Icons.Rounded.Shield,
-                    title = "AdBlocker",
-                    subtitle = if (isAdBlockEnabled) "Ad & tracker shield active" else "AdBlocker disabled",
-                    checked = isAdBlockEnabled,
-                    onCheckedChange = onToggleAdBlock
-                )
-                if (isMediaPlaying) {
-                    val context = androidx.compose.ui.platform.LocalContext.current
-                    val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-                    val autoPip = sp.getBoolean("sp_auto_pip", true)
-                    val backgroundPlay = sp.getBoolean("sp_background_play", false)
-                    val isPipSupported = remember {
-                        context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
-                    }
+                val toggleCount = if (!isHomePage) 2 else 1
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    SwitchSettingItem(
+                        title = "AdBlocker",
+                        subtitle = if (isAdBlockEnabled) "Ad & tracker shield active" else "AdBlocker disabled",
+                        checked = isAdBlockEnabled,
+                        onCheckedChange = onToggleAdBlock,
+                        shape = getGroupItemShape(0, toggleCount),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Shield,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    )
 
-                    if (autoPip && isPipSupported) {
-                        MenuRowItem(
-                            icon = Icons.Rounded.PictureInPicture,
-                            title = "Play in Picture-in-Picture",
-                            subtitle = "Open floating video window (per PiP settings)",
-                            onClick = onTriggerMediaMode
-                        )
-                    } else if (backgroundPlay) {
-                        MenuRowItem(
-                            icon = Icons.Rounded.PlayCircle,
-                            title = "Play in Background",
-                            subtitle = "Continue video/audio when switching apps (per settings)",
-                            onClick = onTriggerMediaMode
-                        )
-                    } else {
-                        MenuRowItem(
-                            icon = Icons.Rounded.PictureInPicture,
-                            title = "Play Video in Window",
-                            subtitle = "Open video playback mode",
-                            onClick = onTriggerMediaMode
+                    if (!isHomePage) {
+                        SwitchSettingItem(
+                            title = "Desktop site",
+                            subtitle = "Request desktop version",
+                            checked = isDesktopSite,
+                            onCheckedChange = onToggleDesktopSite,
+                            shape = getGroupItemShape(1, toggleCount),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.DesktopWindows,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         )
                     }
+                }
+
+                if (isMediaPlaying) {
+                    SettingsItem(
+                        title = "Play in Picture-in-Picture",
+                        subtitle = "Floating video window",
+                        shape = RoundedCornerShape(24.dp),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.PictureInPicture,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        },
+                        onClick = onTriggerMediaMode
+                    )
                 }
 
                 if (!isHomePage) {
-                    MenuRowSwitchItem(
-                        icon = Icons.Rounded.DesktopWindows,
-                        title = "Desktop site",
-                        subtitle = "Request desktop version of websites",
-                        checked = isDesktopSite,
-                        onCheckedChange = onToggleDesktopSite
+                    val pageActions = listOf(
+                        Triple(if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder, if (isBookmarked) "Remove bookmark" else "Add bookmark", onToggleBookmark),
+                        Triple(Icons.Rounded.InstallMobile, "Install as App", onInstallPwa)
                     )
-                    MenuRowItem(
-                        icon = if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                        title = if (isBookmarked) "Remove bookmark" else "Add bookmark",
-                        subtitle = if (isBookmarked) "Remove current page from bookmarks" else "Save page to your bookmarks",
-                        onClick = onToggleBookmark
-                    )
-                    MenuRowItem(
-                        icon = Icons.Rounded.InstallMobile,
-                        title = "Install as App",
-                        subtitle = "Install as standalone PWA app with home screen icon",
-                        onClick = onInstallPwa
-                    )
-
-                    // Thin 1px horizontal divider line
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        pageActions.forEachIndexed { index, (icon, title, action) ->
+                            SettingsItem(
+                                title = title,
+                                subtitle = "",
+                                shape = getGroupItemShape(index, pageActions.size),
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                },
+                                onClick = action
+                            )
+                        }
+                    }
                 }
 
-                // Section 3: History & Delete browsing data
-                MenuRowItem(
-                    icon = Icons.Rounded.History,
-                    title = "History",
-                    onClick = onOpenHistory
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.DeleteSweep,
-                    title = "Delete browsing data",
-                    onClick = onDeleteBrowsingData
+                // Section 3: History & Downloads & Bookmarks
+                val navActions = listOf(
+                    Triple(Icons.Rounded.History, "History", onOpenHistory),
+                    Triple(Icons.Rounded.Download, "Downloads", onOpenDownloads),
+                    Triple(Icons.Rounded.Bookmark, "Bookmarks", onOpenBookmarks),
+                    Triple(Icons.Rounded.DeleteSweep, "Delete browsing data", onDeleteBrowsingData)
                 )
 
-                // Thin 1px horizontal divider line
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
-
-                // Section 4: Downloads & Bookmarks
-                MenuRowItem(
-                    icon = Icons.Rounded.Download,
-                    title = "Downloads",
-                    onClick = onOpenDownloads
-                )
-                MenuRowItem(
-                    icon = Icons.Rounded.Bookmark,
-                    title = "Bookmarks",
-                    onClick = onOpenBookmarks
-                )
-
-                // Thin 1px horizontal divider line
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
-
-                // Section 5: Tools & Settings
-                MenuRowItem(
-                    icon = Icons.Rounded.Build,
-                    title = "More tools",
-                    trailingIcon = if (isMoreToolsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                    onClick = { isMoreToolsExpanded = !isMoreToolsExpanded }
-                )
-
-                AnimatedVisibility(
-                    visible = isMoreToolsExpanded,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        MenuRowItem(
-                            icon = Icons.Rounded.Search,
-                            title = "Search on site",
-                            isSubItem = true,
-                            onClick = onSearchOnSite
-                        )
-                        MenuRowItem(
-                            icon = Icons.Rounded.MenuBook,
-                            title = "Show Reading mode",
-                            subtitle = "Distraction-free article view with custom fonts",
-                            isSubItem = true,
-                            onClick = onShowReadingMode
-                        )
-                        MenuRowItem(
-                            icon = Icons.Rounded.Print,
-                            title = "Print page to PDF",
-                            isSubItem = true,
-                            onClick = onPrintPdf
-                        )
-                        MenuRowItem(
-                            icon = Icons.Rounded.SaveAlt,
-                            title = "Save page",
-                            isSubItem = true,
-                            onClick = onSavePage
-                        )
-                        MenuRowItem(
-                            icon = Icons.Rounded.Share,
-                            title = "Share link",
-                            isSubItem = true,
-                            onClick = onShareLink
+                    navActions.forEachIndexed { index, (icon, title, action) ->
+                        SettingsItem(
+                            title = title,
+                            subtitle = "",
+                            shape = getGroupItemShape(index, navActions.size),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            },
+                            onClick = action
                         )
                     }
                 }
 
-                MenuRowItem(
-                    icon = Icons.Rounded.Settings,
-                    title = "Settings",
-                    onClick = onOpenSettings
+                // Section 4: Tools & Settings
+                val toolsActions = listOf(
+                    Triple(Icons.Rounded.Search, "Search on site", onSearchOnSite),
+                    Triple(Icons.Rounded.MenuBook, "Reading mode", onShowReadingMode),
+                    Triple(Icons.Rounded.Print, "Print to PDF", onPrintPdf),
+                    Triple(Icons.Rounded.SaveAlt, "Save page", onSavePage),
+                    Triple(Icons.Rounded.Share, "Share link", onShareLink)
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    SettingsItem(
+                        title = "More tools",
+                        subtitle = if (isMoreToolsExpanded) "Tap to collapse" else "Page utilities & tools",
+                        shape = if (isMoreToolsExpanded) getGroupItemShape(0, 2) else RoundedCornerShape(24.dp),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Build,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = if (isMoreToolsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        onClick = { isMoreToolsExpanded = !isMoreToolsExpanded }
+                    )
+
+                    AnimatedVisibility(
+                        visible = isMoreToolsExpanded,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            toolsActions.forEachIndexed { index, (icon, title, action) ->
+                                SettingsItem(
+                                    title = title,
+                                    subtitle = "",
+                                    shape = getGroupItemShape(index, toolsActions.size),
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    },
+                                    onClick = action
+                                )
+                            }
+                        }
+                    }
+
+                    SettingsItem(
+                        title = "Settings",
+                        subtitle = "Browser preferences & customization",
+                        shape = RoundedCornerShape(24.dp),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Settings,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        },
+                        onClick = onOpenSettings
+                    )
+                }
+
+                Spacer(Modifier.height(4.dp))
             }
         }
     }
@@ -602,138 +630,22 @@ private fun CircularIconButton(
     tint: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
-    Surface(
+    Card(
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        contentColor = if (enabled) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            contentColor = if (enabled) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .size(44.dp)
-            .bouncyClickable(scaleDown = 0.84f, enabled = enabled, onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
             Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(20.dp))
-        }
-    }
-}
-
-@Composable
-private fun MenuRowItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String? = null,
-    trailingIcon: ImageVector? = null,
-    isSubItem: Boolean = false,
-    onClick: () -> Unit
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
-                onClick()
-            })
-            .padding(
-                start = if (isSubItem) 28.dp else 16.dp,
-                end = 16.dp,
-                top = 10.dp,
-                bottom = 10.dp
-            )
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Fixed-width icon column so all icons align vertically across rows
-            Box(
-                modifier = Modifier.width(28.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (!subtitle.isNullOrBlank()) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            if (trailingIcon != null) {
-                Icon(
-                    imageVector = trailingIcon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MenuRowSwitchItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String? = null,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Fixed-width icon column so all icons align vertically across rows
-            Box(
-                modifier = Modifier.width(28.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (!subtitle.isNullOrBlank()) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            IconSwitch(
-                checked = checked,
-                icon = icon,
-                onCheckedChange = onCheckedChange
-            )
         }
     }
 }

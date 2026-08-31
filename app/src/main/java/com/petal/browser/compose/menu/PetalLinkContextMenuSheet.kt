@@ -23,12 +23,13 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.AsyncImage
+import com.petal.browser.ui.components.SettingsItem
+import com.petal.browser.ui.components.getGroupItemShape
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -56,6 +57,12 @@ interface PetalLinkContextMenuHandler {
     fun onSearchWithGoogleLens() {}
 }
 
+private data class MenuItemSpec(
+    val title: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit
+)
+
 @Composable
 fun PetalLinkContextMenuSheet(
     linkTitle: String?,
@@ -67,7 +74,7 @@ fun PetalLinkContextMenuSheet(
     handler: PetalLinkContextMenuHandler
 ) {
     Surface(
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -90,57 +97,63 @@ fun PetalLinkContextMenuSheet(
             Spacer(Modifier.height(14.dp))
 
             // Header with Favicon / Shape Avatar, Title, and Truncated URL
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f))
-                    .padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                val headerShape = remember {
-                    com.petal.browser.ui.theme.PetalMaterialShapes.SoftScallop.toShape()
-                }
-                Box(
+                Row(
                     modifier = Modifier
-                        .size(46.dp)
-                        .clip(headerShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    if (!faviconUrl.isNullOrEmpty() && !isImage && !isVideo) {
-                        AsyncImage(
-                            model = faviconUrl,
-                            contentDescription = linkTitle ?: "Site Favicon",
-                            modifier = Modifier.size(24.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!faviconUrl.isNullOrEmpty() && !isImage && !isVideo) {
+                            AsyncImage(
+                                model = faviconUrl,
+                                contentDescription = linkTitle ?: "Site Favicon",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (isImage) Icons.Rounded.Image else if (isVideo) Icons.Rounded.Videocam else Icons.Rounded.Language,
+                                contentDescription = "Content",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (!linkTitle.isNullOrBlank()) linkTitle else HelperUnit.domain(linkUrl) ?: linkUrl,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                    } else {
-                        Icon(
-                            imageVector = if (isImage) Icons.Rounded.Image else if (isVideo) Icons.Rounded.Videocam else Icons.Rounded.Language,
-                            contentDescription = "Content",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(24.dp)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = linkUrl,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = if (!linkTitle.isNullOrBlank()) linkTitle else HelperUnit.domain(linkUrl) ?: linkUrl,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = linkUrl,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
                 }
             }
 
@@ -149,201 +162,172 @@ fun PetalLinkContextMenuSheet(
             // Group 1: Primary Navigation Actions
             Text(
                 text = if (isImage) "Image Options" else if (isVideo) "Video Options" else "Link Options",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
+                modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
             )
 
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.45f),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    if (isImage) {
-                        ContextMenuItem("Open image in new tab", Icons.Rounded.OpenInNew, shape = com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape()) {
+            val primaryActions = remember(isImage, isVideo, linkUrl) {
+                if (isImage) {
+                    listOf(
+                        MenuItemSpec("Open image in new tab", Icons.Rounded.OpenInNew) {
                             onDismiss()
                             handler.onOpenImageInNewTab()
-                        }
-                        ContextMenuItem("Download image", Icons.Rounded.Download, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape()) {
+                        },
+                        MenuItemSpec("Download image", Icons.Rounded.Download) {
                             onDismiss()
                             handler.onDownloadImage()
-                        }
-                        ContextMenuItem("Search image with Google Lens", Icons.Rounded.TravelExplore, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape()) {
+                        },
+                        MenuItemSpec("Search image with Google Lens", Icons.Rounded.TravelExplore) {
                             onDismiss()
                             handler.onSearchWithGoogleLens()
-                        }
-                        ContextMenuItem("Scan image with Petal Scanner", Icons.Rounded.CenterFocusWeak, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Boom.toShape()) {
+                        },
+                        MenuItemSpec("Scan image with Petal Scanner", Icons.Rounded.CenterFocusWeak) {
                             onDismiss()
                             handler.onScanImage()
                         }
-                    } else if (isVideo) {
-                        ContextMenuItem("Open video in new tab", Icons.Rounded.OpenInNew, shape = com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape()) {
+                    )
+                } else if (isVideo) {
+                    listOf(
+                        MenuItemSpec("Open video in new tab", Icons.Rounded.OpenInNew) {
                             onDismiss()
                             handler.onOpenInNewTab()
-                        }
-                        ContextMenuItem("Download video", Icons.Rounded.Download, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape()) {
+                        },
+                        MenuItemSpec("Download video", Icons.Rounded.Download) {
                             onDismiss()
                             handler.onDownloadVideo()
                         }
-                    } else {
-                        ContextMenuItem("Open in new tab", Icons.Rounded.OpenInNew, shape = com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape()) {
+                    )
+                } else {
+                    listOf(
+                        MenuItemSpec("Open in new tab", Icons.Rounded.OpenInNew) {
                             onDismiss()
                             handler.onOpenInNewTab()
-                        }
-                        ContextMenuItem("Open in new tab in group", Icons.Rounded.TabUnselected, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape()) {
+                        },
+                        MenuItemSpec("Open in new tab in group", Icons.Rounded.TabUnselected) {
                             onDismiss()
                             handler.onOpenInNewTabInGroup()
-                        }
-                        ContextMenuItem("Open in Incognito tab", Icons.Rounded.VisibilityOff, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Ghostish.toShape()) {
+                        },
+                        MenuItemSpec("Open in Incognito tab", Icons.Rounded.VisibilityOff) {
                             onDismiss()
                             handler.onOpenInIncognitoTab()
-                        }
-                        ContextMenuItem("Open in new window", Icons.Rounded.OpenInBrowser, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape()) {
+                        },
+                        MenuItemSpec("Open in new window", Icons.Rounded.OpenInBrowser) {
                             onDismiss()
                             handler.onOpenInNewWindow()
-                        }
-                        ContextMenuItem("Preview page", Icons.Rounded.FindInPage, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Gem.toShape()) {
+                        },
+                        MenuItemSpec("Preview page", Icons.Rounded.FindInPage) {
                             onDismiss()
                             handler.onPreviewPage()
                         }
-                    }
+                    )
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                primaryActions.forEachIndexed { index, spec ->
+                    SettingsItem(
+                        title = spec.title,
+                        subtitle = "",
+                        shape = getGroupItemShape(index, primaryActions.size),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = spec.icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        },
+                        onClick = spec.onClick
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             // Group 2: Utilities & Sharing
             Text(
                 text = "Clipboard & Sharing",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
+                modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
             )
 
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.45f),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    if (isImage) {
-                        ContextMenuItem("Copy image URL", Icons.Rounded.ContentCopy, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape()) {
+            val shareActions = remember(isImage, isVideo, linkUrl) {
+                if (isImage) {
+                    listOf(
+                        MenuItemSpec("Copy image URL", Icons.Rounded.ContentCopy) {
                             onDismiss()
                             handler.onCopyImage()
-                        }
-                        ContextMenuItem("Share image", Icons.Rounded.Share, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()) {
+                        },
+                        MenuItemSpec("Share image", Icons.Rounded.Share) {
                             onDismiss()
                             handler.onShareImage()
                         }
-                    } else if (isVideo) {
-                        ContextMenuItem("Copy video link", Icons.Rounded.ContentCopy, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape()) {
+                    )
+                } else if (isVideo) {
+                    listOf(
+                        MenuItemSpec("Copy video link", Icons.Rounded.ContentCopy) {
                             onDismiss()
                             handler.onCopyLinkAddress()
-                        }
-                        ContextMenuItem("Share video", Icons.Rounded.Share, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()) {
+                        },
+                        MenuItemSpec("Share video", Icons.Rounded.Share) {
                             onDismiss()
                             handler.onShareLink()
                         }
-                    } else {
-                        ContextMenuItem("Copy link address", Icons.Rounded.ContentCopy, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape()) {
+                    )
+                } else {
+                    listOf(
+                        MenuItemSpec("Copy link address", Icons.Rounded.ContentCopy) {
                             onDismiss()
                             handler.onCopyLinkAddress()
-                        }
-                        ContextMenuItem("Copy link text", Icons.Rounded.Title, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Hexagon.toShape()) {
+                        },
+                        MenuItemSpec("Copy link text", Icons.Rounded.Title) {
                             onDismiss()
                             handler.onCopyLinkText()
-                        }
-                        ContextMenuItem("Download link", Icons.Rounded.Download, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie7Sided.toShape()) {
+                        },
+                        MenuItemSpec("Download link", Icons.Rounded.Download) {
                             onDismiss()
                             handler.onDownloadLink()
-                        }
-                        ContextMenuItem("Add to reading list", Icons.Rounded.BookmarkAdd, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Flower.toShape()) {
+                        },
+                        MenuItemSpec("Add to reading list", Icons.Rounded.BookmarkAdd) {
                             onDismiss()
                             handler.onAddToReadingList()
-                        }
-                        ContextMenuItem("Share link", Icons.Rounded.Share, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()) {
+                        },
+                        MenuItemSpec("Share link", Icons.Rounded.Share) {
                             onDismiss()
                             handler.onShareLink()
                         }
-                    }
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                shareActions.forEachIndexed { index, spec ->
+                    SettingsItem(
+                        title = spec.title,
+                        subtitle = "",
+                        shape = getGroupItemShape(index, shareActions.size),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = spec.icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        },
+                        onClick = spec.onClick
+                    )
                 }
             }
 
             Spacer(Modifier.height(18.dp))
-        }
-    }
-}
-
-@Composable
-private fun ContextMenuItem(
-    label: String,
-    leadingIcon: ImageVector,
-    trailingIcon: ImageVector? = null,
-    shape: androidx.compose.ui.graphics.Shape? = null,
-    onClick: () -> Unit
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val itemShape = remember(label, shape) {
-        shape ?: run {
-            val hash = kotlin.math.abs(label.hashCode())
-            val shapes = listOf(
-                com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape(),
-                com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
-                com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape(),
-                com.petal.browser.ui.theme.PetalMaterialShapes.Hexagon.toShape(),
-                com.petal.browser.ui.theme.PetalMaterialShapes.Octagon.toShape(),
-                com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape(),
-                com.petal.browser.ui.theme.PetalMaterialShapes.SoftScallop.toShape(),
-                com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()
-            )
-            shapes[hash % shapes.size]
-        }
-    }
-
-    Surface(
-        onClick = {
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
-            onClick()
-        },
-        color = androidx.compose.ui.graphics.Color.Transparent,
-        shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(itemShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = leadingIcon,
-                    contentDescription = label,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f)
-            )
-            if (trailingIcon != null) {
-                Icon(
-                    imageVector = trailingIcon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
         }
     }
 }

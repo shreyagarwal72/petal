@@ -75,149 +75,177 @@ fun PetalSiteInfoBottomSheet(
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
             // --- Domain & Security Header ---
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (favicon != null) {
-                    Image(
-                        bitmap = favicon.asImageBitmap(),
-                        contentDescription = "Site Favicon",
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                    )
-                } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Public,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(20.dp)
+                        if (favicon != null) {
+                            Image(
+                                bitmap = favicon.asImageBitmap(),
+                                contentDescription = "Site Favicon",
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Rounded.Public,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = domain.ifEmpty { "Current Website" },
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = if (isSecure) "Connection is secure" else if (isHttps) "SSL Encrypted" else "Connection not secure",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isSecure || isHttps) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = domain.ifEmpty { "Current Website" },
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = if (isSecure) "Connection is secure" else if (isHttps) "SSL Encrypted" else "Connection not secure",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isSecure || isHttps) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
-                    )
-                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // --- SSL & Connection Security Card ---
             Card(
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isSecure || isHttps)
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-                    else
-                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Icon(
-                        imageVector = if (isSecure || isHttps) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
-                        contentDescription = null,
-                        tint = if (isSecure || isHttps) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(26.dp)
-                    )
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSecure || isHttps) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isSecure || isHttps) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = if (isSecure) "Valid Security Certificate" else if (isHttps) "HTTPS Encrypted Connection" else "Unencrypted Connection",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         val certDetails = remember(sslCertificate) {
                             if (sslCertificate != null) {
                                 "Issued to: ${sslCertificate.issuedTo.cName}\nIssued by: ${sslCertificate.issuedBy.oName}"
                             } else if (isHttps) {
-                                "Your information (e.g. passwords or credit cards) is private when sent to this site."
+                                "Your information is private when sent to this site."
                             } else {
-                                "You should not enter any sensitive info on this site (e.g. passwords or credit cards)."
+                                "You should not enter sensitive info on this site."
                             }
                         }
+                        Spacer(Modifier.height(2.dp))
                         Text(
                             text = certDetails,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp)
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // --- Cookies & Site Data Section ---
             Text(
                 text = "Cookies & Site Data",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 6.dp)
+                modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
             )
 
             Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.Cookie,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Stored Cookies & Cache",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = if (cookieCount > 0) "$cookieCount active cookies" else "No active cookies stored",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Stored Cookies & Cache",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = if (cookieCount > 0) "$cookieCount active cookies" else "No active cookies stored",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
                     OutlinedButton(
@@ -233,7 +261,7 @@ fun PetalSiteInfoBottomSheet(
                             }
                         },
                         shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Icon(Icons.Rounded.DeleteSweep, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
@@ -242,136 +270,120 @@ fun PetalSiteInfoBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // --- Site Permissions Section ---
             Text(
                 text = "Page Permissions",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 6.dp)
+                modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
             )
 
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    // Camera
-                    PermissionToggleRow(
-                        title = "Camera Access",
-                        icon = Icons.Rounded.Videocam,
-                        checked = isCameraAllowed,
-                        onCheckedChange = { allowed ->
-                            isCameraAllowed = allowed
-                            sp.edit().putBoolean(profile + "_camera", allowed).apply()
-                            if (allowed && context is android.app.Activity) {
-                                HelperUnit.grantPermissionsCamera(context)
-                            }
-                            webView?.reloadWithoutInit()
+                // Camera
+                SwitchSettingItem(
+                    title = "Camera Access",
+                    subtitle = if (isCameraAllowed) "Allowed" else "Blocked",
+                    checked = isCameraAllowed,
+                    onCheckedChange = { allowed ->
+                        isCameraAllowed = allowed
+                        sp.edit().putBoolean(profile + "_camera", allowed).apply()
+                        if (allowed && context is android.app.Activity) {
+                            HelperUnit.grantPermissionsCamera(context)
                         }
-                    )
+                        webView?.reloadWithoutInit()
+                    },
+                    shape = getGroupItemShape(0, 4),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Videocam,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                )
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                    // Microphone
-                    PermissionToggleRow(
-                        title = "Microphone Access",
-                        icon = Icons.Rounded.Mic,
-                        checked = isMicAllowed,
-                        onCheckedChange = { allowed ->
-                            isMicAllowed = allowed
-                            sp.edit().putBoolean(profile + "_microphone", allowed).apply()
-                            if (allowed && context is android.app.Activity) {
-                                HelperUnit.grantPermissionsMic(context)
-                            }
-                            webView?.reloadWithoutInit()
+                // Microphone
+                SwitchSettingItem(
+                    title = "Microphone Access",
+                    subtitle = if (isMicAllowed) "Allowed" else "Blocked",
+                    checked = isMicAllowed,
+                    onCheckedChange = { allowed ->
+                        isMicAllowed = allowed
+                        sp.edit().putBoolean(profile + "_microphone", allowed).apply()
+                        if (allowed && context is android.app.Activity) {
+                            HelperUnit.grantPermissionsMic(context)
                         }
-                    )
+                        webView?.reloadWithoutInit()
+                    },
+                    shape = getGroupItemShape(1, 4),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Mic,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                )
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                    // Location
-                    PermissionToggleRow(
-                        title = "Location Access",
-                        icon = Icons.Rounded.MyLocation,
-                        checked = isLocationAllowed,
-                        onCheckedChange = { allowed ->
-                            isLocationAllowed = allowed
-                            sp.edit().putBoolean(profile + "_location", allowed).apply()
-                            webView?.getSettings()?.setGeolocationEnabled(allowed)
-                            if (allowed && context is android.app.Activity) {
-                                HelperUnit.grantPermissionsLoc(context)
-                            } else if (!allowed) {
-                                try {
-                                    GeolocationPermissions.getInstance().clear(domain)
-                                } catch (ignored: Exception) {}
-                            }
-                            webView?.reloadWithoutInit()
+                // Location
+                SwitchSettingItem(
+                    title = "Location Access",
+                    subtitle = if (isLocationAllowed) "Allowed" else "Blocked",
+                    checked = isLocationAllowed,
+                    onCheckedChange = { allowed ->
+                        isLocationAllowed = allowed
+                        sp.edit().putBoolean(profile + "_location", allowed).apply()
+                        webView?.getSettings()?.setGeolocationEnabled(allowed)
+                        if (allowed && context is android.app.Activity) {
+                            HelperUnit.grantPermissionsLoc(context)
+                        } else if (!allowed) {
+                            try {
+                                GeolocationPermissions.getInstance().clear(domain)
+                            } catch (ignored: Exception) {}
                         }
-                    )
+                        webView?.reloadWithoutInit()
+                    },
+                    shape = getGroupItemShape(2, 4),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.MyLocation,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                )
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                    // Notifications
-                    PermissionToggleRow(
-                        title = "Notifications",
-                        icon = Icons.Rounded.Notifications,
-                        checked = isNotificationsAllowed,
-                        onCheckedChange = { allowed ->
-                            isNotificationsAllowed = allowed
-                            sp.edit().putBoolean("sp_notifications_$domain", allowed).apply()
-                            if (allowed && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && context is android.app.Activity) {
-                                if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                                    androidx.core.app.ActivityCompat.requestPermissions(context, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
-                                }
+                // Notifications
+                SwitchSettingItem(
+                    title = "Notifications",
+                    subtitle = if (isNotificationsAllowed) "Allowed" else "Blocked",
+                    checked = isNotificationsAllowed,
+                    onCheckedChange = { allowed ->
+                        isNotificationsAllowed = allowed
+                        sp.edit().putBoolean("sp_notifications_$domain", allowed).apply()
+                        if (allowed && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && context is android.app.Activity) {
+                            if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                androidx.core.app.ActivityCompat.requestPermissions(context, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
                             }
                         }
-                    )
-                }
+                    },
+                    shape = getGroupItemShape(3, 4),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
         }
-    }
-}
-
-@Composable
-private fun PermissionToggleRow(
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            thumbContent = if (checked) {
-                { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
-            } else null
-        )
     }
 }
