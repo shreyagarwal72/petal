@@ -191,6 +191,53 @@ object PetalTabGroupManager {
     }
 
     @Synchronized
+    fun autoGroupByDomain(context: Context, tabs: List<PetalTabItem>): Int {
+        init(context)
+        val regularTabs = tabs.filter { !it.isIncognito && it.url.isNotBlank() && !it.url.startsWith("about:") }
+        val domainMap = mutableMapOf<String, MutableList<PetalTabItem>>()
+        
+        for (tab in regularTabs) {
+            val domain = com.petal.browser.unit.HelperUnit.domain(tab.url)
+            if (!domain.isNullOrBlank() && domain != "null" && domain != "localhost") {
+                domainMap.getOrPut(domain) { mutableListOf() }.add(tab)
+            }
+        }
+
+        var groupsCreatedOrUpdated = 0
+        for ((domain, tabList) in domainMap) {
+            if (tabList.size >= 2) {
+                val existingGroup = groupsMap.values.find { it.title.equals(domain, ignoreCase = true) && !it.isIncognito }
+                val tabIds = tabList.map { it.id }
+                if (existingGroup != null) {
+                    val merged = (existingGroup.tabIds + tabIds).distinct()
+                    if (merged.size != existingGroup.tabIds.size) {
+                        groupsMap[existingGroup.id] = existingGroup.copy(tabIds = merged)
+                        groupsCreatedOrUpdated++
+                    }
+                } else {
+                    val newGroupId = "group_${System.currentTimeMillis()}_${groupsMap.size}"
+                    val colorIndex = (groupsMap.size) % TabGroupColorPresets.size
+                    val colorHex = TabGroupColorPresets[colorIndex]
+                    val cleanTitle = domain.removePrefix("www.").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                    val newGroup = PetalTabGroup(
+                        id = newGroupId,
+                        title = cleanTitle,
+                        colorHex = colorHex,
+                        isIncognito = false,
+                        tabIds = tabIds.distinct()
+                    )
+                    groupsMap[newGroupId] = newGroup
+                    groupsCreatedOrUpdated++
+                }
+            }
+        }
+        if (groupsCreatedOrUpdated > 0) {
+            persist(context)
+        }
+        return groupsCreatedOrUpdated
+    }
+
+    @Synchronized
     fun syncWithOpenTabs(context: Context, currentOpenTabIds: Set<String>) {
         init(context)
         var changed = false
