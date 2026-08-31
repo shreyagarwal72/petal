@@ -818,23 +818,29 @@ private fun DownloadRowItem(
                     label = "Progress"
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                LinearWavyProgressIndicator(
-                    progress = { animatedProgress },
-                    color = MaterialTheme.colorScheme.primary,
+                LinearRipplingWavyProgressIndicator(
+                    progress = animatedProgress,
+                    activeColor = MaterialTheme.colorScheme.primary,
+                    secondaryColor = MaterialTheme.colorScheme.tertiary,
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp)
+                        .height(10.dp),
+                    height = 8.dp,
+                    strokeWidth = 3.5.dp
                 )
             } else if (item.status == DownloadManager.STATUS_PAUSED) {
                 Spacer(modifier = Modifier.height(6.dp))
-                LinearWavyProgressIndicator(
-                    progress = { item.progress ?: 0f },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                LinearRipplingWavyProgressIndicator(
+                    progress = item.progress ?: 0f,
+                    activeColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    secondaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp)
+                        .height(10.dp),
+                    height = 8.dp,
+                    strokeWidth = 3.5.dp
                 )
             }
         }
