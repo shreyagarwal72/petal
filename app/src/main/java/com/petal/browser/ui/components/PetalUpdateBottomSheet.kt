@@ -285,13 +285,12 @@ fun PetalUpdateSheetContent(
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = 600.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -372,8 +371,6 @@ fun PetalUpdateSheetContent(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = 220.dp)
-                                .verticalScroll(rememberScrollState())
                                 .padding(16.dp)
                         ) {
                             PetalMarkdownText(
@@ -417,8 +414,8 @@ fun PetalUpdateSheetContent(
                                     version = updateInfo.versionName,
                                     onProgress = { progress ->
                                         coroutineScope.launch(Dispatchers.Main) {
-                                            downloadProgress = progress
-                                            if (progress >= 100) isDownloading = false
+                                             downloadProgress = progress
+                                             if (progress >= 100) isDownloading = false
                                         }
                                     }
                                 )
@@ -454,7 +451,7 @@ fun PetalUpdateSheetContent(
                 }
             }
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -598,9 +595,7 @@ fun PetalChangelogHistorySheetContent(
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = 580.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
@@ -660,8 +655,9 @@ fun PetalChangelogHistorySheetContent(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 440.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .heightIn(max = 520.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(releases) { rel ->
                         Card(
