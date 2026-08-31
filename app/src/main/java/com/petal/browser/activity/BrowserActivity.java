@@ -854,22 +854,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             searchOnSiteLayout.setVisibility(GONE);
             appBar.setVisibility(VISIBLE);
         } else if (ninjaWebView != null && ninjaWebView.canGoBack()) {
-            WebBackForwardList list = ninjaWebView.copyBackForwardList();
-            if (list != null && list.getCurrentIndex() > 0) {
-                WebHistoryItem prevItem = list.getItemAtIndex(list.getCurrentIndex() - 1);
-                String prevUrl = prevItem != null ? prevItem.getUrl() : null;
-                if (prevUrl != null && isHomePage(prevUrl)) {
-                    ninjaWebView.loadUrl("about:blank");
-                    ninjaWebView.clearHistory();
-                    showAlbum(currentAlbumController, "about:blank");
-                    return;
-                }
-            }
             sp.edit().putBoolean("backPressed", true).apply();
             ninjaWebView.goBack();
         } else {
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-            if (currentUrl != null && !isHomePage(currentUrl)) {
+            if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl)) {
                 if (ninjaWebView != null) {
                     ninjaWebView.loadUrl("about:blank");
                     ninjaWebView.clearHistory();
