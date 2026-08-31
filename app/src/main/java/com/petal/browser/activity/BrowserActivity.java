@@ -1823,7 +1823,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             BrowserContainer.remove(controller);
             com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
             if (isClosingCurrent && BrowserContainer.size() > 0) {
-                showAlbum(BrowserContainer.get(Math.max(0, BrowserContainer.size() - 1)));
+                AlbumController nextController = BrowserContainer.get(Math.max(0, BrowserContainer.size() - 1));
+                if (isOverlayScreenShowing) {
+                    if (currentAlbumController != null) {
+                        currentAlbumController.deactivate();
+                    }
+                    currentAlbumController = nextController;
+                    if (currentAlbumController instanceof NinjaWebView) {
+                        ninjaWebView = (NinjaWebView) currentAlbumController;
+                    }
+                    currentAlbumController.activate();
+                } else {
+                    showAlbum(nextController);
+                }
             } else if (BrowserContainer.size() == 0) {
                 currentAlbumController = null;
                 ninjaWebView = null;
