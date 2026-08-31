@@ -255,6 +255,20 @@ public class PetalMediaSessionService extends Service {
         builder.addAction(R.drawable.icon_close, String.format(java.util.Locale.US, "%.2fx", currentSpeed), speedIntent);
         builder.addAction(R.drawable.icon_close, isMuted ? "Unmute" : "Mute", muteIntent);
 
+        // Status bar chip styling & Live Update extras for Android 16+ Promoted Ongoing
+        String chipText = isPlaying ? "Playing" : "Paused";
+        Bundle extras = new Bundle();
+        extras.putString("android.liveAlertText", chipText);
+        extras.putBoolean("android.isLiveAlert", true);
+        extras.putBoolean("android.promotedOngoing", isPlaying);
+        extras.putString("android.shortCriticalText", chipText);
+        builder.setExtras(extras);
+
+        try {
+            java.lang.reflect.Method setShortCriticalText = builder.getClass().getMethod("setShortCriticalText", CharSequence.class);
+            setShortCriticalText.invoke(builder, chipText);
+        } catch (Exception ignored) {}
+
         // Enable live progress updates & live activity / notification bar compatibility
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             builder.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);

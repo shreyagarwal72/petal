@@ -159,6 +159,8 @@ public class LiveUpdateNotificationManager {
         Bundle extras = new Bundle();
         extras.putString("android.liveAlertText", chipText);
         extras.putBoolean("android.isLiveAlert", true);
+        extras.putBoolean("android.promotedOngoing", !isPaused);
+        extras.putString("android.shortCriticalText", chipText);
         builder.setExtras(extras);
 
         try {
@@ -170,7 +172,8 @@ public class LiveUpdateNotificationManager {
     }
 
     /**
-     * Uses reflection to build API 36 (Android 16) Notification.ProgressStyle with segment tracking support.
+     * Uses reflection to build API 36 (Android 16) Notification.ProgressStyle with segment tracking support,
+     * setting setOngoing(true), setShortCriticalText(), and promoted ongoing status bar chip flags.
      */
     private static Notification buildAndroid16ProgressStyleNotification(
             Context context,
@@ -211,9 +214,39 @@ public class LiveUpdateNotificationManager {
                 setProgressTrackerText.invoke(progressStyle, chipText);
             } catch (NoSuchMethodException ignored) {}
 
+            try {
+                Method setShortCriticalTextMethod = progressStyleClass.getMethod("setShortCriticalText", CharSequence.class);
+                setShortCriticalTextMethod.invoke(progressStyle, chipText);
+            } catch (NoSuchMethodException ignored) {}
+
             // Apply style to Notification.Builder
             Method setStyleMethod = Notification.Builder.class.getMethod("setStyle", Notification.Style.class);
             setStyleMethod.invoke(builder, progressStyle);
+
+            // Set short critical text directly on Notification.Builder if supported
+            try {
+                Method setShortCriticalText = Notification.Builder.class.getMethod("setShortCriticalText", CharSequence.class);
+                setShortCriticalText.invoke(builder, chipText);
+            } catch (NoSuchMethodException ignored) {}
+
+            // Set Promoted flag if method exists
+            try {
+                Method setPromotedMethod = Notification.Builder.class.getMethod("setPromoted", boolean.class);
+                setPromotedMethod.invoke(builder, true);
+            } catch (NoSuchMethodException ignored) {}
+
+            try {
+                Method setPromotedOngoing = Notification.Builder.class.getMethod("setPromotedOngoing", boolean.class);
+                setPromotedOngoing.invoke(builder, true);
+            } catch (NoSuchMethodException ignored) {}
+
+            // Add extras for Promoted Ongoing & Live Alert chips
+            Bundle extras = new Bundle();
+            extras.putString("android.liveAlertText", chipText);
+            extras.putBoolean("android.isLiveAlert", true);
+            extras.putBoolean("android.promotedOngoing", true);
+            extras.putString("android.shortCriticalText", chipText);
+            builder.addExtras(extras);
 
             // Add actions
             if (cancelPendingIntent != null) {
@@ -224,12 +257,6 @@ public class LiveUpdateNotificationManager {
                 ).build();
                 builder.addAction(cancelAction);
             }
-
-            // Set Promoted flag if method exists
-            try {
-                Method setPromotedMethod = Notification.Builder.class.getMethod("setPromoted", boolean.class);
-                setPromotedMethod.invoke(builder, true);
-            } catch (NoSuchMethodException ignored) {}
 
             return builder.build();
         } catch (Exception e) {
