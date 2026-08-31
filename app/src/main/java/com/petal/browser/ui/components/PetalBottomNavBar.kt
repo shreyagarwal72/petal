@@ -363,7 +363,7 @@ fun PetalBottomNavBar(
                     isIncognito = isIncognito,
                     icon = { isSelected, tint ->
                         Icon(
-                            imageVector = Icons.Rounded.Home,
+                            painter = androidx.compose.ui.res.painterResource(if (isSelected) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home),
                             contentDescription = "Home",
                             tint = tint,
                             modifier = Modifier.size(24.dp)
@@ -456,7 +456,7 @@ fun PetalBottomNavBar(
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.Home,
+                                painter = androidx.compose.ui.res.painterResource(if (selectedTab == PetalNavTab.HOME) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home),
                                 contentDescription = "Home",
                                 tint = if (selectedTab == PetalNavTab.HOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(24.dp)
