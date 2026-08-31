@@ -103,71 +103,67 @@ fun PetalLinkContextMenuDialog(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .verticalScroll(rememberScrollState())
+                            .padding(bottom = 8.dp)
                     ) {
                         // ── Header Section ───────────────────────────────────
-                        Card(
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.primary),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (favicon != null) {
-                                        Image(
-                                            bitmap = favicon.asImageBitmap(),
-                                            contentDescription = "Site Favicon",
-                                            modifier = Modifier
-                                                .size(28.dp)
-                                                .clip(CircleShape)
-                                        )
-                                    } else {
-                                        Text(
-                                            text = title.take(1).uppercase().ifBlank { "L" },
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-                                }
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = title.ifBlank { "Link Options" },
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                if (favicon != null) {
+                                    Image(
+                                        bitmap = favicon.asImageBitmap(),
+                                        contentDescription = "Site Favicon",
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clip(CircleShape)
                                     )
+                                } else {
                                     Text(
-                                        text = url.ifBlank { "about:blank" },
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        text = title.take(1).uppercase().ifBlank { "L" },
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
                             }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = title.ifBlank { "Link Options" },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = url.ifBlank { "about:blank" },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
 
-                        // ── Scrollable Menu Options ──────────────────────────
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
+
+                        // ── Menu Options ──────────────────────────
                         val actions = listOf(
                             Triple(Icons.Rounded.Tab, "Open in new tab") { onOpenInNewTab(); onDismiss() },
                             Triple(Icons.Rounded.TabUnselected, "Open in new tab in group") { onOpenInNewTabGroup(); onDismiss() },
@@ -181,32 +177,60 @@ fun PetalLinkContextMenuDialog(
                             Triple(Icons.Rounded.Share, "Share link") { onShareLink(); onDismiss() }
                         )
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 380.dp)
-                                .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            actions.forEachIndexed { index, (icon, label, onClick) ->
-                                SettingsItem(
-                                    title = label,
-                                    subtitle = "",
-                                    shape = getGroupItemShape(index, actions.size),
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = icon,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    },
-                                    onClick = onClick
-                                )
-                            }
+                        actions.forEach { (icon, label, onClick) ->
+                            DialogContextRow(
+                                icon = icon,
+                                title = label,
+                                onClick = onClick
+                            )
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DialogContextRow(
+    icon: ImageVector,
+    title: String,
+    onClick: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                onClick()
+            })
+            .padding(horizontal = 18.dp, vertical = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.width(28.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
