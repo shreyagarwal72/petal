@@ -59,8 +59,8 @@ public class PetalDownloadEngine {
     private PetalDownloadEngine(Context context) {
         Context appContext = context.getApplicationContext();
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
-                .setDownloadConcurrentLimit(4)
-                .setProgressReportingInterval(300L)
+                .setDownloadConcurrentLimit(8)
+                .setProgressReportingInterval(150L)
                 .setAutoRetryMaxAttempts(5)
                 .enableAutoStart(true)
                 .enableRetryOnNetworkGain(true)

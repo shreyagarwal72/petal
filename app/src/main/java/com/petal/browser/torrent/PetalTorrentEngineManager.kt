@@ -37,9 +37,24 @@ object PetalTorrentEngineManager {
     }
 
     @JvmStatic
+    fun isFirstTimeEnginePromptNeeded(context: Context): Boolean {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        return !sp.getBoolean("sp_download_engine_prompt_shown", false)
+    }
+
+    @JvmStatic
+    fun setEnginePromptCompleted(context: Context) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        sp.edit().putBoolean("sp_download_engine_prompt_shown", true).apply()
+    }
+
+    @JvmStatic
     fun setEngineMode(context: Context, mode: TorrentEngineMode) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        sp.edit().putString("sp_torrent_engine", mode.key).apply()
+        sp.edit()
+            .putString("sp_torrent_engine", mode.key)
+            .putBoolean("sp_download_engine_prompt_shown", true)
+            .apply()
     }
 
     @JvmStatic
