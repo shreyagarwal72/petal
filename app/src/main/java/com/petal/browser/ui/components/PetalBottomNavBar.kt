@@ -7,19 +7,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,11 +29,13 @@ import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -56,10 +50,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
@@ -130,12 +126,12 @@ private val dualEdgeBlurAgsl =
  * and fallback rendering on earlier Android versions (matching Remember and FilePipe).
  */
 fun Modifier.progressiveBlur(
-    blurRadius: Float = 80f,
+    blurRadius: Float = 90f,
     topHeight: Float = 0f,
     bottomHeight: Float = 0f,
     showGradientOverlay: Boolean = true,
     overlayAlpha: Float = 0.28f,
-    overlayAlphaBottom: Float = 0.45f,
+    overlayAlphaBottom: Float = 0.48f,
     topBlurProgressPower: Float = 2.5f,
     topAlphaMultiplier: Float = 1f,
     bottomAlphaMultiplier: Float = 1f,
@@ -215,6 +211,7 @@ fun Modifier.progressiveBlur(
                                 Brush.verticalGradient(
                                     colors = listOf(Color.Transparent, overlayColorBottom),
                                     startY = size.height - activeBottomHeight,
+                                    endY = size.height,
                                 )
                             }
                         drawRect(brush = brush)
@@ -234,7 +231,7 @@ fun Modifier.progressiveBlur(
 @Composable
 fun ProgressiveBlurBar(
     modifier: Modifier = Modifier,
-    blurRadius: Float = 80f
+    blurRadius: Float = 90f
 ) {
     val isBlurSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -245,7 +242,7 @@ fun ProgressiveBlurBar(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     Modifier.progressiveBlur(
                         blurRadius = blurRadius,
-                        bottomHeight = 300f,
+                        bottomHeight = 350f,
                         overlayAlphaBottom = 0.55f
                     )
                 } else if (isBlurSupported) {
@@ -271,12 +268,14 @@ fun ProgressiveBlurBar(
 
 /**
  * Modern Floating Navigation Bar with Material 3 Expressive HorizontalFloatingToolbar
- * and Progressive Frosted-Glass Blur (inspired by bikram-agarwal/Remember and bikram-agarwal/FilePipe).
- * Features:
- * - Proper HorizontalFloatingToolbar floating pill architecture
- * - Spring-animated tab expansion (72.dp label expand on active selection)
- * - Tactile active container pill morphing
- * - Edge-to-edge progressive blur effect behind navigation bar
+ * and Progressive Frosted-Glass Blur (matching bikram-agarwal/Remember and bikram-agarwal/FilePipe).
+ *
+ * Architecture & Theming:
+ * - Toolbar container uses vibrant primary container theme (`colorScheme.primary` container & `colorScheme.onPrimary` content)
+ * - Active tab item fills with background color and primary tinted icon & bold label (`MaterialTheme.colorScheme.background` container, `MaterialTheme.colorScheme.primary` content)
+ * - Inactive tab item stays lightweight (`MaterialTheme.colorScheme.onPrimary` content)
+ * - Tactile spring-animated label width expansion (`72.dp` target on active selection)
+ * - Progressive blur overlay with AGSL RuntimeShader & frosted glass backdrop
  * - Live Tab Count badge with animated scale bounce
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -322,7 +321,7 @@ fun PetalBottomNavBar(
             modifier = modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(bottom = 20.dp),
+                .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
             // Progressive blur underlay (FilePipe / Remember style)
@@ -330,22 +329,22 @@ fun PetalBottomNavBar(
                 ProgressiveBlurBar(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(110.dp)
+                        .height(115.dp)
                         .align(Alignment.BottomCenter)
                 )
             }
 
-            // Material 3 Expressive Floating Toolbar (matching Remember & FilePipe)
-            val containerColor = if (isIncognito) {
-                MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = if (isProgressiveBlurEnabled) 0.90f else 0.98f)
+            // Material 3 Expressive Floating Toolbar (matching Remember & FilePipe vibrant colors)
+            val toolbarColors = if (isIncognito) {
+                FloatingToolbarDefaults.vibrantFloatingToolbarColors(
+                    toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    toolbarContentColor = MaterialTheme.colorScheme.onSurface
+                )
             } else {
-                MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (isProgressiveBlurEnabled) 0.90f else 0.98f)
-            }
-
-            val contentColor = if (isIncognito) {
-                MaterialTheme.colorScheme.onSurface
-            } else {
-                MaterialTheme.colorScheme.onSurface
+                FloatingToolbarDefaults.vibrantFloatingToolbarColors(
+                    toolbarContainerColor = MaterialTheme.colorScheme.primary,
+                    toolbarContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             }
 
             HorizontalFloatingToolbar(
@@ -353,17 +352,15 @@ fun PetalBottomNavBar(
                 modifier = Modifier
                     .wrapContentWidth()
                     .height(64.dp)
-                    .shadow(8.dp, CircleShape)
+                    .shadow(10.dp, CircleShape)
                     .clip(CircleShape),
-                colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
-                    toolbarContainerColor = containerColor,
-                    toolbarContentColor = contentColor
-                )
+                colors = toolbarColors
             ) {
                 FloatingNavTabItem(
                     selected = selectedTab == PetalNavTab.HOME,
                     label = "Home",
                     index = 0,
+                    isIncognito = isIncognito,
                     icon = { isSelected, tint ->
                         Icon(
                             imageVector = Icons.Rounded.Home,
@@ -379,6 +376,7 @@ fun PetalBottomNavBar(
                     selected = selectedTab == PetalNavTab.NEW_TAB,
                     label = newTabLabel,
                     index = 1,
+                    isIncognito = isIncognito,
                     icon = { isSelected, tint ->
                         Icon(
                             imageVector = Icons.Rounded.Add,
@@ -394,6 +392,7 @@ fun PetalBottomNavBar(
                     selected = selectedTab == PetalNavTab.TABS,
                     label = tabsLabel,
                     index = 2,
+                    isIncognito = isIncognito,
                     icon = { isSelected, tint ->
                         TabCountBadge(
                             color = tint,
@@ -408,6 +407,7 @@ fun PetalBottomNavBar(
                     selected = selectedTab == PetalNavTab.MENU,
                     label = "Menu",
                     index = 3,
+                    isIncognito = isIncognito,
                     icon = { isSelected, tint ->
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
@@ -505,7 +505,7 @@ fun PetalBottomNavBar(
 }
 
 /**
- * Floating Nav Tab Item (Remember & FilePipe style).
+ * Floating Nav Tab Item (matching Remember & FilePipe FloatingNavTabItem).
  * Features spring-animated label width expansion (`72.dp`), active background morphing,
  * and filled/tonal icon button colors.
  */
@@ -514,6 +514,7 @@ private fun FloatingNavTabItem(
     selected: Boolean,
     label: String,
     index: Int,
+    isIncognito: Boolean,
     icon: @Composable (isSelected: Boolean, tint: Color) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -527,9 +528,23 @@ private fun FloatingNavTabItem(
         label = "nav_label_$index"
     )
 
-    val activeContentColor = MaterialTheme.colorScheme.primary
-    val activeContainerColor = MaterialTheme.colorScheme.background
-    val inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val activeContainerColor = if (isIncognito) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.background
+    }
+
+    val activeContentColor = if (isIncognito) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+
+    val inactiveContentColor = if (isIncognito) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        MaterialTheme.colorScheme.onPrimary
+    }
 
     val currentContentColor = if (selected) activeContentColor else inactiveContentColor
 
@@ -601,3 +616,4 @@ private fun TabCountBadge(color: Color, count: Int, scale: Float) {
         )
     }
 }
+
