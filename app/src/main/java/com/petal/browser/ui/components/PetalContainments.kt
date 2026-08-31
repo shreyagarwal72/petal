@@ -300,6 +300,103 @@ fun SwitchSettingItem(
 }
 
 /**
+ * Expressive Connected Group Container (PixelPlayer style)
+ * Visually groups items inside a continuous rounded container.
+ */
+@Composable
+fun ExpressiveSettingsGroup(
+    modifier: Modifier = Modifier,
+    shape: RoundedCornerShape = RoundedCornerShape(24.dp),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Color.Transparent)
+    ) {
+        content()
+    }
+}
+
+/**
+ * Material 3 Expressive Category Navigation Tile (PixelPlayer style).
+ * Features variable corner radius based on index position, elevated surface container,
+ * expressive icon background badge, and title/subtitle typography.
+ */
+@Composable
+fun ExpressiveCategoryItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(16.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    badgeColor: Color = MaterialTheme.colorScheme.primaryContainer,
+    iconColor: Color = MaterialTheme.colorScheme.onPrimaryContainer
+) {
+    Surface(
+        onClick = onClick,
+        shape = shape,
+        color = containerColor,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 82.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(badgeColor)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = title,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                Text(
+                    text = subtitle,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+/**
  * Contained Card Container grouping multiple setting items or rich content together.
  */
 @Composable
