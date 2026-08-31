@@ -358,17 +358,55 @@ fun PetalLensBottomSheet(
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
                 }
             } else if (mediaItems.isEmpty()) {
-                Box(
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(160.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(vertical = 8.dp)
                 ) {
-                    Text(
-                        text = "No photos found on device",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.PhotoLibrary,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Text(
+                            text = "No indexed photos found in MediaStore",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "You can browse your device gallery, Google Photos, or Cloud Drive directly using the system picker.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Button(
+                            onClick = {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                try {
+                                    galleryLauncher.launch("image/*")
+                                } catch (e: Exception) {
+                                    PetalLensManager.launchGoogleLensApp(context)
+                                    onDismissRequest()
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Browse Photos & Files", fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             } else {
                 Text(
