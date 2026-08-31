@@ -351,9 +351,13 @@ private fun HistoryCardItem(
         } else ""
     }
 
-    Surface(
+    Card(
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(scaleDown = 0.95f, onClick = onSelect)
@@ -364,7 +368,7 @@ private fun HistoryCardItem(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             val faviconUrl = remember(record.url) {
                 val domain = record.domain?.takeIf { it.isNotBlank() }
@@ -372,65 +376,66 @@ private fun HistoryCardItem(
                 if (!domain.isNullOrEmpty()) "https://www.google.com/s2/favicons?domain=$domain&sz=32" else null
             }
 
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(40.dp)
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (faviconUrl != null) {
-                        SubcomposeAsyncImage(
-                            model = faviconUrl,
-                            contentDescription = "Website Icon",
-                            modifier = Modifier.size(24.dp).clip(CircleShape),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                            loading = {
-                                Icon(
-                                    Icons.Rounded.Public,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            error = {
-                                Icon(
-                                    Icons.Rounded.Public,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        )
-                    } else {
-                        Icon(
-                            Icons.Rounded.Public,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                if (faviconUrl != null) {
+                    SubcomposeAsyncImage(
+                        model = faviconUrl,
+                        contentDescription = "Website Icon",
+                        modifier = Modifier.size(24.dp).clip(CircleShape),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                        loading = {
+                            Icon(
+                                Icons.Rounded.Public,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        },
+                        error = {
+                            Icon(
+                                Icons.Rounded.Public,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    )
+                } else {
+                    Icon(
+                        Icons.Rounded.Public,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
-            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = record.title?.takeIf { it.isNotBlank() } ?: record.domain ?: "Web Page",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = record.url ?: "",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 if (timeFormatted.isNotEmpty()) {
+                    Spacer(Modifier.height(2.dp))
                     Text(
                         text = timeFormatted,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                         color = MaterialTheme.colorScheme.primary
                     )
                 }

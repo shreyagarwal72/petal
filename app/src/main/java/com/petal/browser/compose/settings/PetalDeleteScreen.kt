@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  * Material 3 Expressive Clear Browsing Data / Delete History Screen for Petal Browser.
  * Fully follows app theme, color scheme, expressiveness, expressive feature tiles,
- * and card/containment styling.
+ * and RvSystemMonitor containment styling with getGroupItemShape and SwitchSettingItem.
  */
 
 package com.petal.browser.compose.settings
@@ -40,9 +40,9 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.components.SwitchSettingItem
+import com.petal.browser.ui.components.getGroupItemShape
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.BrowserUnit
 
@@ -102,7 +102,6 @@ fun PetalDeleteScreen(
 ) {
     val context = LocalContext.current
     val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
 
     var clearHistory by remember { mutableStateOf(sp.getBoolean("sp_clear_history", false)) }
     var clearCache by remember { mutableStateOf(sp.getBoolean("sp_clear_cache", false)) }
@@ -183,13 +182,14 @@ fun PetalDeleteScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header / Summary containment card (Material 3 Expressive UI redesign)
+                    // Header / Summary containment card (RvSystemMonitor Card style)
                     Card(
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                            contentColor = MaterialTheme.colorScheme.onSurface
                         ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -197,139 +197,188 @@ fun PetalDeleteScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(48.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.primary),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Rounded.DeleteSweep, contentDescription = null, modifier = Modifier.size(24.dp))
-                                }
+                                Icon(
+                                    Icons.Rounded.DeleteSweep,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Clear Browsing Data",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "Choose items to erase. Settings apply immediately and during clear operations.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     }
 
-                    // Containment Card grouping clear options (Material 3 Expressive UI redesign)
-                    Card(
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    // Stack of position-aware items with RvSystemMonitor containment shape group
+                    Text(
+                        text = "DATA CATEGORIES",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
                         ),
-                        modifier = Modifier.fillMaxWidth()
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+
+                    val optionsCount = 7
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = "DATA CATEGORIES",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.2.sp
-                                ),
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
-                            )
+                        SwitchSettingItem(
+                            title = context.getString(R.string.album_title_history),
+                            subtitle = "Clear visited web pages and address bar history",
+                            checked = clearHistory,
+                            onCheckedChange = {
+                                clearHistory = it
+                                sp.edit().putBoolean("sp_clear_history", it).apply()
+                            },
+                            shape = getGroupItemShape(0, optionsCount),
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.History,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        )
 
-                            DeleteOptionItem(
-                                title = context.getString(R.string.album_title_history),
-                                subtitle = "Clear visited web pages and address bar history",
-                                icon = Icons.Rounded.History,
-                                checked = clearHistory,
-                                onCheckedChange = {
-                                    clearHistory = it
-                                    sp.edit().putBoolean("sp_clear_history", it).apply()
-                                }
-                            )
+                        SwitchSettingItem(
+                            title = context.getString(R.string.clear_title_cache),
+                            subtitle = "Frees up space by clearing cached images and files",
+                            checked = clearCache,
+                            onCheckedChange = {
+                                clearCache = it
+                                sp.edit().putBoolean("sp_clear_cache", it).apply()
+                            },
+                            shape = getGroupItemShape(1, optionsCount),
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.CleaningServices,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        )
 
-                            DeleteOptionItem(
-                                title = context.getString(R.string.clear_title_cache),
-                                subtitle = "Frees up space by clearing cached images and files",
-                                icon = Icons.Rounded.CleaningServices,
-                                checked = clearCache,
-                                onCheckedChange = {
-                                    clearCache = it
-                                    sp.edit().putBoolean("sp_clear_cache", it).apply()
-                                }
-                            )
+                        SwitchSettingItem(
+                            title = context.getString(R.string.setting_title_dom),
+                            subtitle = "Local website data and offline storage",
+                            checked = clearIndexedDB,
+                            onCheckedChange = {
+                                clearIndexedDB = it
+                                sp.edit().putBoolean("sp_clearIndexedDB", it).apply()
+                            },
+                            shape = getGroupItemShape(2, optionsCount),
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Storage,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        )
 
-                            DeleteOptionItem(
-                                title = context.getString(R.string.setting_title_dom),
-                                subtitle = "Local website data and offline storage",
-                                icon = Icons.Rounded.Storage,
-                                checked = clearIndexedDB,
-                                onCheckedChange = {
-                                    clearIndexedDB = it
-                                    sp.edit().putBoolean("sp_clearIndexedDB", it).apply()
-                                }
-                            )
+                        SwitchSettingItem(
+                            title = context.getString(R.string.setting_title_cookie),
+                            subtitle = context.getString(R.string.setting_summary_cookie_delete),
+                            checked = clearCookie,
+                            onCheckedChange = {
+                                clearCookie = it
+                                sp.edit().putBoolean("sp_clear_cookie", it).apply()
+                            },
+                            shape = getGroupItemShape(3, optionsCount),
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Cookie,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        )
 
-                            DeleteOptionItem(
-                                title = context.getString(R.string.setting_title_cookie),
-                                subtitle = context.getString(R.string.setting_summary_cookie_delete),
-                                icon = Icons.Rounded.Cookie,
-                                checked = clearCookie,
-                                onCheckedChange = {
-                                    clearCookie = it
-                                    sp.edit().putBoolean("sp_clear_cookie", it).apply()
-                                }
-                            )
+                        SwitchSettingItem(
+                            title = context.getString(R.string.title_appDatabase),
+                            subtitle = context.getString(R.string.setting_backup_sumDatabase),
+                            checked = clearDatabase,
+                            onCheckedChange = {
+                                clearDatabase = it
+                                sp.edit().putBoolean("sp_deleteDatabase", it).apply()
+                            },
+                            shape = getGroupItemShape(4, optionsCount),
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.FolderSpecial,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        )
 
-                            DeleteOptionItem(
-                                title = context.getString(R.string.title_appDatabase),
-                                subtitle = context.getString(R.string.setting_backup_sumDatabase),
-                                icon = Icons.Rounded.FolderSpecial,
-                                checked = clearDatabase,
-                                onCheckedChange = {
-                                    clearDatabase = it
-                                    sp.edit().putBoolean("sp_deleteDatabase", it).apply()
-                                }
-                            )
+                        SwitchSettingItem(
+                            title = context.getString(R.string.setting_label),
+                            subtitle = context.getString(R.string.setting_backup_sumSettings),
+                            checked = clearSettings,
+                            onCheckedChange = {
+                                clearSettings = it
+                                sp.edit().putBoolean("sp_clear_settings", it).apply()
+                            },
+                            shape = getGroupItemShape(5, optionsCount),
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Tune,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        )
 
-                            DeleteOptionItem(
-                                title = context.getString(R.string.setting_label),
-                                subtitle = context.getString(R.string.setting_backup_sumSettings),
-                                icon = Icons.Rounded.Tune,
-                                checked = clearSettings,
-                                onCheckedChange = {
-                                    clearSettings = it
-                                    sp.edit().putBoolean("sp_clear_settings", it).apply()
-                                }
-                            )
-
-                            DeleteOptionItem(
-                                title = context.getString(R.string.clear_title_quit),
-                                subtitle = "Automatically clear history, cache, and open tabs on exit (keeps account logins and credentials safe)",
-                                icon = Icons.Rounded.PowerSettingsNew,
-                                checked = clearQuit,
-                                onCheckedChange = {
-                                    clearQuit = it
-                                    sp.edit().putBoolean("sp_clear_quit", it).putBoolean("sp_clear_on_exit", it).apply()
-                                }
-                            )
-                        }
+                        SwitchSettingItem(
+                            title = context.getString(R.string.clear_title_quit),
+                            subtitle = "Automatically clear history, cache, and open tabs on exit",
+                            checked = clearQuit,
+                            onCheckedChange = {
+                                clearQuit = it
+                                sp.edit().putBoolean("sp_clear_quit", it).putBoolean("sp_clear_on_exit", it).apply()
+                            },
+                            shape = getGroupItemShape(6, optionsCount),
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.PowerSettingsNew,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                Surface(
+                Card(
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    tonalElevation = 6.dp,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Box(modifier = Modifier.padding(16.dp)) {
@@ -358,63 +407,4 @@ fun PetalDeleteScreen(
     }
 }
 }
-}
-
-@Composable
-private fun DeleteOptionItem(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { onCheckedChange(!checked) }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-                contentColor = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-            }
-        }
-        IconSwitch(
-            checked = checked,
-            icon = icon,
-            onCheckedChange = onCheckedChange
-        )
-    }
 }

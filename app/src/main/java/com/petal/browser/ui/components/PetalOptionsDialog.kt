@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -16,7 +17,7 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Refined Material 3 Expressive Options Sheet / Dialog for Petal Browser featuring
- * Stride IconSwitches, quick action grid, spring animations, rounded 32.dp sheet container, and bouncy physics.
+ * RvSystemMonitor position-aware containment, 48dp rounded badge icons, 0dp elevation, and smooth haptic styling.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +37,7 @@ fun PetalOptionsSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         dragHandle = {
             BottomSheetDefaults.DragHandle(
@@ -47,22 +48,22 @@ fun PetalOptionsSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = "Browser Options",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.entrance(index = 0)
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 4.dp).entrance(index = 0)
             )
 
-            // Top Quick Grid Action Tiles with Stride Bouncy Animation
+            // Top Quick Grid Action Tiles
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .entrance(index = 1),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OptionTile(Icons.Rounded.Add, "New Tab", Modifier.weight(1f)) {
                     onNewTab()
@@ -82,84 +83,86 @@ fun PetalOptionsSheet(
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-            // Toggles with Stride IconSwitches
+            // Toggles with RvSystemMonitor containment shape group
             Column(
-                modifier = Modifier.entrance(index = 2),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Desktop Site Toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(Icons.Rounded.DesktopWindows, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Column {
-                            Text("Desktop Mode", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text("Request desktop version of websites", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    IconSwitch(
-                        checked = isDesktopSite,
-                        icon = Icons.Rounded.DesktopWindows,
-                        onCheckedChange = onDesktopSiteChange
-                    )
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                // Incognito Mode Toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(Icons.Rounded.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Column {
-                            Text("Private Browsing", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text("Don't save history or cookies", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    IconSwitch(
-                        checked = isIncognito,
-                        icon = Icons.Rounded.Security,
-                        onCheckedChange = onIncognitoChange
-                    )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-            // List Actions
-            Column(
-                modifier = Modifier.entrance(index = 3),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .entrance(index = 2),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                OptionRowItem(Icons.Rounded.Search, "Find in Page") {
-                    onFindInPage()
-                    onDismiss()
-                }
-                OptionRowItem(Icons.Rounded.Share, "Share Web Page") {
-                    onShare()
-                    onDismiss()
-                }
-                OptionRowItem(Icons.Rounded.Settings, "Browser Settings") {
-                    onSettings()
-                    onDismiss()
+                SwitchSettingItem(
+                    title = "Desktop Mode",
+                    subtitle = "Request desktop version of websites",
+                    checked = isDesktopSite,
+                    onCheckedChange = onDesktopSiteChange,
+                    shape = getGroupItemShape(0, 2),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.DesktopWindows,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                )
+
+                SwitchSettingItem(
+                    title = "Private Browsing",
+                    subtitle = "Don't save history or cookies",
+                    checked = isIncognito,
+                    onCheckedChange = onIncognitoChange,
+                    shape = getGroupItemShape(1, 2),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Security,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                )
+            }
+
+            // Action Items Group with RvSystemMonitor variable corner shape
+            val actionItems = listOf(
+                Triple(Icons.Rounded.Search, "Find in Page", onFindInPage),
+                Triple(Icons.Rounded.Share, "Share Web Page", onShare),
+                Triple(Icons.Rounded.Settings, "Browser Settings", onSettings)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .entrance(index = 3),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                actionItems.forEachIndexed { index, (icon, label, action) ->
+                    SettingsItem(
+                        title = label,
+                        subtitle = "",
+                        shape = getGroupItemShape(index, actionItems.size),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        onClick = {
+                            action()
+                            onDismiss()
+                        }
+                    )
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -171,11 +174,15 @@ private fun OptionTile(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
-            .height(72.dp)
+            .height(76.dp)
             .bouncyClickable(scaleDown = 0.92f, onClick = onClick)
     ) {
         Column(
@@ -183,34 +190,27 @@ private fun OptionTile(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxSize().padding(6.dp)
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.height(4.dp))
-            Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp), fontWeight = FontWeight.SemiBold)
-        }
-    }
-}
-
-@Composable
-private fun OptionRowItem(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = androidx.compose.ui.graphics.Color.Transparent,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .bouncyClickable(scaleDown = 0.96f, onClick = onClick)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.padding(horizontal = 10.dp)
-        ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
-            Text(label, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.onSurface)
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
         }
     }
 }

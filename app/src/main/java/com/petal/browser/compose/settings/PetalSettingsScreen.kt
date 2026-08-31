@@ -609,13 +609,20 @@ fun PetalSettingsScreen(
                                     SettingsCategory.ABOUT
                                 )
 
-                                categories.forEach { cat ->
-                                    SettingsCategoryRow(
-                                        title = cat.title,
-                                        subtitle = cat.subtitle,
-                                        icon = cat.icon,
-                                        onClick = { currentCategory = cat }
-                                    )
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    categories.forEachIndexed { index, cat ->
+                                        val shape = com.petal.browser.ui.components.getGroupItemShape(index, categories.size)
+                                        SettingsCategoryRow(
+                                            title = cat.title,
+                                            subtitle = cat.subtitle,
+                                            icon = cat.icon,
+                                            shape = shape,
+                                            onClick = { currentCategory = cat }
+                                        )
+                                    }
                                 }
                             }
 

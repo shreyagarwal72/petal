@@ -2,7 +2,8 @@
  * PetalSearchEngineSheet.kt
  * ─────────────────────────────────────────────────────────────────────────
  * Material 3 Search Engine Selection Modal Sheet for Petal Browser.
- * Zero-lag single BottomSheetDialog with clear radio selections and explicit Confirm action.
+ * Zero-lag single BottomSheetDialog with clear radio selections and explicit Confirm action,
+ * styled with RvSystemMonitor position-aware containment and 48dp badge icons.
  */
 
 package com.petal.browser.ui.components
@@ -10,7 +11,6 @@ package com.petal.browser.ui.components
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -110,7 +110,7 @@ fun PetalSearchEngineSheetContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .padding(20.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -124,87 +124,104 @@ fun PetalSearchEngineSheetContent(
                     .align(Alignment.CenterHorizontally)
             )
 
-            // Header Title
-            Row(
-                modifier = Modifier.entrance(index = 0),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // Header Title Card
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                PetalSearchLottie(
+                Row(
                     modifier = Modifier
-                        .size(44.dp)
-                        .popIn()
-                )
-                Column {
-                    Text(
-                        text = "Choose Default Search Engine",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Selected engine will handle omnibox & query searches",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Choose Default Search Engine",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "Selected engine will handle omnibox & query searches",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-            // Search Engines Cards List
+            // Search Engines Cards List with RvSystemMonitor position-aware containment
             Column(
-                modifier = Modifier.entrance(index = 1),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                availableSearchEngines.forEach { engine ->
+                availableSearchEngines.forEachIndexed { index, engine ->
                     val isSelected = engine.index == selectedIndex
-                    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                    val bgColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainer
+                    val shape = getGroupItemShape(index, availableSearchEngines.size)
 
-                    Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = bgColor,
+                    Card(
+                        shape = shape,
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(
-                                width = if (isSelected) 2.dp else 1.dp,
-                                color = borderColor,
-                                shape = RoundedCornerShape(18.dp)
-                            )
-                            .clip(RoundedCornerShape(18.dp))
-                            .bouncyClickable(scaleDown = 0.97f, onClick = { selectedIndex = engine.index })
+                            .clickable { selectedIndex = engine.index }
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = engine.name,
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
+                                Spacer(Modifier.height(2.dp))
                                 Text(
                                     text = engine.description,
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             RadioButton(
                                 selected = isSelected,
-                                onClick = {
-                                    selectedIndex = engine.index
-                                }
+                                onClick = { selectedIndex = engine.index }
                             )
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
 
             // Confirm Button
             Button(
@@ -217,7 +234,6 @@ fun PetalSearchEngineSheetContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
-                    .entrance(index = 2)
             ) {
                 Icon(Icons.Rounded.Check, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
