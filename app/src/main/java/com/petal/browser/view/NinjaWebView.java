@@ -211,6 +211,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         setWebViewClient(webViewClient);
         setWebChromeClient(webChromeClient);
         setDownloadListener(downloadListener);
+        initPreferences(null);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> resetGestureExclusionRects());
