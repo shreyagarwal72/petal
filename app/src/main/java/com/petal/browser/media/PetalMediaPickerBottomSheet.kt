@@ -499,17 +499,71 @@ fun PetalMediaPickerBottomSheet(
                     )
                 }
             } else if (mediaItems.isEmpty()) {
-                Box(
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
-                    Text(
-                        text = "No media files found on this device",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.PhotoLibrary,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = "No indexed media found",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Text(
+                            text = "MediaStore has not indexed recent photos/videos or scoped storage is filtering them. You can browse all device files and albums directly via the system picker.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Button(
+                            onClick = {
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                                val mediaType = when (selectedFilter) {
+                                    MediaFilterType.PHOTOS -> ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    MediaFilterType.VIDEOS -> ActivityResultContracts.PickVisualMedia.VideoOnly
+                                    MediaFilterType.ALL -> ActivityResultContracts.PickVisualMedia.ImageAndVideo
+                                }
+                                val request = androidx.activity.result.PickVisualMediaRequest(mediaType)
+                                if (allowMultiple) {
+                                    systemMultiplePhotoPickerLauncher.launch(request)
+                                } else {
+                                    systemPhotoPickerLauncher.launch(request)
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Rounded.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Browse Device Files & Gallery", fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             } else {
                 // Media Grid
