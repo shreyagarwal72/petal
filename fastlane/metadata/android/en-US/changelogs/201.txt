@@ -1,0 +1,4 @@
+v2.0.1 Hotfix Highlights:
+- Integrated PixelPlayer Material 3 Expressive Containment System across the app.
+- Replaced uncontained rows with elevated surface container cards (16dp rounded corners, icon badges, tactile haptic feedback).
+- Enhanced preference sliders, switch items, and settings sections with contained elevation.

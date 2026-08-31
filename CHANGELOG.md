@@ -1,3 +1,10 @@
+### v2.0.1 (Hotfix)
+
+- **🎨 PixelPlayer Expressive Containment System Integration**:
+  - Integrated proper Material 3 Expressive containments ported from PixelPlayer across the entire app (`SettingsSection`, `SettingsItem`, `SwitchSettingItem`, `SettingsCardContainer`, `ContainedSelectionCard`).
+  - Replaced uncontained / flat toggle rows with elevated `Surface` container cards featuring rounded shapes (`16.dp`), circular icon badges, clear spacing, and animated switch thumbs.
+  - Enhanced slider and preference controls with elevated container backgrounds (`surfaceContainer`) and crisp typography.
+
 ### v2.0.0 (First Official Public Release)
 
 - **🖼️ Profile Picture & Interactive Cropper Overhaul**:
