@@ -114,12 +114,12 @@ object PetalLiveAlertManager {
                 val channel = NotificationChannel(
                     CHANNEL_ID,
                     CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_HIGH
+                    NotificationManager.IMPORTANCE_LOW
                 ).apply {
                     description = "Live real-time alerts for active downloads with progress, velocity, and controls"
                     setSound(null, null)
                     enableVibration(false)
-                    setShowBadge(true)
+                    setShowBadge(false)
                 }
                 nm.createNotificationChannel(channel)
             }
@@ -175,7 +175,7 @@ object PetalLiveAlertManager {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
         val openAppIntent = Intent(context, BrowserActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("open_downloads", true)
         }
         val openAppPendingIntent = PendingIntent.getActivity(
@@ -247,7 +247,7 @@ object PetalLiveAlertManager {
 
         // Open Downloads manager intent
         val openAppIntent = Intent(context, BrowserActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("open_downloads", true)
         }
         val openAppPendingIntent = PendingIntent.getActivity(
@@ -333,7 +333,7 @@ object PetalLiveAlertManager {
             }
         } else {
             Intent(context, BrowserActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 putExtra("open_downloads", true)
             }
         }

@@ -55,8 +55,15 @@ public class WebAppInterface {
                 if (rootView != null) {
                     String text = mContext.getString(R.string.app_done) + ". " + mContext.getString(R.string.menu_download) +"?";
                     Snackbar snackbar = Snackbar.make(rootView, text, Snackbar.LENGTH_SHORT);
-                    HelperUnit.makeSnackbarRound(snackbar);
-                    snackbar.setAction(mContext.getString(R.string.app_ok), v -> mContext.startActivity(Intent.createChooser(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS), null)));
+                    snackbar.setAction(mContext.getString(R.string.app_ok), v -> {
+                        if (mContext instanceof com.petal.browser.activity.BrowserActivity) {
+                            ((com.petal.browser.activity.BrowserActivity) mContext).showDownloads();
+                        } else {
+                            try {
+                                mContext.startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                            } catch (Exception ignored) {}
+                        }
+                    });
                     snackbar.show();
                 }
             });

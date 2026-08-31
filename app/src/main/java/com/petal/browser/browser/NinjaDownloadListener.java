@@ -149,7 +149,15 @@ public class NinjaDownloadListener implements DownloadListener {
                                     String text = webView.getContext().getString(R.string.app_done) + ". " + webView.getContext().getString(R.string.menu_download) + "?";
                                     Snackbar snackbar = Snackbar.make(webView, text, Snackbar.LENGTH_SHORT);
                                     HelperUnit.makeSnackbarRound(snackbar);
-                                    snackbar.setAction(context.getString(R.string.app_ok), (v -> webView.getContext().startActivity(Intent.createChooser(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS), null))));
+                                    snackbar.setAction(context.getString(R.string.app_ok), (v -> {
+                                         if (context instanceof com.petal.browser.activity.BrowserActivity) {
+                                             ((com.petal.browser.activity.BrowserActivity) context).showDownloads();
+                                         } else {
+                                             try {
+                                                 context.startActivity(new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                                             } catch (Exception ignored) {}
+                                         }
+                                     }));
                                     snackbar.show();
                                 });
                             } catch (Exception e) {

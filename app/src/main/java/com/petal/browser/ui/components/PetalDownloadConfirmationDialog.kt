@@ -199,14 +199,6 @@ object PetalDownloadDialogBridge {
         activity.runOnUiThread {
             try {
                 lateinit var dialog: androidx.appcompat.app.AlertDialog
-                val handler = android.os.Handler(android.os.Looper.getMainLooper())
-                val autoDismissRunnable = Runnable {
-                    try {
-                        if (dialog.isShowing) {
-                            dialog.dismiss()
-                        }
-                    } catch (_: Exception) {}
-                }
 
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
@@ -236,14 +228,12 @@ object PetalDownloadDialogBridge {
                                 fileSizeFormatted = formattedSize,
                                 isDuplicate = isDuplicate,
                                 onConfirm = {
-                                    handler.removeCallbacks(autoDismissRunnable)
                                     if (dialog.isShowing) dialog.dismiss()
                                     if (!com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, url, guessedFileName, mimeType)) {
                                         onConfirmDownload(guessedFileName)
                                     }
                                 },
                                 onDismiss = {
-                                    handler.removeCallbacks(autoDismissRunnable)
                                     if (dialog.isShowing) dialog.dismiss()
                                 }
                             )
@@ -256,13 +246,8 @@ object PetalDownloadDialogBridge {
                     .setCancelable(true)
                     .create()
 
-                dialog.setOnDismissListener {
-                    handler.removeCallbacks(autoDismissRunnable)
-                }
-
                 dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
                 dialog.show()
-                handler.postDelayed(autoDismissRunnable, 5000L)
                 com.petal.browser.unit.HelperUnit.setupDialog(activity, dialog)
             } catch (e: Exception) {
                 e.printStackTrace()
