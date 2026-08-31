@@ -30,12 +30,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -323,7 +323,7 @@ private fun FilePipeFloatingNavItem(
             .clip(CircleShape)
             .clickable(
                 interactionSource = interactionSource,
-                indication = rememberRipple(bounded = true, color = MaterialTheme.colorScheme.primary),
+                indication = ripple(bounded = true, color = MaterialTheme.colorScheme.primary),
                 onClick = onClick
             )
     ) {
