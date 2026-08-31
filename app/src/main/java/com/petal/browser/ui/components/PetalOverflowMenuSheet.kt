@@ -329,8 +329,8 @@ fun PetalOverflowMenuSheet(
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .widthIn(max = 360.dp)
+                .fillMaxWidth(0.88f)
+                .widthIn(max = 350.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -348,275 +348,201 @@ fun PetalOverflowMenuSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Top Header Action Buttons Row
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    modifier = Modifier.fillMaxWidth()
+                // Top Header Circular Icon Action Buttons Row (evenly spaced)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .entrance(index = 0),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .entrance(index = 0),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularIconButton(
-                            icon = Icons.Rounded.ArrowBack,
-                            contentDescription = "Back",
-                            enabled = canGoBack,
-                            onClick = onGoBack
-                        )
-                        val isHomePageUrl = pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("file:///android_asset/")
-                        CircularIconButton(
-                            icon = if (isBookmarked && !isHomePageUrl) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                            contentDescription = "Toggle Bookmark",
-                            enabled = !isHomePageUrl,
-                            tint = if (isBookmarked && !isHomePageUrl) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                            onClick = onToggleBookmark
-                        )
-                        CircularIconButton(
-                            icon = Icons.Rounded.OfflinePin,
-                            contentDescription = "Install site offline",
-                            enabled = !isHomePageUrl,
-                            onClick = onSavePage
-                        )
-                        CircularIconButton(
-                            icon = Icons.Rounded.Refresh,
-                            contentDescription = "Reload",
-                            onClick = onReload
-                        )
-                    }
+                    CircularIconButton(
+                        icon = Icons.Rounded.ArrowBack,
+                        contentDescription = "Back",
+                        enabled = canGoBack,
+                        onClick = onGoBack
+                    )
+                    val isHomePageUrl = pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("file:///android_asset/")
+                    CircularIconButton(
+                        icon = if (isBookmarked && !isHomePageUrl) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        contentDescription = "Toggle Bookmark",
+                        enabled = !isHomePageUrl,
+                        tint = if (isBookmarked && !isHomePageUrl) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        onClick = onToggleBookmark
+                    )
+                    CircularIconButton(
+                        icon = Icons.Rounded.OfflinePin,
+                        contentDescription = "Install site offline",
+                        enabled = !isHomePageUrl,
+                        onClick = onSavePage
+                    )
+                    CircularIconButton(
+                        icon = Icons.Rounded.Refresh,
+                        contentDescription = "Reload",
+                        onClick = onReload
+                    )
                 }
 
-                // Section 1: Tab actions
-                val tabActions = listOf(
-                    Triple(Icons.Rounded.Add, "New tab", onNewTab),
-                    Triple(Icons.Rounded.VisibilityOff, "New Private / Incognito tab", onNewIncognitoTab)
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 )
 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    tabActions.forEachIndexed { index, (icon, title, action) ->
-                        SettingsItem(
-                            title = title,
-                            subtitle = if (title.contains("Incognito")) "Browse without saving history" else "",
-                            shape = getGroupItemShape(index, tabActions.size),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
-                                )
-                            },
-                            onClick = action
-                        )
-                    }
-                }
+                // Section 1: Tab actions
+                MenuRowItem(
+                    icon = Icons.Rounded.Add,
+                    title = "New tab",
+                    onClick = onNewTab
+                )
+                MenuRowItem(
+                    icon = Icons.Rounded.VisibilityOff,
+                    title = "New Private / Incognito tab",
+                    subtitle = "Browse without saving search history",
+                    onClick = onNewIncognitoTab
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                )
 
                 // Section 2: Quick Toggles (AdBlocker & Desktop site)
+                MenuRowSwitchItem(
+                    icon = Icons.Rounded.Shield,
+                    title = "AdBlocker",
+                    subtitle = if (isAdBlockEnabled) "Ad & tracker shield active" else "AdBlocker disabled",
+                    checked = isAdBlockEnabled,
+                    onCheckedChange = onToggleAdBlock
+                )
+
                 val isHomePage = remember(pageUrl, pageTitle) {
                     pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("petal://") || pageUrl == "file:///android_asset/petal_home.html" || pageTitle == "Petal"
                 }
 
-                val toggleCount = if (!isHomePage) 2 else 1
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    SwitchSettingItem(
-                        title = "AdBlocker",
-                        subtitle = if (isAdBlockEnabled) "Ad & tracker shield active" else "AdBlocker disabled",
-                        checked = isAdBlockEnabled,
-                        onCheckedChange = onToggleAdBlock,
-                        shape = getGroupItemShape(0, toggleCount),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.Shield,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
+                if (!isHomePage) {
+                    MenuRowSwitchItem(
+                        icon = Icons.Rounded.DesktopWindows,
+                        title = "Desktop site",
+                        subtitle = "Request desktop version",
+                        checked = isDesktopSite,
+                        onCheckedChange = onToggleDesktopSite
                     )
-
-                    if (!isHomePage) {
-                        SwitchSettingItem(
-                            title = "Desktop site",
-                            subtitle = "Request desktop version",
-                            checked = isDesktopSite,
-                            onCheckedChange = onToggleDesktopSite,
-                            shape = getGroupItemShape(1, toggleCount),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Rounded.DesktopWindows,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        )
-                    }
                 }
 
                 if (isMediaPlaying) {
-                    SettingsItem(
+                    MenuRowItem(
+                        icon = Icons.Rounded.PictureInPicture,
                         title = "Play in Picture-in-Picture",
                         subtitle = "Floating video window",
-                        shape = RoundedCornerShape(24.dp),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.PictureInPicture,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        },
                         onClick = onTriggerMediaMode
                     )
                 }
 
                 if (!isHomePage) {
-                    val pageActions = listOf(
-                        Triple(if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder, if (isBookmarked) "Remove bookmark" else "Add bookmark", onToggleBookmark),
-                        Triple(Icons.Rounded.InstallMobile, "Install as App", onInstallPwa)
+                    MenuRowItem(
+                        icon = if (isBookmarked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        title = if (isBookmarked) "Remove bookmark" else "Add bookmark",
+                        onClick = onToggleBookmark
                     )
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        pageActions.forEachIndexed { index, (icon, title, action) ->
-                            SettingsItem(
-                                title = title,
-                                subtitle = "",
-                                shape = getGroupItemShape(index, pageActions.size),
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                },
-                                onClick = action
-                            )
-                        }
-                    }
+                    MenuRowItem(
+                        icon = Icons.Rounded.InstallMobile,
+                        title = "Install as App",
+                        onClick = onInstallPwa
+                    )
                 }
 
-                // Section 3: History & Downloads & Bookmarks
-                val navActions = listOf(
-                    Triple(Icons.Rounded.History, "History", onOpenHistory),
-                    Triple(Icons.Rounded.Download, "Downloads", onOpenDownloads),
-                    Triple(Icons.Rounded.Bookmark, "Bookmarks", onOpenBookmarks),
-                    Triple(Icons.Rounded.DeleteSweep, "Delete browsing data", onDeleteBrowsingData)
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 )
 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                // Section 3: Navigation & Data
+                MenuRowItem(
+                    icon = Icons.Rounded.History,
+                    title = "History",
+                    onClick = onOpenHistory
+                )
+                MenuRowItem(
+                    icon = Icons.Rounded.DeleteSweep,
+                    title = "Delete browsing data",
+                    onClick = onDeleteBrowsingData
+                )
+                MenuRowItem(
+                    icon = Icons.Rounded.Download,
+                    title = "Downloads",
+                    onClick = onOpenDownloads
+                )
+                MenuRowItem(
+                    icon = Icons.Rounded.Bookmark,
+                    title = "Bookmarks",
+                    onClick = onOpenBookmarks
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                )
+
+                // Section 4: Tools & Settings
+                MenuRowItem(
+                    icon = Icons.Rounded.Build,
+                    title = "More tools",
+                    trailingIcon = if (isMoreToolsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    onClick = { isMoreToolsExpanded = !isMoreToolsExpanded }
+                )
+
+                AnimatedVisibility(
+                    visible = isMoreToolsExpanded,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
                 ) {
-                    navActions.forEachIndexed { index, (icon, title, action) ->
-                        SettingsItem(
-                            title = title,
-                            subtitle = "",
-                            shape = getGroupItemShape(index, navActions.size),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary
-                                )
-                            },
-                            onClick = action
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        MenuRowItem(
+                            icon = Icons.Rounded.Search,
+                            title = "Search on site",
+                            isSubItem = true,
+                            onClick = onSearchOnSite
+                        )
+                        MenuRowItem(
+                            icon = Icons.Rounded.MenuBook,
+                            title = "Reading mode",
+                            isSubItem = true,
+                            onClick = onShowReadingMode
+                        )
+                        MenuRowItem(
+                            icon = Icons.Rounded.Print,
+                            title = "Print to PDF",
+                            isSubItem = true,
+                            onClick = onPrintPdf
+                        )
+                        MenuRowItem(
+                            icon = Icons.Rounded.SaveAlt,
+                            title = "Save page",
+                            isSubItem = true,
+                            onClick = onSavePage
+                        )
+                        MenuRowItem(
+                            icon = Icons.Rounded.Share,
+                            title = "Share link",
+                            isSubItem = true,
+                            onClick = onShareLink
                         )
                     }
                 }
 
-                // Section 4: Tools & Settings
-                val toolsActions = listOf(
-                    Triple(Icons.Rounded.Search, "Search on site", onSearchOnSite),
-                    Triple(Icons.Rounded.MenuBook, "Reading mode", onShowReadingMode),
-                    Triple(Icons.Rounded.Print, "Print to PDF", onPrintPdf),
-                    Triple(Icons.Rounded.SaveAlt, "Save page", onSavePage),
-                    Triple(Icons.Rounded.Share, "Share link", onShareLink)
+                MenuRowItem(
+                    icon = Icons.Rounded.Settings,
+                    title = "Settings",
+                    onClick = onOpenSettings
                 )
 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    SettingsItem(
-                        title = "More tools",
-                        subtitle = if (isMoreToolsExpanded) "Tap to collapse" else "Page utilities & tools",
-                        shape = if (isMoreToolsExpanded) getGroupItemShape(0, 2) else RoundedCornerShape(24.dp),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.Build,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        },
-                        trailingIcon = {
-                            Icon(
-                                imageVector = if (isMoreToolsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
-                        onClick = { isMoreToolsExpanded = !isMoreToolsExpanded }
-                    )
-
-                    AnimatedVisibility(
-                        visible = isMoreToolsExpanded,
-                        enter = expandVertically(),
-                        exit = shrinkVertically()
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            toolsActions.forEachIndexed { index, (icon, title, action) ->
-                                SettingsItem(
-                                    title = title,
-                                    subtitle = "",
-                                    shape = getGroupItemShape(index, toolsActions.size),
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = icon,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    },
-                                    onClick = action
-                                )
-                            }
-                        }
-                    }
-
-                    SettingsItem(
-                        title = "Settings",
-                        subtitle = "Browser preferences & customization",
-                        shape = RoundedCornerShape(24.dp),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.Settings,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        },
-                        onClick = onOpenSettings
-                    )
-                }
-
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(8.dp))
             }
         }
     }
@@ -646,6 +572,128 @@ private fun CircularIconButton(
             contentAlignment = Alignment.Center
         ) {
             Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun MenuRowItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String? = null,
+    trailingIcon: ImageVector? = null,
+    isSubItem: Boolean = false,
+    onClick: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                onClick()
+            })
+            .padding(
+                start = if (isSubItem) 28.dp else 16.dp,
+                end = 16.dp,
+                top = 10.dp,
+                bottom = 10.dp
+            )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Fixed-width icon column so all icons align vertically across rows
+            Box(
+                modifier = Modifier.width(28.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (!subtitle.isNullOrBlank()) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (trailingIcon != null) {
+                Icon(
+                    imageVector = trailingIcon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MenuRowSwitchItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Fixed-width icon column so all icons align vertically across rows
+            Box(
+                modifier = Modifier.width(28.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (!subtitle.isNullOrBlank()) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            IconSwitch(
+                checked = checked,
+                icon = icon,
+                onCheckedChange = onCheckedChange
+            )
         }
     }
 }

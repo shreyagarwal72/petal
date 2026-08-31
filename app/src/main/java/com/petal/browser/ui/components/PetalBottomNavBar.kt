@@ -1,7 +1,5 @@
 package com.petal.browser.ui.components
 
-import android.graphics.RenderEffect
-import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -22,7 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
@@ -41,14 +38,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
@@ -65,217 +57,17 @@ enum class PetalNavTab {
 }
 
 // -------------------------------------------------------------------------------------------------
-// AGSL Progressive Blur Shader & Modifier (from Remember and FilePipe)
-// -------------------------------------------------------------------------------------------------
-
-private val dualEdgeBlurAgsl =
-    """
-    uniform shader content;
-    uniform float blurRadius;
-    uniform float topHeight;
-    uniform float bottomHeight;
-    uniform float contentHeight;
-    uniform float topBlurProgressPower;
-
-    half4 main(float2 fragCoord) {
-        float topProgress = topHeight > 0.0
-            ? 1.0 - clamp(fragCoord.y / topHeight, 0.0, 1.0)
-            : 0.0;
-        float bottomProgress = bottomHeight > 0.0
-            ? 1.0 - clamp((contentHeight - fragCoord.y) / bottomHeight, 0.0, 1.0)
-            : 0.0;
-
-        float topBlur = pow(topProgress, topBlurProgressPower);
-        float bottomBlur = pow(bottomProgress, 2.5);
-        float progress = max(topBlur, bottomBlur);
-        float radius = progress * blurRadius;
-
-        if (radius <= 0.0) {
-            return content.eval(fragCoord);
-        }
-
-        half4 accum = half4(0.0);
-        float weightSum = 0.0;
-
-        float dither = fract(sin(dot(fragCoord, float2(12.9898, 78.233))) * 43758.5453);
-        float2 jitter = float2(dither - 0.5, fract(dither * 1.618) - 0.5);
-
-        const int SAMPLES = 5;
-        float offsetScale = radius / float(SAMPLES);
-
-        for (int x = -SAMPLES; x <= SAMPLES; x++) {
-            for (int y = -SAMPLES; y <= SAMPLES; y++) {
-                float2 offset = (float2(float(x), float(y)) + jitter) * offsetScale;
-                float distSq = dot(offset, offset);
-                float radiusSq = radius * radius;
-
-                if (distSq <= radiusSq) {
-                    float weight = exp(-3.0 * distSq / radiusSq);
-                    accum += content.eval(fragCoord + offset) * weight;
-                    weightSum += weight;
-                }
-            }
-        }
-
-        return accum / weightSum;
-    }
-    """.trimIndent()
-
-/**
- * Real AGSL progressive blur modifier on Android 13+ (API 33+), with vertical gradient overlay
- * and fallback rendering on earlier Android versions (matching Remember and FilePipe).
- */
-fun Modifier.progressiveBlur(
-    blurRadius: Float = 90f,
-    topHeight: Float = 0f,
-    bottomHeight: Float = 0f,
-    showGradientOverlay: Boolean = true,
-    overlayAlpha: Float = 0.28f,
-    overlayAlphaBottom: Float = 0.48f,
-    topBlurProgressPower: Float = 2.5f,
-    topAlphaMultiplier: Float = 1f,
-    bottomAlphaMultiplier: Float = 1f,
-): Modifier =
-    composed {
-        val surfaceContainer = MaterialTheme.colorScheme.surfaceContainer
-        val finalAlphaTop = (if (blurRadius <= 0f) 1.0f else overlayAlpha) * topAlphaMultiplier
-        val finalAlphaBottom = (if (blurRadius <= 0f) 1.0f else overlayAlphaBottom) * bottomAlphaMultiplier
-
-        val overlayColorTop =
-            remember(surfaceContainer, finalAlphaTop) {
-                surfaceContainer.copy(alpha = finalAlphaTop)
-            }
-        val overlayColorBottom =
-            remember(surfaceContainer, finalAlphaBottom) {
-                surfaceContainer.copy(alpha = finalAlphaBottom)
-            }
-
-        val blurModifier =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && blurRadius > 0f) {
-                val shader = remember { RuntimeShader(dualEdgeBlurAgsl) }
-                Modifier.graphicsLayer {
-                    shader.setFloatUniform("blurRadius", blurRadius)
-                    shader.setFloatUniform("topHeight", topHeight * topAlphaMultiplier)
-                    shader.setFloatUniform("bottomHeight", bottomHeight * bottomAlphaMultiplier)
-                    shader.setFloatUniform("contentHeight", size.height)
-                    shader.setFloatUniform("topBlurProgressPower", topBlurProgressPower)
-                    renderEffect =
-                        RenderEffect
-                            .createRuntimeShaderEffect(shader, "content")
-                            .asComposeRenderEffect()
-                }
-            } else {
-                Modifier
-            }
-
-        val gradientModifier =
-            if (showGradientOverlay) {
-                Modifier.drawWithContent {
-                    drawContent()
-                    val activeTopHeight = topHeight * topAlphaMultiplier
-                    if (activeTopHeight > 0f) {
-                        val brush =
-                            if (blurRadius <= 0f) {
-                                Brush.verticalGradient(
-                                    colorStops =
-                                        arrayOf(
-                                            0.0f to overlayColorTop,
-                                            0.75f to overlayColorTop.copy(alpha = overlayColorTop.alpha * 0.95f),
-                                            1.0f to Color.Transparent,
-                                        ),
-                                    endY = activeTopHeight,
-                                )
-                            } else {
-                                Brush.verticalGradient(
-                                    colors = listOf(overlayColorTop, Color.Transparent),
-                                    endY = activeTopHeight,
-                                )
-                            }
-                        drawRect(brush = brush)
-                    }
-                    val activeBottomHeight = bottomHeight * bottomAlphaMultiplier
-                    if (activeBottomHeight > 0f) {
-                        val brush =
-                            if (blurRadius <= 0f) {
-                                Brush.verticalGradient(
-                                    colorStops =
-                                        arrayOf(
-                                            0.0f to Color.Transparent,
-                                            0.65f to overlayColorBottom.copy(alpha = overlayColorBottom.alpha * 0.9f),
-                                            1.0f to overlayColorBottom,
-                                        ),
-                                    startY = size.height - activeBottomHeight,
-                                    endY = size.height,
-                                )
-                            } else {
-                                Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, overlayColorBottom),
-                                    startY = size.height - activeBottomHeight,
-                                    endY = size.height,
-                                )
-                            }
-                        drawRect(brush = brush)
-                    }
-                }
-            } else {
-                Modifier
-            }
-
-        this.then(blurModifier).then(gradientModifier)
-    }
-
-/**
- * Progressive Frosted-Glass Blur Layer (matching FilePipe and Remember).
- * Leverages AGSL RuntimeShader on Android 13+ and graded opacity gradient fallback.
- */
-@Composable
-fun ProgressiveBlurBar(
-    modifier: Modifier = Modifier,
-    blurRadius: Float = 90f
-) {
-    val isBlurSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val backgroundColor = MaterialTheme.colorScheme.background
-
-    Box(
-        modifier = modifier
-            .then(
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    Modifier.progressiveBlur(
-                        blurRadius = blurRadius,
-                        bottomHeight = 350f,
-                        overlayAlphaBottom = 0.55f
-                    )
-                } else if (isBlurSupported) {
-                    Modifier.blur(20.dp)
-                } else Modifier
-            )
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        backgroundColor.copy(alpha = 0.35f),
-                        backgroundColor.copy(alpha = 0.75f),
-                        backgroundColor.copy(alpha = 0.95f)
-                    )
-                )
-            )
-    )
-}
-
-// -------------------------------------------------------------------------------------------------
 // Modern Floating Bottom Navigation Bar (Remember & FilePipe style HorizontalFloatingToolbar)
 // -------------------------------------------------------------------------------------------------
 
 /**
- * Modern Floating Navigation Bar with Material 3 Expressive HorizontalFloatingToolbar
- * and Progressive Frosted-Glass Blur (matching bikram-agarwal/Remember and bikram-agarwal/FilePipe).
+ * Modern Floating Navigation Bar with Material 3 Expressive HorizontalFloatingToolbar.
  *
  * Architecture & Theming:
  * - Toolbar container uses vibrant primary container theme (`colorScheme.primary` container & `colorScheme.onPrimary` content)
- * - Active tab item fills with background color and primary tinted icon & bold label (`MaterialTheme.colorScheme.background` container, `MaterialTheme.colorScheme.primary` content)
- * - Inactive tab item stays lightweight (`MaterialTheme.colorScheme.onPrimary` content)
+ * - Active tab item fills with background color and primary tinted icon & bold label
+ * - Inactive tab item stays lightweight
  * - Tactile spring-animated label width expansion (`72.dp` target on active selection)
- * - Progressive blur overlay with AGSL RuntimeShader & frosted glass backdrop
  * - Live Tab Count badge with animated scale bounce
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -285,7 +77,6 @@ fun PetalBottomNavBar(
     tabCount: Int,
     isIncognito: Boolean = false,
     isFloatingStyle: Boolean = true,
-    isProgressiveBlurEnabled: Boolean = true,
     onHomeClick: () -> Unit,
     onNewTabClick: () -> Unit,
     onTabsClick: () -> Unit,
@@ -324,15 +115,6 @@ fun PetalBottomNavBar(
                 .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
-            // Progressive blur underlay (FilePipe / Remember style)
-            if (isProgressiveBlurEnabled) {
-                ProgressiveBlurBar(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(115.dp)
-                        .align(Alignment.BottomCenter)
-                )
-            }
 
             // Material 3 Expressive Floating Toolbar (matching Remember & FilePipe vibrant colors)
             val toolbarColors = if (isIncognito) {
@@ -421,23 +203,13 @@ fun PetalBottomNavBar(
             }
         }
     } else {
-        // Flat Bottom Navigation Bar with Optional Progressive Blur
-        Box(modifier = modifier.fillMaxWidth()) {
-            if (isProgressiveBlurEnabled) {
-                ProgressiveBlurBar(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .align(Alignment.BottomCenter)
-                )
-            }
-
-            Surface(
-                color = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = 3.dp,
-                shadowElevation = 4.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+        // Flat Bottom Navigation Bar
+        Surface(
+            color = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = 3.dp,
+            shadowElevation = 4.dp,
+            modifier = modifier.fillMaxWidth()
+        ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -500,7 +272,6 @@ fun PetalBottomNavBar(
                     }
                 }
             }
-        }
     }
 }
 
