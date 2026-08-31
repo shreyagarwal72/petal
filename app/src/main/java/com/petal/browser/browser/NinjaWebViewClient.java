@@ -517,10 +517,6 @@ public class NinjaWebViewClient extends WebViewClient {
         boolean fingerprint = ninjaWebView.isFingerPrintProtection() || sp.getBoolean("sp_fingerprint_protection", true);
         if (fingerprint || dntGpc) {
             view.evaluateJavascript("var test=document.querySelector(\"a[ping]\"); if(test!==null){test.removeAttribute('ping')};", null);
-            //do not allow ping on http only pages (tested with http://tests.caniuse.com)
-            if (view.getSettings().getUseWideViewPort() && (view.getWidth() < 1300)){
-                view.evaluateJavascript("document.querySelector('meta[name=\"viewport\"]').setAttribute('content', 'width=1200px');", null);
-            }
             //  Client-side detection for GlobalPrivacyControl
             view.evaluateJavascript("if (navigator.globalPrivacyControl === undefined) { Object.defineProperty(navigator, 'globalPrivacyControl', { value: true, writable: false,configurable: false});} else {try { navigator.globalPrivacyControl = true;} catch (e) { console.error('globalPrivacyControl is not writable: ', e); }};", null);
             //  Script taken from:
