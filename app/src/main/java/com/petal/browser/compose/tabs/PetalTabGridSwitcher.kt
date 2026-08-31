@@ -4,10 +4,15 @@ import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -15,7 +20,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -118,6 +127,7 @@ fun PetalTabGridSwitcher(
     onOpenSettings: () -> Unit = {},
     onTabVisible: (PetalTabItem) -> Unit = {},
     onBack: (() -> Unit)? = null,
+    onRestoreTab: ((PetalTabItem) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -165,18 +175,37 @@ fun PetalTabGridSwitcher(
     }
 
     val pendingRemovalIds = remember { mutableStateListOf<String>() }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
+    val recentlyClosedBatch = remember { mutableStateListOf<PetalTabItem>() }
+    var isUndoBannerVisible by remember { mutableStateOf(false) }
+    var undoBannerKey by remember { mutableLongStateOf(0L) }
+
+    LaunchedEffect(undoBannerKey) {
+        if (undoBannerKey > 0L && isUndoBannerVisible) {
+            kotlinx.coroutines.delay(4500L)
+            isUndoBannerVisible = false
+            recentlyClosedBatch.clear()
+        }
+    }
 
     fun requestOptimisticClose(tab: PetalTabItem) {
         if (tab.id in pendingRemovalIds) return
         pendingRemovalIds.add(tab.id)
+        recentlyClosedBatch.add(tab)
+        undoBannerKey = System.currentTimeMillis()
+        isUndoBannerVisible = true
         onTabClose(tab)
-        coroutineScope.launch {
-            snackbarHostState.showSnackbar(
-                message = "Closed ${tab.title.ifBlank { "Tab" }}",
-                duration = SnackbarDuration.Short
-            )
+    }
+
+    fun undoClosedTabs() {
+        if (recentlyClosedBatch.isNotEmpty()) {
+            val toRestore = recentlyClosedBatch.toList()
+            recentlyClosedBatch.clear()
+            isUndoBannerVisible = false
+            toRestore.forEach { restoredTab ->
+                pendingRemovalIds.remove(restoredTab.id)
+                onRestoreTab?.invoke(restoredTab)
+            }
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playClick(context)
         }
     }
 
@@ -187,7 +216,6 @@ fun PetalTabGridSwitcher(
         idsToCommit.forEach { id ->
             tabs.find { it.id == id }?.let { onTabClose(it) }
         }
-        snackbarHostState.currentSnackbarData?.dismiss()
     }
 
     // Tab counts
@@ -675,13 +703,20 @@ fun PetalTabGridSwitcher(
                 }
             }
 
-            // Floating Material 3 Undo snackbar, anchored to the bottom of the screen.
-            PetalThemedSnackbarHost(
-                hostState = snackbarHostState,
+            // Floating Material 3 Expressive Undo Banner with slide-to-hide gesture and auto-grouping
+            ExpressiveTabUndoBanner(
+                visible = isUndoBannerVisible && recentlyClosedBatch.isNotEmpty(),
+                initialTabTitle = recentlyClosedBatch.firstOrNull()?.title.orEmpty(),
+                totalClosedCount = recentlyClosedBatch.size,
+                accentColor = accentColor,
+                onUndo = { undoClosedTabs() },
+                onDismiss = {
+                    isUndoBannerVisible = false
+                    recentlyClosedBatch.clear()
+                },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                actionColor = accentColor
+                    .padding(bottom = 16.dp)
             )
         }
     }
@@ -1687,6 +1722,142 @@ object PetalTabGridBridge {
                         onCloseAllTabs = onCloseAllTabsListener,
                         onOpenSettings = onOpenSettingsListener
                     )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Material 3 Expressive Floating Tab Undo Banner with slide-to-hide (swipe dismiss) physics,
+ * auto-grouping with the initial closed tab displayed first, fluid spring entrance/exit,
+ * and bold action button.
+ */
+@Composable
+fun ExpressiveTabUndoBanner(
+    visible: Boolean,
+    initialTabTitle: String,
+    totalClosedCount: Int,
+    accentColor: Color,
+    onUndo: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var dragOffsetX by remember { mutableFloatStateOf(0f) }
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = dragOffsetX,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "undoBannerOffsetX"
+    )
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically(initialOffsetY = { it * 2 }) + fadeIn() + scaleIn(initialScale = 0.9f),
+        exit = slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut() + scaleOut(targetScale = 0.9f),
+        modifier = modifier
+    ) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+            shadowElevation = 8.dp,
+            tonalElevation = 6.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .offset { IntOffset(animatedOffsetX.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (abs(dragOffsetX) > 100.dp.toPx()) {
+                                onDismiss()
+                            }
+                            dragOffsetX = 0f
+                        },
+                        onDragCancel = {
+                            dragOffsetX = 0f
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            dragOffsetX += dragAmount
+                        }
+                    )
+                }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = accentColor.copy(alpha = 0.16f),
+                        contentColor = accentColor,
+                        modifier = Modifier.size(34.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.Tab,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    val displayText = if (totalClosedCount <= 1) {
+                        "Closed \"${initialTabTitle.ifBlank { "Tab" }}\""
+                    } else {
+                        val others = totalClosedCount - 1
+                        "Closed \"${initialTabTitle.ifBlank { "Tab" }}\" (+$others more)"
+                    }
+                    Text(
+                        text = displayText,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    TextButton(
+                        onClick = onUndo,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = accentColor
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Undo,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "Undo",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Dismiss",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }
