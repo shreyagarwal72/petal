@@ -103,16 +103,16 @@ fun PetalBottomNavBar(
             modifier = modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(bottom = 36.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
             HorizontalFloatingToolbar(
                 expanded = true,
                 modifier = Modifier
                     .animateContentSize()
-                    .height(56.dp),
-                shape = RoundedCornerShape(28.dp),
-                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                    .height(68.dp),
+                shape = RoundedCornerShape(100),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
                 colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
                     toolbarContainerColor = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.primaryContainer
                 )
@@ -125,7 +125,7 @@ fun PetalBottomNavBar(
                     Icon(
                         imageVector = Icons.Rounded.Home,
                         contentDescription = "Home",
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
 
@@ -137,7 +137,7 @@ fun PetalBottomNavBar(
                     Icon(
                         imageVector = Icons.Rounded.Add,
                         contentDescription = "New Tab",
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
 
@@ -157,7 +157,7 @@ fun PetalBottomNavBar(
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
                         contentDescription = "Menu",
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
@@ -246,7 +246,7 @@ fun PetalBottomNavBar(
 private fun TabCountBadge(color: Color, count: Int, scale: Float) {
     Box(
         modifier = Modifier
-            .size(22.dp)
+            .size(26.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -254,7 +254,7 @@ private fun TabCountBadge(color: Color, count: Int, scale: Float) {
             .border(
                 width = 2.dp,
                 color = color,
-                shape = RoundedCornerShape(6.dp)
+                shape = RoundedCornerShape(7.dp)
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -272,6 +272,7 @@ private fun TabCountBadge(color: Color, count: Int, scale: Float) {
 
 /**
  * Single item inside the floating toolbar: aligned icon and animated label.
+ * Matches Zenith's ShortNavigationBarItem with dynamic indicator height and titleMedium ExtraBold text.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -281,12 +282,21 @@ private fun FloatingNavItem(
     onClick: () -> Unit,
     icon: @Composable (Color) -> Unit
 ) {
+    val extraHeight by animateDpAsState(
+        targetValue = if (selected) 16.dp else 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "indicatorHeight"
+    )
+
     ShortNavigationBarItem(
         selected = selected,
         onClick = onClick,
         icon = {
             Box(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.height(26.dp + extraHeight),
                 contentAlignment = Alignment.Center
             ) {
                 icon(if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer)
@@ -308,9 +318,8 @@ private fun FloatingNavItem(
             ) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
                     maxLines = 1,
                     modifier = Modifier.padding(start = 2.dp, end = 4.dp)
                 )
@@ -325,7 +334,7 @@ private fun FloatingNavItem(
             unselectedTextColor = Color.Transparent
         ),
         modifier = Modifier
-            .padding(horizontal = 2.dp)
+            .padding(horizontal = 4.dp)
             .fillMaxHeight()
     )
 }
