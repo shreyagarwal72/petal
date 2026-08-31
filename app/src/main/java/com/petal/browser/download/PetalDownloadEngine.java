@@ -64,7 +64,7 @@ public class PetalDownloadEngine {
                 .setAutoRetryMaxAttempts(5)
                 .enableAutoStart(true)
                 .enableRetryOnNetworkGain(true)
-                .setHttpDownloader(new HttpUrlConnectionDownloader(Downloader.FileDownloaderType.PARALLEL, 60000))
+                .setHttpDownloader(new HttpUrlConnectionDownloader(Downloader.FileDownloaderType.PARALLEL))
                 .enableLogging(false)
                 .build();
         fetch = Fetch.Impl.getInstance(fetchConfiguration);
