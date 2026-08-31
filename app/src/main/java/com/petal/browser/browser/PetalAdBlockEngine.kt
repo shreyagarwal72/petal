@@ -71,12 +71,10 @@ object PetalAdBlockEngine {
         "scorecardresearch.com", "quantserve.com", "openx.net", "monetag.com",
         "hilltopads.com", "adcash.com", "adsterra.com", "a-ads.com", "mgid.com",
         "revcontent.com", "juicyads.com", "trafficjunky.com", "coinhive.com",
-        "statcounter.com", "hotjar.com", "mixpanel.com", "segment.io", "clarity.ms",
-        "pixel.facebook.com",
+        "statcounter.com", "pixel.facebook.com",
 
-        // uBlock Origin / EasyList path patterns
-        "/pagead/", "/adserv", "/ads/", "/ad_banner", "/popunder", "/popup.js",
-        "analytics.js", "gtag/js", "fbevents.js", "adsbygoogle.js", "ad_status"
+        // Specific ad/tracker scripts and paths
+        "/pagead/", "/ad_banner", "/popunder", "/popup.js", "adsbygoogle.js"
     )
 
     @JvmStatic
