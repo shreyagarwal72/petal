@@ -437,7 +437,8 @@ fun ExpressiveSettingsGroup(
 fun ExpressiveCategoryItem(
     title: String,
     subtitle: String,
-    icon: ImageVector,
+    icon: ImageVector? = null,
+    iconPainter: Painter? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(24.dp),
@@ -469,12 +470,21 @@ fun ExpressiveCategoryItem(
                     .clip(RoundedCornerShape(12.dp))
                     .background(badgeColor)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconColor,
-                    modifier = Modifier.size(24.dp)
-                )
+                if (iconPainter != null) {
+                    Icon(
+                        painter = iconPainter,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
             Column(
@@ -501,7 +511,7 @@ fun ExpressiveCategoryItem(
             }
 
             Icon(
-                imageVector = Icons.Rounded.ChevronRight,
+                painter = painterResource(com.petal.browser.R.drawable.arrow_forward_ios_new),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(16.dp)
@@ -516,7 +526,8 @@ fun ExpressiveCategoryItem(
 @Composable
 fun SettingsCardContainer(
     title: String,
-    icon: ImageVector,
+    icon: ImageVector? = null,
+    iconPainter: Painter? = null,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
     shape: Shape = RoundedCornerShape(24.dp),
@@ -546,12 +557,21 @@ fun SettingsCardContainer(
                         .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (iconPainter != null) {
+                        Icon(
+                            painter = iconPainter,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else if (icon != null) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
                 Text(
                     title,
