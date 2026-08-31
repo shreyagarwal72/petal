@@ -1,7 +1,5 @@
-v2.0.0 Release Highlights (First Official Public Release):
-- Profile Picture & Interactive Cropper Overhaul with precision circular crop, pinch-to-zoom, drag-to-align, and rotation controls.
-- Reorganized and streamlined Settings categories with new dedicated Miscellaneous Hub.
-- 100% Kotlin codebase & modern Jetpack Compose Material 3 Expressive UI with 35 custom container shapes.
-- High Refresh Rate (120Hz/144Hz+) Native Hardware Synchronization and kinetic scrolling.
-- Google Lens search integration and In-App multi-volume media picker.
-- Advanced Privacy Suite, Passkeys / WebAuthn, AdBlock Trie engine, and Fingerprint Protection.
+v2.0 Release Highlights:
+- Real-Time Vector Shape Morphing Background with androidx.graphics.shapes.Morph across all 35 M3 Expressive shapes.
+- Floating Bottom Navigation Bar aligned with Zenith (68dp height, stadium pill, 26dp icons, dynamic indicator).
+- Material 3 Expressive Containment System with elevated surface cards, tactile switch items, and rounded shapes.
+- Interactive Profile Picture Avatar Cropper & Streamlined Settings categorization.

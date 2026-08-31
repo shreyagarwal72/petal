@@ -1,9 +1,24 @@
 /*
- * PetalDownloadService.kt
- * ─────────────────────────────────────────────────────────────────────────
- * Foreground Service for Petal Browser Download Engine.
- * Keeps Fetch2 background download threads alive with a persistent Foreground
- * Notification even when the main app Activity is minimized, swiped away, or killed.
+ * MIT License
+ * Copyright (c) 2026 Petal Browser
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT/TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package com.petal.browser.compose.downloads
@@ -14,14 +29,18 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 
 class PetalDownloadService : Service() {
+
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "PetalDownloadService created")
         PetalFetchDownloadBridge.ensureInitialized(applicationContext)
+        acquireWakeLock()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -45,7 +64,7 @@ class PetalDownloadService : Service() {
             null
         )
 
-        // 2. VERY FIRST synchronous call: startForeground() on main thread within 5s window
+        // 2. Synchronous call: startForeground() on main thread within 5s window
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
@@ -65,7 +84,7 @@ class PetalDownloadService : Service() {
             return START_NOT_STICKY
         }
 
-        // 3. Perform download tracking without re-triggering startForegroundService loop (startService = false)
+        // 3. Perform download tracking without re-triggering startForegroundService loop
         if (downloadId > 0L) {
             PetalLiveAlertManager.trackDownload(
                 context = applicationContext,
@@ -82,7 +101,32 @@ class PetalDownloadService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        releaseWakeLock()
         Log.d(TAG, "PetalDownloadService destroyed")
+    }
+
+    private fun acquireWakeLock() {
+        try {
+            if (wakeLock == null) {
+                val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
+                wakeLock = powerManager?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PetalBrowser:DownloadWakeLock")
+            }
+            if (wakeLock?.isHeld == false) {
+                wakeLock?.acquire(2 * 60 * 60 * 1000L) // 2 hour max safety timeout
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to acquire wake lock: ${e.message}")
+        }
+    }
+
+    private fun releaseWakeLock() {
+        try {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to release wake lock: ${e.message}")
+        }
     }
 
     private fun stopForegroundAndSelf() {
@@ -96,6 +140,7 @@ class PetalDownloadService : Service() {
         } catch (e: Exception) {
             Log.e(TAG, "Error removing foreground notification: ${e.message}")
         }
+        releaseWakeLock()
         stopSelf()
     }
 
