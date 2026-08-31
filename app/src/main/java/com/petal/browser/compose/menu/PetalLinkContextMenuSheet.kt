@@ -81,10 +81,12 @@ fun PetalLinkContextMenuSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 12.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             // Drag Handle Bar
+            Spacer(Modifier.height(10.dp))
             Box(
                 modifier = Modifier
                     .width(36.dp)
@@ -93,81 +95,65 @@ fun PetalLinkContextMenuSheet(
                     .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                     .align(Alignment.CenterHorizontally)
             )
-
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(12.dp))
 
             // Header with Favicon / Shape Avatar, Title, and Truncated URL
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Row(
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (!faviconUrl.isNullOrEmpty() && !isImage && !isVideo) {
-                            AsyncImage(
-                                model = faviconUrl,
-                                contentDescription = linkTitle ?: "Site Favicon",
-                                modifier = Modifier.size(24.dp)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = if (isImage) Icons.Rounded.Image else if (isVideo) Icons.Rounded.Videocam else Icons.Rounded.Language,
-                                contentDescription = "Content",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (!linkTitle.isNullOrBlank()) linkTitle else HelperUnit.domain(linkUrl) ?: linkUrl,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    if (!faviconUrl.isNullOrEmpty() && !isImage && !isVideo) {
+                        AsyncImage(
+                            model = faviconUrl,
+                            contentDescription = linkTitle ?: "Site Favicon",
+                            modifier = Modifier.size(24.dp)
                         )
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            text = linkUrl,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    } else {
+                        Icon(
+                            imageVector = if (isImage) Icons.Rounded.Image else if (isVideo) Icons.Rounded.Videocam else Icons.Rounded.Language,
+                            contentDescription = "Content",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (!linkTitle.isNullOrBlank()) linkTitle else HelperUnit.domain(linkUrl) ?: linkUrl,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = linkUrl.ifBlank { "about:blank" },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
-            Spacer(Modifier.height(16.dp))
-
-            // Group 1: Primary Navigation Actions
-            Text(
-                text = if (isImage) "Image Options" else if (isVideo) "Video Options" else "Link Options",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+            Spacer(Modifier.height(8.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             )
 
+            // Primary Navigation Actions
             val primaryActions = remember(isImage, isVideo, linkUrl) {
                 if (isImage) {
                     listOf(
@@ -225,38 +211,21 @@ fun PetalLinkContextMenuSheet(
                 }
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                primaryActions.forEachIndexed { index, spec ->
-                    SettingsItem(
-                        title = spec.title,
-                        subtitle = "",
-                        shape = getGroupItemShape(index, primaryActions.size),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = spec.icon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        },
-                        onClick = spec.onClick
-                    )
-                }
+            primaryActions.forEach { spec ->
+                ContextMenuItemRow(
+                    icon = spec.icon,
+                    title = spec.title,
+                    onClick = spec.onClick
+                )
             }
 
-            Spacer(Modifier.height(16.dp))
-
-            // Group 2: Utilities & Sharing
-            Text(
-                text = "Clipboard & Sharing",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
             )
 
+            // Clipboard & Sharing Actions
             val shareActions = remember(isImage, isVideo, linkUrl) {
                 if (isImage) {
                     listOf(
@@ -306,28 +275,59 @@ fun PetalLinkContextMenuSheet(
                 }
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                shareActions.forEachIndexed { index, spec ->
-                    SettingsItem(
-                        title = spec.title,
-                        subtitle = "",
-                        shape = getGroupItemShape(index, shareActions.size),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = spec.icon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        },
-                        onClick = spec.onClick
-                    )
-                }
+            shareActions.forEach { spec ->
+                ContextMenuItemRow(
+                    icon = spec.icon,
+                    title = spec.title,
+                    onClick = spec.onClick
+                )
             }
 
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun ContextMenuItemRow(
+    icon: ImageVector,
+    title: String,
+    onClick: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                onClick()
+            })
+            .padding(horizontal = 20.dp, vertical = 11.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.width(28.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
