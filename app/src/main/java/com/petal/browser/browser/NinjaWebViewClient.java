@@ -224,7 +224,7 @@ public class NinjaWebViewClient extends WebViewClient {
             //The source code has been published originally under Mozilla Public License V2.0. You can obtain a copy of the license at https://mozilla.org/MPL/2.0/
             //The author has given explicit written permission to use his code under GPL V3 in this project.
 
-            view.evaluateJavascript("\n" +
+            view.evaluateJavascript("try {\n" +
                     "  const toBlob = HTMLCanvasElement.prototype.toBlob;\n" +
                     "  const toDataURL = HTMLCanvasElement.prototype.toDataURL;\n" +
                     "  const getImageData = CanvasRenderingContext2D.prototype.getImageData;\n" +
@@ -277,7 +277,8 @@ public class NinjaWebViewClient extends WebViewClient {
                     "      noisify(this.canvas, this);\n" +
                     "      return getImageData.apply(this, arguments);\n" +
                     "    }\n" +
-                    "  });", null);
+                    "  });\n" +
+                    "} catch(e) {}", null);
 
             //Prevent WebGL fingerprinting by randomizing
             //can be tested e.g. at https://webbrowsertools.com
@@ -286,7 +287,7 @@ public class NinjaWebViewClient extends WebViewClient {
             //The source code has been published originally under Mozilla Public License V2.0. You can obtain a copy of the license at https://mozilla.org/MPL/2.0/
             //The author has given explicit written permission to use his code under GPL V3 in this project.
 
-            view.evaluateJavascript("\n" +
+            view.evaluateJavascript("try {\n" +
                     "  var config = {\n" +
                     "    \"random\": {\n" +
                     "      \"value\": function () {\n" +
@@ -385,7 +386,8 @@ public class NinjaWebViewClient extends WebViewClient {
                     "  config.spoof.webgl.buffer(WebGLRenderingContext);\n" +
                     "  config.spoof.webgl.buffer(WebGL2RenderingContext);\n" +
                     "  config.spoof.webgl.parameter(WebGLRenderingContext);\n" +
-                    "  config.spoof.webgl.parameter(WebGL2RenderingContext);", null);
+                    "  config.spoof.webgl.parameter(WebGL2RenderingContext);\n" +
+                    "} catch(e) {}", null);
 
             //Prevent AudioContext fingerprinting by randomizing
             //can be tested e.g. at https://webbrowsertools.com
@@ -394,7 +396,7 @@ public class NinjaWebViewClient extends WebViewClient {
             //The source code has been published originally under Mozilla Public License V2.0. You can obtain a copy of the license at https://mozilla.org/MPL/2.0/
             //The author has given explicit written permission to use his code under GPL V3 in this project.
 
-            view.evaluateJavascript("\n" +
+            view.evaluateJavascript("try {\n" +
                     "    const context = {\n" +
                     "    \"BUFFER\": null,\n" +
                     "    \"getChannelData\": function (e) {\n" +
@@ -441,7 +443,8 @@ public class NinjaWebViewClient extends WebViewClient {
                     "  context.getChannelData(AudioBuffer);\n" +
                     "  context.createAnalyser(AudioContext);\n" +
                     "  context.getChannelData(OfflineAudioContext);\n" +
-                    "  context.createAnalyser(OfflineAudioContext);  ", null);
+                    "  context.createAnalyser(OfflineAudioContext);\n" +
+                    "} catch(e) {}", null);
 
             //Prevent Font fingerprinting by randomizing
             //can be tested e.g. at https://webbrowsertools.com
@@ -450,7 +453,7 @@ public class NinjaWebViewClient extends WebViewClient {
             //The source code has been published originally under Mozilla Public License V2.0. You can obtain a copy of the license at https://mozilla.org/MPL/2.0/
             //The author has given explicit written permission to use his code under GPL V3 in this project.
 
-            view.evaluateJavascript("\n" +
+            view.evaluateJavascript("try {\n" +
                     "  var rand = {\n" +
                     "    \"noise\": function () {\n" +
                     "      var SIGN = Math.random() < Math.random() ? -1 : 1;\n" +
@@ -489,7 +492,8 @@ public class NinjaWebViewClient extends WebViewClient {
                     "      //\n" +
                     "      return result;\n" +
                     "    }\n" +
-                    "  });", null);
+                    "  });\n" +
+                    "} catch(e) {}", null);
 
             //Spoof screen resolution, color depth: set values like in Tor browser, random values for device memory, hardwareConcurrency, remove battery, network connection, keyboard, media devices info, prevent sendBeacon
 

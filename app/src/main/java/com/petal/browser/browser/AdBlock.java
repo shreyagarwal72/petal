@@ -42,17 +42,11 @@ public class AdBlock {
         "scorecardresearch.com", "quantserve.com", "openx.net", "monetag.com",
         "hilltopads.com", "adcash.com", "adsterra.com", "a-ads.com", "mgid.com",
         "revcontent.com", "juicyads.com", "trafficjunky.com", "coinhive.com",
-        "statcounter.com", "hotjar.com", "mixpanel.com", "segment.io", "clarity.ms",
-        "pixel.facebook.com", "adservice", "popunder", "popups", "tracking",
-        // uBlock Origin Core Filters & Trackers
-        "ublockorigin", "gorhill", "easylist", "easyprivacy", "adguard",
-        "uBlock-filters", "uBlock-unbreak", "uBlock-badware", "uBlock-privacy",
-        "uBlock-quick-fixes", "analytics", "telemetry", "tracking", "tracker"
+        "statcounter.com", "pixel.facebook.com"
     };
 
     private static final String[] AD_PATH_PATTERNS = new String[] {
-        "/pagead/", "/adserv", "/ads/", "/ad_banner", "/popunder", "/popup.js",
-        "adsterra", "popcash", "popads", "analytics.js", "gtag/js", "fbevents.js",
+        "/pagead/", "/ad_banner", "/popunder", "/popup.js",
         "adsbygoogle.js", "ad_status"
     };
 

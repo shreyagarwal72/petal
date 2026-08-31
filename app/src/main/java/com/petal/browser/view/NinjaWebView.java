@@ -629,7 +629,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
         initPreferences(targetUrl);
         resetGestureExclusionRects();
-        super.loadUrl(targetUrl, getRequestHeaders());
+        super.loadUrl(targetUrl);
     }
 
     @Override
