@@ -97,6 +97,18 @@ data class PetalShortcut(
     val contentColor: Color = Color.White
 )
 
+fun loadRemovedShortcutUrls(context: Context): Set<String> {
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    return sp.getStringSet("sp_removed_home_shortcut_urls_v1", emptySet()) ?: emptySet()
+}
+
+fun saveRemovedShortcutUrls(context: Context, set: Set<String>) {
+    PreferenceManager.getDefaultSharedPreferences(context)
+        .edit()
+        .putStringSet("sp_removed_home_shortcut_urls_v1", set)
+        .apply()
+}
+
 fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val jsonStr = sp.getString("sp_custom_home_shortcuts_json_v3", null)
@@ -137,9 +149,11 @@ fun fetchTopVisitedShortcuts(context: Context): List<PetalShortcut> {
             Color(0xFFFBBC05), Color(0xFF9C27B0), Color(0xFF00BCD4)
         )
 
+        val removedUrls = loadRemovedShortcutUrls(context)
+
         // Group history records by domain host to find sites visited more than 3 times
         val topSites = records
-            .filter { !it.url.isNullOrBlank() && !it.url.startsWith("about:") && !it.url.startsWith("petal://") }
+            .filter { !it.url.isNullOrBlank() && !it.url.startsWith("about:") && !it.url.startsWith("petal://") && !removedUrls.contains(it.url) }
             .groupBy {
                 try { Uri.parse(it.url).host ?: it.url } catch (e: Exception) { it.url }
             }
@@ -493,17 +507,18 @@ fun PetalHomeScreen(
 ) {
     var context = LocalContext.current
     var shortcuts by remember { mutableStateOf(loadHomeShortcuts(context)) }
-    var editingSlotIndex by remember { mutableStateOf<Int?>(null) }
+    var removedUrls by remember { mutableStateOf(loadRemovedShortcutUrls(context)) }
+    var editingItem by remember { mutableStateOf<Pair<PetalShortcut, Boolean>?>(null) }
     var isAddingNewShortcut by remember { mutableStateOf(false) }
 
     val profile = accountViewModel.profileState
 
-    // Merge saved shortcuts + auto-visited, deduplicated by URL
-    val autoVisitedSites = remember { fetchTopVisitedShortcuts(context).take(8) }
+    // Merge saved shortcuts + auto-visited, deduplicated by URL and filtered by removed blocklist
+    val autoVisitedSites = remember(removedUrls) { fetchTopVisitedShortcuts(context).take(8) }
     val mergedItems: List<Pair<PetalShortcut, Boolean>> = remember(shortcuts, autoVisitedSites) {
         val savedUrls = shortcuts.map { it.url }.toSet()
         val extraVisited = autoVisitedSites.filter { it.url !in savedUrls }
-        // true = user-editable saved shortcut; false = auto-visited (read-only)
+        // true = user-editable saved shortcut; false = auto-visited
         shortcuts.map { it to true } + extraVisited.map { it to false }
     }
 
@@ -579,7 +594,7 @@ fun PetalHomeScreen(
                                 PetalShortcutGrid(
                                     items = mergedItems,
                                     onOpenShortcut = { shortcut -> onOpenShortcutUrl(shortcut.url) },
-                                    onEditShortcutSlot = { index -> editingSlotIndex = index },
+                                    onEditShortcutItem = { item -> editingItem = item },
                                     onAddShortcutClick = { isAddingNewShortcut = true }
                                 )
 
@@ -607,36 +622,49 @@ fun PetalHomeScreen(
                         )
                     }
 
-                    // ── Edit Existing Shortcut Dialog ─────────────────────────────────
-                    editingSlotIndex?.let { slotIndex ->
-                        val current = shortcuts.getOrNull(slotIndex)
-                        if (current != null) {
-                            EditShortcutDialog(
-                                dialogTitle = "Edit Shortcut",
-                                initialName = current.label,
-                                initialUrl = current.url,
-                                initialColor = current.containerColor,
-                                onDismiss = { editingSlotIndex = null },
-                                onSave = { updatedShortcut ->
+                    // ── Edit / Remove Shortcut Dialog ─────────────────────────────────
+                    editingItem?.let { (current, isCustom) ->
+                        EditShortcutDialog(
+                            dialogTitle = if (isCustom) "Edit Shortcut" else "Remove Shortcut",
+                            initialName = current.label,
+                            initialUrl = current.url,
+                            initialColor = current.containerColor,
+                            onDismiss = { editingItem = null },
+                            onSave = { updatedShortcut ->
+                                if (isCustom) {
                                     val newList = shortcuts.toMutableList()
-                                    if (slotIndex in newList.indices) {
-                                        newList[slotIndex] = updatedShortcut
+                                    val idx = newList.indexOfFirst { it.url == current.url }
+                                    if (idx != -1) {
+                                        newList[idx] = updatedShortcut
+                                    } else {
+                                        newList.add(updatedShortcut)
                                     }
                                     shortcuts = newList
                                     saveHomeShortcuts(context, newList)
-                                    editingSlotIndex = null
-                                },
-                                onDelete = {
+                                } else {
+                                    // Convert to custom shortcut with new properties
                                     val newList = shortcuts.toMutableList()
-                                    if (slotIndex in newList.indices) {
-                                        newList.removeAt(slotIndex)
-                                    }
+                                    newList.add(updatedShortcut)
                                     shortcuts = newList
                                     saveHomeShortcuts(context, newList)
-                                    editingSlotIndex = null
                                 }
-                            )
-                        }
+                                editingItem = null
+                            },
+                            onDelete = {
+                                if (isCustom) {
+                                    val newList = shortcuts.toMutableList()
+                                    newList.removeAll { it.url == current.url }
+                                    shortcuts = newList
+                                    saveHomeShortcuts(context, newList)
+                                }
+                                // Also blocklist URL so it does not reappear under auto-visited
+                                val newRemoved = removedUrls.toMutableSet()
+                                newRemoved.add(current.url)
+                                removedUrls = newRemoved
+                                saveRemovedShortcutUrls(context, newRemoved)
+                                editingItem = null
+                            }
+                        )
                     }
         }
     }
@@ -649,7 +677,7 @@ fun PetalHomeScreen(
 private fun PetalShortcutGrid(
     items: List<Pair<PetalShortcut, Boolean>>, // shortcut to isEditable
     onOpenShortcut: (PetalShortcut) -> Unit,
-    onEditShortcutSlot: (Int) -> Unit,
+    onEditShortcutItem: (Pair<PetalShortcut, Boolean>) -> Unit,
     onAddShortcutClick: () -> Unit
 ) {
     FlowRow(
@@ -658,14 +686,15 @@ private fun PetalShortcutGrid(
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items.forEachIndexed { index, (shortcut, isEditable) ->
+        items.forEachIndexed { index, item ->
+            val (shortcut, isEditable) = item
             Box(modifier = Modifier.width(68.dp)) {
                 ShortcutTile(
                     shortcut = shortcut,
                     isEditable = isEditable,
                     index = index,
                     onClick = { onOpenShortcut(shortcut) },
-                    onLongClick = { if (isEditable) onEditShortcutSlot(index) }
+                    onLongClick = { onEditShortcutItem(item) }
                 )
             }
         }
@@ -723,13 +752,15 @@ private fun ShortcutTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .homeLaunchEntrance(3 + index)
+            .clip(RoundedCornerShape(12.dp))
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = androidx.compose.foundation.LocalIndication.current,
                 onClick = onClick,
                 onLongClick = onLongClick
             )
+            .homeLaunchEntrance(3 + index)
+            .padding(vertical = 4.dp)
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -790,8 +821,10 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .homeLaunchEntrance(3 + index)
+            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
+            .homeLaunchEntrance(3 + index)
+            .padding(vertical = 4.dp)
     ) {
         val totalShapes = PetalMaterialShapes.homescreenShapes.size
         val addShapeIndex = remember(index) { index % totalShapes }
