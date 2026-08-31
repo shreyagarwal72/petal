@@ -81,12 +81,12 @@ public class LiveUpdateNotificationManager {
                 NotificationChannel channel = new NotificationChannel(
                         CHANNEL_ID,
                         CHANNEL_NAME,
-                        NotificationManager.IMPORTANCE_HIGH
+                        NotificationManager.IMPORTANCE_LOW
                 );
                 channel.setDescription("Live real-time alerts for active downloads and media with progress, velocity, and controls");
                 channel.setSound(null, null);
                 channel.enableVibration(false);
-                channel.setShowBadge(true);
+                channel.setShowBadge(false);
                 nm.createNotificationChannel(channel);
             }
         }
@@ -131,7 +131,7 @@ public class LiveUpdateNotificationManager {
                 .setOngoing(!isPaused)
                 .setOnlyAlertOnce(true)
                 .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(contentPendingIntent);
 
         if (togglePendingIntent != null) {
