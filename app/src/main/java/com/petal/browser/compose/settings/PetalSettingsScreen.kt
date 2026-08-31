@@ -609,27 +609,13 @@ fun PetalSettingsScreen(
                                     SettingsCategory.ABOUT
                                 )
 
-                                com.petal.browser.ui.components.ExpressiveSettingsGroup {
-                                    val totalItems = categories.size
-                                    fun shapeFor(index: Int) = when {
-                                        totalItems == 1 -> RoundedCornerShape(24.dp)
-                                        index == 0 -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
-                                        index == totalItems - 1 -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
-                                        else -> RoundedCornerShape(4.dp)
-                                    }
-
-                                    categories.forEachIndexed { index, cat ->
-                                        SettingsCategoryRow(
-                                            title = cat.title,
-                                            subtitle = cat.subtitle,
-                                            icon = cat.icon,
-                                            shape = shapeFor(index),
-                                            onClick = { currentCategory = cat }
-                                        )
-                                        if (index < totalItems - 1) {
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                        }
-                                    }
+                                categories.forEach { cat ->
+                                    SettingsCategoryRow(
+                                        title = cat.title,
+                                        subtitle = cat.subtitle,
+                                        icon = cat.icon,
+                                        onClick = { currentCategory = cat }
+                                    )
                                 }
                             }
 
