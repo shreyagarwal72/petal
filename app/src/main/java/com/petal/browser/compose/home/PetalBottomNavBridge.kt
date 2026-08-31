@@ -60,6 +60,7 @@ object PetalBottomNavBridge {
                 var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
                 var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
                 var floatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
+                var isProgressiveBlur by remember { mutableStateOf(sp.getBoolean("sp_progressive_blur", true)) }
 
                 DisposableEffect(sp) {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -74,6 +75,7 @@ object PetalBottomNavBridge {
                             "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
                             "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
                             "sp_floating_tab_bar" -> floatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
+                            "sp_progressive_blur" -> isProgressiveBlur = sp.getBoolean("sp_progressive_blur", true)
                         }
                     }
                     sp.registerOnSharedPreferenceChangeListener(listener)
@@ -109,6 +111,7 @@ object PetalBottomNavBridge {
                             tabCount = tabCount,
                             isIncognito = isIncognito,
                             isFloatingStyle = floatingTabBar,
+                            isProgressiveBlurEnabled = isProgressiveBlur,
                             onHomeClick = { handler.onHomeClick() },
                             onNewTabClick = { handler.onNewTabClick() },
                             onTabsClick = { handler.onTabsClick() },

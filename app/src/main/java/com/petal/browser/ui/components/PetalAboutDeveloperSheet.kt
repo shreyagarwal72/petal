@@ -864,6 +864,16 @@ val petalAppCredits = listOf(
         tags = listOf("Image Loader", "Kotlin Coroutines", "Memory Cache")
     ),
     AppCreditItem(
+        title = "FilePipe & Remember",
+        developer = "Bikram Agarwal (bikram-agarwal)",
+        role = "Floating Navigation Bar & Progressive Blur Architecture",
+        description = "Fluid pill-shaped floating navigation bar, haptic spring interaction animations, and progressive frosted-glass blur underlay.",
+        url = "https://github.com/bikram-agarwal/FilePipe",
+        icon = Icons.Rounded.BlurOn,
+        containerColor = Color(0xFF00897B),
+        tags = listOf("Floating Navbar", "Progressive Blur", "Frosted Glass")
+    ),
+    AppCreditItem(
         title = "Material 3 Expressive",
         developer = "Google Android Jetpack Team",
         role = "Design Language & Dynamic Shape Morphing",

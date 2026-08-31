@@ -421,6 +421,7 @@ fun PetalSettingsScreen(
     }
     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
     var isFloatingTabBar by remember { mutableStateOf(sp.getBoolean("sp_floating_tab_bar", true)) }
+    var isProgressiveBlur by remember { mutableStateOf(sp.getBoolean("sp_progressive_blur", true)) }
     var isDynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
     var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
     var isExpressiveBgShapes by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
@@ -475,6 +476,9 @@ fun PetalSettingsScreen(
             when (key) {
                 "sp_floating_tab_bar" -> {
                     isFloatingTabBar = sp.getBoolean("sp_floating_tab_bar", true)
+                }
+                "sp_progressive_blur" -> {
+                    isProgressiveBlur = sp.getBoolean("sp_progressive_blur", true)
                 }
                 "sp_expressive_bg_shapes" -> {
                     isExpressiveBgShapes = sp.getBoolean("sp_expressive_bg_shapes", true)
@@ -1294,6 +1298,20 @@ fun PetalSettingsScreen(
                                         onCheckedChange = { newValue ->
                                             isFloatingTabBar = newValue
                                             sp.edit().putBoolean("sp_floating_tab_bar", newValue).apply()
+                                        }
+                                    )
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    // Progressive Frosted-Glass Blur Toggle
+                                    ToggleRow(
+                                        title = "Progressive Blur",
+                                        subtitle = "Apply progressive frosted-glass blur behind navigation bars (inspired by FilePipe & Remember)",
+                                        icon = Icons.Rounded.BlurOn,
+                                        checked = isProgressiveBlur,
+                                        onCheckedChange = { newValue ->
+                                            isProgressiveBlur = newValue
+                                            sp.edit().putBoolean("sp_progressive_blur", newValue).apply()
                                         }
                                     )
                                     
