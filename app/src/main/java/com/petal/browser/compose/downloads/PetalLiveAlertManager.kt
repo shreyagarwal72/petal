@@ -25,6 +25,9 @@ object PetalLiveAlertManager {
     private val trackingJobs = ConcurrentHashMap<Long, Job>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    private val lastNotifTimeMap = ConcurrentHashMap<Long, Long>()
+    private val handledTerminalStatusMap = ConcurrentHashMap<Long, Int>()
+
     @Volatile
     private var isGlobalCollectorStarted = false
 
@@ -68,27 +71,44 @@ object PetalLiveAlertManager {
                         PetalDownloadService.stopIfNoActiveDownloads(context)
                     }
 
+                    val now = System.currentTimeMillis()
                     items.forEach { item ->
                         when (item.status) {
                             DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
-                                showLiveNotification(
-                                    context,
-                                    downloadId = item.id,
-                                    fileName = item.fileName,
-                                    soFar = item.bytesDownloaded,
-                                    total = item.totalSize,
-                                    speedBytesPerSec = item.speedBytesPerSec,
-                                    etaSeconds = item.etaSeconds
-                                )
+                                handledTerminalStatusMap.remove(item.id)
+                                val lastTime = lastNotifTimeMap[item.id] ?: 0L
+                                if (now - lastTime >= 1000L || lastTime == 0L) {
+                                    lastNotifTimeMap[item.id] = now
+                                    showLiveNotification(
+                                        context,
+                                        downloadId = item.id,
+                                        fileName = item.fileName,
+                                        soFar = item.bytesDownloaded,
+                                        total = item.totalSize,
+                                        speedBytesPerSec = item.speedBytesPerSec,
+                                        etaSeconds = item.etaSeconds
+                                    )
+                                }
                             }
                             DownloadManager.STATUS_PAUSED -> {
-                                showPausedNotification(context, item.id)
+                                if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_PAUSED) {
+                                    handledTerminalStatusMap[item.id] = DownloadManager.STATUS_PAUSED
+                                    showPausedNotification(context, item.id)
+                                }
                             }
                             DownloadManager.STATUS_SUCCESSFUL -> {
-                                showCompletionNotification(context, item.id, item.fileName, item.totalSize)
+                                if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_SUCCESSFUL) {
+                                    handledTerminalStatusMap[item.id] = DownloadManager.STATUS_SUCCESSFUL
+                                    lastNotifTimeMap.remove(item.id)
+                                    showCompletionNotification(context, item.id, item.fileName, item.totalSize)
+                                }
                             }
                             DownloadManager.STATUS_FAILED -> {
-                                showFailureNotification(context, item.id, item.fileName)
+                                if (handledTerminalStatusMap[item.id] != DownloadManager.STATUS_FAILED) {
+                                    handledTerminalStatusMap[item.id] = DownloadManager.STATUS_FAILED
+                                    lastNotifTimeMap.remove(item.id)
+                                    showFailureNotification(context, item.id, item.fileName)
+                                }
                             }
                         }
                     }
@@ -101,6 +121,8 @@ object PetalLiveAlertManager {
     fun stopTracking(context: Context, downloadId: Long) {
         trackingJobs[downloadId]?.cancel()
         trackingJobs.remove(downloadId)
+        lastNotifTimeMap.remove(downloadId)
+        handledTerminalStatusMap.remove(downloadId)
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         nm?.cancel(downloadId.toInt())
         PetalDownloadService.stopIfNoActiveDownloads(context.applicationContext)

@@ -1095,6 +1095,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 com.petal.browser.view.NinjaToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
                 return true;
             case KeyEvent.KEYCODE_BACK:
+                performBackNavigation();
                 return true;
         }
         return super.onKeyDown(keyCode, event);

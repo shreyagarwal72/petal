@@ -170,7 +170,17 @@ object PetalTabSwitcherBridge {
                         },
                         onRestoreTab = { restoredTab ->
                             if (activity is BrowserActivity) {
-                                activity.addAlbum(restoredTab.title, restoredTab.url, true, restoredTab.isIncognito)
+                                val restoreUrl = if (restoredTab.url == "Petal Home" || restoredTab.url.isBlank() || restoredTab.url.equals("about:blank", ignoreCase = true)) {
+                                    "about:blank"
+                                } else {
+                                    restoredTab.url
+                                }
+                                val restoreTitle = if (restoredTab.title == "Petal Home" || restoredTab.title.isBlank() || restoredTab.title.equals("about:blank", ignoreCase = true)) {
+                                    ""
+                                } else {
+                                    restoredTab.title
+                                }
+                                activity.addAlbum(restoreTitle, restoreUrl, true, restoredTab.isIncognito)
                             }
                             if (tabItems.none { it.id == restoredTab.id }) {
                                 tabItems.add(restoredTab)
