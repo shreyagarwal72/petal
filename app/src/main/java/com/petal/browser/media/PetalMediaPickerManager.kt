@@ -107,51 +107,67 @@ object PetalMediaPickerManager {
 
         // 1. Query Images
         if (filterType == MediaFilterType.ALL || filterType == MediaFilterType.PHOTOS) {
-            try {
-                val projection = arrayOf(
-                    MediaStore.Images.Media._ID,
-                    MediaStore.Images.Media.DISPLAY_NAME,
-                    MediaStore.Images.Media.MIME_TYPE,
-                    MediaStore.Images.Media.SIZE,
-                    MediaStore.Images.Media.DATE_ADDED
-                )
-                val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC LIMIT 300"
-                context.contentResolver.query(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    sortOrder
-                )?.use { cursor ->
-                    val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-                    val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-                    val mimeCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE)
-                    val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
-                    val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+            val imageUris = mutableListOf<Uri>()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                imageUris.add(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL))
+                imageUris.add(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY))
+            }
+            imageUris.add(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            imageUris.add(MediaStore.Images.Media.INTERNAL_CONTENT_URI)
 
-                    while (cursor.moveToNext()) {
-                        val id = cursor.getLong(idCol)
-                        val name = cursor.getString(nameCol) ?: "Image_$id"
-                        val mime = cursor.getString(mimeCol) ?: "image/jpeg"
-                        val size = cursor.getLong(sizeCol)
-                        val date = cursor.getLong(dateCol)
-                        val contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+            val projection = arrayOf(
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.DISPLAY_NAME,
+                MediaStore.Images.Media.MIME_TYPE,
+                MediaStore.Images.Media.SIZE,
+                MediaStore.Images.Media.DATE_ADDED
+            )
+            val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
 
-                        mediaList.add(
-                            MediaItem(
-                                id = id,
-                                uri = contentUri,
-                                displayName = name,
-                                mimeType = mime,
-                                size = size,
-                                dateAdded = date,
-                                isVideo = false
-                            )
-                        )
+            val seenIds = mutableSetOf<Long>()
+            for (targetUri in imageUris.distinct()) {
+                try {
+                    context.contentResolver.query(
+                        targetUri,
+                        projection,
+                        null,
+                        null,
+                        sortOrder
+                    )?.use { cursor ->
+                        val idCol = cursor.getColumnIndex(MediaStore.Images.Media._ID)
+                        val nameCol = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME)
+                        val mimeCol = cursor.getColumnIndex(MediaStore.Images.Media.MIME_TYPE)
+                        val sizeCol = cursor.getColumnIndex(MediaStore.Images.Media.SIZE)
+                        val dateCol = cursor.getColumnIndex(MediaStore.Images.Media.DATE_ADDED)
+
+                        if (idCol != -1) {
+                            while (cursor.moveToNext() && mediaList.size < 300) {
+                                val id = cursor.getLong(idCol)
+                                if (!seenIds.add(id)) continue
+
+                                val name = if (nameCol != -1) cursor.getString(nameCol) ?: "Image_$id" else "Image_$id"
+                                val mime = if (mimeCol != -1) cursor.getString(mimeCol) ?: "image/jpeg" else "image/jpeg"
+                                val size = if (sizeCol != -1) cursor.getLong(sizeCol) else 0L
+                                val date = if (dateCol != -1) cursor.getLong(dateCol) else System.currentTimeMillis() / 1000
+                                val contentUri = ContentUris.withAppendedId(targetUri, id)
+
+                                mediaList.add(
+                                    MediaItem(
+                                        id = id,
+                                        uri = contentUri,
+                                        displayName = name,
+                                        mimeType = mime,
+                                        size = size,
+                                        dateAdded = date,
+                                        isVideo = false
+                                    )
+                                )
+                            }
+                        }
                     }
+                } catch (e: Exception) {
+                    // Continue to next URI
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
 
