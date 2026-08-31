@@ -1455,7 +1455,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     albumSavedUrl = ninjaWebView.getAlbumUrl();
                 } catch (Exception ignored) {}
 
-                String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : albumSavedUrl;
+                String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : (currentUrl != null && !currentUrl.isEmpty() ? currentUrl : albumSavedUrl);
 
                 if ((currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl)) &&
                     (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl))) {

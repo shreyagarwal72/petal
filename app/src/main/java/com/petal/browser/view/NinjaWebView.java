@@ -659,6 +659,31 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         resetGestureExclusionRects();
     }
 
+    @Override
+    public synchronized void goBackOrForward(int steps) {
+        try {
+            WebBackForwardList mWebBackForwardList = this.copyBackForwardList();
+            if (mWebBackForwardList != null) {
+                int targetIndex = mWebBackForwardList.getCurrentIndex() + steps;
+                if (targetIndex >= 0 && targetIndex < mWebBackForwardList.getSize()) {
+                    stopLoading();
+                    WebHistoryItem item = mWebBackForwardList.getItemAtIndex(targetIndex);
+                    if (item != null && item.getUrl() != null) {
+                        String historyUrl = item.getUrl();
+                        initPreferences(historyUrl);
+                        if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(historyUrl)) && sp.getBoolean("sp_standard_always", true)) {
+                            sp.edit().putString("profile", "profileStandard").apply();
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        try {
+            super.goBackOrForward(steps);
+        } catch (Exception ignored) {}
+        resetGestureExclusionRects();
+    }
+
     public synchronized void initWebSettings() {
         this.initPreferences(this.getUrl());
     }
