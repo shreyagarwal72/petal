@@ -88,22 +88,27 @@ fun PetalLinkContextMenuSheet(
 
             Spacer(Modifier.height(14.dp))
 
-            // Header with Favicon, Title, and Truncated URL
+            // Header with Favicon / Shape Avatar, Title, and Truncated URL
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f))
+                    .padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                val headerShape = remember {
+                    com.petal.browser.ui.theme.PetalMaterialShapes.SoftScallop.toShape()
+                }
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .size(46.dp)
+                        .clip(headerShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (!faviconUrl.isNullOrEmpty()) {
+                    if (!faviconUrl.isNullOrEmpty() && !isImage && !isVideo) {
                         AsyncImage(
                             model = faviconUrl,
                             contentDescription = linkTitle ?: "Site Favicon",
@@ -113,7 +118,7 @@ fun PetalLinkContextMenuSheet(
                         Icon(
                             imageVector = if (isImage) Icons.Rounded.Image else if (isVideo) Icons.Rounded.Videocam else Icons.Rounded.Language,
                             contentDescription = "Content",
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -121,7 +126,7 @@ fun PetalLinkContextMenuSheet(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (!linkTitle.isNullOrBlank()) linkTitle else linkUrl,
+                        text = if (!linkTitle.isNullOrBlank()) linkTitle else HelperUnit.domain(linkUrl) ?: linkUrl,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -138,88 +143,133 @@ fun PetalLinkContextMenuSheet(
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Action Items - Dynamically contextually adapted for Link vs Image vs Video
-            if (isImage) {
-                ContextMenuItem("Open image in new tab", Icons.Rounded.OpenInNew) {
-                    onDismiss()
-                    handler.onOpenImageInNewTab()
-                }
-                ContextMenuItem("Copy image", Icons.Rounded.ContentCopy) {
-                    onDismiss()
-                    handler.onCopyImage()
-                }
-                ContextMenuItem("Download image", Icons.Rounded.Download) {
-                    onDismiss()
-                    handler.onDownloadImage()
-                }
-                ContextMenuItem("Search Google for this image", Icons.Rounded.TravelExplore) {
-                    onDismiss()
-                    handler.onSearchWithGoogleLens()
-                }
-                ContextMenuItem("Share image", Icons.Rounded.Share) {
-                    onDismiss()
-                    handler.onShareImage()
-                }
-            } else if (isVideo) {
-                ContextMenuItem("Open video in new tab", Icons.Rounded.OpenInNew) {
-                    onDismiss()
-                    handler.onOpenInNewTab()
-                }
-                ContextMenuItem("Download video", Icons.Rounded.Download) {
-                    onDismiss()
-                    handler.onDownloadVideo()
-                }
-                ContextMenuItem("Copy video link", Icons.Rounded.ContentCopy) {
-                    onDismiss()
-                    handler.onCopyLinkAddress()
-                }
-                ContextMenuItem("Share video", Icons.Rounded.Share) {
-                    onDismiss()
-                    handler.onShareLink()
-                }
-            } else {
-                ContextMenuItem("Open in new tab", Icons.Rounded.OpenInNew) {
-                    onDismiss()
-                    handler.onOpenInNewTab()
-                }
-                ContextMenuItem("Open in new tab in group", Icons.Rounded.TabUnselected) {
-                    onDismiss()
-                    handler.onOpenInNewTabInGroup()
-                }
-                ContextMenuItem("Open in Incognito tab", Icons.Rounded.VisibilityOff) {
-                    onDismiss()
-                    handler.onOpenInIncognitoTab()
-                }
-                ContextMenuItem("Open in new window", Icons.Rounded.OpenInBrowser) {
-                    onDismiss()
-                    handler.onOpenInNewWindow()
-                }
-                ContextMenuItem("Preview page", Icons.Rounded.FindInPage) {
-                    onDismiss()
-                    handler.onPreviewPage()
-                }
-                ContextMenuItem("Copy link address", Icons.Rounded.ContentCopy) {
-                    onDismiss()
-                    handler.onCopyLinkAddress()
-                }
-                ContextMenuItem("Copy link text", Icons.Rounded.Title) {
-                    onDismiss()
-                    handler.onCopyLinkText()
-                }
-                ContextMenuItem("Add to reading list", Icons.Rounded.BookmarkAdd) {
-                    onDismiss()
-                    handler.onAddToReadingList()
-                }
-                ContextMenuItem("Share link", Icons.Rounded.Share) {
-                    onDismiss()
-                    handler.onShareLink()
+            // Group 1: Primary Navigation Actions
+            Text(
+                text = if (isImage) "Image Options" else if (isVideo) "Video Options" else "Link Options",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
+            )
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.45f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    if (isImage) {
+                        ContextMenuItem("Open image in new tab", Icons.Rounded.OpenInNew, shape = com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape()) {
+                            onDismiss()
+                            handler.onOpenImageInNewTab()
+                        }
+                        ContextMenuItem("Download image", Icons.Rounded.Download, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape()) {
+                            onDismiss()
+                            handler.onDownloadImage()
+                        }
+                        ContextMenuItem("Search image with Google Lens", Icons.Rounded.TravelExplore, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape()) {
+                            onDismiss()
+                            handler.onSearchWithGoogleLens()
+                        }
+                        ContextMenuItem("Scan image with Petal Scanner", Icons.Rounded.CenterFocusWeak, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Boom.toShape()) {
+                            onDismiss()
+                            handler.onScanImage()
+                        }
+                    } else if (isVideo) {
+                        ContextMenuItem("Open video in new tab", Icons.Rounded.OpenInNew, shape = com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape()) {
+                            onDismiss()
+                            handler.onOpenInNewTab()
+                        }
+                        ContextMenuItem("Download video", Icons.Rounded.Download, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape()) {
+                            onDismiss()
+                            handler.onDownloadVideo()
+                        }
+                    } else {
+                        ContextMenuItem("Open in new tab", Icons.Rounded.OpenInNew, shape = com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape()) {
+                            onDismiss()
+                            handler.onOpenInNewTab()
+                        }
+                        ContextMenuItem("Open in new tab in group", Icons.Rounded.TabUnselected, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape()) {
+                            onDismiss()
+                            handler.onOpenInNewTabInGroup()
+                        }
+                        ContextMenuItem("Open in Incognito tab", Icons.Rounded.VisibilityOff, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Ghostish.toShape()) {
+                            onDismiss()
+                            handler.onOpenInIncognitoTab()
+                        }
+                        ContextMenuItem("Open in new window", Icons.Rounded.OpenInBrowser, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape()) {
+                            onDismiss()
+                            handler.onOpenInNewWindow()
+                        }
+                        ContextMenuItem("Preview page", Icons.Rounded.FindInPage, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Gem.toShape()) {
+                            onDismiss()
+                            handler.onPreviewPage()
+                        }
+                    }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
+
+            // Group 2: Utilities & Sharing
+            Text(
+                text = "Clipboard & Sharing",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
+            )
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.45f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    if (isImage) {
+                        ContextMenuItem("Copy image URL", Icons.Rounded.ContentCopy, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape()) {
+                            onDismiss()
+                            handler.onCopyImage()
+                        }
+                        ContextMenuItem("Share image", Icons.Rounded.Share, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()) {
+                            onDismiss()
+                            handler.onShareImage()
+                        }
+                    } else if (isVideo) {
+                        ContextMenuItem("Copy video link", Icons.Rounded.ContentCopy, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape()) {
+                            onDismiss()
+                            handler.onCopyLinkAddress()
+                        }
+                        ContextMenuItem("Share video", Icons.Rounded.Share, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()) {
+                            onDismiss()
+                            handler.onShareLink()
+                        }
+                    } else {
+                        ContextMenuItem("Copy link address", Icons.Rounded.ContentCopy, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape()) {
+                            onDismiss()
+                            handler.onCopyLinkAddress()
+                        }
+                        ContextMenuItem("Copy link text", Icons.Rounded.Title, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Hexagon.toShape()) {
+                            onDismiss()
+                            handler.onCopyLinkText()
+                        }
+                        ContextMenuItem("Download link", Icons.Rounded.Download, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie7Sided.toShape()) {
+                            onDismiss()
+                            handler.onDownloadLink()
+                        }
+                        ContextMenuItem("Add to reading list", Icons.Rounded.BookmarkAdd, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Flower.toShape()) {
+                            onDismiss()
+                            handler.onAddToReadingList()
+                        }
+                        ContextMenuItem("Share link", Icons.Rounded.Share, shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()) {
+                            onDismiss()
+                            handler.onShareLink()
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(18.dp))
         }
     }
 }
@@ -229,22 +279,25 @@ private fun ContextMenuItem(
     label: String,
     leadingIcon: ImageVector,
     trailingIcon: ImageVector? = null,
+    shape: androidx.compose.ui.graphics.Shape? = null,
     onClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val itemShape = remember(label) {
-        val hash = kotlin.math.abs(label.hashCode())
-        val shapes = listOf(
-            com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape(),
-            com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
-            com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape(),
-            com.petal.browser.ui.theme.PetalMaterialShapes.Hexagon.toShape(),
-            com.petal.browser.ui.theme.PetalMaterialShapes.Octagon.toShape(),
-            com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape(),
-            com.petal.browser.ui.theme.PetalMaterialShapes.SoftScallop.toShape(),
-            com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()
-        )
-        shapes[hash % shapes.size]
+    val itemShape = remember(label, shape) {
+        shape ?: run {
+            val hash = kotlin.math.abs(label.hashCode())
+            val shapes = listOf(
+                com.petal.browser.ui.theme.PetalMaterialShapes.RoundedSquare.toShape(),
+                com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
+                com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape(),
+                com.petal.browser.ui.theme.PetalMaterialShapes.Hexagon.toShape(),
+                com.petal.browser.ui.theme.PetalMaterialShapes.Octagon.toShape(),
+                com.petal.browser.ui.theme.PetalMaterialShapes.Pill.toShape(),
+                com.petal.browser.ui.theme.PetalMaterialShapes.SoftScallop.toShape(),
+                com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape()
+            )
+            shapes[hash % shapes.size]
+        }
     }
 
     Surface(
@@ -254,7 +307,7 @@ private fun ContextMenuItem(
             onClick()
         },
         color = androidx.compose.ui.graphics.Color.Transparent,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(

@@ -213,6 +213,88 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         setDownloadListener(downloadListener);
         initPreferences(null);
 
+        // Track last touch coordinates in page coordinate space for precise DOM element lookups
+        setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                float density = getResources().getDisplayMetrics().density;
+                float cssX = event.getX() / density;
+                float cssY = event.getY() / density;
+                evaluateJavascript("(function(){ window.lastTouchX = " + cssX + "; window.lastTouchY = " + cssY + "; })();", null);
+            }
+            return false;
+        });
+
+        // Wire robust default context menu long-click listener
+        setOnLongClickListener(v -> {
+            HitTestResult result = getHitTestResult();
+            if (result == null) return false;
+            int type = result.getType();
+            Activity activity = (context instanceof Activity) ? (Activity) context : null;
+            if (activity == null && getHostWindow() != null && getHostWindow().getContext() instanceof Activity) {
+                activity = (Activity) getHostWindow().getContext();
+            }
+            if (activity instanceof com.petal.browser.activity.BrowserActivity) {
+                com.petal.browser.activity.BrowserActivity browserActivity = (com.petal.browser.activity.BrowserActivity) activity;
+                if (type == HitTestResult.IMAGE_TYPE || type == HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+                    final String imageURL = result.getExtra();
+                    if (imageURL != null && !imageURL.isEmpty()) {
+                        v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                        com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(browserActivity, imageURL);
+                        return true;
+                    }
+                }
+                if (type == HitTestResult.SRC_ANCHOR_TYPE) {
+                    final String urlResult = result.getExtra();
+                    if (urlResult != null && !urlResult.isEmpty()) {
+                        v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                        com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(browserActivity, urlResult);
+                        return true;
+                    }
+                }
+
+                // If HitTestResult is UNKNOWN_TYPE or another element, check if long-press landed on an anchor link / image / video in DOM
+                evaluateJavascript(
+                    "(function() {" +
+                    "   var el = document.elementFromPoint(window.lastTouchX || 0, window.lastTouchY || 0);" +
+                    "   if (!el) el = document.activeElement;" +
+                    "   if (!el) return '';" +
+                    "   var a = el.closest('a');" +
+                    "   if (a && a.href) return 'LINK:' + a.href;" +
+                    "   var img = (el.tagName === 'IMG') ? el : el.querySelector('img');" +
+                    "   if (img && img.src) return 'IMG:' + img.src;" +
+                    "   var v = (el.tagName === 'VIDEO') ? el : (el.querySelector('video') || el.closest('video'));" +
+                    "   if (v && (v.currentSrc || v.src)) return 'VIDEO:' + (v.currentSrc || v.src);" +
+                    "   return '';" +
+                    "})();",
+                    evalResult -> {
+                        if (evalResult != null && !evalResult.equals("null") && !evalResult.isEmpty()) {
+                            String clean = evalResult.replace("\"", "").trim();
+                            if (clean.startsWith("LINK:")) {
+                                String linkUrl = clean.substring(5).trim();
+                                if (!linkUrl.isEmpty()) {
+                                    v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                                    com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(browserActivity, linkUrl);
+                                }
+                            } else if (clean.startsWith("IMG:")) {
+                                String imgUrl = clean.substring(4).trim();
+                                if (!imgUrl.isEmpty()) {
+                                    v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                                    com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(browserActivity, imgUrl);
+                                }
+                            } else if (clean.startsWith("VIDEO:")) {
+                                String videoUrl = clean.substring(6).trim();
+                                if (!videoUrl.isEmpty()) {
+                                    v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                                    com.petal.browser.compose.menu.BrowserContextMenuManager.showVideoContextMenu(browserActivity, videoUrl);
+                                }
+                            }
+                        }
+                    }
+                );
+            }
+            return false;
+        });
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> resetGestureExclusionRects());
             post(this::resetGestureExclusionRects);
