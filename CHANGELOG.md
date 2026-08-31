@@ -1,3 +1,28 @@
+### v2.0.0 (First Official Public Release)
+
+- **🖼️ Profile Picture & Interactive Cropper Overhaul**:
+  - Fixed profile picture custom avatar loading and caching: updated Coil image loader with explicit write-only cache policies and fallback handling across `filesDir` and content URIs so custom avatars update immediately on Home screen and Account profile screen.
+  - Interactive Crop Viewport: Added precision circular crop dialog with real-time pinch-to-zoom, drag-to-align viewport, 90° rotation controls, reset button, and live preview.
+  - Direct Crop & Media Picker Integration: Tapping the avatar hero card or gallery button immediately opens the photo picker and circular crop editor with instant image saving.
+
+- **🗂️ Clean Settings Categorization & New Miscellaneous Hub**:
+  - Reorganized `PetalSettingsScreen.kt` into dedicated, intuitive categories: **Appearance & Theme**, **Accessibility**, **Privacy & Security**, **Experimental**, and newly added **Miscellaneous**.
+  - Moved Download Engine (1DM Integration / Embedded Native Downloader) and Auto Open External Apps into the dedicated **Miscellaneous** category.
+  - Kept Experimental Flags and advanced developer features strictly isolated under the **Experimental** category.
+
+- **⚡ Complete Kotlin & Jetpack Compose Modernization (100% Kotlin)**:
+  - 100% Kotlin codebase with complete Java decoupling across all 8 modular browser subsystem delegates and 42 core background managers.
+  - Pure Material 3 Expressive UI design system featuring 35 customizable container shapes, fluid predictive back navigation gestures with 24.dp background depth blur, and adaptive dynamic color theming.
+
+- **🌐 Google Lens & In-App Multi-Volume Media Picker**:
+  - Full Google Lens search integration across Omnibox search bar, context menus, and home widgets.
+  - Multi-volume device storage indexing supporting `VOLUME_EXTERNAL_PRIMARY`, `VOLUME_EXTERNAL`, and fallback to System Photo Picker.
+
+- **🔒 Advanced Privacy, Passkeys & High-Performance Web Engine**:
+  - Full WebAuthn & biometric passkey sign-in support via Android Credential Manager.
+  - Built-in AdBlock Trie filtering engine with domain whitelist management, WebRTC IP leak protection, Canvas/Audio fingerprint shield, and strict referrer header trimming.
+  - Native 120Hz/144Hz high refresh rate hardware pacing and kinetic scrolling.
+
 ### v1.9.9
 
 - **🎨 Material 3 Expressive Color Container System (Zenith Parity)**:

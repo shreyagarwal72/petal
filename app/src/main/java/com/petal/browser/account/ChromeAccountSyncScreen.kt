@@ -93,8 +93,8 @@ fun ProfileAvatarDisplay(
                     val imageModel = remember(imageSource, profile.avatarTimestamp, avatarFile?.lastModified(), avatarFile?.length()) {
                         coil.request.ImageRequest.Builder(context)
                             .data(imageSource)
-                            .memoryCacheKey("avatar_${profile.avatarTimestamp}_${avatarFile?.lastModified() ?: 0}_${avatarFile?.length() ?: 0}")
-                            .diskCacheKey("avatar_${profile.avatarTimestamp}_${avatarFile?.lastModified() ?: 0}_${avatarFile?.length() ?: 0}")
+                            .memoryCachePolicy(coil.request.CachePolicy.WRITE_ONLY)
+                            .diskCachePolicy(coil.request.CachePolicy.WRITE_ONLY)
                             .crossfade(true)
                             .build()
                     }
@@ -504,9 +504,9 @@ private fun RenderUserProfileContent(
                         // Gallery / Built-in Media Picker & Crop Button
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                            color = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = if (profile.avatarType == AvatarType.GALLERY_URI) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+                            border = if (profile.avatarType == AvatarType.GALLERY_URI) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                             modifier = Modifier
                                 .size(52.dp)
                                 .bouncyClickable { openAvatarMediaPicker() }
@@ -1367,20 +1367,21 @@ private fun cropAndSaveAvatarBitmap(
     rotation: Float
 ): String? {
     return try {
-        val openStream: () -> java.io.InputStream? = {
+        val imageBytes: ByteArray? = try {
             if (sourceUri.scheme == "file" || sourceUri.path?.startsWith("/") == true) {
-                val filePath = sourceUri.path ?: ""
-                val f = java.io.File(filePath)
-                if (f.exists()) java.io.FileInputStream(f) else context.contentResolver.openInputStream(sourceUri)
+                val f = java.io.File(sourceUri.path ?: "")
+                if (f.exists()) f.readBytes() else context.contentResolver.openInputStream(sourceUri)?.use { it.readBytes() }
             } else {
-                context.contentResolver.openInputStream(sourceUri)
+                context.contentResolver.openInputStream(sourceUri)?.use { it.readBytes() }
             }
+        } catch (e: Exception) {
+            null
         }
 
+        if (imageBytes == null || imageBytes.isEmpty()) return null
+
         val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        openStream()?.use { input ->
-            BitmapFactory.decodeStream(input, null, boundsOptions)
-        }
+        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, boundsOptions)
         val origW = boundsOptions.outWidth
         val origH = boundsOptions.outHeight
         if (origW <= 0 || origH <= 0) return null
@@ -1395,9 +1396,7 @@ private fun cropAndSaveAvatarBitmap(
             inSampleSize = sampleSize
             inPreferredConfig = Bitmap.Config.ARGB_8888
         }
-        val originalBitmap = openStream()?.use { input ->
-            BitmapFactory.decodeStream(input, null, decodeOptions)
-        } ?: return null
+        val originalBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, decodeOptions) ?: return null
 
         val size = 512
         val croppedBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
