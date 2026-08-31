@@ -195,6 +195,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val icon: I
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", Icons.Rounded.Search),
     DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", Icons.Rounded.Accessibility),
     EXPERIMENTAL("Experimental", "App language, experimental features and advanced settings", Icons.Rounded.Science),
+    MISCELLANEOUS("Miscellaneous", "Download engine, external apps handling and extra browser tools", Icons.Rounded.Widgets),
     DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", Icons.Rounded.Backup),
     UPDATER("App Updates", "Check for updates and auto-check on launch", Icons.Rounded.SystemUpdate),
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", Icons.Rounded.Info)
@@ -601,6 +602,7 @@ fun PetalSettingsScreen(
                                     SettingsCategory.SEARCH_HOMEPAGE,
                                     SettingsCategory.DISPLAY_ZOOM,
                                     SettingsCategory.EXPERIMENTAL,
+                                    SettingsCategory.MISCELLANEOUS,
                                     SettingsCategory.DATA_STORAGE,
                                     SettingsCategory.UPDATER,
                                     SettingsCategory.ABOUT
@@ -1965,19 +1967,6 @@ fun PetalSettingsScreen(
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                                     ToggleRow(
-                                        title = "Auto Open External Apps",
-                                        subtitle = "Allow YouTube, Maps & Play Store links to open in external native apps instead of Petal",
-                                        icon = Icons.Rounded.Launch,
-                                        checked = isAutoOpenApps,
-                                        onCheckedChange = { newValue ->
-                                            isAutoOpenApps = newValue
-                                            sp.edit().putBoolean("sp_auto_open_apps", newValue).apply()
-                                        }
-                                    )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    ToggleRow(
                                         title = "HTTPS Security Enforcer",
                                         subtitle = "Automatically upgrade connections to HTTPS",
                                         icon = Icons.Rounded.Lock,
@@ -2296,9 +2285,12 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                     }
+                                }
+                            }
 
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
+                            // 8. Miscellaneous Settings Category
+                            if ((scaffoldCategory == SettingsCategory.MISCELLANEOUS || searchQuery.isNotBlank()) && matchesSearch("Miscellaneous", "download torrent engine 1dm manager external apps open youtube maps apps launch")) {
+                                SettingsCategoryCard(title = "Miscellaneous & Download Options", icon = Icons.Rounded.Widgets) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -2369,7 +2361,7 @@ fun PetalSettingsScreen(
                                                 ) {
                                                     Box(contentAlignment = Alignment.Center) {
                                                         Icon(
-                                                            imageVector = when (activeEngineMode) {
+                                                             imageVector = when (activeEngineMode) {
                                                                 com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM -> Icons.Rounded.Speed
                                                                 com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_EMBEDDED -> Icons.Rounded.Download
                                                             },
@@ -2396,8 +2388,20 @@ fun PetalSettingsScreen(
                                             }
                                         }
                                     }
-                                }
 
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    ToggleRow(
+                                        title = "Auto Open External Apps",
+                                        subtitle = "Allow YouTube, Maps & Play Store links to open in external native apps instead of Petal",
+                                        icon = Icons.Rounded.Launch,
+                                        checked = isAutoOpenApps,
+                                        onCheckedChange = { newValue ->
+                                            isAutoOpenApps = newValue
+                                            sp.edit().putBoolean("sp_auto_open_apps", newValue).apply()
+                                        }
+                                    )
+                                }
                             }
 
                             // 8. Full Backup & Sync Section
