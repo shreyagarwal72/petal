@@ -9,7 +9,7 @@
   <p><strong>Fast, Ultra-Lightweight & Privacy-Focused Android Web Browser built with Jetpack Compose & Material 3 Expressive Design</strong></p>
 
   [![Latest Release](https://img.shields.io/github/v/release/shreyagarwal72/petal?color=0075ff&style=for-the-badge)](https://github.com/shreyagarwal72/petal/releases/latest)
-  [![Build Status](https://img.shields.io/github/actions/workflow/status/shreyagarwal72/petal/build.yml?branch=main&style=for-the-badge)](https://github.com/shreyagarwal72/petal/actions)
+  [![Build Status](https://img.shields.io/github/actions/workflow/status/shreyagarwal72/petal/android_build.yml?branch=main&style=for-the-badge)](https://github.com/shreyagarwal72/petal/actions/workflows/android_build.yml)
   [![Telegram Channel](https://img.shields.io/badge/Telegram-Champion%20Workspace-blue?style=for-the-badge&logo=telegram)](https://t.me/championworkspace)
   [![License](https://img.shields.io/github/license/shreyagarwal72/petal?color=purple&style=for-the-badge)](LICENSE.md)
 
