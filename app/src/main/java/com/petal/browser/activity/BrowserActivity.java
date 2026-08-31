@@ -825,6 +825,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * nav / predictive back) below, so both routes behave identically.
      */
     public void performBackNavigation() {
+        if (currentAlbumController instanceof NinjaWebView) {
+            ninjaWebView = (NinjaWebView) currentAlbumController;
+        }
+
         View currentFocus = getCurrentFocus();
         boolean isKeyboardVisible = false;
         View mainView = findViewById(R.id.main);
@@ -855,11 +859,34 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             appBar.setVisibility(VISIBLE);
         } else if (ninjaWebView != null && ninjaWebView.canGoBack()) {
             sp.edit().putBoolean("backPressed", true).apply();
-            ninjaWebView.goBack();
+            ninjaWebView.stopLoading();
+
+            WebBackForwardList historyList = ninjaWebView.copyBackForwardList();
+            int currentIndex = historyList.getCurrentIndex();
+            int targetStep = -1;
+            String currentUrl = ninjaWebView.getUrl();
+
+            if (currentIndex > 0) {
+                for (int i = currentIndex - 1; i >= 0; i--) {
+                    String prevUrl = historyList.getItemAtIndex(i).getUrl();
+                    if (prevUrl != null && !prevUrl.equalsIgnoreCase(currentUrl) && !prevUrl.equalsIgnoreCase("about:blank")) {
+                        targetStep = i - currentIndex;
+                        break;
+                    }
+                }
+            }
+
+            if (targetStep < -1 && ninjaWebView.canGoBackOrForward(targetStep)) {
+                ninjaWebView.goBackOrForward(targetStep);
+            } else {
+                ninjaWebView.goBack();
+            }
+            updateOmniBox();
         } else {
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
-            if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl)) {
+            if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl) && !currentUrl.equalsIgnoreCase("about:blank")) {
                 if (ninjaWebView != null) {
+                    ninjaWebView.stopLoading();
                     ninjaWebView.loadUrl("about:blank");
                     ninjaWebView.clearHistory();
                 }
