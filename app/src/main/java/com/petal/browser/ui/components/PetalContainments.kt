@@ -19,14 +19,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT/TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- * ─────────────────────────────────────────────────────────────────────────
- * Containment system genuinely ported from PixelPlayer
- * (presentation/screens/SettingsComponents.kt, PixelPlayerHQ/PixelPlayer,
- * MIT licensed) and adapted to Petal's package, theme tokens and haptics
- * layer. Structure, shapes and interaction behavior mirror the upstream
- * implementation; only integration points (haptics, imports) were swapped
- * for Petal's own equivalents so the components compile and feel native.
  */
 
 package com.petal.browser.ui.components
@@ -50,6 +42,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -77,13 +70,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.petal.browser.haptics.rememberHapticOnValueChange
+import androidx.compose.ui.unit.sp
 
 /**
- * Expressive Section Container: a small caption-style label above a group of
- * settings, with an optional leading icon slot. Ported from PixelPlayer's
- * `SettingsSection`.
+ * Expressive Section Container with header label and optional icon.
+ * Ported and adapted from PixelPlayer containment system.
  */
 @Composable
 fun SettingsSection(
@@ -95,28 +88,26 @@ fun SettingsSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
         ) {
             if (icon != null) {
                 Box(
                     modifier = Modifier
                         .padding(end = 8.dp)
-                        .size(18.dp),
+                        .size(20.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     icon()
                 }
-            } else {
-                Spacer(modifier = Modifier.width(12.dp))
             }
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
         }
@@ -125,9 +116,8 @@ fun SettingsSection(
 }
 
 /**
- * Standard Contained Settings Item: rounded `surfaceContainer` row with a
- * leading icon slot, title/subtitle, and a trailing slot (chevron by
- * default). Ported from PixelPlayer's `SettingsItem`.
+ * Standard Contained Settings Item.
+ * Features rounded surface container, leading icon badge, title, subtitle, and trailing slot.
  */
 @Composable
 fun SettingsItem(
@@ -143,42 +133,48 @@ fun SettingsItem(
             modifier = Modifier.size(20.dp)
         )
     },
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = containerColor,
+        shape = shape,
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(shape)
             .clickable(enabled = enabled, onClick = onClick)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .padding(16.dp)
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             if (leadingIcon != null) {
-                Box(
-                    modifier = Modifier
-                        .padding(end = 16.dp)
-                        .size(24.dp),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (enabled) 0.75f else 0.4f),
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    leadingIcon()
+                    Box(contentAlignment = Alignment.Center) {
+                        leadingIcon()
+                    }
                 }
             }
 
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                    .padding(end = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -195,7 +191,10 @@ fun SettingsItem(
             }
 
             if (trailingIcon != null) {
-                Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.size(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     trailingIcon()
                 }
             }
@@ -204,10 +203,7 @@ fun SettingsItem(
 }
 
 /**
- * Contained Switch Setting Item: same shell as [SettingsItem] with a
- * Material 3 switch that shows an animated check/close thumb icon, and
- * fires tactile feedback through Petal's haptics layer on toggle. Ported
- * from PixelPlayer's `SwitchSettingItem`.
+ * Contained Switch Setting Item with PixelPlayer animated thumb icons and tactile styling.
  */
 @Composable
 fun SwitchSettingItem(
@@ -217,56 +213,65 @@ fun SwitchSettingItem(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     leadingIcon: (@Composable () -> Unit)? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
     enabled: Boolean = true
 ) {
-    val hapticOnCheckedChange = rememberHapticOnValueChange(onCheckedChange)
-
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = containerColor,
+        shape = shape,
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .clickable(enabled = enabled) { hapticOnCheckedChange(!checked) }
+            .clip(shape)
+            .clickable(enabled = enabled) { onCheckedChange(!checked) }
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             if (leadingIcon != null) {
-                Box(
-                    modifier = Modifier
-                        .padding(end = 4.dp)
-                        .size(24.dp),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    shape = CircleShape,
+                    color = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    leadingIcon()
+                    Box(contentAlignment = Alignment.Center) {
+                        leadingIcon()
+                    }
                 }
             }
 
             Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 if (subtitle.isNotBlank()) {
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
 
             Switch(
                 checked = checked,
-                onCheckedChange = { if (enabled) hapticOnCheckedChange(it) },
+                onCheckedChange = { if (enabled) onCheckedChange(it) },
                 enabled = enabled,
                 thumbContent = {
                     AnimatedContent(
@@ -295,31 +300,7 @@ fun SwitchSettingItem(
 }
 
 /**
- * Expressive Settings Group: a transparent, rounded-clip wrapper used to
- * visually group several [SettingsItem]/[SwitchSettingItem] rows without
- * imposing its own surface color. Ported from PixelPlayer's
- * `ExpressiveSettingsGroup`.
- */
-@Composable
-fun ExpressiveSettingsGroup(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(24.dp))
-            .background(Color.Transparent)
-    ) {
-        content()
-    }
-}
-
-/**
- * Contained Card Container grouping multiple setting items or rich content
- * under a titled, icon-badged header card. PixelPlayer has no 1:1
- * equivalent (it favors [ExpressiveSettingsGroup] for that role); this
- * keeps Petal's richer titled-card variant, restyled to match the ported
- * containment system's shapes and surface tokens.
+ * Contained Card Container grouping multiple setting items or rich content together.
  */
 @Composable
 fun SettingsCardContainer(
@@ -366,10 +347,8 @@ fun SettingsCardContainer(
 }
 
 /**
- * Contained Item Card for lists (Bookmarks, History, Downloads, Tabs) with
- * animated selection scale, elevation, and rounded border. Restyled to the
- * ported containment system's shapes; no direct PixelPlayer settings
- * equivalent, so kept as a Petal-side extension of the same visual family.
+ * Contained Item Card for lists (Bookmarks, History, Downloads, Tabs)
+ * with animated selection scale, elevation, and rounded border.
  */
 @Composable
 fun ContainedSelectionCard(
