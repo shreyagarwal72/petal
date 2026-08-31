@@ -327,8 +327,14 @@ object PetalLiveAlertManager {
         }
 
         val openFileIntent = if (fileUri != null) {
+            val extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(fileName.ifEmpty { fileUri.toString() })
+            var mimeType = if (!extension.isNullOrEmpty()) {
+                android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
+            } else null
+            if (mimeType.isNullOrEmpty()) mimeType = "*/*"
+
             Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(fileUri, "*/*")
+                setDataAndType(fileUri, mimeType)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
         } else {

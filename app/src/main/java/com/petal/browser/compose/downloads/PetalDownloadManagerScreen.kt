@@ -997,12 +997,9 @@ private fun openDownloadedFile(context: Context, item: DownloadItem) {
 
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(contentUri, mimeType)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            val chooser = Intent.createChooser(intent, "Open file with").apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(chooser)
+            context.startActivity(intent)
         } else {
             val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             dm.openDownloadedFile(item.id)

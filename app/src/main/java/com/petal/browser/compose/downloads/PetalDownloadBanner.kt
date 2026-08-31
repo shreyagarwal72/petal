@@ -482,7 +482,7 @@ private fun openDownloadedFile(context: Context, data: ActiveBannerData) {
                 setDataAndType(contentUri, mimeType)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(Intent.createChooser(intent, "Open file"))
+            context.startActivity(intent)
         }
     } catch (e: Exception) {
         e.printStackTrace()
