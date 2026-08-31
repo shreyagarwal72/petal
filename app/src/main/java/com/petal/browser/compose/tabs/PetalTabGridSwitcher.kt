@@ -269,6 +269,9 @@ fun PetalTabGridSwitcher(
         effectiveOnBack()
     }
 
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
         onBack = effectiveOnBack,
@@ -276,6 +279,7 @@ fun PetalTabGridSwitcher(
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
