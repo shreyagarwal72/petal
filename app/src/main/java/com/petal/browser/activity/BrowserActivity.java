@@ -674,7 +674,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             e.printStackTrace();
         }
         if (sp != null) {
-            if (!sp.getBoolean("sp_welcome_shown", false)) {
+            int currentVersionCode = 0;
+            try {
+                currentVersionCode = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+            } catch (Exception ignored) {}
+
+            int lastAppVersionCode = sp.getInt("sp_last_app_version_code", 0);
+            boolean welcomeShown = sp.getBoolean("sp_welcome_shown", false);
+
+            if (lastAppVersionCode == 0 && !welcomeShown) {
+                // First install: record current version and mark welcome shown
+                sp.edit()
+                        .putInt("sp_last_app_version_code", currentVersionCode)
+                        .putBoolean("sp_welcome_shown", true)
+                        .apply();
+            } else if (lastAppVersionCode != 0 && currentVersionCode > lastAppVersionCode) {
+                // App updated: update saved version code and show one-time What's New popup
+                sp.edit().putInt("sp_last_app_version_code", currentVersionCode).apply();
+                com.petal.browser.ui.components.PetalUpdateSheetBridge.showWhatsNewUpdateDialog(this);
+            } else if (!welcomeShown) {
                 sp.edit().putBoolean("sp_welcome_shown", true).apply();
             }
         }
