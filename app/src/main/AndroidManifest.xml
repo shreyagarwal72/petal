@@ -17,7 +17,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.RECORD_VIDEO" tools:ignore="SystemPermissionTypo" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -164,31 +163,6 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
 
-        </activity>
-
-        <!-- Hilfs-Activities für das Teilen von Inhalten -->
-        <activity
-            android:name=".activity.ActivityShare"
-            android:label="@string/dialog_postOnWebsite"
-            android:theme="@android:style/Theme.NoDisplay"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".activity.ActivityCustomSearches"
-            android:label="@string/custom_searches_title"
-            android:theme="@android:style/Theme.NoDisplay"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
         </activity>
 
         <!--
