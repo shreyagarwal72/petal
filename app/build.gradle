@@ -149,7 +149,4 @@ dependencies {
     // Google ML Kit On-Device Recognition APIs
     implementation 'com.google.mlkit:text-recognition:16.0.1'
     implementation 'com.google.mlkit:barcode-scanning:17.3.0'
-
-    // Google Mobile Ads SDK (AdMob)
-    implementation 'com.google.android.gms:play-services-ads:23.6.0'
 }
