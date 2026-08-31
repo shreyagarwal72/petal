@@ -246,52 +246,16 @@ private fun SettingsCategoryRow(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(16.dp),
     onClick: () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Icon(
-                imageVector = Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
+    com.petal.browser.ui.components.ExpressiveCategoryItem(
+        title = title,
+        subtitle = subtitle,
+        icon = icon,
+        shape = shape,
+        onClick = onClick
+    )
 }
 
 @Composable
@@ -625,7 +589,8 @@ fun PetalSettingsScreen(
                                 Text(
                                     "Categories",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                                 )
 
                                 val categories = listOf(
@@ -640,15 +605,29 @@ fun PetalSettingsScreen(
                                     SettingsCategory.ABOUT
                                 )
 
-                                categories.forEach { cat ->
-                                     SettingsCategoryRow(
-                                         title = cat.title,
-                                         subtitle = cat.subtitle,
-                                         icon = cat.icon,
-                                         onClick = { currentCategory = cat }
-                                     )
-                                 }
+                                com.petal.browser.ui.components.ExpressiveSettingsGroup {
+                                    val totalItems = categories.size
+                                    fun shapeFor(index: Int) = when {
+                                        totalItems == 1 -> RoundedCornerShape(24.dp)
+                                        index == 0 -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+                                        index == totalItems - 1 -> RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+                                        else -> RoundedCornerShape(4.dp)
+                                    }
+
+                                    categories.forEachIndexed { index, cat ->
+                                        SettingsCategoryRow(
+                                            title = cat.title,
+                                            subtitle = cat.subtitle,
+                                            icon = cat.icon,
+                                            shape = shapeFor(index),
+                                            onClick = { currentCategory = cat }
+                                        )
+                                        if (index < totalItems - 1) {
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                        }
+                                    }
                                 }
+                            }
 
                             // 0. Dedicated Petal AI & API Keys Hub Sub-Screen Page
                             if ((scaffoldCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "petal ai api key gemini openrouter openai grok groq key deep research webkit extensions search suggestions")) {
