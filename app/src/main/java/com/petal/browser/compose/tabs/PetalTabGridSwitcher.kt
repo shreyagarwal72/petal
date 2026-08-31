@@ -322,6 +322,22 @@ fun PetalTabGridSwitcher(
                                         onNewTab(true)
                                     }
                                 )
+                                DropdownMenuItem(
+                                    text = { Text("Group by Domain") },
+                                    leadingIcon = { Icon(Icons.Rounded.Workspaces, contentDescription = null, tint = accentColor) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        val count = PetalTabGroupManager.autoGroupByDomain(context, tabs)
+                                        refreshGroups()
+                                        selectedCategory = TabCategory.GROUPS
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = if (count > 0) "Organized tabs into $count domain groups" else "No matching domain pairs found to group",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    }
+                                )
                                 HorizontalDivider()
                                 DropdownMenuItem(
                                     text = { Text("Close All Tabs") },
