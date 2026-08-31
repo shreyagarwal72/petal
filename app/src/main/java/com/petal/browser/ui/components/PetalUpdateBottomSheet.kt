@@ -114,51 +114,52 @@ object PetalUpdateSheetBridge {
         val currentVer = try {
             activity.packageManager.getPackageInfo(activity.packageName, 0).versionName
         } catch (_: Exception) {
-            "1.9.2"
+            "2.1"
         }
 
         return listOf(
             PetalUpdateInfo(
                 versionName = "v$currentVer",
-                releaseNotes = "* **Appearance Hero Animations**: Added RvSystem-Monitor inspired spring scale physics & infinite shimmer sweep to active theme mini cards in Settings.\n* **Launcher Wallpaper Preview**: Added dynamic system launcher preview during predictive back on Home screen.",
+                releaseNotes = """
+* **Compose Ripple Modernization & Compile Hotfix**: Migrated deprecated `rememberRipple` indication to official Material 3 `ripple()` API in `PetalBottomNavBar.kt`.
+* **First-Launch Update Changelog Showcase**: One-time interactive popup on app update highlighting new features and categorized changelogs.
+* **Full Official v2.0 Changelog History**: Complete feature documentation and offline changelog history integration.
+                """.trimIndent(),
                 downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
                 releaseUrl = "https://github.com/shreyagarwal72/petal/releases"
             ),
             PetalUpdateInfo(
-                versionName = "v1.9.1",
-                releaseNotes = "* **Predictive Back Launcher Preview**: Added system launcher desktop preview behind the Home screen during predictive back exit.\n* **Profile Picture Visibility & PetalSlider**: Fixed custom gallery avatar loading with dynamic Coil cache keying and added PetalSlider to profile picture cropper dialog.",
+                versionName = "v2.0",
+                releaseNotes = """
+* **✨ Real-Time Vector Shape Morphing Background (`androidx.graphics.shapes.Morph`)**: Organic vector shape morphing between all 35 official Material 3 Expressive shapes with luminous gradient halos and kinetic breathing.
+* **🎨 Floating Bottom Navigation Bar (Zenith Parity)**: 68dp height, stadium pill shape, 36dp bottom offset, 26dp icons, and dynamic indicator selection.
+* **📦 PixelPlayer Expressive Containment System**: Elevated surface container cards with 16dp rounded corners and animated tactile switch thumbs.
+* **🖼️ Profile Picture & Interactive Cropper Overhaul**: Circular crop viewport with real-time pinch-to-zoom (1.0x - 4.0x), pan gesture alignment, 90° rotation, and immediate Coil cache updates.
+* **🗂️ Clean Settings Categorization & Miscellaneous Hub**: Intuitive reorganization into Appearance & Theme, Accessibility, Privacy & Security, Experimental, and Miscellaneous.
+* **⚡ Complete Kotlin & Jetpack Compose Modernization (100% Kotlin)**: Pure Material 3 Expressive UI, predictive back navigation with 24dp background depth blur, and adaptive dynamic theming.
+* **🌐 Google Lens & In-App Multi-Volume Media Picker**: Full Google Lens search integration across Omnibox search bar, context menus, and home widgets.
+* **🔒 Advanced Privacy, Passkeys & High-Performance Web Engine**: Full WebAuthn & biometric passkey support, AdBlock Trie filtering engine, and 120Hz/144Hz high refresh rate hardware pacing.
+                """.trimIndent(),
                 downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
-                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.9.1"
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v2.0.0"
             ),
             PetalUpdateInfo(
-                versionName = "v1.9.0",
-                releaseNotes = "* **Fixed Files Integration**: Merged updated project core composables, Glance widgets, and predictive back junction components.",
+                versionName = "v1.9.9",
+                releaseNotes = "* **Material 3 Expressive Container Colors**: High-contrast container elevation model with dynamic palette switching.\n* **Universal Touch Haptics Engine**: Multi-tiered vibration execution for tactile feedback on all Android devices.\n* **Dynamic Per-App Language & Natural Hinglish**: Full conversational Hinglish translations across all string resources.\n* **High Refresh Rate (120Hz/144Hz+) Native Synchronization**: Hardware display mode locking and frame pacing.",
                 downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
-                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.9.0"
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.9.9"
             ),
             PetalUpdateInfo(
-                versionName = "v1.8.9",
-                releaseNotes = "* **Profile Picture Image Cropper**: Added interactive Profile Picture Image Cropper dialog (`ProfilePictureCropDialog`) with circular crop viewport, pinch-to-zoom (1.0x - 4.0x), pan gesture alignment, rotation (90° steps), and anti-aliased bitmap output.\n* **Account Page Cleanup**: Removed obsolete Google Passkey option.",
+                versionName = "v1.9.8",
+                releaseNotes = "* **100% Java-to-Kotlin Migration**: Complete codebase conversion to Kotlin with zero remaining Java files.\n* **35 Material 3 Expressive Shapes**: Full system-wide catalog integration across all UI components.\n* **120Hz Smooth Scrolling Physics**: Nested scrolling and hardware-accelerated rendering.",
                 downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
-                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.8.9"
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.9.8"
             ),
             PetalUpdateInfo(
-                versionName = "v1.8.8",
-                releaseNotes = "* **Dynamic Predictive Back Underlay Preview**: Added `PetalDynamicUnderlayPreview()` to dynamically render active web page preview cards behind settings & secondary screens when a web page is open.",
+                versionName = "v1.9.4",
+                releaseNotes = "* **Google Lens Integration**: In-app camera capture, photo picker, and context menu search.\n* **Multi-Engine Torrent & Magnet Downloader**: 1DM integration, in-app native streamer, and system downloader.\n* **Dynamic Morphing Background Timer**: Periodic ambient background shape rotation with customizable interval.",
                 downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
-                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.8.8"
-            ),
-            PetalUpdateInfo(
-                versionName = "v1.8.7",
-                releaseNotes = "* **Website Back Navigation & Flicker Fix**: Fixed website back gestures by detecting active WebView web history (`canNinjaGoBack()`) in `PetalPredictiveJunction.kt`, bypassing activity scale-down effects.",
-                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
-                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.8.7"
-            ),
-            PetalUpdateInfo(
-                versionName = "v1.8.6",
-                releaseNotes = "* **Foreground Service Crash Fix**: Made `startForeground()` the synchronous first call in `PetalDownloadService.onStartCommand()`.",
-                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
-                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.8.6"
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases/tag/v1.9.4"
             )
         )
     }
@@ -197,6 +198,56 @@ object PetalUpdateSheetBridge {
             dialog.show()
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    @JvmStatic
+    fun showWhatsNewUpdateDialog(activity: ComponentActivity) {
+        executor.execute {
+            var releases: List<PetalUpdateInfo>? = null
+            try {
+                val url = URL("https://api.github.com/repos/shreyagarwal72/petal/releases")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
+                conn.setRequestProperty("User-Agent", "PetalBrowserApp")
+                conn.connectTimeout = 5000
+                conn.readTimeout = 5000
+                if (conn.responseCode == 200) {
+                    val reader = java.io.BufferedReader(java.io.InputStreamReader(conn.inputStream))
+                    val sb = StringBuilder()
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        sb.append(line)
+                    }
+                    reader.close()
+                    val jsonArray = com.google.gson.JsonParser.parseString(sb.toString()).asJsonArray
+                    val fetchedReleases = mutableListOf<PetalUpdateInfo>()
+                    for (i in 0 until jsonArray.size()) {
+                        val obj = jsonArray.get(i).asJsonObject
+                        val tag = obj.get("tag_name")?.asString ?: ""
+                        val body = obj.get("body")?.asString ?: ""
+                        val htmlUrl = obj.get("html_url")?.asString ?: "https://github.com/shreyagarwal72/petal/releases"
+                        fetchedReleases.add(PetalUpdateInfo(versionName = tag, releaseNotes = body, downloadUrl = "", releaseUrl = htmlUrl, isUpdateAvailable = false))
+                    }
+                    if (fetchedReleases.isNotEmpty()) {
+                        releases = fetchedReleases
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            if (releases == null || releases.isEmpty()) {
+                releases = getFallbackReleases(activity)
+            }
+
+            val finalReleases = releases
+            activity.runOnUiThread {
+                if (!activity.isFinishing) {
+                    showChangelogDialog(activity, finalReleases)
+                }
+            }
         }
     }
 

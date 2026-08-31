@@ -1,3 +1,16 @@
+### v2.1 (Hotfix)
+
+- **🎨 Compose Ripple Modernization & Compilation Hotfix**:
+  - Migrated deprecated `rememberRipple` indication in `PetalBottomNavBar.kt` to the official Material 3 `ripple()` API, resolving Kotlin compiler deprecation errors and improving touch indication performance.
+  - Seamlessly unified interaction source ripple feedback across floating navigation bar items and gesture elements.
+
+- **📢 First-Launch Update Changelog Showcase**:
+  - Added a dedicated one-time "What's New in Petal" interactive bottom sheet popup displayed immediately when the browser is updated from a previous version.
+  - Highlights full categorized release notes and improvements, ensuring users never miss new features.
+
+- **📜 Full Changelog History from Official v2.0**:
+  - Enriched offline fallback changelog history with complete breakdown of all major v2.0 features (Real-Time Vector Shape Morphing Background, Floating Bottom Nav, PixelPlayer Containment System, Avatar Cropper, Settings Categorization, and 100% Kotlin Modernization).
+
 ### v2.0 (Official Release)
 
 - **✨ Real-Time Vector Shape Morphing Background (`androidx.graphics.shapes.Morph`)**:
