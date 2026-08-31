@@ -69,14 +69,17 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.PetalSearchEngineSheetContent
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.availableSearchEngines
 import com.petal.browser.ui.components.ExpressiveButtonGroup
 import com.petal.browser.ui.components.ExpressiveSegmentItem
+import com.petal.browser.ui.components.ExpressiveSettingsGroup
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.SettingsCardContainer
+import com.petal.browser.ui.components.SettingsItem
+import com.petal.browser.ui.components.SwitchSettingItem
 import com.petal.browser.ui.theme.*
 
 object PetalSettingsBridge {
@@ -201,42 +204,32 @@ enum class SettingsCategory(val title: String, val subtitle: String, val icon: I
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", Icons.Rounded.Info)
 }
 
+/*
+ * The three row/card primitives below used to be Petal's own hand-rolled
+ * "containment" styling, duplicated ad hoc across this screen. They now
+ * delegate to the containment system genuinely ported from PixelPlayer in
+ * PetalContainments.kt (SettingsCardContainer / SettingsItem /
+ * SwitchSettingItem), so every settings row and card group in this file
+ * shares the same, real PixelPlayer-derived implementation. Signatures are
+ * kept intact so the ~100+ call sites throughout this screen need no
+ * changes.
+ */
+
 @Composable
 private fun SettingsCategoryCard(
     title: String,
     icon: ImageVector,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+    SettingsCardContainer(
+        title = title,
+        icon = icon,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(18.dp))
-                    }
-                }
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+        ExpressiveSettingsGroup {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                content()
             }
-            content()
         }
     }
 }
@@ -248,20 +241,11 @@ private fun SettingsCategoryRow(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
+    SettingsItem(
+        title = title,
+        subtitle = subtitle,
+        modifier = Modifier.fillMaxWidth(),
+        leadingIcon = {
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
@@ -272,26 +256,9 @@ private fun SettingsCategoryRow(
                     Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
                 }
             }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Icon(
-                imageVector = Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
+        },
+        onClick = onClick
+    )
 }
 
 @Composable
@@ -303,58 +270,26 @@ private fun ToggleRow(
     onCheckedChange: (Boolean) -> Unit,
     enabled: Boolean = true
 ) {
-    val contentAlpha = if (enabled) 1f else 0.38f
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(enabled = enabled) { onCheckedChange(!checked) }
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    SwitchSettingItem(
+        title = title,
+        subtitle = subtitle,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = Modifier.fillMaxWidth(),
+        enabled = enabled,
+        leadingIcon = {
             Surface(
                 shape = CircleShape,
                 color = if (checked && enabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-                contentColor = if (checked && enabled) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
+                contentColor = if (checked && enabled) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.38f),
                 modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
                 }
             }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.5f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (subtitle.isNotBlank()) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.4f),
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            IconSwitch(
-                checked = checked,
-                icon = icon,
-                onCheckedChange = onCheckedChange,
-                enabled = enabled
-            )
         }
-    }
+    )
 }
 
 @Composable
