@@ -168,6 +168,15 @@ object PetalTabSwitcherBridge {
                                 com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
                             }
                         },
+                        onRestoreTab = { restoredTab ->
+                            if (activity is BrowserActivity) {
+                                activity.addAlbum(restoredTab.title, restoredTab.url, true, restoredTab.isIncognito)
+                            }
+                            if (tabItems.none { it.id == restoredTab.id }) {
+                                tabItems.add(restoredTab)
+                            }
+                            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
+                        },
                         onNewTab = { isIncognito ->
                             onNewTab(isIncognito)
                         },
