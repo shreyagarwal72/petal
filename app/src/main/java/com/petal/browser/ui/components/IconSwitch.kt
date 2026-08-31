@@ -18,10 +18,12 @@ fun IconSwitch(
     icon: ImageVector,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
+        enabled = enabled,
         thumbContent = {
             Icon(
                 imageVector = icon,

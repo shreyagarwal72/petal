@@ -300,15 +300,17 @@ private fun ToggleRow(
     subtitle: String,
     icon: ImageVector,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true
 ) {
+    val contentAlpha = if (enabled) 1f else 0.38f
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .clickable { onCheckedChange(!checked) }
+            .clickable(enabled = enabled) { onCheckedChange(!checked) }
     ) {
         Row(
             modifier = Modifier
@@ -319,8 +321,8 @@ private fun ToggleRow(
         ) {
             Surface(
                 shape = CircleShape,
-                color = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-                contentColor = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (checked && enabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = if (checked && enabled) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
                 modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -331,7 +333,7 @@ private fun ToggleRow(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.5f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -339,7 +341,7 @@ private fun ToggleRow(
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.4f),
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -348,7 +350,8 @@ private fun ToggleRow(
             IconSwitch(
                 checked = checked,
                 icon = icon,
-                onCheckedChange = onCheckedChange
+                onCheckedChange = onCheckedChange,
+                enabled = enabled
             )
         }
     }
@@ -1062,8 +1065,14 @@ fun PetalSettingsScreen(
                                     val currentPalette = remember(selectedPaletteId) {
                                         PetalPalettes.firstOrNull { it.id == selectedPaletteId } ?: PetalPalettes.first()
                                     }
-                                    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
-                                    val activeBaseScheme = if (isSystemDark) currentPalette.dark else currentPalette.light
+                                    val isEffectiveAmoled = isDarkTheme && isAmoled
+                                    val activeBaseScheme = remember(currentPalette, isDarkTheme, isEffectiveAmoled) {
+                                        if (isDarkTheme) {
+                                            if (isEffectiveAmoled) currentPalette.dark.applyAmoled() else currentPalette.dark
+                                        } else {
+                                            currentPalette.light
+                                        }
+                                    }
                                     val activePreviewScheme = remember(activeBaseScheme, selectedColorStyle) {
                                         activeBaseScheme.applyStyle(selectedColorStyle)
                                     }
@@ -1284,9 +1293,10 @@ fun PetalSettingsScreen(
                                     // AMOLED Black Toggle
                                     ToggleRow(
                                         title = "AMOLED Black Dark Mode",
-                                        subtitle = "Pure black background ladder for OLED displays",
+                                        subtitle = if (isDarkTheme) "Pure black background ladder for OLED displays" else "Disabled in Light Mode (Requires Dark theme)",
                                         icon = Icons.Rounded.DarkMode,
-                                        checked = isAmoled,
+                                        checked = isAmoled && isDarkTheme,
+                                        enabled = isDarkTheme,
                                         onCheckedChange = { newValue ->
                                             isAmoled = newValue
                                             sp.edit().putBoolean("sp_amoled", newValue).apply()
