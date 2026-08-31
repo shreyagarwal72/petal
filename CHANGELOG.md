@@ -1,11 +1,15 @@
-### v2.0.1 (Hotfix)
+### v2.0 (Official Release)
 
-- **🎨 PixelPlayer Expressive Containment System Integration**:
-  - Integrated proper Material 3 Expressive containments ported from PixelPlayer across the entire app (`SettingsSection`, `SettingsItem`, `SwitchSettingItem`, `SettingsCardContainer`, `ContainedSelectionCard`).
-  - Replaced uncontained / flat toggle rows with elevated `Surface` container cards featuring rounded shapes (`16.dp`), circular icon badges, clear spacing, and animated switch thumbs.
-  - Enhanced slider and preference controls with elevated container backgrounds (`surfaceContainer`) and crisp typography.
+- **✨ Real-Time Vector Shape Morphing Background (`androidx.graphics.shapes.Morph`)**:
+  - Implemented organic, continuous vector shape morphing between all 35 official Material 3 Expressive shapes (`Sunny`, `Cookie9Sided`, `Flower`, `Clover4Leaf`, `SoftBurst`, etc.).
+  - Added luminous multi-stop radial gradient halos across M3 tonal color roles (`primary`, `primaryContainer`, `tertiary`) with gentle kinetic breathing.
 
-### v2.0.0 (First Official Public Release)
+- **🎨 Floating Bottom Navigation Bar (Zenith Parity)**:
+  - Matched Zenith's floating navigation bar dimensions: `68.dp` height, `RoundedCornerShape(100)` stadium pill, `36.dp` bottom offset, `26.dp` icons, and dynamic indicator selection height.
+
+- **📦 PixelPlayer Expressive Containment System Integration**:
+  - Integrated proper Material 3 Expressive containments (`SettingsSection`, `SettingsItem`, `SwitchSettingItem`, `SettingsCardContainer`, `ContainedSelectionCard`).
+  - Replaced uncontained / flat toggle rows with elevated `Surface` container cards with `16.dp` rounded shapes and animated switch thumbs.
 
 - **🖼️ Profile Picture & Interactive Cropper Overhaul**:
   - Fixed profile picture custom avatar loading and caching: updated Coil image loader with explicit write-only cache policies and fallback handling across `filesDir` and content URIs so custom avatars update immediately on Home screen and Account profile screen.
