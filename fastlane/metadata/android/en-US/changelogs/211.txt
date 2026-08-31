@@ -1,0 +1,4 @@
+v2.1 Release Highlights:
+- Compose Material 3 ripple() modernization & compile hotfix.
+- One-time update changelog showcase popup highlighting all new changes.
+- Complete official v2.0 feature showcase & offline changelog history integration.
