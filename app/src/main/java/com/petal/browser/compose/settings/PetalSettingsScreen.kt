@@ -187,24 +187,25 @@ object PetalSettingsBridge {
     }
 }
 
-enum class SettingsCategory(val title: String, val subtitle: String, val icon: ImageVector) {
-    OVERVIEW("Settings", "Browse all settings categories", Icons.Rounded.Settings),
-    API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", Icons.Rounded.Extension),
-    APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", Icons.Rounded.Palette),
-    PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", Icons.Rounded.Shield),
-    SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", Icons.Rounded.Search),
-    DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", Icons.Rounded.Accessibility),
-    EXPERIMENTAL("Experimental", "App language, experimental features and advanced settings", Icons.Rounded.Science),
-    MISCELLANEOUS("Miscellaneous", "Download engine, external apps handling and extra browser tools", Icons.Rounded.Widgets),
-    DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", Icons.Rounded.Backup),
-    UPDATER("App Updates", "Check for updates and auto-check on launch", Icons.Rounded.SystemUpdate),
-    ABOUT("About & Developer", "App version, licenses, GitHub & developer", Icons.Rounded.Info)
+enum class SettingsCategory(val title: String, val subtitle: String, val iconRes: Int) {
+    OVERVIEW("Settings", "Browse all settings categories", com.petal.browser.R.drawable.settings_filled),
+    API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", com.petal.browser.R.drawable.ic_rust_logo),
+    APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", com.petal.browser.R.drawable.brightness_medium_filled),
+    PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", com.petal.browser.R.drawable.layers_filled),
+    SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.globe_2_cancel_rounded),
+    DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", com.petal.browser.R.drawable.mobile_vibrate_filled),
+    EXPERIMENTAL("Experimental", "App language, experimental features and advanced settings", com.petal.browser.R.drawable.build_filled),
+    MISCELLANEOUS("Miscellaneous", "Download engine, external apps handling and extra browser tools", com.petal.browser.R.drawable.dvr_filled),
+    DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", com.petal.browser.R.drawable.database_filled),
+    UPDATER("App Updates", "Check for updates and auto-check on launch", com.petal.browser.R.drawable.update_rounded),
+    ABOUT("About & Developer", "App version, licenses, GitHub & developer", com.petal.browser.R.drawable.info_filled)
 }
 
 @Composable
 private fun SettingsCategoryCard(
     title: String,
-    icon: ImageVector,
+    icon: ImageVector? = null,
+    iconRes: Int? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
@@ -231,12 +232,21 @@ private fun SettingsCategoryCard(
                         .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (iconRes != null) {
+                        Icon(
+                            painter = androidx.compose.ui.res.painterResource(iconRes),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else if (icon != null) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
                 Text(
                     title,
@@ -253,14 +263,14 @@ private fun SettingsCategoryCard(
 private fun SettingsCategoryRow(
     title: String,
     subtitle: String,
-    icon: ImageVector,
+    iconRes: Int,
     shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(16.dp),
     onClick: () -> Unit
 ) {
     com.petal.browser.ui.components.ExpressiveCategoryItem(
         title = title,
         subtitle = subtitle,
-        icon = icon,
+        iconPainter = androidx.compose.ui.res.painterResource(iconRes),
         shape = shape,
         onClick = onClick
     )
@@ -622,7 +632,7 @@ fun PetalSettingsScreen(
                                         SettingsCategoryRow(
                                             title = cat.title,
                                             subtitle = cat.subtitle,
-                                            icon = cat.icon,
+                                            iconRes = cat.iconRes,
                                             shape = shape,
                                             onClick = { currentCategory = cat }
                                         )
@@ -632,7 +642,7 @@ fun PetalSettingsScreen(
 
                             // 0. Dedicated Petal AI & API Keys Hub Sub-Screen Page
                             if ((scaffoldCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "petal ai api key gemini openrouter openai grok groq key deep research webkit extensions search suggestions")) {
-                                SettingsCategoryCard(title = "Petal AI & API Keys Hub", icon = Icons.Rounded.AutoAwesome) {
+                                SettingsCategoryCard(title = "Petal AI & API Keys Hub", iconRes = com.petal.browser.R.drawable.ic_rust_logo) {
                                     Text(
                                         "Configure AI providers, API keys, and model selections for Petal Deep Research, AI Search, and page summarizer.",
                                         style = MaterialTheme.typography.bodySmall,
@@ -908,7 +918,7 @@ fun PetalSettingsScreen(
                                     }
                                 )
 
-                                SettingsCategoryCard(title = "Custom Fonts & Accent Themes", icon = Icons.Rounded.Palette) {
+                                SettingsCategoryCard(title = "Custom Fonts & Accent Themes", iconRes = com.petal.browser.R.drawable.brightness_medium_filled) {
                                     Text(
                                         "Customize app typography and accent style",
                                         style = MaterialTheme.typography.bodySmall,
@@ -1419,7 +1429,7 @@ fun PetalSettingsScreen(
 
                             // 2. Custom Homepage & Background Play
                             if ((scaffoldCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Homepage", "custom home start page background play video audio media")) {
-                                SettingsCategoryCard(title = "Homepage & Media Playback", icon = Icons.Rounded.Home) {
+                                SettingsCategoryCard(title = "Homepage & Media Playback", iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded) {
                                     Text(
                                         "Custom Homepage:",
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
@@ -1527,7 +1537,7 @@ fun PetalSettingsScreen(
 
                             // 3. Private DNS & Chrome Flags
                             if ((scaffoldCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Chrome Flags", "chrome://flags petal://flags flags experimental webgpu features force dark safe browsing")) {
-                                SettingsCategoryCard(title = "Experimental Petal & Chrome Flags", icon = Icons.Rounded.Science) {
+                                SettingsCategoryCard(title = "Experimental Petal & Chrome Flags", iconRes = com.petal.browser.R.drawable.build_filled) {
                                     Surface(
                                         onClick = {
                                             if (context is androidx.activity.ComponentActivity) {
@@ -1562,7 +1572,7 @@ fun PetalSettingsScreen(
                             }
 
                             if ((scaffoldCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Private DNS", "dns cleanbrowsing cloudflare 1.1.1.1 google opendns security filter")) {
-                                SettingsCategoryCard(title = "Private DNS Protection", icon = Icons.Rounded.Dns) {
+                                SettingsCategoryCard(title = "Private DNS Protection", iconRes = com.petal.browser.R.drawable.database_filled) {
                                     Text(
                                         "Encrypt DNS queries to prevent tracking & block malicious content:",
                                         style = MaterialTheme.typography.bodySmall,
@@ -1641,7 +1651,7 @@ fun PetalSettingsScreen(
 
                             // 4. Popular Languages Selector (Under Experimental Category)
                             if ((scaffoldCategory == SettingsCategory.EXPERIMENTAL || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english hinglish spanish hindi french german chinese arabic portuguese russian japanese experimental address bar top bottom position")) {
-                                SettingsCategoryCard(title = "App Language", icon = Icons.Rounded.Language) {
+                                SettingsCategoryCard(title = "App Language", iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded) {
                                     Text(
                                         "Choose your preferred display language:",
                                         style = MaterialTheme.typography.bodySmall,
@@ -1693,7 +1703,7 @@ fun PetalSettingsScreen(
                                     }
                                 }
 
-                                SettingsCategoryCard(title = "Address Bar Position (Experimental)", icon = Icons.Rounded.Science) {
+                                SettingsCategoryCard(title = "Address Bar Position (Experimental)", iconRes = com.petal.browser.R.drawable.build_filled) {
                                     Text(
                                         "Choose whether the URL search address bar appears at the top or bottom of the screen:",
                                         style = MaterialTheme.typography.bodySmall,
@@ -1742,7 +1752,7 @@ fun PetalSettingsScreen(
 
                             // 5. Default Search Engine Section
                             if ((scaffoldCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Search Engine", "google duckduckgo bing brave startpage ecosia search provider")) {
-                                SettingsCategoryCard(title = "Default Search Engine", icon = Icons.Rounded.Search) {
+                                SettingsCategoryCard(title = "Default Search Engine", iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded) {
                                     val currentEngineName = remember(searchEngineIndex) {
                                         val idx = searchEngineIndex.toIntOrNull() ?: 0
                                         availableSearchEngines.find { it.index == idx }?.name ?: "Google"
@@ -1782,7 +1792,7 @@ fun PetalSettingsScreen(
 
                             // 6. Privacy & Shield Section
                             if ((scaffoldCategory == SettingsCategory.PRIVACY || searchQuery.isNotBlank()) && matchesSearch("Privacy Shield", "adblock tracker popups https javascript external apps protection")) {
-                                SettingsCategoryCard(title = "Privacy & Shield Protection", icon = Icons.Rounded.Shield) {
+                                SettingsCategoryCard(title = "Privacy & Shield Protection", iconRes = com.petal.browser.R.drawable.layers_filled) {
                                     ToggleRow(
                                         title = "Ad & Tracker Shield",
                                         subtitle = "uBlock Origin & AdGuard-grade Trie filter engine & scriptlets",
@@ -2013,7 +2023,7 @@ fun PetalSettingsScreen(
 
                             // 7. Accessibility & Scaling (using PetalSlider)
                             if ((scaffoldCategory == SettingsCategory.DISPLAY_ZOOM || searchQuery.isNotBlank()) && matchesSearch("Accessibility", "haptics touch vibration text font scale page zoom text scaling stride slider blur download torrent engine 1dm manager")) {
-                                SettingsCategoryCard(title = "Accessibility & Display Options", icon = Icons.Rounded.Accessibility) {
+                                SettingsCategoryCard(title = "Accessibility & Display Options", iconRes = com.petal.browser.R.drawable.mobile_vibrate_filled) {
                                     ToggleRow(
                                         title = "Predictive Back Animations",
                                         subtitle = "Enable fluid predictive back gesture scaling and slide transitions across all screens",
@@ -2309,7 +2319,7 @@ fun PetalSettingsScreen(
 
                             // 8. Miscellaneous Settings Category
                             if ((scaffoldCategory == SettingsCategory.MISCELLANEOUS || searchQuery.isNotBlank()) && matchesSearch("Miscellaneous", "download torrent engine 1dm manager external apps open youtube maps apps launch")) {
-                                SettingsCategoryCard(title = "Miscellaneous & Download Options", icon = Icons.Rounded.Widgets) {
+                                SettingsCategoryCard(title = "Miscellaneous & Download Options", iconRes = com.petal.browser.R.drawable.dvr_filled) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -2586,7 +2596,7 @@ fun PetalSettingsScreen(
                             }
 
                             if ((scaffoldCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Backup Sync", "backup restore sync history bookmarks settings database export import json")) {
-                                SettingsCategoryCard(title = "Backup & Restore (JSON)", icon = Icons.Rounded.Backup) {
+                                SettingsCategoryCard(title = "Backup & Restore (JSON)", iconRes = com.petal.browser.R.drawable.database_filled) {
                                     Text(
                                         "Export or restore specific items to/from a single JSON file (Documents/browser_backup/petal_browser_backup.json):",
                                         style = MaterialTheme.typography.bodySmall,
@@ -2610,11 +2620,11 @@ fun PetalSettingsScreen(
                                             ) {
                                                 Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                                                 Spacer(Modifier.width(6.dp))
-                                                Text("Backup", maxLines = 1)
+                                                Text("Backup to JSON", maxLines = 1)
                                             }
                                         }
 
-                                        OutlinedButton(
+                                        Button(
                                             onClick = { showRestoreDialog = true },
                                             shape = RoundedCornerShape(14.dp),
                                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
@@ -2624,27 +2634,16 @@ fun PetalSettingsScreen(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.Center
                                             ) {
-                                                Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                                Text("Restore", maxLines = 1)
+                                                Text("Restore from JSON", maxLines = 1)
                                             }
                                         }
                                     }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(
-                                        "Downgrade Data Protection: Automatic snapshots are saved to Documents/browser_backup/petal_downgrade_snapshot.json whenever app version updates, allowing seamless data restoration if downgrading to older versions.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
                                 }
                             }
 
-
-
                             // 9. App Updates & Inbuilt Updater Section
                             if ((scaffoldCategory == SettingsCategory.UPDATER || searchQuery.isNotBlank()) && matchesSearch("App Updates", "update updater version check launch github download upgrade")) {
-                                SettingsCategoryCard(title = "App Updates & Inbuilt Updater", icon = Icons.Rounded.SystemUpdate) {
+                                SettingsCategoryCard(title = "App Updates & Inbuilt Updater", iconRes = com.petal.browser.R.drawable.update_rounded) {
                                     ToggleRow(
                                         title = "Check for Updates on Launch",
                                         subtitle = "Automatically check for new browser releases when app starts",

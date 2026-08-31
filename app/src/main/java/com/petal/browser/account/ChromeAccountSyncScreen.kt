@@ -576,9 +576,8 @@ private fun RenderUserProfileContent(
                         )
                     )
                 },
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
                 modifier = Modifier
                     .fillMaxWidth()
                     .bouncyClickable {
@@ -595,103 +594,104 @@ private fun RenderUserProfileContent(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(18.dp),
+                        .padding(20.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(44.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Rounded.Language,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
+                        Icon(
+                            painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.globe_2_cancel_rounded),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             "Open Google Accounts Web SSO",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
                             "Launch Google Accounts login page to sign in to Google Web Services (YouTube, Gmail, Drive, Maps)",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
                     Icon(
-                        Icons.AutoMirrored.Rounded.ArrowForward,
+                        painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.arrow_forward_ios_new),
                         contentDescription = "Open SSO",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
 
             // Section 1: 🛡️ Security & Privacy Center
-            Surface(
+            Card(
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(36.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.Security,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                         Text(
                             text = "Security & Privacy Center",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
                     Spacer(Modifier.height(14.dp))
 
-                    // Dedicated App & Profile Lock Config Navigation Row (No direct toggle, opens page)
+                    // Dedicated App & Profile Lock Config Navigation Row
                     val isLockActive = sp.getBoolean("sp_app_lock_enabled", false)
                     AccountActionRow(
                         title = "App & Profile Lock",
                         subtitle = if (isLockActive) "Protection active • Fingerprint or Password" else "Require authentication on app startup",
-                        icon = Icons.Rounded.Lock,
+                        iconPainter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.mobile_vibrate_filled),
                         trailing = {
                             Icon(
-                                Icons.AutoMirrored.Rounded.ArrowForward,
+                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.arrow_forward_ios_new),
                                 contentDescription = "Configure Lock",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         },
                         onClick = {
                             onOpenAppLockConfig()
                         }
                     )
-
-
 
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 4.dp),
@@ -703,7 +703,7 @@ private fun RenderUserProfileContent(
                     AccountActionRow(
                         title = "Auto-Clear Data on Exit",
                         subtitle = "Automatically purge cache, history, and open tabs on exit (keeps account logins safe)",
-                        icon = Icons.Rounded.CleaningServices,
+                        iconPainter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
                         trailing = {
                             IconSwitch(
                                 checked = isClearOnExit,
@@ -746,7 +746,7 @@ private fun RenderUserProfileContent(
                     AccountActionRow(
                         title = "HTTPS-Only Mode",
                         subtitle = if (isHttpsOnly) "Active • HTTP automatically upgraded to HTTPS" else "Disabled • Insecure connections allowed",
-                        icon = Icons.Rounded.Lock,
+                        iconPainter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.globe_2_cancel_rounded),
                         trailing = {
                             IconSwitch(
                                 checked = isHttpsOnly,
@@ -808,40 +808,43 @@ private fun RenderUserProfileContent(
                 )
             }
 
-            Surface(
+            Card(
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(36.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.Storage,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.database_filled),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                         Column {
                             Text(
                                 text = "Storage & Data Audit",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Inspect application storage & manage browsing data",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -850,10 +853,13 @@ private fun RenderUserProfileContent(
                     Spacer(Modifier.height(14.dp))
 
                     // Storage Consumption Summary Card
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -872,19 +878,19 @@ private fun RenderUserProfileContent(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        modifier = Modifier.size(44.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(MaterialTheme.colorScheme.primaryContainer),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Rounded.CleaningServices,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                modifier = Modifier.size(22.dp)
-                                            )
-                                        }
+                                        Icon(
+                                            painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(22.dp)
+                                        )
                                     }
                                     Column {
                                         Text(
@@ -940,7 +946,7 @@ private fun RenderUserProfileContent(
                                     modifier = Modifier.bouncyClickable()
                                 ) {
                                     Icon(
-                                        Icons.Rounded.DeleteSweep,
+                                        painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.close_rounded),
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -956,7 +962,7 @@ private fun RenderUserProfileContent(
                     AccountActionRow(
                         title = "Clear Browsing Data",
                         subtitle = "Select & remove history, cookies, web storage, autofill & permissions",
-                        icon = Icons.Rounded.DeleteSweep,
+                        iconPainter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.reset_settings_rounded),
                         onClick = { showClearDataDialog = true }
                     )
                 }
@@ -1074,7 +1080,8 @@ private fun RenderUserProfileContent(
 private fun AccountActionRow(
     title: String,
     subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    iconPainter: androidx.compose.ui.graphics.painter.Painter? = null,
     trailing: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
@@ -1093,12 +1100,21 @@ private fun AccountActionRow(
                 .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(24.dp)
-            )
+            if (iconPainter != null) {
+                Icon(
+                    painter = iconPainter,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
