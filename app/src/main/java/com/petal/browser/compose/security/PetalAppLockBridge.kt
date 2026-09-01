@@ -9,6 +9,7 @@ package com.petal.browser.compose.security
 import android.app.Activity
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
+import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -24,6 +25,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
@@ -32,6 +34,7 @@ object PetalAppLockBridge {
     @JvmStatic
     fun showLockOverlay(activity: Activity, onUnlocked: Runnable, onCancel: Runnable) {
         val decor = activity.window.decorView as? ViewGroup ?: return
+        val browserActivity = activity as? BrowserActivity
         val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
         PetalContentSnapshot.capture(rootView)
         var composeView: ComposeView? = null
@@ -40,6 +43,7 @@ object PetalAppLockBridge {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
+                setViewTreeOnBackPressedDispatcherOwner(activity)
             }
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
@@ -102,16 +106,19 @@ object PetalAppLockBridge {
                         backgroundSnapshot = snapshotBitmap,
                         onUnlocked = {
                             decor.removeView(composeView)
+                            browserActivity?.isDecorOverlayShowing = false
                             onUnlocked.run()
                         },
                         onBackPress = {
                             decor.removeView(composeView)
+                            browserActivity?.isDecorOverlayShowing = false
                             onCancel.run()
                         }
                     )
                 }
             }
         }
+        browserActivity?.isDecorOverlayShowing = true
         decor.addView(
             composeView,
             ViewGroup.LayoutParams(
@@ -124,6 +131,7 @@ object PetalAppLockBridge {
     @JvmStatic
     fun showConfig(activity: Activity, onBack: Runnable) {
         val decor = activity.window.decorView as? ViewGroup ?: return
+        val browserActivity = activity as? BrowserActivity
         val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
         PetalContentSnapshot.capture(rootView)
         var composeView: ComposeView? = null
@@ -132,6 +140,7 @@ object PetalAppLockBridge {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
+                setViewTreeOnBackPressedDispatcherOwner(activity)
             }
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
@@ -194,12 +203,14 @@ object PetalAppLockBridge {
                         backgroundSnapshot = snapshotBitmap,
                         onBack = {
                             decor.removeView(composeView)
+                            browserActivity?.isDecorOverlayShowing = false
                             onBack.run()
                         }
                     )
                 }
             }
         }
+        browserActivity?.isDecorOverlayShowing = true
         decor.addView(
             composeView,
             ViewGroup.LayoutParams(
