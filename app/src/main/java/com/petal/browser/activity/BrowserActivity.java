@@ -500,13 +500,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
-                predictiveBackSwipeEdge = backEvent.getSwipeEdge();
-                beginPredictiveBackGesture();
+                if (isOverlayScreenShowing) {
+                    predictiveBackSwipeEdge = backEvent.getSwipeEdge();
+                    beginPredictiveBackGesture();
+                }
             }
 
             @Override
             public void handleOnBackProgressed(@NonNull androidx.activity.BackEventCompat backEvent) {
-                applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
+                if (isOverlayScreenShowing) {
+                    applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
+                }
             }
 
             @Override
@@ -518,7 +522,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             @Override
             public void handleOnBackCancelled() {
-                settlePredictiveBackGesture(false);
+                if (isOverlayScreenShowing) {
+                    settlePredictiveBackGesture(false);
+                } else {
+                    resetPredictiveBackVisuals();
+                }
             }
         });
         setContentView(R.layout.activity_main);
@@ -946,7 +954,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * don't have one, so neither does this.
      */
     public void beginPredictiveBackGesture() {
-        if (isOverlayScreenShowing || isDecorOverlayShowing) return;
+        if (!isOverlayScreenShowing || isDecorOverlayShowing) return;
         if (predictiveBackSettleAnimator != null) {
             predictiveBackSettleAnimator.cancel();
             predictiveBackSettleAnimator = null;
@@ -962,7 +970,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * identical curve to every Compose screen so the native browsing surface feels the same.
      */
     public void applyPredictiveBackTransform(float progress, int swipeEdge) {
-        if (isOverlayScreenShowing || isDecorOverlayShowing) return;
+        if (!isOverlayScreenShowing || isDecorOverlayShowing) return;
         if (predictiveBackRoot == null) return;
         predictiveBackProgress = progress;
 
@@ -982,7 +990,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * finish sliding off before the real {@link #performBackNavigation()} fires.
      */
     public void settlePredictiveBackGesture(boolean committed) {
-        if (isOverlayScreenShowing || isDecorOverlayShowing) return;
+        if (!isOverlayScreenShowing || isDecorOverlayShowing) return;
         if (predictiveBackRoot == null) return;
 
         if (predictiveBackSettleAnimator != null) {
