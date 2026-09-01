@@ -208,13 +208,11 @@ private fun SettingsCategoryCard(
     iconRes: Int? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
+    Surface(
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+        tonalElevation = 1.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(

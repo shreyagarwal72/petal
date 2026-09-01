@@ -577,7 +577,9 @@ private fun RenderUserProfileContent(
                     )
                 },
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                tonalElevation = 1.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .bouncyClickable {
@@ -606,7 +608,7 @@ private fun RenderUserProfileContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.globe_2_cancel_rounded),
+                            painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.home_filled),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
@@ -637,13 +639,11 @@ private fun RenderUserProfileContent(
             }
 
             // Section 1: 🛡️ Security & Privacy Center
-            Card(
+            Surface(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                tonalElevation = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
@@ -746,7 +746,7 @@ private fun RenderUserProfileContent(
                     AccountActionRow(
                         title = "HTTPS-Only Mode",
                         subtitle = if (isHttpsOnly) "Active • HTTP automatically upgraded to HTTPS" else "Disabled • Insecure connections allowed",
-                        iconPainter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.globe_2_cancel_rounded),
+                        iconPainter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.layers_filled),
                         trailing = {
                             IconSwitch(
                                 checked = isHttpsOnly,
@@ -808,13 +808,11 @@ private fun RenderUserProfileContent(
                 )
             }
 
-            Card(
+            Surface(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                tonalElevation = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {

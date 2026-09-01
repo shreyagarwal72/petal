@@ -447,14 +447,13 @@ fun ExpressiveCategoryItem(
     badgeColor: Color = MaterialTheme.colorScheme.primary,
     iconColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {
-    Card(
+    Surface(
         modifier = modifier.fillMaxWidth(),
         shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        color = containerColor,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+        tonalElevation = 1.dp
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
