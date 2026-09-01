@@ -33,6 +33,7 @@ interface PetalBottomNavHandler {
     fun onMenuClick()
 }
 
+object PetalBottomNavBridge {
     private var _selectedTabState = androidx.compose.runtime.mutableStateOf(PetalNavTab.HOME)
     private var _tabCountState = androidx.compose.runtime.mutableIntStateOf(1)
     private var _isIncognitoState = androidx.compose.runtime.mutableStateOf(false)
