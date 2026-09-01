@@ -1,3 +1,18 @@
+### v2.3 (Official Release)
+
+- **🎨 Settings & Account Containments & RvSystem-Monitor Icon Overhaul**:
+  - Replaced flat and inconsistent card backgrounds across all Settings categories, Account & Profile pages, and UI components with unified Material 3 `surfaceContainerLow` containers, subtle `1.dp` outline borders, and `24.dp` rounded shapes.
+  - Replaced legacy settings category and sub-card drawables with the cohesive, expressive vector icon set from `RvSystem-Monitor` (`settings_filled`, `brightness_medium_filled`, `layers_filled`, `home_filled`, `mobile_vibrate_filled`, `build_filled`, `translate`, `download_2_filled`, `backup_filled`, `update_rounded`, `info_filled`).
+
+- **⚡ Buttery Smooth Floating Bottom Navigation Bar**:
+  - Fixed stutter and jank in the floating bottom navigation bar by eliminating recomposition tree teardown, switching to stable hoisted state holders, and tuning physics animations.
+
+- **🖼️ Persistent Tab Manager Thumbnail Cache**:
+  - Fixed tab thumbnail cache persistence across cold restarts by keying previews with unique persistent tab IDs with URL fallback lookup.
+
+- **🚀 High-Speed Multi-Chunk Download Engine**:
+  - Optimized download buffering and concurrency limits up to 12 parallel channels with instant 100ms progress dispatching and aggressive network gain retry resilience.
+
 ### v2.1 (Hotfix)
 
 - **🎨 Compose Ripple Modernization & Compilation Hotfix**:
