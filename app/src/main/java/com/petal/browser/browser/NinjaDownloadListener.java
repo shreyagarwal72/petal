@@ -56,6 +56,42 @@ public class NinjaDownloadListener implements DownloadListener {
         return "bin";
     }
 
+    /** Simple heuristic: mostly-printable bytes with no NUL bytes reads as text (source code, JSON, CSV, ...). */
+    private boolean looksLikeText(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return false;
+        int sampleLen = Math.min(bytes.length, 512);
+        int printable = 0;
+        for (int i = 0; i < sampleLen; i++) {
+            int b = bytes[i] & 0xFF;
+            if (b == 0) return false;
+            if (b == 9 || b == 10 || b == 13 || (b >= 32 && b < 127) || b >= 128) {
+                printable++;
+            }
+        }
+        return printable >= sampleLen * 0.95;
+    }
+
+    /** Avoids silently overwriting an existing file of the same name. */
+    private String dedupeFileName(String fileName) {
+        File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        File target = new File(downloadDir, fileName);
+        if (!target.exists()) return fileName;
+        String name = fileName;
+        String extension = "";
+        int dot = fileName.lastIndexOf('.');
+        if (dot > 0 && dot < fileName.length() - 1) {
+            name = fileName.substring(0, dot);
+            extension = fileName.substring(dot);
+        }
+        int counter = 1;
+        File candidate = target;
+        while (candidate.exists()) {
+            candidate = new File(downloadDir, name + "(" + counter + ")" + extension);
+            counter++;
+        }
+        return candidate.getName();
+    }
+
     private static String lastHandledUrl = null;
     private static long lastHandledTime = 0L;
 
@@ -117,30 +153,36 @@ public class NinjaDownloadListener implements DownloadListener {
             if (commaIndex == -1) throw new IllegalArgumentException("Ungültige Data-URL");
             String base64Data = downloadUrl.substring(commaIndex + 1);
             byte[] decodedBytes = Base64.decode(base64Data, Base64.DEFAULT);
-            String realExtension = getExtensionFromBytes(decodedBytes);
-            String finalFileName = generatedFileName;
-            if (finalFileName.contains(".")) {
-                finalFileName = finalFileName.substring(0, finalFileName.lastIndexOf(".")) + "." + realExtension;
-            } else {
-                finalFileName = finalFileName + "." + realExtension;
-            }
 
-            String d = webView.getContext().getString(R.string.dialog_title_download) + " - " + finalFileName;
-            HelperUnit.showCustomSnackbarWithTwoActions(
-                    webView.getContext(), webView, null,
-                    webView.getTitle(), d, downloadUrl,
-                    R.drawable.icon_check, () -> {
+            // Resolve a real filename first (honors a Content-Disposition filename when present),
+            // then fall back to magic-byte sniffing with a text/plain fallback instead of always
+            // defaulting to ".bin" - the old getExtension(mimeType)/getExtensionFromBytes() pair
+            // here only recognized pdf/png/jpg/zip, so anything else (source files, JSON, CSV,
+            // etc.) silently saved as ".bin" and was shown via a plain Snackbar instead of the
+            // same AlertDialog-based confirmation used for every other download path.
+            String resolvedName = HelperUnit.resolveFileName(downloadUrl, contentDisposition, mimeType);
+            String finalFileName;
+            if (resolvedName != null && !resolvedName.equals("downloadfile") && resolvedName.contains(".") && !resolvedName.toLowerCase(java.util.Locale.US).endsWith(".bin")) {
+                finalFileName = resolvedName;
+            } else {
+                String realExtension = getExtensionFromBytes(decodedBytes);
+                if ("bin".equals(realExtension) && looksLikeText(decodedBytes)) {
+                    realExtension = "txt";
+                }
+                finalFileName = HelperUnit.domain(webView.getUrl()) + "_" + timestamp + "." + realExtension;
+            }
+            final String dedupedFileName = dedupeFileName(finalFileName);
+
+            com.petal.browser.ui.components.PetalDownloadDialogBridge.showBlobDownloadConfirmation(
+                    context,
+                    dedupedFileName,
+                    decodedBytes.length,
+                    () -> {
                         Executors.newSingleThreadExecutor().execute(() -> {
                             try {
-                                String finalFileName2 = generatedFileName;
-                                if (finalFileName2.contains(".")) {
-                                    finalFileName2 = finalFileName2.substring(0, finalFileName2.lastIndexOf(".")) + "." + realExtension;
-                                } else {
-                                    finalFileName2 = finalFileName2 + "." + realExtension;
-                                }
                                 File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                                 if (!downloadDir.exists()) downloadDir.mkdirs();
-                                File file = new File(downloadDir, finalFileName2);
+                                File file = new File(downloadDir, dedupedFileName);
                                 try (BufferedOutputStream bos = new BufferedOutputStream(Files.newOutputStream(file.toPath()))) {
                                     bos.write(decodedBytes);
                                     bos.flush();
@@ -176,9 +218,9 @@ public class NinjaDownloadListener implements DownloadListener {
                                 });
                             }
                         });
-                        return true;
+                        return kotlin.Unit.INSTANCE;
                     },
-                    R.drawable.icon_close, () -> true
+                    () -> kotlin.Unit.INSTANCE
             );
         } else {
             if (context instanceof android.app.Activity && com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet((android.app.Activity) context, downloadUrl, null, mimeType)) {
