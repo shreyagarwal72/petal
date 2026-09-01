@@ -608,6 +608,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     com.petal.browser.unit.TabSessionManager.TabStateRecord record = savedSession.get(i);
                     boolean isForegroundTab = record.isActive || (i == 0 && BrowserContainer.size() == 0);
                     NinjaWebView restoredWebView = new NinjaWebView(context);
+                    if (record.persistentTabId != null && !record.persistentTabId.isEmpty()) {
+                        restoredWebView.setTabId(record.persistentTabId);
+                    }
                     restoredWebView.initPreferences(record.url);
                     restoredWebView.setBrowserController(this);
 
@@ -1826,6 +1829,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 tab_container.removeView(controller.getAlbumView());
                 int index = BrowserContainer.indexOf(controller);
                 BrowserContainer.remove(controller);
+                if (controller instanceof NinjaWebView) {
+                    com.petal.browser.unit.TabThumbnailCache.remove(((NinjaWebView) controller).getTabId());
+                }
                 com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
                 if ((predecessor != null) && (BrowserContainer.indexOf(predecessor) != -1)) {
                     //if predecessor is stored and has not been closed in the meantime
@@ -1853,6 +1859,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             boolean isClosingCurrent = (controller == currentAlbumController);
             BrowserContainer.remove(controller);
+            if (controller instanceof NinjaWebView) {
+                com.petal.browser.unit.TabThumbnailCache.remove(((NinjaWebView) controller).getTabId());
+            }
             com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
             if (isClosingCurrent && BrowserContainer.size() > 0) {
                 AlbumController nextController = BrowserContainer.get(Math.max(0, BrowserContainer.size() - 1));

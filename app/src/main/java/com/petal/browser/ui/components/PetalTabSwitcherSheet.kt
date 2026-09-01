@@ -163,6 +163,9 @@ object PetalTabSwitcherBridge {
                             val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
                             if (targetAlbum != null) {
                                 tabItems.removeAll { it.id == tabItem.id }
+                                if (targetAlbum is com.petal.browser.view.NinjaWebView) {
+                                    com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
+                                }
                                 com.petal.browser.unit.TabThumbnailCache.remove(tabItem.id)
                                 onCloseTab(targetAlbum)
                                 com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
