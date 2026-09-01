@@ -445,7 +445,7 @@ fun ExpressiveCategoryItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(24.dp),
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     badgeColor: Color = MaterialTheme.colorScheme.primary,
     iconColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {

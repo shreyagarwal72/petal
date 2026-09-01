@@ -610,6 +610,7 @@ fun PetalSettingsScreen(
                                 )
 
                                 val categories = listOf(
+                                    SettingsCategory.API_INTEGRATIONS,
                                     SettingsCategory.APPEARANCE,
                                     SettingsCategory.PRIVACY,
                                     SettingsCategory.SEARCH_HOMEPAGE,
