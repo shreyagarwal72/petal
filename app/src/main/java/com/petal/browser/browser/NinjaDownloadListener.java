@@ -74,34 +74,43 @@ public class NinjaDownloadListener implements DownloadListener {
         String generatedFileName = HelperUnit.domain(webView.getUrl()) + "_" + timestamp + "." + getExtension(mimeType);
 
         if (downloadUrl.startsWith("blob:")) {
-            String d = webView.getContext().getString(R.string.dialog_title_download) + " - " + generatedFileName;
-            HelperUnit.showCustomSnackbarWithTwoActions(
-                    webView.getContext(), webView, null,
-                    webView.getTitle(), d, downloadUrl,
-                    R.drawable.icon_check, () -> {
-                        String jsCode = "javascript: (function() {" +
-                                "   var xhr = new XMLHttpRequest();" +
-                                "   xhr.open('GET', '" + downloadUrl + "', true);" +
-                                "   xhr.responseType = 'blob';" +
-                                "   xhr.onload = function() {" +
-                                "       if (xhr.status === 200) {" +
-                                "           var blob = xhr.response;" +
-                                "           var reader = new FileReader();" +
-                                "           reader.onloadend = function() {" +
-                                "               var base64data = reader.result;" +
-                                "               var fileName = '" + generatedFileName + "';" +
-                                "               AndroidInterface.processBlob(base64data, '" + mimeType + "', fileName);" +
-                                "           };" +
-                                "           reader.readAsDataURL(blob);" +
-                                "       }" +
-                                "   };" +
-                                "   xhr.send();" +
-                                "})();";
-                        webView.evaluateJavascript(jsCode, null);
-                        return true;
-                    },
-                    R.drawable.icon_close, () -> true
-            );
+            // Previously this showed a Snackbar confirmation *before* fetching the blob, using
+            // a filename generated purely from the (often empty/generic) mimeType Android hands
+            // us for blob: URLs - that path always fell back to "bin" for anything that wasn't
+            // pdf/png/jpg/zip, so e.g. a "Download" button that hands the WebView a .kt (or any
+            // other source/text) file always showed a different-looking Snackbar prompt, and
+            // then saved as a misleadingly-named ".bin" file - easy to mistake for "it didn't
+            // download". Now we silently fetch+encode the blob first (cheap, same-origin, no
+            // network round trip) so we can recover the real suggested filename from the
+            // triggering <a download="..."> element and the blob's actual MIME type, and only
+            // then show the SAME AlertDialog-based confirmation used for normal downloads
+            // (see WebAppInterface#processBlob), with the correct name/extension and file size.
+            String jsCode = "javascript: (function() {" +
+                    "   var xhr = new XMLHttpRequest();" +
+                    "   xhr.open('GET', '" + downloadUrl + "', true);" +
+                    "   xhr.responseType = 'blob';" +
+                    "   xhr.onload = function() {" +
+                    "       if (xhr.status === 200) {" +
+                    "           var blob = xhr.response;" +
+                    "           var reader = new FileReader();" +
+                    "           reader.onloadend = function() {" +
+                    "               var base64data = reader.result;" +
+                    "               var suggestedName = '';" +
+                    "               try {" +
+                    "                   var anchors = document.querySelectorAll('a[href=\"' + '" + downloadUrl + "' + '\"]');" +
+                    "                   for (var i = 0; i < anchors.length; i++) {" +
+                    "                       if (anchors[i].download) { suggestedName = anchors[i].download; break; }" +
+                    "                   }" +
+                    "               } catch (e) {}" +
+                    "               var resolvedMime = blob.type || '" + mimeType + "';" +
+                    "               AndroidInterface.processBlob(base64data, resolvedMime, suggestedName);" +
+                    "           };" +
+                    "           reader.readAsDataURL(blob);" +
+                    "       }" +
+                    "   };" +
+                    "   xhr.send();" +
+                    "})();";
+            webView.evaluateJavascript(jsCode, null);
         } else if (downloadUrl.startsWith("data:")) {
 
             int commaIndex = downloadUrl.indexOf(",");
