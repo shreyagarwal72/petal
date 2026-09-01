@@ -1,0 +1,6 @@
+v2.3 Release Highlights:
+- Settings & Account containments overhaul with elevated surfaceContainerLow and 24.dp rounded borders.
+- Cohesive RvSystem-Monitor vector icon set across settings and account pages.
+- Buttery smooth floating bottom navigation bar with zero-jank physics animations.
+- Persistent tab thumbnail preview cache across app restarts.
+- High-speed 12-channel multi-chunk parallel download engine.
