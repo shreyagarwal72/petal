@@ -192,11 +192,11 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", com.petal.browser.R.drawable.ic_rust_logo),
     APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", com.petal.browser.R.drawable.brightness_medium_filled),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", com.petal.browser.R.drawable.layers_filled),
-    SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.globe_2_cancel_rounded),
+    SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.home_filled),
     DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", com.petal.browser.R.drawable.mobile_vibrate_filled),
     EXPERIMENTAL("Experimental", "App language, experimental features and advanced settings", com.petal.browser.R.drawable.build_filled),
-    MISCELLANEOUS("Miscellaneous", "Download engine, external apps handling and extra browser tools", com.petal.browser.R.drawable.dvr_filled),
-    DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", com.petal.browser.R.drawable.database_filled),
+    MISCELLANEOUS("Miscellaneous", "Download engine, external apps handling and extra browser tools", com.petal.browser.R.drawable.download_2_filled),
+    DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", com.petal.browser.R.drawable.backup_filled),
     UPDATER("App Updates", "Check for updates and auto-check on launch", com.petal.browser.R.drawable.update_rounded),
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", com.petal.browser.R.drawable.info_filled)
 }
@@ -1429,7 +1429,7 @@ fun PetalSettingsScreen(
 
                             // 2. Custom Homepage & Background Play
                             if ((scaffoldCategory == SettingsCategory.SEARCH_HOMEPAGE || searchQuery.isNotBlank()) && matchesSearch("Homepage", "custom home start page background play video audio media")) {
-                                SettingsCategoryCard(title = "Homepage & Media Playback", iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded) {
+                                SettingsCategoryCard(title = "Homepage & Media Playback", iconRes = com.petal.browser.R.drawable.home_filled) {
                                     Text(
                                         "Custom Homepage:",
                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
@@ -1651,7 +1651,7 @@ fun PetalSettingsScreen(
 
                             // 4. Popular Languages Selector (Under Experimental Category)
                             if ((scaffoldCategory == SettingsCategory.EXPERIMENTAL || searchQuery.isNotBlank()) && matchesSearch("Language", "languages popular english hinglish spanish hindi french german chinese arabic portuguese russian japanese experimental address bar top bottom position")) {
-                                SettingsCategoryCard(title = "App Language", iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded) {
+                                SettingsCategoryCard(title = "App Language", iconRes = com.petal.browser.R.drawable.translate) {
                                     Text(
                                         "Choose your preferred display language:",
                                         style = MaterialTheme.typography.bodySmall,
@@ -2319,7 +2319,7 @@ fun PetalSettingsScreen(
 
                             // 8. Miscellaneous Settings Category
                             if ((scaffoldCategory == SettingsCategory.MISCELLANEOUS || searchQuery.isNotBlank()) && matchesSearch("Miscellaneous", "download torrent engine 1dm manager external apps open youtube maps apps launch")) {
-                                SettingsCategoryCard(title = "Miscellaneous & Download Options", iconRes = com.petal.browser.R.drawable.dvr_filled) {
+                                SettingsCategoryCard(title = "Miscellaneous & Download Options", iconRes = com.petal.browser.R.drawable.download_2_filled) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -2596,7 +2596,7 @@ fun PetalSettingsScreen(
                             }
 
                             if ((scaffoldCategory == SettingsCategory.DATA_STORAGE || searchQuery.isNotBlank()) && matchesSearch("Backup Sync", "backup restore sync history bookmarks settings database export import json")) {
-                                SettingsCategoryCard(title = "Backup & Restore (JSON)", iconRes = com.petal.browser.R.drawable.database_filled) {
+                                SettingsCategoryCard(title = "Backup & Restore (JSON)", iconRes = com.petal.browser.R.drawable.backup_filled) {
                                     Text(
                                         "Export or restore specific items to/from a single JSON file (Documents/browser_backup/petal_browser_backup.json):",
                                         style = MaterialTheme.typography.bodySmall,
