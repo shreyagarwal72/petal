@@ -225,7 +225,10 @@ public class HelperUnit {
                                 java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
                                 extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
                                 extraHeaders.put("Accept-Language", Locale.getDefault().toLanguageTag());
-                                extraHeaders.put("Accept-Encoding", "gzip, deflate, br, identity");
+                                // No custom Accept-Encoding: HttpURLConnection (Fetch2's downloader)
+                                // only auto-decompresses gzip when this header is left unset. Setting
+                                // it ourselves caused compressed responses (e.g. server-gzipped zip
+                                // files) to be saved to disk still compressed, producing a "corrupt" file.
                                 extraHeaders.put("Connection", "keep-alive");
                                 extraHeaders.put("Cache-Control", "no-transform");
                                 extraHeaders.put("Referer", url);
