@@ -203,6 +203,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public LinearProgressIndicator progressBar;
     public com.petal.browser.ui.components.PullToRefreshFrameLayout contentFrame;
     public boolean isOverlayScreenShowing = false;
+    /**
+     * True while a Compose overlay that is attached directly to the window decor view (e.g.
+     * App Lock, via PetalAppLockBridge) owns the current back gesture. Unlike
+     * isOverlayScreenShowing, this overlay lives outside contentFrame, so it is tracked
+     * separately and must NOT be wired into performBackNavigation's isOverlayScreenShowing
+     * branch (that branch calls contentFrame.removeAllViews()/showAlbum(), which would be
+     * wrong here). It exists solely to stop the Activity-level predictive back animator from
+     * running underneath the Compose-level one.
+     */
+    public boolean isDecorOverlayShowing = false;
     public LinearLayout tab_container;
     public FrameLayout fullscreenHolder;
     public com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
@@ -933,6 +943,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * don't have one, so neither does this.
      */
     public void beginPredictiveBackGesture() {
+        if (isOverlayScreenShowing || isDecorOverlayShowing) return;
         if (predictiveBackSettleAnimator != null) {
             predictiveBackSettleAnimator.cancel();
             predictiveBackSettleAnimator = null;
@@ -948,6 +959,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * identical curve to every Compose screen so the native browsing surface feels the same.
      */
     public void applyPredictiveBackTransform(float progress, int swipeEdge) {
+        if (isOverlayScreenShowing || isDecorOverlayShowing) return;
         if (predictiveBackRoot == null) return;
         predictiveBackProgress = progress;
 
@@ -967,6 +979,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * finish sliding off before the real {@link #performBackNavigation()} fires.
      */
     public void settlePredictiveBackGesture(boolean committed) {
+        if (isOverlayScreenShowing || isDecorOverlayShowing) return;
         if (predictiveBackRoot == null) return;
 
         if (predictiveBackSettleAnimator != null) {
