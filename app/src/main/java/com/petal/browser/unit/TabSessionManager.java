@@ -40,17 +40,24 @@ public class TabSessionManager {
         public long timestamp;
         public String tabGroupId;
         public String tabGroupTitle;
+        public String persistentTabId;
 
         public TabStateRecord() {}
 
         public TabStateRecord(long tabId, String title, String url, int scrollX, int scrollY,
                               boolean isIncognito, boolean isActive, String webViewStateBase64, long timestamp) {
-            this(tabId, title, url, scrollX, scrollY, isIncognito, isActive, webViewStateBase64, timestamp, null, null);
+            this(tabId, title, url, scrollX, scrollY, isIncognito, isActive, webViewStateBase64, timestamp, null, null, null);
         }
 
         public TabStateRecord(long tabId, String title, String url, int scrollX, int scrollY,
                               boolean isIncognito, boolean isActive, String webViewStateBase64, long timestamp,
                               String tabGroupId, String tabGroupTitle) {
+            this(tabId, title, url, scrollX, scrollY, isIncognito, isActive, webViewStateBase64, timestamp, tabGroupId, tabGroupTitle, null);
+        }
+
+        public TabStateRecord(long tabId, String title, String url, int scrollX, int scrollY,
+                              boolean isIncognito, boolean isActive, String webViewStateBase64, long timestamp,
+                              String tabGroupId, String tabGroupTitle, String persistentTabId) {
             this.tabId = tabId;
             this.title = title;
             this.url = url;
@@ -62,6 +69,7 @@ public class TabSessionManager {
             this.timestamp = timestamp;
             this.tabGroupId = tabGroupId;
             this.tabGroupTitle = tabGroupTitle;
+            this.persistentTabId = persistentTabId;
         }
     }
 
@@ -151,9 +159,11 @@ public class TabSessionManager {
                 String tabGroupId = webView.getTabGroupId();
                 String tabGroupTitle = webView.getTabGroupTitle();
 
+                String persistentTabId = webView.getTabId();
+
                 // Store URL, title, scroll positions, tab group & metadata safely. Avoid webView.saveState() Base64
                 // serialization as restoring corrupt webViewState bundles causes native Chromium crashes.
-                records.add(new TabStateRecord(i, title, url, scrollX, scrollY, false, isActive, "", now, tabGroupId, tabGroupTitle));
+                records.add(new TabStateRecord(i, title, url, scrollX, scrollY, false, isActive, "", now, tabGroupId, tabGroupTitle, persistentTabId));
             }
         }
 

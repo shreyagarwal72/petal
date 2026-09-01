@@ -121,7 +121,13 @@ public final class TabThumbnailCache {
     }
 
     private static String getSafeKey(String key) {
-        return key.replaceAll("[^a-zA-Z0-9_-]", "_");
+        if (key == null) return "null";
+        String sanitized = key.replaceAll("[^a-zA-Z0-9_-]", "_");
+        if (sanitized.length() > 64) {
+            String hash = String.valueOf(Math.abs(key.hashCode()));
+            sanitized = sanitized.substring(0, 48) + "_" + hash;
+        }
+        return sanitized;
     }
 
     private static void deleteFromDiskAsync(String key) {

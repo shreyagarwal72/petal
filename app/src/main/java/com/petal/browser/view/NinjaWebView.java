@@ -144,8 +144,24 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         super(context, attrs, defStyleAttr);
     }
 
+    private String tabId = null;
+
+    public String getTabId() {
+        if (tabId == null || tabId.isEmpty()) {
+            tabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(hashCode());
+        }
+        return tabId;
+    }
+
+    public void setTabId(String tabId) {
+        if (tabId != null && !tabId.isEmpty()) {
+            this.tabId = tabId;
+        }
+    }
+
     public NinjaWebView(Context context) {
         super(context);
+        this.tabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(hashCode());
         sp = PreferenceManager.getDefaultSharedPreferences(context);
         String profile = sp.getString("profile", "standard");
         this.context = context;
@@ -886,14 +902,18 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
      * Unique key for tab thumbnail caching, strictly scoped to this tab instance.
      */
     public String getThumbnailKey() {
-        return String.valueOf(hashCode());
+        return getTabId();
     }
 
     public void capturePreviewBitmapAsync(@NonNull java.util.function.Consumer<Bitmap> callback) {
-        final String tabId = getThumbnailKey();
+        final String thumbnailKey = getThumbnailKey();
+        final String currentUrl = getUrl();
         java.util.function.Consumer<Bitmap> cachingCallback = bitmap -> {
             if (bitmap != null) {
-                TabThumbnailCache.put(tabId, bitmap);
+                TabThumbnailCache.put(thumbnailKey, bitmap);
+                if (currentUrl != null && !currentUrl.isEmpty() && !"about:blank".equalsIgnoreCase(currentUrl)) {
+                    TabThumbnailCache.put(currentUrl, bitmap);
+                }
             }
             callback.accept(bitmap);
         };
@@ -957,6 +977,13 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         Bitmap bitmap = TabThumbnailCache.get(getThumbnailKey());
         if (bitmap != null && !bitmap.isRecycled()) {
             return bitmap;
+        }
+        String url = getUrl();
+        if (url != null && !url.isEmpty() && !"about:blank".equalsIgnoreCase(url)) {
+            bitmap = TabThumbnailCache.get(url);
+            if (bitmap != null && !bitmap.isRecycled()) {
+                return bitmap;
+            }
         }
         return null;
     }
