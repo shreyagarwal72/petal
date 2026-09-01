@@ -11,6 +11,7 @@ package com.petal.browser.compose.settings
 import android.content.SharedPreferences
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -54,6 +55,7 @@ object PetalDeleteBridge {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
+            setViewTreeOnBackPressedDispatcherOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 DisposableEffect(Unit) {
