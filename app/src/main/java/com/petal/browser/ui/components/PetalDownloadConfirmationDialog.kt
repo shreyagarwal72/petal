@@ -499,4 +499,91 @@ object PetalDownloadDialogBridge {
             showConfirmationDialogAction()
         }
     }
+
+    /**
+     * Same confirmation UI as [showDownloadConfirmation], for downloads where the bytes have
+     * already been fetched (blob: URLs) and the filename/size are already known - so no
+     * URL/mimeType guessing is done here, and [onConfirmDownload] takes no filename argument.
+     */
+    @JvmStatic
+    fun showBlobDownloadConfirmation(
+        context: Context,
+        fileName: String,
+        byteSize: Long,
+        onConfirmDownload: () -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        val formattedSize = formatFileSize(byteSize)
+        val isDuplicate = isFileExistsInDownloads(fileName)
+
+        var currContext = context
+        while (currContext is android.content.ContextWrapper) {
+            if (currContext is androidx.activity.ComponentActivity) break
+            currContext = currContext.baseContext
+        }
+        val activity = currContext as? androidx.activity.ComponentActivity
+        if (activity == null || activity.isFinishing || activity.isDestroyed) {
+            onConfirmDownload()
+            return
+        }
+
+        activity.runOnUiThread {
+            try {
+                lateinit var dialog: androidx.appcompat.app.AlertDialog
+
+                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                val appFont = com.petal.browser.ui.theme.AppFont.fromName(fontName)
+                val colorStyle = try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+
+                val composeView = ComposeView(activity).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeViewModelStoreOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                    setContent {
+                        PetalExpressiveTheme(
+                            dynamicColor = dynamicColor,
+                            useAmoled = isAmoled,
+                            appFont = appFont,
+                            colorStyle = colorStyle,
+                            paletteId = paletteId
+                        ) {
+                            PetalDownloadConfirmationDialog(
+                                fileName = fileName,
+                                fileSizeFormatted = formattedSize,
+                                isDuplicate = isDuplicate,
+                                onConfirm = {
+                                    if (dialog.isShowing) dialog.dismiss()
+                                    onConfirmDownload()
+                                },
+                                onDismiss = {
+                                    if (dialog.isShowing) dialog.dismiss()
+                                    onDismiss()
+                                }
+                            )
+                        }
+                    }
+                }
+
+                dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+                    .setView(composeView)
+                    .setCancelable(true)
+                    .create()
+
+                dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                dialog.show()
+                com.petal.browser.unit.HelperUnit.setupDialog(activity, dialog)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Fallback to direct save if dialog creation fails
+                onConfirmDownload()
+            }
+        }
+    }
 }
