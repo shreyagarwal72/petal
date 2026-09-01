@@ -1,0 +1,5 @@
+v2.4 Release Highlights:
+- Unified inner category page containments matching the main settings overview screen.
+- API & Integrations Hub added directly to main overview navigation list.
+- Dedicated direct back navigation for web pages with zero glitching.
+- Optimized bottom navbar tab count badge text for clear visibility.

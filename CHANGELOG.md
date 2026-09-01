@@ -1,3 +1,15 @@
+### v2.4 (Official Release)
+
+- **🎨 Settings Inner Categories Containment Harmonization**:
+  - Unified all inner settings category page cards (`SettingsCategoryCard`) across Appearance, Privacy & Security, Accessibility, and Experimental to match the exact Material 3 `surfaceContainerLow` elevation, `1.dp` outline borders, and `24.dp` rounded shapes of the main settings overview screen.
+  - Added the **API & Integrations Hub** directly into the main Overview categories list for seamless navigation.
+
+- **🌐 Dedicated Direct Web Back Navigation**:
+  - Replaced predictive back root-view scaling on web pages with a clean, direct web back handler, ensuring zero glitching or displacement during website browsing while strictly preserving predictive back transitions on overlay and sheet screens.
+
+- **🏷️ Bottom Navbar Tab Count Badge Optimization**:
+  - Shortened incognito tab counter text to `"Tabs ($count)"` to guarantee crisp visibility inside the floating navigation pill without text truncation.
+
 ### v2.3 (Official Release)
 
 - **🎨 Settings & Account Containments & RvSystem-Monitor Icon Overhaul**:
