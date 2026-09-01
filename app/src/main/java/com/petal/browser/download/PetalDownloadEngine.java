@@ -58,10 +58,12 @@ public class PetalDownloadEngine {
 
     private PetalDownloadEngine(Context context) {
         Context appContext = context.getApplicationContext();
+        // Configure high-performance multi-chunk parallel downloader
+        // Parallel multi-part segmentation accelerates speeds across high-bandwidth WiFi and 5G connections
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
-                .setDownloadConcurrentLimit(8)
-                .setProgressReportingInterval(150L)
-                .setAutoRetryMaxAttempts(5)
+                .setDownloadConcurrentLimit(12)
+                .setProgressReportingInterval(100L)
+                .setAutoRetryMaxAttempts(10)
                 .enableAutoStart(true)
                 .enableRetryOnNetworkGain(true)
                 .setHttpDownloader(new HttpUrlConnectionDownloader(Downloader.FileDownloaderType.PARALLEL))
