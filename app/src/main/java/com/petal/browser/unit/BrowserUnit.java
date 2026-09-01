@@ -171,7 +171,15 @@ public class BrowserUnit {
                 java.util.Map<String, String> extraHeaders = new java.util.HashMap<>();
                 extraHeaders.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
                 extraHeaders.put("Accept-Language", Locale.getDefault().toLanguageTag());
-                extraHeaders.put("Accept-Encoding", "gzip, deflate, br, identity");
+                // Do NOT set a custom Accept-Encoding header here. HttpURLConnection (used by
+                // Fetch2's HttpUrlConnectionDownloader) only performs transparent gzip
+                // decompression when the app does not set this header itself. Setting it
+                // manually (as before, "gzip, deflate, br, identity") tells the server it's
+                // free to compress the response, but Fetch2 then writes the raw compressed
+                // bytes straight to disk without decoding them - so a downloaded "file.zip"
+                // was actually a gzip/br-compressed stream and failed to open as a valid zip.
+                // Leaving Accept-Encoding unset lets the platform negotiate and decode gzip
+                // transparently, so downloaded files (zip, pdf, images, etc.) land on disk intact.
                 extraHeaders.put("Connection", "keep-alive");
                 extraHeaders.put("Cache-Control", "no-transform");
                 extraHeaders.put("Referer", verifiedUrl);
