@@ -6,6 +6,7 @@ import android.content.Context
 import android.net.Uri
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
+import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -105,6 +106,7 @@ object PetalAboutDeveloperBridge {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
+                setViewTreeOnBackPressedDispatcherOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
@@ -915,6 +917,7 @@ object PetalCreditsBridge {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
+            setViewTreeOnBackPressedDispatcherOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
