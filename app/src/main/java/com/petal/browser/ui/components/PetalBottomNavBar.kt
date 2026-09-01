@@ -275,11 +275,6 @@ fun PetalBottomNavBar(
     }
 }
 
-/**
- * Floating Nav Tab Item (matching Remember & FilePipe FloatingNavTabItem).
- * Features spring-animated label width expansion (`72.dp`), active background morphing,
- * and filled/tonal icon button colors.
- */
 @Composable
 private fun FloatingNavTabItem(
     selected: Boolean,
@@ -293,8 +288,8 @@ private fun FloatingNavTabItem(
     val labelWidth by animateDpAsState(
         targetValue = if (selected) 72.dp else 0.dp,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = 0.82f,
+            stiffness = 380f
         ),
         label = "nav_label_$index"
     )
@@ -317,12 +312,22 @@ private fun FloatingNavTabItem(
         MaterialTheme.colorScheme.onPrimary
     }
 
-    val currentContentColor = if (selected) activeContentColor else inactiveContentColor
+    val currentContentColor by animateColorAsState(
+        targetValue = if (selected) activeContentColor else inactiveContentColor,
+        animationSpec = tween(durationMillis = 200),
+        label = "nav_color_$index"
+    )
+
+    val currentBgColor by animateColorAsState(
+        targetValue = if (selected) activeContainerColor else Color.Transparent,
+        animationSpec = tween(durationMillis = 200),
+        label = "nav_bg_$index"
+    )
 
     Surface(
         onClick = onClick,
         shape = CircleShape,
-        color = if (selected) activeContainerColor else Color.Transparent,
+        color = currentBgColor,
         modifier = modifier
             .height(48.dp)
             .width(48.dp + labelWidth)
@@ -349,7 +354,8 @@ private fun FloatingNavTabItem(
                         letterSpacing = 0.2.sp
                     ),
                     color = currentContentColor,
-                    maxLines = 1
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }

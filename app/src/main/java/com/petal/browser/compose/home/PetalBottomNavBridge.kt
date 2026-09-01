@@ -33,7 +33,11 @@ interface PetalBottomNavHandler {
     fun onMenuClick()
 }
 
-object PetalBottomNavBridge {
+    private var _selectedTabState = androidx.compose.runtime.mutableStateOf(PetalNavTab.HOME)
+    private var _tabCountState = androidx.compose.runtime.mutableIntStateOf(1)
+    private var _isIncognitoState = androidx.compose.runtime.mutableStateOf(false)
+    private var _navHandler: PetalBottomNavHandler? = null
+
     @JvmStatic
     fun bindBottomNav(
         composeView: ComposeView,
@@ -43,12 +47,28 @@ object PetalBottomNavBridge {
         isIncognito: Boolean,
         handler: PetalBottomNavHandler
     ) {
+        _selectedTabState.value = selectedTab
+        _tabCountState.intValue = tabCount
+        _isIncognitoState.value = isIncognito
+        _navHandler = handler
+
+        // If ComposeView already has content set, state updates above will trigger recomposition without rebuilding ViewTree
+        if (composeView.tag == "PetalBottomNavBound") {
+            return
+        }
+        composeView.tag = "PetalBottomNavBound"
+
         composeView.apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val currentTab by _selectedTabState
+                val currentCount by _tabCountState
+                val currentIncognito by _isIncognitoState
+                val currentHandler = _navHandler
+
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                 var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
@@ -105,14 +125,14 @@ object PetalBottomNavBridge {
                         contentAlignment = Alignment.BottomCenter
                     ) {
                         PetalBottomNavBar(
-                            selectedTab = selectedTab,
-                            tabCount = tabCount,
-                            isIncognito = isIncognito,
+                            selectedTab = currentTab,
+                            tabCount = currentCount,
+                            isIncognito = currentIncognito,
                             isFloatingStyle = floatingTabBar,
-                            onHomeClick = { handler.onHomeClick() },
-                            onNewTabClick = { handler.onNewTabClick() },
-                            onTabsClick = { handler.onTabsClick() },
-                            onMenuClick = { handler.onMenuClick() }
+                            onHomeClick = { currentHandler?.onHomeClick() },
+                            onNewTabClick = { currentHandler?.onNewTabClick() },
+                            onTabsClick = { currentHandler?.onTabsClick() },
+                            onMenuClick = { currentHandler?.onMenuClick() }
                         )
                     }
                 }
