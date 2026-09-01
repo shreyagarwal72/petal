@@ -104,8 +104,8 @@ fun PetalBottomNavBar(
         )
     }
 
-    val tabsLabel = if (isIncognito) "Incognito ($animatedCount)" else "Tabs ($animatedCount)"
-    val newTabLabel = if (isIncognito) "Incognito" else "New"
+    val tabsLabel = if (isIncognito) "Tabs ($animatedCount)" else "Tabs ($animatedCount)"
+    val newTabLabel = if (isIncognito) "New" else "New"
 
     if (isFloatingStyle) {
         Box(
