@@ -1,3 +1,10 @@
+### v2.5.1 (Hotfix)
+
+- **🐛 Predictive Back Shutter Eliminated — App Lock & About Developer Screens**:
+  - Fixed: App Lock overlay and App Lock Config screen caused a single-frame white/black flash (shutter) when a predictive back gesture committed. Root cause: `decor.removeView(composeView)` was called immediately, tearing the View out while Compose's spring exit animation was still in its 200ms settle window.
+  - Fix: Added a 160ms `ViewPropertyAnimator` alpha fade (`0f`) before the `removeView` call, so the composable has time to finish its exit choreography before the View is detached.
+  - Fixed: About Developer screen was using a raw `BackHandler` call with no `PetalPredictiveBackSurface` / `PetalScreenWrapper` wrapper — predictive back showed a harsh tear. Now properly wrapped matching the Credits screen pattern.
+
 ### v2.5 (Official Release)
 
 - **🔖 HTML Bookmark Import & Export (Standard Netscape Format)**:

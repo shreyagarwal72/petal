@@ -182,7 +182,12 @@ fun PetalAboutDeveloperSheetContent(
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = true, onBack = onClose)
+
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onClose
+    ) {
+        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -195,6 +200,7 @@ fun PetalAboutDeveloperSheetContent(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
+
                 ExpressiveHeader(
                     title = "About Developer",
                     subtitle = "Crafted with ❤ for Android & Termux",
@@ -292,6 +298,8 @@ fun PetalAboutDeveloperSheetContent(
             }
         }
     }
+    } // PetalScreenWrapper
+    } // PetalPredictiveBackSurface
 
 /** Developer Hero Profile Card with glowing radial avatar ring and bio chips. */
 @Composable
