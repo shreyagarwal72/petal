@@ -1761,22 +1761,95 @@ fun PetalSettingsScreen(
                                         }
                                     }
 
-                                    // Main toggle
-                                    ToggleRow(
-                                        title = "Enable Gecko Rendering Engine",
-                                        subtitle = "Use Mozilla's Firefox engine instead of Chrome/WebView. Enables WebExtension API support.",
-                                        icon = Icons.Rounded.Language,
-                                        checked = isGeckoEngineEnabled,
-                                        onCheckedChange = { newValue ->
-                                            isGeckoEngineEnabled = newValue
-                                            if (newValue) {
-                                                com.petal.browser.gecko.GeckoRuntimeHolder.enable(context)
-                                            } else {
-                                                com.petal.browser.gecko.GeckoRuntimeHolder.disable(context)
+                                    var isGeckoDownloaded by remember { mutableStateOf(com.petal.browser.gecko.GeckoEngineInstaller.isInstalled(context)) }
+                                    var isDownloadingGecko by remember { mutableStateOf(false) }
+
+                                    if (!isGeckoDownloaded) {
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(14.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        "Download Gecko Module",
+                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Text(
+                                                        "Download Mozilla Gecko rendering engine from GitHub Releases (~95 MB). Keeps base app light and saves RAM.",
+                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                                Spacer(Modifier.width(8.dp))
+                                                Button(
+                                                    onClick = {
+                                                        isDownloadingGecko = true
+                                                        com.petal.browser.gecko.GeckoEngineInstaller.startDownload(context) {
+                                                            isDownloadingGecko = false
+                                                            isGeckoDownloaded = true
+                                                            showGeckoRestartBanner = true
+                                                        }
+                                                    },
+                                                    enabled = !isDownloadingGecko,
+                                                    shape = RoundedCornerShape(10.dp)
+                                                ) {
+                                                    if (isDownloadingGecko) {
+                                                        CircularProgressIndicator(
+                                                            modifier = Modifier.size(16.dp),
+                                                            strokeWidth = 2.dp,
+                                                            color = MaterialTheme.colorScheme.onPrimary
+                                                        )
+                                                    } else {
+                                                        Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                        Spacer(Modifier.width(6.dp))
+                                                        Text("Download", style = MaterialTheme.typography.labelMedium)
+                                                    }
+                                                }
                                             }
-                                            showGeckoRestartBanner = true
                                         }
-                                    )
+                                    } else {
+                                        // Main toggle
+                                        ToggleRow(
+                                            title = "Enable Gecko Rendering Engine",
+                                            subtitle = "Use Mozilla's Firefox engine instead of Chrome/WebView. Enables WebExtension API support.",
+                                            icon = Icons.Rounded.Language,
+                                            checked = isGeckoEngineEnabled,
+                                            onCheckedChange = { newValue ->
+                                                isGeckoEngineEnabled = newValue
+                                                if (newValue) {
+                                                    com.petal.browser.gecko.GeckoRuntimeHolder.enable(context)
+                                                } else {
+                                                    com.petal.browser.gecko.GeckoRuntimeHolder.disable(context)
+                                                }
+                                                showGeckoRestartBanner = true
+                                            }
+                                        )
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                            horizontalArrangement = Arrangement.End
+                                        ) {
+                                            TextButton(
+                                                onClick = {
+                                                    com.petal.browser.gecko.GeckoEngineInstaller.removeEngine(context)
+                                                    isGeckoDownloaded = false
+                                                    isGeckoEngineEnabled = false
+                                                    showGeckoRestartBanner = true
+                                                }
+                                            ) {
+                                                Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("Delete Gecko Module to Free Storage", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
+                                            }
+                                        }
+                                    }
 
                                     // Restart required banner — shown after toggle change
                                     androidx.compose.animation.AnimatedVisibility(

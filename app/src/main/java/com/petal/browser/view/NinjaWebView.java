@@ -796,6 +796,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         updatePreviewCache();
         try {
             onPause();
+            pauseTimers();
         } catch (Exception ignored) {}
     }
 
