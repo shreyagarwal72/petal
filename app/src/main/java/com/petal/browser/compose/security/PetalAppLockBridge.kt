@@ -105,14 +105,26 @@ object PetalAppLockBridge {
                     PetalAppLockScreen(
                         backgroundSnapshot = snapshotBitmap,
                         onUnlocked = {
-                            decor.removeView(composeView)
-                            browserActivity?.isDecorOverlayShowing = false
-                            onUnlocked.run()
+                            composeView?.animate()
+                                ?.alpha(0f)
+                                ?.setDuration(160L)
+                                ?.withEndAction {
+                                    decor.removeView(composeView)
+                                    browserActivity?.isDecorOverlayShowing = false
+                                    onUnlocked.run()
+                                }
+                                ?.start()
                         },
                         onBackPress = {
-                            decor.removeView(composeView)
-                            browserActivity?.isDecorOverlayShowing = false
-                            onCancel.run()
+                            composeView?.animate()
+                                ?.alpha(0f)
+                                ?.setDuration(160L)
+                                ?.withEndAction {
+                                    decor.removeView(composeView)
+                                    browserActivity?.isDecorOverlayShowing = false
+                                    onCancel.run()
+                                }
+                                ?.start()
                         }
                     )
                 }
@@ -202,9 +214,15 @@ object PetalAppLockBridge {
                     PetalAppLockConfigScreen(
                         backgroundSnapshot = snapshotBitmap,
                         onBack = {
-                            decor.removeView(composeView)
-                            browserActivity?.isDecorOverlayShowing = false
-                            onBack.run()
+                            composeView?.animate()
+                                ?.alpha(0f)
+                                ?.setDuration(160L)
+                                ?.withEndAction {
+                                    decor.removeView(composeView)
+                                    browserActivity?.isDecorOverlayShowing = false
+                                    onBack.run()
+                                }
+                                ?.start()
                         }
                     )
                 }

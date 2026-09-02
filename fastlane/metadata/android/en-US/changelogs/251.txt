@@ -1,0 +1,10 @@
+### 🐛 Bug Fixes
+
+- Fix: Eliminated shutter/flash when predictive back gesture commits on the App Lock overlay screen
+- Fix: Eliminated shutter/flash when predictive back gesture commits on the App Lock Config screen
+- Fix: Replaced raw BackHandler in About Developer screen with proper PetalPredictiveBackSurface + PetalScreenWrapper — now animates smoothly on back gesture like Credits screen
+
+### ⚡ Performance & Smoothness
+
+- App Lock overlay now fades out with a 160ms alpha animation before the ComposeView is removed from the window decor, preventing the abrupt view teardown that caused single-frame white/black flashes during predictive back commits
+- About Developer screen now participates fully in the shared-element predictive back choreography
