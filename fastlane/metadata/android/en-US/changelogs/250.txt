@@ -1,0 +1,5 @@
+v2.5 Release Highlights:
+- HTML Bookmark Import & Export: Standard Netscape format support with Storage Access Framework (SAF) for Chrome, Firefox, Safari, Edge interoperability.
+- Live Predictive Back Previews: Real-time dynamic snapshot streaming for fluid, non-stale depth blur back gestures.
+- Stutter-Free Web Navigation: Clean domain-aware back navigation eliminating webview preference churn.
+- Extensions Screen & Gecko Runtime Fixes: Smooth add-on installation and badge counting.
