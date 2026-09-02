@@ -472,8 +472,8 @@ fun PetalSettingsScreen(
     var isAutoOpenApps by remember { mutableStateOf(sp.getBoolean("sp_auto_open_apps", false)) }
     var isCheckUpdateOnLaunch by remember { mutableStateOf(sp.getBoolean("sp_check_update_on_launch", true)) }
     var isTouchHaptics by remember { mutableStateOf(sp.getBoolean("sp_touch_haptics", true)) }
-    var isPredictiveBackJunction by remember { mutableStateOf(sp.getBoolean("sp_predictive_back_junction_enabled", true)) }
-    var isDepthBlurJunction by remember { mutableStateOf(sp.getBoolean("sp_depth_blur_junction_enabled", true)) }
+    var isPredictiveBackJunction by remember { mutableStateOf(sp.getBoolean("sp_predictive_back_animation", true)) }
+    var isDepthBlurJunction by remember { mutableStateOf(sp.getBoolean("sp_depth_blur_effects", true)) }
     var isAppLockEnabled by remember { mutableStateOf(sp.getBoolean("sp_app_lock_enabled", false)) }
     var showPasscodeDialog by remember { mutableStateOf(false) }
     var isDoubleBackExit by remember { mutableStateOf(sp.getBoolean("sp_double_back_exit", true)) }
@@ -2215,7 +2215,7 @@ fun PetalSettingsScreen(
                                         checked = isPredictiveBackJunction,
                                         onCheckedChange = { newValue ->
                                             isPredictiveBackJunction = newValue
-                                            com.petal.browser.predictive.PetalPredictiveJunction.setPredictiveBackEnabled(sp, newValue)
+                                            com.petal.browser.predictive.PetalPredictiveJunction.setPredictiveBackEnabled(newValue)
                                         }
                                     )
 
@@ -2226,7 +2226,7 @@ fun PetalSettingsScreen(
                                         checked = isDepthBlurJunction,
                                         onCheckedChange = { newValue ->
                                             isDepthBlurJunction = newValue
-                                            com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(sp, newValue)
+                                            com.petal.browser.predictive.PetalPredictiveJunction.setDepthBlurEnabled(newValue)
                                         }
                                     )
 
