@@ -3232,12 +3232,14 @@ private fun AppearanceHeroBanner(
     )
 
     Surface(
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(24.dp),
         color = cardBgColor,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        shadowElevation = 6.dp
+            .padding(vertical = 4.dp),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
         Box(
             modifier = Modifier
