@@ -529,8 +529,10 @@ fun PetalSettingsScreen(
 
     fun matchesSearch(sectionTitle: String, keywords: String): Boolean {
         if (searchQuery.isBlank()) return true
-        val query = searchQuery.trim().lowercase()
-        return sectionTitle.lowercase().contains(query) || keywords.lowercase().contains(query)
+        val terms = searchQuery.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        if (terms.isEmpty()) return true
+        val combinedSearchTarget = (sectionTitle + " " + keywords).lowercase()
+        return terms.all { term -> combinedSearchTarget.contains(term) }
     }
 
     val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
