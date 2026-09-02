@@ -152,21 +152,32 @@ object GeckoExtensionManager {
  */
 private class PetalExtensionPromptDelegate : WebExtensionController.PromptDelegate {
 
-    override fun onInstallPrompt(
-        extension: WebExtension
-    ): GeckoResult<AllowOrDeny> {
-        Log.i(TAG, "onInstallPrompt: ${extension.id} — auto-granting")
-        return GeckoResult.allow()
+    override fun onInstallPromptRequest(
+        extension: WebExtension,
+        permissions: Array<String>,
+        origins: Array<String>,
+        dataCollectionPermissions: Array<String>
+    ): GeckoResult<WebExtension.PermissionPromptResponse> {
+        Log.i(TAG, "onInstallPromptRequest: ${extension.id} — auto-granting")
+        return GeckoResult.fromValue(
+            WebExtension.PermissionPromptResponse(
+                true,  // isPermissionsGranted
+                true,  // isPrivateModeGranted
+                false  // isTechnicalAndInteractionDataGranted
+            )
+        )
     }
 
     override fun onUpdatePrompt(
-        currentlyInstalled: WebExtension,
-        updatedExtension: WebExtension,
-        newPermissions: List<String>
+        extension: WebExtension,
+        newPermissions: Array<String>,
+        newOrigins: Array<String>,
+        newDataCollectionPermissions: Array<String>
     ): GeckoResult<AllowOrDeny> {
         Log.i(
             TAG,
-            "onUpdatePrompt: ${currentlyInstalled.id} → new permissions=$newPermissions"
+            "onUpdatePrompt: ${extension.id} → new permissions=${newPermissions.toList()}, " +
+                "new origins=${newOrigins.toList()}"
         )
         // Auto-grant updates for built-in and user-approved extensions.
         return GeckoResult.allow()
