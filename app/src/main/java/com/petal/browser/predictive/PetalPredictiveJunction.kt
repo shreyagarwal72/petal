@@ -31,6 +31,7 @@ import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -42,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -49,6 +51,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
@@ -230,6 +233,7 @@ fun PetalScreenWrapper(
     }
 
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
+    val junctionBlurEnabled by PetalPredictiveJunction.isDepthBlurEnabled.collectAsState()
     val predictiveEnabled = junctionPredictiveEnabled
     val predictiveBackState = LocalPredictiveBackState.current
 
@@ -252,6 +256,12 @@ fun PetalScreenWrapper(
     val isActive = predictiveBackState.isActive
     val progress = if (predictiveEnabled && isActive) predictiveBackState.progress else 0f
     val scaleEased = PetalM3EmphasizedEasing.transform(progress)
+
+    val targetBlurRadius = if (isBehindTopScreen && junctionBlurEnabled) {
+        if (isActive) 24f * (1f - scaleEased) else 24f
+    } else 0f
+
+    val blurRadius = targetBlurRadius.dp
 
     Box(
         modifier = modifier
@@ -295,7 +305,7 @@ fun PetalScreenWrapper(
                     scaleY = revealScale
                     translationX = bgParallaxOffset
                     alpha = 1f
-                    compositingStrategy = if (isActive) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+                    compositingStrategy = if (isActive || (isBehindTopScreen && junctionBlurEnabled)) CompositingStrategy.Offscreen else CompositingStrategy.Auto
                     if (cornerRadius > 0.5f) {
                         this.shape = RoundedCornerShape(cornerRadius.dp)
                         this.clip = true
@@ -306,6 +316,13 @@ fun PetalScreenWrapper(
                 }
             }
             .then(
+                if (isBehindTopScreen && junctionBlurEnabled && blurRadius > 0.dp) {
+                    Modifier.blur(blurRadius)
+                } else {
+                    Modifier
+                }
+            )
+            .then(
                 if (!isBehindTopScreen) Modifier.background(MaterialTheme.colorScheme.background)
                 else Modifier
             )
@@ -313,7 +330,7 @@ fun PetalScreenWrapper(
         content()
 
         if (isBehindTopScreen) {
-            val settledTargetDim = 0.40f
+            val settledTargetDim = if (junctionBlurEnabled) 0.40f else 0.70f
             val effectiveDimAlpha = if (isActive) settledTargetDim * (1f - scaleEased) else settledTargetDim
             Box(
                 modifier = Modifier
