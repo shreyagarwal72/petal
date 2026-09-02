@@ -652,6 +652,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     public synchronized void goBack() {
+        if (!canGoBack()) return;
         try {
             WebBackForwardList mWebBackForwardList = this.copyBackForwardList();
             if (mWebBackForwardList != null && mWebBackForwardList.getCurrentIndex() > 0) {
@@ -661,8 +662,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                     WebHistoryItem item = mWebBackForwardList.getItemAtIndex(prevIndex);
                     if (item != null && item.getUrl() != null) {
                         String historyUrl = item.getUrl();
-                        initPreferences(historyUrl);
-                        if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(historyUrl)) && sp.getBoolean("sp_standard_always", true)) {
+                        if (listStandard != null && listStandard.isWhite(historyUrl)) {
+                            profile = HelperUnit.domain(historyUrl);
+                        } else if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(historyUrl)) && sp.getBoolean("sp_standard_always", true)) {
+                            profile = "profileStandard";
                             sp.edit().putString("profile", "profileStandard").apply();
                         }
                     }
@@ -677,6 +680,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
     @Override
     public synchronized void goBackOrForward(int steps) {
+        if (!canGoBackOrForward(steps)) return;
         try {
             WebBackForwardList mWebBackForwardList = this.copyBackForwardList();
             if (mWebBackForwardList != null) {
@@ -686,8 +690,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                     WebHistoryItem item = mWebBackForwardList.getItemAtIndex(targetIndex);
                     if (item != null && item.getUrl() != null) {
                         String historyUrl = item.getUrl();
-                        initPreferences(historyUrl);
-                        if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(historyUrl)) && sp.getBoolean("sp_standard_always", true)) {
+                        if (listStandard != null && listStandard.isWhite(historyUrl)) {
+                            profile = HelperUnit.domain(historyUrl);
+                        } else if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(historyUrl)) && sp.getBoolean("sp_standard_always", true)) {
+                            profile = "profileStandard";
                             sp.edit().putString("profile", "profileStandard").apply();
                         }
                     }

@@ -56,6 +56,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -125,11 +126,20 @@ data class PredictiveBackState(
 val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
 
 /**
+ * Android M3 Emphasized Decelerate Easing: cubic-bezier(0.05, 0.7, 0.1, 1.0)
+ */
+val PetalM3EmphasizedEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
+
+/**
+ * Pop Exit Slide Easing: cubic-bezier(0.5, 0.0, 0.8, 0.2)
+ */
+val PetalPopExitSlideEasing = CubicBezierEasing(0.5f, 0.0f, 0.8f, 0.2f)
+
+const val PETAL_POP_EXIT_MAX_SCALE_DELTA = 0.15f
+
+/**
  * Wraps [content] with a [PredictiveBackHandler] and republishes gesture progress
  * through [LocalPredictiveBackState] so any descendant can react to it live.
- *
- * Renders the real Home Screen surface in the background with 24.dp depth blur
- * during in-flight back gestures, matching RvSystem-Monitor & PixelPlayer 1:1.
  */
 @Composable
 fun PetalPredictiveBackSurface(
@@ -147,6 +157,9 @@ fun PetalPredictiveBackSurface(
         if (junctionPredictiveEnabled) {
             PredictiveBackHandler(enabled = true) { progressFlow ->
                 try {
+                    // Trigger dynamic live refresh when back gesture starts
+                    PetalContentSnapshot.refreshLiveSnapshotAsync()
+
                     progressFlow.collect { backEvent ->
                         progressAnim.snapTo(backEvent.progress)
                         backState = PredictiveBackState(
@@ -184,7 +197,6 @@ fun PetalPredictiveBackSurface(
                 }
             }
         } else {
-            // Instant, standard back navigation when predictive animations are toggled off
             androidx.activity.compose.BackHandler(enabled = true, onBack = onBack)
         }
     }
@@ -200,11 +212,7 @@ fun PetalPredictiveBackSurface(
 
 /**
  * Screen wrapper that applies predictive back visual effects and depth blur to full-screen Petal surfaces.
- * Ported 1:1 from RvSystem-Monitor & PixelPlayer:
- * - Background (behind) surface: 24.dp depth blur + black dim overlay (0.40f/0.75f clearing as gesture completes)
- *   with aospSharedAxisPopEnter parallax slide in (-33% -> 0).
- * - Foreground (top) surface: crisp scale down (1.0 -> 0.85) + 32.dp corner clipping + 16.dp drop shadow + aospSharedAxisPopExit slide offset (+50% right / -50% left).
- * - AnimatedVisibilityScope support: live 32dp corner radius, 24dp depth blur, and dim alpha transition specs during NavHost transitions.
+ * Dynamically resolves live background snapshots to reflect changing web content without stutter.
  */
 @Composable
 fun PetalScreenWrapper(
@@ -237,6 +245,17 @@ fun PetalScreenWrapper(
     val predictiveEnabled = junctionPredictiveEnabled
     val blurEnabled = junctionBlurEnabled
     val predictiveBackState = LocalPredictiveBackState.current
+
+    // Observe live snapshot stream for real-time dynamic web updates
+    val liveBitmapState by PetalContentSnapshot.liveSnapshotFlow.collectAsState()
+    val effectiveSnapshotBitmap = remember(liveBitmapState, backgroundSnapshot) {
+        val live = liveBitmapState
+        if (live != null && !live.isRecycled) {
+            live.asImageBitmap()
+        } else {
+            backgroundSnapshot
+        }
+    }
 
     val myEntry = lifecycleOwner as? NavBackStackEntry
     val previousEntryId = navController?.previousBackStackEntry?.id
@@ -296,8 +315,8 @@ fun PetalScreenWrapper(
         Box(
             modifier = modifier.fillMaxSize()
         ) {
-            // Layer 0: Background snapshot underlay (rendered when gesture is active or behind top screen)
-            if (backgroundSnapshot != null && (isActive || isBehindTopScreen)) {
+            // Layer 0: Background live snapshot underlay
+            if (effectiveSnapshotBitmap != null && (isActive || isBehindTopScreen)) {
                 val snapshotBlurRadius = if (blurEnabled) (24f * (1f - scaleEased)).dp else 0.dp
                 val snapshotDimAlpha = if (!blurEnabled) 0.75f * (1f - scaleEased) else 0.40f * (1f - scaleEased)
                 val snapshotScale = 0.94f + 0.06f * scaleEased
@@ -318,7 +337,7 @@ fun PetalScreenWrapper(
                         }
                 ) {
                     Image(
-                        bitmap = backgroundSnapshot,
+                        bitmap = effectiveSnapshotBitmap,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -389,7 +408,7 @@ fun PetalScreenWrapper(
                         }
                     }
                     .then(
-                        if (backgroundSnapshot == null && !isBehindTopScreen) Modifier.background(MaterialTheme.colorScheme.background)
+                        if (effectiveSnapshotBitmap == null && !isBehindTopScreen) Modifier.background(MaterialTheme.colorScheme.background)
                         else Modifier
                     )
             ) {
@@ -411,5 +430,3 @@ fun PetalScreenWrapper(
         }
     }
 }
-
-
