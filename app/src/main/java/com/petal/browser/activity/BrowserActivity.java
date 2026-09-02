@@ -899,27 +899,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else if (ninjaWebView != null && ninjaWebView.canGoBack()) {
             sp.edit().putBoolean("backPressed", true).apply();
             ninjaWebView.stopLoading();
-
-            WebBackForwardList historyList = ninjaWebView.copyBackForwardList();
-            int currentIndex = historyList.getCurrentIndex();
-            int targetStep = -1;
-            String currentUrl = ninjaWebView.getUrl();
-
-            if (currentIndex > 0) {
-                for (int i = currentIndex - 1; i >= 0; i--) {
-                    String prevUrl = historyList.getItemAtIndex(i).getUrl();
-                    if (prevUrl != null && !prevUrl.equalsIgnoreCase(currentUrl) && !prevUrl.equalsIgnoreCase("about:blank")) {
-                        targetStep = i - currentIndex;
-                        break;
-                    }
-                }
-            }
-
-            if (targetStep < -1 && ninjaWebView.canGoBackOrForward(targetStep)) {
-                ninjaWebView.goBackOrForward(targetStep);
-            } else {
-                ninjaWebView.goBack();
-            }
+            ninjaWebView.goBack();
             updateOmniBox();
         } else {
             String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
