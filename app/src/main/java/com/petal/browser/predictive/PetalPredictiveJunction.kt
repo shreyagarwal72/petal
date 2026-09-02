@@ -125,17 +125,7 @@ data class PredictiveBackState(
 
 val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
 
-/**
- * Android M3 Emphasized Decelerate Easing: cubic-bezier(0.05, 0.7, 0.1, 1.0)
- */
-val PetalM3EmphasizedEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
 
-/**
- * Pop Exit Slide Easing: cubic-bezier(0.5, 0.0, 0.8, 0.2)
- */
-val PetalPopExitSlideEasing = CubicBezierEasing(0.5f, 0.0f, 0.8f, 0.2f)
-
-const val PETAL_POP_EXIT_MAX_SCALE_DELTA = 0.15f
 
 /**
  * Wraps [content] with a [PredictiveBackHandler] and republishes gesture progress

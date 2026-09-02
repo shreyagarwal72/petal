@@ -306,80 +306,8 @@ public class HelperUnit {
     }
 
     public static String resolveFileName(String url, String contentDisposition, String mimeType) {
-        try {
-            if (contentDisposition != null && !contentDisposition.trim().isEmpty()) {
-                String guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
-                if (guessed != null && !guessed.endsWith(".bin") && !guessed.equals("downloadfile")) {
-                    return guessed;
-                }
-            }
-
-            if (url != null && !url.trim().isEmpty() && !url.startsWith("data:") && !url.startsWith("blob:")) {
-                try {
-                    String decodedUrl = Uri.decode(url);
-                    Uri uri = Uri.parse(decodedUrl);
-                    String path = uri.getPath();
-                    if (path != null) {
-                        int lastSlash = path.lastIndexOf('/');
-                        String rawName = (lastSlash >= 0) ? path.substring(lastSlash + 1) : path;
-                        if (!rawName.trim().isEmpty() && !rawName.equalsIgnoreCase("downloadfile") && !rawName.equalsIgnoreCase("download")) {
-                            int dotIndex = rawName.lastIndexOf('.');
-                            if (dotIndex > 0 && dotIndex < rawName.length() - 1) {
-                                String ext = rawName.substring(dotIndex + 1);
-                                if (!ext.contains("/") && !ext.contains("?") && !ext.contains("&") && ext.length() <= 10) {
-                                    return rawName;
-                                }
-                            } else if (dotIndex < 0) {
-                                // Direct filename without dot in URL path (e.g. main.kt without ext or custom endpoint)
-                                String guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
-                                if (guessed != null && !guessed.endsWith(".bin")) {
-                                    return guessed;
-                                }
-                            }
-                        }
-                    }
-
-                    // Check query parameters for file or filename parameter
-                    for (String queryParam : uri.getQueryParameterNames()) {
-                        if (queryParam.equalsIgnoreCase("filename") || queryParam.equalsIgnoreCase("file") || queryParam.equalsIgnoreCase("name")) {
-                            String val = uri.getQueryParameter(queryParam);
-                            if (val != null && val.contains(".")) {
-                                return val;
-                            }
-                        }
-                    }
-                } catch (Exception ignored) {}
-            }
-
-            String guessed = URLUtil.guessFileName(url, contentDisposition, mimeType);
-            if (guessed != null && guessed.endsWith(".bin")) {
-                if (mimeType != null && !mimeType.isEmpty() && !mimeType.equalsIgnoreCase("application/octet-stream")) {
-                    String ext = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
-                    if (ext != null && !ext.isEmpty()) {
-                        return guessed.substring(0, guessed.length() - 4) + "." + ext;
-                    }
-                }
-                // Try deriving extension directly from URL path segment if available
-                if (url != null && url.contains(".")) {
-                    try {
-                        String pathOnly = Uri.parse(url).getPath();
-                        if (pathOnly != null) {
-                            int dot = pathOnly.lastIndexOf('.');
-                            if (dot > 0 && dot < pathOnly.length() - 1) {
-                                String urlExt = pathOnly.substring(dot + 1);
-                                if (urlExt.matches("^[a-zA-Z0-9]{1,8}$")) {
-                                    String base = guessed.substring(0, guessed.length() - 4);
-                                    return base + "." + urlExt;
-                                }
-                            }
-                        }
-                    } catch (Exception ignored) {}
-                }
-            }
-            return (guessed != null && !guessed.isEmpty()) ? guessed : "downloadfile";
-        } catch (Exception e) {
-            return URLUtil.guessFileName(url, contentDisposition, mimeType);
-        }
+        if (url == null || url.trim().isEmpty()) return "download";
+        return com.petal.browser.download.SafeDownloadValues.fileName(url, contentDisposition, mimeType);
     }
 
     public static String domain(String url) {

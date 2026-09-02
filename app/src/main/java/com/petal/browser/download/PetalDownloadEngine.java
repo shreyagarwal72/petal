@@ -46,9 +46,9 @@ import java.io.File;
 import java.util.Map;
 
 /**
- * Petal Fast Download Engine (MDM - Multi-threaded Download Manager)
- * Uses Fetch2 under the hood for parallel multi-chunk downloading, resume support,
- * 60s resilient socket timeouts, auto-retry on network stutters, and high-speed downloads.
+ * Petal High-Speed Download Engine
+ * Uses Fetch2 with robust sequential chunking and strict byte-stream integrity,
+ * preventing corrupted archive, zip, apk, and image downloads across all network types.
  */
 public class PetalDownloadEngine {
     private static final String TAG = "PetalDownloadEngine";
@@ -58,15 +58,15 @@ public class PetalDownloadEngine {
 
     private PetalDownloadEngine(Context context) {
         Context appContext = context.getApplicationContext();
-        // Configure high-performance multi-chunk parallel downloader
-        // Parallel multi-part segmentation accelerates speeds across high-bandwidth WiFi and 5G connections
+        // Use SEQUENTIAL downloader to guarantee single continuous non-corrupted byte-stream writing
+        // while supporting pause, resume, retries, and background service execution.
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
-                .setDownloadConcurrentLimit(12)
+                .setDownloadConcurrentLimit(6)
                 .setProgressReportingInterval(100L)
-                .setAutoRetryMaxAttempts(10)
+                .setAutoRetryMaxAttempts(5)
                 .enableAutoStart(true)
                 .enableRetryOnNetworkGain(true)
-                .setHttpDownloader(new HttpUrlConnectionDownloader(Downloader.FileDownloaderType.PARALLEL))
+                .setHttpDownloader(new HttpUrlConnectionDownloader(Downloader.FileDownloaderType.SEQUENTIAL))
                 .enableLogging(false)
                 .build();
         fetch = Fetch.Impl.getInstance(fetchConfiguration);
@@ -101,7 +101,7 @@ public class PetalDownloadEngine {
     }
 
     /**
-     * Enqueues a high-speed multi-threaded download request.
+     * Enqueues a high-speed download request.
      */
     public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders) {
         enqueueDownload(context, url, fileName, userAgent, cookie, extraHeaders, null);
@@ -110,9 +110,7 @@ public class PetalDownloadEngine {
     private final Map<String, Long> recentEnqueues = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
-     * Enqueues a download request and reports the Fetch2-assigned download ID back once
-     * queued, so callers (e.g. BrowserUnit) can start live-tracking/notifications for the
-     * exact download that was created instead of guessing an ID.
+     * Enqueues a download request and reports the Fetch2-assigned download ID back once queued.
      */
     public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders, java.util.function.BiConsumer<Integer, String> onEnqueued) {
         if (url == null || url.isEmpty()) return;
@@ -129,14 +127,15 @@ public class PetalDownloadEngine {
             downloadsDir.mkdirs();
         }
 
-        File targetFile = new File(downloadsDir, fileName);
+        String safeFileName = (fileName != null && !fileName.trim().isEmpty()) ? fileName : SafeDownloadValues.fileName(url, null, null);
+        File targetFile = new File(downloadsDir, safeFileName);
         if (targetFile.exists()) {
-            String name = fileName;
+            String name = safeFileName;
             String extension = "";
-            int dotIndex = fileName.lastIndexOf('.');
-            if (dotIndex > 0 && dotIndex < fileName.length() - 1) {
-                name = fileName.substring(0, dotIndex);
-                extension = fileName.substring(dotIndex);
+            int dotIndex = safeFileName.lastIndexOf('.');
+            if (dotIndex > 0 && dotIndex < safeFileName.length() - 1) {
+                name = safeFileName.substring(0, dotIndex);
+                extension = safeFileName.substring(dotIndex);
             }
             int counter = 1;
             while (targetFile.exists()) {
@@ -152,15 +151,21 @@ public class PetalDownloadEngine {
         request.setEnqueueAction(EnqueueAction.INCREMENT_FILE_NAME);
         request.setAutoRetryMaxAttempts(5);
 
-        if (userAgent != null && !userAgent.isEmpty()) {
-            request.addHeader("User-Agent", userAgent);
+        String safeUserAgent = SafeDownloadValues.INSTANCE.header(userAgent, 4096);
+        if (safeUserAgent != null && !safeUserAgent.isEmpty()) {
+            request.addHeader("User-Agent", safeUserAgent);
         }
-        if (cookie != null && !cookie.isEmpty()) {
-            request.addHeader("Cookie", cookie);
+        String safeCookie = SafeDownloadValues.INSTANCE.header(cookie, 16384);
+        if (safeCookie != null && !safeCookie.isEmpty()) {
+            request.addHeader("Cookie", safeCookie);
         }
         if (extraHeaders != null) {
             for (Map.Entry<String, String> entry : extraHeaders.entrySet()) {
-                request.addHeader(entry.getKey(), entry.getValue());
+                String safeKey = SafeDownloadValues.INSTANCE.header(entry.getKey(), 1024);
+                String safeVal = SafeDownloadValues.INSTANCE.header(entry.getValue(), 4096);
+                if (safeKey != null && safeVal != null) {
+                    request.addHeader(safeKey, safeVal);
+                }
             }
         }
 
