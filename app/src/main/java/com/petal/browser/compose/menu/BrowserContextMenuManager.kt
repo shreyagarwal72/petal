@@ -107,8 +107,7 @@ object BrowserContextMenuManager {
 
                 override fun onSearchWithGoogleLens() {
                     if (imageURL.isNotBlank()) {
-                        val lensUrl = "https://lens.google.com/uploadbyurl?url=" + Uri.encode(imageURL)
-                        activity.addAlbum("Google Lens", lensUrl, true)
+                        com.petal.browser.lens.PetalLensManager.searchImageWithGoogleLens(activity, imageURL)
                     } else {
                         NinjaToast.show(activity, "No valid image URL found")
                     }
@@ -242,8 +241,7 @@ object BrowserContextMenuManager {
 
                 override fun onSearchWithGoogleLens() {
                     if (urlResult.isNotBlank()) {
-                        val lensUrl = "https://lens.google.com/uploadbyurl?url=" + Uri.encode(urlResult)
-                        activity.addAlbum("Google Lens", lensUrl, true)
+                        com.petal.browser.lens.PetalLensManager.searchImageWithGoogleLens(activity, urlResult)
                     }
                 }
 

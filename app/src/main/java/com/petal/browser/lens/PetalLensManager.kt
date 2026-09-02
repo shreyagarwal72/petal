@@ -7,12 +7,13 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.unit.ImageActionHelper
 import java.io.File
 import java.io.FileOutputStream
 
 /**
  * Petal Lens Manager
- * Full in-app Google Lens flow: Photo capture, gallery selection, and Google Lens app launch.
+ * Full in-app Google Lens flow: Photo capture, gallery selection, and Google Lens app/web launch.
  */
 object PetalLensManager {
 
@@ -145,10 +146,8 @@ object PetalLensManager {
                 addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            if (isIntentResolvable(context, intent)) {
-                context.startActivity(intent)
-                return
-            }
+            context.startActivity(intent)
+            return
         } catch (e: Exception) {
             android.util.Log.w(TAG, "Direct lens attachment intent failed", e)
         }
@@ -164,10 +163,8 @@ object PetalLensManager {
                 addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            if (isIntentResolvable(context, standaloneIntent)) {
-                context.startActivity(standaloneIntent)
-                return
-            }
+            context.startActivity(standaloneIntent)
+            return
         } catch (e: Exception) {
             android.util.Log.w(TAG, "Standalone lens send failed", e)
         }
@@ -183,10 +180,8 @@ object PetalLensManager {
                 addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            if (isIntentResolvable(context, gsbIntent)) {
-                context.startActivity(gsbIntent)
-                return
-            }
+            context.startActivity(gsbIntent)
+            return
         } catch (e: Exception) {
             android.util.Log.w(TAG, "QuickSearchBox send failed", e)
         }
@@ -202,10 +197,8 @@ object PetalLensManager {
                 addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            if (isIntentResolvable(context, photosIntent)) {
-                context.startActivity(photosIntent)
-                return
-            }
+            context.startActivity(photosIntent)
+            return
         } catch (e: Exception) {
             android.util.Log.w(TAG, "Photos send failed", e)
         }
@@ -235,16 +228,65 @@ object PetalLensManager {
         launchGoogleLensApp(context)
     }
 
-    private fun isIntentResolvable(context: Context, intent: Intent): Boolean {
-        return try {
-            val activities = context.packageManager.queryIntentActivities(
-                intent,
-                PackageManager.MATCH_DEFAULT_ONLY
-            )
-            activities.isNotEmpty()
-        } catch (_: Exception) {
-            false
+    /**
+     * Searches an image with Google Lens from an image URL (e.g. from Context Menu).
+     * Attempts to resolve via Google Search / Google Lens, downloading and caching locally
+     * if necessary to guarantee that local/blob/data or remote images open directly in Google Lens.
+     */
+    @JvmStatic
+    fun searchImageWithGoogleLens(context: Context, imageUrl: String) {
+        if (imageUrl.isBlank()) return
+        PetalHapticEngine.getInstance(context).playClick(context)
+
+        // If it's already a local/content URI, search directly
+        if (imageUrl.startsWith("content://") || imageUrl.startsWith("file://")) {
+            launchLensForImageUri(context, Uri.parse(imageUrl))
+            return
         }
+
+        // Asynchronously download/prepare image or fallback to Google Lens web redirect
+        Thread {
+            try {
+                val storageDir = File(context.cacheDir, "lens_photos").apply { mkdirs() }
+                val destFile = File(storageDir, "lens_web_${System.currentTimeMillis()}.jpg")
+
+                val imageBytes = ImageActionHelper.getImageBytes(context, imageUrl)
+                FileOutputStream(destFile).use { fos ->
+                    fos.write(imageBytes)
+                    fos.flush()
+                }
+
+                val contentUri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    destFile
+                )
+
+                if (context is android.app.Activity) {
+                    context.runOnUiThread {
+                        launchLensForImageUri(context, contentUri)
+                    }
+                } else {
+                    launchLensForImageUri(context, contentUri)
+                }
+            } catch (e: Exception) {
+                android.util.Log.w(TAG, "Failed to download image for Lens intent, falling back to Lens web URL", e)
+                if (context is android.app.Activity) {
+                    context.runOnUiThread {
+                        val encodedUrl = Uri.encode(imageUrl)
+                        val lensWebUrl = "https://lens.google.com/uploadbyurl?url=$encodedUrl"
+                        if (context is com.petal.browser.activity.BrowserActivity) {
+                            context.addAlbum("Google Lens", lensWebUrl, true)
+                        } else {
+                            val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(lensWebUrl)).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(webIntent)
+                        }
+                    }
+                }
+            }
+        }.start()
     }
 
     /**

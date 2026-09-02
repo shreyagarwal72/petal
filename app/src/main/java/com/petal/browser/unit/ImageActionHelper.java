@@ -121,7 +121,7 @@ public class ImageActionHelper {
         }).start();
     }
 
-    private static byte[] getImageBytes(Context context, String imageUrl) throws Exception {
+    public static byte[] getImageBytes(Context context, String imageUrl) throws Exception {
         if (imageUrl.startsWith("data:image")) {
             String base64Data = imageUrl.substring(imageUrl.indexOf(",") + 1);
             return android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT);
