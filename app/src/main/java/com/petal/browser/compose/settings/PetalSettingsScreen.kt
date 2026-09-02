@@ -485,6 +485,8 @@ fun PetalSettingsScreen(
     var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
     var torrentEngineMode by remember { mutableStateOf(sp.getString("sp_torrent_engine", "1DM") ?: "1DM") }
     var showEngineSheet by remember { mutableStateOf(false) }
+    var isGeckoEngineEnabled by remember { mutableStateOf(sp.getBoolean(com.petal.browser.gecko.PREF_GECKO_ENGINE_ENABLED, false)) }
+    var showGeckoRestartBanner by remember { mutableStateOf(false) }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -1743,6 +1745,146 @@ fun PetalSettingsScreen(
                                                 leadingIcon = if (addressBarPosition == "BOTTOM") {
                                                     { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                                 } else null
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // ── Gecko Engine (Experimental) ───────────────────────────────────────
+                            if ((scaffoldCategory == SettingsCategory.EXPERIMENTAL || searchQuery.isNotBlank()) && matchesSearch("Gecko Engine", "gecko mozilla firefox geckoview rendering engine experimental webextension")) {
+                                SettingsCategoryCard(title = "Gecko Engine (Experimental)", iconRes = com.petal.browser.R.drawable.build_filled) {
+
+                                    // Info banner
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            verticalAlignment = Alignment.Top
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.Info,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.size(18.dp).padding(top = 1.dp)
+                                            )
+                                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                Text(
+                                                    "Mozilla Gecko (Firefox 150)",
+                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                )
+                                                Text(
+                                                    "Replaces Android WebView with Mozilla's Gecko rendering engine. Enables real WebExtension APIs (uBlock, Tampermonkey). Adds ~100 MB to APK and ~120 MB RAM overhead. Restart required to take effect.",
+                                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
+                                                )
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(
+                                                    "⚠ Supported: arm64-v8a · x86_64 only",
+                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    // Main toggle
+                                    ToggleRow(
+                                        title = "Enable Gecko Rendering Engine",
+                                        subtitle = "Use Mozilla's Firefox engine instead of Chrome/WebView. Enables WebExtension API support.",
+                                        icon = Icons.Rounded.Language,
+                                        checked = isGeckoEngineEnabled,
+                                        onCheckedChange = { newValue ->
+                                            isGeckoEngineEnabled = newValue
+                                            if (newValue) {
+                                                com.petal.browser.gecko.GeckoRuntimeHolder.enable(context)
+                                            } else {
+                                                com.petal.browser.gecko.GeckoRuntimeHolder.disable(context)
+                                            }
+                                            showGeckoRestartBanner = true
+                                        }
+                                    )
+
+                                    // Restart required banner — shown after toggle change
+                                    androidx.compose.animation.AnimatedVisibility(
+                                        visible = showGeckoRestartBanner,
+                                        enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                                        exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = MaterialTheme.colorScheme.errorContainer,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.Warning,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                    Text(
+                                                        "Restart Petal to apply changes",
+                                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                                    )
+                                                }
+                                                TextButton(
+                                                    onClick = {
+                                                        // Restart the app cleanly
+                                                        val pm = context.packageManager
+                                                        val intent = pm.getLaunchIntentForPackage(context.packageName)
+                                                        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                                        context.startActivity(intent)
+                                                        android.os.Process.killProcess(android.os.Process.myPid())
+                                                    }
+                                                ) {
+                                                    Text(
+                                                        "Restart now",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Engine status chip
+                                    val isLive = com.petal.browser.gecko.GeckoRuntimeHolder.isInitialized
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = if (isLive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                if (isLive) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                                                contentDescription = null,
+                                                tint = if (isLive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Text(
+                                                text = if (isLive) "Gecko Engine is active (Firefox 150 · geckoview-omni:150.0.20260511200624)" else "Gecko Engine is inactive — using system WebView",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                                color = if (isLive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }

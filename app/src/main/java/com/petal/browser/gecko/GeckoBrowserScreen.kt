@@ -61,6 +61,39 @@ fun GeckoBrowserScreen(
     onOpenTabs: () -> Unit = {},
     onClose: () -> Unit = {}
 ) {
+    // Guard — show a fallback if the user hasn't enabled Gecko in Settings yet
+    if (!GeckoRuntimeHolder.isInitialized) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(32.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(48.dp)
+                )
+                Text(
+                    "Gecko Engine not active",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "Enable the Gecko Engine toggle in\nSettings → Experimental to use this browser.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
+        return
+    }
+
     // ── State ─────────────────────────────────────────────────────────────
     val browserState = remember { GeckoBrowserState() }
 

@@ -53,6 +53,10 @@ object GeckoExtensionManager {
      * @param context used to enumerate the assets directory.
      */
     fun init(context: Context) {
+        if (!GeckoRuntimeHolder.isInitialized) {
+            Log.w(TAG, "init() called before GeckoRuntime — skipping extension setup")
+            return
+        }
         controller.promptDelegate = PetalExtensionPromptDelegate()
         installBuiltInExtensions(context)
     }
