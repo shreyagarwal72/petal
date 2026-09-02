@@ -26,6 +26,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -397,11 +399,12 @@ private fun prettyUrl(url: String): String =
     url.removePrefix("https://").removePrefix("http://").trimEnd('/').ifEmpty { url }
 
 /** Click without ripple — used for the tappable address-bar display row. */
-private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier =
-    this.then(
-        androidx.compose.foundation.clickable(
-            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-            indication        = null,
-            onClick           = onClick
-        )
+@Composable
+private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
+    val interactionSource = remember { MutableInteractionSource() }
+    return this.clickable(
+        interactionSource = interactionSource,
+        indication        = null,
+        onClick           = onClick
     )
+}
