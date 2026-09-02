@@ -11,6 +11,8 @@ import android.os.Bundle
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.petal.browser.engine.ChromiumNativeEngineCore
+import com.petal.browser.gecko.GeckoExtensionManager
+import com.petal.browser.gecko.GeckoRuntimeHolder
 import com.petal.browser.predictive.PetalPredictiveJunction
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.TabThumbnailCache
@@ -40,13 +42,15 @@ class PetalApplication : Application() {
         try {
             com.petal.browser.logger.PetalAppLogger.init(this)
             ChromiumNativeEngineCore.initialize(this)
+            GeckoRuntimeHolder.init(this)
+            GeckoExtensionManager.init(this)
             PetalPredictiveJunction.init(
                 PreferenceManager.getDefaultSharedPreferences(this)
             )
             TabThumbnailCache.initDiskCache(this)
-            Log.i(TAG, "Early Chromium Native Engine & Predictive Junction initialization complete")
+            Log.i(TAG, "Early Chromium Native Engine, GeckoRuntime & Predictive Junction initialization complete")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed early Chromium Native Engine init", e)
+            Log.e(TAG, "Failed early engine init", e)
         }
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {

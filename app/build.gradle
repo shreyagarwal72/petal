@@ -36,8 +36,8 @@ android {
         abi {
             enable true
             reset()
-            include 'armeabi-v7a', 'arm64-v8a'
-            universalApk true
+            include 'arm64-v8a', 'x86_64'
+            universalApk false
         }
     }
 
@@ -149,4 +149,8 @@ dependencies {
     // Google ML Kit On-Device Recognition APIs
     implementation 'com.google.mlkit:text-recognition:16.0.1'
     implementation 'com.google.mlkit:barcode-scanning:17.3.0'
+
+    // ── Mozilla GeckoView — Gecko rendering engine ──────────────────────────
+    // omni variant bundles all locales. Pin to a stable Firefox 150 build.
+    implementation 'org.mozilla.geckoview:geckoview-omni:150.0.20260511200624'
 }
