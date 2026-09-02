@@ -1,3 +1,23 @@
+### v2.5 (Official Release)
+
+- **🔖 HTML Bookmark Import & Export (Standard Netscape Format)**:
+  - Added full support for importing and exporting bookmarks using the industry-standard Netscape Bookmark File format (`bookmarks.html`), fully compatible with Google Chrome, Mozilla Firefox, Apple Safari, Microsoft Edge, and Brave.
+  - Added one-tap **Import (FileUpload)** and **Export (FileDownload)** header action icons directly on the Material 3 Bookmarks screen.
+  - Integrated with Storage Access Framework (`CreateDocument` and `OpenDocument`) for seamless folder and file selection across all Android versions.
+  - Added dedicated HTML Bookmarks import and export controls under **Settings → Data & Storage → Backup & Restore**.
+  - Built-in duplicate detection, timestamp parsing (`ADD_DATE`), and transactional database integrity guarantees.
+
+- **✨ Live Dynamic Predictive Back Previews & Depth Blur**:
+  - Replaced static/stale initial screen captures with a reactive `liveSnapshotFlow` stream in `PetalContentSnapshot`, delivering real-time underlays during active predictive back gestures.
+  - Synchronized gesture spring physics with `RvSystem-Monitor` and `PixelPlayer` specs (`Spring.StiffnessMedium`, no bounce on commit, low bounce on cancel).
+
+- **⚡ Stutter-Free Website Back Navigation**:
+  - Removed synchronous preference re-initialization churn inside `NinjaWebView.goBack()` and `goBackOrForward()`.
+  - Replaced heavy web settings resets with clean domain-aware navigation inspired by `candy-browser`, ensuring smooth 60/120fps back navigation without frame drops.
+
+- **🧩 WebExtensions Management & Runtime Fixes**:
+  - Stabilized Gecko extension management, add-on discovery prompt delegation, and dynamic counter badges.
+
 ### v2.4 (Official Release)
 
 - **🎨 Settings Inner Categories Containment Harmonization**:
