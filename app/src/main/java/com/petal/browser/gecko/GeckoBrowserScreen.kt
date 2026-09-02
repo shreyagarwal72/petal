@@ -1,20 +1,9 @@
 /*
  * GeckoBrowserScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Production-ready Jetpack Compose screen wrapping Mozilla GeckoView.
- *
- * Architecture:
- *   • [GeckoBrowserState]        — Compose-observable state bag
- *   • [GeckoProgressDelegate]    — wires engine progress → state
- *   • [GeckoNavigationDelegate]  — wires navigation events → state
- *   • [GeckoContentDelegate]     — wires title changes → state
- *   • DisposableEffect           — opens session on launch, closes on disposal
- *   • AndroidView                — bridges GeckoView native View into Compose
- *   • BackHandler (Petal-parity) — full mirror of BrowserActivity back logic:
- *       1. Stop loading before navigating back
- *       2. Skip duplicate / about:blank entries in history
- *       3. Fall back to home URL if history is empty but not already home
- *       4. Double-back-to-exit (2 s window) respecting sp_double_back_exit pref
+ * Production-ready Jetpack Compose screen wrapping Mozilla GeckoView with
+ * full multi-tab session management, Material 3 Tab Manager grid integration,
+ * dynamic tab switching, and crash-proof lifecycle management.
  *
  * MIT License — Copyright (c) 2026 Petal Browser
  */
@@ -48,7 +37,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.preference.PreferenceManager
-import org.mozilla.geckoview.GeckoSession
+import com.petal.browser.compose.tabs.PetalTabGridSwitcher
+import com.petal.browser.ui.components.AnimatedCounterBadge
 import org.mozilla.geckoview.GeckoView
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -71,16 +61,16 @@ private fun isGeckoHomePage(url: String): Boolean {
 // ── Main Screen ───────────────────────────────────────────────────────────
 
 /**
- * Full-screen Gecko-powered browser.
+ * Full-screen Gecko-powered browser with robust multi-tab support.
  *
  * @param initialUrl  First URL to load. Defaults to [DEFAULT_HOME_URL].
- * @param onOpenTabs  Invoked when the tab-switcher button is tapped.
+ * @param onOpenTabs  Optional external callback for opening tabs overview.
  * @param onClose     Invoked when the app should exit (double-back confirmed).
  */
 @Composable
 fun GeckoBrowserScreen(
     initialUrl: String = DEFAULT_HOME_URL,
-    onOpenTabs: () -> Unit = {},
+    onOpenTabs: (() -> Unit)? = null,
     onClose: () -> Unit = {}
 ) {
     // ── Runtime guard ─────────────────────────────────────────────────────
@@ -119,61 +109,42 @@ fun GeckoBrowserScreen(
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-    // ── State ─────────────────────────────────────────────────────────────
-    val browserState = remember { GeckoBrowserState() }
+    // Initialize or retrieve active tab session
+    LaunchedEffect(Unit) {
+        GeckoTabManager.ensureInitialTab(initialUrl)
+    }
+
+    val activeTab = GeckoTabManager.activeTab ?: remember {
+        GeckoTabManager.ensureInitialTab(initialUrl)
+    }
+
+    val browserState = activeTab.state
+    var showTabSwitcher by remember { mutableStateOf(false) }
+
+    // Ensure active tab session is opened with runtime
+    DisposableEffect(activeTab.id) {
+        if (GeckoRuntimeHolder.isInitialized) {
+            activeTab.openSafely(GeckoRuntimeHolder.runtime)
+        }
+        onDispose {}
+    }
 
     // Tracks when the user last pressed back — for double-back-to-exit.
     var lastBackPressMs by remember { mutableLongStateOf(0L) }
 
-    // ── GeckoSession lifecycle ────────────────────────────────────────────
-    val session = remember {
-        GeckoSession().apply {
-            progressDelegate  = GeckoProgressDelegate(browserState)
-            navigationDelegate = GeckoNavigationDelegate(browserState)
-            contentDelegate   = GeckoContentDelegate(browserState)
-        }
-    }
-
-    DisposableEffect(session) {
-        session.open(GeckoRuntimeHolder.runtime)
-        session.loadUri(initialUrl)
-        onDispose { session.close() }
-    }
-
     // ── Petal-parity back handler ─────────────────────────────────────────
-    //
-    // Mirrors BrowserActivity's back-press logic exactly:
-    //
-    //  1. If canGoBack → stop loading, walk history backwards skipping
-    //     any duplicate entries that share the same URL as the current page
-    //     or are plain "about:blank" (matches BrowserActivity lines 900-922).
-    //
-    //  2. If history exhausted but current page is NOT home → navigate home
-    //     (matches BrowserActivity lines 925-932).
-    //
-    //  3. If already on home → honour sp_double_back_exit:
-    //       • false  → exit immediately
-    //       • true   → show toast on first press; exit only if pressed again
-    //                   within 2 000 ms (matches BrowserActivity lines 933-945).
-    //
-    // BackHandler is always enabled so it intercepts the system back gesture
-    // at every state, preventing the activity from finishing prematurely.
-    // ─────────────────────────────────────────────────────────────────────
     BackHandler(enabled = true) {
         when {
-            // ── 1. Navigate backwards in history ─────────────────────────
+            showTabSwitcher -> {
+                showTabSwitcher = false
+            }
             browserState.canGoBack -> {
-                session.stop()
-                session.goBack()
+                activeTab.goBack()
             }
-
-            // ── 2. History exhausted, not on home → go home ───────────────
             !isGeckoHomePage(browserState.currentUrl) -> {
-                session.stop()
-                session.loadUri(DEFAULT_HOME_URL)
+                activeTab.stop()
+                activeTab.loadUri(DEFAULT_HOME_URL)
             }
-
-            // ── 3. Already on home → double-back-to-exit logic ────────────
             else -> {
                 val requireDouble = sp.getBoolean("sp_double_back_exit", true)
                 if (!requireDouble) {
@@ -195,32 +166,67 @@ fun GeckoBrowserScreen(
         }
     }
 
+    // ── Tab Switcher Overlay ──────────────────────────────────────────────
+    if (showTabSwitcher) {
+        PetalTabGridSwitcher(
+            tabs = GeckoTabManager.getPetalTabItems(),
+            onTabSelect = { selectedItem ->
+                GeckoTabManager.selectTab(selectedItem.id)
+                showTabSwitcher = false
+            },
+            onTabClose = { closedItem ->
+                GeckoTabManager.closeTab(closedItem.id)
+            },
+            onNewTab = { isIncognito ->
+                GeckoTabManager.createTab(
+                    initialUrl = DEFAULT_HOME_URL,
+                    isIncognito = isIncognito,
+                    selectImmediately = true
+                )
+                showTabSwitcher = false
+            },
+            onCloseAllTabs = {
+                GeckoTabManager.closeAllTabs(context)
+                showTabSwitcher = false
+            },
+            onBack = {
+                showTabSwitcher = false
+            }
+        )
+        return
+    }
+
     // ── UI ────────────────────────────────────────────────────────────────
     Scaffold(
         topBar = {
             GeckoAddressBar(
-                url      = browserState.currentUrl,
+                url = browserState.currentUrl,
                 isSecure = browserState.isSecure,
                 isLoading = browserState.isLoading,
                 progress = browserState.progress,
-                onNavigate = { url -> session.loadUri(url) },
-                onRefresh  = { session.reload() }
+                onNavigate = { url -> activeTab.loadUri(url) },
+                onRefresh = { activeTab.reload() }
             )
         },
         bottomBar = {
             GeckoBottomNav(
-                canGoBack    = browserState.canGoBack,
+                canGoBack = browserState.canGoBack,
                 canGoForward = browserState.canGoForward,
+                tabCount = GeckoTabManager.tabs.size,
                 onBack = {
-                    // Bottom-nav back button uses the same de-duplicate logic
                     if (browserState.canGoBack) {
-                        session.stop()
-                        session.goBack()
+                        activeTab.goBack()
                     }
                 },
-                onForward = { session.goForward() },
-                onHome    = { session.loadUri(DEFAULT_HOME_URL) },
-                onTabs    = onOpenTabs
+                onForward = { activeTab.goForward() },
+                onHome = { activeTab.loadUri(DEFAULT_HOME_URL) },
+                onTabs = {
+                    if (onOpenTabs != null) {
+                        onOpenTabs()
+                    } else {
+                        showTabSwitcher = true
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -229,12 +235,23 @@ fun GeckoBrowserScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory  = { ctx ->
-                    GeckoView(ctx).apply { setSession(session) }
-                }
-            )
+            key(activeTab.id) {
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { ctx ->
+                        GeckoView(ctx).apply {
+                            setSession(activeTab.session)
+                        }
+                    },
+                    update = { view ->
+                        try {
+                            view.setSession(activeTab.session)
+                        } catch (e: Exception) {
+                            android.util.Log.e("GeckoBrowserScreen", "Error updating GeckoView session", e)
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -252,8 +269,8 @@ private fun GeckoAddressBar(
     onRefresh: () -> Unit
 ) {
     var editingUrl by remember { mutableStateOf(false) }
-    var inputText  by remember(url) { mutableStateOf(url) }
-    val focusRequester    = remember { FocusRequester() }
+    var inputText by remember(url) { mutableStateOf(url) }
+    val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     Column {
@@ -269,7 +286,7 @@ private fun GeckoAddressBar(
                             .focusRequester(focusRequester),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Uri,
-                            imeAction    = ImeAction.Go
+                            imeAction = ImeAction.Go
                         ),
                         keyboardActions = KeyboardActions(
                             onGo = {
@@ -280,7 +297,7 @@ private fun GeckoAddressBar(
                         ),
                         colors = TextFieldDefaults.colors(
                             unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                            focusedContainerColor   = androidx.compose.ui.graphics.Color.Transparent
+                            focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent
                         )
                     )
                     LaunchedEffect(Unit) { focusRequester.requestFocus() }
@@ -302,8 +319,8 @@ private fun GeckoAddressBar(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text     = prettyUrl(url),
-                            style    = MaterialTheme.typography.bodyMedium,
+                            text = prettyUrl(url),
+                            style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
@@ -315,7 +332,7 @@ private fun GeckoAddressBar(
                 if (editingUrl) {
                     IconButton(onClick = {
                         editingUrl = false
-                        inputText  = url
+                        inputText = url
                         keyboardController?.hide()
                     }) {
                         Icon(Icons.Rounded.Close, contentDescription = "Cancel")
@@ -346,6 +363,7 @@ private fun GeckoAddressBar(
 private fun GeckoBottomNav(
     canGoBack: Boolean,
     canGoForward: Boolean,
+    tabCount: Int,
     onBack: () -> Unit,
     onForward: () -> Unit,
     onHome: () -> Unit,
@@ -354,29 +372,41 @@ private fun GeckoBottomNav(
     NavigationBar {
         NavigationBarItem(
             selected = false,
-            onClick  = onBack,
-            enabled  = canGoBack,
-            icon     = { Icon(Icons.Rounded.ArrowBack, contentDescription = "Back") },
-            label    = { Text("Back") }
+            onClick = onBack,
+            enabled = canGoBack,
+            icon = { Icon(Icons.Rounded.ArrowBack, contentDescription = "Back") },
+            label = { Text("Back") }
         )
         NavigationBarItem(
             selected = false,
-            onClick  = onForward,
-            enabled  = canGoForward,
-            icon     = { Icon(Icons.Rounded.ArrowForward, contentDescription = "Forward") },
-            label    = { Text("Forward") }
+            onClick = onForward,
+            enabled = canGoForward,
+            icon = { Icon(Icons.Rounded.ArrowForward, contentDescription = "Forward") },
+            label = { Text("Forward") }
         )
         NavigationBarItem(
             selected = false,
-            onClick  = onHome,
-            icon     = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
-            label    = { Text("Home") }
+            onClick = onHome,
+            icon = { Icon(Icons.Rounded.Home, contentDescription = "Home") },
+            label = { Text("Home") }
         )
         NavigationBarItem(
             selected = false,
-            onClick  = onTabs,
-            icon     = { Icon(Icons.Rounded.Tab, contentDescription = "Tabs") },
-            label    = { Text("Tabs") }
+            onClick = onTabs,
+            icon = {
+                BadgedBox(
+                    badge = {
+                        AnimatedCounterBadge(
+                            count = tabCount,
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                ) {
+                    Icon(Icons.Rounded.Tab, contentDescription = "Tabs")
+                }
+            },
+            label = { Text("Tabs") }
         )
     }
 }
@@ -404,7 +434,7 @@ private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier {
     val interactionSource = remember { MutableInteractionSource() }
     return this.clickable(
         interactionSource = interactionSource,
-        indication        = null,
-        onClick           = onClick
+        indication = null,
+        onClick = onClick
     )
 }

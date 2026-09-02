@@ -65,10 +65,12 @@ class GeckoProgressDelegate(
 // ── Navigation Delegate ───────────────────────────────────────────────────
 
 /**
- * Wires [GeckoSession.NavigationDelegate] callbacks into [GeckoBrowserState].
+ * Wires [GeckoSession.NavigationDelegate] callbacks into [GeckoBrowserState]
+ * and handles new tab / popup requests.
  */
 class GeckoNavigationDelegate(
-    private val state: GeckoBrowserState
+    private val state: GeckoBrowserState,
+    private val onNewTabUri: ((String) -> Unit)? = null
 ) : NavigationDelegate {
 
     override fun onLocationChange(
@@ -102,23 +104,28 @@ class GeckoNavigationDelegate(
         session: GeckoSession,
         uri: String
     ): GeckoResult<GeckoSession>? {
-        // Popup / new-window request — return null to block silently.
-        // A future multi-tab implementation can intercept here instead.
-        Log.d(TAG, "onNewSession requested for: $uri — blocked (single-tab mode)")
+        Log.d(TAG, "onNewSession requested for: $uri")
+        onNewTabUri?.invoke(uri)
         return null
     }
 }
 
-// ── Content Delegate (title updates) ─────────────────────────────────────
+// ── Content Delegate (title updates & window close) ───────────────────────
 
 /**
- * Minimal [GeckoSession.ContentDelegate] wiring that captures page titles.
+ * [GeckoSession.ContentDelegate] wiring that captures page titles and window close events.
  */
 class GeckoContentDelegate(
-    private val state: GeckoBrowserState
+    private val state: GeckoBrowserState,
+    private val onCloseWindow: (() -> Unit)? = null
 ) : GeckoSession.ContentDelegate {
 
     override fun onTitleChange(session: GeckoSession, title: String?) {
         state.pageTitle = title ?: ""
+    }
+
+    override fun onCloseRequest(session: GeckoSession) {
+        Log.d(TAG, "onCloseRequest received for session")
+        onCloseWindow?.invoke()
     }
 }
