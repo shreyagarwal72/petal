@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  * Chrome Android-inspired Material 3 Expressive Bookmarks Page for Petal Browser.
  * Features live search/filter, individual bookmark deletion, bookmark creation,
- * share actions, and 60fps smooth animations.
+ * share actions, HTML Bookmark import/export, and 60fps smooth animations.
  */
 
 package com.petal.browser.compose.bookmarks
@@ -11,6 +11,8 @@ package com.petal.browser.compose.bookmarks
 import android.content.Context
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -40,6 +42,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import coil.compose.AsyncImage
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
+import com.petal.browser.unit.BookmarkHtmlImporterExporter
 import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
@@ -143,6 +146,27 @@ fun PetalBookmarksScreen(
         reloadBookmarks()
     }
 
+    // HTML Export & Import SAF Activity Launchers
+    val exportHtmlLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/html")
+    ) { targetUri ->
+        if (targetUri != null) {
+            BookmarkHtmlImporterExporter.exportToUri(context, targetUri)
+        }
+    }
+
+    val importHtmlLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { sourceUri ->
+        if (sourceUri != null) {
+            BookmarkHtmlImporterExporter.importFromUri(context, sourceUri) { success, _ ->
+                if (success) {
+                    reloadBookmarks()
+                }
+            }
+        }
+    }
+
     val filteredBookmarks = remember(searchQuery, rawBookmarks) {
         val list = rawBookmarks ?: emptyList()
         if (searchQuery.isBlank()) {
@@ -180,6 +204,16 @@ fun PetalBookmarksScreen(
                     subtitle = "${filteredBookmarks.size} saved items",
                     onBack = onDismiss,
                     actions = {
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.FileUpload,
+                            contentDescription = "Import Bookmarks (HTML)",
+                            onClick = { importHtmlLauncher.launch(arrayOf("text/html", "text/plain", "*/*")) }
+                        )
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.FileDownload,
+                            contentDescription = "Export Bookmarks (HTML)",
+                            onClick = { exportHtmlLauncher.launch("bookmarks.html") }
+                        )
                         HeaderActionIcon(
                             icon = Icons.Rounded.Add,
                             contentDescription = "Add Bookmark",
@@ -234,7 +268,7 @@ fun PetalBookmarksScreen(
                     com.petal.browser.ui.components.EmptyStateBlob(
                         illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.BOOKMARKS,
                         title = if (searchQuery.isEmpty()) "No Bookmarks Saved Yet" else "No Matching Bookmarks",
-                        description = if (searchQuery.isEmpty()) "Tap the star icon on web pages to save them for quick access" else "Try searching with a different URL or keyword"
+                        description = if (searchQuery.isEmpty()) "Tap the star icon on web pages to save them, or import bookmarks.html above" else "Try searching with a different URL or keyword"
                     )
                 } else {
                     LazyColumn(
@@ -266,8 +300,9 @@ fun PetalBookmarksScreen(
         if (showClearConfirm) {
             AlertDialog(
                 onDismissRequest = { showClearConfirm = false },
+                icon = { Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                 title = { Text("Clear All Bookmarks?") },
-                text = { Text("This will permanently remove all saved bookmarks.") },
+                text = { Text("This will permanently remove all bookmarks from your library. This action cannot be undone.") },
                 confirmButton = {
                     Button(
                         onClick = {
