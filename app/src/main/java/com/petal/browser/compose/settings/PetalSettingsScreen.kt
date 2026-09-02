@@ -208,51 +208,53 @@ private fun SettingsCategoryCard(
     iconRes: Int? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-        tonalElevation = 1.dp,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+    // RvSystem-Monitor style: bold primary section label above the card,
+    // flat Card with surfaceVariant 70% alpha, 24dp corners, 0dp elevation.
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // ── Section label (primary, bold, with inline icon) ───────────────
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(bottom = 10.dp, start = 6.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (iconRes != null) {
-                        Icon(
-                            painter = androidx.compose.ui.res.painterResource(iconRes),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else if (icon != null) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface
+            if (iconRes != null) {
+                Icon(
+                    painter = androidx.compose.ui.res.painterResource(iconRes),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(15.dp)
+                )
+            } else if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(15.dp)
                 )
             }
-            content()
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        // ── Flat card body ────────────────────────────────────────────────
+        androidx.compose.material3.Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = androidx.compose.material3.CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+            ),
+            elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                content()
+            }
         }
     }
 }
@@ -285,7 +287,7 @@ private fun ToggleRow(
 ) {
     val contentAlpha = if (enabled) 1f else 0.38f
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -295,7 +297,7 @@ private fun ToggleRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -345,7 +347,7 @@ private fun PetalVariableSlider(
     onValueChange: (Float) -> Unit
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -819,40 +821,6 @@ fun PetalSettingsScreen(
                                             )
                                         }
                                     }
-                                    }
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    // Open AI Hub Button Card
-                                    Surface(
-                                        onClick = {
-                                            if (context is androidx.activity.ComponentActivity) {
-                                                com.petal.browser.compose.ai.PetalAiHubBridge.showAiHub(context)
-                                            }
-                                        },
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(14.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(
-                                                    "Open Petal AI Hub Directory",
-                                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                                                )
-                                                Text(
-                                                    "Launch Petal AI tools, Deep Web Research, and web AI tools catalog",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
-                                                )
-                                            }
-                                            Icon(Icons.Rounded.SmartToy, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
-                                        }
                                     }
 
                                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
