@@ -108,11 +108,11 @@ object GeckoExtensionManager {
         }
 
         result
-            .then { ext ->
+            .then<WebExtension> { ext ->
                 Log.i(TAG, "Extension installed: id=${ext?.id} name=${ext?.metaData?.name}")
                 GeckoResult.fromValue(ext)
             }
-            .exceptionally { throwable ->
+            .exceptionally<WebExtension> { throwable ->
                 Log.e(TAG, "Extension install failed for $uri", throwable)
                 null
             }
@@ -127,11 +127,11 @@ object GeckoExtensionManager {
      */
     fun uninstall(extension: WebExtension) {
         controller.uninstall(extension)
-            .then {
+            .then<Void> {
                 Log.i(TAG, "Extension uninstalled: ${extension.id}")
                 GeckoResult.fromValue(null)
             }
-            .exceptionally { throwable ->
+            .exceptionally<Void> { throwable ->
                 Log.e(TAG, "Extension uninstall failed", throwable)
                 null
             }
@@ -162,12 +162,11 @@ private class PetalExtensionPromptDelegate : WebExtensionController.PromptDelega
     override fun onUpdatePrompt(
         currentlyInstalled: WebExtension,
         updatedExtension: WebExtension,
-        newPermissions: Array<String>,
-        newOrigins: Array<String>
+        newPermissions: List<String>
     ): GeckoResult<AllowOrDeny> {
         Log.i(
             TAG,
-            "onUpdatePrompt: ${currentlyInstalled.id} → new permissions=${newPermissions.toList()}"
+            "onUpdatePrompt: ${currentlyInstalled.id} → new permissions=$newPermissions"
         )
         // Auto-grant updates for built-in and user-approved extensions.
         return GeckoResult.allow()
