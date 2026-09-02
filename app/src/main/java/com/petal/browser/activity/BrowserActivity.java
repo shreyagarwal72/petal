@@ -1070,19 +1070,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (animate) {
             screen.setAlpha(0f);
             contentFrame.addView(screen);
-            screen.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    screen.getViewTreeObserver().removeOnPreDrawListener(this);
-                    screen.setTranslationX(screen.getWidth() / 3f);
-                    screen.animate()
-                            .alpha(1f)
-                            .translationX(0f)
-                            .setDuration(PB_TRANSITION_DURATION_MS)
-                            .setInterpolator(predictiveBackEasing)
-                            .start();
-                    return true;
-                }
+            screen.post(() -> {
+                int width = screen.getWidth() > 0 ? screen.getWidth() : getResources().getDisplayMetrics().widthPixels;
+                screen.setTranslationX(width / 3f);
+                screen.animate()
+                        .alpha(1f)
+                        .translationX(0f)
+                        .setDuration(PB_TRANSITION_DURATION_MS)
+                        .setInterpolator(predictiveBackEasing)
+                        .withLayer()
+                        .start();
             });
         } else {
             screen.setAlpha(1f);
