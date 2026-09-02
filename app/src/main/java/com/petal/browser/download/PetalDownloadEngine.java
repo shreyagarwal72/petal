@@ -33,22 +33,25 @@ import com.tonyodev.fetch2.EnqueueAction;
 import com.tonyodev.fetch2.Error;
 import com.tonyodev.fetch2.Fetch;
 import com.tonyodev.fetch2.FetchConfiguration;
-import com.tonyodev.fetch2.HttpUrlConnectionDownloader;
 import com.tonyodev.fetch2.NetworkType;
 import com.tonyodev.fetch2.Priority;
 import com.tonyodev.fetch2.Request;
 import com.tonyodev.fetch2core.Downloader;
+import com.tonyodev.fetch2okhttp.OkHttpDownloader;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.OkHttpClient;
 
 /**
- * Petal High-Speed Download Engine
- * Uses Fetch2 with robust sequential chunking and strict byte-stream integrity,
- * preventing corrupted archive, zip, apk, and image downloads across all network types.
+ * Petal High-Speed Parallel Multi-Threaded Download Engine (MDM)
+ * Uses Fetch2 + OkHttpDownloader (PARALLEL mode) for high-speed multi-part segmented downloading,
+ * real pause/resume, automatic retry on network reconnects, and byte-stream integrity checks.
  */
 public class PetalDownloadEngine {
     private static final String TAG = "PetalDownloadEngine";
@@ -58,15 +61,26 @@ public class PetalDownloadEngine {
 
     private PetalDownloadEngine(Context context) {
         Context appContext = context.getApplicationContext();
-        // Use SEQUENTIAL downloader to guarantee single continuous non-corrupted byte-stream writing
-        // while supporting pause, resume, retries, and background service execution.
+
+        // Custom robust OkHttpClient for segmented parallel downloading
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .followRedirects(true)
+                .followSslRedirects(true)
+                .retryOnConnectionFailure(true)
+                .build();
+
+        // Configure parallel multi-part segmentation downloader
+        // PARALLEL chunking splits large payloads across concurrent threads for maximum throughput
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
-                .setDownloadConcurrentLimit(6)
+                .setDownloadConcurrentLimit(12)
                 .setProgressReportingInterval(100L)
-                .setAutoRetryMaxAttempts(5)
+                .setAutoRetryMaxAttempts(10)
                 .enableAutoStart(true)
                 .enableRetryOnNetworkGain(true)
-                .setHttpDownloader(new HttpUrlConnectionDownloader(Downloader.FileDownloaderType.SEQUENTIAL))
+                .setHttpDownloader(new OkHttpDownloader(okHttpClient, Downloader.FileDownloaderType.PARALLEL))
                 .enableLogging(false)
                 .build();
         fetch = Fetch.Impl.getInstance(fetchConfiguration);
@@ -74,7 +88,7 @@ public class PetalDownloadEngine {
         fetch.addListener(new AbstractFetchListener() {
             @Override
             public void onCompleted(@NotNull Download download) {
-                Log.d(TAG, "Download completed: " + download.getFile());
+                Log.d(TAG, "Download completed successfully: " + download.getFile());
             }
 
             @Override
@@ -101,7 +115,7 @@ public class PetalDownloadEngine {
     }
 
     /**
-     * Enqueues a high-speed download request.
+     * Enqueues a high-speed parallel multi-threaded download request.
      */
     public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders) {
         enqueueDownload(context, url, fileName, userAgent, cookie, extraHeaders, null);
@@ -110,7 +124,7 @@ public class PetalDownloadEngine {
     private final Map<String, Long> recentEnqueues = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
-     * Enqueues a download request and reports the Fetch2-assigned download ID back once queued.
+     * Enqueues a parallel download request and reports the Fetch2-assigned download ID back once queued.
      */
     public void enqueueDownload(Context context, String url, String fileName, String userAgent, String cookie, Map<String, String> extraHeaders, java.util.function.BiConsumer<Integer, String> onEnqueued) {
         if (url == null || url.isEmpty()) return;
@@ -149,7 +163,7 @@ public class PetalDownloadEngine {
         request.setPriority(Priority.HIGH);
         request.setNetworkType(NetworkType.ALL);
         request.setEnqueueAction(EnqueueAction.INCREMENT_FILE_NAME);
-        request.setAutoRetryMaxAttempts(5);
+        request.setAutoRetryMaxAttempts(10);
 
         String safeUserAgent = SafeDownloadValues.INSTANCE.header(userAgent, 4096);
         if (safeUserAgent != null && !safeUserAgent.isEmpty()) {
@@ -161,7 +175,11 @@ public class PetalDownloadEngine {
         }
         if (extraHeaders != null) {
             for (Map.Entry<String, String> entry : extraHeaders.entrySet()) {
-                String safeKey = SafeDownloadValues.INSTANCE.header(entry.getKey(), 1024);
+                String key = entry.getKey();
+                // Never inject manual Accept-Encoding when using OkHttp / Fetch2 parallel downloader
+                // OkHttp automatically negotiates and decodes gzip/deflate transparently
+                if (key.equalsIgnoreCase("Accept-Encoding")) continue;
+                String safeKey = SafeDownloadValues.INSTANCE.header(key, 1024);
                 String safeVal = SafeDownloadValues.INSTANCE.header(entry.getValue(), 4096);
                 if (safeKey != null && safeVal != null) {
                     request.addHeader(safeKey, safeVal);
@@ -171,12 +189,12 @@ public class PetalDownloadEngine {
 
         final String finalResolvedFileName = targetFile.getName();
         fetch.enqueue(request, updatedRequest -> {
-            Log.d(TAG, "Download enqueued successfully with ID: " + updatedRequest.getId() + ", file: " + filePath);
+            Log.d(TAG, "Parallel download enqueued successfully with ID: " + updatedRequest.getId() + ", file: " + filePath);
             if (onEnqueued != null) {
                 onEnqueued.accept(updatedRequest.getId(), finalResolvedFileName);
             }
         }, error -> {
-            Log.e(TAG, "Failed to enqueue download: " + error);
+            Log.e(TAG, "Failed to enqueue parallel download: " + error);
         });
     }
 }
