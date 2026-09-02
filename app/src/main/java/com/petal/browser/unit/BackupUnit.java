@@ -944,8 +944,45 @@ public class BackupUnit {
 
     public static void exportList(Context context) {}
     public static void importList(Context context) {}
-    public static void exportBookmarksSimple(Context context) {}
-    public static void importBookmarksSimple(Context context) {}
+    public static void exportBookmarksHtmlToUri(Context context, android.net.Uri uri) {
+        BookmarkHtmlImporterExporter.INSTANCE.exportToUri(context, uri, null);
+    }
+
+    public static void importBookmarksHtmlFromUri(Context context, android.net.Uri uri) {
+        BookmarkHtmlImporterExporter.INSTANCE.importFromUri(context, uri, null);
+    }
+
+    public static void exportBookmarksSimple(Context context) {
+        if (context == null) return;
+        File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
+        if (!backupDir.exists()) backupDir.mkdirs();
+        File htmlFile = new File(backupDir, "petal_bookmarks.html");
+        try {
+            RecordAction action = new RecordAction(context);
+            action.open(false);
+            List<Record> bookmarks = action.listBookmark(context, false, 0);
+            action.close();
+            String html = BookmarkHtmlImporterExporter.INSTANCE.exportToHtmlString(bookmarks);
+            BufferedWriter writer = new BufferedWriter(new FileWriter(htmlFile, false));
+            writer.write(html);
+            writer.close();
+            NinjaToast.show(context, "Bookmarks exported to " + htmlFile.getName());
+        } catch (Exception e) {
+            NinjaToast.show(context, "Export failed: " + e.getMessage());
+        }
+    }
+
+    public static void importBookmarksSimple(Context context) {
+        if (context == null) return;
+        File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
+        File htmlFile = new File(backupDir, "petal_bookmarks.html");
+        if (!htmlFile.exists()) {
+            NinjaToast.show(context, "No bookmarks file found at Documents/browser_backup/petal_bookmarks.html");
+            return;
+        }
+        android.net.Uri fileUri = android.net.Uri.fromFile(htmlFile);
+        BookmarkHtmlImporterExporter.INSTANCE.importFromUri(context, fileUri, null);
+    }
     public static void exportHistory(Context context) {}
     public static void importHistory(Context context) {}
 }

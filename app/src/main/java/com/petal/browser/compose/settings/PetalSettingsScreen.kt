@@ -2594,6 +2594,22 @@ fun PetalSettingsScreen(
                                 }
                             }
 
+                            val exportBookmarksHtmlLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                                contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("text/html")
+                            ) { uri: android.net.Uri? ->
+                                if (uri != null) {
+                                    com.petal.browser.unit.BookmarkHtmlImporterExporter.exportToUri(context, uri)
+                                }
+                            }
+
+                            val importBookmarksHtmlLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                                contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+                            ) { uri: android.net.Uri? ->
+                                if (uri != null) {
+                                    com.petal.browser.unit.BookmarkHtmlImporterExporter.importFromUri(context, uri)
+                                }
+                            }
+
                             if (showBackupDialog) {
                                 AlertDialog(
                                     onDismissRequest = { showBackupDialog = false },
@@ -2729,7 +2745,7 @@ fun PetalSettingsScreen(
                                             ) {
                                                 Icon(Icons.Rounded.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                                                 Spacer(Modifier.width(6.dp))
-                                                Text("Backup to JSON", maxLines = 1)
+                                                Text("Backup JSON", maxLines = 1)
                                             }
                                         }
 
@@ -2743,7 +2759,53 @@ fun PetalSettingsScreen(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.Center
                                             ) {
-                                                Text("Restore from JSON", maxLines = 1)
+                                                Text("Restore JSON", maxLines = 1)
+                                            }
+                                        }
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                    Text(
+                                        "HTML Bookmarks (Standard Netscape Format — Chrome, Firefox, Safari):",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = { exportBookmarksHtmlLauncher.launch("bookmarks.html") },
+                                            shape = RoundedCornerShape(14.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Center
+                                            ) {
+                                                Icon(Icons.Rounded.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text("Export HTML", maxLines = 1)
+                                            }
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = { importBookmarksHtmlLauncher.launch(arrayOf("text/html", "text/plain", "*/*")) },
+                                            shape = RoundedCornerShape(14.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Center
+                                            ) {
+                                                Icon(Icons.Rounded.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                                Text("Import HTML", maxLines = 1)
                                             }
                                         }
                                     }
