@@ -285,39 +285,6 @@ private class PetalExtensionPromptDelegate(
     private val contextProvider: () -> Context
 ) : WebExtensionController.PromptDelegate {
 
-    override fun onInstallPrompt(
-        extension: WebExtension
-    ): GeckoResult<AllowOrDeny> {
-        val result = GeckoResult<AllowOrDeny>()
-        val context = contextProvider()
-
-        val extName = extension.metaData?.name ?: extension.id
-        val permissions = emptyList<String>()
-
-        Log.i(TAG, "onInstallPrompt: Requesting permission for extension $extName")
-
-        // Dispatch UI prompt to main thread
-        CoroutineScope(Dispatchers.Main.immediate).launch {
-            GeckoExtensionPermissionDialogBridge.showPrompt(
-                context = context,
-                extensionName = extName,
-                permissions = permissions,
-                origins = emptyList(),
-                isUpdate = false,
-                onAllow = {
-                    Log.i(TAG, "onInstallPrompt: Allowed by user for $extName")
-                    result.complete(AllowOrDeny.ALLOW)
-                },
-                onDeny = {
-                    Log.i(TAG, "onInstallPrompt: Denied by user for $extName")
-                    result.complete(AllowOrDeny.DENY)
-                }
-            )
-        }
-
-        return result
-    }
-
     override fun onInstallPromptRequest(
         extension: WebExtension,
         permissions: Array<String>,

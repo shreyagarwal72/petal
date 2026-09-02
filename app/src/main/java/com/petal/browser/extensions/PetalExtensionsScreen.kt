@@ -778,7 +778,7 @@ private fun RenderInstalledTab(
 
             items(filteredGecko, key = { it.id }) { ext ->
                 val meta = ext.metaData
-                val isEnabled = ext.flags and WebExtension.Flags.ALLOW_IN_INCOGNITO != 0 || true
+                val isEnabled = true
 
                 Card(
                     shape = RoundedCornerShape(20.dp),

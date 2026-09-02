@@ -394,16 +394,9 @@ private fun GeckoBottomNav(
             selected = false,
             onClick = onTabs,
             icon = {
-                BadgedBox(
-                    badge = {
-                        AnimatedCounterBadge(
-                            count = tabCount,
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Tab, contentDescription = "Tabs")
+                    AnimatedCounterBadge(count = tabCount, modifier = Modifier.padding(start = 14.dp, bottom = 14.dp))
                 }
             },
             label = { Text("Tabs") }
