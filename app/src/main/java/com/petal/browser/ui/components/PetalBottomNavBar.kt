@@ -1,12 +1,36 @@
+/*
+ * MIT License
+ * Copyright (c) 2026 Petal Browser
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT/TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package com.petal.browser.ui.components
 
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -15,6 +39,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,18 +82,18 @@ enum class PetalNavTab {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Modern Floating Bottom Navigation Bar (Remember & FilePipe style HorizontalFloatingToolbar)
+// Modern Floating Bottom Navigation Bar (Unified Normal & Incognito Architecture with Rich Motion)
 // -------------------------------------------------------------------------------------------------
 
 /**
  * Modern Floating Navigation Bar with Material 3 Expressive HorizontalFloatingToolbar.
  *
- * Architecture & Theming:
- * - Toolbar container uses vibrant primary container theme (`colorScheme.primary` container & `colorScheme.onPrimary` content)
- * - Active tab item fills with background color and primary tinted icon & bold label
- * - Inactive tab item stays lightweight
- * - Tactile spring-animated label width expansion (`72.dp` target on active selection)
- * - Live Tab Count badge with animated scale bounce
+ * Architecture & Animations:
+ * - Unified vibrant styling across normal & incognito modes
+ * - Active pill spring expansion with tactile low-bouncy overshoot
+ * - Interactive touch press micro-scale reaction (bouncy touch feedback)
+ * - Icon rotation and spring pop when selected
+ * - Animated Tab Count badge with spring bounce
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -104,8 +129,8 @@ fun PetalBottomNavBar(
         )
     }
 
-    val tabsLabel = if (isIncognito) "Tabs ($animatedCount)" else "Tabs ($animatedCount)"
-    val newTabLabel = if (isIncognito) "New" else "New"
+    val tabsLabel = "Tabs ($animatedCount)"
+    val newTabLabel = "New"
 
     if (isFloatingStyle) {
         Box(
@@ -115,26 +140,18 @@ fun PetalBottomNavBar(
                 .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
-
-            // Material 3 Expressive Floating Toolbar (matching Remember & FilePipe vibrant colors)
-            val toolbarColors = if (isIncognito) {
-                FloatingToolbarDefaults.vibrantFloatingToolbarColors(
-                    toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    toolbarContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            } else {
-                FloatingToolbarDefaults.vibrantFloatingToolbarColors(
-                    toolbarContainerColor = MaterialTheme.colorScheme.primary,
-                    toolbarContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            // Material 3 Expressive Floating Toolbar with vibrant primary colors for both normal and incognito
+            val toolbarColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
+                toolbarContainerColor = MaterialTheme.colorScheme.primary,
+                toolbarContentColor = MaterialTheme.colorScheme.onPrimary
+            )
 
             HorizontalFloatingToolbar(
                 expanded = true,
                 modifier = Modifier
                     .wrapContentWidth()
                     .height(64.dp)
-                    .shadow(10.dp, CircleShape)
+                    .shadow(12.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
                     .clip(CircleShape),
                 colors = toolbarColors
             ) {
@@ -142,13 +159,22 @@ fun PetalBottomNavBar(
                     selected = selectedTab == PetalNavTab.HOME,
                     label = "Home",
                     index = 0,
-                    isIncognito = isIncognito,
                     icon = { isSelected, tint ->
+                        val iconScale by animateFloatAsState(
+                            targetValue = if (isSelected) 1.15f else 1.0f,
+                            animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                            label = "home_scale"
+                        )
                         Icon(
                             painter = androidx.compose.ui.res.painterResource(if (isSelected) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home),
                             contentDescription = "Home",
                             tint = tint,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier
+                                .size(24.dp)
+                                .graphicsLayer {
+                                    scaleX = iconScale
+                                    scaleY = iconScale
+                                }
                         )
                     },
                     onClick = onHomeClick
@@ -158,13 +184,28 @@ fun PetalBottomNavBar(
                     selected = selectedTab == PetalNavTab.NEW_TAB,
                     label = newTabLabel,
                     index = 1,
-                    isIncognito = isIncognito,
                     icon = { isSelected, tint ->
+                        val rotationAngle by animateFloatAsState(
+                            targetValue = if (isSelected) 90f else 0f,
+                            animationSpec = spring(dampingRatio = 0.68f, stiffness = 450f),
+                            label = "add_rotation"
+                        )
+                        val iconScale by animateFloatAsState(
+                            targetValue = if (isSelected) 1.15f else 1.0f,
+                            animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                            label = "add_scale"
+                        )
                         Icon(
                             imageVector = Icons.Rounded.Add,
                             contentDescription = "New Tab",
                             tint = tint,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier
+                                .size(24.dp)
+                                .graphicsLayer {
+                                    rotationZ = rotationAngle
+                                    scaleX = iconScale
+                                    scaleY = iconScale
+                                }
                         )
                     },
                     onClick = onNewTabClick
@@ -174,12 +215,16 @@ fun PetalBottomNavBar(
                     selected = selectedTab == PetalNavTab.TABS,
                     label = tabsLabel,
                     index = 2,
-                    isIncognito = isIncognito,
                     icon = { isSelected, tint ->
+                        val iconScale by animateFloatAsState(
+                            targetValue = if (isSelected) 1.12f else 1.0f,
+                            animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                            label = "tabs_scale"
+                        )
                         TabCountBadge(
                             color = tint,
                             count = animatedCount,
-                            scale = badgeScale.value
+                            scale = badgeScale.value * iconScale
                         )
                     },
                     onClick = onTabsClick
@@ -189,13 +234,28 @@ fun PetalBottomNavBar(
                     selected = selectedTab == PetalNavTab.MENU,
                     label = "Menu",
                     index = 3,
-                    isIncognito = isIncognito,
                     icon = { isSelected, tint ->
+                        val rotationAngle by animateFloatAsState(
+                            targetValue = if (isSelected) 180f else 0f,
+                            animationSpec = spring(dampingRatio = 0.70f, stiffness = 420f),
+                            label = "menu_rotation"
+                        )
+                        val iconScale by animateFloatAsState(
+                            targetValue = if (isSelected) 1.15f else 1.0f,
+                            animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                            label = "menu_scale"
+                        )
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
                             contentDescription = "Menu",
                             tint = tint,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier
+                                .size(24.dp)
+                                .graphicsLayer {
+                                    rotationZ = rotationAngle
+                                    scaleX = iconScale
+                                    scaleY = iconScale
+                                }
                         )
                     },
                     onClick = onMenuClick
@@ -205,73 +265,73 @@ fun PetalBottomNavBar(
     } else {
         // Flat Bottom Navigation Bar
         Surface(
-            color = if (isIncognito) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainer,
+            color = MaterialTheme.colorScheme.surfaceContainer,
             tonalElevation = 3.dp,
             shadowElevation = 4.dp,
             modifier = modifier.fillMaxWidth()
         ) {
-                Column(
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .height(56.dp)
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .padding(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceAround,
-                        verticalAlignment = Alignment.CenterVertically
+                    IconButton(
+                        onClick = onHomeClick,
+                        modifier = Modifier.size(48.dp)
                     ) {
-                        IconButton(
-                            onClick = onHomeClick,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                painter = androidx.compose.ui.res.painterResource(if (selectedTab == PetalNavTab.HOME) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home),
-                                contentDescription = "Home",
-                                tint = if (selectedTab == PetalNavTab.HOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                        Icon(
+                            painter = androidx.compose.ui.res.painterResource(if (selectedTab == PetalNavTab.HOME) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home),
+                            contentDescription = "Home",
+                            tint = if (selectedTab == PetalNavTab.HOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
 
-                        IconButton(
-                            onClick = onNewTabClick,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Add,
-                                contentDescription = "New Tab",
-                                tint = if (selectedTab == PetalNavTab.NEW_TAB) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                    IconButton(
+                        onClick = onNewTabClick,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = "New Tab",
+                            tint = if (selectedTab == PetalNavTab.NEW_TAB) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
 
-                        IconButton(
-                            onClick = onTabsClick,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            TabCountBadge(
-                                color = if (selectedTab == PetalNavTab.TABS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                count = animatedCount,
-                                scale = badgeScale.value
-                            )
-                        }
+                    IconButton(
+                        onClick = onTabsClick,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        TabCountBadge(
+                            color = if (selectedTab == PetalNavTab.TABS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            count = animatedCount,
+                            scale = badgeScale.value
+                        )
+                    }
 
-                        IconButton(
-                            onClick = onMenuClick,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.MoreVert,
-                                contentDescription = "Menu",
-                                tint = if (selectedTab == PetalNavTab.MENU) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                    IconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = "Menu",
+                            tint = if (selectedTab == PetalNavTab.MENU) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             }
+        }
     }
 }
 
@@ -280,57 +340,60 @@ private fun FloatingNavTabItem(
     selected: Boolean,
     label: String,
     index: Int,
-    isIncognito: Boolean,
     icon: @Composable (isSelected: Boolean, tint: Color) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    // Bouncy touch feedback press scale
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.90f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "press_scale_$index"
+    )
+
     val labelWidth by animateDpAsState(
         targetValue = if (selected) 72.dp else 0.dp,
         animationSpec = spring(
-            dampingRatio = 0.82f,
-            stiffness = 380f
+            dampingRatio = 0.76f,
+            stiffness = 360f
         ),
         label = "nav_label_$index"
     )
 
-    val activeContainerColor = if (isIncognito) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.background
-    }
-
-    val activeContentColor = if (isIncognito) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.primary
-    }
-
-    val inactiveContentColor = if (isIncognito) {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    } else {
-        MaterialTheme.colorScheme.onPrimary
-    }
+    val activeContainerColor = MaterialTheme.colorScheme.background
+    val activeContentColor = MaterialTheme.colorScheme.primary
+    val inactiveContentColor = MaterialTheme.colorScheme.onPrimary
 
     val currentContentColor by animateColorAsState(
         targetValue = if (selected) activeContentColor else inactiveContentColor,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
         label = "nav_color_$index"
     )
 
     val currentBgColor by animateColorAsState(
         targetValue = if (selected) activeContainerColor else Color.Transparent,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
         label = "nav_bg_$index"
     )
 
     Surface(
         onClick = onClick,
+        interactionSource = interactionSource,
         shape = CircleShape,
         color = currentBgColor,
         modifier = modifier
             .height(48.dp)
             .width(48.dp + labelWidth)
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
             .clip(CircleShape)
             .semantics { contentDescription = label }
     ) {
@@ -393,4 +456,3 @@ private fun TabCountBadge(color: Color, count: Int, scale: Float) {
         )
     }
 }
-
