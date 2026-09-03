@@ -138,7 +138,7 @@ object PetalAppLogger {
             append("Device: ${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})\n")
             append("\nStacktrace:\n$stack\n")
             append("\n--- Last In-Memory Logs Before Crash ---\n")
-            logBuffer.takeLast(40).forEach { line ->
+            logBuffer.toList().takeLast(40).forEach { line ->
                 append(line)
                 append("\n")
             }
