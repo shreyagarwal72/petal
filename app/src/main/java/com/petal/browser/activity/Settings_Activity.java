@@ -16,7 +16,9 @@ import com.petal.browser.compose.settings.PetalSettingsBridge;
 import com.petal.browser.compose.settings.SettingsCategory;
 import com.petal.browser.unit.BrowserUnit;
 import com.petal.browser.unit.HelperUnit;
+import dagger.hilt.android.AndroidEntryPoint;
 
+@AndroidEntryPoint
 public class Settings_Activity extends AppCompatActivity {
 
     /**
