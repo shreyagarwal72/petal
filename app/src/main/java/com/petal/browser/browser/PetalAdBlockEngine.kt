@@ -18,9 +18,9 @@ import android.content.Context
 import android.net.Uri
 import android.webkit.WebResourceResponse
 import androidx.preference.PreferenceManager
-import com.petal.browser.engine.candy.blocking.CandyCosmeticScript
-import com.petal.browser.engine.candy.blocking.CandyProceduralCosmeticScript
-import com.petal.browser.engine.candy.blocking.ContentBlocker
+import com.petal.browser.engine.petal.blocking.PetalCosmeticScript
+import com.petal.browser.engine.petal.blocking.PetalProceduralCosmeticScript
+import com.petal.browser.engine.petal.blocking.ContentBlocker
 import java.io.ByteArrayInputStream
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -163,7 +163,7 @@ object PetalAdBlockEngine {
             if (isDomainWhitelisted(pageHost)) return false
         }
 
-        // 1. Candy ContentBlocker advanced rules & host indexes (EasyList, uAssets, HaGeZi)
+        // 1. Petal ContentBlocker advanced rules & host indexes (EasyList, uAssets, HaGeZi)
         val blocker = contentBlocker
         if (blocker != null) {
             try {
@@ -195,7 +195,7 @@ object PetalAdBlockEngine {
 
     /**
      * uBlock Origin & AdGuard Injection Payload:
-     * - Bundled cosmetic CSS selectors and procedural selectors (:has(), :has-text()) from candy-browser ContentBlocker
+     * - Bundled cosmetic CSS selectors and procedural selectors (:has(), :has-text()) from petal ContentBlocker
      * - uBO Scriptlets (`set-constant`, `abort-on-property-read`, `nano-sib`)
      * - Dedicated YouTube Mobile auto-skip, mute, and speedup scriptlet
      */
@@ -234,7 +234,7 @@ object PetalAdBlockEngine {
         val cosmeticScript = contentBlocker?.let { blocker ->
             try {
                 val selectors = blocker.adCosmeticSelectors(url)
-                val script = CandyCosmeticScript.create(selectors)
+                val script = PetalCosmeticScript.create(selectors)
                 val procedural = blocker.adProceduralDocumentStartScript(url)
                 "$script\n$procedural"
             } catch (_: Throwable) {
@@ -313,7 +313,7 @@ object PetalAdBlockEngine {
                     });
                 }
 
-                // 3. Candy Engine Cosmetic & Procedural Rules
+                // 3. Petal Engine Cosmetic & Procedural Rules
                 try {
                     $cosmeticScript
                 } catch(e) {}

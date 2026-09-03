@@ -1,4 +1,4 @@
-candy-procedural-cosmetic:1
+petal-procedural-cosmetic:1
 # Generated bounded uAssets procedural cosmetic subset. Do not edit by hand.
 # Source: https://github.com/uBlockOrigin/uAssets
 # Source revision: 05bc031ad40c2270223f068f052970201ca1bf14
