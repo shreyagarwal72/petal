@@ -17,6 +17,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -250,36 +259,14 @@ fun PetalUserProfileScreen(
             }
         },
     ) {
-        if (showAppLockConfigPage) {
-            // Both entries rendered live in the same Box, exactly like Settings' drilled
-            // category (PetalSettingsScreen.kt): Profile stays composed underneath
-            // (isBehind = true) so PetalScreenWrapper has a real surface to blur/dim/parallax,
-            // while App Lock config sits on top (isBehind = false) and does the
-            // scale/corner-clip/slide — matches the History/Downloads predictive treatment.
-            Box(modifier = Modifier.fillMaxSize()) {
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = true) {
-                    RenderUserProfileContent(
-                        profile = profile,
-                        isLoading = isLoading,
-                        isSigningIn = isSigningIn,
-                        isExpressiveFeatureTiles = isExpressiveFeatureTiles,
-                        snackbarHostState = snackbarHostState,
-                        onBack = onBack,
-                        onOpenOAuth = onOpenOAuth,
-                        onStartGoogleSignIn = { startGoogleSignIn() },
-                        onOpenAppLockConfig = { showAppLockConfigPage = true },
-                        modifier = modifier
-                    )
-                }
-                com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
-                    com.petal.browser.compose.security.PetalAppLockConfigScreen(
-                        onBack = { showAppLockConfigPage = false },
-                        wrapPredictive = false
-                    )
-                }
-            }
-        } else {
-            com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
+        // Always keep both layers in composition so exit animations can play.
+        // Profile sits behind (isBehind=true) and dims/parallaxes during predictive back;
+        // AppLockConfig slides in over it and AnimatedVisibility handles its enter/exit.
+        Box(modifier = Modifier.fillMaxSize()) {
+            com.petal.browser.predictive.PetalScreenWrapper(
+                isBehind = showAppLockConfigPage,
+                backgroundSnapshot = if (!showAppLockConfigPage) backgroundSnapshot else null
+            ) {
                 RenderUserProfileContent(
                     profile = profile,
                     isLoading = isLoading,
@@ -293,7 +280,27 @@ fun PetalUserProfileScreen(
                     modifier = modifier
                 )
             }
+            AnimatedVisibility(
+                visible = showAppLockConfigPage,
+                enter = slideInHorizontally(
+                    initialOffsetX = { it / 3 },
+                    animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                ) + fadeIn(animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))),
+                exit = slideOutHorizontally(
+                    targetOffsetX = { it },
+                    animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                ) + scaleOut(
+                    targetScale = 0.85f,
+                    animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                )
+            ) {
+                com.petal.browser.compose.security.PetalAppLockConfigScreen(
+                    onBack = { showAppLockConfigPage = false },
+                    wrapPredictive = false
+                )
+            }
         }
+
     }
 }
 
