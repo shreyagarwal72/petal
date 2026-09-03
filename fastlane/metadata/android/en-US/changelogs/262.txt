@@ -1,0 +1,7 @@
+v2.6.2 — Hotfix: Advanced Web Engine & Content Blocker Upgrade
+
+• Advanced Content Blocker: Bundled multi-layer filter engine with EasyList, HaGeZi, and uAssets host binary indices for faster page loading
+• Procedural Cosmetic Rules: Real-time element hiding and cookie banner removal injected cleanly at page start and commit
+• Web Media Engine: Integrated HTML5 audio/video playback bridge, video autoplay controls, and Picture-in-Picture tracking
+• Native Credentials & Passkeys: Enabled system-level Autofill and WebAuthentication (passkeys) support
+• Momentum & Navigation Recovery: Watchdog against scroll stutter and intelligent popup/popunder defusion

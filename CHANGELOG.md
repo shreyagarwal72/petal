@@ -1,3 +1,18 @@
+### v2.6.2 (Hotfix)
+
+- **🛡️ Advanced Content Blocker & Multi-Layer Ad Protection Engine**:
+  - Integrated high-performance request interceptor with bundled EasyList, HaGeZi, and uAssets host binary indices.
+  - Added procedural cosmetic rules engine (`:has()`, `:has-text()`, `:matches-path()`) running at document start via MutationObserver.
+  - Added EasyList and overrides cookie banner removal stylesheet injected directly at page commit.
+- **🎥 Web Media & Playback Engine**:
+  - Added robust HTML5 video and audio media bridge tracking playback, mute states, and Picture-in-Picture sessions seamlessly.
+  - Added video autoplay suppression controls and background media playback coordination.
+- **🔐 Native Passkeys & System Credentials Integration**:
+  - Configured native `WebAuthentication` (passkeys) and system autofill compatibility directly via `WebSettingsCompat`.
+- **⚡ Smooth Momentum Recovery & Navigation Stability**:
+  - Added compositor momentum recovery watchdog preventing scroll freezes on high refresh-rate displays.
+  - Intelligent cross-site popup and popunder navigation arbitration defusing intrusive redirects.
+
 ### v2.6.1 (Hotfix)
 
 - **🔄 Universal Release Inbuilt Updater**:
@@ -35,7 +50,7 @@
 
 - **⚡ Stutter-Free Website Back Navigation**:
   - Removed synchronous preference re-initialization churn inside `NinjaWebView.goBack()` and `goBackOrForward()`.
-  - Replaced heavy web settings resets with clean domain-aware navigation inspired by `candy-browser`, ensuring smooth 60/120fps back navigation without frame drops.
+  - Replaced heavy web settings resets with clean domain-aware navigation with specialized domain-aware rules, ensuring smooth 60/120fps back navigation without frame drops.
 
 - **🧩 WebExtensions Management & Runtime Fixes**:
   - Stabilized Gecko extension management, add-on discovery prompt delegation, and dynamic counter badges.
