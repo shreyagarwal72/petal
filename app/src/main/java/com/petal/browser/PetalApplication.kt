@@ -39,9 +39,11 @@ class PetalApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         try {
             com.petal.browser.logger.PetalAppLogger.init(this)
             ChromiumNativeEngineCore.initialize(this)
+            com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(this)
             PetalPredictiveJunction.init(
                 PreferenceManager.getDefaultSharedPreferences(this)
             )
@@ -102,5 +104,8 @@ class PetalApplication : Application() {
 
     companion object {
         private const val TAG = "PetalApplication"
+        @JvmStatic
+        var instance: PetalApplication? = null
+            private set
     }
 }

@@ -153,6 +153,9 @@ dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.1'
     implementation 'com.google.mlkit:barcode-scanning:17.3.0'
 
+    // Guava for high performance host/domain parsing
+    implementation 'com.google.guava:guava:33.2.1-android'
+
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.51.1'
     kapt 'com.google.dagger:hilt-compiler:2.51.1'
