@@ -1,3 +1,13 @@
+### v2.6.6
+
+- **🎨 Multi-Style Cold-Start Intro Animations & Experimental Settings**:
+  - Added preference option in **Experimental Settings** to customize the cold-start intro animation:
+    - `Off (Default)`: Instant entrance with zero splash or intro delays.
+    - `3D Prism & Optical Beam`: High-precision crystalline 3D isometric prism with optical laser sweep and chromatic spectral refraction waves.
+    - `The Blooming Petal`: Organic fluid blossoming unfolding into 5 glassmorphic 3D petals with concentric harmonic light ripples.
+  - Resolved Android splash screen occlusion: lengthened intro duration to ~950ms and introduced grace buffers so the entire cinematic sequence remains fully visible after the app icon splash dismisses.
+  - Integrated dynamic search keyword indexing across Settings Hub for all intro animation terms.
+
 ### v2.6.5
 
 - **⚡ 3D Prism & Optical Beam Cold-Start Intro**:

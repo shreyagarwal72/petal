@@ -667,8 +667,8 @@ fun PetalHomeScreen(
                         )
                     }
 
-                    // ── 3D Prism & Optical Beam Cold-Start Intro Animation ──────────
-                    com.petal.browser.ui.components.PetalPrismOpticalIntro(
+                    // ── Cold-Start Intro Animation Host (Prism, Blooming Petal, or Off) ──
+                    com.petal.browser.ui.components.PetalIntroHost(
                         modifier = Modifier.fillMaxSize()
                     )
         }
