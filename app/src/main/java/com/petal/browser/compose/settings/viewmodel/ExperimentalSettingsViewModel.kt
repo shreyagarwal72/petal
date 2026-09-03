@@ -21,9 +21,6 @@ class ExperimentalSettingsViewModel @Inject constructor(
     val addressBarPosition: StateFlow<String> = settingsRepository.addressBarPosition
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "TOP")
 
-    val introAnimationStyle: StateFlow<String> = settingsRepository.introAnimationStyle
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "NONE")
-
     val appLockEnabled: StateFlow<Boolean> = settingsRepository.appLockEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -39,10 +36,6 @@ class ExperimentalSettingsViewModel @Inject constructor(
 
     fun setAddressBarPosition(position: String) = viewModelScope.launch {
         settingsRepository.setAddressBarPosition(position)
-    }
-
-    fun setIntroAnimationStyle(style: String) = viewModelScope.launch {
-        settingsRepository.setIntroAnimationStyle(style)
     }
 
     fun setAppLockEnabled(enabled: Boolean) = viewModelScope.launch {

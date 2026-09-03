@@ -667,11 +667,6 @@ fun PetalHomeScreen(
                         )
                     }
 
-                    // ── Cold-Start Intro Animation Host (Prism, Blooming Petal, or Off) ──
-                    com.petal.browser.ui.components.PetalIntroHost(
-                        modifier = Modifier.fillMaxSize()
-                    )
-
                     // ── Built-in Crash Recovery Dialog Host (Auto / Off) ──
                     com.petal.browser.ui.components.PetalCrashRecoveryHost()
         }
