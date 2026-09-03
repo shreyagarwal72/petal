@@ -1,3 +1,10 @@
+### v2.6.4 (Hotfix)
+
+- **🐛 Custom Scheme Handling & Home Page Resolution**:
+  - Resolved `net::ERR_UNKNOWN_URL_SCHEME` when opening or restoring the home page after browser restart.
+  - Automatically intercepted `petal://` and custom home URLs in `NinjaWebView.loadUrl()`, loading a clean blank canvas while retaining complete Compose Home UI state.
+  - Added internal protocol routing in `NinjaWebViewClient.shouldOverrideUrlLoading()` and safeguarded session restoration in `BrowserActivity.java`.
+
 ### v2.6.3 (Hotfix)
 
 - **⚡ Unified High-Speed Download Architecture**:

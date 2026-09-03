@@ -577,6 +577,11 @@ public class NinjaWebViewClient extends WebViewClient {
             return true;
         }
 
+        if (url.startsWith("petal://") || com.petal.browser.unit.BrowserUnit.isHomePage(url)) {
+            com.petal.browser.unit.BrowserUnit.intentURL(context, uri);
+            return true;
+        }
+
         boolean isHttpsOnly = sp.getBoolean("sp_https_only", true);
         if (isHttpsOnly && url.startsWith("http://")) {
             String httpsUrl = "https://" + url.substring(7);
