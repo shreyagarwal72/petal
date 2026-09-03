@@ -71,6 +71,8 @@ object PetalBottomNavBridge {
                 val currentHandler = _navHandler
 
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
+                val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+                var themeConfigStr by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
                 var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId) }
@@ -85,6 +87,7 @@ object PetalBottomNavBridge {
                 DisposableEffect(sp) {
                     val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                         when (key) {
+                            "sp_theme_config" -> themeConfigStr = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
                             "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                             "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
@@ -101,6 +104,14 @@ object PetalBottomNavBridge {
                     onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
                 }
 
+                val darkTheme = remember(themeConfigStr, isSystemDark) {
+                    val config = try { com.petal.browser.ui.theme.ThemeConfig.valueOf(themeConfigStr) } catch (e: Exception) { com.petal.browser.ui.theme.ThemeConfig.FOLLOW_SYSTEM }
+                    when (config) {
+                        com.petal.browser.ui.theme.ThemeConfig.FOLLOW_SYSTEM -> isSystemDark
+                        com.petal.browser.ui.theme.ThemeConfig.LIGHT -> false
+                        com.petal.browser.ui.theme.ThemeConfig.DARK -> true
+                    }
+                }
                 val appFont = remember(fontName) {
                     AppFont.fromName(fontName)
                 }
@@ -109,6 +120,7 @@ object PetalBottomNavBridge {
                 }
 
                 PetalExpressiveTheme(
+                    darkTheme = darkTheme,
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
                     expressiveColors = isExpressiveColors,
