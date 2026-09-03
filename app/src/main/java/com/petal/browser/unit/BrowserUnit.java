@@ -524,4 +524,13 @@ public class BrowserUnit {
         }
         return dir != null && dir.delete();
     }
+
+    public static boolean isHomePage(String url) {
+        if (url == null || url.trim().isEmpty()) return true;
+        String clean = url.trim().toLowerCase(Locale.ROOT);
+        if (clean.equals("about:blank") || clean.equals("about:home") || clean.equals("petal://home") || clean.equals("petal://start") || clean.contains("petal_home.html")) {
+            return true;
+        }
+        return clean.startsWith("file:///android_asset/");
+    }
 }

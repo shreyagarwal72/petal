@@ -756,6 +756,17 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             return;
         }
 
+        // Intercept home scheme URLs so WebView stays on about:blank and does not trigger net::ERR_UNKNOWN_URL_SCHEME
+        if (BrowserUnit.isHomePage(targetUrl) || BrowserUnit.isHomePage(urlToLoad) || BrowserUnit.isHomePage(url)) {
+            initPreferences("about:blank");
+            resetGestureExclusionRects();
+            super.loadUrl("about:blank");
+            if (album != null) {
+                album.setAlbumTitle("Petal Home", "petal://home");
+            }
+            return;
+        }
+
         initPreferences(targetUrl);
         resetGestureExclusionRects();
         super.loadUrl(targetUrl);

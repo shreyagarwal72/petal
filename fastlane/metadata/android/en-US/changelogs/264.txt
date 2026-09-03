@@ -1,0 +1,5 @@
+v2.6.4 — Hotfix: Custom Scheme Handling & Home Tab Fix
+
+• Resolved net::ERR_UNKNOWN_URL_SCHEME error when opening or restoring the home page after restart
+• Intercepted petal:// and custom home scheme URLs to ensure the underlying WebView cleanly loads blank state while keeping home UI intact
+• Hardened session restoration and tab management against unhandled protocol schemes

@@ -652,7 +652,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     restoredWebView.initPreferences(record.url);
                     restoredWebView.setBrowserController(this);
 
-                    if (record.url != null && !record.url.isEmpty()) {
+                    if (record.url != null && !record.url.isEmpty() && !isHomePage(record.url)) {
                         restoredWebView.loadUrl(record.url);
                     } else {
                         restoredWebView.loadUrl("about:blank");
@@ -4777,7 +4777,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ninjaWebView.loadUrl("about:blank");
         } else {
             ninjaWebView.setAlbumTitle(title, url);
-            if (url.trim().isEmpty()) ninjaWebView.loadUrl("about:blank");
+            if (url.trim().isEmpty() || isHomePage(url)) ninjaWebView.loadUrl("about:blank");
             else ninjaWebView.loadUrl(url);
         }
 
