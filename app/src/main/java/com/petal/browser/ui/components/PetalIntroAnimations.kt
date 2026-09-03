@@ -26,7 +26,6 @@ package com.petal.browser.ui.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -83,7 +82,8 @@ enum class PetalIntroStyle(val prefValue: String, val title: String, val descrip
 
     companion object {
         fun fromPref(value: String?): PetalIntroStyle {
-            return entries.firstOrNull { it.prefValue.equals(value, ignoreCase = true) } ?: NONE
+            if (value == null) return NONE
+            return values().firstOrNull { it.prefValue.equals(value, ignoreCase = true) } ?: NONE
         }
     }
 }
@@ -103,9 +103,15 @@ fun PetalIntroHost(
     }
 
     val context = LocalContext.current
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    val styleKey = remember { sp.getString("sp_intro_animation_style", PetalIntroStyle.NONE.prefValue) }
-    val selectedStyle = remember(styleKey) { PetalIntroStyle.fromPref(styleKey) }
+    val sp = remember {
+        try {
+            PreferenceManager.getDefaultSharedPreferences(context)
+        } catch (_: Throwable) {
+            null
+        }
+    }
+    val styleKey = sp?.getString("sp_intro_animation_style", PetalIntroStyle.NONE.prefValue)
+    val selectedStyle = PetalIntroStyle.fromPref(styleKey)
 
     if (selectedStyle == PetalIntroStyle.NONE) {
         PetalIntroAnimationTracker.hasIntroCompleted = true
@@ -133,10 +139,10 @@ fun PetalIntroHost(
  * 🌸 "The Blooming Petal" 3D Cold-Start Intro Animation.
  *
  * Sequence (~950ms total, giving full visibility after system splash screen drops):
- * 1. Initial 100ms graceful hold allowing any residual splash screen window to dismiss.
+ * 1. Initial grace period allowing system splash window to fully dismiss.
  * 2. Luminous core particle emerges and pulses at center (100ms..350ms).
- * 3. 5 organic glassmorphic 3D petals unfurl outward with spring rotation and cubic expansion (300ms..750ms).
- * 4. Micro-haptic feedback clicks at full bloom expansion (~500ms).
+ * 3. 5 organic glassmorphic 3D petals unfurl outward with spring rotation and expansion (300ms..750ms).
+ * 4. Micro-haptic feedback clicks at full bloom expansion (~550ms).
  * 5. Concentric harmonic light ripples expand outward into the Material 3 Home UI (600ms..950ms).
  */
 @Composable
@@ -167,24 +173,27 @@ fun PetalBloomingPetalIntro(
             } catch (_: Throwable) {}
         }
 
-        animProgress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(
-                durationMillis = 980,
-                easing = CubicBezierEasing(0.18f, 0.0f, 0.12f, 1.0f)
+        try {
+            animProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = 950,
+                    easing = FastOutSlowInEasing
+                )
             )
-        )
+        } catch (_: Throwable) {}
 
         PetalIntroAnimationTracker.hasIntroCompleted = true
         isVisible = false
-        onIntroFinished()
+        try {
+            onIntroFinished()
+        } catch (_: Throwable) {}
     }
 
     if (!isVisible) return
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
-    val secondaryColor = MaterialTheme.colorScheme.secondary
     val surfaceColor = MaterialTheme.colorScheme.background
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -192,6 +201,8 @@ fun PetalBloomingPetalIntro(
             val progress = animProgress.value
             val width = size.width
             val height = size.height
+            if (width <= 0f || height <= 0f) return@Canvas
+
             val cx = width / 2f
             val cy = height / 2f
 
@@ -210,7 +221,7 @@ fun PetalBloomingPetalIntro(
                 drawRect(color = surfaceColor.copy(alpha = bgDarken))
             }
 
-            // ── Phase 1: Concentric Harmonic Ripples (0.45f .. 1.0f) ──
+            // ── Phase 1: Concentric Harmonic Ripples (0.40f .. 1.0f) ──
             if (progress >= 0.40f) {
                 val rippleProgress = ((progress - 0.40f) / 0.60f).coerceIn(0f, 1f)
                 val maxRippleRadius = width.coerceAtLeast(height) * 0.85f
@@ -219,8 +230,8 @@ fun PetalBloomingPetalIntro(
                     val phaseOffset = r * 0.18f
                     val ringProgress = (rippleProgress - phaseOffset).coerceIn(0f, 1f)
                     if (ringProgress > 0f) {
-                        val ringRadius = maxRippleRadius * ringProgress
-                        val ringAlpha = ((1f - ringProgress) * 0.35f * overallAlpha).coerceAtLeast(0f)
+                        val ringRadius = (maxRippleRadius * ringProgress).coerceAtLeast(1f)
+                        val ringAlpha = ((1f - ringProgress) * 0.35f * overallAlpha).coerceIn(0f, 1f)
                         drawCircle(
                             brush = Brush.radialGradient(
                                 colors = listOf(
@@ -230,7 +241,7 @@ fun PetalBloomingPetalIntro(
                                     Color.Transparent
                                 ),
                                 center = Offset(cx, cy),
-                                radius = ringRadius.coerceAtLeast(1f)
+                                radius = ringRadius
                             ),
                             radius = ringRadius,
                             center = Offset(cx, cy)
@@ -239,60 +250,63 @@ fun PetalBloomingPetalIntro(
                 }
             }
 
-            // ── Phase 2: 5 Organic 3D Petals Blooming (0.15f .. 0.85f) ──
-            val bloomProgress = ((progress - 0.12f) / 0.68f).coerceIn(0f, 1f)
-            val bloomEase = CubicBezierEasing(0.34f, 1.45f, 0.64f, 1.0f).transform(bloomProgress)
+            // ── Phase 2: 5 Organic 3D Petals Blooming (0.12f .. 0.85f) ──
+            if (progress >= 0.12f) {
+                val bloomProgress = ((progress - 0.12f) / 0.68f).coerceIn(0f, 1f)
+                val bloomEase = FastOutSlowInEasing.transform(bloomProgress)
 
-            val petalCount = 5
-            val maxPetalDist = 42.dp.toPx() * bloomEase
-            val petalRadiusX = 26.dp.toPx() * bloomEase
-            val petalRadiusY = 46.dp.toPx() * bloomEase
-            val spinAngle = progress * 65f
+                val petalCount = 5
+                val maxPetalDist = (42.dp.toPx() * bloomEase).coerceAtLeast(0f)
+                val petalRadiusX = (26.dp.toPx() * bloomEase).coerceAtLeast(0.1f)
+                val petalRadiusY = (46.dp.toPx() * bloomEase).coerceAtLeast(0.1f)
+                val spinAngle = progress * 65f
 
-            rotate(degrees = spinAngle, pivot = Offset(cx, cy)) {
-                for (i in 0 until petalCount) {
-                    val angle = (i * (360f / petalCount)) * (PI.toFloat() / 180f)
-                    val petalCx = cx + maxPetalDist * cos(angle)
-                    val petalCy = cy + maxPetalDist * sin(angle)
+                rotate(degrees = spinAngle, pivot = Offset(cx, cy)) {
+                    for (i in 0 until petalCount) {
+                        val angle = (i * (360f / petalCount)) * (PI.toFloat() / 180f)
+                        val petalCx = cx + maxPetalDist * cos(angle)
+                        val petalCy = cy + maxPetalDist * sin(angle)
 
-                    val petalRotationDeg = (i * (360f / petalCount)) + 90f
+                        val petalRotationDeg = (i * (360f / petalCount)) + 90f
 
-                    rotate(degrees = petalRotationDeg, pivot = Offset(petalCx, petalCy)) {
-                        // 3D Glassmorphic Petal Path
-                        val petalPath = Path().apply {
-                            moveTo(petalCx, petalCy - petalRadiusY)
-                            cubicTo(
-                                petalCx + petalRadiusX, petalCy - petalRadiusY * 0.4f,
-                                petalCx + petalRadiusX, petalCy + petalRadiusY * 0.6f,
-                                petalCx, petalCy + petalRadiusY
+                        rotate(degrees = petalRotationDeg, pivot = Offset(petalCx, petalCy)) {
+                            // 3D Glassmorphic Petal Path
+                            val petalPath = Path().apply {
+                                moveTo(petalCx, petalCy - petalRadiusY)
+                                cubicTo(
+                                    petalCx + petalRadiusX, petalCy - petalRadiusY * 0.4f,
+                                    petalCx + petalRadiusX, petalCy + petalRadiusY * 0.6f,
+                                    petalCx, petalCy + petalRadiusY
+                                )
+                                cubicTo(
+                                    petalCx - petalRadiusX, petalCy + petalRadiusY * 0.6f,
+                                    petalCx - petalRadiusX, petalCy - petalRadiusY * 0.4f,
+                                    petalCx, petalCy - petalRadiusY
+                                )
+                                close()
+                            }
+
+                            val gradRadius = (petalRadiusY * 1.1f).coerceAtLeast(1f)
+                            // Gradient fill with specular light
+                            val petalGrad = Brush.radialGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.90f * overallAlpha),
+                                    primaryColor.copy(alpha = 0.70f * overallAlpha),
+                                    tertiaryColor.copy(alpha = 0.35f * overallAlpha),
+                                    Color.Transparent
+                                ),
+                                center = Offset(petalCx, petalCy),
+                                radius = gradRadius
                             )
-                            cubicTo(
-                                petalCx - petalRadiusX, petalCy + petalRadiusY * 0.6f,
-                                petalCx - petalRadiusX, petalCy - petalRadiusY * 0.4f,
-                                petalCx, petalCy - petalRadiusY
+                            drawPath(path = petalPath, brush = petalGrad)
+
+                            // Outer crystalline edge highlight
+                            drawPath(
+                                path = petalPath,
+                                color = Color.White.copy(alpha = 0.65f * overallAlpha),
+                                style = Stroke(width = 1.5.dp.toPx())
                             )
-                            close()
                         }
-
-                        // Gradient fill with specular light
-                        val petalGrad = Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.90f * overallAlpha),
-                                primaryColor.copy(alpha = 0.70f * overallAlpha),
-                                tertiaryColor.copy(alpha = 0.35f * overallAlpha),
-                                Color.Transparent
-                            ),
-                            center = Offset(petalCx, petalCy),
-                            radius = petalRadiusY * 1.1f
-                        )
-                        drawPath(path = petalPath, brush = petalGrad, blendMode = BlendMode.Plus)
-
-                        // Outer crystalline edge highlight
-                        drawPath(
-                            path = petalPath,
-                            color = Color.White.copy(alpha = 0.65f * overallAlpha),
-                            style = Stroke(width = 1.5.dp.toPx())
-                        )
                     }
                 }
             }
@@ -302,8 +316,8 @@ fun PetalBloomingPetalIntro(
                 progress < 0.25f -> (progress / 0.25f) * 1.25f
                 progress < 0.60f -> 1.25f - ((progress - 0.25f) / 0.35f) * 0.25f
                 else -> 1f + (progress - 0.60f) * 1.5f
-            }
-            val coreRadius = 24.dp.toPx() * coreScale
+            }.coerceAtLeast(0f)
+            val coreRadius = (24.dp.toPx() * coreScale).coerceAtLeast(1f)
 
             // Core radial sunburst
             drawCircle(
@@ -315,16 +329,16 @@ fun PetalBloomingPetalIntro(
                         Color.Transparent
                     ),
                     center = Offset(cx, cy),
-                    radius = coreRadius * 1.4f
+                    radius = (coreRadius * 1.4f).coerceAtLeast(1f)
                 ),
-                radius = coreRadius * 1.4f,
+                radius = (coreRadius * 1.4f).coerceAtLeast(1f),
                 center = Offset(cx, cy)
             )
 
             // Inner sparkling nucleus
             drawCircle(
                 color = Color.White.copy(alpha = 0.95f * overallAlpha),
-                radius = 8.dp.toPx() * coreScale,
+                radius = (8.dp.toPx() * coreScale).coerceAtLeast(1f),
                 center = Offset(cx, cy)
             )
         }
