@@ -171,4 +171,17 @@
     <string name="widget_shortcuts_desc">Quick access grid for favorite shortcuts and bookmarks.</string>
     <string name="widget_mode_switch_name">Petal Mode Switcher</string>
     <string name="widget_mode_switch_desc">Instant toggle between Standard and Incognito browsing mode.</string>
+
+    <!-- Crash Reporting & Diagnostic Tracker -->
+    <string name="crash_reporting_title">Crash &amp; Diagnostic Reporting</string>
+    <string name="crash_reporting_desc">Automatically capture crash diagnostics and report issues</string>
+    <string name="crash_reporting_mode_off">Off</string>
+    <string name="crash_reporting_mode_auto">Auto</string>
+    <string name="crash_reporting_dialog_title">Petal Browser Crashed</string>
+    <string name="crash_reporting_dialog_desc">Petal recovered from an unexpected crash during its previous session. Would you like to view the diagnostic trace or share a report to help resolve it?</string>
+    <string name="action_view_crash_log">View Log</string>
+    <string name="action_report_issue">Report Issue</string>
+    <string name="action_simulate_crash">Simulate Crash</string>
+    <string name="action_export_logs">Export Logs (.zip)</string>
+    <string name="crash_toast_recovered">Petal recovered from a crash. Diagnostic report saved.</string>
 </resources>
