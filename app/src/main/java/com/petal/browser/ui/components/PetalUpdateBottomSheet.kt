@@ -165,39 +165,54 @@ object PetalUpdateSheetBridge {
     }
 
     private fun showChangelogDialog(activity: ComponentActivity, releases: List<PetalUpdateInfo>) {
-        try {
-            val dialog = BottomSheetDialog(activity)
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-                setContent {
-                    PetalExpressiveTheme {
-                        PetalChangelogHistorySheetContent(
-                            releases = releases,
-                            onDismiss = {
-                                try { dialog.dismiss() } catch (ignored: Exception) {}
+        activity.runOnUiThread {
+            try {
+                var composeView: ComposeView? = null
+                composeView = ComposeView(activity).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeViewModelStoreOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+                    setContent {
+                        PetalExpressiveTheme {
+                            var showSheet by remember { mutableStateOf(true) }
+                            if (showSheet) {
+                                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                                ModalBottomSheet(
+                                    onDismissRequest = {
+                                        showSheet = false
+                                        val parent = composeView?.parent as? android.view.ViewGroup
+                                        parent?.removeView(composeView)
+                                    },
+                                    sheetState = sheetState,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                                    dragHandle = { BottomSheetDefaults.DragHandle() }
+                                ) {
+                                    PetalChangelogHistorySheetContent(
+                                        releases = releases,
+                                        onDismiss = {
+                                            showSheet = false
+                                            val parent = composeView?.parent as? android.view.ViewGroup
+                                            parent?.removeView(composeView)
+                                        }
+                                    )
+                                }
                             }
-                        )
+                        }
                     }
                 }
+                val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content)
+                rootView?.addView(
+                    composeView,
+                    android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            dialog.setContentView(composeView)
-            dialog.setOnShowListener {
-                val sheetView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-                if (sheetView != null) {
-                    com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheetView).apply {
-                        skipCollapsed = true
-                        state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-                    }
-                }
-            }
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -253,39 +268,54 @@ object PetalUpdateSheetBridge {
 
     @JvmStatic
     fun showUpdateSheet(activity: ComponentActivity, updateInfo: PetalUpdateInfo) {
-        try {
-            val dialog = BottomSheetDialog(activity)
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-            val composeView = ComposeView(activity).apply {
-                setViewTreeLifecycleOwner(activity)
-                setViewTreeViewModelStoreOwner(activity)
-                setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-                setContent {
-                    PetalExpressiveTheme {
-                        PetalUpdateSheetContent(
-                            updateInfo = updateInfo,
-                            onDismiss = {
-                                try { dialog.dismiss() } catch (ignored: Exception) {}
+        activity.runOnUiThread {
+            try {
+                var composeView: ComposeView? = null
+                composeView = ComposeView(activity).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeViewModelStoreOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+                    setContent {
+                        PetalExpressiveTheme {
+                            var showSheet by remember { mutableStateOf(true) }
+                            if (showSheet) {
+                                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                                ModalBottomSheet(
+                                    onDismissRequest = {
+                                        showSheet = false
+                                        val parent = composeView?.parent as? android.view.ViewGroup
+                                        parent?.removeView(composeView)
+                                    },
+                                    sheetState = sheetState,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                                    dragHandle = { BottomSheetDefaults.DragHandle() }
+                                ) {
+                                    PetalUpdateSheetContent(
+                                        updateInfo = updateInfo,
+                                        onDismiss = {
+                                            showSheet = false
+                                            val parent = composeView?.parent as? android.view.ViewGroup
+                                            parent?.removeView(composeView)
+                                        }
+                                    )
+                                }
                             }
-                        )
+                        }
                     }
                 }
+                val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content)
+                rootView?.addView(
+                    composeView,
+                    android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            dialog.setContentView(composeView)
-            dialog.setOnShowListener {
-                val sheetView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-                if (sheetView != null) {
-                    com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheetView).apply {
-                        skipCollapsed = true
-                        state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-                    }
-                }
-            }
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -342,19 +372,10 @@ fun PetalUpdateSheetContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 24.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Drag handle
-            Box(
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-            )
-
             // Header Icon Badge
             Surface(
                 shape = CircleShape,
@@ -651,19 +672,9 @@ fun PetalChangelogHistorySheetContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Drag handle
-            Box(
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
