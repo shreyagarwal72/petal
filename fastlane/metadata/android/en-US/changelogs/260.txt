@@ -1,0 +1,6 @@
+v2.6.0 — Complete Removal of Gecko Engine & Extensions
+
+• Completely stripped out Mozilla GeckoView (geckoview-omni:150) and all related runtime engine holder code, installer, sessions, and screen components
+• Removed all extension features, including Chrome Extensions bridge, Mozilla Add-ons repository, and internal petal://extensions protocol handling
+• Cleaned up Settings and search indexing, removing Gecko Engine experimental controls and references
+• Substantially reduced APK size (~100 MB lighter) and lowered runtime memory footprint
