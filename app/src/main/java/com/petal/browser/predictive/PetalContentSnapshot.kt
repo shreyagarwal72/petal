@@ -30,55 +30,41 @@ import android.graphics.Canvas
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
-import android.os.Looper
 import android.view.PixelCopy
 import android.view.View
 import android.view.Window
 import androidx.core.view.drawToBitmap
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import java.lang.ref.WeakReference
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
- * Shared holder for capturing and providing live browser content view snapshots (Bitmap).
- * Used by Compose bridges before and during predictive back gestures to supply dynamic,
- * real-time underlays rather than static or stale screenshots.
+ * Shared holder for capturing and storing the current browser content view snapshot (Bitmap).
+ * Used by Compose bridges before mounting top-level ComposeViews to feed predictive back depth blur.
  */
 object PetalContentSnapshot {
     @Volatile
     private var _current: Bitmap? = null
 
-    private val _liveSnapshotFlow = MutableStateFlow<Bitmap?>(null)
-    val liveSnapshotFlow: StateFlow<Bitmap?> = _liveSnapshotFlow.asStateFlow()
-
-    private var activeRootViewRef: WeakReference<View>? = null
-
     /**
-     * Guarded read: returns valid non-recycled bitmap or null.
+     * Guarded read: every caller across the 15+ screens that use this (Settings,
+     * History, Downloads, Tab Switcher, Bookmarks, Account Sync, etc.) was reading
+     * the raw field and handing it straight to Compose's Image() with no recycled
+     * check - the same class of bug TabThumbnailCache already guards against on
+     * its own bitmap reads. A crash log showed "Canvas: trying to use a recycled
+     * bitmap" (FATAL, kills the whole app) with no app frame in the trace, which
+     * is consistent with exactly this: some caller drawing a bitmap that became
+     * invalid between capture and draw. Returning null instead of a recycled
+     * bitmap means the Image() call sites just skip drawing that frame instead
+     * of crashing the process.
      */
     val current: Bitmap?
         get() {
             val bmp = _current
-            return if (bmp != null && !bmp.isRecycled) bmp else null
+            return if (bmp != null && !bmp.isRecycled()) bmp else null
         }
 
-    /**
-     * Registers active root view for real-time dynamic refresh during back gestures.
-     */
-    @JvmStatic
-    fun registerActiveRootView(rootView: View) {
-        activeRootViewRef = WeakReference(rootView)
-    }
-
-    /**
-     * Captures a live snapshot synchronously or updates the current snapshot buffer.
-     */
     @JvmStatic
     fun capture(rootView: View): Bitmap {
-        registerActiveRootView(rootView)
         val width = rootView.width.coerceAtLeast(1)
         val height = rootView.height.coerceAtLeast(1)
 
@@ -101,7 +87,7 @@ object PetalContentSnapshot {
                         latch.countDown()
                     }, handler)
 
-                    val success = latch.await(150, TimeUnit.MILLISECONDS)
+                    val success = latch.await(200, TimeUnit.MILLISECONDS)
                     thread.quitSafely()
 
                     if (success && copyResult == PixelCopy.SUCCESS) {
@@ -131,52 +117,12 @@ object PetalContentSnapshot {
         }
 
         _current = captured
-        _liveSnapshotFlow.value = captured
         return captured
-    }
-
-    /**
-     * Triggers asynchronous live capture to refresh preview during dynamic web changes.
-     */
-    @JvmStatic
-    fun refreshLiveSnapshotAsync(onComplete: ((Bitmap?) -> Unit)? = null) {
-        val view = activeRootViewRef?.get() ?: return
-        if (view.width <= 0 || view.height <= 0) return
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val window = findWindow(view)
-            if (window != null) {
-                try {
-                    val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-                    PixelCopy.request(window, bitmap, { copyResult ->
-                        if (copyResult == PixelCopy.SUCCESS) {
-                            _current = bitmap
-                            _liveSnapshotFlow.value = bitmap
-                            Handler(Looper.getMainLooper()).post { onComplete?.invoke(bitmap) }
-                        } else {
-                            bitmap.recycle()
-                            Handler(Looper.getMainLooper()).post { onComplete?.invoke(current) }
-                        }
-                    }, Handler(Looper.getMainLooper()))
-                    return
-                } catch (ignored: Throwable) {}
-            }
-        }
-
-        try {
-            val bmp = view.drawToBitmap(Bitmap.Config.ARGB_8888)
-            _current = bmp
-            _liveSnapshotFlow.value = bmp
-            onComplete?.invoke(bmp)
-        } catch (ignored: Throwable) {
-            onComplete?.invoke(current)
-        }
     }
 
     @JvmStatic
     fun clear() {
         _current = null
-        _liveSnapshotFlow.value = null
     }
 
     private fun findWindow(view: View): Window? {
