@@ -46,7 +46,7 @@ val PetalM3EmphasizedEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 const val PETAL_TRANSITION_DURATION = 350
 
 // Pop exit slide easing: cubic slide curve f * f * f.
-val PetalPopExitSlideEasing = CubicBezierEasing(0.5f, 0.0f, 0.8f, 0.2f)
+val PetalPopExitSlideEasing: Easing = Easing { f -> f * f * f }
 
 // Pop exit target scale delta (0.85f final scale).
 const val PETAL_POP_EXIT_MAX_SCALE_DELTA = 0.15f
