@@ -41,7 +41,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     EXPERIMENTAL("Experimental", "App language, intro animations, experimental features and advanced settings", com.petal.browser.R.drawable.build_filled),
     MISCELLANEOUS("Miscellaneous", "Download engine, external apps handling and extra browser tools", com.petal.browser.R.drawable.download_2_filled),
     DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", com.petal.browser.R.drawable.backup_filled),
-    UPDATER("App Updates", "Check for updates and auto-check on launch", com.petal.browser.R.drawable.update_rounded),
+    UPDATER("Updates & Diagnostics", "Release tracker, auto-updates & crash reporting", com.petal.browser.R.drawable.update_rounded),
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", com.petal.browser.R.drawable.info_filled)
 }
 

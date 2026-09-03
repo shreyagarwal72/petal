@@ -21,13 +21,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.preference.PreferenceManager
 import com.petal.browser.compose.composable.ContainedLoadingIndicator
 import com.petal.browser.compose.settings.viewmodel.MiscSettingsViewModel
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.logger.PetalAppLogger
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalCrashReportingPicker
 import com.petal.browser.unit.UpdateUnit
 import com.petal.browser.view.NinjaToast
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun UpdaterSettingsScreen(
@@ -53,7 +59,15 @@ fun UpdaterSettingsScreenContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+
     var isCheckingUpdate by remember { mutableStateOf(false) }
+    var crashReportMode by remember {
+        mutableStateOf(sp.getString(PetalAppLogger.PREF_CRASH_REPORT_MODE, "auto") ?: "auto")
+    }
+    var lastCheckTimestamp by remember {
+        mutableLongStateOf(sp.getLong("sp_update_last_check_timestamp", 0L))
+    }
 
     val appVersionName = remember {
         try {
@@ -73,13 +87,18 @@ fun UpdaterSettingsScreenContent(
         } catch (e: Exception) { 100L }
     }
 
+    val formattedLastCheck = remember(lastCheckTimestamp) {
+        if (lastCheckTimestamp <= 0L) "Never"
+        else SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(lastCheckTimestamp))
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "updater_settings")
 
         Column(modifier = Modifier.fillMaxSize()) {
             ExpressiveHeader(
-                title = "App Updates",
-                subtitle = "Check for updates and auto-check on launch",
+                title = "Updates & Diagnostics",
+                subtitle = "Release tracker, automatic updates & crash reporting",
                 onBack = onNavigateBack
             )
 
@@ -92,8 +111,11 @@ fun UpdaterSettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // App Updates & Inbuilt Updater Card
-                SettingsCategoryCard(title = "App Updates & Inbuilt Updater", iconRes = com.petal.browser.R.drawable.update_rounded) {
+                // ── Section 1: Inbuilt Update Engine & Tracker ──
+                SettingsCategoryCard(
+                    title = "Update Tracker & Releases",
+                    iconRes = com.petal.browser.R.drawable.update_rounded
+                ) {
                     ToggleRow(
                         title = "Check for Updates on Launch",
                         subtitle = "Automatically check for new browser releases when app starts",
@@ -104,110 +126,180 @@ fun UpdaterSettingsScreenContent(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                    // Channel & Version Hero Card
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(18.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(34.dp)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Rounded.Sync,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Rounded.RocketLaunch,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Petal v ()",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "Channel: GitHub Official • Last Checked: ",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Check for Updates Now",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = if (isCheckingUpdate) "Checking for updates..." else "Version v$appVersionName ($appVersionCode)",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            if (isCheckingUpdate) {
-                                ContainedLoadingIndicator(
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            } else {
-                                Button(
-                                    onClick = {
-                                        PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
-                                        isCheckingUpdate = true
-                                        var act: Activity? = null
-                                        var ctx = context
-                                        while (ctx is ContextWrapper) {
-                                            if (ctx is Activity) {
-                                                act = ctx
-                                                break
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                if (isCheckingUpdate) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(42.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        ContainedLoadingIndicator(modifier = Modifier.size(32.dp))
+                                    }
+                                } else {
+                                    Button(
+                                        onClick = {
+                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
+                                            isCheckingUpdate = true
+                                            var act: Activity? = null
+                                            var ctx = context
+                                            while (ctx is ContextWrapper) {
+                                                if (ctx is Activity) {
+                                                    act = ctx
+                                                    break
+                                                }
+                                                ctx = ctx.baseContext
                                             }
-                                            ctx = ctx.baseContext
-                                        }
-                                        if (act != null) {
-                                            UpdateUnit.checkForUpdates(act, false) {
+                                            if (act != null) {
+                                                UpdateUnit.checkForUpdates(act, false) {
+                                                    isCheckingUpdate = false
+                                                    lastCheckTimestamp = System.currentTimeMillis()
+                                                }
+                                            } else {
                                                 isCheckingUpdate = false
+                                                NinjaToast.show(context, "Checking for updates...")
                                             }
-                                        } else {
-                                            isCheckingUpdate = false
-                                            NinjaToast.show(context, "Checking for updates...")
-                                        }
-                                    },
-                                    shape = RoundedCornerShape(12.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                                ) {
-                                    Icon(Icons.Rounded.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Check", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Check Now", fontWeight = FontWeight.Bold)
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = {
+                                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                            var act: Activity? = null
+                                            var ctx = context
+                                            while (ctx is ContextWrapper) {
+                                                if (ctx is Activity) {
+                                                    act = ctx
+                                                    break
+                                                }
+                                                ctx = ctx.baseContext
+                                            }
+                                            if (act != null) {
+                                                com.petal.browser.ui.components.PetalUpdateSheetBridge.showChangelogHistorySheet(act as androidx.activity.ComponentActivity)
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Changelog")
+                                    }
                                 }
                             }
                         }
                     }
+                }
 
-                    OutlinedButton(
-                        onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
-                            var act: Activity? = null
-                            var ctx = context
-                            while (ctx is ContextWrapper) {
-                                if (ctx is Activity) {
-                                    act = ctx
-                                    break
-                                }
-                                ctx = ctx.baseContext
-                            }
-                            if (act != null) {
-                                UpdateUnit.checkForUpdates(act, false, null)
-                            }
-                        },
+                // ── Section 2: Crash Reporting & Diagnostic Tracker (Inspired by Essentials) ──
+                SettingsCategoryCard(
+                    title = "Crash Reporting & Diagnostics",
+                    icon = Icons.Rounded.BugReport
+                ) {
+                    PetalCrashReportingPicker(
+                        selectedMode = crashReportMode,
+                        onModeSelected = { mode ->
+                            crashReportMode = mode
+                            sp.edit().putString(PetalAppLogger.PREF_CRASH_REPORT_MODE, mode).apply()
+                            NinjaToast.show(context, if (mode == "auto") "Crash reporting set to Auto" else "Crash reporting disabled")
+                        }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Diagnostic Actions Row: Export ZIP and Simulate Crash
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("View Release History on GitHub")
+                        OutlinedButton(
+                            onClick = {
+                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.6f)
+                                PetalAppLogger.shareLogsZip(context)
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Rounded.FolderZip, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Export Logs")
+                        }
+
+                        Button(
+                            onClick = {
+                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.VIRTUAL_KEY, 0.8f)
+                                PetalAppLogger.simulateCrash()
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                        ) {
+                            Icon(Icons.Rounded.WarningAmber, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Simulate Crash")
+                        }
                     }
                 }
 

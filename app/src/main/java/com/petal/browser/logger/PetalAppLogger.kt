@@ -1,7 +1,31 @@
+/*
+ * MIT License
+ * Copyright (c) 2026 Petal Browser
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT/TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package com.petal.browser.logger
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.content.FileProvider
@@ -18,28 +42,55 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * Builtin App Logger for Petal Browser.
- * Records runtime events, catches uncaught exceptions, and exports
- * a comprehensive diagnostic ZIP bundle containing logcat, crash traces,
- * device/OS info, and sanitized preferences.
+ * Builtin App Logger & Crash Reporting Engine for Petal Browser.
+ *
+ * Features:
+ * 1. Thread-safe in-memory ring buffer for runtime diagnostic logs.
+ * 2. Uncaught Exception interception with persistent disk crash dump (`last_crash.log`).
+ * 3. Crash recovery detection on cold launch with Material 3 interactive report prompt.
+ * 4. Configurable crash reporting mode ("auto" / "off") inspired by Essentials.
+ * 5. Diagnostic bundle exporter (.zip) including logcat, stacktraces, device specs, and sanitized preferences.
+ * 6. Direct GitHub Issue reporting pre-populated with crash stack traces and system diagnostics.
  */
 object PetalAppLogger {
 
     private const val TAG = "PetalAppLogger"
     private const val MAX_IN_MEMORY_LOGS = 500
+    private const val CRASH_LOG_FILENAME = "last_crash.log"
+    const val PREF_CRASH_REPORT_MODE = "sp_crash_report_mode" // "auto" or "off"
 
     private val logBuffer = ConcurrentLinkedQueue<String>()
     private val crashTraces = ConcurrentLinkedQueue<String>()
 
     private var defaultUncaughtHandler: Thread.UncaughtExceptionHandler? = null
+    private var lastCrashReport: String? = null
 
     @JvmStatic
     fun init(context: Context) {
+        // Read previous crash report from disk if exists
+        try {
+            val crashFile = File(context.filesDir, CRASH_LOG_FILENAME)
+            if (crashFile.exists()) {
+                val content = crashFile.readText()
+                if (content.isNotBlank()) {
+                    lastCrashReport = content
+                    crashTraces.add(content)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read crash log from disk", e)
+        }
+
         if (defaultUncaughtHandler == null) {
             defaultUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-                recordCrash(thread, throwable)
-                defaultUncaughtHandler?.uncaughtException(thread, throwable)
+                try {
+                    handleCrash(context, thread, throwable)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error recording uncaught crash", e)
+                } finally {
+                    defaultUncaughtHandler?.uncaughtException(thread, throwable)
+                }
             }
             log(TAG, "PetalAppLogger initialized successfully")
         }
@@ -70,14 +121,109 @@ object PetalAppLogger {
         }
     }
 
-    private fun recordCrash(thread: Thread, throwable: Throwable) {
+    private fun handleCrash(context: Context, thread: Thread, throwable: Throwable) {
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
         val sw = StringWriter()
         throwable.printStackTrace(PrintWriter(sw))
         val stack = sw.toString()
-        val crashReport = "=== UNCAUGHT CRASH ===\nTimestamp: $timestamp\nThread: ${thread.name} (id=${thread.id})\nException: ${throwable.javaClass.name}: ${throwable.message}\nStacktrace:\n$stack\n"
-        crashTraces.add(crashReport)
-        log(TAG, crashReport)
+
+        val report = buildString {
+            append("=== PETAL BROWSER UNCAUGHT CRASH ===\n")
+            append("Timestamp: $timestamp\n")
+            append("Thread: ${thread.name} (id=${thread.id})\n")
+            append("Exception: ${throwable.javaClass.name}\n")
+            append("Message: ${throwable.message}\n")
+            append("App Version: ${try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Throwable) { "Unknown" }}\n")
+            append("Android OS: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})\n")
+            append("Device: ${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})\n")
+            append("\nStacktrace:\n$stack\n")
+            append("\n--- Last In-Memory Logs Before Crash ---\n")
+            logBuffer.takeLast(40).forEach { line ->
+                append(line)
+                append("\n")
+            }
+        }
+
+        crashTraces.add(report)
+        log(TAG, report)
+
+        try {
+            val crashFile = File(context.filesDir, CRASH_LOG_FILENAME)
+            crashFile.writeText(report)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to persist crash dump file", e)
+        }
+    }
+
+    /**
+     * Checks if a previous crash log is available for user reporting.
+     */
+    @JvmStatic
+    fun hasPendingCrashReport(): Boolean {
+        return !lastCrashReport.isNullOrBlank()
+    }
+
+    /**
+     * Retrieves the last crash log content.
+     */
+    @JvmStatic
+    fun getLastCrashReport(): String? {
+        return lastCrashReport
+    }
+
+    /**
+     * Clears the pending crash report and deletes the disk log file.
+     */
+    @JvmStatic
+    fun clearPendingCrashReport(context: Context) {
+        lastCrashReport = null
+        try {
+            val crashFile = File(context.filesDir, CRASH_LOG_FILENAME)
+            if (crashFile.exists()) {
+                crashFile.delete()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete crash dump file", e)
+        }
+    }
+
+    /**
+     * Simulates a test crash for Developer & Debug validation (like Essentials).
+     */
+    @JvmStatic
+    fun simulateCrash() {
+        throw RuntimeException("Simulated test crash from Petal Browser Developer Options")
+    }
+
+    /**
+     * Generates a GitHub Issue URL pre-filled with the crash trace and device diagnostics.
+     */
+    @JvmStatic
+    fun openGitHubCrashIssue(context: Context, crashText: String?) {
+        try {
+            val title = "Crash: " + (crashText?.lineSequence()?.firstOrNull { it.startsWith("Exception:") }?.removePrefix("Exception:")?.trim() ?: "Unexpected App Crash")
+            val issueBody = buildString {
+                append("### Description\nPetal Browser encountered an unexpected crash.\n\n")
+                append("### Crash Trace\n```\n")
+                append(crashText?.take(3000) ?: "No crash trace available.")
+                append("\n```\n\n")
+                append("### Device Info\n")
+                append("- Android Version: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})\n")
+                append("- Device: ${Build.MANUFACTURER} ${Build.MODEL}\n")
+                append("- App Version: ${try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Throwable) { "Unknown" }}\n")
+            }
+
+            val encodedTitle = Uri.encode(title.take(120))
+            val encodedBody = Uri.encode(issueBody)
+            val issueUrl = "https://github.com/shreyagarwal72/petal/issues/new?title=$encodedTitle&body=$encodedBody"
+
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(issueUrl)).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to launch GitHub Issue URL", e)
+        }
     }
 
     @JvmStatic
@@ -117,7 +263,6 @@ object PetalAppLogger {
                     val sp = PreferenceManager.getDefaultSharedPreferences(context)
                     val all = sp.all
                     for ((k, v) in all.entries.sortedBy { it.key }) {
-                        // Exclude any credential/sensitive keys
                         if (k.contains("password", ignoreCase = true) ||
                             k.contains("token", ignoreCase = true) ||
                             k.contains("secret", ignoreCase = true) ||
