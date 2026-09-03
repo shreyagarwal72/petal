@@ -1,0 +1,5 @@
+v2.5.2 — Predictive Back Animation Fix
+
+• Fixed any overlay screen (settings, history, bookmarks, credits) snapping to home instead of smoothly animating back — root-view transform is now correctly reset after Compose's exit animation completes
+• Fixed Credits → About Developer navigation: credits screen now properly cleans up before re-opening the About Developer sheet, eliminating ghost overlay and zombie view in contentFrame
+• Fixed App & Profile Lock config → Users & Accounts: back navigation now plays a smooth AOSP-matched slide+scale exit animation (M3 emphasized easing, 350ms) instead of an instant disappearance

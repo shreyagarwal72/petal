@@ -213,6 +213,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * running underneath the Compose-level one.
      */
     public boolean isDecorOverlayShowing = false;
+    /**
+     * Optional action to run instead of showAlbum() when performBackNavigation exits an overlay
+     * screen. Used by showCreditsScreen() so that "back from credits" can re-open the About
+     * Developer sheet instead of going all the way to the browser home.
+     * Must be set BEFORE presentComposeScreen() and cleared by performBackNavigation().
+     */
+    public Runnable pendingOverlayBackAction = null;
     public LinearLayout tab_container;
     public FrameLayout fullscreenHolder;
     public com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
@@ -363,6 +370,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private final PathInterpolator predictiveBackEasing = new PathInterpolator(0.2f, 0f, 0f, 1f);
     // Mirrors RvSystem's AOSP_TRANSITION_DURATION
     private static final int PB_TRANSITION_DURATION_MS = 350;
+    /**
+     * Set to true in handleOnBackStarted when isOverlayScreenShowing is true,
+     * so handleOnBackPressed knows the gesture was started over an overlay screen.
+     * The Compose PredictiveBackHandler inside the overlay will animate its own exit
+     * and call onBack() which runs showAlbum() (clearing isOverlayScreenShowing).
+     * handleOnBackPressed must NOT call performBackNavigation() in this case —
+     * it must only call resetPredictiveBackVisuals() to clear the root-view transform.
+     */
+    private boolean predictiveBackStartedOnOverlay = false;
 
     public AlbumController nextAlbumController(boolean next) {
         if (BrowserContainer.size() <= 1) return currentAlbumController;
@@ -500,7 +516,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
-                if (isOverlayScreenShowing) {
+                predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing;
+                if (predictiveBackStartedOnOverlay) {
                     predictiveBackSwipeEdge = backEvent.getSwipeEdge();
                     beginPredictiveBackGesture();
                 }
@@ -508,7 +525,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             @Override
             public void handleOnBackProgressed(@NonNull androidx.activity.BackEventCompat backEvent) {
-                if (isOverlayScreenShowing) {
+                if (predictiveBackStartedOnOverlay) {
                     applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
                 }
             }
@@ -516,13 +533,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             @Override
             public void handleOnBackPressed() {
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                performBackNavigation();
-                resetPredictiveBackVisuals();
+                if (predictiveBackStartedOnOverlay) {
+                    // The gesture started on an overlay screen. Compose's PredictiveBackHandler
+                    // has already animated the screen's exit and called onBack() → showAlbum()
+                    // (which cleared isOverlayScreenShowing). We must NOT call performBackNavigation()
+                    // here — that would try to go back in web history. Only reset the root-view
+                    // transform that was applied during handleOnBackProgressed.
+                    predictiveBackStartedOnOverlay = false;
+                    resetPredictiveBackVisuals();
+                } else {
+                    performBackNavigation();
+                    resetPredictiveBackVisuals();
+                }
             }
 
             @Override
             public void handleOnBackCancelled() {
-                if (isOverlayScreenShowing) {
+                if (predictiveBackStartedOnOverlay) {
+                    predictiveBackStartedOnOverlay = false;
                     settlePredictiveBackGesture(false);
                 } else {
                     resetPredictiveBackVisuals();
@@ -889,7 +917,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else if (isOverlayScreenShowing) {
             isOverlayScreenShowing = false;
             contentFrame.removeAllViews();
-            showAlbum(currentAlbumController);
+            Runnable backAction = pendingOverlayBackAction;
+            pendingOverlayBackAction = null;
+            if (backAction != null) {
+                backAction.run();
+            } else {
+                showAlbum(currentAlbumController);
+            }
             updatePersistentBottomNav();
             updateOmniBox();
         } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
@@ -3345,6 +3379,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
+            pendingOverlayBackAction = onBackAction;
             contentFrame.removeAllViews();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
@@ -3359,11 +3394,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View creditsView = com.petal.browser.ui.components.PetalCreditsBridge.createCreditsView(
                 BrowserActivity.this,
                 () -> {
-                    if (onBackAction != null) {
-                        onBackAction.run();
+                    // Compose's PredictiveBackHandler has already animated the exit.
+                    // Clean up contentFrame and overlay state, then run the pending
+                    // action (re-open About Developer) or fall back to showing home.
+                    isOverlayScreenShowing = false;
+                    contentFrame.removeAllViews();
+                    Runnable action = pendingOverlayBackAction;
+                    pendingOverlayBackAction = null;
+                    if (action != null) {
+                        action.run();
                     } else {
                         showAlbum(currentAlbumController);
                     }
+                    updatePersistentBottomNav();
+                    updateOmniBox();
                     return kotlin.Unit.INSTANCE;
                 }
             );
