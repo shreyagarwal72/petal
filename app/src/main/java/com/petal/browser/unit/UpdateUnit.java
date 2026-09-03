@@ -80,17 +80,31 @@ public class UpdateUnit {
                     final String latestTag = json.optString("tag_name", currentVersion);
                     final String releaseNotes = json.optString("body", "Performance polish, security enhancements, and stability improvements.");
 
-                    // Locate direct APK asset download URL if available, fallback to html_url release page
+                    // Locate direct APK asset download URL: ALWAYS prioritize universal release
                     String apkDownloadUrl = json.optString("html_url", GITHUB_RELEASES_PAGE);
                     JSONArray assets = json.optJSONArray("assets");
                     if (assets != null && assets.length() > 0) {
+                        String universalUrl = null;
+                        String fallbackApkUrl = null;
                         for (int i = 0; i < assets.length(); i++) {
                             JSONObject asset = assets.getJSONObject(i);
                             String assetName = asset.optString("name", "");
                             if (assetName.endsWith(".apk")) {
-                                apkDownloadUrl = asset.optString("browser_download_url", apkDownloadUrl);
-                                break;
+                                String downloadUrl = asset.optString("browser_download_url", "");
+                                if (!downloadUrl.isEmpty()) {
+                                    if (assetName.toLowerCase().contains("universal")) {
+                                        universalUrl = downloadUrl;
+                                        break; // Found universal, use it immediately
+                                    } else if (fallbackApkUrl == null) {
+                                        fallbackApkUrl = downloadUrl;
+                                    }
+                                }
                             }
+                        }
+                        if (universalUrl != null) {
+                            apkDownloadUrl = universalUrl;
+                        } else if (fallbackApkUrl != null) {
+                            apkDownloadUrl = fallbackApkUrl;
                         }
                     }
                     final String finalDownloadUrl = apkDownloadUrl;

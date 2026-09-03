@@ -1,0 +1,5 @@
+v2.6.1 — Hotfix: Inbuilt Updater & Multi-Architecture Releases
+
+• Inbuilt App Updater: Prioritizes universal release APK downloads across all device types and architectures
+• Pure Compose BottomSheet: Migrated updater and changelog sheets to ModalBottomSheet for seamless nested scrolling up and down matching Essentials physics
+• Multi-Architecture Release Builds: GitHub Actions and Gradle now generate and distribute standalone APKs for arm64-v8a, armeabi-v7a, x86_64, and x86, alongside the complete universal build
