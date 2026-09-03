@@ -243,7 +243,7 @@ fun ExperimentalSettingsScreenContent(
                 }
 
                 // Security & Navigation Safeguards Card
-                SettingsCategoryCard(title = "Security & Navigation Safeguards", iconRes = com.petal.browser.R.drawable.lock_filled) {
+                SettingsCategoryCard(title = "Security & Navigation Safeguards", icon = Icons.Rounded.Lock) {
                     ToggleRow(
                         title = "App Lock Protection",
                         subtitle = "Protect Petal with biometric authentication or custom passcode",
