@@ -77,8 +77,8 @@ import kotlinx.coroutines.flow.asStateFlow
  * Ported 1:1 from RvSystem-Monitor & PixelPlayer's official architecture.
  */
 object PetalPredictiveJunction {
-    private const val KEY_PREDICTIVE_BACK_ENABLED = "sp_predictive_back_junction_enabled"
-    private const val KEY_DEPTH_BLUR_ENABLED = "sp_depth_blur_junction_enabled"
+    const val KEY_PREDICTIVE_BACK_ENABLED = "sp_predictive_back_junction_enabled"
+    const val KEY_DEPTH_BLUR_ENABLED = "sp_depth_blur_junction_enabled"
 
     private val _isPredictiveBackEnabled = MutableStateFlow(true)
     val isPredictiveBackEnabled: StateFlow<Boolean> = _isPredictiveBackEnabled.asStateFlow()
