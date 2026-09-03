@@ -16,6 +16,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.preference.PreferenceManager
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
@@ -94,6 +98,7 @@ object PetalProgressBarBridge {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PetalFancyWebLoadingBar(
     progress: Float,
@@ -104,14 +109,14 @@ fun PetalFancyWebLoadingBar(
         enter = fadeIn(),
         exit = fadeOut()
     ) {
-        LinearRipplingWavyProgressIndicator(
-            progress = progress,
+        val coercedProgress = progress.coerceIn(0f, 1f)
+        LinearWavyProgressIndicator(
+            progress = { coercedProgress },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(14.dp),
-            height = 10.dp,
-            strokeWidth = 3.dp,
-            waveAmplitude = 3.dp
+                .height(10.dp),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
         )
     }
 }
