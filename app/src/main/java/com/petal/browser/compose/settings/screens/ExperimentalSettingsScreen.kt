@@ -32,7 +32,6 @@ fun ExperimentalSettingsScreen(
 ) {
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val addressBarPosition by viewModel.addressBarPosition.collectAsStateWithLifecycle()
-    val introAnimationStyle by viewModel.introAnimationStyle.collectAsStateWithLifecycle()
     val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     val appLockPasscode by viewModel.appLockPasscode.collectAsStateWithLifecycle()
     val doubleBackExit by viewModel.doubleBackExit.collectAsStateWithLifecycle()
@@ -40,13 +39,11 @@ fun ExperimentalSettingsScreen(
     ExperimentalSettingsScreenContent(
         appLanguage = appLanguage,
         addressBarPosition = addressBarPosition,
-        introAnimationStyle = introAnimationStyle,
         appLockEnabled = appLockEnabled,
         appLockPasscode = appLockPasscode,
         doubleBackExit = doubleBackExit,
         onAppLanguageChange = viewModel::setAppLanguage,
         onAddressBarPositionChange = viewModel::setAddressBarPosition,
-        onIntroAnimationStyleChange = viewModel::setIntroAnimationStyle,
         onAppLockEnabledChange = viewModel::setAppLockEnabled,
         onAppLockPasscodeChange = viewModel::setAppLockPasscode,
         onDoubleBackExitChange = viewModel::setDoubleBackExit,
@@ -59,13 +56,11 @@ fun ExperimentalSettingsScreen(
 fun ExperimentalSettingsScreenContent(
     appLanguage: String,
     addressBarPosition: String,
-    introAnimationStyle: String,
     appLockEnabled: Boolean,
     appLockPasscode: String,
     doubleBackExit: Boolean,
     onAppLanguageChange: (String) -> Unit,
     onAddressBarPositionChange: (String) -> Unit,
-    onIntroAnimationStyleChange: (String) -> Unit,
     onAppLockEnabledChange: (Boolean) -> Unit,
     onAppLockPasscodeChange: (String) -> Unit,
     onDoubleBackExitChange: (Boolean) -> Unit,
@@ -243,48 +238,6 @@ fun ExperimentalSettingsScreenContent(
                                     { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                 } else null
                             )
-                        }
-                    }
-                }
-
-                // Cold-Start Intro Animation Card
-                SettingsCategoryCard(title = "Cold-Start Intro Animation (Experimental)", icon = Icons.Rounded.Animation) {
-                    Text(
-                        "Select the 3D cinematic opening animation when launching Petal from a cold start:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    val introOptions = listOf(
-                        Triple("NONE", "Off (Default)", "Instant home screen with zero delay"),
-                        Triple("PRISM_BEAM", "3D Prism & Optical Beam", "Refractive 3D glass prism struck by laser with chromatic spectral waves"),
-                        Triple("BLOOMING_PETAL", "The Blooming Petal", "Fluid organic blossom unfolding into 5 glassmorphic petals with ripples")
-                    )
-
-                    val introScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = introScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(introScrollState),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            introOptions.forEach { (key, label, _) ->
-                                FilterChip(
-                                    selected = introAnimationStyle == key,
-                                    onClick = {
-                                        onIntroAnimationStyleChange(key)
-                                        com.petal.browser.ui.components.PetalIntroAnimationTracker.reset()
-                                    },
-                                    label = { Text(label) },
-                                    leadingIcon = if (introAnimationStyle == key) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
-                            }
                         }
                     }
                 }

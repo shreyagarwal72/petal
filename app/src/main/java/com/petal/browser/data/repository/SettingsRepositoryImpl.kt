@@ -236,10 +236,6 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString("sp_address_bar_position", "TOP") ?: "TOP"
     }
 
-    override val introAnimationStyle: Flow<String> = preferenceFlow("sp_intro_animation_style") {
-        sp.getString("sp_intro_animation_style", "NONE") ?: "NONE"
-    }
-
     override val appLockEnabled: Flow<Boolean> = preferenceFlow("sp_app_lock_enabled") {
         sp.getBoolean("sp_app_lock_enabled", false)
     }
@@ -455,10 +451,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setAddressBarPosition(position: String) {
         sp.edit().putString("sp_address_bar_position", position).apply()
-    }
-
-    override suspend fun setIntroAnimationStyle(style: String) {
-        sp.edit().putString("sp_intro_animation_style", style).apply()
     }
 
     override suspend fun setAppLockEnabled(enabled: Boolean) {

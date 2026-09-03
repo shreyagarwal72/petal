@@ -38,7 +38,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", com.petal.browser.R.drawable.layers_filled),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.home_filled),
     DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", com.petal.browser.R.drawable.mobile_vibrate_filled),
-    EXPERIMENTAL("Experimental", "App language, intro animations, experimental features and advanced settings", com.petal.browser.R.drawable.build_filled),
+    EXPERIMENTAL("Experimental", "App language, experimental features and advanced settings", com.petal.browser.R.drawable.build_filled),
     MISCELLANEOUS("Miscellaneous", "Download engine, external apps handling and extra browser tools", com.petal.browser.R.drawable.download_2_filled),
     DATA_STORAGE("Data & Backup", "Backup and restore history, bookmarks & settings", com.petal.browser.R.drawable.backup_filled),
     UPDATER("Updates & Diagnostics", "Release tracker, auto-updates & crash reporting", com.petal.browser.R.drawable.update_rounded),

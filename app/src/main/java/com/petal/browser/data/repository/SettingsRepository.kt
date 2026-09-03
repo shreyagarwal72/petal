@@ -66,7 +66,6 @@ interface SettingsRepository {
     // Experimental & Miscellaneous
     val appLanguage: Flow<String>
     val addressBarPosition: Flow<String>
-    val introAnimationStyle: Flow<String>
     val appLockEnabled: Flow<Boolean>
     val appLockPasscode: Flow<String>
     val doubleBackExit: Flow<Boolean>
@@ -125,7 +124,6 @@ interface SettingsRepository {
 
     suspend fun setAppLanguage(language: String)
     suspend fun setAddressBarPosition(position: String)
-    suspend fun setIntroAnimationStyle(style: String)
     suspend fun setAppLockEnabled(enabled: Boolean)
     suspend fun setAppLockPasscode(passcode: String)
     suspend fun setDoubleBackExit(enabled: Boolean)
