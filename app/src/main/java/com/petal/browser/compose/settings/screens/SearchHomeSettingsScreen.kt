@@ -98,7 +98,7 @@ fun SearchHomeSettingsScreenContent(
                     onSearchEngineIndexChange(idx.toString())
                     showEngineSheet = false
                 },
-                onDismiss = { showEngineSheet = false }
+                onCancel = { showEngineSheet = false }
             )
         }
     }
