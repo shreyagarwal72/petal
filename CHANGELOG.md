@@ -1,3 +1,11 @@
+### v2.6.5
+
+- **⚡ 3D Prism & Optical Beam Cold-Start Intro**:
+  - Integrated ultra-smooth 3D isometric crystal glass prism intro powered by hardware-accelerated Compose Canvas shader passes.
+  - Features real-time optical coherent laser sweep and chromatic spectral refraction across Petal's module palette (Cyan Speed, Violet Privacy, Emerald Engine).
+  - Blooming 3D petal emblem transition accompanied by synchronized dual-stage micro-haptic tactile feedback.
+  - Seamlessly blends into the Material 3 Expressive Home layout on cold start, skipping on warm returns for 0ms overhead.
+
 ### v2.6.4 (Hotfix)
 
 - **🐛 Custom Scheme Handling & Home Page Resolution**:
