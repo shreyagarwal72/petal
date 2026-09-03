@@ -251,14 +251,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             }
             if (activity instanceof com.petal.browser.activity.BrowserActivity) {
                 com.petal.browser.activity.BrowserActivity browserActivity = (com.petal.browser.activity.BrowserActivity) activity;
-                if (type == HitTestResult.IMAGE_TYPE || type == HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
-                    final String imageURL = result.getExtra();
-                    if (imageURL != null && !imageURL.isEmpty()) {
-                        v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
-                        com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(browserActivity, imageURL);
-                        return true;
-                    }
-                }
                 if (type == HitTestResult.SRC_ANCHOR_TYPE) {
                     final String urlResult = result.getExtra();
                     if (urlResult != null && !urlResult.isEmpty()) {
@@ -266,6 +258,39 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                         com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(browserActivity, urlResult);
                         return true;
                     }
+                }
+
+                if (type == HitTestResult.IMAGE_TYPE || type == HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+                    final String imageURL = result.getExtra();
+                    // First check if the clicked image is inside an anchor link (favicon/icon inside link)
+                    evaluateJavascript(
+                        "(function() {" +
+                        "   var el = document.elementFromPoint(window.lastTouchX || 0, window.lastTouchY || 0);" +
+                        "   if (!el) el = document.activeElement;" +
+                        "   if (!el) return '';" +
+                        "   var a = el.closest('a');" +
+                        "   if (a && a.href) return 'LINK:' + a.href;" +
+                        "   return '';" +
+                        "})();",
+                        linkCheckResult -> {
+                            if (linkCheckResult != null && !linkCheckResult.equals("null") && !linkCheckResult.isEmpty()) {
+                                String cleanLink = linkCheckResult.replace("\"", "").trim();
+                                if (cleanLink.startsWith("LINK:")) {
+                                    String targetHref = cleanLink.substring(5).trim();
+                                    if (!targetHref.isEmpty()) {
+                                        v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                                        com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(browserActivity, targetHref);
+                                        return;
+                                    }
+                                }
+                            }
+                            if (imageURL != null && !imageURL.isEmpty()) {
+                                v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                                com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(browserActivity, imageURL);
+                            }
+                        }
+                    );
+                    return true;
                 }
 
                 // If HitTestResult is UNKNOWN_TYPE or another element, check if long-press landed on an anchor link / image / video in DOM

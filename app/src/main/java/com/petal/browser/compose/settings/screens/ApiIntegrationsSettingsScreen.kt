@@ -77,7 +77,7 @@ fun ApiIntegrationsSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Dedicated Petal AI & API Keys Hub Card
-                SettingsCategoryCard(title = "Petal AI & API Keys Hub", iconRes = com.petal.browser.R.drawable.ic_rust_logo) {
+                SettingsCategoryCard(title = "Petal AI & API Keys Hub", iconRes = com.petal.browser.R.drawable.ic_ai_stars) {
                     Text(
                         "Configure AI providers, API keys, and model selections for Petal Deep Research, AI Search, and page summarizer.",
                         style = MaterialTheme.typography.bodySmall,

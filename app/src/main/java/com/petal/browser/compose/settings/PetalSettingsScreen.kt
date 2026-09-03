@@ -33,7 +33,7 @@ import com.petal.browser.ui.theme.*
 
 enum class SettingsCategory(val title: String, val subtitle: String, val iconRes: Int) {
     OVERVIEW("Settings", "Browse all settings categories", com.petal.browser.R.drawable.settings_filled),
-    API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", com.petal.browser.R.drawable.ic_rust_logo),
+    API_INTEGRATIONS("API & Integrations Hub", "AndroidX WebKit, Google Credential Manager & Palette APIs", com.petal.browser.R.drawable.ic_ai_stars),
     APPEARANCE("Appearance & Theme", "Fonts, theme modes, color palettes, AMOLED & Material You", com.petal.browser.R.drawable.brightness_medium_filled),
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", com.petal.browser.R.drawable.layers_filled),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.home_filled),

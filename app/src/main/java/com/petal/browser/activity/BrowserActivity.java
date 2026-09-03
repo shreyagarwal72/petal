@@ -4726,16 +4726,42 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             WebView.HitTestResult result = ninjaWebView.getHitTestResult();
             int type = result.getType();
 
-            if (type == WebView.HitTestResult.IMAGE_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
-                final String imageURL = result.getExtra();
-                v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
-                com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(BrowserActivity.this, imageURL);
-                return true;
-            }
             if (type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
                 final String urlResult = result.getExtra();
                 v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
                 com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(BrowserActivity.this, urlResult);
+                return true;
+            }
+
+            if (type == WebView.HitTestResult.IMAGE_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+                final String imageURL = result.getExtra();
+                ninjaWebView.evaluateJavascript(
+                    "(function() {" +
+                    "   var el = document.elementFromPoint(window.lastTouchX || 0, window.lastTouchY || 0);" +
+                    "   if (!el) el = document.activeElement;" +
+                    "   if (!el) return '';" +
+                    "   var a = el.closest('a');" +
+                    "   if (a && a.href) return 'LINK:' + a.href;" +
+                    "   return '';" +
+                    "})();",
+                    linkCheckResult -> {
+                        if (linkCheckResult != null && !linkCheckResult.equals("null") && !linkCheckResult.isEmpty()) {
+                            String cleanLink = linkCheckResult.replace("\"", "").trim();
+                            if (cleanLink.startsWith("LINK:")) {
+                                String targetHref = cleanLink.substring(5).trim();
+                                if (!targetHref.isEmpty()) {
+                                    v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                                    com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(BrowserActivity.this, targetHref);
+                                    return;
+                                }
+                            }
+                        }
+                        if (imageURL != null && !imageURL.isEmpty()) {
+                            v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(BrowserActivity.this, imageURL);
+                        }
+                    }
+                );
                 return true;
             }
 
