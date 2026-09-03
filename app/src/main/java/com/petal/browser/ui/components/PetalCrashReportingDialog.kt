@@ -115,8 +115,7 @@ fun PetalCrashRecoveryHost(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            val firstLines = crashReport.lineSequence().take(4).joinToString("
-")
+                            val firstLines = crashReport.lineSequence().take(4).joinToString("\n")
                             Text(
                                 text = firstLines.ifBlank { "Uncaught Exception" },
                                 style = MaterialTheme.typography.bodySmall.copy(
