@@ -26,8 +26,8 @@ android {
         applicationId "com.petal.browser"
         minSdkVersion 26
         targetSdkVersion 36
-        versionCode 252
-        versionName "2.5.2"
+        versionCode 260
+        versionName "2.6.0"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
     }
@@ -150,8 +150,4 @@ dependencies {
     // Google ML Kit On-Device Recognition APIs
     implementation 'com.google.mlkit:text-recognition:16.0.1'
     implementation 'com.google.mlkit:barcode-scanning:17.3.0'
-
-    // ── Mozilla GeckoView — Gecko rendering engine ──────────────────────────
-    // omni variant bundles all locales. Pin to a stable Firefox 150 build.
-    implementation 'org.mozilla.geckoview:geckoview-omni:150.0.20260511200624'
 }

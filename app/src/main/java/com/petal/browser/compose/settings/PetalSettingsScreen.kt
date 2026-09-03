@@ -487,8 +487,6 @@ fun PetalSettingsScreen(
     var searchEngineIndex by remember { mutableStateOf(sp.getString("sp_search_engine", "0") ?: "0") }
     var torrentEngineMode by remember { mutableStateOf(sp.getString("sp_torrent_engine", "1DM") ?: "1DM") }
     var showEngineSheet by remember { mutableStateOf(false) }
-    var isGeckoEngineEnabled by remember { mutableStateOf(sp.getBoolean(com.petal.browser.gecko.PREF_GECKO_ENGINE_ENABLED, false)) }
-    var showGeckoRestartBanner by remember { mutableStateOf(false) }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -646,7 +644,7 @@ fun PetalSettingsScreen(
                             }
 
                             // 0. Dedicated Petal AI & API Keys Hub Sub-Screen Page
-                            if ((scaffoldCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "petal ai api key gemini openrouter openai grok groq key deep research webkit extensions search suggestions")) {
+                            if ((scaffoldCategory == SettingsCategory.API_INTEGRATIONS || searchQuery.isNotBlank()) && matchesSearch("API & Integrations", "petal ai api key gemini openrouter openai grok groq key deep research webkit search suggestions")) {
                                 SettingsCategoryCard(title = "Petal AI & API Keys Hub", iconRes = com.petal.browser.R.drawable.ic_rust_logo) {
                                     Text(
                                         "Configure AI providers, API keys, and model selections for Petal Deep Research, AI Search, and page summarizer.",
@@ -838,39 +836,6 @@ fun PetalSettingsScreen(
                                             sp.edit().putBoolean("sp_enable_live_suggestions", newValue).apply()
                                         }
                                     )
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                                    Surface(
-                                        onClick = {
-                                            if (context is androidx.activity.ComponentActivity) {
-                                                com.petal.browser.extensions.PetalExtensionsBridge.showExtensions(context)
-                                            }
-                                        },
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(14.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(
-                                                    "Chrome Extensions (petal://extensions)",
-                                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                                )
-                                                Text(
-                                                    "Manage active extensions, install .CRX / .ZIP files, or configure UserScript engine",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
-                                                )
-                                            }
-                                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                                        }
-                                    }
                                 }
                             }
 
@@ -1715,219 +1680,6 @@ fun PetalSettingsScreen(
                                                 leadingIcon = if (addressBarPosition == "BOTTOM") {
                                                     { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                                 } else null
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            // ── Gecko Engine (Experimental) ───────────────────────────────────────
-                            if ((scaffoldCategory == SettingsCategory.EXPERIMENTAL || searchQuery.isNotBlank()) && matchesSearch("Gecko Engine", "gecko mozilla firefox geckoview rendering engine experimental webextension")) {
-                                SettingsCategoryCard(title = "Gecko Engine (Experimental)", iconRes = com.petal.browser.R.drawable.build_filled) {
-
-                                    // Info banner
-                                    Surface(
-                                        shape = RoundedCornerShape(14.dp),
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(12.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                            verticalAlignment = Alignment.Top
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.Info,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                modifier = Modifier.size(18.dp).padding(top = 1.dp)
-                                            )
-                                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                                Text(
-                                                    "Mozilla Gecko (Firefox 150)",
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                                )
-                                                Text(
-                                                    "Replaces Android WebView with Mozilla's Gecko rendering engine. Enables real WebExtension APIs (uBlock, Tampermonkey). Adds ~100 MB to APK and ~120 MB RAM overhead. Restart required to take effect.",
-                                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
-                                                )
-                                                Spacer(Modifier.height(4.dp))
-                                                Text(
-                                                    "⚠ Supported: arm64-v8a · x86_64 only",
-                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    var isGeckoDownloaded by remember { mutableStateOf(com.petal.browser.gecko.GeckoEngineInstaller.isInstalled(context)) }
-                                    var isDownloadingGecko by remember { mutableStateOf(false) }
-
-                                    if (!isGeckoDownloaded) {
-                                        Surface(
-                                            shape = RoundedCornerShape(12.dp),
-                                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(14.dp),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Text(
-                                                        "Download Gecko Module",
-                                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                    Text(
-                                                        "Download Mozilla Gecko rendering engine from GitHub Releases (~95 MB). Keeps base app light and saves RAM.",
-                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                }
-                                                Spacer(Modifier.width(8.dp))
-                                                Button(
-                                                    onClick = {
-                                                        isDownloadingGecko = true
-                                                        com.petal.browser.gecko.GeckoEngineInstaller.startDownload(context) {
-                                                            isDownloadingGecko = false
-                                                            isGeckoDownloaded = true
-                                                            showGeckoRestartBanner = true
-                                                        }
-                                                    },
-                                                    enabled = !isDownloadingGecko,
-                                                    shape = RoundedCornerShape(10.dp)
-                                                ) {
-                                                    if (isDownloadingGecko) {
-                                                        CircularProgressIndicator(
-                                                            modifier = Modifier.size(16.dp),
-                                                            strokeWidth = 2.dp,
-                                                            color = MaterialTheme.colorScheme.onPrimary
-                                                        )
-                                                    } else {
-                                                        Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                                                        Spacer(Modifier.width(6.dp))
-                                                        Text("Download", style = MaterialTheme.typography.labelMedium)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        // Main toggle
-                                        ToggleRow(
-                                            title = "Enable Gecko Rendering Engine",
-                                            subtitle = "Use Mozilla's Firefox engine instead of Chrome/WebView. Enables WebExtension API support.",
-                                            icon = Icons.Rounded.Language,
-                                            checked = isGeckoEngineEnabled,
-                                            onCheckedChange = { newValue ->
-                                                isGeckoEngineEnabled = newValue
-                                                if (newValue) {
-                                                    com.petal.browser.gecko.GeckoRuntimeHolder.enable(context)
-                                                } else {
-                                                    com.petal.browser.gecko.GeckoRuntimeHolder.disable(context)
-                                                }
-                                                showGeckoRestartBanner = true
-                                            }
-                                        )
-
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                                            horizontalArrangement = Arrangement.End
-                                        ) {
-                                            TextButton(
-                                                onClick = {
-                                                    com.petal.browser.gecko.GeckoEngineInstaller.removeEngine(context)
-                                                    isGeckoDownloaded = false
-                                                    isGeckoEngineEnabled = false
-                                                    showGeckoRestartBanner = true
-                                                }
-                                            ) {
-                                                Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
-                                                Spacer(Modifier.width(4.dp))
-                                                Text("Delete Gecko Module to Free Storage", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
-                                            }
-                                        }
-                                    }
-
-                                    // Restart required banner — shown after toggle change
-                                    androidx.compose.animation.AnimatedVisibility(
-                                        visible = showGeckoRestartBanner,
-                                        enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
-                                        exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
-                                    ) {
-                                        Surface(
-                                            shape = RoundedCornerShape(12.dp),
-                                            color = MaterialTheme.colorScheme.errorContainer,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Row(
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.weight(1f)
-                                                ) {
-                                                    Icon(
-                                                        Icons.Rounded.Warning,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.onErrorContainer,
-                                                        modifier = Modifier.size(16.dp)
-                                                    )
-                                                    Text(
-                                                        "Restart Petal to apply changes",
-                                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                                    )
-                                                }
-                                                TextButton(
-                                                    onClick = {
-                                                        // Restart the app cleanly
-                                                        val pm = context.packageManager
-                                                        val intent = pm.getLaunchIntentForPackage(context.packageName)
-                                                        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                                        context.startActivity(intent)
-                                                        android.os.Process.killProcess(android.os.Process.myPid())
-                                                    }
-                                                ) {
-                                                    Text(
-                                                        "Restart now",
-                                                        style = MaterialTheme.typography.labelMedium,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    // Engine status chip
-                                    val isLive = com.petal.browser.gecko.GeckoRuntimeHolder.isInitialized
-                                    Surface(
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = if (isLive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                if (isLive) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                                                contentDescription = null,
-                                                tint = if (isLive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Text(
-                                                text = if (isLive) "Gecko Engine is active (Firefox 150 · geckoview-omni:150.0.20260511200624)" else "Gecko Engine is inactive — using system WebView",
-                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                                color = if (isLive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }

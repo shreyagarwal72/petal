@@ -370,7 +370,7 @@ public class BrowserUnit {
     public static void intentURL(Context context, Uri uri) {
         if (context == null || uri == null) return;
         String uriStr = uri.toString();
-        if (uriStr.startsWith("petal://settings") || uriStr.startsWith("petal://flags") || uriStr.startsWith("petal://extensions") || uriStr.startsWith("petal://credits")) {
+        if (uriStr.startsWith("petal://settings") || uriStr.startsWith("petal://flags") || uriStr.startsWith("petal://credits")) {
             if (context instanceof Activity) {
                 Activity activity = (Activity) context;
                 if (uriStr.startsWith("petal://settings")) {
@@ -393,9 +393,6 @@ public class BrowserUnit {
                     return;
                 } else if (uriStr.startsWith("petal://flags") && activity instanceof androidx.activity.ComponentActivity) {
                     com.petal.browser.flags.PetalChromeFlagsBridge.showFlags((androidx.activity.ComponentActivity) activity, null);
-                    return;
-                } else if (uriStr.startsWith("petal://extensions") && activity instanceof androidx.activity.ComponentActivity) {
-                    com.petal.browser.extensions.PetalExtensionsBridge.showExtensions((androidx.activity.ComponentActivity) activity);
                     return;
                 } else if (uriStr.startsWith("petal://credits") && activity instanceof com.petal.browser.activity.BrowserActivity) {
                     ((com.petal.browser.activity.BrowserActivity) activity).showCreditsScreen();
