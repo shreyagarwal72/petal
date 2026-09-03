@@ -78,6 +78,7 @@ import com.petal.browser.ui.components.ExpressiveButtonGroup
 import com.petal.browser.ui.components.ExpressiveSegmentItem
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.*
+import com.petal.browser.predictive.PetalPredictiveJunction
 
 object PetalSettingsBridge {
     @JvmStatic
