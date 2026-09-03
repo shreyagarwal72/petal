@@ -491,13 +491,7 @@ object PetalDownloadDialogBridge {
             }
         }
 
-        if (com.petal.browser.torrent.PetalTorrentEngineManager.isFirstTimeEnginePromptNeeded(activity)) {
-            showFirstTimeEngineSelection(activity) {
-                showConfirmationDialogAction()
-            }
-        } else {
-            showConfirmationDialogAction()
-        }
+        showConfirmationDialogAction()
     }
 
     /**

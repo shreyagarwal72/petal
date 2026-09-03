@@ -1,0 +1,6 @@
+v2.6.3 — Hotfix: Unified High-Speed Download Architecture
+
+• Unified Best Download Engine: High-speed multi-threaded segmented downloading powered by Fetch2 and OkHttp with auto-retry on reconnects
+• Safe Filenames & Headers: Integrated robust RFC 5987 / UTF-8 filename decoding, character stripping, and safe HTTP header handling
+• Automatic Torrent Routing: Intelligent auto-detection routing torrents and magnet links directly to 1DM if installed, with seamless streaming fallback
+• Streamlined Settings: Removed manual download engine tweak settings and first-time prompts for direct, frictionless downloads

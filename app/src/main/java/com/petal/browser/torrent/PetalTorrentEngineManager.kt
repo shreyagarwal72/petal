@@ -69,31 +69,21 @@ object PetalTorrentEngineManager {
 
         if (!isMagnet && !isTorrentFile) return false
 
-        val mode = getSelectedEngineMode(activity)
-
-        return when (mode) {
-            TorrentEngineMode.ENGINE_1DM -> {
-                if (Util1DM.is1DMInstalled(activity)) {
-                    try {
-                        if (isMagnet) {
-                            Util1DM.downloadMagnet(activity, url, true)
-                        } else {
-                            Util1DM.downloadTorrent(activity, url, true)
-                        }
-                        NinjaToast.show(activity, "Opening 1DM Torrent Downloader...")
-                        true
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        NinjaToast.show(activity, "1DM Engine unavailable. Opening in-app handler...")
-                        launchNativeInAppTorrent(activity, url, fileName)
-                    }
+        if (Util1DM.is1DMInstalled(activity)) {
+            return try {
+                if (isMagnet) {
+                    Util1DM.downloadMagnet(activity, url, true)
                 } else {
-                    launchNativeInAppTorrent(activity, url, fileName)
+                    Util1DM.downloadTorrent(activity, url, true)
                 }
-            }
-            TorrentEngineMode.ENGINE_EMBEDDED -> {
+                NinjaToast.show(activity, "Opening 1DM Torrent Downloader...")
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
                 launchNativeInAppTorrent(activity, url, fileName)
             }
+        } else {
+            return launchNativeInAppTorrent(activity, url, fileName)
         }
     }
 
