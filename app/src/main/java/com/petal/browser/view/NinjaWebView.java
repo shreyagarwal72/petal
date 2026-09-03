@@ -516,7 +516,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         );
 
         try {
-            com.petal.browser.engine.candy.SystemWebViewCredentials.INSTANCE.configure(this);
+            com.petal.browser.engine.petal.SystemWebViewCredentials.INSTANCE.configure(this);
         } catch (Throwable t) {
             Log.w(TAG, "System credentials configuration bypassed: " + t.getMessage());
         }

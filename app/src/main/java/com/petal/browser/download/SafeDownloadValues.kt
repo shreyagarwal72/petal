@@ -1,7 +1,7 @@
 /*
  * SafeDownloadValues.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Ported from candy-browser's robust SafeDownloadValues & BrowserDownloadRequestFactory.
+ * Ported from petal's robust SafeDownloadValues & BrowserDownloadRequestFactory.
  * Safely resolves download URLs, handles Content-Disposition (RFC 5987 / UTF-8),
  * sanitizes filenames, detects accurate MIME types, and prevents corrupt downloads.
  *
@@ -79,7 +79,7 @@ object SafeDownloadValues {
 
     /**
      * Resolves the exact safe file name from Content-Disposition (RFC 5987 / UTF-8* or standard),
-     * URL path, query params, and MIME type fallback (Candy-Browser algorithm).
+     * URL path, query params, and MIME type fallback (Petal algorithm).
      */
     @JvmStatic
     fun fileName(url: String, contentDisposition: String?, mimeType: String?): String {
