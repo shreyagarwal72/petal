@@ -666,6 +666,11 @@ fun PetalHomeScreen(
                             }
                         )
                     }
+
+                    // ── 3D Prism & Optical Beam Cold-Start Intro Animation ──────────
+                    com.petal.browser.ui.components.PetalPrismOpticalIntro(
+                        modifier = Modifier.fillMaxSize()
+                    )
         }
     }
 }
