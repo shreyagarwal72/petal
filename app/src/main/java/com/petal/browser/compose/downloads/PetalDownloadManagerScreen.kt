@@ -67,7 +67,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
 import com.petal.browser.ui.theme.PetalExpressiveTheme
-import com.petal.browser.ui.components.LinearRipplingWavyProgressIndicator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -822,29 +821,24 @@ private fun DownloadRowItem(
                     label = "Progress"
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                LinearRipplingWavyProgressIndicator(
-                    progress = animatedProgress,
-                    activeColor = MaterialTheme.colorScheme.primary,
-                    secondaryColor = MaterialTheme.colorScheme.tertiary,
-                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                LinearWavyProgressIndicator(
+                    progress = { animatedProgress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp),
-                    height = 8.dp,
-                    strokeWidth = 3.5.dp
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                 )
             } else if (item.status == DownloadManager.STATUS_PAUSED) {
                 Spacer(modifier = Modifier.height(6.dp))
-                LinearRipplingWavyProgressIndicator(
-                    progress = item.progress ?: 0f,
-                    activeColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    secondaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
+                val pausedProgress = item.progress ?: 0f
+                LinearWavyProgressIndicator(
+                    progress = { pausedProgress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp),
-                    height = 8.dp,
-                    strokeWidth = 3.5.dp
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f)
                 )
             }
         }

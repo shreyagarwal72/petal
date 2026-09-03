@@ -17,6 +17,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -417,11 +419,13 @@ fun PetalUpdateSheetContent(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    LinearRipplingWavyProgressIndicator(
-                        progress = null,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        height = 6.dp,
-                        strokeWidth = 3.5.dp
+                    LinearWavyProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .height(10.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     )
                 }
             } else if (notesToDisplay.isNotBlank()) {
@@ -461,11 +465,14 @@ fun PetalUpdateSheetContent(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        LinearRipplingWavyProgressIndicator(
-                            progress = downloadProgress / 100f,
-                            modifier = Modifier.fillMaxWidth(),
-                            height = 8.dp,
-                            strokeWidth = 4.dp
+                        val progressFraction = (downloadProgress / 100f).coerceIn(0f, 1f)
+                        LinearWavyProgressIndicator(
+                            progress = { progressFraction },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(10.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
