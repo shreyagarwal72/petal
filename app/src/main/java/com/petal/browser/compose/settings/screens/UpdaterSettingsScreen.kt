@@ -286,7 +286,7 @@ fun UpdaterSettingsScreenContent(
 
                         Button(
                             onClick = {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.VIRTUAL_KEY, 0.8f)
+                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.8f)
                                 PetalAppLogger.simulateCrash()
                             },
                             modifier = Modifier.weight(1f),
