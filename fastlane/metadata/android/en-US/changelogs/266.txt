@@ -1,0 +1,5 @@
+- 🎨 Multi-Style Cold-Start Intro Animations & Experimental Settings:
+  - Added preference option in Experimental Settings: Off (Default), 3D Prism & Optical Beam, or The Blooming Petal.
+  - Implemented The Blooming Petal 3D organic blossom unfolding into 5 glassmorphic petals with concentric harmonic ripples.
+  - Resolved Android splash screen occlusion with calibrated ~950ms timing and smooth post-splash transition.
+  - Full Settings Hub search indexing for all intro animation keywords.

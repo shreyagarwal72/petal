@@ -56,40 +56,25 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Controller singleton that determines if the 3D Prism & Optical Beam intro animation
- * has already executed during this app process lifetime (cold start vs warm return).
- */
-object PetalPrismIntroTracker {
-    @Volatile
-    var hasIntroCompleted: Boolean = false
-
-    /** Reset state (useful for testing or previews) */
-    fun reset() {
-        hasIntroCompleted = false
-    }
-}
-
-/**
  * 3D Prism & Optical Beam Intro Overlay for Petal Browser.
  *
- * Visual Sequence:
- * 1. An isometric crystalline triangular prism rotates and forms in the center with 3D facet reflections.
- * 2. An intense, focused optical coherent beam sweeps in from the left, striking the apex facet.
- * 3. Chromatic refraction splits the beam into multi-spectral petal waves (Cyan, Violet, Emerald, Amber, Rose).
- * 4. Micro-haptic tactile feedback fires as the refracted beams bloom into the 3D Petal emblem.
- * 5. Dynamic seamless spatial expansion blends the energy rays outward into the M3 Expressive home layout.
+ * Timing: ~950ms total sequence, giving ample time to fully display after
+ * the OS/Activity splash screen dismisses without being cut off.
  *
- * Guarantees:
- * - 0 performance cost after intro completes (~680ms).
- * - Full visibility on AMOLED, dark, and light themes with dynamic luminescence.
- * - Hardware accelerated drawing using Compose Canvas and gradient shader passes.
+ * Visual Sequence:
+ * 1. Initial 80ms buffer allowing system splash window to fully transition away.
+ * 2. An isometric crystalline triangular prism rotates and forms in the center with 3D facet reflections (100ms..400ms).
+ * 3. An intense optical coherent laser sweeps in from the left, striking the apex facet with an impact spark (250ms..550ms).
+ * 4. Chromatic refraction splits the beam into multi-spectral petal waves (Cyan, Violet, Emerald, Amber, Rose) (450ms..750ms).
+ * 5. Micro-haptic tactile feedback fires as the refracted beams bloom into the 3D Petal emblem (~550ms).
+ * 6. Dynamic seamless spatial expansion blends the energy rays outward into the M3 Expressive home layout (750ms..950ms).
  */
 @Composable
 fun PetalPrismOpticalIntro(
     modifier: Modifier = Modifier,
     onIntroFinished: () -> Unit = {}
 ) {
-    if (PetalPrismIntroTracker.hasIntroCompleted) {
+    if (PetalIntroAnimationTracker.hasIntroCompleted) {
         return
     }
 
@@ -98,17 +83,17 @@ fun PetalPrismOpticalIntro(
     var isVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        // Trigger haptic at laser-prism impact point (~220ms in)
+        // Trigger haptic at laser-prism impact point (~360ms in)
         launch {
-            delay(220L)
+            delay(360L)
             try {
                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.85f)
             } catch (_: Throwable) {}
         }
 
-        // Secondary subtle bloom settle haptic (~520ms)
+        // Secondary subtle bloom settle haptic (~680ms)
         launch {
-            delay(520L)
+            delay(680L)
             try {
                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.5f)
             } catch (_: Throwable) {}
@@ -117,12 +102,12 @@ fun PetalPrismOpticalIntro(
         animProgress.animateTo(
             targetValue = 1f,
             animationSpec = tween(
-                durationMillis = 680,
-                easing = CubicBezierEasing(0.2f, 0.0f, 0.15f, 1.0f)
+                durationMillis = 950,
+                easing = CubicBezierEasing(0.18f, 0.0f, 0.12f, 1.0f)
             )
         )
 
-        PetalPrismIntroTracker.hasIntroCompleted = true
+        PetalIntroAnimationTracker.hasIntroCompleted = true
         isVisible = false
         onIntroFinished()
     }
@@ -141,17 +126,17 @@ fun PetalPrismOpticalIntro(
             val cx = width / 2f
             val cy = height / 2f
 
-            // Dissolve/fade out towards completion (from 0.72f to 1.0f)
-            val overallAlpha = if (progress < 0.72f) {
+            // Dissolve/fade out towards completion (from 0.75f to 1.0f)
+            val overallAlpha = if (progress < 0.75f) {
                 1f
             } else {
-                (1f - ((progress - 0.72f) / 0.28f)).coerceIn(0f, 1f)
+                (1f - ((progress - 0.75f) / 0.25f)).coerceIn(0f, 1f)
             }
 
             if (overallAlpha <= 0.001f) return@Canvas
 
             // ── 0. Backdrop Ambient Darkness & Radial Glow ──
-            val bgDarkenAlpha = ((1f - progress * 1.1f).coerceIn(0f, 0.88f)) * overallAlpha
+            val bgDarkenAlpha = ((1f - progress * 1.05f).coerceIn(0f, 0.90f)) * overallAlpha
             if (bgDarkenAlpha > 0f) {
                 drawRect(
                     color = surfaceColor.copy(alpha = bgDarkenAlpha)
@@ -159,7 +144,7 @@ fun PetalPrismOpticalIntro(
             }
 
             // Radial background flare matching active theme
-            val flareRadius = (width.coerceAtLeast(height) * 0.75f) * (0.4f + progress * 0.6f)
+            val flareRadius = (width.coerceAtLeast(height) * 0.75f) * (0.35f + progress * 0.65f)
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
@@ -175,23 +160,22 @@ fun PetalPrismOpticalIntro(
             )
 
             // ── 1. 3D Isometric Prism Geometry ──
-            // Prism emerges, rotates in 3D perspective, then expands into the petal bloom
             val prismScale = when {
                 progress < 0.28f -> (progress / 0.28f) * 1.05f
-                progress < 0.45f -> 1.05f - ((progress - 0.28f) / 0.17f) * 0.05f
-                else -> 1f + (progress - 0.45f) * 2.8f
+                progress < 0.48f -> 1.05f - ((progress - 0.28f) / 0.20f) * 0.05f
+                else -> 1f + (progress - 0.48f) * 2.8f
             }
 
             val prismRotation = -15f + (progress * 35f) // 3D yaw/roll angle
             val prismBaseRadius = 46.dp.toPx() * prismScale
 
-            // 3D Isometric Prism Vertices (Top apex, left base, right base, inner centroid)
+            // 3D Isometric Prism Vertices
             val apexAngle = -PI.toFloat() / 2f
             val leftAngle = apexAngle + (2f * PI.toFloat() / 3f)
             val rightAngle = apexAngle + (4f * PI.toFloat() / 3f)
 
             // 3D perspective depth offset
-            val depthZ = 22.dp.toPx() * (1f - (progress - 0.4f).coerceAtLeast(0f) * 2f).coerceAtLeast(0f)
+            val depthZ = 22.dp.toPx() * (1f - (progress - 0.42f).coerceAtLeast(0f) * 2f).coerceAtLeast(0f)
 
             val pApex = Offset(cx + prismBaseRadius * cos(apexAngle), cy + prismBaseRadius * sin(apexAngle) - depthZ)
             val pLeft = Offset(cx + prismBaseRadius * cos(leftAngle), cy + prismBaseRadius * sin(leftAngle))
@@ -270,9 +254,9 @@ fun PetalPrismOpticalIntro(
                 drawLine(Color.White.copy(alpha = 0.4f * overallAlpha), pRight, pCenter, strokeWidth = 1.2.dp.toPx())
             }
 
-            // ── 2. Incoming Optical Coherent Beam (0.04f to 0.48f) ──
-            if (progress in 0.04f..0.48f) {
-                val beamProgress = ((progress - 0.04f) / 0.36f).coerceIn(0f, 1f)
+            // ── 2. Incoming Optical Coherent Beam (0.08f to 0.52f) ──
+            if (progress in 0.08f..0.52f) {
+                val beamProgress = ((progress - 0.08f) / 0.38f).coerceIn(0f, 1f)
                 val beamStartX = -60.dp.toPx()
                 val beamTargetX = cx - 12.dp.toPx()
                 val currentBeamHeadX = beamStartX + (beamTargetX - beamStartX) * FastOutSlowInEasing.transform(beamProgress)
@@ -329,9 +313,9 @@ fun PetalPrismOpticalIntro(
                 }
             }
 
-            // ── 3. Chromatic Refracted Spectral Beams (0.20f to 0.75f) ──
-            if (progress >= 0.20f) {
-                val refractProgress = ((progress - 0.20f) / 0.48f).coerceIn(0f, 1f)
+            // ── 3. Chromatic Refracted Spectral Beams (0.24f to 0.78f) ──
+            if (progress >= 0.24f) {
+                val refractProgress = ((progress - 0.24f) / 0.48f).coerceIn(0f, 1f)
                 val refractEase = FastOutSlowInEasing.transform(refractProgress)
 
                 // Spectral ray wavelengths: Cyan, Violet, Emerald, Amber, Rose
@@ -380,10 +364,10 @@ fun PetalPrismOpticalIntro(
                 }
             }
 
-            // ── 4. 3D Petal Emblem Unfold & Bloom (0.35f to 1.0f) ──
-            if (progress >= 0.35f) {
-                val bloomProgress = ((progress - 0.35f) / 0.42f).coerceIn(0f, 1f)
-                val bloomEase = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1.0f).transform(bloomProgress) // Bouncy overshoot
+            // ── 4. 3D Petal Emblem Unfold & Bloom (0.38f to 1.0f) ──
+            if (progress >= 0.38f) {
+                val bloomProgress = ((progress - 0.38f) / 0.42f).coerceIn(0f, 1f)
+                val bloomEase = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1.0f).transform(bloomProgress)
                 val petalRadius = 36.dp.toPx() * bloomEase
                 val petalCount = 5
 
