@@ -184,27 +184,10 @@ public class BrowserUnit {
                 extraHeaders.put("Cache-Control", "no-transform");
                 extraHeaders.put("Referer", verifiedUrl);
 
-                // Check user selected download engine
-                com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode engineMode =
-                        com.petal.browser.torrent.PetalTorrentEngineManager.getSelectedEngineMode(context);
-
-                // If 1DM engine is selected and 1DM / 1DM+ / 1DM Lite is installed, hand off to 1DM
-                if (engineMode == com.petal.browser.torrent.PetalTorrentEngineManager.TorrentEngineMode.ENGINE_1DM
-                        && context instanceof Activity && Util1DM.is1DMInstalled(context)) {
-                    try {
-                        Util1DM.downloadFile((Activity) context, verifiedUrl, verifiedUrl, fileName, userAgent, cookie, extraHeaders, false, false);
-                        return;
-                    } catch (Exception e) {
-                        Log.w(TAG, "Util1DM download handoff failed, falling back to PetalDownloadEngine", e);
-                    }
-                }
-
-                // Fetch2 is now the single download engine (it's the only one that actually
-                // supports pause/resume) - the system DownloadManager used to also enqueue the
-                // same file in parallel here, which both wasted bandwidth and left the Downloads
-                // screen's pause/resume calling into an engine (system DownloadManager) that
-                // never applied them. The finished file is still registered with the system
-                // DownloadManager/MediaStore afterwards so it shows up in the Files app etc.
+                // Petal Unified Best Download Engine:
+                // High-speed parallel multi-threaded chunked downloader (Fetch2 + OkHttp),
+                // with auto-retry on reconnects, safe RFC 5987 filename sanitization,
+                // and real-time live alert progress tracking.
                 com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(
                         context, verifiedUrl, fileName, userAgent, cookie, extraHeaders,
                         (fetchId, resolvedName) -> com.petal.browser.compose.downloads.PetalLiveAlertManager.trackDownload(

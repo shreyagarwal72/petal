@@ -15,18 +15,11 @@ class MiscSettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    val torrentEngineMode: StateFlow<String> = settingsRepository.torrentEngineMode
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "1DM")
-
     val autoOpenApps: StateFlow<Boolean> = settingsRepository.autoOpenApps
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val checkUpdateOnLaunch: StateFlow<Boolean> = settingsRepository.checkUpdateOnLaunch
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
-    fun setTorrentEngineMode(mode: String) = viewModelScope.launch {
-        settingsRepository.setTorrentEngineMode(mode)
-    }
 
     fun setAutoOpenApps(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setAutoOpenApps(enabled)

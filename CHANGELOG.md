@@ -1,3 +1,13 @@
+### v2.6.3 (Hotfix)
+
+- **⚡ Unified High-Speed Download Architecture**:
+  - Unified best-in-class multi-threaded segmented downloading powered by Fetch2 and OkHttp (12 concurrent threads, transparent retry on network change, pause/resume/cancel).
+  - Integrated robust RFC 5987 / UTF-8 filename decoding, control-character stripping, and safe HTTP header sanitization.
+  - Automatic P2P and torrent link routing to 1DM when installed, with seamless in-app streaming fallback.
+- **🎨 Streamlined Settings & Frictionless Downloads**:
+  - Removed manual download engine tweak settings from Miscellaneous Settings to streamline preferences.
+  - Removed first-time download engine prompt dialog, allowing downloads to begin directly and smoothly without interruptions.
+
 ### v2.6.2 (Hotfix)
 
 - **🛡️ Advanced Content Blocker & Multi-Layer Ad Protection Engine**:
