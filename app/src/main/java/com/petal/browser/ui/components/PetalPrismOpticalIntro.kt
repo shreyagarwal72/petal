@@ -99,17 +99,21 @@ fun PetalPrismOpticalIntro(
             } catch (_: Throwable) {}
         }
 
-        animProgress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(
-                durationMillis = 950,
-                easing = CubicBezierEasing(0.18f, 0.0f, 0.12f, 1.0f)
+        try {
+            animProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = 950,
+                    easing = FastOutSlowInEasing
+                )
             )
-        )
+        } catch (_: Throwable) {}
 
         PetalIntroAnimationTracker.hasIntroCompleted = true
         isVisible = false
-        onIntroFinished()
+        try {
+            onIntroFinished()
+        } catch (_: Throwable) {}
     }
 
     if (!isVisible) return
@@ -123,6 +127,8 @@ fun PetalPrismOpticalIntro(
             val progress = animProgress.value
             val width = size.width
             val height = size.height
+            if (width <= 0f || height <= 0f) return@Canvas
+
             val cx = width / 2f
             val cy = height / 2f
 
@@ -144,7 +150,7 @@ fun PetalPrismOpticalIntro(
             }
 
             // Radial background flare matching active theme
-            val flareRadius = (width.coerceAtLeast(height) * 0.75f) * (0.35f + progress * 0.65f)
+            val flareRadius = ((width.coerceAtLeast(height) * 0.75f) * (0.35f + progress * 0.65f)).coerceAtLeast(1f)
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
@@ -164,7 +170,7 @@ fun PetalPrismOpticalIntro(
                 progress < 0.28f -> (progress / 0.28f) * 1.05f
                 progress < 0.48f -> 1.05f - ((progress - 0.28f) / 0.20f) * 0.05f
                 else -> 1f + (progress - 0.48f) * 2.8f
-            }
+            }.coerceAtLeast(0.01f)
 
             val prismRotation = -15f + (progress * 35f) // 3D yaw/roll angle
             val prismBaseRadius = 46.dp.toPx() * prismScale
@@ -297,6 +303,7 @@ fun PetalPrismOpticalIntro(
                 // Laser Strike Point Spark / Flare
                 if (beamProgress > 0.65f) {
                     val flareIntensity = ((beamProgress - 0.65f) / 0.35f) * overallAlpha
+                    val flareRad = (24.dp.toPx() * flareIntensity).coerceAtLeast(1f)
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
@@ -305,9 +312,9 @@ fun PetalPrismOpticalIntro(
                                 Color.Transparent
                             ),
                             center = Offset(currentBeamHeadX, beamY),
-                            radius = 24.dp.toPx()
+                            radius = flareRad
                         ),
-                        radius = 24.dp.toPx(),
+                        radius = flareRad,
                         center = Offset(currentBeamHeadX, beamY)
                     )
                 }
@@ -358,8 +365,7 @@ fun PetalPrismOpticalIntro(
                             ),
                             start = strikePoint,
                             end = endPt
-                        ),
-                        blendMode = BlendMode.Plus
+                        )
                     )
                 }
             }
@@ -367,8 +373,8 @@ fun PetalPrismOpticalIntro(
             // ── 4. 3D Petal Emblem Unfold & Bloom (0.38f to 1.0f) ──
             if (progress >= 0.38f) {
                 val bloomProgress = ((progress - 0.38f) / 0.42f).coerceIn(0f, 1f)
-                val bloomEase = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1.0f).transform(bloomProgress)
-                val petalRadius = 36.dp.toPx() * bloomEase
+                val bloomEase = FastOutSlowInEasing.transform(bloomProgress)
+                val petalRadius = (36.dp.toPx() * bloomEase).coerceAtLeast(1f)
                 val petalCount = 5
 
                 rotate(degrees = progress * 72f, pivot = Offset(cx, cy)) {
@@ -379,7 +385,7 @@ fun PetalPrismOpticalIntro(
                         val petalCenterY = cy + petalDistance * sin(petalAngle)
 
                         // Draw individual expressive petal leaf
-                        scale(scale = bloomEase, pivot = Offset(petalCenterX, petalCenterY)) {
+                        scale(scale = bloomEase.coerceAtLeast(0.01f), pivot = Offset(petalCenterX, petalCenterY)) {
                             drawCircle(
                                 brush = Brush.radialGradient(
                                     colors = listOf(
@@ -399,6 +405,7 @@ fun PetalPrismOpticalIntro(
                 }
 
                 // Core luminous jewel center
+                val coreRad = (20.dp.toPx() * bloomEase).coerceAtLeast(1f)
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
@@ -407,9 +414,9 @@ fun PetalPrismOpticalIntro(
                             Color.Transparent
                         ),
                         center = Offset(cx, cy),
-                        radius = 20.dp.toPx() * bloomEase
+                        radius = coreRad
                     ),
-                    radius = 20.dp.toPx() * bloomEase,
+                    radius = coreRad,
                     center = Offset(cx, cy)
                 )
             }
