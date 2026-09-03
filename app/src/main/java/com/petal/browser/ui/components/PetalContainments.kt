@@ -196,10 +196,12 @@ fun SettingsItem(
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = {
         Icon(
-            imageVector = Icons.Rounded.ChevronRight,
+            painter = painterResource(com.petal.browser.R.drawable.arrow_back_ios_new),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier
+                .size(16.dp)
+                .graphicsLayer(rotationZ = 180f)
         )
     },
     containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
@@ -301,9 +303,11 @@ fun SettingsMenuItem(
         },
         trailingIcon = {
             Icon(
-                imageVector = Icons.Rounded.ChevronRight,
+                painter = painterResource(com.petal.browser.R.drawable.arrow_back_ios_new),
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier
+                    .size(16.dp)
+                    .graphicsLayer(rotationZ = 180f),
                 tint = MaterialTheme.colorScheme.primary
             )
         },
@@ -445,7 +449,7 @@ fun ExpressiveCategoryItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(24.dp),
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
     badgeColor: Color = MaterialTheme.colorScheme.primary,
     iconColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {
@@ -454,8 +458,7 @@ fun ExpressiveCategoryItem(
         shape = shape,
         color = containerColor,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-        tonalElevation = 1.dp
+        tonalElevation = 0.dp
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

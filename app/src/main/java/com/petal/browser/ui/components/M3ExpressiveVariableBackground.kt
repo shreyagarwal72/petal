@@ -181,11 +181,20 @@ private fun isBatterySaverEnabled(): Boolean {
 @Composable
 fun M3ExpressiveVariableBackground(
     modifier: Modifier = Modifier,
-    pageSeed: String = "expressive_page"
+    pageSeed: String = "expressive_page",
+    showInSettings: Boolean = false
 ) {
     val context = LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     var isShapesEnabled by remember { mutableStateOf(sp.getBoolean("sp_expressive_bg_shapes", true)) }
+    val isSettingsPage = remember(pageSeed) {
+        pageSeed.endsWith("_settings") || pageSeed.endsWith("_hub") || pageSeed == "delete_page"
+    }
+    if (isSettingsPage && !showInSettings) {
+        // RvSystem-Monitor containment style: clean, un-muddled high-contrast Material 3 background for all settings surfaces
+        return
+    }
+
     var shapeChangeMode by remember { mutableStateOf(sp.getString("sp_bg_shape_change_mode", "ALWAYS") ?: "ALWAYS") } // "ALWAYS" or "PERIODIC"
     var rotationMinutes by remember { mutableIntStateOf(sp.getInt("sp_bg_shape_rotation_min", 5)) } // 1..60 min
     var seedEpoch by remember { mutableLongStateOf(System.currentTimeMillis()) }

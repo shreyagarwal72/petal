@@ -36,13 +36,15 @@ public class ImageActionHelper {
                 fileName += ".jpg";
             }
 
-            DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-            if (downloadManager != null && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
-                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(imageUrl));
-                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
-                request.allowScanningByMediaScanner();
-                downloadManager.enqueue(request);
+            if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+                com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(
+                    context,
+                    imageUrl,
+                    fileName,
+                    null,
+                    null,
+                    null
+                );
                 NinjaToast.show(context, "Image download started");
             } else {
                 // Handle Base64 or local URIs directly
