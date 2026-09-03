@@ -18,6 +18,9 @@ import android.content.Context
 import android.net.Uri
 import android.webkit.WebResourceResponse
 import androidx.preference.PreferenceManager
+import com.petal.browser.engine.candy.blocking.CandyCosmeticScript
+import com.petal.browser.engine.candy.blocking.CandyProceduralCosmeticScript
+import com.petal.browser.engine.candy.blocking.ContentBlocker
 import java.io.ByteArrayInputStream
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -59,10 +62,10 @@ object PetalAdBlockEngine {
     private val trieEngine = FastRuleTrie()
     private val whitelistedDomains = ConcurrentHashMap.newKeySet<String>()
     @Volatile private var isInitialized = false
+    @Volatile private var contentBlocker: ContentBlocker? = null
 
     // Default EasyList / uBlock / AdGuard high-frequency ad & tracker patterns
     private val defaultRules = listOf(
-        // Ad networks & servers
         "doubleclick.net", "googlesyndication.com", "google-analytics.com",
         "adservice.google.com", "adnxs.com", "popads.net", "popcash.net",
         "adform.net", "taboola.com", "outbrain.com", "adroll.com", "criteo.com",
@@ -72,19 +75,21 @@ object PetalAdBlockEngine {
         "hilltopads.com", "adcash.com", "adsterra.com", "a-ads.com", "mgid.com",
         "revcontent.com", "juicyads.com", "trafficjunky.com", "coinhive.com",
         "statcounter.com", "pixel.facebook.com",
-
-        // Specific ad/tracker scripts and paths
         "/pagead/", "/ad_banner", "/popunder", "/popup.js", "adsbygoogle.js"
     )
 
     @JvmStatic
     fun ensureInitialized(context: Context) {
-        if (isInitialized) return
+        if (isInitialized && contentBlocker != null) return
         synchronized(this) {
-            if (isInitialized) return
-            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            if (isInitialized && contentBlocker != null) return
+            val appContext = context.applicationContext ?: context
+            if (contentBlocker == null) {
+                contentBlocker = ContentBlocker(appContext)
+            }
+            val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
 
-            // Populate Trie with default & custom filters
+            // Populate fallback Trie with default filters
             defaultRules.forEach { trieEngine.insert(it) }
 
             // Load user domain whitelist
@@ -92,6 +97,14 @@ object PetalAdBlockEngine {
             whitelistedDomains.addAll(whitelistSet)
 
             isInitialized = true
+        }
+    }
+
+    @JvmStatic
+    fun getContentBlocker(context: Context): ContentBlocker {
+        ensureInitialized(context)
+        return contentBlocker ?: synchronized(this) {
+            contentBlocker ?: ContentBlocker(context.applicationContext ?: context).also { contentBlocker = it }
         }
     }
 
@@ -150,7 +163,18 @@ object PetalAdBlockEngine {
             if (isDomainWhitelisted(pageHost)) return false
         }
 
-        // Fast Trie & regex pattern match
+        // 1. Candy ContentBlocker advanced rules & host indexes (EasyList, uAssets, HaGeZi)
+        val blocker = contentBlocker
+        if (blocker != null) {
+            try {
+                val blocked = blocker.shouldBlock(requestUrl, pageUrl)
+                if (blocked) return true
+            } catch (_: Throwable) {
+                // Fall through to Trie matching if engine is still loading
+            }
+        }
+
+        // 2. Fast Trie fallback
         return trieEngine.containsSubstring(requestUrl)
     }
 
@@ -159,14 +183,20 @@ object PetalAdBlockEngine {
      */
     @JvmStatic
     fun createEmpty204Response(): WebResourceResponse {
-        val response = WebResourceResponse("text/plain", "UTF-8", 204, "No Content", mapOf("Access-Control-Allow-Origin" to "*"), ByteArrayInputStream(ByteArray(0)))
-        return response
+        return WebResourceResponse(
+            "text/plain",
+            "UTF-8",
+            204,
+            "No Content",
+            mapOf("Access-Control-Allow-Origin" to "*"),
+            ByteArrayInputStream(ByteArray(0))
+        )
     }
 
     /**
      * uBlock Origin & AdGuard Injection Payload:
+     * - Bundled cosmetic CSS selectors and procedural selectors (:has(), :has-text()) from candy-browser ContentBlocker
      * - uBO Scriptlets (`set-constant`, `abort-on-property-read`, `nano-sib`)
-     * - Cosmetic procedural rules (`:has()`, `:has-text()`) via MutationObservers
      * - Dedicated YouTube Mobile auto-skip, mute, and speedup scriptlet
      */
     @JvmStatic
@@ -200,6 +230,17 @@ object PetalAdBlockEngine {
             }
             setInterval(handleYouTubeAds, 250);
         """.trimIndent() else ""
+
+        val cosmeticScript = contentBlocker?.let { blocker ->
+            try {
+                val selectors = blocker.adCosmeticSelectors(url)
+                val script = CandyCosmeticScript.create(selectors)
+                val procedural = blocker.adProceduralDocumentStartScript(url)
+                "$script\n$procedural"
+            } catch (_: Throwable) {
+                ""
+            }
+        }.orEmpty()
 
         return """
             javascript:(function() {
@@ -272,7 +313,12 @@ object PetalAdBlockEngine {
                     });
                 }
 
-                // 3. YouTube Mobile Ad Skipper
+                // 3. Candy Engine Cosmetic & Procedural Rules
+                try {
+                    $cosmeticScript
+                } catch(e) {}
+
+                // 4. YouTube Mobile Ad Skipper
                 $ytScriptlet
             })();
         """.trimIndent()

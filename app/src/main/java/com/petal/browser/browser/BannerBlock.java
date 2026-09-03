@@ -171,6 +171,18 @@ public class BannerBlock {
                     "               }\n" +
                     "            }\n" +
                     "        }";
+            // Incorporate candy-browser easylist cookie banner CSS remover
+            try {
+                Context appCtx = com.petal.browser.PetalApplication.getInstance();
+                if (appCtx != null) {
+                    com.petal.browser.engine.candy.blocking.ContentBlocker blocker = PetalAdBlockEngine.getContentBlocker(appCtx);
+                    String consentScript = blocker.getConsentScript();
+                    if (consentScript != null && !consentScript.isEmpty()) {
+                        bannerBlockScript = bannerBlockScript + "\n" + consentScript;
+                    }
+                }
+            } catch (Exception ignored) {}
+
             return bannerBlockScript;
         }
     }
