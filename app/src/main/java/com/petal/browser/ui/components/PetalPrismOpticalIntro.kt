@@ -49,6 +49,8 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.petal.browser.haptics.PetalHapticEngine
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -97,16 +99,16 @@ fun PetalPrismOpticalIntro(
 
     LaunchedEffect(Unit) {
         // Trigger haptic at laser-prism impact point (~220ms in)
-        kotlinx.coroutines.launch {
-            kotlinx.coroutines.delay(220L)
+        launch {
+            delay(220L)
             try {
                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.85f)
             } catch (_: Throwable) {}
         }
 
         // Secondary subtle bloom settle haptic (~520ms)
-        kotlinx.coroutines.launch {
-            kotlinx.coroutines.delay(520L)
+        launch {
+            delay(520L)
             try {
                 PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.TICK, 0.5f)
             } catch (_: Throwable) {}
