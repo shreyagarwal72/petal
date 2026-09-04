@@ -627,6 +627,49 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         reload();
     }
 
+    /**
+     * Pre-navigation site protection dispatch: synchronizes desktop view policy,
+     * cookie permissions, and profile context for the target navigation URL.
+     */
+    public void applySiteProtectionForNavigation(String targetUrl) {
+        if (targetUrl == null || targetUrl.isEmpty()) return;
+        try {
+            if (listStandard != null && listStandard.isWhite(targetUrl)) {
+                profile = HelperUnit.domain(targetUrl);
+            } else if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(targetUrl)) && sp.getBoolean("sp_standard_always", true)) {
+                profile = "profileStandard";
+                sp.edit().putString("profile", "profileStandard").apply();
+            }
+
+            WebSettings settings = getSettings();
+            boolean isDesktop = sp.getBoolean(profile + "_desktop", false) || sp.getBoolean("sp_desktop_site", false);
+            String desktopUserAgent = getDerivedDesktopUserAgent(context);
+            String rawDefaultUa = WebSettings.getDefaultUserAgent(context);
+            String googleLoginMobileUa = rawDefaultUa != null ? rawDefaultUa.replaceAll("; wv\\)", ")").replaceAll(" Version/\\d+\\.\\d+", "") : "";
+            String mobileUserAgent = sp.getString("sp_userAgent", "");
+            if (mobileUserAgent.isEmpty() || !sp.getBoolean("userAgentSwitch", false)) {
+                mobileUserAgent = googleLoginMobileUa;
+            }
+            String ownUserAgent = HelperUnit.getSafeString(sp, "sp_userAgent", "");
+            if (!ownUserAgent.isEmpty() && HelperUnit.getSafeBoolean(sp, "userAgentSwitch", false)) {
+                mobileUserAgent = ownUserAgent;
+            }
+
+            String targetUa = isDesktop ? desktopUserAgent : mobileUserAgent;
+            if (!Objects.equals(settings.getUserAgentString(), targetUa)) {
+                settings.setUserAgentString(targetUa);
+            }
+
+            CookieManager manager = CookieManager.getInstance();
+            boolean blockThirdParty = sp.getBoolean("sp_block_third_party_cookies", false);
+            boolean globalSso = sp.getBoolean("sp_global_google_login", true);
+            boolean acceptCookies = globalSso || sp.getBoolean(profile + "_cookies", true);
+            boolean acceptThirdParty = !blockThirdParty && (globalSso || sp.getBoolean(profile + "_cookiesThirdParty", true));
+            manager.setAcceptCookie(acceptCookies);
+            manager.setAcceptThirdPartyCookies(this, acceptThirdParty);
+        } catch (Exception ignored) {}
+    }
+
     public void setProfileDefaultValues() {
 
         RecordAction action = new RecordAction(context);
@@ -719,12 +762,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                     WebHistoryItem item = mWebBackForwardList.getItemAtIndex(prevIndex);
                     if (item != null && item.getUrl() != null) {
                         String historyUrl = item.getUrl();
-                        if (listStandard != null && listStandard.isWhite(historyUrl)) {
-                            profile = HelperUnit.domain(historyUrl);
-                        } else if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(historyUrl)) && sp.getBoolean("sp_standard_always", true)) {
-                            profile = "profileStandard";
-                            sp.edit().putString("profile", "profileStandard").apply();
-                        }
+                        applySiteProtectionForNavigation(historyUrl);
                     }
                 }
             }
@@ -747,12 +785,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
                     WebHistoryItem item = mWebBackForwardList.getItemAtIndex(targetIndex);
                     if (item != null && item.getUrl() != null) {
                         String historyUrl = item.getUrl();
-                        if (listStandard != null && listStandard.isWhite(historyUrl)) {
-                            profile = HelperUnit.domain(historyUrl);
-                        } else if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(historyUrl)) && sp.getBoolean("sp_standard_always", true)) {
-                            profile = "profileStandard";
-                            sp.edit().putString("profile", "profileStandard").apply();
-                        }
+                        applySiteProtectionForNavigation(historyUrl);
                     }
                 }
             }
