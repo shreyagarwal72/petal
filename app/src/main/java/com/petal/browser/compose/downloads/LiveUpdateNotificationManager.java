@@ -115,7 +115,7 @@ public class LiveUpdateNotificationManager {
         // Try building Android 16 native Notification.ProgressStyle via reflection if API >= 36 and capable
         if (canPostPromotedNotifications(context)) {
             Notification nativeNotif = buildAndroid16ProgressStyleNotification(
-                    context, title, contentText, progressPercent, isIndeterminate, chipText, contentPendingIntent, cancelPendingIntent
+                    context, title, contentText, progressPercent, isIndeterminate, isPaused, chipText, contentPendingIntent, cancelPendingIntent, togglePendingIntent
             );
             if (nativeNotif != null) {
                 return nativeNotif;
@@ -130,6 +130,7 @@ public class LiveUpdateNotificationManager {
                 .setSubText(chipText)
                 .setOngoing(!isPaused)
                 .setOnlyAlertOnce(true)
+                .setSilent(true)
                 .setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(contentPendingIntent);
@@ -181,16 +182,18 @@ public class LiveUpdateNotificationManager {
             String contentText,
             int progressPercent,
             boolean isIndeterminate,
+            boolean isPaused,
             String chipText,
             PendingIntent contentPendingIntent,
-            PendingIntent cancelPendingIntent
+            PendingIntent cancelPendingIntent,
+            PendingIntent togglePendingIntent
     ) {
         try {
             Notification.Builder builder = new Notification.Builder(context, CHANNEL_ID)
                     .setSmallIcon(R.drawable.icon_download)
                     .setContentTitle(title)
                     .setContentText(contentText)
-                    .setOngoing(true)
+                    .setOngoing(!isPaused)
                     .setOnlyAlertOnce(true)
                     .setContentIntent(contentPendingIntent);
 
@@ -237,18 +240,28 @@ public class LiveUpdateNotificationManager {
 
             try {
                 Method setPromotedOngoing = Notification.Builder.class.getMethod("setPromotedOngoing", boolean.class);
-                setPromotedOngoing.invoke(builder, true);
+                setPromotedOngoing.invoke(builder, !isPaused);
             } catch (NoSuchMethodException ignored) {}
 
             // Add extras for Promoted Ongoing & Live Alert chips
             Bundle extras = new Bundle();
             extras.putString("android.liveAlertText", chipText);
             extras.putBoolean("android.isLiveAlert", true);
-            extras.putBoolean("android.promotedOngoing", true);
+            extras.putBoolean("android.promotedOngoing", !isPaused);
             extras.putString("android.shortCriticalText", chipText);
             builder.addExtras(extras);
 
-            // Add actions
+            // Add toggle action (Pause / Resume)
+            if (togglePendingIntent != null) {
+                Notification.Action toggleAction = new Notification.Action.Builder(
+                        Icon.createWithResource(context, isPaused ? R.drawable.icon_play : R.drawable.icon_pause),
+                        isPaused ? "Resume" : "Pause",
+                        togglePendingIntent
+                ).build();
+                builder.addAction(toggleAction);
+            }
+
+            // Add cancel action
             if (cancelPendingIntent != null) {
                 Notification.Action cancelAction = new Notification.Action.Builder(
                         Icon.createWithResource(context, R.drawable.icon_close),
