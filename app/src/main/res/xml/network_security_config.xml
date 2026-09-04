@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Cleartext is permitted at the platform layer for custom AI endpoints on local LAN (e.g. Ollama, LM Studio).
+         All remote web traffic uses HTTPS. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

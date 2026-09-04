@@ -294,7 +294,7 @@ fun PetalAiSearchResultSheet(
                         expanded = providerMenuExpanded,
                         onDismissRequest = { providerMenuExpanded = false }
                     ) {
-                        AiProvider.values().forEach { provider ->
+                        AiProvider.entries.forEach { provider ->
                             DropdownMenuItem(
                                 text = { Text(provider.displayName) },
                                 onClick = {

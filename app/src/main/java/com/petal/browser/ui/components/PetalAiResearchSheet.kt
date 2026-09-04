@@ -49,7 +49,8 @@ fun PetalAiResearchSheet(
     var selectedProvider by remember { mutableStateOf(PetalAiResearchEngine.getSelectedProvider(context)) }
     var selectedModel by remember { mutableStateOf(PetalAiResearchEngine.getSelectedModel(context, selectedProvider)) }
     var apiKey by remember(selectedProvider) { mutableStateOf(PetalAiResearchEngine.getApiKey(context, selectedProvider)) }
-    var showApiKeyConfig by remember { mutableStateOf(apiKey.isBlank()) }
+    var customEndpoint by remember { mutableStateOf(PetalAiResearchEngine.getCustomEndpoint(context)) }
+    var showApiKeyConfig by remember { mutableStateOf(apiKey.isBlank() && selectedProvider != AiProvider.CUSTOM) }
 
     var selectedMode by remember { mutableStateOf(initialMode) }
     var customPromptText by remember { mutableStateOf("") }
@@ -190,7 +191,7 @@ fun PetalAiResearchSheet(
                                         PetalAiResearchEngine.setSelectedProvider(context, provider)
                                         selectedModel = PetalAiResearchEngine.getSelectedModel(context, provider)
                                         apiKey = PetalAiResearchEngine.getApiKey(context, provider)
-                                        showApiKeyConfig = apiKey.isBlank()
+                                        showApiKeyConfig = apiKey.isBlank() && provider != AiProvider.CUSTOM
                                         providerMenuExpanded = false
                                     }
                                 )
@@ -198,31 +199,47 @@ fun PetalAiResearchSheet(
                         }
                     }
 
-                    // Model Dropdown
-                    Box {
-                        AssistChip(
-                            onClick = { modelMenuExpanded = true },
-                            label = {
-                                val displayModel = selectedModel.substringAfterLast("/")
-                                Text(displayModel, maxLines = 1)
+                    // Model Dropdown or Custom Model Input
+                    if (selectedProvider == AiProvider.CUSTOM) {
+                        OutlinedTextField(
+                            value = selectedModel,
+                            onValueChange = { newModel ->
+                                selectedModel = newModel
+                                PetalAiResearchEngine.setSelectedModel(context, selectedProvider, newModel)
                             },
+                            label = { Text("Model ID") },
+                            placeholder = { Text("e.g. llama3, deepseek-r1") },
+                            singleLine = true,
                             leadingIcon = { Icon(Icons.Rounded.Memory, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                            trailingIcon = { Icon(Icons.Rounded.ArrowDropDown, contentDescription = null) }
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f, fill = false)
                         )
+                    } else {
+                        Box {
+                            AssistChip(
+                                onClick = { modelMenuExpanded = true },
+                                label = {
+                                    val displayModel = selectedModel.substringAfterLast("/")
+                                    Text(displayModel, maxLines = 1)
+                                },
+                                leadingIcon = { Icon(Icons.Rounded.Memory, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                                trailingIcon = { Icon(Icons.Rounded.ArrowDropDown, contentDescription = null) }
+                            )
 
-                        DropdownMenu(
-                            expanded = modelMenuExpanded,
-                            onDismissRequest = { modelMenuExpanded = false }
-                        ) {
-                            selectedProvider.availableModels.forEach { model ->
-                                DropdownMenuItem(
-                                    text = { Text(model) },
-                                    onClick = {
-                                        selectedModel = model
-                                        PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
-                                        modelMenuExpanded = false
-                                    }
-                                )
+                            DropdownMenu(
+                                expanded = modelMenuExpanded,
+                                onDismissRequest = { modelMenuExpanded = false }
+                            ) {
+                                selectedProvider.availableModels.forEach { model ->
+                                    DropdownMenuItem(
+                                        text = { Text(model) },
+                                        onClick = {
+                                            selectedModel = model
+                                            PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
+                                            modelMenuExpanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -246,8 +263,23 @@ fun PetalAiResearchSheet(
                         ) {
                             Icon(Icons.Rounded.VpnKey, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             Text(
-                                "Configure ${selectedProvider.displayName} API Key",
+                                if (selectedProvider == AiProvider.CUSTOM) "Configure Custom AI Endpoint" else "Configure ${selectedProvider.displayName} API Key",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+
+                        if (selectedProvider == AiProvider.CUSTOM) {
+                            OutlinedTextField(
+                                value = customEndpoint,
+                                onValueChange = { newEp ->
+                                    customEndpoint = newEp
+                                    PetalAiResearchEngine.setCustomEndpoint(context, newEp)
+                                },
+                                label = { Text("Endpoint URL") },
+                                placeholder = { Text("https://api.openai.com/v1 or http://localhost:11434/v1") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
                             )
                         }
 
@@ -257,8 +289,8 @@ fun PetalAiResearchSheet(
                                 apiKey = newKey
                                 PetalAiResearchEngine.setApiKey(context, selectedProvider, newKey)
                             },
-                            label = { Text("${selectedProvider.displayName} API Key") },
-                            placeholder = { Text("Paste API key here...") },
+                            label = { Text(if (selectedProvider == AiProvider.CUSTOM) "API Key (Optional)" else "${selectedProvider.displayName} API Key") },
+                            placeholder = { Text(if (selectedProvider == AiProvider.CUSTOM) "Paste API key (leave blank if none)..." else "Paste API key here...") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
@@ -269,16 +301,20 @@ fun PetalAiResearchSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            TextButton(
-                                onClick = {
-                                    try {
-                                        BrowserUnit.intentURL(context, Uri.parse(selectedProvider.keyUrl))
-                                    } catch (e: Exception) { e.printStackTrace() }
+                            if (selectedProvider.keyUrl.isNotBlank()) {
+                                TextButton(
+                                    onClick = {
+                                        try {
+                                            BrowserUnit.intentURL(context, Uri.parse(selectedProvider.keyUrl))
+                                        } catch (e: Exception) { e.printStackTrace() }
+                                    }
+                                ) {
+                                    Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Get API Key")
                                 }
-                            ) {
-                                Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                            } else {
                                 Spacer(Modifier.width(4.dp))
-                                Text("Get API Key")
                             }
 
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -374,7 +410,7 @@ fun PetalAiResearchSheet(
             // Start Research Action Button
             Button(
                 onClick = {
-                    if (apiKey.isBlank()) {
+                    if (apiKey.isBlank() && selectedProvider != AiProvider.CUSTOM) {
                         showApiKeyConfig = true
                         com.petal.browser.view.NinjaToast.show(context, "Please enter an API Key first")
                         return@Button
