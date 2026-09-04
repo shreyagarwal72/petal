@@ -18,9 +18,12 @@ import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 
 /**
- * Kotlin delegate handling Picture-in-Picture (PiP) parameter building,
- * aspect ratio calculation, remote media actions (play/pause/skip),
- * and system PiP triggers for BrowserActivity.
+ * Petal PiP Engine & Delegate
+ * Rebuilt using mpvEx architecture:
+ * - Precise aspect-ratio computation clamped strictly to Android PIP boundaries [0.418f..2.39f]
+ * - Dynamic SourceRectHint letterbox/pillarbox calculation for seamless, flicker-free window morphing
+ * - Broadcast-driven remote actions (Rewind 10s, Play/Pause toggle, Forward 10s) with auto-updating icons
+ * - Android 12+ (API 31+) seamless AutoEnter enabled state
  */
 object BrowserMediaDelegate {
 
@@ -82,51 +85,102 @@ object BrowserMediaDelegate {
     }
 
     @JvmStatic
+    fun isYouTubeUrl(url: String?): Boolean {
+        if (url == null || url.isEmpty()) return false
+        val lower = url.lowercase()
+        return lower.contains("youtube.com") ||
+            lower.contains("youtu.be") ||
+            lower.contains("youtube-nocookie.com") ||
+            lower.contains("/embed/") ||
+            lower.contains("ytimg.com")
+    }
+
+    @JvmStatic
+    fun calculateSourceRect(view: View, aspectRatio: Rational): Rect {
+        val viewWidth = view.width.toFloat()
+        val viewHeight = view.height.toFloat()
+        if (viewWidth <= 0f || viewHeight <= 0f) {
+            val globalRect = Rect()
+            view.getGlobalVisibleRect(globalRect)
+            return globalRect
+        }
+
+        val videoAspect = aspectRatio.toFloat()
+        val viewAspect = viewWidth / viewHeight
+
+        val localRect = if (viewAspect < videoAspect) {
+            // Letterboxed: black bars top and bottom
+            val height = viewWidth / videoAspect
+            val top = ((viewHeight - height) / 2f).toInt()
+            Rect(0, top, viewWidth.toInt(), (height + top).toInt())
+        } else {
+            // Pillarboxed: black bars left and right
+            val width = viewHeight * videoAspect
+            val left = ((viewWidth - width) / 2f).toInt()
+            Rect(left, 0, (width + left).toInt(), viewHeight.toInt())
+        }
+
+        val location = IntArray(2)
+        view.getLocationInWindow(location)
+        localRect.offset(location[0], location[1])
+        return localRect
+    }
+
+    @JvmStatic
+    fun buildPipParams(activity: BrowserActivity, enableAutoEnter: Boolean): PictureInPictureParams? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null
+
+        val pipBuilder = PictureInPictureParams.Builder()
+        val isAutoPipEnabled = activity.sp?.getBoolean("sp_auto_pip", true) ?: true
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            pipBuilder.setAutoEnterEnabled(isAutoPipEnabled && enableAutoEnter)
+        }
+
+        // Add Remote Actions (Replay 10s, Play/Pause, Forward 10s)
+        val actions = buildPipActions(activity, activity.isMediaPlaying)
+        if (actions.isNotEmpty()) {
+            pipBuilder.setActions(actions)
+        }
+
+        val targetView: View? = activity.customView
+            ?: (activity.videoView ?: (activity.ninjaWebView ?: activity.findViewById(android.R.id.content)))
+
+        var width = 0
+        var height = 0
+        if (activity.currentVideoWidth > 0 && activity.currentVideoHeight > 0) {
+            width = activity.currentVideoWidth
+            height = activity.currentVideoHeight
+        } else if (targetView != null && targetView.width > 0 && targetView.height > 0) {
+            width = targetView.width
+            height = targetView.height
+        }
+
+        if (width > 0 && height > 0) {
+            val ratio = (width.toFloat() / height.toFloat()).coerceIn(0.418f, 2.39f)
+            val aspectRatio = Rational((ratio * 1000).toInt(), 1000)
+            pipBuilder.setAspectRatio(aspectRatio)
+
+            if (targetView != null && targetView.width > 0 && targetView.height > 0) {
+                val sourceRect = calculateSourceRect(targetView, aspectRatio)
+                if (!sourceRect.isEmpty) {
+                    pipBuilder.setSourceRectHint(sourceRect)
+                }
+            }
+        }
+
+        return pipBuilder.build()
+    }
+
+    @JvmStatic
     fun updatePipParams(activity: BrowserActivity, enableAutoEnter: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 registerPipReceiver(activity)
-                val pipBuilder = PictureInPictureParams.Builder()
-                val isAutoPipEnabled = activity.sp?.getBoolean("sp_auto_pip", true) ?: true
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    pipBuilder.setAutoEnterEnabled(isAutoPipEnabled && enableAutoEnter)
+                val params = buildPipParams(activity, enableAutoEnter)
+                if (params != null) {
+                    activity.setPictureInPictureParams(params)
                 }
-
-                // Add Remote Actions (Replay 10s, Play/Pause, Forward 10s)
-                val actions = buildPipActions(activity, activity.isMediaPlaying)
-                if (actions.isNotEmpty()) {
-                    pipBuilder.setActions(actions)
-                }
-
-                val targetView: View? = activity.customView
-                    ?: (activity.videoView ?: (activity.ninjaWebView ?: activity.findViewById(android.R.id.content)))
-
-                var width = 0
-                var height = 0
-                if (activity.currentVideoWidth > 0 && activity.currentVideoHeight > 0) {
-                    width = activity.currentVideoWidth
-                    height = activity.currentVideoHeight
-                } else if (targetView != null && targetView.width > 0 && targetView.height > 0) {
-                    width = targetView.width
-                    height = targetView.height
-                }
-
-                if (width > 0 && height > 0) {
-                    var ratio = width.toFloat() / height.toFloat()
-                    if (ratio > 2.39f) ratio = 2.39f
-                    if (ratio < 0.418f) ratio = 0.418f
-                    val aspectRatio = Rational((ratio * 1000).toInt(), 1000)
-                    pipBuilder.setAspectRatio(aspectRatio)
-
-                    if (targetView != null) {
-                        val rect = Rect()
-                        targetView.getGlobalVisibleRect(rect)
-                        if (!rect.isEmpty) {
-                            pipBuilder.setSourceRectHint(rect)
-                        }
-                    }
-                }
-                activity.setPictureInPictureParams(pipBuilder.build())
             } catch (ignored: Exception) {}
         }
     }
@@ -136,47 +190,10 @@ object BrowserMediaDelegate {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 registerPipReceiver(activity)
-                val pipBuilder = PictureInPictureParams.Builder()
-                val isAutoPipEnabled = activity.sp?.getBoolean("sp_auto_pip", true) ?: true
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    pipBuilder.setAutoEnterEnabled(isAutoPipEnabled)
+                val params = buildPipParams(activity, true)
+                if (params != null) {
+                    activity.enterPictureInPictureMode(params)
                 }
-
-                // Add Remote Actions (Replay 10s, Play/Pause, Forward 10s)
-                val actions = buildPipActions(activity, activity.isMediaPlaying)
-                if (actions.isNotEmpty()) {
-                    pipBuilder.setActions(actions)
-                }
-
-                val targetView: View? = activity.customView
-                    ?: (activity.videoView ?: (activity.ninjaWebView ?: activity.findViewById(android.R.id.content)))
-
-                var width = 0
-                var height = 0
-                if (activity.currentVideoWidth > 0 && activity.currentVideoHeight > 0) {
-                    width = activity.currentVideoWidth
-                    height = activity.currentVideoHeight
-                } else if (targetView != null && targetView.width > 0 && targetView.height > 0) {
-                    width = targetView.width
-                    height = targetView.height
-                }
-
-                if (width > 0 && height > 0) {
-                    var ratio = width.toFloat() / height.toFloat()
-                    if (ratio > 2.39f) ratio = 2.39f
-                    if (ratio < 0.418f) ratio = 0.418f
-                    val aspectRatio = Rational((ratio * 1000).toInt(), 1000)
-                    pipBuilder.setAspectRatio(aspectRatio)
-
-                    if (targetView != null) {
-                        val rect = Rect()
-                        targetView.getGlobalVisibleRect(rect)
-                        if (!rect.isEmpty) {
-                            pipBuilder.setSourceRectHint(rect)
-                        }
-                    }
-                }
-                activity.enterPictureInPictureMode(pipBuilder.build())
             } catch (ignored: Exception) {}
         }
     }

@@ -2087,7 +2087,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         FrameLayout.LayoutParams.MATCH_PARENT
                 ));
 
-        // Attach Petal native video player overlay on top of customView
+        // Attach Petal native video player overlay on top of customView (auto-skipped on YouTube & YT embeds)
         try {
             videoOverlayBridge = new com.petal.browser.media.PetalVideoPlayerOverlayBridge(
                     this,
@@ -2097,7 +2097,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         return kotlin.Unit.INSTANCE;
                     }
             );
-            videoOverlayBridge.attachOverlay(fullscreenHolder);
+            videoOverlayBridge.attachOverlay(fullscreenHolder, customView);
         } catch (Exception e) {
             Log.w(TAG, "Video player overlay bridge failed to attach: " + e.getMessage());
         }
