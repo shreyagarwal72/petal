@@ -53,6 +53,9 @@ fun ApiIntegrationsSettingsScreenContent(
     var selectedProvider by remember { mutableStateOf(PetalAiResearchEngine.getSelectedProvider(context)) }
     var currentKey by remember(selectedProvider) { mutableStateOf(PetalAiResearchEngine.getApiKey(context, selectedProvider)) }
     var selectedModel by remember(selectedProvider) { mutableStateOf(PetalAiResearchEngine.getSelectedModel(context, selectedProvider)) }
+    var customEndpoint by remember { mutableStateOf(PetalAiResearchEngine.getCustomEndpoint(context)) }
+    var customModels by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isFetchingModels by remember { mutableStateOf(false) }
     var isKeyVisible by remember { mutableStateOf(false) }
     var testResultMsg by remember { mutableStateOf<String?>(null) }
     var isTestingKey by remember { mutableStateOf(false) }
@@ -101,7 +104,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 .horizontalScroll(aiProviderScrollState),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            AiProvider.values().forEach { provider ->
+                            AiProvider.entries.forEach { provider ->
                                 val isSelected = selectedProvider == provider
                                 FilterChip(
                                     selected = isSelected,
@@ -121,6 +124,24 @@ fun ApiIntegrationsSettingsScreenContent(
                         }
                     }
 
+                    if (selectedProvider == AiProvider.CUSTOM) {
+                        Spacer(Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = customEndpoint,
+                            onValueChange = { newEndpoint ->
+                                customEndpoint = newEndpoint
+                                PetalAiResearchEngine.setCustomEndpoint(context, newEndpoint)
+                                testResultMsg = null
+                            },
+                            label = { Text("Custom Endpoint URL") },
+                            placeholder = { Text("https://api.openai.com/v1 or http://localhost:11434/v1") },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Rounded.CloudQueue, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
                     Spacer(Modifier.height(4.dp))
 
                     OutlinedTextField(
@@ -130,8 +151,8 @@ fun ApiIntegrationsSettingsScreenContent(
                             PetalAiResearchEngine.setApiKey(context, selectedProvider, newKey)
                             testResultMsg = null
                         },
-                        label = { Text("${selectedProvider.displayName} API Key") },
-                        placeholder = { Text("Paste your ${selectedProvider.displayName} API Key...") },
+                        label = { Text(if (selectedProvider == AiProvider.CUSTOM) "API Key (Optional for Local AI)" else "${selectedProvider.displayName} API Key") },
+                        placeholder = { Text(if (selectedProvider == AiProvider.CUSTOM) "Paste API key (leave blank if not required)..." else "Paste your ${selectedProvider.displayName} API Key...") },
                         singleLine = true,
                         visualTransformation = if (isKeyVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         leadingIcon = { Icon(Icons.Rounded.VpnKey, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
@@ -163,17 +184,51 @@ fun ApiIntegrationsSettingsScreenContent(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(selectedProvider.keyUrl))
-                            context.startActivity(intent)
-                        }) {
-                            Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Get Free ${selectedProvider.displayName} Key", style = MaterialTheme.typography.labelSmall)
+                        if (selectedProvider.keyUrl.isNotBlank()) {
+                            TextButton(onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(selectedProvider.keyUrl))
+                                context.startActivity(intent)
+                            }) {
+                                Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Get Free ${selectedProvider.displayName} Key", style = MaterialTheme.typography.labelSmall)
+                            }
+                        } else if (selectedProvider == AiProvider.CUSTOM) {
+                            TextButton(
+                                enabled = customEndpoint.isNotBlank() && !isFetchingModels,
+                                onClick = {
+                                    isFetchingModels = true
+                                    testResultMsg = "Fetching models from endpoint..."
+                                    PetalAiResearchEngine.fetchCustomModels(context) { res ->
+                                        isFetchingModels = false
+                                        res.onSuccess { fetched ->
+                                            if (fetched.isNotEmpty()) {
+                                                customModels = fetched
+                                                testResultMsg = "✓ Found ${fetched.size} model(s)"
+                                            } else {
+                                                testResultMsg = "Reachable, but no models found. Enter model name manually."
+                                            }
+                                        }.onFailure { err ->
+                                            testResultMsg = "✗ Fetch failed: ${err.message}"
+                                        }
+                                    }
+                                }
+                            ) {
+                                if (isFetchingModels) {
+                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                    Spacer(Modifier.width(6.dp))
+                                } else {
+                                    Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                }
+                                Text("Fetch Models", style = MaterialTheme.typography.labelSmall)
+                            }
+                        } else {
+                            Spacer(Modifier.width(8.dp))
                         }
 
                         TextButton(
-                            enabled = currentKey.isNotBlank() && !isTestingKey,
+                            enabled = (currentKey.isNotBlank() || selectedProvider == AiProvider.CUSTOM) && !isTestingKey,
                             onClick = {
                                 isTestingKey = true
                                 testResultMsg = "Testing connection..."
@@ -186,7 +241,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                     customPrompt = "Respond with 'OK' if API key is working cleanly.",
                                     onResult = { res ->
                                         isTestingKey = false
-                                        testResultMsg = if (res.isSuccess) "✓ API Key Verified & Connected!" else "✗ Connection Failed: ${res.exceptionOrNull()?.message ?: "Invalid Key"}"
+                                        testResultMsg = if (res.isSuccess) "✓ AI Verified & Connected!" else "✗ Connection Failed: ${res.exceptionOrNull()?.message ?: "Connection Error"}"
                                     }
                                 )
                             }
@@ -198,7 +253,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 Icon(Icons.Rounded.NetworkCheck, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
                             }
-                            Text("Test Key", style = MaterialTheme.typography.labelSmall)
+                            Text("Test Connection", style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
@@ -217,30 +272,76 @@ fun ApiIntegrationsSettingsScreenContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    val modelScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = modelScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(modelScrollState),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    if (selectedProvider == AiProvider.CUSTOM) {
+                        OutlinedTextField(
+                            value = selectedModel,
+                            onValueChange = { newModel ->
+                                selectedModel = newModel
+                                PetalAiResearchEngine.setSelectedModel(context, selectedProvider, newModel)
+                            },
+                            label = { Text("Custom Model ID / Name") },
+                            placeholder = { Text("e.g. llama3:latest, deepseek-r1, gpt-4o") },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Rounded.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        if (customModels.isNotEmpty()) {
+                            val modelScrollState = rememberScrollState()
+                            ScrollFadeRow(
+                                scrollState = modelScrollState,
+                                edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(modelScrollState),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    customModels.forEach { model ->
+                                        val isSelected = selectedModel == model
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = {
+                                                selectedModel = model
+                                                PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
+                                            },
+                                            label = { Text(model) },
+                                            leadingIcon = if (isSelected) {
+                                                { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            } else null
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        val modelScrollState = rememberScrollState()
+                        ScrollFadeRow(
+                            scrollState = modelScrollState,
+                            edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
                         ) {
-                            selectedProvider.availableModels.forEach { model ->
-                                val isSelected = selectedModel == model
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = {
-                                        selectedModel = model
-                                        PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
-                                    },
-                                    label = { Text(model) },
-                                    leadingIcon = if (isSelected) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(modelScrollState),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                selectedProvider.availableModels.forEach { model ->
+                                    val isSelected = selectedModel == model
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            selectedModel = model
+                                            PetalAiResearchEngine.setSelectedModel(context, selectedProvider, model)
+                                        },
+                                        label = { Text(model) },
+                                        leadingIcon = if (isSelected) {
+                                            { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                        } else null
+                                    )
+                                }
                             }
                         }
                     }
