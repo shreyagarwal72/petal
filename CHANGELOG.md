@@ -1,3 +1,11 @@
+### v2.6.7
+
+- **🎨 Unified Settings Subpages Containment & Expressive Theming**:
+  - Harmonized visual containment across all sub-settings screens (**Appearance & Theme**, **Privacy & Security**, **Search Engine & Home**, **Accessibility**, **Miscellaneous**, **Experimental**, and **API & Integrations**) to match the design rhythm of the main Settings Hub overview.
+  - Upgraded section cards to full-width elevated containers (`surfaceVariant` with 70% alpha, 24dp rounded corners, and zero shadow elevation) featuring integrated top headers with signature 48dp `primary`-accent rounded badges (12dp corner radius), crisp `onPrimary` icons, and semi-bold title typography separated by soft outline dividers.
+  - Enhanced all toggle rows with 40dp position-aware rounded icon badges, accent primary container fills when enabled, and refined `surfaceContainerHigh` background surfaces.
+  - Standardized slider and selection surfaces with consistent 16dp corner geometry for full visual consistency across the entire application.
+
 ### v2.6.6
 
 - **🎨 Multi-Style Cold-Start Intro Animations & Experimental Settings**:

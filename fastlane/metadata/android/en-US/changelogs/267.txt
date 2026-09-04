@@ -1,0 +1,4 @@
+- 🎨 Unified Settings Subpages Containment & Expressive Theming:
+  - Harmonized containment design across all settings subpages (Appearance, Privacy & Security, Search Engine & Home, Accessibility, Miscellaneous, Experimental, and API Integrations) to match the main settings overview hub.
+  - Upgraded section category containers to integrated Cards with surfaceVariant container theming, 24dp rounded corners, zero elevation, and signature 48dp primary-accent icon badges with 12dp rounded corners and onPrimary icons.
+  - Refined toggle rows with matching 40dp rounded primary badges and surfaceContainerHigh styling for cohesive visual rhythm across the entire app.
