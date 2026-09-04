@@ -85,7 +85,7 @@ fun DataBackupSettingsScreen(
         contract = ActivityResultContracts.CreateDocument("text/html")
     ) { uri: Uri? ->
         if (uri != null) {
-            BookmarkHtmlImporterExporter.exportToUri(context, uri)
+            BookmarkHtmlImporterExporter.exportToUri(context, uri, format = "html")
         }
     }
 
