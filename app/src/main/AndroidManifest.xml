@@ -59,6 +59,15 @@
         <package android:name="idm.internet.download.manager" />
         <package android:name="idm.internet.download.manager.adm.lite" />
         <package android:name="idm.internet.download.manager.plus" />
+        <!-- Advanced Download Manager (ADM) -->
+        <package android:name="com.dv.adm" />
+        <package android:name="com.dv.adm.pay" />
+        <!-- AB Download Manager -->
+        <package android:name="com.abdownloadmanager" />
+        <package android:name="com.ab.abdownloadmanager" />
+        <!-- Navi Download Manager -->
+        <package android:name="com.arun.navi" />
+        <package android:name="com.arun.navi.pro" />
         <intent>
             <action android:name="android.intent.action.SEND" />
             <data android:mimeType="image/*" />

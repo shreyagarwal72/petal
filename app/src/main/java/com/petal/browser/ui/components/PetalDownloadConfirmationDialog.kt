@@ -44,7 +44,8 @@ fun PetalDownloadConfirmationDialog(
     fileSizeFormatted: String,
     isDuplicate: Boolean,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onExternalDownload: (() -> Unit)? = null
 ) {
     Surface(
         shape = RoundedCornerShape(28.dp),
@@ -125,7 +126,22 @@ fun PetalDownloadConfirmationDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                if (onExternalDownload != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    OutlinedButton(
+                        onClick = onExternalDownload,
+                        shape = RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                    ) {
+                        Text(
+                            text = "External App",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Button(
                     onClick = onConfirm,
@@ -461,6 +477,15 @@ object PetalDownloadDialogBridge {
                                     fileName = guessedFileName,
                                     fileSizeFormatted = formattedSize,
                                     isDuplicate = isDuplicate,
+                                    onExternalDownload = {
+                                        if (dialog.isShowing) dialog.dismiss()
+                                        com.petal.browser.unit.ExternalDownloadManagerHelper.launchDownloadInExternalManager(
+                                            activity = activity,
+                                            url = url,
+                                            fileName = guessedFileName,
+                                            mimeType = mimeType
+                                        )
+                                    },
                                     onConfirm = {
                                         if (dialog.isShowing) dialog.dismiss()
                                         if (!com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, url, guessedFileName, mimeType)) {
