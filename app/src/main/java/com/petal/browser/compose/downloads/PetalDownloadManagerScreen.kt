@@ -427,7 +427,7 @@ fun PetalDownloadManagerScreen(
                         actions = {
                             Box {
                                 HeaderActionIcon(
-                                    icon = Icons.AutoMirrored.Rounded.Sort,
+                                    icon = Icons.Rounded.Sort,
                                     contentDescription = "Sort Downloads",
                                     onClick = { sortMenuExpanded = true }
                                 )
