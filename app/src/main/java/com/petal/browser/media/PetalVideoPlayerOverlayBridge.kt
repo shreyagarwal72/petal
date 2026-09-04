@@ -17,6 +17,8 @@ import com.petal.browser.view.NinjaWebView
  * PetalVideoPlayerOverlayBridge
  * Attaches PetalVideoPlayerOverlay directly over any video view (such as WebChromeClient customView)
  * and synchronizes state bidirectionally with PetalMediaBridge.
+ *
+ * NOTE: Does NOT attach on YouTube or any embedded YouTube video player.
  */
 class PetalVideoPlayerOverlayBridge(
     private val activity: Activity,
@@ -34,8 +36,32 @@ class PetalVideoPlayerOverlayBridge(
     var durationMs by mutableLongStateOf(0L)
     var playbackSpeed by mutableFloatStateOf(1.0f)
 
-    fun attachOverlay(container: ViewGroup): View {
+    companion object {
+        @JvmStatic
+        fun isYouTubeVideo(webView: NinjaWebView?, targetView: View?): Boolean {
+            val webUrl = webView?.url?.lowercase() ?: ""
+            val originalUrl = webView?.originalUrl?.lowercase() ?: ""
+            if (BrowserMediaDelegate.isYouTubeUrl(webUrl) || BrowserMediaDelegate.isYouTubeUrl(originalUrl)) {
+                return true
+            }
+            // Check view class / hierarchy for YouTube embedded players
+            if (targetView != null) {
+                val className = targetView.javaClass.name.lowercase()
+                if (className.contains("youtube") || className.contains("ytp")) {
+                    return true
+                }
+            }
+            return false
+        }
+    }
+
+    fun attachOverlay(container: ViewGroup, targetView: View?): View? {
         detachOverlay()
+
+        // If the video is on YouTube or is an embedded YouTube video, bypass overlay
+        if (isYouTubeVideo(webView, targetView)) {
+            return null
+        }
 
         // Hook into mediaBridge
         webView?.mediaBridge?.let { bridge ->
@@ -79,8 +105,7 @@ class PetalVideoPlayerOverlayBridge(
                         webView?.mediaBridge?.changeSpeed(speed)
                     },
                     onPipClick = {
-                        val mediaBridge = webView?.mediaBridge
-                        PetalMediaBridge.enterPipIfSupported(activity, container)
+                        BrowserMediaDelegate.triggerSystemPipMode(activity as com.petal.browser.activity.BrowserActivity)
                     },
                     onCloseFullscreen = {
                         onClose()
