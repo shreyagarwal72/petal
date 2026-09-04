@@ -182,7 +182,6 @@ public class NinjaWebViewClient extends WebViewClient {
         com.petal.browser.accessibility.PetalAccessibilityEngine.applyForceZoom(view);
         com.petal.browser.accessibility.PetalAccessibilityEngine.injectReaderModeDetector(view);
         com.petal.browser.accessibility.PetalAccessibilityEngine.applyCaretBrowsing(view, com.petal.browser.accessibility.PetalAccessibilityEngine.isCaretBrowsingEnabled(context));
-        ninjaWebView.applyAmoledBlackMode();
 
         // Refresh the tab manager's LRU thumbnail cache so the grid shows an up-to-date
         // preview for this tab the next time it's opened, without the switcher having to
@@ -202,8 +201,6 @@ public class NinjaWebViewClient extends WebViewClient {
             ninjaWebView.resetFavicon();
 
             super.onPageStarted(view, url, favicon);
-
-            ninjaWebView.applyAmoledBlackMode();
 
             if (context instanceof com.petal.browser.activity.BrowserActivity) {
                 ((com.petal.browser.activity.BrowserActivity) context).onTabUrlStarted(ninjaWebView, url);

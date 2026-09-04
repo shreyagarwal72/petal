@@ -507,7 +507,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         webSettings.setGeolocationEnabled(sp.getBoolean(profile + "_location", false));
 
         boolean isForceDark = sp.getBoolean("sp_force_dark_mode", false) || sp.getBoolean("sp_dark_mode", false);
-        boolean isAmoled = sp.getBoolean("sp_amoled", false);
         if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING)) {
             androidx.webkit.WebSettingsCompat.setAlgorithmicDarkeningAllowed(webSettings, isForceDark);
         }
@@ -517,17 +516,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             androidx.webkit.WebSettingsCompat.setForceDark(webSettings, forceDarkState);
         }
         if (isForceDark && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.FORCE_DARK_STRATEGY)) {
-            androidx.webkit.WebSettingsCompat.setForceDarkStrategy(
-                webSettings,
-                (isAmoled && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING))
-                    ? androidx.webkit.WebSettingsCompat.DARK_STRATEGY_USER_AGENT_DARKENING_ONLY
-                    : androidx.webkit.WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING
-            );
-        }
-        if (isForceDark && isAmoled) {
-            setBackgroundColor(Color.BLACK);
-        } else {
-            setBackgroundColor(Color.TRANSPARENT);
+            androidx.webkit.WebSettingsCompat.setForceDarkStrategy(webSettings, androidx.webkit.WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING);
         }
 
         boolean enableJs = sp.getBoolean("sp_javascript", sp.getBoolean(profile + "_javascript", true));
@@ -1172,32 +1161,5 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             } catch (Exception ignored) {}
         }
         com.petal.browser.unit.BrowsingDataManager.configureWebSettings(this, incognito);
-    }
-
-    public void applyAmoledBlackMode() {
-        boolean isForceDark = sp.getBoolean("sp_force_dark_mode", false) || sp.getBoolean("sp_dark_mode", false);
-        boolean isAmoled = sp.getBoolean("sp_amoled", false);
-        if (isForceDark && isAmoled) {
-            String js = "(function() {" +
-                "  if (document.getElementById('petal-amoled-style')) return;" +
-                "  var css = 'html, body { background-color: #000000 !important; } " +
-                "             * { background-color: inherit; } " +
-                "             [style*=\"background-color: rgb(24\"], [style*=\"background-color: rgb(25\"], " +
-                "             [style*=\"background-color: rgb(26\"], [style*=\"background-color: rgb(27\"], " +
-                "             [style*=\"background-color: rgb(28\"], [style*=\"background-color: rgb(29\"], " +
-                "             [style*=\"background-color: rgb(3\"], [style*=\"background-color: rgb(4\"], " +
-                "             [style*=\"background-color: rgb(5\"], [style*=\"background-color: #1\"], " +
-                "             [style*=\"background-color: #2\"], [style*=\"background-color: #3\"], " +
-                "             [style*=\"background-color: #4\"], [style*=\"background-color: #5\"] { " +
-                "               background-color: #000000 !important; " +
-                "             }';" +
-                "  var style = document.createElement('style');" +
-                "  style.id = 'petal-amoled-style';" +
-                "  style.type = 'text/css';" +
-                "  style.appendChild(document.createTextNode(css));" +
-                "  (document.head || document.documentElement).appendChild(style);" +
-                "})();";
-            evaluateJavascript(js, null);
-        }
     }
 }
