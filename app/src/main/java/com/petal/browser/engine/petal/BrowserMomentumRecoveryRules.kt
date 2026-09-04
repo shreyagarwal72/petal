@@ -1,6 +1,7 @@
 package com.petal.browser.engine.petal
 
-internal object BrowserMomentumRecoveryRules {
+public object BrowserMomentumRecoveryRules {
+    @JvmStatic
     fun observe(
         previousScrollY: Int,
         currentScrollY: Int,
@@ -35,12 +36,12 @@ internal object BrowserMomentumRecoveryRules {
     }
 }
 
-internal data class BrowserMomentumWatchdogObservation(
+public data class BrowserMomentumWatchdogObservation(
     val stalledFrames: Int,
     val decision: BrowserMomentumWatchdogDecision,
 )
 
-internal enum class BrowserMomentumWatchdogDecision {
+public enum class BrowserMomentumWatchdogDecision {
     Continue,
     Recover,
     Stop,
