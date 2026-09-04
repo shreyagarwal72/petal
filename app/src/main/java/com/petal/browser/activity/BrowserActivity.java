@@ -1935,8 +1935,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             if (!refreshState.isRefreshing() && !isInternalPage) {
                 com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(progressBarCompose, progress);
+                com.petal.browser.compose.home.PetalAddressBarBridge.updateProgressValue(progress);
             } else {
                 com.petal.browser.ui.components.PetalProgressBarBridge.hide(progressBarCompose);
+                com.petal.browser.compose.home.PetalAddressBarBridge.updateProgressValue(100);
             }
         }
 
@@ -2615,6 +2617,35 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 () -> {
                     com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                     showAiResearchSheet();
+                },
+                ninjaWebView != null ? ninjaWebView.getFavicon() : null,
+                ninjaWebView != null ? (ninjaWebView.getProgress() / 100f) : 0f,
+                () -> {
+                    // Swipe to next tab
+                    AlbumController next = nextAlbumController(true);
+                    if (next != null && next != currentAlbumController) {
+                        showAlbum(next);
+                    }
+                },
+                () -> {
+                    // Swipe to previous tab
+                    AlbumController prev = nextAlbumController(false);
+                    if (prev != null && prev != currentAlbumController) {
+                        showAlbum(prev);
+                    }
+                },
+                pastedText -> {
+                    // Paste & Go
+                    if (pastedText != null && !pastedText.trim().isEmpty()) {
+                        handleFinalSearch(pastedText.trim());
+                    }
+                    return kotlin.Unit.INSTANCE;
+                },
+                () -> {
+                    // Hard Refresh
+                    if (ninjaWebView != null) {
+                        ninjaWebView.reload();
+                    }
                 }
         );
         if (refreshState != null && refreshState.isRefreshing()) {

@@ -62,6 +62,8 @@ interface SettingsRepository {
     val readerModeDetection: Flow<Boolean>
     val caretBrowsing: Flow<Boolean>
     val touchpadSwipeNav: Flow<Boolean>
+    val addressBarSwipeTabs: Flow<Boolean>
+    val addressBarQuickActions: Flow<Boolean>
 
     // Experimental & Miscellaneous
     val appLanguage: Flow<String>
@@ -121,6 +123,8 @@ interface SettingsRepository {
     suspend fun setReaderModeDetection(enabled: Boolean)
     suspend fun setCaretBrowsing(enabled: Boolean)
     suspend fun setTouchpadSwipeNav(enabled: Boolean)
+    suspend fun setAddressBarSwipeTabs(enabled: Boolean)
+    suspend fun setAddressBarQuickActions(enabled: Boolean)
 
     suspend fun setAppLanguage(language: String)
     suspend fun setAddressBarPosition(position: String)

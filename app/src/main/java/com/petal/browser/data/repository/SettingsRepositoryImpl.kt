@@ -227,6 +227,14 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_touchpad_swipe_nav", true)
     }
 
+    override val addressBarSwipeTabs: Flow<Boolean> = preferenceFlow("sp_address_bar_swipe_tabs") {
+        sp.getBoolean("sp_address_bar_swipe_tabs", true)
+    }
+
+    override val addressBarQuickActions: Flow<Boolean> = preferenceFlow("sp_address_bar_quick_actions") {
+        sp.getBoolean("sp_address_bar_quick_actions", true)
+    }
+
     // ── Experimental & Miscellaneous ──────────────────────────────────────────
     override val appLanguage: Flow<String> = preferenceFlow("sp_app_language") {
         sp.getString("sp_app_language", "system") ?: "system"
@@ -443,6 +451,14 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setTouchpadSwipeNav(enabled: Boolean) {
         sp.edit().putBoolean("sp_touchpad_swipe_nav", enabled).apply()
+    }
+
+    override suspend fun setAddressBarSwipeTabs(enabled: Boolean) {
+        sp.edit().putBoolean("sp_address_bar_swipe_tabs", enabled).apply()
+    }
+
+    override suspend fun setAddressBarQuickActions(enabled: Boolean) {
+        sp.edit().putBoolean("sp_address_bar_quick_actions", enabled).apply()
     }
 
     override suspend fun setAppLanguage(language: String) {

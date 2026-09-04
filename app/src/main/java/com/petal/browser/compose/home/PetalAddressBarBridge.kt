@@ -22,6 +22,8 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 object PetalAddressBarBridge {
     private val _urlState = mutableStateOf("")
     private val _titleState = mutableStateOf("")
+    private val _faviconState = mutableStateOf<android.graphics.Bitmap?>(null)
+    private val _progressState = mutableFloatStateOf(0f)
     private val _isIncognitoState = mutableStateOf(false)
     private val _isLoadingState = mutableStateOf(false)
     private val _canGoBackState = mutableStateOf(true)
@@ -30,6 +32,17 @@ object PetalAddressBarBridge {
     private val _onAddressClickState = mutableStateOf<Runnable?>(null)
     private val _onSiteControlsClickState = mutableStateOf<Runnable?>(null)
     private val _onAiResearchClickState = mutableStateOf<Runnable?>(null)
+    private val _onSwipeNextTabState = mutableStateOf<Runnable?>(null)
+    private val _onSwipePrevTabState = mutableStateOf<Runnable?>(null)
+    private val _onPasteAndGoState = mutableStateOf<((String) -> Unit)?>(null)
+    private val _onHardRefreshState = mutableStateOf<Runnable?>(null)
+
+    @JvmStatic
+    fun updateProgressValue(progress: Int) {
+        val frac = (progress.coerceIn(0, 100)) / 100f
+        _progressState.floatValue = frac
+        _isLoadingState.value = progress < 100
+    }
 
     @JvmStatic
     @JvmOverloads
@@ -45,10 +58,18 @@ object PetalAddressBarBridge {
         onShareClick: Runnable,
         onAddressClick: Runnable,
         onSiteControlsClick: Runnable? = null,
-        onAiResearchClick: Runnable? = null
+        onAiResearchClick: Runnable? = null,
+        favicon: android.graphics.Bitmap? = null,
+        progress: Float = 0f,
+        onSwipeNextTab: Runnable? = null,
+        onSwipePrevTab: Runnable? = null,
+        onPasteAndGo: ((String) -> Unit)? = null,
+        onHardRefresh: Runnable? = null
     ) {
         _urlState.value = url
         _titleState.value = title
+        _faviconState.value = favicon
+        _progressState.floatValue = progress
         _isIncognitoState.value = isIncognito
         _isLoadingState.value = isLoading
         _canGoBackState.value = canGoBack
@@ -57,6 +78,10 @@ object PetalAddressBarBridge {
         _onAddressClickState.value = onAddressClick
         _onSiteControlsClickState.value = onSiteControlsClick
         _onAiResearchClickState.value = onAiResearchClick
+        _onSwipeNextTabState.value = onSwipeNextTab
+        _onSwipePrevTabState.value = onSwipePrevTab
+        _onPasteAndGoState.value = onPasteAndGo
+        _onHardRefreshState.value = onHardRefresh
 
         if (composeView.tag == "PetalAddressBarBound") {
             return
@@ -127,6 +152,13 @@ object PetalAddressBarBridge {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
 
+                val currentFavicon by _faviconState
+                val currentProgress by _progressState
+                val swipeNextTab = _onSwipeNextTabState.value
+                val swipePrevTab = _onSwipePrevTabState.value
+                val pasteAndGo = _onPasteAndGoState.value
+                val hardRefresh = _onHardRefreshState.value
+
                 PetalExpressiveTheme(
                     darkTheme = darkTheme,
                     dynamicColor = dynamicColor,
@@ -142,6 +174,8 @@ object PetalAddressBarBridge {
                     PetalAddressBar(
                         url = currentUrl,
                         title = currentTitle,
+                        favicon = currentFavicon,
+                        progress = currentProgress,
                         isIncognito = currentIncognito,
                         isLoading = currentLoading,
                         canGoBack = currentCanGoBack,
@@ -149,7 +183,11 @@ object PetalAddressBarBridge {
                         onShareClick = { shareClick?.run() },
                         onAddressClick = { addressClick?.run() },
                         onSiteControlsClick = { siteControlsClick?.run() },
-                        onAiResearchClick = { aiResearchClick?.run() }
+                        onAiResearchClick = { aiResearchClick?.run() },
+                        onSwipeNextTab = { swipeNextTab?.run() },
+                        onSwipePrevTab = { swipePrevTab?.run() },
+                        onPasteAndGo = { pasteAndGo?.invoke(it) },
+                        onHardRefresh = { hardRefresh?.run() }
                     )
                 }
             }

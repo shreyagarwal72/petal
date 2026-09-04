@@ -42,6 +42,12 @@ class DisplaySettingsViewModel @Inject constructor(
     val touchpadSwipeNav: StateFlow<Boolean> = settingsRepository.touchpadSwipeNav
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val addressBarSwipeTabs: StateFlow<Boolean> = settingsRepository.addressBarSwipeTabs
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val addressBarQuickActions: StateFlow<Boolean> = settingsRepository.addressBarQuickActions
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     fun setTouchHaptics(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setTouchHaptics(enabled)
     }
@@ -76,5 +82,13 @@ class DisplaySettingsViewModel @Inject constructor(
 
     fun setTouchpadSwipeNav(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setTouchpadSwipeNav(enabled)
+    }
+
+    fun setAddressBarSwipeTabs(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setAddressBarSwipeTabs(enabled)
+    }
+
+    fun setAddressBarQuickActions(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setAddressBarQuickActions(enabled)
     }
 }
