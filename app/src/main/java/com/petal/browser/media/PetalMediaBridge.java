@@ -113,6 +113,14 @@ public class PetalMediaBridge {
         default void onMuteChanged(boolean muted) {}
     }
 
+    public void setListener(MediaStateListener listener) {
+        this.listener = listener;
+    }
+
+    public MediaStateListener getListener() {
+        return listener;
+    }
+
     public PetalMediaBridge(Context context, WebView webView, MediaStateListener listener) {
         this.context = context;
         this.webView = webView;
