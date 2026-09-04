@@ -138,7 +138,13 @@ public class PetalMediaBridge {
     public void playMedia() {
         if (webView != null) {
             webView.evaluateJavascript(
-                    "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].play(); }", null
+                    "(function() {" +
+                    "   var vids = document.querySelectorAll('video');" +
+                    "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
+                    "   for (var i = 0; i < vids.length; i++) {" +
+                    "       try { vids[i].play(); } catch(e) {}" +
+                    "   }" +
+                    "})();", null
             );
         }
     }
@@ -146,7 +152,12 @@ public class PetalMediaBridge {
     public void pauseMedia() {
         if (webView != null) {
             webView.evaluateJavascript(
-                    "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].pause(); }", null
+                    "(function() {" +
+                    "   var vids = document.querySelectorAll('video, audio');" +
+                    "   for (var i = 0; i < vids.length; i++) {" +
+                    "       try { vids[i].pause(); } catch(e) {}" +
+                    "   }" +
+                    "})();", null
             );
         }
     }
@@ -154,7 +165,12 @@ public class PetalMediaBridge {
     public void changeSpeed(float speed) {
         if (webView != null) {
             webView.evaluateJavascript(
-                    "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].playbackRate = " + speed + "; }", null
+                    "(function() {" +
+                    "   var vids = document.querySelectorAll('video, audio');" +
+                    "   for (var i = 0; i < vids.length; i++) {" +
+                    "       try { vids[i].playbackRate = " + speed + "; } catch(e) {}" +
+                    "   }" +
+                    "})();", null
             );
         }
     }
@@ -162,7 +178,12 @@ public class PetalMediaBridge {
     public void toggleMute() {
         if (webView != null) {
             webView.evaluateJavascript(
-                    "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].muted = !els[i].muted; }", null
+                    "(function() {" +
+                    "   var vids = document.querySelectorAll('video, audio');" +
+                    "   for (var i = 0; i < vids.length; i++) {" +
+                    "       try { vids[i].muted = !vids[i].muted; } catch(e) {}" +
+                    "   }" +
+                    "})();", null
             );
         }
     }
@@ -170,7 +191,20 @@ public class PetalMediaBridge {
     public void skip(int deltaSeconds) {
         if (webView != null) {
             webView.evaluateJavascript(
-                    "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].currentTime += " + deltaSeconds + "; }", null
+                    "(function() {" +
+                    "   var vids = document.querySelectorAll('video');" +
+                    "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
+                    "   var target = null;" +
+                    "   for (var i = 0; i < vids.length; i++) {" +
+                    "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
+                    "   }" +
+                    "   if (!target && vids.length > 0) target = vids[0];" +
+                    "   if (target) {" +
+                    "       try {" +
+                    "           target.currentTime = Math.max(0, Math.min(target.duration || 1e9, target.currentTime + (" + deltaSeconds + ")));" +
+                    "       } catch(e) {}" +
+                    "   }" +
+                    "})();", null
             );
         }
     }
@@ -179,7 +213,20 @@ public class PetalMediaBridge {
         if (webView != null) {
             double seconds = positionMs / 1000.0;
             webView.evaluateJavascript(
-                    "var els = document.querySelectorAll('video, audio'); for(var i=0; i<els.length; i++) { els[i].currentTime = " + seconds + "; }", null
+                    "(function() {" +
+                    "   var vids = document.querySelectorAll('video');" +
+                    "   if (vids.length === 0) vids = document.querySelectorAll('audio');" +
+                    "   var target = null;" +
+                    "   for (var i = 0; i < vids.length; i++) {" +
+                    "       if (!vids[i].paused && vids[i].currentTime > 0) { target = vids[i]; break; }" +
+                    "   }" +
+                    "   if (!target && vids.length > 0) target = vids[0];" +
+                    "   if (target) {" +
+                    "       try {" +
+                    "           target.currentTime = " + seconds + ";" +
+                    "       } catch(e) {}" +
+                    "   }" +
+                    "})();", null
             );
         }
     }

@@ -537,13 +537,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             @Override
             public void handleOnBackPressed() {
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                if (predictiveBackStartedOnOverlay) {
-                    // The gesture started on an overlay screen. Compose's PredictiveBackHandler
-                    // has already animated the screen's exit and called onBack() → showAlbum()
-                    // (which cleared isOverlayScreenShowing). We must NOT call performBackNavigation()
-                    // here — that would try to go back in web history. Only reset the root-view
-                    // transform that was applied during handleOnBackProgressed.
-                    predictiveBackStartedOnOverlay = false;
+                boolean overlayDismissedByGesture = predictiveBackStartedOnOverlay;
+                predictiveBackStartedOnOverlay = false;
+
+                // Check if an actual overlay screen is still showing in contentFrame
+                boolean hasOverlayView = isOverlayScreenShowing || (contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(0) instanceof NinjaWebView));
+
+                if (overlayDismissedByGesture && !hasOverlayView) {
+                    // Compose's PredictiveBackHandler handled the dismiss animation and showed the album
                     resetPredictiveBackVisuals();
                 } else {
                     performBackNavigation();
@@ -553,8 +554,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             @Override
             public void handleOnBackCancelled() {
-                if (predictiveBackStartedOnOverlay) {
-                    predictiveBackStartedOnOverlay = false;
+                boolean wasOverlay = predictiveBackStartedOnOverlay;
+                predictiveBackStartedOnOverlay = false;
+                if (wasOverlay) {
                     settlePredictiveBackGesture(false);
                 } else {
                     resetPredictiveBackVisuals();
@@ -807,6 +809,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onResume() {
         super.onResume();
+        predictiveBackStartedOnOverlay = false;
         applyAddressBarPosition();
         if (ninjaWebView != null) {
             ninjaWebView.onResume();
@@ -1211,6 +1214,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (fabShare != null) fabShare.setVisibility(GONE);
                 if (fabBubble != null) fabBubble.setVisibility(GONE);
 
+                // In PiP mode, hide the video player overlay so Compose controls don't clutter the mini window
+                if (videoOverlayBridge != null) {
+                    videoOverlayBridge.setOverlayVisible(false);
+                }
+
                 // Update PiP actions on entry
                 updatePipParams(isMediaPlaying);
 
@@ -1222,8 +1230,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         "   if (!style) {" +
                         "       style = document.createElement('style');" +
                         "       style.id = 'petal-pip-style';" +
-                        "       style.innerHTML = 'body { background: #000 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; } ' +" +
-                        "                         'video { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999999 !important; object-fit: contain !important; background: #000 !important; } ' +" +
+                        "       style.innerHTML = 'html, body { background: #000 !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; overflow: hidden !important; } ' +" +
+                        "                         'video { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; z-index: 2147483647 !important; object-fit: contain !important; background: #000 !important; margin: 0 !important; } ' +" +
                         "                         'header, footer, nav, sidebar, .ytp-chrome-top, .ytp-gradient-top, .ytp-show-cards-title, .html5-video-player > *:not(video) { display: none !important; opacity: 0 !important; }';" +
                         "       (document.head || document.documentElement).appendChild(style);" +
                         "   }" +
@@ -1238,6 +1246,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (mainProgressBar != null) mainProgressBar.setVisibility(VISIBLE);
                 if (appBar != null && currentAlbumController != null && !isHomePage(ninjaWebView != null ? ninjaWebView.getUrl() : "")) {
                     appBar.setVisibility(VISIBLE);
+                }
+
+                // Restore video player overlay if returning from PiP
+                if (videoOverlayBridge != null) {
+                    videoOverlayBridge.setOverlayVisible(true);
                 }
 
                 // Remove PiP video isolation CSS upon exiting PiP mode

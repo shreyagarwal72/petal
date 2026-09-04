@@ -146,12 +146,26 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         dispatchNestedFling(0, vy, true);
     }
 
-    public void retainParentTouchStreamOwnership() {
+    public void retainParentTouchStreamOwnership(MotionEvent event) {
         releaseParentTouchStreamOwnership();
+        // If touch begins near the screen edges (within 24dp), do not disallow parent intercept,
+        // allowing system predictive back gesture and parent gesture handlers to operate.
+        if (event != null) {
+            float edgeMarginPx = 24f * getResources().getDisplayMetrics().density;
+            float x = event.getX();
+            int width = getWidth();
+            if (x < edgeMarginPx || (width > 0 && x > (width - edgeMarginPx))) {
+                return;
+            }
+        }
         touchStreamParent = getParent();
         if (touchStreamParent != null) {
             touchStreamParent.requestDisallowInterceptTouchEvent(true);
         }
+    }
+
+    public void retainParentTouchStreamOwnership() {
+        retainParentTouchStreamOwnership(null);
     }
 
     public void releaseParentTouchStreamOwnership() {
@@ -347,7 +361,7 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-            retainParentTouchStreamOwnership();
+            retainParentTouchStreamOwnership(event);
         }
 
         switch (event.getActionMasked()) {

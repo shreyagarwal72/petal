@@ -122,6 +122,10 @@ class PetalVideoPlayerOverlayBridge(
         return cv
     }
 
+    fun setOverlayVisible(visible: Boolean) {
+        composeView?.visibility = if (visible) View.VISIBLE else View.GONE
+    }
+
     fun detachOverlay() {
         // Restore previous listener if any
         webView?.mediaBridge?.let { bridge ->
@@ -135,6 +139,13 @@ class PetalVideoPlayerOverlayBridge(
             (cv.parent as? ViewGroup)?.removeView(cv)
         }
         composeView = null
+
+        // Ensure activity window screenBrightness is restored to system default
+        try {
+            val lp = activity.window.attributes
+            lp.screenBrightness = android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            activity.window.attributes = lp
+        } catch (ignored: Exception) {}
     }
 
     // MediaStateListener callbacks
