@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +52,7 @@ import com.petal.browser.view.NinjaToast
  * - Far right: AI Research button (for proper sites) & Share icon button (min 48dp touch target, 24dp icon)
  * - Bottom edge: Integrated subtle animated loading progress indicator
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PetalAddressBar(
     url: String,
@@ -247,7 +248,11 @@ fun PetalAddressBar(
                                 }
                         ) {
                             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                if (favicon != null && !isBlankOrSearch && !isIncognito) {
+                                if (isLoading) {
+                                    ContainedLoadingIndicator(
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                } else if (favicon != null && !isBlankOrSearch && !isIncognito) {
                                     Image(
                                         bitmap = favicon.asImageBitmap(),
                                         contentDescription = "Favicon",

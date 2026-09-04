@@ -1294,6 +1294,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public synchronized void showAlbum(AlbumController controller, String overrideUrl) {
+        if (controller == null) {
+            if (BrowserContainer.size() > 0) {
+                controller = BrowserContainer.get(0);
+            } else {
+                addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
+                return;
+            }
+        }
+        if (controller == null) return;
         View av = (View) controller;
         if (currentAlbumController != null) {
             if (currentAlbumController instanceof NinjaWebView) {
@@ -3214,7 +3223,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 },
                 () -> {
-                    showAlbum(currentAlbumController);
+                    if (currentAlbumController != null) {
+                        showAlbum(currentAlbumController);
+                    } else if (BrowserContainer.size() > 0) {
+                        showAlbum(BrowserContainer.get(0));
+                    } else {
+                        addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
+                    }
                     return kotlin.Unit.INSTANCE;
                 }
             );
