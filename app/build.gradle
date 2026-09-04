@@ -28,8 +28,8 @@ android {
         applicationId "com.petal.browser"
         minSdkVersion 26
         targetSdkVersion 36
-        versionCode 266
-        versionName "2.6.6"
+        versionCode 267
+        versionName "2.6.7"
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
     }
