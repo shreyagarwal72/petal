@@ -262,12 +262,10 @@ fun PetalDownloadManagerScreen(
     // to it live, so this list updates instantly on progress/pause/resume/completion
     // instead of being polled from the system DownloadManager (which never reflected a
     // pause and is why the feature looked broken).
-    var isLoading by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         PetalFetchDownloadBridge.ensureInitialized(context)
         PetalFetchDownloadBridge.refresh(context)
-        kotlinx.coroutines.delay(1000L)
-        isLoading = false
     }
     val rawDownloadList by PetalFetchDownloadBridge.downloadItems.collectAsState()
     var pendingDeletedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -429,7 +427,7 @@ fun PetalDownloadManagerScreen(
                         actions = {
                             Box {
                                 HeaderActionIcon(
-                                    icon = Icons.Rounded.Sort,
+                                    icon = Icons.AutoMirrored.Rounded.Sort,
                                     contentDescription = "Sort Downloads",
                                     onClick = { sortMenuExpanded = true }
                                 )
@@ -437,26 +435,26 @@ fun PetalDownloadManagerScreen(
                                     expanded = sortMenuExpanded,
                                     onDismissRequest = { sortMenuExpanded = false }
                                 ) {
-                                    Text(
-                                        text = "Sort By",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                                    )
-                                    HorizontalDivider()
                                     DownloadSortOption.values().forEach { option ->
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    text = option.label,
-                                                    fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal,
-                                                    color = if (sortOption == option) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                    text = when (option) {
+                                                        DownloadSortOption.DATE_DESC -> "Date (Newest first)"
+                                                        DownloadSortOption.DATE_ASC -> "Date (Oldest first)"
+                                                        DownloadSortOption.NAME_ASC -> "Name (A-Z)"
+                                                        DownloadSortOption.NAME_DESC -> "Name (Z-A)"
+                                                        DownloadSortOption.SIZE_DESC -> "Size (Largest first)"
+                                                        DownloadSortOption.SIZE_ASC -> "Size (Smallest first)"
+                                                        DownloadSortOption.STATUS -> "Status (Active first)"
+                                                    },
+                                                    fontWeight = if (sortOption == option) FontWeight.Bold else FontWeight.Normal
                                                 )
                                             },
-                                            leadingIcon = {
+                                            trailingIcon = {
                                                 if (sortOption == option) {
                                                     Icon(
-                                                        imageVector = Icons.Rounded.Check,
+                                                        Icons.Rounded.Check,
                                                         contentDescription = null,
                                                         tint = MaterialTheme.colorScheme.primary
                                                     )
@@ -469,9 +467,6 @@ fun PetalDownloadManagerScreen(
                                         )
                                     }
                                 }
-                            }
-                            IconButton(onClick = { PetalFetchDownloadBridge.refresh(context) }) {
-                                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
                             }
                         }
                     )
@@ -821,34 +816,6 @@ private fun DownloadRowItem(
                         )
                     }
                 }
-            }
-
-            if (item.status == DownloadManager.STATUS_RUNNING) {
-                val animatedProgress by animateFloatAsState(
-                    targetValue = item.progress ?: 0f,
-                    animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
-                    label = "Progress"
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                LinearWavyProgressIndicator(
-                    progress = { animatedProgress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                )
-            } else if (item.status == DownloadManager.STATUS_PAUSED) {
-                Spacer(modifier = Modifier.height(6.dp))
-                val pausedProgress = item.progress ?: 0f
-                LinearWavyProgressIndicator(
-                    progress = { pausedProgress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f)
-                )
             }
         }
     }
