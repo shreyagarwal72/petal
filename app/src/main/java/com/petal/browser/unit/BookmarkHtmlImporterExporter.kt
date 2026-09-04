@@ -173,13 +173,6 @@ object BookmarkHtmlImporterExporter {
     }
 
     /**
-     * Java compatibility helper: allows calling exportToUri(context, uri, onComplete) with default HTML or JSON format.
-     */
-    fun exportToUri(context: Context, destinationUri: Uri, onComplete: ((Boolean, Int) -> Unit)?) {
-        exportToUri(context, destinationUri, "html", onComplete)
-    }
-
-    /**
      * Parses standard Netscape Bookmark HTML or JSON input and imports records into the bookmarks database.
      * Automatically detects whether file is JSON or HTML.
      */
