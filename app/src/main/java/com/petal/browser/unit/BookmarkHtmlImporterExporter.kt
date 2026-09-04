@@ -135,29 +135,52 @@ object BookmarkHtmlImporterExporter {
                 }
 
                 val uriStr = destinationUri.toString().lowercase()
-                val isJson = format.equals("json", ignoreCase = true) || uriStr.endsWith(".json")
+                val isJson = if (uriStr.contains(".html") || uriStr.contains(".htm")) {
+                    false
+                } else if (uriStr.contains(".json")) {
+                    true
+                } else {
+                    format.equals("json", ignoreCase = true)
+                }
+
+                if (validBookmarks.isEmpty()) {
+                    mainHandler.post {
+                        NinjaToast.show(context, "No bookmarks found to export")
+                    }
+                }
+
                 val content = if (isJson) {
                     exportToJsonString(validBookmarks)
                 } else {
                     exportToHtmlString(validBookmarks)
                 }
 
-                // Open output stream with write fallback ("wt" then "w")
+                // Open output stream with write fallback ("rwt" -> "wt" -> "w")
                 val outputStream = try {
+                    context.contentResolver.openOutputStream(destinationUri, "rwt")
+                } catch (e: Exception) {
+                    null
+                } ?: try {
                     context.contentResolver.openOutputStream(destinationUri, "wt")
                 } catch (e: Exception) {
+                    null
+                } ?: try {
                     context.contentResolver.openOutputStream(destinationUri, "w")
+                } catch (e: Exception) {
+                    null
                 } ?: throw IllegalStateException("Could not open destination storage stream")
 
+                val bytes = content.toByteArray(Charsets.UTF_8)
                 outputStream.use { os ->
-                    BufferedWriter(OutputStreamWriter(os, Charsets.UTF_8)).use { writer ->
-                        writer.write(content)
-                        writer.flush()
-                    }
+                    os.write(bytes)
+                    os.flush()
+                    try {
+                        (os as? java.io.FileOutputStream)?.fd?.sync()
+                    } catch (_: Exception) {}
                 }
 
                 val formatLabel = if (isJson) "JSON" else "HTML"
-                Log.i(TAG, "Exported ${validBookmarks.size} bookmarks to $formatLabel: $destinationUri")
+                Log.i(TAG, "Exported ${validBookmarks.size} bookmarks to $formatLabel: $destinationUri (${bytes.size} bytes)")
                 mainHandler.post {
                     NinjaToast.show(context, "Exported ${validBookmarks.size} bookmarks ($formatLabel) successfully")
                     onComplete?.invoke(true, validBookmarks.size)
