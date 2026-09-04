@@ -1,3 +1,18 @@
+### v2.6.8
+
+- **🎨 Interactive Address Bar & Expressive Gestures**:
+  - **Horizontal Tab Swiping**: Swipe left or right directly across the address bar pill to switch between tabs with tactile micro-haptic feedback.
+  - **Long-Press Quick Actions**: Press and hold the address bar to open a Material 3 bottom sheet with high-value actions:
+    - 📋 **Copy Clean URL**: Automatically strips tracking and telemetry query parameters (`utm_*`, `fbclid`, `gclid`, etc.) before copying to clipboard.
+    - 🔗 **Paste & Go**: One-tap search or navigation directly from your clipboard content.
+    - ⭐️ **Quick Bookmark**: Instantly add or remove the current page from bookmarks with live state feedback.
+    - 🔄 **Hard Refresh**: Reload the current page and bypass cache.
+  - **Smart Dynamic Visuals**:
+    - Embedded site favicon capsule chip with SSL security status icon (Tune / Lock / Incognito).
+    - Subtle animated inline loading progress indicator integrated directly into the bottom curve of the address bar pill.
+- **♿ Accessibility Preferences**:
+  - Added dedicated toggles in **Accessibility Settings** for horizontal tab swiping and long-press quick actions (enabled by default).
+
 ### v2.6.7
 
 - **🎨 Unified Settings Subpages Containment & Expressive Theming**:

@@ -1,0 +1,5 @@
+- 🎨 Interactive Address Bar & Material 3 Gestures:
+  - Added horizontal swipe gesture across the address bar to switch between open tabs with tactile haptic feedback.
+  - Added Material 3 bottom sheet Quick Actions menu on address bar long-press: Copy Clean URL (strips tracking/telemetry parameters), Paste & Go, Quick Bookmark toggle, and Hard Refresh.
+  - Added Favicon capsule chip with SSL security status indicator and integrated subtle animated loading progress indicator along the bottom curve of the address bar.
+  - Added user controls in Accessibility Settings to enable or disable horizontal tab swiping and long-press quick actions (enabled by default).
