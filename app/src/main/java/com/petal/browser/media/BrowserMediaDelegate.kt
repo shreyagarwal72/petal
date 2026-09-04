@@ -110,14 +110,14 @@ object BrowserMediaDelegate {
 
         val localRect = if (viewAspect < videoAspect) {
             // Letterboxed: black bars top and bottom
-            val height = viewWidth / videoAspect
-            val top = ((viewHeight - height) / 2f).toInt()
-            Rect(0, top, viewWidth.toInt(), (height + top).toInt())
+            val height = (viewWidth / videoAspect).coerceAtMost(viewHeight)
+            val top = ((viewHeight - height) / 2f).coerceAtLeast(0f).toInt()
+            Rect(0, top, viewWidth.toInt(), (height + top).toInt().coerceAtMost(viewHeight.toInt()))
         } else {
             // Pillarboxed: black bars left and right
-            val width = viewHeight * videoAspect
-            val left = ((viewWidth - width) / 2f).toInt()
-            Rect(left, 0, (width + left).toInt(), viewHeight.toInt())
+            val width = (viewHeight * videoAspect).coerceAtMost(viewWidth)
+            val left = ((viewWidth - width) / 2f).coerceAtLeast(0f).toInt()
+            Rect(left, 0, (width + left).toInt().coerceAtMost(viewWidth.toInt()), viewHeight.toInt())
         }
 
         val location = IntArray(2)

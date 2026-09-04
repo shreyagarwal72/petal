@@ -104,6 +104,10 @@ fun PetalVideoPlayerOverlay(
     var currentSpeed by remember { mutableFloatStateOf(playbackSpeed) }
     var showSpeedSelector by remember { mutableStateOf(false) }
 
+    // Local Video Brightness State (0.1f = very dim, 1.0f = full normal brightness)
+    // Adjusting brightness only affects the video layer, not the browser activity or device window
+    var videoBrightness by remember { mutableFloatStateOf(1.0f) }
+
     // HUD gesture overlays
     var volumeHudLevel by remember { mutableIntStateOf(-1) }
     var brightnessHudLevel by remember { mutableFloatStateOf(-1f) }
@@ -119,73 +123,82 @@ fun PetalVideoPlayerOverlay(
     }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        areControlsVisible = !areControlsVisible
-                        if (!areControlsVisible) showSpeedSelector = false
-                    },
-                    onDoubleTap = { offset ->
+        modifier = modifier.fillMaxSize(),
+    ) {
+        // Dedicated Background Gesture Layer:
+        // Placed at the bottom of the Box stack so controls layer above receives all click events cleanly
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            areControlsVisible = !areControlsVisible
+                            if (!areControlsVisible) showSpeedSelector = false
+                        },
+                        onDoubleTap = { offset ->
+                            val width = size.width
+                            if (offset.x < width * 0.4f) {
+                                onRewind()
+                                doubleTapSeekText = "-10s"
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                            } else if (offset.x > width * 0.6f) {
+                                onFastForward()
+                                doubleTapSeekText = "+10s"
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                            } else {
+                                onPlayPauseToggle()
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                            }
+                        },
+                    )
+                }
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = {},
+                        onDragEnd = {
+                            volumeHudLevel = -1
+                            brightnessHudLevel = -1f
+                        },
+                        onDragCancel = {
+                            volumeHudLevel = -1
+                            brightnessHudLevel = -1f
+                        },
+                    ) { change, dragAmount ->
                         val width = size.width
-                        if (offset.x < width * 0.4f) {
-                            onRewind()
-                            doubleTapSeekText = "-10s"
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                        } else if (offset.x > width * 0.6f) {
-                            onFastForward()
-                            doubleTapSeekText = "+10s"
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                        } else {
-                            onPlayPauseToggle()
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                        }
-                    },
-                )
-            }
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = {},
-                    onDragEnd = {
-                        volumeHudLevel = -1
-                        brightnessHudLevel = -1f
-                    },
-                    onDragCancel = {
-                        volumeHudLevel = -1
-                        brightnessHudLevel = -1f
-                    },
-                ) { change, dragAmount ->
-                    val width = size.width
-                    val x = change.position.x
-                    val deltaY = -dragAmount.y
+                        val x = change.position.x
+                        val deltaY = -dragAmount.y
 
-                    if (x < width * 0.45f) {
-                        // Left side vertical gesture: Brightness
-                        if (context is Activity) {
-                            val layoutParams = context.window.attributes
-                            var currentBrightness = layoutParams.screenBrightness
-                            if (currentBrightness < 0f) currentBrightness = 0.5f
-                            val newBrightness = (currentBrightness + (deltaY / 600f)).coerceIn(0.02f, 1f)
-                            layoutParams.screenBrightness = newBrightness
-                            context.window.attributes = layoutParams
+                        if (x < width * 0.45f) {
+                            // Left side vertical gesture: Video Brightness (affects ONLY video overlay, not browser)
+                            val newBrightness = (videoBrightness + (deltaY / 600f)).coerceIn(0.1f, 1.0f)
+                            videoBrightness = newBrightness
                             brightnessHudLevel = newBrightness
-                        }
-                    } else if (x > width * 0.55f) {
-                        // Right side vertical gesture: Volume
-                        audioManager?.let { am ->
-                            val currentVol = am.getStreamVolume(AudioManager.STREAM_MUSIC)
-                            val step = if (deltaY > 0) 1 else -1
-                            if (abs(deltaY) > 20f) {
-                                val newVol = (currentVol + step).coerceIn(0, maxVolume)
-                                am.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0)
-                                volumeHudLevel = newVol
+                        } else if (x > width * 0.55f) {
+                            // Right side vertical gesture: Volume
+                            audioManager?.let { am ->
+                                val currentVol = am.getStreamVolume(AudioManager.STREAM_MUSIC)
+                                val step = if (deltaY > 0) 1 else -1
+                                if (abs(deltaY) > 20f) {
+                                    val newVol = (currentVol + step).coerceIn(0, maxVolume)
+                                    am.setStreamVolume(AudioManager.STREAM_MUSIC, newVol, 0)
+                                    volumeHudLevel = newVol
+                                }
                             }
                         }
                     }
-                }
-            },
-    ) {
+                },
+        )
+
+        // Local Video Dimmer Layer: Dims the video content beneath without affecting browser or system brightness
+        if (videoBrightness < 1.0f) {
+            val dimAlpha = ((1.0f - videoBrightness) * 0.85f).coerceIn(0f, 0.85f)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = dimAlpha)),
+            )
+        }
         // Double-tap Seek Pill Indicator
         LaunchedEffect(doubleTapSeekText) {
             if (doubleTapSeekText != null) {
