@@ -167,15 +167,6 @@ jobs:
             ## What's Changed in ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || env.APP_VERSION }}
 
             ${{ env.CHANGELOG }}
-
-            ---
-
-            ### Direct APK Downloads:
-            - **`petal-browser-universal-release.apk`**: Universal build containing all ABIs (Recommended for all devices & in-app updates)
-            - **`petal-browser-arm64-v8a-release.apk`**: 64-bit ARM architecture (Recommended for modern smartphones)
-            - **`petal-browser-armeabi-v7a-release.apk`**: 32-bit ARM architecture (For older devices)
-            - **`petal-browser-x86_64-release.apk`**: 64-bit x86 architecture (For emulators & Chromebooks)
-            - **`petal-browser-x86-release.apk`**: 32-bit x86 architecture (For older emulators)
           files: |
             dist/*.apk
           generate_release_notes: true

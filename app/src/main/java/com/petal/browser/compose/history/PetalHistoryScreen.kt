@@ -12,6 +12,9 @@ import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -309,10 +312,21 @@ fun PetalHistoryScreen(
                                     )
                                 }
                             } else {
-                                itemsIndexed(filteredHistory, key = { idx, item -> "${item.url}_$idx" }) { index, record ->
+                                itemsIndexed(
+                                    items = filteredHistory,
+                                    key = { _, item -> "${item.url}_${item.time}" }
+                                ) { index, record ->
                                     HistoryCardItem(
                                         record = record,
                                         index = index,
+                                        modifier = Modifier.animateItem(
+                                            fadeInSpec = tween(220),
+                                            fadeOutSpec = tween(180),
+                                            placementSpec = spring(
+                                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                stiffness = Spring.StiffnessMediumLow
+                                            )
+                                        ),
                                         onSelect = { record.url?.let(onOpenUrl) },
                                         onDelete = {
                                             try {
@@ -342,6 +356,7 @@ fun PetalHistoryScreen(
 private fun HistoryCardItem(
     record: Record,
     index: Int,
+    modifier: Modifier = Modifier,
     onSelect: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -358,7 +373,7 @@ private fun HistoryCardItem(
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .bouncyClickable(scaleDown = 0.95f, onClick = onSelect)
             .entrance(index = index)
