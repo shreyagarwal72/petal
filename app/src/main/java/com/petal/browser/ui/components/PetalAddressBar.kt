@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -248,11 +247,7 @@ fun PetalAddressBar(
                                 }
                         ) {
                             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                if (isLoading) {
-                                    ContainedLoadingIndicator(
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                } else if (favicon != null && !isBlankOrSearch && !isIncognito) {
+                                if (favicon != null && !isBlankOrSearch && !isIncognito) {
                                     Image(
                                         bitmap = favicon.asImageBitmap(),
                                         contentDescription = "Favicon",
