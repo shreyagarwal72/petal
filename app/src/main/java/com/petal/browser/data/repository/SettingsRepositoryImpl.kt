@@ -268,6 +268,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString("sp_torrent_engine", "1DM") ?: "1DM"
     }
 
+    override val downloadManagerMode: Flow<String> = preferenceFlow(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE) {
+        sp.getString(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE, com.petal.browser.unit.ExternalDownloadManagerHelper.MODE_IN_APP) ?: com.petal.browser.unit.ExternalDownloadManagerHelper.MODE_IN_APP
+    }
+
     // ── Setters ───────────────────────────────────────────────────────────────
     override suspend fun setAppFont(font: AppFont) {
         sp.edit().putString("sp_app_font", font.name).apply()
@@ -491,5 +495,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setTorrentEngineMode(mode: String) {
         sp.edit().putString("sp_torrent_engine", mode).apply()
+    }
+
+    override suspend fun setDownloadManagerMode(mode: String) {
+        sp.edit().putString(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE, mode).apply()
     }
 }

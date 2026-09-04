@@ -74,6 +74,7 @@ interface SettingsRepository {
     val autoOpenApps: Flow<Boolean>
     val checkUpdateOnLaunch: Flow<Boolean>
     val torrentEngineMode: Flow<String>
+    val downloadManagerMode: Flow<String>
 
     // Setters
     suspend fun setAppFont(font: AppFont)
@@ -134,4 +135,5 @@ interface SettingsRepository {
     suspend fun setAutoOpenApps(enabled: Boolean)
     suspend fun setCheckUpdateOnLaunch(enabled: Boolean)
     suspend fun setTorrentEngineMode(mode: String)
+    suspend fun setDownloadManagerMode(mode: String)
 }
