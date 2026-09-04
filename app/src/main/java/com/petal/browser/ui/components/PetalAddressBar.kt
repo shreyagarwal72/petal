@@ -113,8 +113,20 @@ fun PetalAddressBar(
 
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    val isSwipeTabsEnabled = remember(sp) { sp.getBoolean("sp_address_bar_swipe_tabs", true) }
-    val isQuickActionsEnabled = remember(sp) { sp.getBoolean("sp_address_bar_quick_actions", true) }
+    var isSwipeTabsEnabled by remember { mutableStateOf(sp.getBoolean("sp_address_bar_swipe_tabs", true)) }
+    var isQuickActionsEnabled by remember { mutableStateOf(sp.getBoolean("sp_address_bar_quick_actions", true)) }
+
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sp_address_bar_swipe_tabs") {
+                isSwipeTabsEnabled = sp.getBoolean("sp_address_bar_swipe_tabs", true)
+            } else if (key == "sp_address_bar_quick_actions") {
+                isQuickActionsEnabled = sp.getBoolean("sp_address_bar_quick_actions", true)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     var showQuickActionsMenu by remember { mutableStateOf(false) }
 
@@ -297,24 +309,6 @@ fun PetalAddressBar(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-            }
-
-            // Integrated Inline Loading Progress Indicator at base of pill
-            val animatedProgress by animateFloatAsState(
-                targetValue = if (isLoading) progress.coerceIn(0.05f, 1f) else 0f,
-                label = "addressBarProgress"
-            )
-            if (isLoading && animatedProgress > 0f) {
-                LinearProgressIndicator(
-                    progress = { animatedProgress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .align(Alignment.BottomCenter)
-                        .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = Color.Transparent
-                )
             }
         }
     }

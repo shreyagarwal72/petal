@@ -83,6 +83,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     private List_standard listStandard;
     private Bitmap favicon;
     private static SharedPreferences sp;
+    private SharedPreferences.OnSharedPreferenceChangeListener prefListener;
     private boolean foreground;
     public static BrowserController browserController = null;
     public interface OnScrollChangeListener {
@@ -182,6 +183,31 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
         initWebView();
         initAlbum();
+
+        this.prefListener = (preferences, key) -> {
+            if (key == null) return;
+            if (key.equals("sp_font_size_scale") || key.equals("sp_zoom_level_scale")
+                    || key.startsWith("sp_site_zoom_") || key.equals("sp_fontSize")) {
+                post(() -> com.petal.browser.accessibility.PetalAccessibilityEngine.applyZoomToWebView(this, getUrl()));
+            } else if (key.equals("sp_force_enable_zoom")) {
+                post(() -> {
+                    if (com.petal.browser.accessibility.PetalAccessibilityEngine.isForceZoomEnabled(context)) {
+                        com.petal.browser.accessibility.PetalAccessibilityEngine.applyForceZoom(this);
+                    }
+                });
+            } else if (key.equals("sp_caret_browsing")) {
+                post(() -> {
+                    boolean caret = com.petal.browser.accessibility.PetalAccessibilityEngine.isCaretBrowsingEnabled(context);
+                    com.petal.browser.accessibility.PetalAccessibilityEngine.applyCaretBrowsing(this, caret);
+                });
+            } else if (key.equals("sp_force_dark_mode") || key.equals("sp_amoled") || key.equals("sp_dark_mode")) {
+                post(() -> {
+                    initPreferences(getUrl());
+                    applyAmoledBlackMode();
+                });
+            }
+        };
+        sp.registerOnSharedPreferenceChangeListener(this.prefListener);
     }
 
     private com.petal.browser.media.PetalMediaBridge mediaBridge;
@@ -876,6 +902,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+        if (sp != null && prefListener != null) {
+            sp.unregisterOnSharedPreferenceChangeListener(prefListener);
+            prefListener = null;
         }
         super.destroy();
     }
