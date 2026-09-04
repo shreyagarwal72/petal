@@ -120,6 +120,7 @@ object BookmarkHtmlImporterExporter {
      * Exports all bookmarks to a target Storage Access Framework (SAF) Uri.
      * Supports both JSON and HTML depending on filename/URI or format parameter.
      */
+    @JvmOverloads
     fun exportToUri(context: Context, destinationUri: Uri, format: String = "json", onComplete: ((Boolean, Int) -> Unit)? = null) {
         executor.execute {
             try {
@@ -172,9 +173,17 @@ object BookmarkHtmlImporterExporter {
     }
 
     /**
+     * Java compatibility helper: allows calling exportToUri(context, uri, onComplete) with default HTML or JSON format.
+     */
+    fun exportToUri(context: Context, destinationUri: Uri, onComplete: ((Boolean, Int) -> Unit)?) {
+        exportToUri(context, destinationUri, "html", onComplete)
+    }
+
+    /**
      * Parses standard Netscape Bookmark HTML or JSON input and imports records into the bookmarks database.
      * Automatically detects whether file is JSON or HTML.
      */
+    @JvmOverloads
     fun importFromUri(context: Context, sourceUri: Uri, onComplete: ((Boolean, Int) -> Unit)? = null) {
         executor.execute {
             try {
