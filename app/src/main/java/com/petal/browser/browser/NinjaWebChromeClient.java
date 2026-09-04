@@ -115,8 +115,8 @@ public class NinjaWebChromeClient extends WebChromeClient {
         Context context = view.getContext();
         if (context instanceof com.petal.browser.activity.BrowserActivity) {
             com.petal.browser.activity.BrowserActivity activity = (com.petal.browser.activity.BrowserActivity) context;
-            activity.addAlbum(activity.getString(R.string.app_name), "about:blank", true);
-            NinjaWebView newTabWebView = com.petal.browser.activity.BrowserActivity.ninjaWebView;
+            boolean isIncognito = ninjaWebView != null && ninjaWebView.isIncognito();
+            NinjaWebView newTabWebView = activity.addAlbumForPopup(activity.getString(R.string.app_name), isIncognito);
             if (newTabWebView != null) {
                 WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
                 transport.setWebView(newTabWebView);

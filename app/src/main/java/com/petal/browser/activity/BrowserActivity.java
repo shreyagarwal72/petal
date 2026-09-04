@@ -4747,8 +4747,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         setWebView(title, url, foreground, false);
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     public void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito) {
+        setWebView(title, url, foreground, isIncognito, false);
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    public void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito, final boolean isPopup) {
         ninjaWebView = com.petal.browser.controller.BrowserWebViewController.createAndConfigureWebView(
             this, title, url, foreground, isIncognito
         );
@@ -4801,7 +4805,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 "(function() {" +
                 "   var el = document.elementFromPoint(window.lastTouchX || 0, window.lastTouchY || 0);" +
                 "   if (!el) el = document.activeElement;" +
-                "   if (el && el.tagName !== 'VIDEO') el = el.querySelector('video') || el.closest('video');" +
+                "   if (!el) return '';" +
+                "   var a = el.closest('video');" +
                 "   if (el && el.src) return el.src;" +
                 "   var v = document.querySelector('video');" +
                 "   return v ? (v.currentSrc || v.src || '') : '';" +
@@ -4829,7 +4834,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (title == null) title = getString(R.string.app_name);
-        if (url == null) {
+        if (isPopup) {
+            ninjaWebView.setAlbumTitle(title, "about:blank");
+            // For popup windows (onCreateWindow), do NOT call loadUrl.
+            // Android WebView Chromium framework strictly requires the new WebView
+            // passed to WebViewTransport to have no prior navigation or history.
+        } else if (url == null) {
             ninjaWebView.setAlbumTitle(title, "about:blank");
             ninjaWebView.loadUrl("about:blank");
         } else {
@@ -4873,6 +4883,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public synchronized void addAlbum(String title, final String url, final boolean foreground, final boolean isIncognito) {
         setWebView(title, url, foreground, isIncognito);
+    }
+
+    public synchronized NinjaWebView addAlbumForPopup(String title, final boolean isIncognito) {
+        setWebView(title, null, true, isIncognito, true);
+        return ninjaWebView;
     }
 
     public synchronized void addAlbumInGroup(String title, final String url, final boolean foreground, final String groupId, final String groupTitle) {
