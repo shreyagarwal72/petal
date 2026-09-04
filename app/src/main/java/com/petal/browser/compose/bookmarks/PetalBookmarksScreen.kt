@@ -146,16 +146,26 @@ fun PetalBookmarksScreen(
         reloadBookmarks()
     }
 
-    // HTML Export & Import SAF Activity Launchers
+    var overflowMenuExpanded by remember { mutableStateOf(false) }
+
+    // Backup Export & Import SAF Activity Launchers (supports JSON & HTML)
+    val exportJsonLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { targetUri ->
+        if (targetUri != null) {
+            BookmarkHtmlImporterExporter.exportToUri(context, targetUri, format = "json")
+        }
+    }
+
     val exportHtmlLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/html")
     ) { targetUri ->
         if (targetUri != null) {
-            BookmarkHtmlImporterExporter.exportToUri(context, targetUri)
+            BookmarkHtmlImporterExporter.exportToUri(context, targetUri, format = "html")
         }
     }
 
-    val importHtmlLauncher = rememberLauncherForActivityResult(
+    val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { sourceUri ->
         if (sourceUri != null) {
@@ -205,26 +215,85 @@ fun PetalBookmarksScreen(
                     onBack = onDismiss,
                     actions = {
                         HeaderActionIcon(
-                            icon = Icons.Rounded.FileUpload,
-                            contentDescription = "Import Bookmarks (HTML)",
-                            onClick = { importHtmlLauncher.launch(arrayOf("text/html", "text/plain", "*/*")) }
-                        )
-                        HeaderActionIcon(
-                            icon = Icons.Rounded.FileDownload,
-                            contentDescription = "Export Bookmarks (HTML)",
-                            onClick = { exportHtmlLauncher.launch("bookmarks.html") }
-                        )
-                        HeaderActionIcon(
                             icon = Icons.Rounded.Add,
                             contentDescription = "Add Bookmark",
                             onClick = { showAddDialog = true }
                         )
-                        if (!rawBookmarks.isNullOrEmpty()) {
+                        Box {
                             HeaderActionIcon(
-                                icon = Icons.Rounded.DeleteSweep,
-                                contentDescription = "Clear All Bookmarks",
-                                onClick = { showClearConfirm = true }
+                                icon = Icons.Rounded.MoreVert,
+                                contentDescription = "More Options",
+                                onClick = { overflowMenuExpanded = true }
                             )
+                            DropdownMenu(
+                                expanded = overflowMenuExpanded,
+                                onDismissRequest = { overflowMenuExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Import Bookmarks (JSON / HTML)") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Rounded.FileUpload,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    },
+                                    onClick = {
+                                        overflowMenuExpanded = false
+                                        importLauncher.launch(arrayOf("application/json", "text/html", "text/plain", "*/*"))
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Export Backup (JSON)") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Rounded.DataObject,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    },
+                                    onClick = {
+                                        overflowMenuExpanded = false
+                                        exportJsonLauncher.launch("petal_bookmarks.json")
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Export Bookmarks (HTML)") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Rounded.FileDownload,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    },
+                                    onClick = {
+                                        overflowMenuExpanded = false
+                                        exportHtmlLauncher.launch("bookmarks.html")
+                                    }
+                                )
+                                if (!rawBookmarks.isNullOrEmpty()) {
+                                    HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Clear All Bookmarks",
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Rounded.DeleteSweep,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            showClearConfirm = true
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 )
