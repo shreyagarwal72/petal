@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -225,7 +228,7 @@ fun SettingsHubScreen(
 @Composable
 private fun SearchItemCard(
     item: SettingsSearchItem,
-    shape: androidx.compose.ui.graphics.Shape,
+    shape: Shape,
     onClick: () -> Unit
 ) {
     Card(
@@ -249,8 +252,8 @@ private fun SearchItemCard(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .androidx.compose.ui.draw.clip(RoundedCornerShape(10.dp))
-                    .androidx.compose.foundation.background(MaterialTheme.colorScheme.primaryContainer),
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
