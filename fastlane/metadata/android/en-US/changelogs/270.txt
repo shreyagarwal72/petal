@@ -1,0 +1,14 @@
+- 🎬 Native Custom Video Player:
+  - Added modern native fullscreen video player overlay with intuitive touch controls.
+  - Implemented fancy squiggly wavy seekbar inspired by mpvEx with animated sine wave propagation and dual time readouts.
+  - Added vertical slide gesture HUD controls for screen brightness (left edge) and volume (right edge).
+  - Added playback speed selector (0.5x up to 2.0x) and quick rewind/forward skip controls (±10s).
+  - Smart YouTube exclusion: preserves native YouTube player and embedded player controls without interference.
+- 📺 Rebuilt Dynamic Picture-in-Picture (PiP):
+  - Upgraded PiP engine with exact letterbox and pillarbox aspect ratio calculation and smooth window shrink animations.
+  - Added dynamic PiP remote actions for 10-second skip back, live play/pause toggle, and 10-second skip forward.
+- 🌐 Core WebView & High-Performance AdBlocker:
+  - Seamless touch stream ownership, momentum scrolling, and rapid page rendering.
+  - Advanced cosmetic and network filtering for lightning-fast page loading and privacy.
+- 🌟 Open Source Credits:
+  - Added mpvEx (by marlboro-advance) to Credits section acknowledging video player UI/UX and wavy seekbar design.

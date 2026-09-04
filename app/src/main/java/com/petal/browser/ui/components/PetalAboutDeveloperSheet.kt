@@ -892,6 +892,16 @@ val petalAppCredits = listOf(
         icon = Icons.Rounded.ColorLens,
         containerColor = Color(0xFF6750A4),
         tags = listOf("Material 3", "Compose UI", "Expressive Shapes")
+    ),
+    AppCreditItem(
+        title = "mpvEx",
+        developer = "marlboro-advance",
+        role = "Video Player UI/UX & Wavy Seekbar Architecture",
+        description = "Full-featured modern media player interface inspiration, squiggly wavy seekbar mechanics, and dynamic PiP layout geometry.",
+        url = "https://github.com/marlboro-advance/mpvEx",
+        icon = Icons.Rounded.PlayCircle,
+        containerColor = Color(0xFFE91E63),
+        tags = listOf("Video Player", "Wavy Seekbar", "Compose UI", "PiP Mode")
     )
 )
 

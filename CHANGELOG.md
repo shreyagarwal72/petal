@@ -1,3 +1,19 @@
+### v2.7 - New Webview & Video Player update
+
+- **🎨 Native Video Player & Fancy Wavy Seekbar**:
+  - **Fluid Overlay Controls**: Implemented modern native fullscreen video overlay controls featuring auto-hiding navigation, quick 10s rewind and forward skip, center play/pause toggle, and playback speed adjustment menu (0.5x to 2.0x).
+  - **Fancy Squiggly Wavy Seekbar**: Integrated animated sine wave propagation seekbar inspired by mpvEx, with smooth flattening dynamics during pause/scrubbing and dual interactive time readouts.
+  - **Vertical Gesture HUD**: Slide vertically on the left side of the player to adjust screen brightness with live percentage HUD, and on the right side to adjust audio volume.
+  - **YouTube Compatibility Protection**: Automatically bypasses custom overlay controls on YouTube (`youtube.com`, `youtu.be`, embedded YouTube frames) to preserve YouTube's native player features and UI.
+- **📺 Rebuilt Dynamic Picture-in-Picture (PiP)**:
+  - Upgraded Android Picture-in-Picture geometry engine using mpvEx-inspired aspect ratio calculations and letterbox/pillarbox source rect hint for fluid, seamless window transitions.
+  - Added remote PiP action buttons: 10s skip backward, dynamic play/pause toggle, and 10s skip forward.
+- **⚡ High-Performance Core Web Engine & AdBlocker**:
+  - Re-architected WebView touch stream dispatch, smooth physics momentum scrolling, and rapid rendering pipeline.
+  - Enhanced content blocking and ad filtering engines for swift, tracker-free web browsing while strictly preserving address bar collapse, context menus, and download confirmations.
+- **🌟 Open Source Credits**:
+  - Added **mpvEx** (by marlboro-advance) to the Credits section in recognition of video player UI/UX and wavy seekbar design.
+
 ### v2.6.8
 
 - **🎨 Interactive Address Bar & Expressive Gestures**:
