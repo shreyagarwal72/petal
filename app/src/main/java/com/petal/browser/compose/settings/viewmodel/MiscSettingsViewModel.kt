@@ -21,11 +21,18 @@ class MiscSettingsViewModel @Inject constructor(
     val checkUpdateOnLaunch: StateFlow<Boolean> = settingsRepository.checkUpdateOnLaunch
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val downloadManagerMode: StateFlow<String> = settingsRepository.downloadManagerMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.petal.browser.unit.ExternalDownloadManagerHelper.MODE_IN_APP)
+
     fun setAutoOpenApps(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setAutoOpenApps(enabled)
     }
 
     fun setCheckUpdateOnLaunch(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setCheckUpdateOnLaunch(enabled)
+    }
+
+    fun setDownloadManagerMode(mode: String) = viewModelScope.launch {
+        settingsRepository.setDownloadManagerMode(mode)
     }
 }

@@ -334,6 +334,13 @@ object PetalSettingsSearchIndex {
 
         // ==================== MISCELLANEOUS ====================
         SettingsSearchItem(
+            id = "misc_default_download_manager",
+            title = "Default Download Manager",
+            subtitle = "Choose between Petal's high-speed in-app downloader or external download managers (1DM, ADM, AB DM, Navi)",
+            category = SettingsCategory.MISCELLANEOUS,
+            keywords = listOf("download manager", "default download", "external download", "1dm", "adm", "ab download manager", "navi", "external downloader", "download engine", "in-app downloader")
+        ),
+        SettingsSearchItem(
             id = "misc_auto_open_apps",
             title = "Open Links in External Apps",
             subtitle = "Automatically launch native installed apps for supported URLs (YouTube, Maps, Twitter, Reddit)",

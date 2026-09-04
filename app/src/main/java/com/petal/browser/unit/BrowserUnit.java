@@ -160,6 +160,17 @@ public class BrowserUnit {
         if (!url.toLowerCase(Locale.US).startsWith("http://") && !url.toLowerCase(Locale.US).startsWith("https://")) {
             verifiedUrl = "https://" + url;
         }
+
+        // If user set external download manager as preferred in Settings, redirect to external manager
+        if (com.petal.browser.unit.ExternalDownloadManagerHelper.isExternalPreferred(context)) {
+            boolean launched = com.petal.browser.unit.ExternalDownloadManagerHelper.launchDownloadInExternalManager(
+                    context, verifiedUrl, fileName, mimeType, null
+            );
+            if (launched) {
+                return;
+            }
+        }
+
         // Berechtigungsprüfung (Ab Android 10/Q wird WRITE_EXTERNAL_STORAGE für Downloads nicht mehr benötigt)
         boolean hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || BackupUnit.checkPermissionStorage(context);
         if (hasPermission) {
