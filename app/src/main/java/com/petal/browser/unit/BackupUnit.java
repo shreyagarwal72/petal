@@ -945,7 +945,7 @@ public class BackupUnit {
     public static void exportList(Context context) {}
     public static void importList(Context context) {}
     public static void exportBookmarksHtmlToUri(Context context, android.net.Uri uri) {
-        BookmarkHtmlImporterExporter.INSTANCE.exportToUri(context, uri, null);
+        BookmarkHtmlImporterExporter.INSTANCE.exportToUri(context, uri, "html", null);
     }
 
     public static void importBookmarksHtmlFromUri(Context context, android.net.Uri uri) {

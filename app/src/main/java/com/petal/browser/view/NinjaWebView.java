@@ -203,7 +203,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             } else if (key.equals("sp_force_dark_mode") || key.equals("sp_amoled") || key.equals("sp_dark_mode")) {
                 post(() -> {
                     initPreferences(getUrl());
-                    applyAmoledBlackMode();
                 });
             }
         };
