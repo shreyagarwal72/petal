@@ -1,4 +1,4 @@
-# candy site privacy defaults v2
+# petal site privacy defaults v2
 force_vertical_scroll	badoo.com
 force_vertical_scroll	comicbook.com
 force_vertical_scroll	de.findagrave.com
