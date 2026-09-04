@@ -513,6 +513,14 @@ fun PetalDownloadManagerScreen(
                                 isSelected = isSelected,
                                 isSelectionMode = isSelectionMode,
                                 showFullDate = (sortOption != DownloadSortOption.DATE_DESC && sortOption != DownloadSortOption.DATE_ASC),
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = tween(220),
+                                    fadeOutSpec = tween(180),
+                                    placementSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    )
+                                ),
                                 onToggleSelect = { toggleSelection(item.id) },
                                 onLongClick = {
                                     if (!isSelectionMode) {
@@ -541,6 +549,7 @@ private fun DownloadRowItem(
     isSelected: Boolean,
     isSelectionMode: Boolean,
     showFullDate: Boolean = false,
+    modifier: Modifier = Modifier,
     onToggleSelect: () -> Unit,
     onLongClick: () -> Unit,
     onDeleteItem: () -> Unit,
@@ -616,7 +625,7 @@ private fun DownloadRowItem(
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
             .combinedClickable(
