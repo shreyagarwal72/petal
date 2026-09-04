@@ -194,6 +194,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public View customView;
+    public WebChromeClient.CustomViewCallback customViewCallback;
+    public com.petal.browser.media.PetalVideoPlayerOverlayBridge videoOverlayBridge;
     public VideoView videoView;
     public boolean isMediaPlaying = false;
     public FloatingActionButton fab_menu;
@@ -2076,6 +2078,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         customView = view;
+        customViewCallback = callback;
         fullscreenHolder = new FrameLayout(context);
         fullscreenHolder.addView(
                 customView,
@@ -2083,6 +2086,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT
                 ));
+
+        // Attach Petal native video player overlay on top of customView
+        try {
+            videoOverlayBridge = new com.petal.browser.media.PetalVideoPlayerOverlayBridge(
+                    this,
+                    ninjaWebView,
+                    () -> {
+                        runOnUiThread(this::onHideCustomView);
+                        return kotlin.Unit.INSTANCE;
+                    }
+            );
+            videoOverlayBridge.attachOverlay(fullscreenHolder);
+        } catch (Exception e) {
+            Log.w(TAG, "Video player overlay bridge failed to attach: " + e.getMessage());
+        }
 
         FrameLayout decorView = (FrameLayout) getWindow().getDecorView();
         decorView.addView(
@@ -2107,9 +2125,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onHideCustomView() {
+        if (videoOverlayBridge != null) {
+            try {
+                videoOverlayBridge.detachOverlay();
+            } catch (Exception ignored) {}
+            videoOverlayBridge = null;
+        }
+        if (customViewCallback != null) {
+            try {
+                customViewCallback.onCustomViewHidden();
+            } catch (Exception ignored) {}
+            customViewCallback = null;
+        }
         FrameLayout decorView = (FrameLayout) getWindow().getDecorView();
-        decorView.removeView(fullscreenHolder);
-        customView.setKeepScreenOn(false);
+        if (fullscreenHolder != null) {
+            decorView.removeView(fullscreenHolder);
+        }
+        if (customView != null) {
+            customView.setKeepScreenOn(false);
+        }
         ((View) currentAlbumController).setVisibility(VISIBLE);
         setCustomFullscreen(false);
         fullscreenHolder = null;
@@ -2117,7 +2151,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (videoView != null) {
             videoView.setOnErrorListener(null);
             videoView.setOnCompletionListener(null);
-            videoView = null; }
+            videoView = null;
+        }
         contentFrame.requestFocus();
     }
 
