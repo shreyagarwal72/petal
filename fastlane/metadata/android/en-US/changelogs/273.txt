@@ -1,0 +1,4 @@
+- 📦 Build & App Bundle Language Compliance:
+  - Resolved unrecognized language code "sh" by migrating legacy values-sh resources to BCP-47 compliant values-b+sr+Latn.
+  - Added explicit Gradle resConfigs to whitelist supported app locales and filter out invalid third-party library resources.
+  - Zero data loss: all user settings, tabs, bookmarks, and preferences are strictly preserved.

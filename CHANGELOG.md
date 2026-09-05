@@ -1,3 +1,11 @@
+### v2.7.3
+
+- **📦 Build & App Bundle Language Compliance**:
+  - **Resolved Deprecated Language Qualifier**: Migrated deprecated legacy `values-sh` resource folder to BCP-47 compliant `values-b+sr+Latn` (Serbian Latin), resolving Google Play App Bundle submission errors regarding unrecognized language `sh`.
+  - **Explicit Resource Configurations**: Configured explicit Gradle `resConfigs` to whitelist all supported locales and strip any unrecognized or invalid third-party library language resources from final AAB / APK packages.
+- **🔒 Zero Data Loss**:
+  - All existing user settings, bookmarks, tabs, and history remain strictly intact.
+
 ### v2.7.2
 
 - **🐛 Default Search Provider & Settings Sheet Fix**:
