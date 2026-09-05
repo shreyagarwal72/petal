@@ -3,10 +3,10 @@ package com.petal.browser.controller
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.media.PetalMediaBridge
 import com.petal.browser.pwa.PetalPwaManager
-import com.petal.browser.view.NinjaWebView
+import com.petal.browser.view.PetalGeckoView
 
 /**
- * Kotlin controller handling NinjaWebView initialization, Media Bridge callbacks,
+ * Kotlin controller handling PetalGeckoView standalone initialization, Media Bridge callbacks,
  * and PWA Manager binding for BrowserActivity.
  */
 object BrowserWebViewController {
@@ -18,27 +18,27 @@ object BrowserWebViewController {
         url: String?,
         foreground: Boolean,
         isIncognito: Boolean
-    ): NinjaWebView {
-        val webView = NinjaWebView(activity)
+    ): PetalGeckoView {
+        val geckoView = PetalGeckoView(activity)
         if (isIncognito) {
-            webView.isIncognito = true
+            geckoView.setIncognito(true)
         }
 
         // Configure Media Bridge
         val bridge = PetalMediaBridge(
             activity,
-            webView,
+            null,
             object : PetalMediaBridge.MediaStateListener {
                 override fun onMediaPlay(title: String?, positionMs: Long, durationMs: Long) {
                     activity.isMediaPlaying = true
                     activity.updatePipParams(true)
-                    activity.mediaService?.updateMediaState(title, webView.title, true, positionMs, durationMs)
+                    activity.mediaService?.updateMediaState(title, geckoView.title, true, positionMs, durationMs)
                 }
 
                 override fun onMediaPause(positionMs: Long, durationMs: Long) {
                     activity.isMediaPlaying = false
                     activity.updatePipParams(false)
-                    activity.mediaService?.updateMediaState(webView.title, webView.title, false, positionMs, durationMs)
+                    activity.mediaService?.updateMediaState(geckoView.title, geckoView.title, false, positionMs, durationMs)
                 }
 
                 override fun onMediaProgress(positionMs: Long, durationMs: Long) {}
@@ -53,18 +53,18 @@ object BrowserWebViewController {
                 }
             }
         )
-        webView.setMediaBridge(bridge)
+        geckoView.setMediaBridge(bridge)
 
         // Configure PWA Manager
-        val pwaManager = PetalPwaManager(activity, webView) { _ ->
+        val pwaManager = PetalPwaManager(activity, null) { _ ->
             activity.runOnUiThread {
                 // PWA notification handling callback
             }
         }
-        webView.setPwaManager(pwaManager)
+        geckoView.setPwaManager(pwaManager)
 
         // Scroll listener for address bar collapse
-        webView.setOnScrollChangeListener(object : NinjaWebView.OnScrollChangeListener {
+        geckoView.setOnScrollChangeListener(object : PetalGeckoView.OnScrollChangeListener {
             override fun onScrollDown() {
                 activity.runOnUiThread { activity.animateAddressBarCollapse(true) }
             }
@@ -74,6 +74,6 @@ object BrowserWebViewController {
             }
         })
 
-        return webView
+        return geckoView
     }
 }
