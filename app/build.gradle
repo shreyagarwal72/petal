@@ -8,12 +8,12 @@ android {
 
     compileSdk 36
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
         freeCompilerArgs += [
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi"
@@ -156,6 +156,9 @@ dependencies {
 
     // Guava for high performance host/domain parsing
     implementation 'com.google.guava:guava:33.2.1-android'
+
+    // Mozilla GeckoView (Stable Engine)
+    implementation 'org.mozilla.geckoview:geckoview:154.0.20260824154132'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.51.1'
