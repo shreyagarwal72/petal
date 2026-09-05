@@ -145,8 +145,9 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onOpenInNewTabInGroup() {
-                    val currentWebView = activity.currentAlbumController as? com.petal.browser.view.NinjaWebView
-                    val currentTabId = currentWebView?.hashCode()?.toString()
+                    val currentAlbum = activity.currentAlbumController
+                    val currentGeckoView = currentAlbum as? com.petal.browser.view.PetalGeckoView
+                    val currentTabId = currentGeckoView?.getTabId() ?: currentAlbum?.hashCode()?.toString()
                     val existingGroup = if (currentTabId != null) {
                         com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(activity, currentTabId)
                     } else null
@@ -157,8 +158,8 @@ object BrowserContextMenuManager {
                         // Create a new group for current tab + new tab
                         val currentTab = com.petal.browser.compose.tabs.PetalTabItem(
                             id = currentTabId ?: "current_${System.currentTimeMillis()}",
-                            title = currentWebView?.title ?: "Tab",
-                            url = currentWebView?.url ?: "about:blank"
+                            title = currentAlbum?.title ?: "Tab",
+                            url = currentAlbum?.url ?: "about:blank"
                         )
                         val newTabDummyId = "temp_${System.currentTimeMillis()}"
                         val newTabDummy = com.petal.browser.compose.tabs.PetalTabItem(
@@ -167,8 +168,8 @@ object BrowserContextMenuManager {
                             url = urlResult
                         )
                         val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, newTabDummy)
-                        currentWebView?.tabGroupId = newGroup.id
-                        currentWebView?.tabGroupTitle = newGroup.title
+                        currentGeckoView?.setTabGroupId(newGroup.id)
+                        currentGeckoView?.setTabGroupTitle(newGroup.title)
                         activity.addAlbumInGroup(HelperUnit.domain(urlResult), urlResult, false, newGroup.id, newGroup.title)
                     }
                 }
@@ -245,6 +246,33 @@ object BrowserContextMenuManager {
                     }
                 }
 
+                override fun onSendEmail(mailto: String) {
+                    try {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO, Uri.parse(mailto))
+                        activity.startActivity(intent)
+                    } catch (e: Exception) {
+                        NinjaToast.show(activity, "No email client found")
+                    }
+                }
+
+                override fun onDialPhoneNumber(tel: String) {
+                    try {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_DIAL, Uri.parse(tel))
+                        activity.startActivity(intent)
+                    } catch (e: Exception) {
+                        NinjaToast.show(activity, "No phone app found")
+                    }
+                }
+
+                override fun onOpenMapLocation(geo: String) {
+                    try {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(geo))
+                        activity.startActivity(intent)
+                    } catch (e: Exception) {
+                        NinjaToast.show(activity, "No maps app found")
+                    }
+                }
+
                 override fun onOpenImageInNewTab() {}
                 override fun onCopyImage() {}
                 override fun onDownloadVideo() {}
@@ -298,6 +326,74 @@ object BrowserContextMenuManager {
                 override fun onShareImage() {}
                 override fun onScanImage() {}
                 override fun onSearchWithGoogleLens() {}
+            }
+        )
+    }
+
+    @JvmStatic
+    fun showAudioContextMenu(activity: BrowserActivity, audioUrl: String) {
+        PetalLinkContextMenuBridge.show(
+            activity = activity,
+            linkTitle = HelperUnit.domain(audioUrl),
+            linkUrl = audioUrl,
+            faviconUrl = null,
+            isImage = false,
+            isVideo = false,
+            isAudio = true,
+            selectedText = null,
+            handler = object : PetalLinkContextMenuHandler {
+                override fun onOpenInNewTab() {
+                    activity.addAlbum(HelperUnit.domain(audioUrl), audioUrl, false)
+                }
+
+                override fun onDownloadAudio() {
+                    try {
+                        val fileName = URLUtil.guessFileName(audioUrl, null, "audio/*")
+                        BrowserUnit.download(activity, audioUrl, fileName, null)
+                        NinjaToast.show(activity, "Audio download started")
+                    } catch (e: Exception) {
+                        NinjaToast.show(activity, "Failed to start audio download")
+                    }
+                }
+
+                override fun onCopyLinkAddress() {
+                    HelperUnit.copy(activity, audioUrl)
+                    NinjaToast.show(activity, "Audio link copied")
+                }
+
+                override fun onShareLink() {
+                    activity.shareLink(HelperUnit.domain(audioUrl), audioUrl)
+                }
+            }
+        )
+    }
+
+    @JvmStatic
+    fun showSelectionContextMenu(activity: BrowserActivity, selectedText: String) {
+        if (selectedText.isBlank()) return
+        PetalLinkContextMenuBridge.show(
+            activity = activity,
+            linkTitle = "Text Selection",
+            linkUrl = selectedText,
+            faviconUrl = null,
+            isImage = false,
+            isVideo = false,
+            isAudio = false,
+            selectedText = selectedText,
+            handler = object : PetalLinkContextMenuHandler {
+                override fun onSearchWebText(text: String) {
+                    val query = BrowserUnit.queryWrapper(activity, text)
+                    activity.addAlbum(text.take(24), query, false)
+                }
+
+                override fun onCopySelectedText(text: String) {
+                    HelperUnit.copy(activity, text)
+                    NinjaToast.show(activity, "Text copied")
+                }
+
+                override fun onShareSelectedText(text: String) {
+                    activity.shareLink("Shared Text", text)
+                }
             }
         )
     }

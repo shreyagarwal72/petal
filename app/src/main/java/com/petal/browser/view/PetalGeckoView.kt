@@ -32,6 +32,7 @@ import com.petal.browser.unit.TabThumbnailCache
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 import java.util.function.Consumer
 
@@ -111,6 +112,7 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onPageStart(session: GeckoSession, url: String) {
                 isStopped = false
                 currentUrl = url
+                album.setAlbumTitle(currentTitle, url)
                 updateProgress(10)
             }
 
@@ -152,16 +154,6 @@ class PetalGeckoView @JvmOverloads constructor(
 
         // Navigation Delegate
         session.navigationDelegate = object : GeckoSession.NavigationDelegate {
-            override fun onLocationChange(session: GeckoSession, url: String?, perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>) {
-                url?.let {
-                    currentUrl = it
-                    album.setAlbumTitle(currentTitle, it)
-                    if (isForegroundTab) {
-                        browserController?.updateProgress(currentProgress)
-                    }
-                }
-            }
-
             override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
                 canGoBackVal = canGoBack
             }
@@ -208,6 +200,40 @@ class PetalGeckoView @JvmOverloads constructor(
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
                         // Fullscreen sync with Material 3 app bars
+                    }
+                }
+            }
+
+            override fun onContextMenu(
+                session: GeckoSession,
+                screenX: Int,
+                screenY: Int,
+                element: GeckoSession.ContentDelegate.ContextElement
+            ) {
+                val act = getHostActivity() ?: return
+                if (act !is com.petal.browser.activity.BrowserActivity) return
+
+                val linkUri = element.linkUri
+                val srcUri = element.srcUri
+                val elemType = element.type
+
+                act.runOnUiThread {
+                    when {
+                        elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_IMAGE && !srcUri.isNullOrEmpty() -> {
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
+                        }
+                        elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_VIDEO && !srcUri.isNullOrEmpty() -> {
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showVideoContextMenu(act, srcUri)
+                        }
+                        elemType == GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO && !srcUri.isNullOrEmpty() -> {
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showAudioContextMenu(act, srcUri)
+                        }
+                        !linkUri.isNullOrEmpty() -> {
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(act, linkUri)
+                        }
+                        !srcUri.isNullOrEmpty() -> {
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showImageContextMenu(act, srcUri)
+                        }
                     }
                 }
             }
@@ -281,7 +307,7 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
-        // Selection & Context Menu Action Delegate (Long-click on links, images, video)
+        // Selection & Context Menu Action Delegate (Long-click text selection)
         session.selectionActionDelegate = object : GeckoSession.SelectionActionDelegate {
             override fun onShowActionRequest(
                 session: GeckoSession,
@@ -289,10 +315,10 @@ class PetalGeckoView @JvmOverloads constructor(
             ) {
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
-                    val linkUri = selection.linkUri
-                    if (linkUri != null && linkUri.isNotEmpty()) {
+                    val selectedText = selection.text
+                    if (!selectedText.isNullOrBlank()) {
                         act.runOnUiThread {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showLinkContextMenu(act, linkUri)
+                            com.petal.browser.compose.menu.BrowserContextMenuManager.showSelectionContextMenu(act, selectedText)
                         }
                     }
                 }
@@ -312,20 +338,20 @@ class PetalGeckoView @JvmOverloads constructor(
     fun applySettings() {
         val desktopEnabled = sp.getBoolean("sp_desktop_site", false)
         session.settings.userAgentMode = if (desktopEnabled) {
-            GeckoSession.Settings.USER_AGENT_MODE_DESKTOP
+            GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
         } else {
-            GeckoSession.Settings.USER_AGENT_MODE_MOBILE
+            GeckoSessionSettings.USER_AGENT_MODE_MOBILE
         }
         session.settings.useTrackingProtection = true
         val enableJs = sp.getBoolean("sp_javascript", true)
-        session.settings.javaScriptEnabled = enableJs
+        session.settings.allowJavascript = enableJs
     }
 
     fun setDesktopMode(enabled: Boolean) {
         session.settings.userAgentMode = if (enabled) {
-            GeckoSession.Settings.USER_AGENT_MODE_DESKTOP
+            GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
         } else {
-            GeckoSession.Settings.USER_AGENT_MODE_MOBILE
+            GeckoSessionSettings.USER_AGENT_MODE_MOBILE
         }
         session.reload()
     }
@@ -391,14 +417,14 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun findAllAsync(query: String) {
-        session.finder.find(query, GeckoSession.Finder.FIND_MATCH_CASE)
+        session.finder.find(query, GeckoSession.FINDER_FIND_MATCH_CASE)
     }
 
     fun findNext(forward: Boolean) {
         if (forward) {
-            session.finder.find(null, GeckoSession.Finder.FIND_MATCH_CASE)
+            session.finder.find(null, GeckoSession.FINDER_FIND_MATCH_CASE)
         } else {
-            session.finder.find(null, GeckoSession.Finder.FIND_MATCH_CASE or GeckoSession.Finder.FIND_BACKWARDS)
+            session.finder.find(null, GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_BACKWARDS)
         }
     }
 
@@ -550,7 +576,7 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         try {
-            session.capturePixels().then({ bitmap ->
+            geckoView.capturePixels().then({ bitmap ->
                 if (bitmap != null) {
                     val w = bitmap.width
                     val h = bitmap.height

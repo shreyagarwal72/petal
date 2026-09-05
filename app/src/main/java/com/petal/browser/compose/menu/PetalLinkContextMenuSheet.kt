@@ -50,11 +50,18 @@ interface PetalLinkContextMenuHandler {
     fun onCopyImage() {}
     fun onDownloadImage() {}
     fun onDownloadVideo() {}
+    fun onDownloadAudio() {}
     fun onAddToReadingList() {}
     fun onShareLink() {}
     fun onShareImage() {}
     fun onScanImage() {}
     fun onSearchWithGoogleLens() {}
+    fun onSearchWebText(text: String) {}
+    fun onCopySelectedText(text: String) {}
+    fun onShareSelectedText(text: String) {}
+    fun onDialPhoneNumber(tel: String) {}
+    fun onSendEmail(mailto: String) {}
+    fun onOpenMapLocation(geo: String) {}
 }
 
 private data class MenuItemSpec(
@@ -70,6 +77,8 @@ fun PetalLinkContextMenuSheet(
     faviconUrl: String? = null,
     isImage: Boolean = false,
     isVideo: Boolean = false,
+    isAudio: Boolean = false,
+    selectedText: String? = null,
     onDismiss: () -> Unit,
     handler: PetalLinkContextMenuHandler
 ) {
@@ -112,15 +121,25 @@ fun PetalLinkContextMenuSheet(
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (!faviconUrl.isNullOrEmpty() && !isImage && !isVideo) {
+                    if (!faviconUrl.isNullOrEmpty() && !isImage && !isVideo && !isAudio && selectedText == null) {
                         AsyncImage(
                             model = faviconUrl,
                             contentDescription = linkTitle ?: "Site Favicon",
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
+                        val headerIcon = when {
+                            selectedText != null -> Icons.Rounded.FormatQuote
+                            isAudio -> Icons.Rounded.Audiotrack
+                            isImage -> Icons.Rounded.Image
+                            isVideo -> Icons.Rounded.Videocam
+                            linkUrl.startsWith("mailto:") -> Icons.Rounded.Email
+                            linkUrl.startsWith("tel:") -> Icons.Rounded.Phone
+                            linkUrl.startsWith("geo:") -> Icons.Rounded.Place
+                            else -> Icons.Rounded.Language
+                        }
                         Icon(
-                            imageVector = if (isImage) Icons.Rounded.Image else if (isVideo) Icons.Rounded.Videocam else Icons.Rounded.Language,
+                            imageVector = headerIcon,
                             contentDescription = "Content",
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(22.dp)
@@ -129,15 +148,29 @@ fun PetalLinkContextMenuSheet(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
+                    val displayTitle = when {
+                        selectedText != null -> "Text Selection"
+                        linkUrl.startsWith("mailto:") -> linkUrl.removePrefix("mailto:")
+                        linkUrl.startsWith("tel:") -> linkUrl.removePrefix("tel:")
+                        linkUrl.startsWith("geo:") -> "Map Location"
+                        !linkTitle.isNullOrBlank() -> linkTitle
+                        else -> HelperUnit.domain(linkUrl) ?: linkUrl
+                    }
+                    val displaySub = when {
+                        selectedText != null -> selectedText
+                        linkUrl.startsWith("mailto:") -> "Send email"
+                        linkUrl.startsWith("tel:") -> "Call phone number"
+                        else -> linkUrl.ifBlank { "about:blank" }
+                    }
                     Text(
-                        text = if (!linkTitle.isNullOrBlank()) linkTitle else HelperUnit.domain(linkUrl) ?: linkUrl,
+                        text = displayTitle,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = linkUrl.ifBlank { "about:blank" },
+                        text = displaySub,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -154,60 +187,128 @@ fun PetalLinkContextMenuSheet(
             )
 
             // Primary Navigation Actions
-            val primaryActions = remember(isImage, isVideo, linkUrl) {
-                if (isImage) {
-                    listOf(
-                        MenuItemSpec("Open image in new tab", Icons.Rounded.OpenInNew) {
-                            onDismiss()
-                            handler.onOpenImageInNewTab()
-                        },
-                        MenuItemSpec("Download image", Icons.Rounded.Download) {
-                            onDismiss()
-                            handler.onDownloadImage()
-                        },
-                        MenuItemSpec("Search image with Google Lens", Icons.Rounded.TravelExplore) {
-                            onDismiss()
-                            handler.onSearchWithGoogleLens()
-                        },
-                        MenuItemSpec("Scan image with Petal Scanner", Icons.Rounded.CenterFocusWeak) {
-                            onDismiss()
-                            handler.onScanImage()
-                        }
-                    )
-                } else if (isVideo) {
-                    listOf(
-                        MenuItemSpec("Open video in new tab", Icons.Rounded.OpenInNew) {
-                            onDismiss()
-                            handler.onOpenInNewTab()
-                        },
-                        MenuItemSpec("Download video", Icons.Rounded.Download) {
-                            onDismiss()
-                            handler.onDownloadVideo()
-                        }
-                    )
-                } else {
-                    listOf(
-                        MenuItemSpec("Open in new tab", Icons.Rounded.OpenInNew) {
-                            onDismiss()
-                            handler.onOpenInNewTab()
-                        },
-                        MenuItemSpec("Open in new tab in group", Icons.Rounded.TabUnselected) {
-                            onDismiss()
-                            handler.onOpenInNewTabInGroup()
-                        },
-                        MenuItemSpec("Open in Incognito tab", Icons.Rounded.VisibilityOff) {
-                            onDismiss()
-                            handler.onOpenInIncognitoTab()
-                        },
-                        MenuItemSpec("Open in new window", Icons.Rounded.OpenInBrowser) {
-                            onDismiss()
-                            handler.onOpenInNewWindow()
-                        },
-                        MenuItemSpec("Preview page", Icons.Rounded.FindInPage) {
-                            onDismiss()
-                            handler.onPreviewPage()
-                        }
-                    )
+            val primaryActions = remember(isImage, isVideo, isAudio, selectedText, linkUrl) {
+                when {
+                    selectedText != null -> {
+                        listOf(
+                            MenuItemSpec("Search web for \"${selectedText.take(18)}\"", Icons.Rounded.Search) {
+                                onDismiss()
+                                handler.onSearchWebText(selectedText)
+                            },
+                            MenuItemSpec("Copy text", Icons.Rounded.ContentCopy) {
+                                onDismiss()
+                                handler.onCopySelectedText(selectedText)
+                            },
+                            MenuItemSpec("Share text", Icons.Rounded.Share) {
+                                onDismiss()
+                                handler.onShareSelectedText(selectedText)
+                            }
+                        )
+                    }
+                    linkUrl.startsWith("mailto:") -> {
+                        listOf(
+                            MenuItemSpec("Send email", Icons.Rounded.Email) {
+                                onDismiss()
+                                handler.onSendEmail(linkUrl)
+                            },
+                            MenuItemSpec("Copy email address", Icons.Rounded.ContentCopy) {
+                                onDismiss()
+                                handler.onCopyLinkAddress()
+                            }
+                        )
+                    }
+                    linkUrl.startsWith("tel:") -> {
+                        listOf(
+                            MenuItemSpec("Call phone number", Icons.Rounded.Call) {
+                                onDismiss()
+                                handler.onDialPhoneNumber(linkUrl)
+                            },
+                            MenuItemSpec("Copy phone number", Icons.Rounded.ContentCopy) {
+                                onDismiss()
+                                handler.onCopyLinkAddress()
+                            }
+                        )
+                    }
+                    linkUrl.startsWith("geo:") -> {
+                        listOf(
+                            MenuItemSpec("Open in Maps", Icons.Rounded.Place) {
+                                onDismiss()
+                                handler.onOpenMapLocation(linkUrl)
+                            },
+                            MenuItemSpec("Copy coordinates", Icons.Rounded.ContentCopy) {
+                                onDismiss()
+                                handler.onCopyLinkAddress()
+                            }
+                        )
+                    }
+                    isAudio -> {
+                        listOf(
+                            MenuItemSpec("Open audio in new tab", Icons.Rounded.OpenInNew) {
+                                onDismiss()
+                                handler.onOpenInNewTab()
+                            },
+                            MenuItemSpec("Download audio", Icons.Rounded.Download) {
+                                onDismiss()
+                                handler.onDownloadAudio()
+                            }
+                        )
+                    }
+                    isImage -> {
+                        listOf(
+                            MenuItemSpec("Open image in new tab", Icons.Rounded.OpenInNew) {
+                                onDismiss()
+                                handler.onOpenImageInNewTab()
+                            },
+                            MenuItemSpec("Download image", Icons.Rounded.Download) {
+                                onDismiss()
+                                handler.onDownloadImage()
+                            },
+                            MenuItemSpec("Search image with Google Lens", Icons.Rounded.TravelExplore) {
+                                onDismiss()
+                                handler.onSearchWithGoogleLens()
+                            },
+                            MenuItemSpec("Scan image with Petal Scanner", Icons.Rounded.CenterFocusWeak) {
+                                onDismiss()
+                                handler.onScanImage()
+                            }
+                        )
+                    }
+                    isVideo -> {
+                        listOf(
+                            MenuItemSpec("Open video in new tab", Icons.Rounded.OpenInNew) {
+                                onDismiss()
+                                handler.onOpenInNewTab()
+                            },
+                            MenuItemSpec("Download video", Icons.Rounded.Download) {
+                                onDismiss()
+                                handler.onDownloadVideo()
+                            }
+                        )
+                    }
+                    else -> {
+                        listOf(
+                            MenuItemSpec("Open in new tab", Icons.Rounded.OpenInNew) {
+                                onDismiss()
+                                handler.onOpenInNewTab()
+                            },
+                            MenuItemSpec("Open in new tab in group", Icons.Rounded.TabUnselected) {
+                                onDismiss()
+                                handler.onOpenInNewTabInGroup()
+                            },
+                            MenuItemSpec("Open in Incognito tab", Icons.Rounded.VisibilityOff) {
+                                onDismiss()
+                                handler.onOpenInIncognitoTab()
+                            },
+                            MenuItemSpec("Open in new window", Icons.Rounded.OpenInBrowser) {
+                                onDismiss()
+                                handler.onOpenInNewWindow()
+                            },
+                            MenuItemSpec("Preview page", Icons.Rounded.FindInPage) {
+                                onDismiss()
+                                handler.onPreviewPage()
+                            }
+                        )
+                    }
                 }
             }
 
@@ -226,52 +327,71 @@ fun PetalLinkContextMenuSheet(
             )
 
             // Clipboard & Sharing Actions
-            val shareActions = remember(isImage, isVideo, linkUrl) {
-                if (isImage) {
-                    listOf(
-                        MenuItemSpec("Copy image URL", Icons.Rounded.ContentCopy) {
-                            onDismiss()
-                            handler.onCopyImage()
-                        },
-                        MenuItemSpec("Share image", Icons.Rounded.Share) {
-                            onDismiss()
-                            handler.onShareImage()
-                        }
-                    )
-                } else if (isVideo) {
-                    listOf(
-                        MenuItemSpec("Copy video link", Icons.Rounded.ContentCopy) {
-                            onDismiss()
-                            handler.onCopyLinkAddress()
-                        },
-                        MenuItemSpec("Share video", Icons.Rounded.Share) {
-                            onDismiss()
-                            handler.onShareLink()
-                        }
-                    )
-                } else {
-                    listOf(
-                        MenuItemSpec("Copy link address", Icons.Rounded.ContentCopy) {
-                            onDismiss()
-                            handler.onCopyLinkAddress()
-                        },
-                        MenuItemSpec("Copy link text", Icons.Rounded.Title) {
-                            onDismiss()
-                            handler.onCopyLinkText()
-                        },
-                        MenuItemSpec("Download link", Icons.Rounded.Download) {
-                            onDismiss()
-                            handler.onDownloadLink()
-                        },
-                        MenuItemSpec("Add to reading list", Icons.Rounded.BookmarkAdd) {
-                            onDismiss()
-                            handler.onAddToReadingList()
-                        },
-                        MenuItemSpec("Share link", Icons.Rounded.Share) {
-                            onDismiss()
-                            handler.onShareLink()
-                        }
-                    )
+            val shareActions = remember(isImage, isVideo, isAudio, selectedText, linkUrl) {
+                when {
+                    selectedText != null || linkUrl.startsWith("mailto:") || linkUrl.startsWith("tel:") || linkUrl.startsWith("geo:") -> {
+                        emptyList()
+                    }
+                    isAudio -> {
+                        listOf(
+                            MenuItemSpec("Copy audio link", Icons.Rounded.ContentCopy) {
+                                onDismiss()
+                                handler.onCopyLinkAddress()
+                            },
+                            MenuItemSpec("Share audio", Icons.Rounded.Share) {
+                                onDismiss()
+                                handler.onShareLink()
+                            }
+                        )
+                    }
+                    isImage -> {
+                        listOf(
+                            MenuItemSpec("Copy image URL", Icons.Rounded.ContentCopy) {
+                                onDismiss()
+                                handler.onCopyImage()
+                            },
+                            MenuItemSpec("Share image", Icons.Rounded.Share) {
+                                onDismiss()
+                                handler.onShareImage()
+                            }
+                        )
+                    }
+                    isVideo -> {
+                        listOf(
+                            MenuItemSpec("Copy video link", Icons.Rounded.ContentCopy) {
+                                onDismiss()
+                                handler.onCopyLinkAddress()
+                            },
+                            MenuItemSpec("Share video", Icons.Rounded.Share) {
+                                onDismiss()
+                                handler.onShareLink()
+                            }
+                        )
+                    }
+                    else -> {
+                        listOf(
+                            MenuItemSpec("Copy link address", Icons.Rounded.ContentCopy) {
+                                onDismiss()
+                                handler.onCopyLinkAddress()
+                            },
+                            MenuItemSpec("Copy link text", Icons.Rounded.Title) {
+                                onDismiss()
+                                handler.onCopyLinkText()
+                            },
+                            MenuItemSpec("Download link", Icons.Rounded.Download) {
+                                onDismiss()
+                                handler.onDownloadLink()
+                            },
+                            MenuItemSpec("Add to reading list", Icons.Rounded.BookmarkAdd) {
+                                onDismiss()
+                                handler.onAddToReadingList()
+                            },
+                            MenuItemSpec("Share link", Icons.Rounded.Share) {
+                                onDismiss()
+                                handler.onShareLink()
+                            }
+                        )
+                    }
                 }
             }
 
@@ -342,6 +462,8 @@ object PetalLinkContextMenuBridge {
         faviconUrl: String? = null,
         isImage: Boolean = false,
         isVideo: Boolean = false,
+        isAudio: Boolean = false,
+        selectedText: String? = null,
         handler: PetalLinkContextMenuHandler
     ) {
         activity.runOnUiThread {
@@ -380,6 +502,8 @@ object PetalLinkContextMenuBridge {
                                 faviconUrl = faviconUrl,
                                 isImage = isImage,
                                 isVideo = isVideo,
+                                isAudio = isAudio,
+                                selectedText = selectedText,
                                 onDismiss = { dialog.dismiss() },
                                 handler = handler
                             )
