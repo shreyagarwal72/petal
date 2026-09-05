@@ -78,7 +78,7 @@ class PetalGeckoView @JvmOverloads constructor(
     private var tabGroupId: String? = null
     private var tabGroupTitle: String? = null
     private var predecessor: AlbumController? = null
-    private val album: AdapterTabs = AdapterTabs(context, this, browserController)
+    private val album: AdapterTabs = AdapterTabs(context, this, globalBrowserController)
 
     private var currentUrl: String = "about:blank"
     private var currentTitle: String = "Petal Start"
