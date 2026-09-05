@@ -53,7 +53,7 @@ class PetalGeckoView @JvmOverloads constructor(
     companion object {
         private const val TAG = "PetalGeckoView"
         @JvmStatic
-        var browserController: BrowserController? = null
+        private var globalBrowserController: BrowserController? = null
 
         @JvmStatic
         fun getDerivedDesktopUserAgent(context: Context): String {
@@ -99,7 +99,7 @@ class PetalGeckoView @JvmOverloads constructor(
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
         initGeckoSession()
-        album.setBrowserController(browserController)
+        album.setBrowserController(globalBrowserController)
     }
 
     private fun initGeckoSession() {
@@ -329,9 +329,9 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     private fun updateProgress(progress: Int) {
-        if (isForegroundTab && browserController != null) {
+        if (isForegroundTab && globalBrowserController != null) {
             val p = if (!isStopped) progress else BrowserUnit.LOADING_STOPPED
-            browserController?.updateProgress(p)
+            globalBrowserController?.updateProgress(p)
         }
     }
 
@@ -505,11 +505,11 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun setBrowserController(controller: BrowserController?) {
-        browserController = controller
+        globalBrowserController = controller
         album.setBrowserController(controller)
     }
 
-    fun getBrowserController(): BrowserController? = browserController
+    fun getBrowserController(): BrowserController? = globalBrowserController
 
     fun setOnScrollChangeListener(listener: OnScrollChangeListener?) {
         this.onScrollChangeListener = listener
