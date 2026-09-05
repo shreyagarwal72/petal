@@ -462,6 +462,29 @@ object PetalLinkContextMenuBridge {
         faviconUrl: String? = null,
         isImage: Boolean = false,
         isVideo: Boolean = false,
+        handler: PetalLinkContextMenuHandler
+    ) {
+        show(
+            activity = activity,
+            linkTitle = linkTitle,
+            linkUrl = linkUrl,
+            faviconUrl = faviconUrl,
+            isImage = isImage,
+            isVideo = isVideo,
+            isAudio = false,
+            selectedText = null,
+            handler = handler
+        )
+    }
+
+    @JvmStatic
+    fun show(
+        activity: ComponentActivity,
+        linkTitle: String?,
+        linkUrl: String,
+        faviconUrl: String? = null,
+        isImage: Boolean = false,
+        isVideo: Boolean = false,
         isAudio: Boolean = false,
         selectedText: String? = null,
         handler: PetalLinkContextMenuHandler
