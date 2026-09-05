@@ -180,7 +180,7 @@ fun PetalAiResearchSheet(
                                     text = {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(provider.displayName, fontWeight = if (provider == selectedProvider) FontWeight.Bold else FontWeight.Normal)
-                                            if (provider == AiProvider.OPENROUTER) {
+                                            if (provider == AiProvider.GEMINI) {
                                                 Spacer(Modifier.width(6.dp))
                                                 Text("(Recommended)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                                             }
