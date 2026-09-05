@@ -1,0 +1,4 @@
+- 🐛 Edge Back Gesture Navigation & WebView Touch Fixes:
+  - Resolved an issue where Chromium/WebView claimed system gesture exclusion zones along display edges, unblocking system edge swipe back gestures across all websites on Android 10+ (API 29+).
+  - Enforced empty system gesture exclusion rects immediately on touch interaction and layout updates.
+  - Zero data loss: all user settings, tabs, bookmarks, and history are preserved.
