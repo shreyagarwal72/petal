@@ -536,6 +536,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             @Override
             public void handleOnBackPressed() {
+                // TEMP DEBUG - remove after diagnosing back gesture bug
+                Log.d("PETAL_BACK_DEBUG", "callback invoked, canGoBack=" + (ninjaWebView != null && ninjaWebView.canGoBack()));
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                 boolean overlayDismissedByGesture = predictiveBackStartedOnOverlay;
                 predictiveBackStartedOnOverlay = false;
