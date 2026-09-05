@@ -1,0 +1,5 @@
+- 🔍 Gesture Diagnostics & Stability:
+  - Added temporary PETAL_BACK_DEBUG diagnostic telemetry to monitor edge swipe dispatching and OnBackPressedCallback handling without modifying native navigation.
+- 📜 Compliance & Documentation:
+  - Published comprehensive privacy policy detailing zero data collection and sandboxed local storage.
+  - Zero data loss: all user bookmarks, history, tabs, and preferences are preserved.
