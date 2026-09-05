@@ -1,3 +1,13 @@
+### v2.7.2
+
+- **🐛 Default Search Provider & Settings Sheet Fix**:
+  - **Fluid Search Provider Selection**: Resolved touch event interception where the Default Search Provider bottom sheet became unresponsive by removing conflicting nested surface wrappers and nested radio click handlers.
+  - **Accurate Selection State**: Correctly synchronizes the initial and updated search engine index state between Settings and the modal sheet.
+- **⚡ Performance & Package Optimization**:
+  - **APK Footprint Reduction**: Removed duplicate drawable resources and redundant raw filter asset sources (`~2.8 MB` reduction in repository assets).
+- **🔒 Build & Platform Stability**:
+  - **Zero Data Loss**: User preferences, bookmarks, history, and search engine selections are strictly preserved.
+
 ### v2.7.1
 
 - **🐛 Edge Back Gesture Navigation & WebView Touch Fixes**:

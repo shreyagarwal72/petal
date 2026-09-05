@@ -92,40 +92,27 @@ object PetalSearchEngineBridge {
 
 @Composable
 fun PetalSearchEngineSheetContent(
+    initialIndex: Int? = null,
     onConfirm: (Int) -> Unit,
     onCancel: () -> Unit
 ) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    var selectedIndex by remember {
-        val current = sp.getString("sp_search_engine", "0") ?: "0"
-        mutableIntStateOf(current.toIntOrNull() ?: 0)
+    var selectedIndex by remember(initialIndex) {
+        val defaultIdx = initialIndex ?: (sp.getString("sp_search_engine", "0")?.toIntOrNull() ?: 0)
+        mutableIntStateOf(defaultIdx)
     }
 
-    Surface(
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .padding(bottom = 24.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Drag Handle Bar
-            Box(
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                    .align(Alignment.CenterHorizontally)
-            )
-
-            // Header Title Card
-            Card(
+        // Header Title Card
+        Card(
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
@@ -214,7 +201,7 @@ fun PetalSearchEngineSheetContent(
                             }
                             RadioButton(
                                 selected = isSelected,
-                                onClick = { selectedIndex = engine.index }
+                                onClick = null
                             )
                         }
                     }
@@ -243,5 +230,4 @@ fun PetalSearchEngineSheetContent(
                 )
             }
         }
-    }
 }

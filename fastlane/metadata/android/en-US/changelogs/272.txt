@@ -1,0 +1,6 @@
+- 🐛 Default Search Provider & Settings Sheet Fix:
+  - Resolved touch event interception where the Default Search Provider bottom sheet became unresponsive by removing conflicting nested surface wrappers and radio click handlers.
+  - Correctly synchronizes the initial and updated search engine selection state between Settings and the modal sheet.
+- ⚡ Performance & Optimization:
+  - Cleaned redundant raw filter asset sources and duplicate drawable resources, reducing overall package footprint.
+  - Zero data loss: all user preferences, search engine settings, bookmarks, and tabs remain intact.

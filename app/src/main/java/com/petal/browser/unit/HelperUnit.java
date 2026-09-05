@@ -583,7 +583,7 @@ public class HelperUnit {
             list.add(new MenuItem(context.getString(R.string.menu_quit), R.drawable.icon_close, true));
             list.add(new MenuItem(context.getString(R.string.menu_edit), R.drawable.icon_edit, true));
             list.add(new MenuItem(context.getString(R.string.menu_delete), R.drawable.icon_delete, true));
-            list.add(new MenuItem(context.getString(R.string.menu_delete_entry), R.drawable.icon_delete_alt, true));
+            list.add(new MenuItem(context.getString(R.string.menu_delete_entry), R.drawable.icon_delete, true));
             list.add(new MenuItem(context.getString(R.string.app_help), R.drawable.icon_help, true));
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putString(Settings_Menu.KEY_LIST, new Gson().toJson(list));
