@@ -1,3 +1,10 @@
+### v2.7.1
+
+- **🐛 Edge Back Gesture Navigation & WebView Touch Fixes**:
+  - **Unblocked System Back Gestures**: Prevented Chromium / WebView from claiming system gesture exclusion zones along display edges on Android 10+ (API 29+), allowing full system back gestures and predictive back navigation to fire reliably on any website.
+  - **Synchronous Exclusion Reset**: Enforced empty system gesture exclusion rects immediately upon touch interaction (`ACTION_DOWN`, `ACTION_UP`, `ACTION_CANCEL`) and layout recomputation, guaranteeing smooth edge back-swipes without gesture trapping.
+  - **Zero Data Loss**: User session tabs, bookmarks, history, and customized settings are strictly preserved.
+
 ### v2.7 - New Webview & Video Player update
 
 - **🎨 Native Video Player & Fancy Wavy Seekbar**:
