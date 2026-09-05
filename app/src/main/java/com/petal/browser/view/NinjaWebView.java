@@ -373,10 +373,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         isExclusionResetPending = false;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
-                java.util.List<android.graphics.Rect> currentRects = getSystemGestureExclusionRects();
-                if (currentRects != null && !currentRects.isEmpty()) {
-                    setSystemGestureExclusionRects(java.util.Collections.emptyList());
-                }
+                super.setSystemGestureExclusionRects(java.util.Collections.emptyList());
             } catch (Exception ignored) {}
         }
     };
@@ -388,11 +385,37 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
      */
     public void resetGestureExclusionRects() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                super.setSystemGestureExclusionRects(java.util.Collections.emptyList());
+            } catch (Exception ignored) {}
             if (!isExclusionResetPending) {
                 isExclusionResetPending = true;
                 post(exclusionResetRunnable);
             }
         }
+    }
+
+    @Override
+    public void setSystemGestureExclusionRects(@NonNull java.util.List<android.graphics.Rect> rects) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Chromium/WebView attempts to exclude the entire view or large horizontal zones
+            // when web pages have touch listeners. We enforce empty exclusion rects so
+            // system back gestures from the left/right screen edges are always received by Android.
+            try {
+                super.setSystemGestureExclusionRects(java.util.Collections.emptyList());
+            } catch (Exception ignored) {}
+        }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            int action = ev.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                resetGestureExclusionRects();
+            }
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
