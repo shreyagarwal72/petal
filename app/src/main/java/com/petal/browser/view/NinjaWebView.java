@@ -408,6 +408,14 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
+        // TEMP DEBUG - remove after diagnosing back gesture bug
+        if (ev.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            float rawX = ev.getRawX();
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            if (rawX < 40 || rawX > screenWidth - 40) {
+                Log.d("PETAL_BACK_DEBUG", "touch action=" + ev.getActionMasked() + " rawX=" + rawX);
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             int action = ev.getActionMasked();
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
