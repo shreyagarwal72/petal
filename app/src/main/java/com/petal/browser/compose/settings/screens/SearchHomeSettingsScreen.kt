@@ -91,9 +91,12 @@ fun SearchHomeSettingsScreenContent(
     if (showEngineSheet) {
         ModalBottomSheet(
             onDismissRequest = { showEngineSheet = false },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             PetalSearchEngineSheetContent(
+                initialIndex = searchEngineIndex.toIntOrNull() ?: 0,
                 onConfirm = { idx ->
                     onSearchEngineIndexChange(idx.toString())
                     showEngineSheet = false
