@@ -1,0 +1,42 @@
+# Petal Browser AI Development Rules & Constraints (.rules)
+
+## 1. Environment & Workflow Constraints
+- **Mobile-Only Environment**: Development is performed directly on an Android device via Termux. There is no PC or local Android Studio workstation.
+- **No Local Gradle Builds**: Do NOT attempt `./gradlew assembleRelease` or heavy multi-variant local builds on-device. Builds and APK artifacts are produced remotely via **GitHub Actions CI**.
+- **Push Workflow**: Every completed feature, bug fix, or code refinement must be cleanly committed and pushed directly to GitHub (`origin main` or active branch).
+- **Zero Secrets / Key Material**: Release keystores, passwords (`RELEASE_STORE_PASSWORD`, `RELEASE_KEY_PASSWORD`), API credentials, or signing secrets must **NEVER** be committed or written into tracked files.
+
+## 2. Codebase Architecture & Hybrid Bridge Conventions
+- **Language Hybridization**: The core activity and lifecycle shell is predominantly Java (`BrowserActivity.java`), while modern UI surfaces, settings, menus, and custom components are written in Kotlin with Jetpack Compose.
+- **ComposeView Bridging**: Compose screens (Settings, Downloads, History, Bookmarks, Tab Switcher, Omnibox, Credits, Overlays) are attached dynamically into `BrowserActivity.contentFrame` via `presentComposeScreen(View screen, boolean animate)`.
+- **ViewTree Wiring Mandatory**: Every dynamic `ComposeView` instantiation MUST explicitly set:
+  ```kotlin
+  composeView.apply {
+      setViewTreeLifecycleOwner(activity)
+      setViewTreeViewModelStoreOwner(activity)
+      setViewTreeSavedStateRegistryOwner(activity)
+      setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+  }
+  ```
+- **Dual Browsing Engine Coexistence**:
+  - Legacy/Android System WebView: Wrapped in `NinjaWebView` (`NinjaWebViewClient`, `NinjaWebChromeClient`).
+  - Modern Mozilla GeckoView: Encapsulated in `PetalGeckoView` (`org.mozilla.geckoview:geckoview:154+`, managed by `PetalGeckoRuntime` and `BrowserWebViewController`).
+  - Legacy naming (`NinjaWebView`, `NinjaWebViewClient`, `NinjaWebChromeClient`, `AlbumController`, `BrowserController`) must be preserved and **never renamed wholesale** to maintain compatibility across the fork.
+- **Naming Pattern**: All newly created features, components, managers, and bridges must carry the `Petal` prefix (e.g., `PetalGeckoView`, `PetalSettingsBridge`, `PetalVideoPlayerOverlay`, `PetalMaterialShapes`).
+
+## 3. Design System & UI Principles
+- **Material 3 Expressive**: Always adhere to Material 3 Expressive guidelines (`androidx.compose.material3:material3:1.5.0-alpha17`).
+- **35 Expressive Shapes**: Use the official 35 M3 dynamic shapes catalog from `PetalMaterialShapes.kt` for chips, pills, shortcuts, and dialog accents.
+- **Living Palette & AMOLED**: Dynamic wallpaper extraction (Android 12+), custom color styles (`TONAL_SPOT`, `EXPRESSIVE`, etc.), and true pure-black `#000000` AMOLED theming (`applyAmoled()`).
+- **Spring Physics & Motion**: Transitions, collapses, and touch responses utilize spring physics and M3 emphasized easing curves (`CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)`).
+- **Tactile Feedback**: Integrate tactile micro-haptics through `PetalHapticEngine` on clicks, drags, and threshold boundaries.
+
+## 4. Navigation & Predictive Back
+- **Predictive Back Coordination**: Back gesture handling is divided between:
+  - System back dispatcher in `BrowserActivity.java` via `OnBackPressedCallback`.
+  - Compose back handling in `PetalPredictiveJunction.kt` via `PredictiveBackHandler`.
+  - State coordination flags: `isOverlayScreenShowing` and `isDecorOverlayShowing`.
+- **System Gesture Exclusions**: Do NOT allow child webviews to capture display edge exclusion zones on Android 10+ (API 29+); always keep edge zones open for system back navigation.
+
+## 5. Stability & Data Protection Guarantee
+- **Strict Zero Data Loss**: Upgrades, schema migrations, and preference updates must never wipe or corrupt user bookmarks, history, passwords, or active tabs.
