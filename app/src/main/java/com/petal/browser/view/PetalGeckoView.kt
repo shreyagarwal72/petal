@@ -85,6 +85,8 @@ class PetalGeckoView @JvmOverloads constructor(
     private var currentProgress: Int = 0
     private var canGoBackVal: Boolean = false
     private var canGoForwardVal: Boolean = false
+    private val backHistoryUrls: java.util.ArrayList<String> = java.util.ArrayList()
+    private var isNavigatingHistory: Boolean = false
     private var favicon: Bitmap? = null
 
     private var mediaBridge: PetalMediaBridge? = null
@@ -111,6 +113,15 @@ class PetalGeckoView @JvmOverloads constructor(
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
             override fun onPageStart(session: GeckoSession, url: String) {
                 isStopped = false
+                if (!isNavigatingHistory && currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true) && !currentUrl.startsWith("about:")) {
+                    if (backHistoryUrls.isEmpty() || backHistoryUrls.last() != currentUrl) {
+                        backHistoryUrls.add(currentUrl)
+                        if (backHistoryUrls.size > 50) {
+                            backHistoryUrls.removeAt(0)
+                        }
+                    }
+                }
+                isNavigatingHistory = false
                 currentUrl = url
                 album.setAlbumTitle(currentTitle, url)
                 updateProgress(10)
@@ -382,12 +393,17 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun goBack() {
         if (canGoBackVal) {
+            isNavigatingHistory = true
+            if (backHistoryUrls.isNotEmpty()) {
+                backHistoryUrls.removeAt(backHistoryUrls.size - 1)
+            }
             session.goBack()
         }
     }
 
     fun goForward() {
         if (canGoForwardVal) {
+            isNavigatingHistory = true
             session.goForward()
         }
     }
@@ -598,7 +614,8 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun getBackHistoryUrl(): String? {
-        return null
+        if (!canGoBackVal) return null
+        return backHistoryUrls.lastOrNull()
     }
 
     fun getBackPreviewBitmap(): Bitmap? {
