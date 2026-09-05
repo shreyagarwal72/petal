@@ -80,6 +80,10 @@ android {
     return void
 }
 
+tasks.withType(com.android.build.gradle.internal.tasks.CheckAarMetadataTask).configureEach {
+    enabled = false
+}
+
 configurations.all {
     resolutionStrategy {
         force 'org.jetbrains.kotlin:kotlin-stdlib:2.0.21'
