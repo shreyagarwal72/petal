@@ -1125,12 +1125,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
             android.view.ViewGroup.LayoutParams.MATCH_PARENT
         ));
-        if (isOverlayScreenShowing) {
-            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-            View bottomNav = findViewById(R.id.bottom_nav_compose);
-            if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
-            if (bottomNav != null) bottomNav.setVisibility(GONE);
-        }
+        isOverlayScreenShowing = true;
+        if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+        if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+        if (appBar != null) appBar.setVisibility(GONE);
+        View appBar_buttons = findViewById(R.id.appBar_buttons);
+        if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+        View bottomNav = findViewById(R.id.bottom_nav_compose);
+        if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
+        if (bottomNav != null) bottomNav.setVisibility(GONE);
+        View fabBubble = findViewById(R.id.fab_bubble);
+        if (fabBubble != null) fabBubble.setVisibility(GONE);
+        hideRefreshAndProgressOverlays();
+
         if (animate) {
             screen.setAlpha(0f);
             contentFrame.addView(screen);
@@ -1689,9 +1697,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (bottomNavCompose != null) {
                 bottomNavCompose.setTranslationY(0f);
                 bottomNavCompose.setVisibility(VISIBLE);
-                String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+                String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
                 boolean isHome = isHomePage(currentUrl);
-                boolean isIncognito = ninjaWebView != null && ninjaWebView.isIncognito();
+                boolean isIncognito = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
+                        ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
+                        : (ninjaWebView != null && ninjaWebView.isIncognito());
                 int currentTabCount = isIncognito ? BrowserContainer.getIncognitoCount() : BrowserContainer.getNormalCount();
                 com.petal.browser.ui.components.PetalNavTab activeTab = isHome ? com.petal.browser.ui.components.PetalNavTab.HOME : com.petal.browser.ui.components.PetalNavTab.TABS;
 
@@ -1705,9 +1715,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void onHomeClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                            if (ninjaWebView != null) {
+                            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl("about:blank");
+                                showAlbum(currentAlbumController, "about:blank");
+                            } else if (ninjaWebView != null) {
                                 ninjaWebView.loadUrl("about:blank");
                                 showAlbum(currentAlbumController, "about:blank");
+                            } else {
+                                addAlbum(getString(R.string.app_name), "about:blank", true);
                             }
                         }
 
@@ -1727,7 +1742,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         public void onMenuClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                             View navView = findViewById(R.id.bottom_nav_compose);
-                            showOverflow(null, navView, 0, ninjaWebView != null ? ninjaWebView.getTitle() : "", ninjaWebView != null ? ninjaWebView.getUrl() : "", null, null, 0);
+                            String title = currentAlbumController != null ? currentAlbumController.getTitle() : (ninjaWebView != null ? ninjaWebView.getTitle() : "");
+                            String url = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
+                            showOverflow(null, navView, 0, title, url, null, null, 0);
                         }
                     }
                 );
@@ -2758,7 +2775,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             currentProgressFraction = ninjaWebView.getProgress() / 100f;
         }
 
-        if (isHomePage(currentUrl)) {
+        if (isHomePage(currentUrl) || isOverlayScreenShowing) {
             composeAddressBar.setVisibility(GONE);
             return;
         } else {
