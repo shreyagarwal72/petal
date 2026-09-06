@@ -146,9 +146,7 @@ object BrowserNavigationDelegate {
 
                 override fun onPrintPdf() {
                     try {
-                        if (webView != null) {
-                            activity.createWebPrintJob(webView)
-                        }
+                        activity.savePageOffline()
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -171,7 +169,7 @@ object BrowserNavigationDelegate {
                 override fun onViewSource() {
                     if (url.isNotEmpty()) {
                         val sourceUrl = if (url.startsWith("view-source:")) url else "view-source:$url"
-                        geckoView?.loadUrl(sourceUrl) ?: webView?.loadUrl(sourceUrl)
+                        geckoView?.loadUrl(sourceUrl)
                     }
                 }
 

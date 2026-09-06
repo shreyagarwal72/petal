@@ -178,20 +178,10 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun toggleCaretBrowsing(context: Context, webView: WebView?): Boolean {
-        return toggleCaretBrowsing(context, webView as? com.petal.browser.browser.AlbumController)
-    }
-
-    @JvmStatic
     fun setCaretBrowsing(context: Context, controller: com.petal.browser.browser.AlbumController?, enabled: Boolean) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         sp.edit().putBoolean("sp_caret_browsing", enabled).apply()
         applyCaretBrowsing(controller, enabled)
-    }
-
-    @JvmStatic
-    fun setCaretBrowsing(context: Context, webView: WebView?, enabled: Boolean) {
-        setCaretBrowsing(context, webView as? com.petal.browser.browser.AlbumController, enabled)
     }
 
     @JvmStatic
@@ -207,11 +197,6 @@ object PetalAccessibilityEngine {
         } else if (controller is WebView) {
             controller.evaluateJavascript(js, null)
         }
-    }
-
-    @JvmStatic
-    fun applyCaretBrowsing(webView: WebView?, enabled: Boolean) {
-        applyCaretBrowsing(webView as? com.petal.browser.browser.AlbumController, enabled)
     }
 
     // ── 5. System Caption Settings Launcher ─────────────────────────────────
@@ -276,11 +261,6 @@ object PetalAccessibilityEngine {
             }
         }
         return false
-    }
-
-    @JvmStatic
-    fun handleGenericMotion(webView: NinjaWebView, event: MotionEvent): Boolean {
-        return handleGenericMotion(webView as com.petal.browser.browser.AlbumController, event)
     }
 
     // ── 7. JS Interface for Accessibility ────────────────────────────────────
