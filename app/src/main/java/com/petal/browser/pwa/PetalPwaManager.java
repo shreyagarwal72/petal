@@ -94,10 +94,6 @@ public class PetalPwaManager {
         }
     }
 
-    public PetalPwaManager(Context context, WebView webView, PwaInstallPromptListener listener) {
-        this(context, (com.petal.browser.browser.AlbumController) (webView instanceof com.petal.browser.browser.AlbumController ? (com.petal.browser.browser.AlbumController) webView : null), listener);
-    }
-
     /**
      * Configures WebSettings required for PWAs: DOM Storage, Database, IndexedDB, JS, Geolocation.
      */
