@@ -1414,6 +1414,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             contentFrame.addView(incognitoHome);
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
+            updatePersistentBottomNav();
         } else if (isHomePage(url)) {
             View composeView = PetalComposeBridge.createComposeHomeView(this, BrowserContainer.size(), new PetalHomeActionHandler() {
                 @Override
@@ -1571,6 +1572,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             contentFrame.addView(composeView);
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
+            updatePersistentBottomNav();
         } else {
             if (av.getParent() != null) {
                 ((android.view.ViewGroup) av.getParent()).removeView(av);
