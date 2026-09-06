@@ -556,6 +556,15 @@ class PetalGeckoView @JvmOverloads constructor(
         session.purgeHistory()
     }
 
+    fun reloadWithoutInit() {
+        isStopped = false
+        session.reload()
+    }
+
+    fun setProfileChanged() {
+        applySettings()
+    }
+
     fun evaluateJavascript(script: String, callback: ((String?) -> Unit)?) {
         // GeckoView executes scripts via WebExtensions or internal session delegates
     }
