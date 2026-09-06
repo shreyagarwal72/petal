@@ -287,6 +287,23 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
             }
 
+            override fun onCrash(session: GeckoSession) {
+                // Per GeckoView docs: once the content process crashes, the session is
+                // permanently closed/unusable. Without re-opening and reloading here, the
+                // tab is left showing the last URL with a blank page indefinitely - this
+                // is the root cause of "page loads but shows blank" that a manual reload
+                // happens to fix (reload re-triggers loadUrl, masking the real problem).
+                android.util.Log.w(TAG, "GeckoSession content process crashed for $currentUrl - reopening session")
+                recoverCrashedSession()
+            }
+
+            override fun onKill(session: GeckoSession) {
+                // Same recovery as onCrash: the OS/Gecko killed the content process
+                // (e.g. under memory pressure), leaving the session closed and unusable.
+                android.util.Log.w(TAG, "GeckoSession content process killed for $currentUrl - reopening session")
+                recoverCrashedSession()
+            }
+
             override fun onContextMenu(
                 session: GeckoSession,
                 screenX: Int,
@@ -541,6 +558,28 @@ class PetalGeckoView @JvmOverloads constructor(
         currentUrl = targetUrl
         album.setAlbumTitle(targetUrl, targetUrl)
         session.loadUri(targetUrl)
+    }
+
+    /**
+     * Recovers a GeckoSession after its content process has crashed or been killed.
+     * Per GeckoView's documented contract, the session is permanently closed and
+     * unusable at that point; re-opening it against the shared runtime and reloading
+     * the last URL is the only way to restore a usable page. No page state (scroll
+     * position, form data) survives this - that data is lost with the killed process.
+     */
+    private fun recoverCrashedSession() {
+        try {
+            val runtime = PetalGeckoRuntime.getOrCreate(context)
+            if (!session.isOpen) {
+                session.open(runtime)
+            }
+            val urlToRestore = currentUrl
+            if (urlToRestore.isNotEmpty() && !urlToRestore.equals("about:blank", ignoreCase = true)) {
+                session.loadUri(urlToRestore)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Failed to recover crashed GeckoSession: ${e.message}", e)
+        }
     }
 
     fun canGoBack(): Boolean = canGoBackVal
