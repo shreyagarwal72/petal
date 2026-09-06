@@ -162,8 +162,14 @@ dependencies {
     // Hidden API bypass for non-SDK interface access (e.g. GeckoThread on Android 15/16)
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
 
-    // Mozilla GeckoView (Stable Engine)
-    implementation 'org.mozilla.geckoview:geckoview:155.0.20260903215306'
+    // Mozilla GeckoView (Release channel, stable)
+    // Was pinned to 155.0.20260903215306, a Nightly-train build (Sept 3, 2026) that
+    // deterministically SIGSEGVs on GeckoThread bootstrap (libmozglue.so nativeRun)
+    // on newer Android/MediaTek devices. Pinned to the latest Release-channel build
+    // published for the org.mozilla.geckoview:geckoview artifact on maven.mozilla.org
+    // (verified via https://mvnrepository.com/artifact/org.mozilla.geckoview/geckoview,
+    // corresponds to the Firefox 154 release train, built/published Aug 25, 2026).
+    implementation 'org.mozilla.geckoview:geckoview:154.0.20260824154132'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.51.1'
