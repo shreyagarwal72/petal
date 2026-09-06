@@ -159,8 +159,8 @@ dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.1'
     implementation 'com.google.mlkit:barcode-scanning:17.3.0'
 
-    // Guava for high performance host/domain parsing
-    implementation 'com.google.guava:guava:33.2.1-android'
+    // Hidden API bypass for non-SDK interface access (e.g. GeckoThread on Android 15/16)
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
 
     // Mozilla GeckoView (Stable Engine)
     implementation 'org.mozilla.geckoview:geckoview:155.0.20260903215306'
