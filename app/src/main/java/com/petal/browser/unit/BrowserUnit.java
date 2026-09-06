@@ -430,20 +430,28 @@ public class BrowserUnit {
     }
 
     public static String redirectURL (WebView ninjaWebView, SharedPreferences sp, String url) {
+        if (url == null) return null;
         try {
             List<CustomRedirect> redirects = CustomRedirectsHelper.getRedirects(sp);
             for (int i = 0; i < redirects.size(); i++) {
                 CustomRedirect customRedirect = redirects.get(i);
-                if (url.contains(customRedirect.getSource()) && sp.getBoolean(customRedirect.getSource(), true)) {
-                    ninjaWebView.stopLoading();
+                if (customRedirect != null && customRedirect.getSource() != null && customRedirect.getTarget() != null &&
+                        url.contains(customRedirect.getSource()) && sp != null && sp.getBoolean(customRedirect.getSource(), true)) {
+                    if (ninjaWebView != null) {
+                        try { ninjaWebView.stopLoading(); } catch (Exception ignored) {}
+                    }
                     url = url.replace(customRedirect.getSource(), customRedirect.getTarget());
                     return url;
                 }
             }
-        } catch (JSONException e) {
+        } catch (Exception e) {
             Log.e("Redirect error", e.toString());
         }
         return url;
+    }
+
+    public static String redirectURL(SharedPreferences sp, String url) {
+        return redirectURL(null, sp, url);
     }
 
     public static void openInBackground(Activity activity, WebView webView) {
