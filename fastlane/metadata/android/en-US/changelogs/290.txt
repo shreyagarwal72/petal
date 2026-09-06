@@ -1,0 +1,6 @@
+v2.9 - Warp Speed Downloads & Background Magic 🚀⚡
+• Instant External Download Handoff: Streamlined external manager integration (1DM, ADM, AB Download Manager, Navi) to dispatch download URLs, headers, and cookies immediately without redundant in-app prompts. Built-in Fetch2 downloader is untouched.
+• Background Redirect Navigation: Added Privacy setting to seamlessly divert link redirects into new background tabs.
+• Custom DNS-over-HTTPS (DoH): Direct input support for custom DoH resolvers with real-time UI validation.
+• Long-Press Tabs Quick Action: Long-pressing the Tabs counter pill instantly opens a fresh tab with haptic feedback.
+• Zero Data Loss Guarantee across tabs, history, and user preferences.

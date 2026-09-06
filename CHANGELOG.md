@@ -1,3 +1,17 @@
+### v2.9 - Warp Speed Downloads & Background Magic 🚀⚡
+- **⚡ Streamlined External Download Dispatch (Issue #6)**:
+  - **Instant External Handoff**: When an external download manager (1DM, ADM, AB Download Manager, Navi) is selected, Petal skips redundant in-app download confirmation prompts and dispatches download URLs, cookies, and headers directly to the external app.
+  - **Untouched Built-in Downloader**: The built-in multi-threaded Fetch2 downloader continues to present the full download confirmation modal dialog as expected.
+- **🔄 Smart Background Redirect Navigation (Issue #6)**:
+  - **Open Redirects in Background Tab**: Added setting in *Settings > Privacy & Security* to automatically open link redirects in new background tabs without disrupting current reading sessions.
+  - **GeckoView Navigation Routing**: Implemented intelligent cross-origin and window-targeting redirect checks within GeckoView's navigation delegate.
+- **🛡️ Custom DNS-over-HTTPS (DoH) Endpoint**:
+  - **Custom DoH Provider**: Enhanced Private DNS Protection settings to support custom DoH URLs alongside standard Cloudflare and NextDNS providers.
+- **📑 Quick Tab Creation on Long-Press**:
+  - **Tactile Long-Press on Tabs Button**: Long-pressing the Tabs counter pill on the bottom navigation bar instantly spawns a new tab with pleasant haptic feedback.
+- **🔒 Zero Data Loss Guarantee**:
+  - Strictly preserves existing SQLite bookmarks, browsing history, user preferences, and session state.
+
 ### v2.8.2
 - **🎬 Native GeckoView MediaSession & Picture-in-Picture Engine**:
   - **Gecko MediaSession Integration**: Wired GeckoView's native `GeckoSession.mediaSessionDelegate` (`MediaSession.Delegate`) directly into `PetalMediaBridge`, detecting HTML5 play, pause, stop, position scrubbing, and track duration events across all Gecko tabs.
