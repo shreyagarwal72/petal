@@ -389,7 +389,7 @@ fun PetalScreenWrapper(
                         }
                     }
                     .then(
-                        if (backgroundSnapshot == null && !isBehindTopScreen) Modifier.background(MaterialTheme.colorScheme.background)
+                        if (!isBehindTopScreen) Modifier.background(MaterialTheme.colorScheme.background)
                         else Modifier
                     )
             ) {
