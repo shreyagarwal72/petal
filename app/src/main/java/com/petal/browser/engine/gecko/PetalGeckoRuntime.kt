@@ -33,18 +33,19 @@ object PetalGeckoRuntime {
             .aboutConfigEnabled(false)
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
-                    .antiTracking(ContentBlocking.AntiTracking.STRICT)
-                    .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY)
+                    .antiTracking(ContentBlocking.AntiTracking.DEFAULT)
+                    .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
-                    .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
+                    .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.DEFAULT)
                     .build()
             )
             .javaScriptEnabled(sp.getBoolean("profileStandard_javascript", true))
             .consoleOutput(false)
+            .webManifest(true)
 
         val newRuntime = GeckoRuntime.create(appContext, settingsBuilder.build())
         runtime = newRuntime
-        Log.i(TAG, "Initialized GeckoRuntime with STRICT anti-tracking and content blocking")
+        Log.i(TAG, "Initialized GeckoRuntime with standard tracking protection and high-performance pipeline")
         return newRuntime
     }
 

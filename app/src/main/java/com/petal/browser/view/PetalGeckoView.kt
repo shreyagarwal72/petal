@@ -108,12 +108,27 @@ class PetalGeckoView @JvmOverloads constructor(
     private var onScrollChangeListener: OnScrollChangeListener? = null
     private var lastScrollHapticY: Int = 0
 
+    val loadingProgressBar = com.google.android.material.progressindicator.LinearProgressIndicator(context).apply {
+        isIndeterminate = false
+        max = 100
+        progress = 0
+        trackThickness = (3 * resources.displayMetrics.density).toInt()
+        val typedValue = android.util.TypedValue()
+        context.theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
+        setIndicatorColor(typedValue.data)
+        visibility = View.GONE
+    }
+
     init {
         isNestedScrollingEnabled = true
         addView(
             geckoView,
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
+        val progressParams = LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            gravity = android.view.Gravity.TOP
+        }
+        addView(loadingProgressBar, progressParams)
         initGeckoSession()
         album.setBrowserController(globalBrowserController)
     }
@@ -465,6 +480,15 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     private fun updateProgress(progress: Int) {
+        post {
+            if (progress >= 100 || progress == BrowserUnit.LOADING_STOPPED || isStopped) {
+                loadingProgressBar.visibility = View.GONE
+                loadingProgressBar.progress = 0
+            } else {
+                loadingProgressBar.visibility = View.VISIBLE
+                loadingProgressBar.setProgressCompat(progress, true)
+            }
+        }
         if (isForegroundTab && globalBrowserController != null) {
             val p = if (!isStopped) progress else BrowserUnit.LOADING_STOPPED
             globalBrowserController?.updateProgress(p)
