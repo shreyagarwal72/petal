@@ -611,15 +611,15 @@ class PetalGeckoView @JvmOverloads constructor(
 
     override fun canScrollVertically(direction: Int): Boolean {
         if (direction < 0) {
-            // Check if we can scroll up: return true if scrolled down (scrollY > 0)
+            // Check if we can scroll up: return true if scrolled down (currentScrollY > 0)
             return currentScrollY > 0 || geckoView.canScrollVertically(direction)
         }
         return geckoView.canScrollVertically(direction)
     }
 
-    override fun getScrollY(): Int = currentScrollY
+    fun getPageScrollY(): Int = currentScrollY
 
-    override fun getScrollX(): Int = currentScrollX
+    fun getPageScrollX(): Int = currentScrollX
 
     fun setProfileChanged() {
         applySettings()

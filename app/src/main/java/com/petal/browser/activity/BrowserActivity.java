@@ -3270,7 +3270,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             
             boolean isScrolledToTop = false;
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getScrollY() <= 0;
+                isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getPageScrollY() <= 0;
             } else if (ninjaWebView != null) {
                 isScrolledToTop = ninjaWebView.getScrollY() <= 0;
             }
