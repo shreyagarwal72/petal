@@ -168,48 +168,50 @@ object PetalAccessibilityEngine {
     }
 
     @JvmStatic
-    fun toggleCaretBrowsing(context: Context, webView: WebView?): Boolean {
+    fun toggleCaretBrowsing(context: Context, controller: com.petal.browser.browser.AlbumController?): Boolean {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val current = sp.getBoolean("sp_caret_browsing", false)
         val newState = !current
         sp.edit().putBoolean("sp_caret_browsing", newState).apply()
-        applyCaretBrowsing(webView, newState)
+        applyCaretBrowsing(controller, newState)
         return newState
     }
 
     @JvmStatic
-    fun setCaretBrowsing(context: Context, webView: WebView?, enabled: Boolean) {
+    fun toggleCaretBrowsing(context: Context, webView: WebView?): Boolean {
+        return toggleCaretBrowsing(context, webView as? com.petal.browser.browser.AlbumController)
+    }
+
+    @JvmStatic
+    fun setCaretBrowsing(context: Context, controller: com.petal.browser.browser.AlbumController?, enabled: Boolean) {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         sp.edit().putBoolean("sp_caret_browsing", enabled).apply()
-        applyCaretBrowsing(webView, enabled)
+        applyCaretBrowsing(controller, enabled)
+    }
+
+    @JvmStatic
+    fun setCaretBrowsing(context: Context, webView: WebView?, enabled: Boolean) {
+        setCaretBrowsing(context, webView as? com.petal.browser.browser.AlbumController, enabled)
+    }
+
+    @JvmStatic
+    fun applyCaretBrowsing(controller: com.petal.browser.browser.AlbumController?, enabled: Boolean) {
+        if (controller == null) return
+        val js = if (enabled) {
+            "document.designMode = 'on'; window.__petal_caret_mode = true;"
+        } else {
+            "if (window.__petal_caret_mode) { document.designMode = 'off'; window.__petal_caret_mode = false; }"
+        }
+        if (controller is com.petal.browser.view.PetalGeckoView) {
+            controller.evaluateJavascript(js, null)
+        } else if (controller is WebView) {
+            controller.evaluateJavascript(js, null)
+        }
     }
 
     @JvmStatic
     fun applyCaretBrowsing(webView: WebView?, enabled: Boolean) {
-        if (webView == null) return
-        if (enabled) {
-            val js = """
-                (function() {
-                    try {
-                        document.designMode = 'on';
-                        window.__petal_caret_mode = true;
-                    } catch(e) {}
-                })();
-            """.trimIndent()
-            webView.evaluateJavascript(js, null)
-        } else {
-            val js = """
-                (function() {
-                    try {
-                        if (window.__petal_caret_mode) {
-                            document.designMode = 'off';
-                            window.__petal_caret_mode = false;
-                        }
-                    } catch(e) {}
-                })();
-            """.trimIndent()
-            webView.evaluateJavascript(js, null)
-        }
+        applyCaretBrowsing(webView as? com.petal.browser.browser.AlbumController, enabled)
     }
 
     // ── 5. System Caption Settings Launcher ─────────────────────────────────
@@ -236,8 +238,10 @@ object PetalAccessibilityEngine {
     private var lastSwipeTime = 0L
 
     @JvmStatic
-    fun handleGenericMotion(webView: NinjaWebView, event: MotionEvent): Boolean {
-        val context = webView.context ?: return false
+    fun handleGenericMotion(controller: com.petal.browser.browser.AlbumController?, event: MotionEvent): Boolean {
+        if (controller == null) return false
+        val view = controller.getAlbumView()
+        val context = view?.context ?: return false
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val enabled = sp.getBoolean("sp_touchpad_swipe_nav", true)
         if (!enabled) return false
@@ -249,21 +253,34 @@ object PetalAccessibilityEngine {
 
             if (hScroll < -0.65f) {
                 // Swipe Left -> Go Back
-                if (webView.canGoBack()) {
+                if (controller is com.petal.browser.view.PetalGeckoView && controller.canGoBack()) {
                     lastSwipeTime = now
-                    webView.goBack()
+                    controller.goBack()
+                    return true
+                } else if (controller is NinjaWebView && controller.canGoBack()) {
+                    lastSwipeTime = now
+                    controller.goBack()
                     return true
                 }
             } else if (hScroll > 0.65f) {
                 // Swipe Right -> Go Forward
-                if (webView.canGoForward()) {
+                if (controller is com.petal.browser.view.PetalGeckoView && controller.canGoForward()) {
                     lastSwipeTime = now
-                    webView.goForward()
+                    controller.goForward()
+                    return true
+                } else if (controller is NinjaWebView && controller.canGoForward()) {
+                    lastSwipeTime = now
+                    controller.goForward()
                     return true
                 }
             }
         }
         return false
+    }
+
+    @JvmStatic
+    fun handleGenericMotion(webView: NinjaWebView, event: MotionEvent): Boolean {
+        return handleGenericMotion(webView as com.petal.browser.browser.AlbumController, event)
     }
 
     // ── 7. JS Interface for Accessibility ────────────────────────────────────

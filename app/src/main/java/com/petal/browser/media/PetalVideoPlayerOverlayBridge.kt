@@ -11,7 +11,9 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
+import com.petal.browser.browser.AlbumController
 import com.petal.browser.view.NinjaWebView
+import com.petal.browser.view.PetalGeckoView
 
 /**
  * PetalVideoPlayerOverlayBridge
@@ -22,26 +24,28 @@ import com.petal.browser.view.NinjaWebView
  */
 class PetalVideoPlayerOverlayBridge(
     private val activity: Activity,
-    private val webView: NinjaWebView?,
+    private val controller: AlbumController?,
     private val onClose: () -> Unit,
 ) : PetalMediaBridge.MediaStateListener {
+
+    private val mediaBridge: PetalMediaBridge?
+        get() = (controller as? PetalGeckoView)?.getMediaBridge() ?: (controller as? NinjaWebView)?.mediaBridge
 
     private var composeView: ComposeView? = null
     private var previousListener: PetalMediaBridge.MediaStateListener? = null
 
     // Reactive states observed by PetalVideoPlayerOverlay
     var isPlaying by mutableStateOf(true)
-    var title by mutableStateOf(webView?.title ?: "Web Video")
+    var title by mutableStateOf(controller?.title ?: "Web Video")
     var positionMs by mutableLongStateOf(0L)
     var durationMs by mutableLongStateOf(0L)
     var playbackSpeed by mutableFloatStateOf(1.0f)
 
     companion object {
         @JvmStatic
-        fun isYouTubeVideo(webView: NinjaWebView?, targetView: View?): Boolean {
-            val webUrl = webView?.url?.lowercase() ?: ""
-            val originalUrl = webView?.originalUrl?.lowercase() ?: ""
-            if (BrowserMediaDelegate.isYouTubeUrl(webUrl) || BrowserMediaDelegate.isYouTubeUrl(originalUrl)) {
+        fun isYouTubeVideo(controller: AlbumController?, targetView: View?): Boolean {
+            val webUrl = controller?.url?.lowercase() ?: ""
+            if (BrowserMediaDelegate.isYouTubeUrl(webUrl)) {
                 return true
             }
             // Check view class / hierarchy for YouTube embedded players
@@ -59,12 +63,12 @@ class PetalVideoPlayerOverlayBridge(
         detachOverlay()
 
         // If the video is on YouTube or is an embedded YouTube video, bypass overlay
-        if (isYouTubeVideo(webView, targetView)) {
+        if (isYouTubeVideo(controller, targetView)) {
             return null
         }
 
         // Hook into mediaBridge
-        webView?.mediaBridge?.let { bridge ->
+        mediaBridge?.let { bridge ->
             previousListener = bridge.listener
             bridge.listener = this
             bridge.injectMediaHooks()
@@ -79,30 +83,30 @@ class PetalVideoPlayerOverlayBridge(
                     durationMs = durationMs,
                     playbackSpeed = playbackSpeed,
                     onPlayPauseToggle = {
-                        val mediaBridge = webView?.mediaBridge
+                        val mb = mediaBridge
                         if (isPlaying) {
-                            mediaBridge?.pauseMedia()
+                            mb?.pauseMedia()
                             isPlaying = false
                         } else {
-                            mediaBridge?.playMedia()
+                            mb?.playMedia()
                             isPlaying = true
                         }
                     },
                     onSeek = { targetMs ->
                         positionMs = targetMs
-                        webView?.mediaBridge?.seekMediaTo(targetMs)
+                        mediaBridge?.seekMediaTo(targetMs)
                     },
                     onFastForward = {
-                        webView?.mediaBridge?.skip(10)
+                        mediaBridge?.skip(10)
                         positionMs = (positionMs + 10000L).coerceAtMost(if (durationMs > 0) durationMs else Long.MAX_VALUE)
                     },
                     onRewind = {
-                        webView?.mediaBridge?.skip(-10)
+                        mediaBridge?.skip(-10)
                         positionMs = (positionMs - 10000L).coerceAtLeast(0L)
                     },
                     onSpeedChange = { speed ->
                         playbackSpeed = speed
-                        webView?.mediaBridge?.changeSpeed(speed)
+                        mediaBridge?.changeSpeed(speed)
                     },
                     onPipClick = {
                         BrowserMediaDelegate.triggerSystemPipMode(activity as com.petal.browser.activity.BrowserActivity)
@@ -128,7 +132,7 @@ class PetalVideoPlayerOverlayBridge(
 
     fun detachOverlay() {
         // Restore previous listener if any
-        webView?.mediaBridge?.let { bridge ->
+        mediaBridge?.let { bridge ->
             if (bridge.listener == this) {
                 bridge.listener = previousListener
             }

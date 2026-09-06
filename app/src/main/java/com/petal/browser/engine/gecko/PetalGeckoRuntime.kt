@@ -49,6 +49,15 @@ object PetalGeckoRuntime {
     }
 
     @JvmStatic
+    fun clearData(context: Context, flags: Long = org.mozilla.geckoview.StorageController.ClearFlags.ALL) {
+        try {
+            getOrCreate(context).storageController.clearData(flags)
+        } catch (e: Exception) {
+            Log.w(TAG, "Error clearing Gecko data: ${e.message}")
+        }
+    }
+
+    @JvmStatic
     fun syncPreferences(sp: SharedPreferences) {
         runtime?.let { rt ->
             try {
