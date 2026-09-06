@@ -216,6 +216,9 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
     public void setMediaBridge(com.petal.browser.media.PetalMediaBridge mediaBridge) {
         this.mediaBridge = mediaBridge;
+        if (this.mediaBridge != null) {
+            this.mediaBridge.attachWebView(this);
+        }
     }
 
     private com.petal.browser.pwa.PetalPwaManager pwaManager;

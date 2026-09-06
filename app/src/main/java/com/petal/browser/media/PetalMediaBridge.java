@@ -100,7 +100,7 @@ public class PetalMediaBridge {
             "})();";
 
     private final Context context;
-    private final WebView webView;
+    private WebView webView;
     private MediaStateListener listener;
 
     public interface MediaStateListener {
@@ -121,12 +121,21 @@ public class PetalMediaBridge {
         return listener;
     }
 
+    public PetalMediaBridge(Context context, MediaStateListener listener) {
+        this(context, null, listener);
+    }
+
     public PetalMediaBridge(Context context, WebView webView, MediaStateListener listener) {
         this.context = context;
-        this.webView = webView;
         this.listener = listener;
+        attachWebView(webView);
+    }
 
-        webView.addJavascriptInterface(new MediaJsInterface(), JS_INTERFACE_NAME);
+    public void attachWebView(WebView webView) {
+        this.webView = webView;
+        if (this.webView != null) {
+            this.webView.addJavascriptInterface(new MediaJsInterface(), JS_INTERFACE_NAME);
+        }
     }
 
     public void injectMediaHooks() {

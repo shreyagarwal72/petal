@@ -1,3 +1,11 @@
+### v2.8.1
+- **🐛 PetalMediaBridge NullPointerException & WebView Deferred Binding Fix**:
+  - **Deferred WebView Binding**: Resolved launch `NullPointerException` inside `PetalMediaBridge` by implementing safe deferred binding (`attachWebView(WebView)`) and null-safe bridge initialization for GeckoView tabs.
+  - **Dynamic Bidirectional Registration**: Ensured `NinjaWebView.setMediaBridge` automatically registers the Javascript media interface whenever a WebView is attached, maintaining full HTML5 media controls and background media notifications.
+  - **GeckoView Startup Stability**: Guaranteed clean app startup without crash during tab instantiation and session rehydration.
+- **🔒 Zero Data Loss Guarantee**:
+  - Full backward compatibility across saved tabs, bookmarks, SQLite history, and user preferences.
+
 ### v2.8 - Bye Bye WebView, Hello Gecko Gecko! 🦎💨
 
 - **🦎 Full Mozilla GeckoView 154 Engine Migration**:
