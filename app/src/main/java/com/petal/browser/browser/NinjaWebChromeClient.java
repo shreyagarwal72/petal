@@ -116,10 +116,10 @@ public class NinjaWebChromeClient extends WebChromeClient {
         if (context instanceof com.petal.browser.activity.BrowserActivity) {
             com.petal.browser.activity.BrowserActivity activity = (com.petal.browser.activity.BrowserActivity) context;
             boolean isIncognito = ninjaWebView != null && ninjaWebView.isIncognito();
-            NinjaWebView newTabWebView = activity.addAlbumForPopup(activity.getString(R.string.app_name), isIncognito);
-            if (newTabWebView != null) {
+            AlbumController popupAlbum = activity.addAlbumForPopup(activity.getString(R.string.app_name), isIncognito);
+            if (popupAlbum instanceof NinjaWebView) {
                 WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
-                transport.setWebView(newTabWebView);
+                transport.setWebView((NinjaWebView) popupAlbum);
                 resultMsg.sendToTarget();
                 return true;
             }
