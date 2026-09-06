@@ -139,6 +139,15 @@ class PetalGeckoView @JvmOverloads constructor(
                 currentUrl = url
                 album.setAlbumTitle(currentTitle, url)
                 updateProgress(10)
+
+                val act = getHostActivity()
+                if (act is com.petal.browser.activity.BrowserActivity) {
+                    act.runOnUiThread {
+                        act.updateOmniBox()
+                        act.updateAddressBar()
+                        act.updatePersistentBottomNav()
+                    }
+                }
             }
 
             override fun onPageStop(session: GeckoSession, success: Boolean) {
@@ -149,6 +158,11 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.resetRefreshState()
+                    act.runOnUiThread {
+                        act.updateOmniBox()
+                        act.updateAddressBar()
+                        act.updatePersistentBottomNav()
+                    }
                 }
 
                 if (!isIncognito && currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true) && !currentUrl.startsWith("about:")) {
@@ -483,7 +497,7 @@ class PetalGeckoView @JvmOverloads constructor(
     // ─────────────────────────────────────────────────────────────────────────
 
     fun loadUrl(url: String) {
-        val redirected = BrowserUnit.redirectURL(null, sp, url)
+        val redirected = BrowserUnit.redirectURL(sp, url)
         val targetUrl = BrowserUnit.queryWrapper(context, redirected)
 
         if (BrowserUnit.isHomePage(targetUrl) || BrowserUnit.isHomePage(url)) {
@@ -495,6 +509,7 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         currentUrl = targetUrl
+        album.setAlbumTitle(targetUrl, targetUrl)
         session.loadUri(targetUrl)
     }
 
