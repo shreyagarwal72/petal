@@ -573,6 +573,19 @@ class PetalGeckoView @JvmOverloads constructor(
             if (!session.isOpen) {
                 session.open(runtime)
             }
+            // Reopening the session alone isn't enough: GeckoView's compositor can stay
+            // bound to the dead content process's Surface, so the reloaded page finishes
+            // "loading" (title/progress/URL bar all update via the delegates above) but no
+            // pixels ever get composited - exactly the "page loads but shows blank" symptom.
+            // Detaching and reattaching the underlying GeckoView forces it through
+            // onDetachedFromWindow/onAttachedToWindow, which makes GeckoView bind a fresh
+            // GeckoDisplay/Surface to the new content process instead of the stale one.
+            val parent = geckoView.parent as? ViewGroup
+            if (parent != null) {
+                val index = parent.indexOfChild(geckoView)
+                parent.removeView(geckoView)
+                parent.addView(geckoView, index)
+            }
             val urlToRestore = currentUrl
             if (urlToRestore.isNotEmpty() && !urlToRestore.equals("about:blank", ignoreCase = true)) {
                 session.loadUri(urlToRestore)
