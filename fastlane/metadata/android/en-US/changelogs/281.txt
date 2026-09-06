@@ -1,0 +1,4 @@
+v2.8.1 Hotfix:
+• Resolved PetalMediaBridge NullPointerException on launch by implementing deferred WebView binding and null-safe initialization for GeckoView tabs.
+• Ensured bidirectional JS media interface registration when WebViews are attached.
+• Enhanced startup stability and tab rehydration with zero data loss.
