@@ -308,89 +308,22 @@ public class UpdateUnit {
     }
 
     private static void downloadAndInstallApk(final Activity activity, final String apkUrl, final String version) {
-        Toast.makeText(activity, "Downloading update " + version + "...", Toast.LENGTH_SHORT).show();
-        executor.execute(() -> {
+        long downloadId = com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueueSystemUpdateDownload(
+                activity.getApplicationContext(),
+                apkUrl,
+                version
+        );
+        if (downloadId <= 0L) {
             try {
-                java.io.File apkFile = new java.io.File(activity.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "petal_update_" + version + ".apk");
-                if (apkFile.exists()) apkFile.delete();
-
-                String currentUrl = apkUrl;
-                HttpURLConnection conn = null;
-                int redirects = 0;
-                while (redirects < 5) {
-                    URL url = new URL(currentUrl);
-                    conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestProperty("User-Agent", "PetalBrowserApp/" + version);
-                    conn.setInstanceFollowRedirects(true);
-                    conn.setConnectTimeout(10000);
-                    conn.setReadTimeout(10000);
-                    int status = conn.getResponseCode();
-                    if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == 307 || status == 308) {
-                        String redirectUrl = conn.getHeaderField("Location");
-                        if (redirectUrl != null && !redirectUrl.isEmpty()) {
-                            currentUrl = redirectUrl;
-                            redirects++;
-                            continue;
-                        }
-                    }
-                    break;
-                }
-
-                if (conn == null || conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                    throw new Exception("HTTP status " + (conn != null ? conn.getResponseCode() : -1));
-                }
-
-                try (java.io.InputStream is = new java.io.BufferedInputStream(conn.getInputStream(), 65536);
-                     java.io.OutputStream os = new java.io.BufferedOutputStream(new java.io.FileOutputStream(apkFile), 65536)) {
-                    byte[] buffer = new byte[65536];
-                    int len;
-                    while ((len = is.read(buffer)) != -1) {
-                        os.write(buffer, 0, len);
-                    }
-                    os.flush();
-                }
-
-                activity.runOnUiThread(() -> installApk(activity, apkFile));
-            } catch (Exception e) {
-                Log.e(TAG, "Error downloading update APK", e);
-                activity.runOnUiThread(() -> {
-                    Toast.makeText(activity, "Download failed, opening browser...", Toast.LENGTH_SHORT).show();
-                    try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl));
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        activity.startActivity(intent);
-                    } catch (Exception ignored) {}
-                });
-            }
-        });
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                activity.startActivity(intent);
+            } catch (Exception ignored) {}
+        }
     }
 
     private static void installApk(Activity activity, java.io.File apkFile) {
-        try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                if (!activity.getPackageManager().canRequestPackageInstalls()) {
-                    Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
-                    intent.setData(Uri.parse("package:" + activity.getPackageName()));
-                    activity.startActivity(intent);
-                    Toast.makeText(activity, "Please grant permission to install updates", Toast.LENGTH_LONG).show();
-                    return;
-                }
-            }
-
-            Uri apkUri = androidx.core.content.FileProvider.getUriForFile(
-                    activity,
-                    activity.getPackageName() + ".fileprovider",
-                    apkFile
-            );
-
-            Intent installIntent = new Intent(Intent.ACTION_VIEW);
-            installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
-            installIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            activity.startActivity(installIntent);
-        } catch (Exception e) {
-            Log.e(TAG, "Error launching package installer", e);
-            Toast.makeText(activity, "Failed to launch installer: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+        com.petal.browser.unit.PetalUpdateInstallerReceiver.installDownloadedApk(activity, apkFile);
     }
 
     private static void showUpToDateToast(Activity activity, String currentVersion) {
