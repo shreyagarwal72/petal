@@ -164,6 +164,15 @@ public class PetalMediaBridge {
         }
     }
 
+    private double lastKnownPositionSec = 0.0;
+    private double lastKnownDurationSec = 0.0;
+    private boolean isMutedState = false;
+
+    public void updatePositionState(double positionSec, double durationSec) {
+        this.lastKnownPositionSec = positionSec;
+        this.lastKnownDurationSec = durationSec;
+    }
+
     public void playMedia() {
         if (activeGeckoMediaSession != null) {
             try {
@@ -217,9 +226,10 @@ public class PetalMediaBridge {
     }
 
     public void toggleMute() {
+        isMutedState = !isMutedState;
         if (activeGeckoMediaSession != null) {
             try {
-                activeGeckoMediaSession.muteAudio(!activeGeckoMediaSession.isMuted());
+                activeGeckoMediaSession.muteAudio(isMutedState);
                 return;
             } catch (Exception ignored) {}
         }
@@ -238,7 +248,12 @@ public class PetalMediaBridge {
     public void skip(int deltaSeconds) {
         if (activeGeckoMediaSession != null) {
             try {
-                activeGeckoMediaSession.seekTo(activeGeckoMediaSession.getPosition() + deltaSeconds, false);
+                double target = Math.max(0.0, lastKnownPositionSec + deltaSeconds);
+                if (lastKnownDurationSec > 0.0) {
+                    target = Math.min(lastKnownDurationSec, target);
+                }
+                activeGeckoMediaSession.seekTo(target, false);
+                lastKnownPositionSec = target;
                 return;
             } catch (Exception ignored) {}
         }
@@ -265,7 +280,9 @@ public class PetalMediaBridge {
     public void seekMediaTo(long positionMs) {
         if (activeGeckoMediaSession != null) {
             try {
-                activeGeckoMediaSession.seekTo(positionMs / 1000.0, false);
+                double target = positionMs / 1000.0;
+                activeGeckoMediaSession.seekTo(target, false);
+                lastKnownPositionSec = target;
                 return;
             } catch (Exception ignored) {}
         }

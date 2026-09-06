@@ -43,7 +43,9 @@ fun PrivacySettingsScreen(
     val httpsOnly by viewModel.httpsOnly.collectAsStateWithLifecycle()
     val javaScriptEnabled by viewModel.javaScriptEnabled.collectAsStateWithLifecycle()
     val blockPopups by viewModel.blockPopups.collectAsStateWithLifecycle()
+    val openRedirectsInBackground by viewModel.openRedirectsInBackground.collectAsStateWithLifecycle()
     val privateDnsMode by viewModel.privateDnsMode.collectAsStateWithLifecycle()
+    val customDohUrl by viewModel.customDohUrl.collectAsStateWithLifecycle()
 
     PrivacySettingsScreenContent(
         adBlockEnabled = adBlockEnabled,
@@ -56,7 +58,9 @@ fun PrivacySettingsScreen(
         httpsOnly = httpsOnly,
         javaScriptEnabled = javaScriptEnabled,
         blockPopups = blockPopups,
+        openRedirectsInBackground = openRedirectsInBackground,
         privateDnsMode = privateDnsMode,
+        customDohUrl = customDohUrl,
         onAdBlockEnabledChange = viewModel::setAdBlockEnabled,
         onBlockThirdPartyCookiesChange = viewModel::setBlockThirdPartyCookies,
         onFingerprintProtectionChange = viewModel::setFingerprintProtection,
@@ -67,7 +71,9 @@ fun PrivacySettingsScreen(
         onHttpsOnlyChange = viewModel::setHttpsOnly,
         onJavaScriptEnabledChange = viewModel::setJavaScriptEnabled,
         onBlockPopupsChange = viewModel::setBlockPopups,
+        onOpenRedirectsInBackgroundChange = viewModel::setOpenRedirectsInBackground,
         onPrivateDnsModeChange = viewModel::setPrivateDnsMode,
+        onCustomDohUrlChange = viewModel::setCustomDohUrl,
         onNavigateBack = onNavigateBack,
         modifier = modifier
     )
@@ -86,7 +92,9 @@ fun PrivacySettingsScreenContent(
     httpsOnly: Boolean,
     javaScriptEnabled: Boolean,
     blockPopups: Boolean,
+    openRedirectsInBackground: Boolean,
     privateDnsMode: String,
+    customDohUrl: String,
     onAdBlockEnabledChange: (Boolean) -> Unit,
     onBlockThirdPartyCookiesChange: (Boolean) -> Unit,
     onFingerprintProtectionChange: (Boolean) -> Unit,
@@ -97,7 +105,9 @@ fun PrivacySettingsScreenContent(
     onHttpsOnlyChange: (Boolean) -> Unit,
     onJavaScriptEnabledChange: (Boolean) -> Unit,
     onBlockPopupsChange: (Boolean) -> Unit,
+    onOpenRedirectsInBackgroundChange: (Boolean) -> Unit,
     onPrivateDnsModeChange: (String) -> Unit,
+    onCustomDohUrlChange: (String) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -303,6 +313,16 @@ fun PrivacySettingsScreenContent(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     ToggleRow(
+                        title = "Open Redirect Links in Background",
+                        subtitle = "Detect external redirect links and spawn them silently in a background tab",
+                        icon = Icons.Rounded.TabUnselected,
+                        checked = openRedirectsInBackground,
+                        onCheckedChange = onOpenRedirectsInBackgroundChange
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    ToggleRow(
                         title = "HTTPS Security Enforcer",
                         subtitle = "Automatically upgrade connections to HTTPS",
                         icon = Icons.Rounded.Lock,
@@ -334,7 +354,8 @@ fun PrivacySettingsScreenContent(
                         Triple("CLOUDFLARE", "Cloudflare (1.1.1.1)", "Fast & private 1.1.1.1 DNS over HTTPS"),
                         Triple("GOOGLE", "Google Public DNS", "8.8.8.8 high performance resolution"),
                         Triple("CLEANBROWSING", "CleanBrowsing Family Filter", "Blocks adult & malicious sites"),
-                        Triple("OPENDNS", "OpenDNS Home", "Cisco OpenDNS security protection")
+                        Triple("OPENDNS", "OpenDNS Home", "Cisco OpenDNS security protection"),
+                        Triple("CUSTOM", "Custom DNS-over-HTTPS (DoH)", "Enter your preferred DoH resolver endpoint URL")
                     )
 
                     dnsOptions.forEach { (mode, name, desc) ->
@@ -367,6 +388,19 @@ fun PrivacySettingsScreenContent(
                                 }
                             }
                         }
+                    }
+
+                    if (privateDnsMode == "CUSTOM") {
+                        OutlinedTextField(
+                            value = customDohUrl,
+                            onValueChange = onCustomDohUrlChange,
+                            label = { Text("Custom DoH Endpoint URL") },
+                            placeholder = { Text("https://dns.adguard-dns.com/dns-query") },
+                            leadingIcon = { Icon(Icons.Rounded.Dns, contentDescription = null) },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
 
                     OutlinedButton(

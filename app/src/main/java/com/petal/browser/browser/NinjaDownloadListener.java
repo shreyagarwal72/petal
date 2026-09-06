@@ -226,6 +226,14 @@ public class NinjaDownloadListener implements DownloadListener {
             if (context instanceof android.app.Activity && com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet((android.app.Activity) context, downloadUrl, null, mimeType)) {
                 return;
             }
+            // If external download manager is preferred (1DM, ADM, AB Download Manager, Navi),
+            // skip the in-app confirmation popup and launch directly into the chosen manager.
+            if (com.petal.browser.unit.ExternalDownloadManagerHelper.isExternalPreferred(context)) {
+                String guessedFileName = com.petal.browser.unit.HelperUnit.resolveFileName(downloadUrl, contentDisposition, mimeType);
+                BrowserUnit.download(context, downloadUrl, guessedFileName, mimeType);
+                return;
+            }
+            // Built-in download manager confirmation dialog remains untouched
             com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
                 context,
                 downloadUrl,

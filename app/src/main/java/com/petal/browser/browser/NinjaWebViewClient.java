@@ -716,6 +716,11 @@ public class NinjaWebViewClient extends WebViewClient {
         }
         if (mimeType == null) mimeType = "text/plain";
         final String finalMimeType = mimeType;
+        if (com.petal.browser.unit.ExternalDownloadManagerHelper.isExternalPreferred(context)) {
+            String guessedFileName = com.petal.browser.unit.HelperUnit.resolveFileName(url, null, finalMimeType);
+            BrowserUnit.download(context, url, guessedFileName, finalMimeType);
+            return;
+        }
         com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
                 context,
                 url,

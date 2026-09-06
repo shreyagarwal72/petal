@@ -186,8 +186,16 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_block_popups", true)
     }
 
+    override val openRedirectsInBackground: Flow<Boolean> = preferenceFlow("sp_open_redirects_in_background") {
+        sp.getBoolean("sp_open_redirects_in_background", false)
+    }
+
     override val privateDnsMode: Flow<String> = preferenceFlow("sp_private_dns_mode") {
         sp.getString("sp_private_dns_mode", "OFF") ?: "OFF"
+    }
+
+    override val customDohUrl: Flow<String> = preferenceFlow("sp_custom_doh_url") {
+        sp.getString("sp_custom_doh_url", "") ?: ""
     }
 
     // ── Accessibility & Display ───────────────────────────────────────────────
@@ -417,8 +425,16 @@ class SettingsRepositoryImpl @Inject constructor(
             .putBoolean("profileStandard_javascriptPopUp", enabled).apply()
     }
 
+    override suspend fun setOpenRedirectsInBackground(enabled: Boolean) {
+        sp.edit().putBoolean("sp_open_redirects_in_background", enabled).apply()
+    }
+
     override suspend fun setPrivateDnsMode(mode: String) {
         sp.edit().putString("sp_private_dns_mode", mode).apply()
+    }
+
+    override suspend fun setCustomDohUrl(url: String) {
+        sp.edit().putString("sp_custom_doh_url", url).apply()
     }
 
     override suspend fun setTouchHaptics(enabled: Boolean) {

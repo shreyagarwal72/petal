@@ -38,6 +38,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -95,7 +96,7 @@ enum class PetalNavTab {
  * - Icon rotation and spring pop when selected
  * - Animated Tab Count badge with spring bounce
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun PetalBottomNavBar(
     selectedTab: PetalNavTab,
@@ -108,6 +109,7 @@ fun PetalBottomNavBar(
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val animatedCount by animateIntAsState(
         targetValue = tabCount,
         animationSpec = spring(
@@ -131,6 +133,16 @@ fun PetalBottomNavBar(
 
     val tabsLabel = "Tabs ($animatedCount)"
     val newTabLabel = "New"
+
+    val handleTabsLongClick: () -> Unit = {
+        try {
+            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
+                0.85f
+            )
+        } catch (_: Throwable) {}
+        onNewTabClick()
+    }
 
     if (isFloatingStyle) {
         Box(
@@ -227,7 +239,8 @@ fun PetalBottomNavBar(
                             scale = badgeScale.value * iconScale
                         )
                     },
-                    onClick = onTabsClick
+                    onClick = onTabsClick,
+                    onLongClick = handleTabsLongClick
                 )
 
                 FloatingNavTabItem(
@@ -307,9 +320,18 @@ fun PetalBottomNavBar(
                         )
                     }
 
-                    IconButton(
-                        onClick = onTabsClick,
-                        modifier = Modifier.size(48.dp)
+                    val tabsInteractionSource = remember { MutableInteractionSource() }
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .combinedClickable(
+                                interactionSource = tabsInteractionSource,
+                                indication = ripple(bounded = false, radius = 24.dp),
+                                onClick = onTabsClick,
+                                onLongClick = handleTabsLongClick
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
                         TabCountBadge(
                             color = if (selectedTab == PetalNavTab.TABS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -335,6 +357,7 @@ fun PetalBottomNavBar(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun FloatingNavTabItem(
     selected: Boolean,
@@ -342,6 +365,7 @@ private fun FloatingNavTabItem(
     index: Int,
     icon: @Composable (isSelected: Boolean, tint: Color) -> Unit,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -383,8 +407,6 @@ private fun FloatingNavTabItem(
     )
 
     Surface(
-        onClick = onClick,
-        interactionSource = interactionSource,
         shape = CircleShape,
         color = currentBgColor,
         modifier = modifier
@@ -395,6 +417,12 @@ private fun FloatingNavTabItem(
                 scaleY = pressScale
             }
             .clip(CircleShape)
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = ripple(),
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .semantics { contentDescription = label }
     ) {
         Row(

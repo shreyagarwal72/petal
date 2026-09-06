@@ -45,8 +45,14 @@ class PrivacySettingsViewModel @Inject constructor(
     val blockPopups: StateFlow<Boolean> = settingsRepository.blockPopups
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val openRedirectsInBackground: StateFlow<Boolean> = settingsRepository.openRedirectsInBackground
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val privateDnsMode: StateFlow<String> = settingsRepository.privateDnsMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "OFF")
+
+    val customDohUrl: StateFlow<String> = settingsRepository.customDohUrl
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
     fun setAdBlockEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setAdBlockEnabled(enabled)
@@ -88,7 +94,15 @@ class PrivacySettingsViewModel @Inject constructor(
         settingsRepository.setBlockPopups(enabled)
     }
 
+    fun setOpenRedirectsInBackground(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setOpenRedirectsInBackground(enabled)
+    }
+
     fun setPrivateDnsMode(mode: String) = viewModelScope.launch {
         settingsRepository.setPrivateDnsMode(mode)
+    }
+
+    fun setCustomDohUrl(url: String) = viewModelScope.launch {
+        settingsRepository.setCustomDohUrl(url)
     }
 }

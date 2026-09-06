@@ -50,7 +50,9 @@ interface SettingsRepository {
     val httpsOnly: Flow<Boolean>
     val javaScriptEnabled: Flow<Boolean>
     val blockPopups: Flow<Boolean>
+    val openRedirectsInBackground: Flow<Boolean>
     val privateDnsMode: Flow<String>
+    val customDohUrl: Flow<String>
 
     // Accessibility & Display
     val touchHaptics: Flow<Boolean>
@@ -113,7 +115,9 @@ interface SettingsRepository {
     suspend fun setHttpsOnly(enabled: Boolean)
     suspend fun setJavaScriptEnabled(enabled: Boolean)
     suspend fun setBlockPopups(enabled: Boolean)
+    suspend fun setOpenRedirectsInBackground(enabled: Boolean)
     suspend fun setPrivateDnsMode(mode: String)
+    suspend fun setCustomDohUrl(url: String)
 
     suspend fun setTouchHaptics(enabled: Boolean)
     suspend fun setPredictiveBack(enabled: Boolean)

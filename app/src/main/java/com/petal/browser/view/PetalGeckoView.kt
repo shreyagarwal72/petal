@@ -181,6 +181,23 @@ class PetalGeckoView @JvmOverloads constructor(
                     album.setAlbumTitle("Petal Home", "petal://home")
                     return GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
+
+                // If "Open Redirect Links in Background" is enabled, spawn cross-origin redirects/links in background tabs
+                val openRedirectsInBackground = sp.getBoolean("sp_open_redirects_in_background", false)
+                if (openRedirectsInBackground && request.target != GeckoSession.NavigationDelegate.TARGET_WINDOW_CURRENT) {
+                    val act = getHostActivity()
+                    if (act is com.petal.browser.activity.BrowserActivity) {
+                        val currentHost = try { android.net.Uri.parse(currentUrl).host } catch (e: Exception) { null }
+                        val targetHost = try { android.net.Uri.parse(uri).host } catch (e: Exception) { null }
+                        if (!currentHost.isNullOrEmpty() && !targetHost.isNullOrEmpty() && !currentHost.equals(targetHost, ignoreCase = true)) {
+                            act.runOnUiThread {
+                                act.addAlbum(null, uri, false, isIncognito)
+                            }
+                            return GeckoResult.fromValue(AllowOrDeny.DENY)
+                        }
+                    }
+                }
+
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW)
             }
 
@@ -360,12 +377,8 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
-                    val meta = mediaSession.metadata
-                    val title = meta?.title ?: currentTitle
-                    val pos = (mediaSession.position * 1000).toLong()
-                    val dur = (mediaSession.duration * 1000).toLong()
                     l?.onMediaPlayingStateChanged(true)
-                    l?.onMediaPlay(title, pos, dur)
+                    l?.onMediaPlay(currentTitle, 0L, 0L)
                 }
             }
 
@@ -373,10 +386,8 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
-                    val pos = (mediaSession.position * 1000).toLong()
-                    val dur = (mediaSession.duration * 1000).toLong()
                     l?.onMediaPlayingStateChanged(false)
-                    l?.onMediaPause(pos, dur)
+                    l?.onMediaPause(0L, 0L)
                 }
             }
 
@@ -384,14 +395,13 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
-                    val pos = (mediaSession.position * 1000).toLong()
-                    val dur = (mediaSession.duration * 1000).toLong()
                     l?.onMediaPlayingStateChanged(false)
-                    l?.onMediaPause(pos, dur)
+                    l?.onMediaPause(0L, 0L)
                 }
             }
 
             override fun onPositionState(session: GeckoSession, mediaSession: MediaSession, state: MediaSession.PositionState) {
+                mediaBridge?.updatePositionState(state.position, state.duration)
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
@@ -415,10 +425,8 @@ class PetalGeckoView @JvmOverloads constructor(
                 act.runOnUiThread {
                     val l = mediaBridge?.listener
                     val title = meta.title ?: currentTitle
-                    val pos = (mediaSession.position * 1000).toLong()
-                    val dur = (mediaSession.duration * 1000).toLong()
                     if (mediaSession.isActive) {
-                        l?.onMediaPlay(title, pos, dur)
+                        l?.onMediaPlay(title, 0L, 0L)
                     }
                 }
             }
