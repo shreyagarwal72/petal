@@ -14,11 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.Composable
@@ -43,22 +42,6 @@ import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
-
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.graphics.asComposePath
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.graphics.shapes.CornerRounding
-import androidx.graphics.shapes.Morph
-import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.toPath
 
 /**
  * Petal Material 3 Expressive ContainedLoadingIndicator composable.
@@ -121,11 +104,7 @@ fun RefreshBarLoadingIndicator(
             val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.8f).coerceIn(0f, 1f)
             val currentScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.3f + (pullProgress * 0.7f)).coerceIn(0.3f, 1.0f)
 
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                tonalElevation = 10.dp,
-                shadowElevation = 10.dp,
+            LoadingIndicator(
                 modifier = Modifier
                     .graphicsLayer {
                         translationY = if (isVisible) offsetY.toPx() else 0f
@@ -133,67 +112,7 @@ fun RefreshBarLoadingIndicator(
                         scaleX = if (isVisible) currentScale else 0f
                         scaleY = if (isVisible) currentScale else 0f
                     }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val infiniteTransition = rememberInfiniteTransition(label = "refreshBarIndicatorTransition")
-
-                    val morphProgress by infiniteTransition.animateFloat(
-                        initialValue = 0f,
-                        targetValue = 1f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(1800, easing = FastOutSlowInEasing),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "morphProgress"
-                    )
-
-                    val rotationAngle by infiniteTransition.animateFloat(
-                        initialValue = 0f,
-                        targetValue = 360f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(3600, easing = LinearEasing)
-                        ),
-                        label = "rotationAngle"
-                    )
-
-                    val indicatorColor = MaterialTheme.colorScheme.primary
-
-                    Canvas(modifier = Modifier.size(24.dp)) {
-                        val radius = size.minDimension / 2f
-                        val center = size.width / 2f
-
-                        val pentagon = RoundedPolygon(
-                            numVertices = 5,
-                            radius = radius,
-                            centerX = center,
-                            centerY = center,
-                            rounding = CornerRounding(radius * 0.25f)
-                        )
-
-                        val triangle = RoundedPolygon(
-                            numVertices = 3,
-                            radius = radius,
-                            centerX = center,
-                            centerY = center,
-                            rounding = CornerRounding(radius * 0.35f)
-                        )
-
-                        val morph = Morph(pentagon, triangle)
-                        val composePath = morph.toPath(morphProgress).asComposePath()
-
-                        rotate(degrees = rotationAngle) {
-                            drawPath(
-                                path = composePath,
-                                color = indicatorColor
-                            )
-                        }
-                    }
-                }
-            }
+            )
         }
     }
 }
