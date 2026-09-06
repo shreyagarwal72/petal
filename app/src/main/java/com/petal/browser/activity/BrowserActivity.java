@@ -3241,21 +3241,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (contentFrame == null) return;
 
         // Works the same for every page hosted in main_content: a normal web
-        // page (NinjaWebView), the home screen, or settings/downloads - all of
+        // page (PetalGeckoView), the home screen, or settings/downloads - all of
         // them get swapped into this same container, and PullToRefreshFrameLayout
         // intercepts the drag regardless of what's currently inside it.
         contentFrame.setPullDistanceDp(300f);
         contentFrame.setCanPull(() -> {
             // If internal native Compose views (Settings, History, Downloads, Account) are swapped into contentFrame, disable pull to refresh
+            if (isOverlayScreenShowing) {
+                return false;
+            }
             if (contentFrame != null && contentFrame.getChildCount() > 0) {
                 for (int i = 0; i < contentFrame.getChildCount(); i++) {
                     View child = contentFrame.getChildAt(i);
-                    if (child != ninjaWebView) {
+                    if (child != currentAlbumController && !(child instanceof com.petal.browser.view.PetalGeckoView) && child != ninjaWebView) {
                         return false;
                     }
                 }
             }
-            String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : null;
+            String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : null);
             if (currentUrl == null) currentUrl = "";
             boolean isInternalPage = isHomePage(currentUrl) ||
                     currentUrl.startsWith("petal://") ||
@@ -3264,7 +3267,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     currentUrl.contains("petal://downloads") ||
                     currentUrl.contains("petal://account") ||
                     currentUrl.contains("petal://incognito");
-            boolean isScrolledToTop = ninjaWebView != null && ninjaWebView.getScrollY() <= 0;
+            
+            boolean isScrolledToTop = false;
+            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getScrollY() <= 0;
+            } else if (ninjaWebView != null) {
+                isScrolledToTop = ninjaWebView.getScrollY() <= 0;
+            }
             return !isInternalPage && isScrolledToTop && !refreshState.isRefreshing();
         });
 
@@ -3279,9 +3288,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this)
                     .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.6f);
             }
-            if (ninjaWebView != null) {
-                // Do not toggle layer type to SOFTWARE during pull gesture to avoid hardware rendering artifacts and black overlay glitches.
-            }
         });
 
         contentFrame.setOnReleaseListener(triggered -> {
@@ -3293,7 +3299,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f);
             refreshState.setRefreshing(true);
             refreshState.setPullProgress(1.0f);
-            if (ninjaWebView != null) {
+            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).reload();
+            } else if (ninjaWebView != null) {
                 ninjaWebView.reload();
             } else {
                 resetRefreshState();

@@ -107,6 +107,8 @@ class PetalGeckoView @JvmOverloads constructor(
     private var pwaManager: PetalPwaManager? = null
     private var onScrollChangeListener: OnScrollChangeListener? = null
     private var lastScrollHapticY: Int = 0
+    private var currentScrollY: Int = 0
+    private var currentScrollX: Int = 0
 
     val loadingProgressBar = com.google.android.material.progressindicator.LinearProgressIndicator(context).apply {
         isIndeterminate = false
@@ -366,6 +368,8 @@ class PetalGeckoView @JvmOverloads constructor(
         // Scroll Delegate for Tactile Haptics and Address Bar Collapsing
         session.scrollDelegate = object : GeckoSession.ScrollDelegate {
             override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+                currentScrollX = scrollX
+                currentScrollY = scrollY
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
                     if (Math.abs(scrollY - lastScrollHapticY) > 36) {
@@ -602,6 +606,18 @@ class PetalGeckoView @JvmOverloads constructor(
         isStopped = false
         session.reload()
     }
+
+    override fun canScrollVertically(direction: Int): Boolean {
+        if (direction < 0) {
+            // Check if we can scroll up: return true if scrolled down (scrollY > 0)
+            return currentScrollY > 0 || geckoView.canScrollVertically(direction)
+        }
+        return geckoView.canScrollVertically(direction)
+    }
+
+    override fun getScrollY(): Int = currentScrollY
+
+    override fun getScrollX(): Int = currentScrollX
 
     fun setProfileChanged() {
         applySettings()
