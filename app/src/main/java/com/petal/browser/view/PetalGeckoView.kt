@@ -53,8 +53,8 @@ class PetalGeckoView @JvmOverloads constructor(
 
     companion object {
         private const val TAG = "PetalGeckoView"
-        @JvmStatic
-        private var globalBrowserController: BrowserController? = null
+        @JvmField
+        var globalBrowserController: BrowserController? = null
 
         @JvmStatic
         fun getBrowserController(): BrowserController? = globalBrowserController
@@ -652,8 +652,6 @@ class PetalGeckoView @JvmOverloads constructor(
         globalBrowserController = controller
         album.setBrowserController(controller)
     }
-
-    fun getBrowserController(): BrowserController? = globalBrowserController
 
     fun setOnScrollChangeListener(listener: OnScrollChangeListener?) {
         this.onScrollChangeListener = listener
