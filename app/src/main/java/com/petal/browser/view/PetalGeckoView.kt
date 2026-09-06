@@ -116,8 +116,10 @@ class PetalGeckoView @JvmOverloads constructor(
         progress = 0
         trackThickness = (3 * resources.displayMetrics.density).toInt()
         val typedValue = android.util.TypedValue()
-        context.theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
-        setIndicatorColor(typedValue.data)
+        if (context.theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true) ||
+            context.theme.resolveAttribute(android.R.attr.colorPrimary, typedValue, true)) {
+            setIndicatorColor(typedValue.data)
+        }
         visibility = View.GONE
     }
 
