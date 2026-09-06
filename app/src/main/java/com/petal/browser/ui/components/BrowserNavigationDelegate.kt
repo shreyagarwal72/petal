@@ -22,10 +22,9 @@ object BrowserNavigationDelegate {
     fun showOverflowMenu(activity: BrowserActivity) {
         val currentController = activity.currentAlbumController
         val geckoView = currentController as? com.petal.browser.view.PetalGeckoView
-        val webView = currentController as? NinjaWebView ?: activity.ninjaWebView
 
-        val title = geckoView?.title ?: webView?.title ?: ""
-        val url = geckoView?.url ?: webView?.url ?: ""
+        val title = geckoView?.title ?: currentController?.title ?: ""
+        val url = geckoView?.url ?: currentController?.url ?: ""
 
         var isBookmarked = false
         if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
@@ -35,8 +34,8 @@ object BrowserNavigationDelegate {
             action.close()
         }
 
-        val canGoBack = geckoView?.canGoBack() ?: webView?.canGoBack() ?: false
-        val canGoForward = geckoView?.canGoForward() ?: webView?.canGoForward() ?: false
+        val canGoBack = geckoView?.canGoBack() ?: false
+        val canGoForward = geckoView?.canGoForward() ?: false
         val profile = PetalGeckoView.getProfile(activity)
         val prefs = activity.sp ?: PreferenceManager.getDefaultSharedPreferences(activity)
         val isDesktopSite = prefs.getBoolean("${profile}_desktop", false)
@@ -57,16 +56,12 @@ object BrowserNavigationDelegate {
                 override fun onGoBack() {
                     if (geckoView != null && geckoView.canGoBack()) {
                         geckoView.goBack()
-                    } else if (webView != null && webView.canGoBack()) {
-                        webView.goBack()
                     }
                 }
 
                 override fun onGoForward() {
                     if (geckoView != null && geckoView.canGoForward()) {
                         geckoView.goForward()
-                    } else if (webView != null && webView.canGoForward()) {
-                        webView.goForward()
                     }
                 }
 
@@ -87,7 +82,7 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onReload() {
-                    geckoView?.reload() ?: webView?.reload()
+                    geckoView?.reload()
                 }
 
                 override fun onToggleDesktopSite(enabled: Boolean) {
@@ -96,7 +91,6 @@ object BrowserNavigationDelegate {
                         .putBoolean("profileStandard_desktop", enabled)
                         .apply()
                     geckoView?.setDesktopMode(enabled)
-                    webView?.setDesktopMode(enabled)
                     NinjaToast.show(activity, if (enabled) "Desktop site requested" else "Mobile site requested")
                 }
 
@@ -108,10 +102,6 @@ object BrowserNavigationDelegate {
                         .apply()
                     geckoView?.initPreferences(url)
                     geckoView?.reload()
-                    if (webView != null) {
-                        webView.initPreferences(url)
-                        webView.reload()
-                    }
                     NinjaToast.show(activity, if (enabled) "AdBlocker Enabled" else "AdBlocker Disabled")
                 }
 

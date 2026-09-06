@@ -697,9 +697,11 @@ public class HelperUnit {
 
             if (link != null && !link.isEmpty() && !link.startsWith("data:")) {
                 textView.setOnClickListener(v -> {
-                    BrowserController browserController = NinjaWebView.getBrowserController();
-                    browserController.hideOverflow();
-                    browserController.showOverflow(null, textView, 1, title, link, null, null, 0);
+                    BrowserController browserController = com.petal.browser.view.PetalGeckoView.getBrowserController();
+                    if (browserController != null) {
+                        browserController.hideOverflow();
+                        browserController.showOverflow(null, textView, 1, title, link, null, null, 0);
+                    }
                     snackbar.dismiss();
                 });
             }

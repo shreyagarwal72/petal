@@ -76,20 +76,26 @@ public class PetalPwaManager {
     }
 
     private final Context context;
+    private final com.petal.browser.browser.AlbumController albumController;
     private final WebView webView;
     private PwaInstallPromptListener promptListener;
     private PwaManifest currentManifest;
 
-    public PetalPwaManager(Context context, WebView webView, PwaInstallPromptListener listener) {
+    public PetalPwaManager(Context context, com.petal.browser.browser.AlbumController albumController, PwaInstallPromptListener listener) {
         this.context = context;
-        this.webView = webView;
+        this.albumController = albumController;
+        this.webView = (albumController instanceof WebView) ? (WebView) albumController : null;
         this.promptListener = listener;
 
-        if (webView != null) {
-            configurePwaWebSettings(webView.getSettings());
+        if (this.webView != null) {
+            configurePwaWebSettings(this.webView.getSettings());
             configureServiceWorker();
-            webView.addJavascriptInterface(new PwaJavascriptInterface(), JS_INTERFACE_NAME);
+            this.webView.addJavascriptInterface(new PwaJavascriptInterface(), JS_INTERFACE_NAME);
         }
+    }
+
+    public PetalPwaManager(Context context, WebView webView, PwaInstallPromptListener listener) {
+        this(context, (com.petal.browser.browser.AlbumController) (webView instanceof com.petal.browser.browser.AlbumController ? (com.petal.browser.browser.AlbumController) webView : null), listener);
     }
 
     /**
@@ -274,7 +280,7 @@ public class PetalPwaManager {
 
         new Thread(() -> {
             try {
-                String pageUrl = webView != null ? webView.getUrl() : null;
+                String pageUrl = albumController != null ? albumController.getUrl() : (webView != null ? webView.getUrl() : null);
                 if (pageUrl == null || pageUrl.isEmpty() || "about:blank".equalsIgnoreCase(pageUrl)) {
                     activity.runOnUiThread(() -> Toast.makeText(activity, "Cannot install empty page as app", Toast.LENGTH_SHORT).show());
                     return;
@@ -295,7 +301,7 @@ public class PetalPwaManager {
                 }
 
                 if (rawTitle == null || rawTitle.isEmpty()) {
-                    rawTitle = webView != null && webView.getTitle() != null && !webView.getTitle().isEmpty() ? webView.getTitle() : HelperUnit.domain(pageUrl);
+                    rawTitle = albumController != null && albumController.getTitle() != null && !albumController.getTitle().isEmpty() ? albumController.getTitle() : (webView != null && webView.getTitle() != null && !webView.getTitle().isEmpty() ? webView.getTitle() : HelperUnit.domain(pageUrl));
                 }
                 if (rawTitle == null || rawTitle.isEmpty()) {
                     rawTitle = "Web App";
@@ -306,6 +312,9 @@ public class PetalPwaManager {
                 if (currentManifest != null && !currentManifest.iconUrl.isEmpty()) {
                     String resolvedIconUrl = resolveUrl(pageUrl, currentManifest.iconUrl);
                     rawBitmap = fetchBitmap(resolvedIconUrl);
+                }
+                if (rawBitmap == null && albumController instanceof com.petal.browser.view.PetalGeckoView) {
+                    rawBitmap = ((com.petal.browser.view.PetalGeckoView) albumController).getFavicon();
                 }
                 if (rawBitmap == null && webView instanceof com.petal.browser.view.NinjaWebView) {
                     rawBitmap = ((com.petal.browser.view.NinjaWebView) webView).getFavicon();

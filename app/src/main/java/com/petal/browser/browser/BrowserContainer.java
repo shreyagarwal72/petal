@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.petal.browser.view.NinjaWebView;
+import com.petal.browser.view.PetalGeckoView;
 
 public class BrowserContainer {
     private static final List<AlbumController> list = new LinkedList<>();
@@ -21,7 +22,9 @@ public class BrowserContainer {
     }
 
     public synchronized static void remove(AlbumController controller) {
-        if (controller instanceof NinjaWebView) {
+        if (controller instanceof PetalGeckoView) {
+            ((PetalGeckoView) controller).destroy();
+        } else if (controller instanceof NinjaWebView) {
             ((NinjaWebView) controller).destroy();
         }
         list.remove(controller);
@@ -42,7 +45,11 @@ public class BrowserContainer {
     public synchronized static int getNormalCount() {
         int count = 0;
         for (AlbumController controller : list) {
-            if (controller instanceof NinjaWebView) {
+            if (controller instanceof PetalGeckoView) {
+                if (!((PetalGeckoView) controller).isIncognito()) {
+                    count++;
+                }
+            } else if (controller instanceof NinjaWebView) {
                 if (!((NinjaWebView) controller).isIncognito()) {
                     count++;
                 }
@@ -56,7 +63,9 @@ public class BrowserContainer {
     public synchronized static int getIncognitoCount() {
         int count = 0;
         for (AlbumController controller : list) {
-            if (controller instanceof NinjaWebView && ((NinjaWebView) controller).isIncognito()) {
+            if (controller instanceof PetalGeckoView && ((PetalGeckoView) controller).isIncognito()) {
+                count++;
+            } else if (controller instanceof NinjaWebView && ((NinjaWebView) controller).isIncognito()) {
                 count++;
             }
         }
@@ -65,7 +74,9 @@ public class BrowserContainer {
 
     public synchronized static void clear() {
         for (AlbumController albumController : list) {
-            if (albumController instanceof NinjaWebView) {
+            if (albumController instanceof PetalGeckoView) {
+                ((PetalGeckoView) albumController).destroy();
+            } else if (albumController instanceof NinjaWebView) {
                 ((NinjaWebView) albumController).destroy();
             }
         }

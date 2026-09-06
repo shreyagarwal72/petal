@@ -89,7 +89,10 @@ public class AdapterCustomSearches extends RecyclerView.Adapter<RedirectsViewHol
             snackbar.show();
         });
         holder.itemView.setOnClickListener(v -> {
-            NinjaWebView.getBrowserController().hideSearch();
+            com.petal.browser.browser.BrowserController controller = PetalGeckoView.getBrowserController();
+            if (controller != null) {
+                controller.hideSearch();
+            }
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
             sp.edit().putString("sp_search_customSearches", current.getTarget()).apply();
             String t = BrowserUnit.queryWrapper(context, url);

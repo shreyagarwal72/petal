@@ -114,9 +114,16 @@ object PetalTabSwitcherBridge {
                                 BrowserContainer.list().map { album: AlbumController ->
                                     val rawTitle = try { album.getTitle() } catch (_: Exception) { null }
                                     val rawUrl = try { album.getUrl() } catch (_: Exception) { null }
-                                    val isIncognitoTab = (album is com.petal.browser.view.NinjaWebView) && album.isIncognito()
-                                    val faviconBitmap = if (album is com.petal.browser.view.NinjaWebView) album.getFavicon() else null
-                                    val previewBitmap = if (album is com.petal.browser.view.NinjaWebView) {
+                                    val isIncognitoTab = (album is com.petal.browser.view.PetalGeckoView && album.isIncognito()) ||
+                                            ((album is com.petal.browser.view.NinjaWebView) && album.isIncognito())
+                                    val faviconBitmap = if (album is com.petal.browser.view.PetalGeckoView) {
+                                        album.getFavicon()
+                                    } else if (album is com.petal.browser.view.NinjaWebView) {
+                                        album.getFavicon()
+                                    } else null
+                                    val previewBitmap = if (album is com.petal.browser.view.PetalGeckoView) {
+                                        album.getCachedPreviewBitmap()
+                                    } else if (album is com.petal.browser.view.NinjaWebView) {
                                         album.getCachedPreviewBitmap() ?: album.capturePreviewBitmap()
                                     } else null
 
@@ -127,9 +134,9 @@ object PetalTabSwitcherBridge {
                                     }
                                     val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equals("about:blank", ignoreCase = true) || rawUrl.startsWith("file:///android_asset/")) "Petal Home" else rawUrl
                                     val group = com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(context, album.hashCode().toString())
-                                    val webViewGroupId = if (album is com.petal.browser.view.NinjaWebView) album.tabGroupId else null
+                                    val webViewGroupId = if (album is com.petal.browser.view.PetalGeckoView) album.getTabGroupId() else if (album is com.petal.browser.view.NinjaWebView) album.tabGroupId else null
                                     val effectiveGroupId = group?.id ?: webViewGroupId
-                                    val effectiveGroupTitle = group?.title ?: (if (album is com.petal.browser.view.NinjaWebView) album.tabGroupTitle else null)
+                                    val effectiveGroupTitle = group?.title ?: (if (album is com.petal.browser.view.PetalGeckoView) album.getTabGroupTitle() else if (album is com.petal.browser.view.NinjaWebView) album.tabGroupTitle else null)
                                     val effectiveGroupColor = group?.colorHex
 
                                     com.petal.browser.compose.tabs.PetalTabItem(
@@ -163,7 +170,9 @@ object PetalTabSwitcherBridge {
                             val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
                             if (targetAlbum != null) {
                                 tabItems.removeAll { it.id == tabItem.id }
-                                if (targetAlbum is com.petal.browser.view.NinjaWebView) {
+                                if (targetAlbum is com.petal.browser.view.PetalGeckoView) {
+                                    com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
+                                } else if (targetAlbum is com.petal.browser.view.NinjaWebView) {
                                     com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
                                 }
                                 com.petal.browser.unit.TabThumbnailCache.remove(tabItem.id)
@@ -208,7 +217,16 @@ object PetalTabSwitcherBridge {
                         onTabVisible = { tabItem ->
                             val targetAlbum = BrowserContainer.list()
                                 .find { it.hashCode().toString() == tabItem.id }
-                            if (targetAlbum is com.petal.browser.view.NinjaWebView) {
+                            if (targetAlbum is com.petal.browser.view.PetalGeckoView) {
+                                targetAlbum.capturePreviewBitmapAsync { bitmap ->
+                                    if (bitmap != null) {
+                                        val index = tabItems.indexOfFirst { it.id == tabItem.id }
+                                        if (index >= 0) {
+                                            tabItems[index] = tabItems[index].copy(previewBitmap = bitmap)
+                                        }
+                                    }
+                                }
+                            } else if (targetAlbum is com.petal.browser.view.NinjaWebView) {
                                 targetAlbum.capturePreviewBitmapAsync { bitmap ->
                                     if (bitmap != null) {
                                         val index = tabItems.indexOfFirst { it.id == tabItem.id }

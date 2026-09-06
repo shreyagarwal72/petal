@@ -57,6 +57,9 @@ class PetalGeckoView @JvmOverloads constructor(
         private var globalBrowserController: BrowserController? = null
 
         @JvmStatic
+        fun getBrowserController(): BrowserController? = globalBrowserController
+
+        @JvmStatic
         fun getProfile(context: Context? = null): String {
             val ctx = context ?: com.petal.browser.PetalApplication.instance
             if (ctx != null) {
@@ -565,8 +568,16 @@ class PetalGeckoView @JvmOverloads constructor(
         applySettings()
     }
 
-    fun evaluateJavascript(script: String, callback: ((String?) -> Unit)?) {
-        // GeckoView executes scripts via WebExtensions or internal session delegates
+    fun evaluateJavascript(script: String, callback: ((String?) -> Unit)? = null) {
+        try {
+            if (script.startsWith("javascript:")) {
+                session.loadUri(script)
+            } else {
+                session.loadUri("javascript:(function(){try{" + script + "}catch(e){}})();")
+            }
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "evaluateJavascript error: " + e.message)
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

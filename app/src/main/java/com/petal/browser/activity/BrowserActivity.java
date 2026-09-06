@@ -3649,8 +3649,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void savePageOffline() {
-        if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
-        String url = ninjaWebView.getUrl();
+        if (currentAlbumController == null || currentAlbumController.getUrl() == null) return;
+        String url = currentAlbumController.getUrl();
         if (url.startsWith("about:") || url.startsWith("petal://") || url.startsWith("file://")) {
             NinjaToast.show(this, "Cannot save internal page offline");
             return;
@@ -3661,23 +3661,42 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             offlineDir.mkdirs();
         }
 
-        String rawTitle = (ninjaWebView.getTitle() != null && !ninjaWebView.getTitle().trim().isEmpty())
-                ? ninjaWebView.getTitle()
+        String rawTitle = (currentAlbumController.getTitle() != null && !currentAlbumController.getTitle().trim().isEmpty())
+                ? currentAlbumController.getTitle()
                 : HelperUnit.domain(url);
         String sanitizedTitle = rawTitle.replaceAll("[^a-zA-Z0-9._-]", "_");
-        String fileName = sanitizedTitle + "_" + System.currentTimeMillis() + ".mhtml";
+        String fileName = sanitizedTitle + "_" + System.currentTimeMillis() + ".html";
         java.io.File archiveFile = new java.io.File(offlineDir, fileName);
 
         try {
-            ninjaWebView.saveWebArchive(archiveFile.getAbsolutePath(), false, value -> {
-                if (value != null) {
-                    NinjaToast.show(BrowserActivity.this, "Saved website to view offline!");
-                    com.petal.browser.compose.downloads.PetalLiveAlertManager.trackOfflinePage(
-                            BrowserActivity.this, rawTitle, url, archiveFile.getAbsolutePath());
-                } else {
-                    NinjaToast.show(BrowserActivity.this, "Failed to save page offline");
+            new Thread(() -> {
+                try {
+                    java.net.URL targetUrl = new java.net.URL(url);
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) targetUrl.openConnection();
+                    conn.setConnectTimeout(5000);
+                    conn.setReadTimeout(5000);
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:154.0) Gecko/154.0 Firefox/154.0");
+                    java.io.InputStream in = conn.getInputStream();
+                    java.io.FileOutputStream out = new java.io.FileOutputStream(archiveFile);
+                    byte[] buffer = new byte[8192];
+                    int len;
+                    while ((len = in.read(buffer)) > 0) {
+                        out.write(buffer, 0, len);
+                    }
+                    out.close();
+                    in.close();
+                    conn.disconnect();
+
+                    runOnUiThread(() -> {
+                        NinjaToast.show(BrowserActivity.this, "Saved website to view offline!");
+                        com.petal.browser.compose.downloads.PetalLiveAlertManager.trackOfflinePage(
+                                BrowserActivity.this, rawTitle, url, archiveFile.getAbsolutePath());
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "Error saving offline page", e);
+                    runOnUiThread(() -> NinjaToast.show(BrowserActivity.this, "Failed to save page offline"));
                 }
-            });
+            }).start();
         } catch (Exception e) {
             Log.e(TAG, "Error saving web archive offline", e);
             NinjaToast.show(BrowserActivity.this, "Failed to save page offline");
@@ -3685,8 +3704,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void showReaderMode() {
-        if (ninjaWebView == null || ninjaWebView.getUrl() == null) return;
-        String url = ninjaWebView.getUrl();
+        if (currentAlbumController == null || currentAlbumController.getUrl() == null) return;
+        String url = currentAlbumController.getUrl();
         if (url.startsWith("about:") || url.startsWith("petal://") || url.startsWith("file://")) {
             NinjaToast.show(this, "Reader mode is not available for internal pages");
             return;
@@ -3694,7 +3713,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         try {
             captureBrowserMainPreview();
-            com.petal.browser.compose.reader.PetalReaderBridge.extractArticle(ninjaWebView, article -> {
+            com.petal.browser.compose.reader.PetalReaderBridge.extractArticle(currentAlbumController, article -> {
                 if (article != null && article.getContentText() != null && !article.getContentText().trim().isEmpty()) {
                     isOverlayScreenShowing = true;
                     contentFrame.removeAllViews();
@@ -5033,9 +5052,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         setWebView(title, url, foreground, isIncognito);
     }
 
-    public synchronized NinjaWebView addAlbumForPopup(String title, final boolean isIncognito) {
+    public synchronized AlbumController addAlbumForPopup(String title, final boolean isIncognito) {
         setWebView(title, null, true, isIncognito, true);
-        return ninjaWebView;
+        return currentAlbumController;
     }
 
     public synchronized void addAlbumInGroup(String title, final String url, final boolean foreground, final String groupId, final String groupTitle) {
@@ -5070,7 +5089,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void installPwaShortcut() {
         try {
-            String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : null);
+            String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : null;
             if (activeUrl == null || activeUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(activeUrl)) {
                 NinjaToast.show(this, "No active web page to install");
                 return;
@@ -5078,14 +5097,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
                 if (gv.getPwaManager() == null) {
-                    gv.setPwaManager(new com.petal.browser.pwa.PetalPwaManager(this, null, null));
+                    gv.setPwaManager(new com.petal.browser.pwa.PetalPwaManager(this, gv, null));
                 }
                 gv.getPwaManager().installCurrentPwa(this);
-            } else if (ninjaWebView != null) {
-                if (ninjaWebView.getPwaManager() == null) {
-                    ninjaWebView.setPwaManager(new com.petal.browser.pwa.PetalPwaManager(this, ninjaWebView, null));
-                }
-                ninjaWebView.getPwaManager().installCurrentPwa(this);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -5127,7 +5141,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public static View getView() {
-        return ninjaWebView != null ? ninjaWebView.getRootView() : null;
+        return currentAlbumController != null ? currentAlbumController.getAlbumView() : (ninjaWebView != null ? ninjaWebView.getRootView() : null);
     }
 
     public void createWebPrintJob(WebView webView) {
