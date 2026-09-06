@@ -43,8 +43,7 @@ object BrowserMediaDelegate {
                 override fun onReceive(context: Context?, intent: Intent?) {
                     if (intent == null || intent.action != ACTION_PIP_CONTROL) return
                     val controlType = intent.getIntExtra(EXTRA_CONTROL_TYPE, 0)
-                    val activeWebView = activity.ninjaWebView
-                    val mediaBridge = activeWebView?.mediaBridge
+                    val mediaBridge = activity.activeMediaBridge
                     when (controlType) {
                         CONTROL_TYPE_PLAY -> {
                             mediaBridge?.playMedia()
@@ -143,8 +142,9 @@ object BrowserMediaDelegate {
             pipBuilder.setActions(actions)
         }
 
+        val currentAlbumView = if (activity.currentAlbumController is View) activity.currentAlbumController as View else null
         val targetView: View? = activity.customView
-            ?: (activity.videoView ?: (activity.ninjaWebView ?: activity.findViewById(android.R.id.content)))
+            ?: (activity.videoView ?: (currentAlbumView ?: (activity.ninjaWebView ?: activity.findViewById(android.R.id.content))))
 
         var width = 0
         var height = 0

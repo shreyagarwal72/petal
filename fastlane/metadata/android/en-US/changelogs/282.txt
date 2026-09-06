@@ -1,0 +1,4 @@
+v2.8.2 Hotfix:
+• Native GeckoView MediaSession & PiP: Integrated GeckoSession.mediaSessionDelegate with PetalMediaBridge for HTML5 play/pause, scrub, duration, fullscreen dimensions, and Picture-in-Picture controls.
+• Fixed Issue #6 Edge Back Gestures: Corrected overlay view detection in BrowserActivity so back navigation works smoothly across all Gecko tabs.
+• Full media notification and PiP remote action synchronization with zero data loss.

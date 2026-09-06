@@ -101,6 +101,8 @@ public class PetalMediaBridge {
 
     private final Context context;
     private WebView webView;
+    private com.petal.browser.view.PetalGeckoView geckoView;
+    private org.mozilla.geckoview.MediaSession activeGeckoMediaSession;
     private MediaStateListener listener;
 
     public interface MediaStateListener {
@@ -122,13 +124,19 @@ public class PetalMediaBridge {
     }
 
     public PetalMediaBridge(Context context, MediaStateListener listener) {
-        this(context, null, listener);
+        this(context, (WebView) null, listener);
     }
 
     public PetalMediaBridge(Context context, WebView webView, MediaStateListener listener) {
         this.context = context;
         this.listener = listener;
         attachWebView(webView);
+    }
+
+    public PetalMediaBridge(Context context, com.petal.browser.view.PetalGeckoView geckoView, MediaStateListener listener) {
+        this.context = context;
+        this.listener = listener;
+        attachGeckoView(geckoView);
     }
 
     public void attachWebView(WebView webView) {
@@ -138,6 +146,18 @@ public class PetalMediaBridge {
         }
     }
 
+    public void attachGeckoView(com.petal.browser.view.PetalGeckoView geckoView) {
+        this.geckoView = geckoView;
+    }
+
+    public void setActiveGeckoMediaSession(org.mozilla.geckoview.MediaSession session) {
+        this.activeGeckoMediaSession = session;
+    }
+
+    public org.mozilla.geckoview.MediaSession getActiveGeckoMediaSession() {
+        return activeGeckoMediaSession;
+    }
+
     public void injectMediaHooks() {
         if (webView != null) {
             webView.evaluateJavascript(MEDIA_JS_INJECTION, null);
@@ -145,6 +165,12 @@ public class PetalMediaBridge {
     }
 
     public void playMedia() {
+        if (activeGeckoMediaSession != null) {
+            try {
+                activeGeckoMediaSession.play();
+                return;
+            } catch (Exception ignored) {}
+        }
         if (webView != null) {
             webView.evaluateJavascript(
                     "(function() {" +
@@ -159,6 +185,12 @@ public class PetalMediaBridge {
     }
 
     public void pauseMedia() {
+        if (activeGeckoMediaSession != null) {
+            try {
+                activeGeckoMediaSession.pause();
+                return;
+            } catch (Exception ignored) {}
+        }
         if (webView != null) {
             webView.evaluateJavascript(
                     "(function() {" +
@@ -185,6 +217,12 @@ public class PetalMediaBridge {
     }
 
     public void toggleMute() {
+        if (activeGeckoMediaSession != null) {
+            try {
+                activeGeckoMediaSession.muteAudio(!activeGeckoMediaSession.isMuted());
+                return;
+            } catch (Exception ignored) {}
+        }
         if (webView != null) {
             webView.evaluateJavascript(
                     "(function() {" +
@@ -198,6 +236,12 @@ public class PetalMediaBridge {
     }
 
     public void skip(int deltaSeconds) {
+        if (activeGeckoMediaSession != null) {
+            try {
+                activeGeckoMediaSession.seekTo(activeGeckoMediaSession.getPosition() + deltaSeconds, false);
+                return;
+            } catch (Exception ignored) {}
+        }
         if (webView != null) {
             webView.evaluateJavascript(
                     "(function() {" +
@@ -219,6 +263,12 @@ public class PetalMediaBridge {
     }
 
     public void seekMediaTo(long positionMs) {
+        if (activeGeckoMediaSession != null) {
+            try {
+                activeGeckoMediaSession.seekTo(positionMs / 1000.0, false);
+                return;
+            } catch (Exception ignored) {}
+        }
         if (webView != null) {
             double seconds = positionMs / 1000.0;
             webView.evaluateJavascript(
@@ -271,7 +321,7 @@ public class PetalMediaBridge {
             if (context instanceof Activity) {
                 Activity act = (Activity) context;
                 act.runOnUiThread(() -> {
-                    enterPipIfSupported(act, webView);
+                    enterPipIfSupported(act, webView != null ? webView : geckoView);
                 });
             }
         }

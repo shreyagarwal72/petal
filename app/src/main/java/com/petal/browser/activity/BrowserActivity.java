@@ -257,6 +257,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * A widget action (ACTION_OPEN_SEARCH / _AI_SEARCH / _VOICE) waiting to run once the
      * window has genuine input focus. See {@link #runOrDeferPendingWidgetAction()}.
      */
+    public com.petal.browser.media.PetalMediaBridge getActiveMediaBridge() {
+        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            return ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getMediaBridge();
+        }
+        if (ninjaWebView != null) {
+            return ninjaWebView.getMediaBridge();
+        }
+        return null;
+    }
+
     private Runnable pendingWidgetAction = null;
     private final ServiceConnection mediaConnection = new ServiceConnection() {
         @Override
@@ -268,50 +278,57 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 mediaService.setMediaControlListener(new com.petal.browser.media.PetalMediaSessionService.MediaControlListener() {
                     @Override
                     public void onPlay() {
-                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
-                            ninjaWebView.getMediaBridge().playMedia();
+                        com.petal.browser.media.PetalMediaBridge bridge = getActiveMediaBridge();
+                        if (bridge != null) {
+                            bridge.playMedia();
                         }
                     }
 
                     @Override
                     public void onPause() {
-                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
-                            ninjaWebView.getMediaBridge().pauseMedia();
+                        com.petal.browser.media.PetalMediaBridge bridge = getActiveMediaBridge();
+                        if (bridge != null) {
+                            bridge.pauseMedia();
                         }
                     }
 
                     @Override
                     public void onStop() {
-                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
-                            ninjaWebView.getMediaBridge().pauseMedia();
+                        com.petal.browser.media.PetalMediaBridge bridge = getActiveMediaBridge();
+                        if (bridge != null) {
+                            bridge.pauseMedia();
                         }
                     }
 
                     @Override
                     public void onSeekTo(long positionMs) {
-                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
-                            ninjaWebView.getMediaBridge().seekMediaTo(positionMs);
+                        com.petal.browser.media.PetalMediaBridge bridge = getActiveMediaBridge();
+                        if (bridge != null) {
+                            bridge.seekMediaTo(positionMs);
                         }
                     }
 
                     @Override
                     public void onSpeedToggle(float newSpeed) {
-                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
-                            ninjaWebView.getMediaBridge().changeSpeed(newSpeed);
+                        com.petal.browser.media.PetalMediaBridge bridge = getActiveMediaBridge();
+                        if (bridge != null) {
+                            bridge.changeSpeed(newSpeed);
                         }
                     }
 
                     @Override
                     public void onMuteToggle() {
-                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
-                            ninjaWebView.getMediaBridge().toggleMute();
+                        com.petal.browser.media.PetalMediaBridge bridge = getActiveMediaBridge();
+                        if (bridge != null) {
+                            bridge.toggleMute();
                         }
                     }
 
                     @Override
                     public void onSkip(int deltaSeconds) {
-                        if (ninjaWebView != null && ninjaWebView.getMediaBridge() != null) {
-                            ninjaWebView.getMediaBridge().skip(deltaSeconds);
+                        com.petal.browser.media.PetalMediaBridge bridge = getActiveMediaBridge();
+                        if (bridge != null) {
+                            bridge.skip(deltaSeconds);
                         }
                     }
                 });
@@ -536,14 +553,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             @Override
             public void handleOnBackPressed() {
-                // TEMP DEBUG - remove after diagnosing back gesture bug
-                Log.d("PETAL_BACK_DEBUG", "callback invoked, canGoBack=" + (ninjaWebView != null && ninjaWebView.canGoBack()));
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                 boolean overlayDismissedByGesture = predictiveBackStartedOnOverlay;
                 predictiveBackStartedOnOverlay = false;
 
                 // Check if an actual overlay screen is still showing in contentFrame
-                boolean hasOverlayView = isOverlayScreenShowing || (contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(0) instanceof NinjaWebView));
+                View topContent = (contentFrame != null && contentFrame.getChildCount() > 0) ? contentFrame.getChildAt(0) : null;
+                boolean isBrowserView = (topContent instanceof NinjaWebView) || (topContent instanceof com.petal.browser.view.PetalGeckoView);
+                boolean hasOverlayView = isOverlayScreenShowing || (topContent != null && !isBrowserView);
 
                 if (overlayDismissedByGesture && !hasOverlayView) {
                     // Compose's PredictiveBackHandler handled the dismiss animation and showed the album
