@@ -57,6 +57,16 @@ class PetalGeckoView @JvmOverloads constructor(
         private var globalBrowserController: BrowserController? = null
 
         @JvmStatic
+        fun getProfile(context: Context? = null): String {
+            val ctx = context ?: com.petal.browser.PetalApplication.instance
+            if (ctx != null) {
+                val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
+                return sp.getString("profile", "profileStandard") ?: "profileStandard"
+            }
+            return "profileStandard"
+        }
+
+        @JvmStatic
         fun getDerivedDesktopUserAgent(context: Context): String {
             return "Mozilla/5.0 (X11; Linux x86_64; rv:154.0) Gecko/20100101 Firefox/154.0"
         }

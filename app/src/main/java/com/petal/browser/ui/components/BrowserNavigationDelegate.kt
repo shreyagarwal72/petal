@@ -2,6 +2,7 @@ package com.petal.browser.ui.components
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.activity.Settings_Delete
@@ -9,6 +10,7 @@ import com.petal.browser.database.RecordAction
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.view.NinjaToast
 import com.petal.browser.view.NinjaWebView
+import com.petal.browser.view.PetalGeckoView
 
 /**
  * Kotlin delegate handling navigation, overview tab switching, and
@@ -18,27 +20,33 @@ object BrowserNavigationDelegate {
 
     @JvmStatic
     fun showOverflowMenu(activity: BrowserActivity) {
-        val webView = activity.ninjaWebView
+        val currentController = activity.currentAlbumController
+        val geckoView = currentController as? com.petal.browser.view.PetalGeckoView
+        val webView = currentController as? NinjaWebView ?: activity.ninjaWebView
+
+        val title = geckoView?.title ?: webView?.title ?: ""
+        val url = geckoView?.url ?: webView?.url ?: ""
+
         var isBookmarked = false
-        if (webView != null && webView.url != null) {
+        if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
             val action = RecordAction(activity)
             action.open(false)
-            isBookmarked = action.checkBookmark(webView.url)
+            isBookmarked = action.checkBookmark(url)
             action.close()
         }
 
-        val canGoBack = webView != null && webView.canGoBack()
-        val canGoForward = webView != null && webView.canGoForward()
-        val profile = NinjaWebView.getProfile()
-        val prefs = activity.sp
+        val canGoBack = geckoView?.canGoBack() ?: webView?.canGoBack() ?: false
+        val canGoForward = geckoView?.canGoForward() ?: webView?.canGoForward() ?: false
+        val profile = PetalGeckoView.getProfile(activity)
+        val prefs = activity.sp ?: PreferenceManager.getDefaultSharedPreferences(activity)
         val isDesktopSite = prefs.getBoolean("${profile}_desktop", false)
         val isAdBlock = prefs.getBoolean("sp_ad_block", prefs.getBoolean("${profile}_adBlock", true))
         val isMediaActive = activity.isMediaPlaying || (activity.customView != null || activity.fullscreenHolder != null || activity.videoView != null)
 
         PetalOverflowBridge.showOverflowMenu(
             activity,
-            webView?.title ?: "",
-            webView?.url ?: "",
+            title,
+            url,
             isBookmarked,
             canGoBack,
             canGoForward,
@@ -47,20 +55,24 @@ object BrowserNavigationDelegate {
             isMediaActive,
             object : PetalOverflowMenuActionHandler {
                 override fun onGoBack() {
-                    if (webView != null && webView.canGoBack()) {
+                    if (geckoView != null && geckoView.canGoBack()) {
+                        geckoView.goBack()
+                    } else if (webView != null && webView.canGoBack()) {
                         webView.goBack()
                     }
                 }
 
                 override fun onGoForward() {
-                    if (webView != null && webView.canGoForward()) {
+                    if (geckoView != null && geckoView.canGoForward()) {
+                        geckoView.goForward()
+                    } else if (webView != null && webView.canGoForward()) {
                         webView.goForward()
                     }
                 }
 
                 override fun onToggleBookmark() {
-                    if (webView != null && webView.url != null) {
-                        activity.saveBookmark(webView.title, webView.url)
+                    if (url.isNotEmpty()) {
+                        activity.saveBookmark(title, url)
                     }
                 }
 
@@ -69,13 +81,13 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onOpenPageInfo() {
-                    if (webView != null && activity.fab_menu != null) {
-                        activity.showDialogFastToggle(HelperUnit.domain(webView.url), webView.url, activity.fab_menu)
+                    if (url.isNotEmpty() && activity.fab_menu != null) {
+                        activity.showDialogFastToggle(HelperUnit.domain(url), url, activity.fab_menu)
                     }
                 }
 
                 override fun onReload() {
-                    webView?.reload()
+                    geckoView?.reload() ?: webView?.reload()
                 }
 
                 override fun onToggleDesktopSite(enabled: Boolean) {
@@ -83,6 +95,7 @@ object BrowserNavigationDelegate {
                         .putBoolean("${profile}_desktop", enabled)
                         .putBoolean("profileStandard_desktop", enabled)
                         .apply()
+                    geckoView?.setDesktopMode(enabled)
                     webView?.setDesktopMode(enabled)
                     NinjaToast.show(activity, if (enabled) "Desktop site requested" else "Mobile site requested")
                 }
@@ -93,8 +106,10 @@ object BrowserNavigationDelegate {
                         .putBoolean("${profile}_adBlock", enabled)
                         .putBoolean("profileStandard_adBlock", enabled)
                         .apply()
+                    geckoView?.initPreferences(url)
+                    geckoView?.reload()
                     if (webView != null) {
-                        webView.initPreferences(webView.url)
+                        webView.initPreferences(url)
                         webView.reload()
                     }
                     NinjaToast.show(activity, if (enabled) "AdBlocker Enabled" else "AdBlocker Disabled")
@@ -141,7 +156,9 @@ object BrowserNavigationDelegate {
 
                 override fun onPrintPdf() {
                     try {
-                        activity.createWebPrintJob(webView)
+                        if (webView != null) {
+                            activity.createWebPrintJob(webView)
+                        }
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -156,14 +173,15 @@ object BrowserNavigationDelegate {
                 }
 
                 override fun onShareLink() {
-                    if (webView != null) {
-                        activity.shareLink(webView.title, webView.url)
+                    if (url.isNotEmpty()) {
+                        activity.shareLink(title, url)
                     }
                 }
 
                 override fun onViewSource() {
-                    if (webView != null && webView.url != null) {
-                        webView.loadUrl("view-source:" + webView.url)
+                    if (url.isNotEmpty()) {
+                        val sourceUrl = if (url.startsWith("view-source:")) url else "view-source:$url"
+                        geckoView?.loadUrl(sourceUrl) ?: webView?.loadUrl(sourceUrl)
                     }
                 }
 
