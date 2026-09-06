@@ -358,7 +358,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return ninjaWebView;
     }
 
-    public static boolean canNinjaGoBack() {
+    public boolean canNinjaGoBack() {
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             return ((com.petal.browser.view.PetalGeckoView) currentAlbumController).canGoBack();
         }
@@ -2713,7 +2713,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return clean.startsWith("file:///android_asset/");
     }
 
-    public static boolean isCurrentTabHomeOrBlank() {
+    public boolean isCurrentTabHomeOrBlank() {
         String url = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
         if (url == null || url.trim().isEmpty()) return true;
         String clean = url.trim().toLowerCase(java.util.Locale.ROOT);
@@ -5188,7 +5188,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public static View getView() {
-        return currentAlbumController != null ? currentAlbumController.getAlbumView() : (ninjaWebView != null ? ninjaWebView.getRootView() : null);
+        if (BrowserContainer.size() > 0) {
+            AlbumController controller = BrowserContainer.get(0);
+            if (controller != null) {
+                return controller.getAlbumView();
+            }
+        }
+        return ninjaWebView != null ? ninjaWebView.getRootView() : null;
     }
 
     public void createWebPrintJob(WebView webView) {
