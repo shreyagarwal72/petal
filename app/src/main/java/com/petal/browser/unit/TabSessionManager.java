@@ -136,7 +136,26 @@ public class TabSessionManager {
 
         for (int i = 0; i < albumList.size(); i++) {
             AlbumController album = albumList.get(i);
-            if (album instanceof NinjaWebView) {
+            if (album instanceof com.petal.browser.view.PetalGeckoView) {
+                com.petal.browser.view.PetalGeckoView geckoView = (com.petal.browser.view.PetalGeckoView) album;
+                if (geckoView.isIncognito()) {
+                    continue;
+                }
+                String url = geckoView.getUrl();
+                if (url == null || url.trim().isEmpty()) {
+                    url = "about:blank";
+                }
+                String title = geckoView.getTitle();
+                if (title == null || title.trim().isEmpty()) {
+                    title = url;
+                }
+                boolean isActive = geckoView.isForeground();
+                String tabGroupId = geckoView.getTabGroupId();
+                String tabGroupTitle = geckoView.getTabGroupTitle();
+                String persistentTabId = geckoView.getTabId();
+
+                records.add(new TabStateRecord(i, title, url, 0, 0, false, isActive, "", now, tabGroupId, tabGroupTitle, persistentTabId));
+            } else if (album instanceof NinjaWebView) {
                 NinjaWebView webView = (NinjaWebView) album;
                 // Skip incognito tabs from session restoration storage for privacy
                 if (webView.isIncognito()) {
@@ -161,8 +180,6 @@ public class TabSessionManager {
 
                 String persistentTabId = webView.getTabId();
 
-                // Store URL, title, scroll positions, tab group & metadata safely. Avoid webView.saveState() Base64
-                // serialization as restoring corrupt webViewState bundles causes native Chromium crashes.
                 records.add(new TabStateRecord(i, title, url, scrollX, scrollY, false, isActive, "", now, tabGroupId, tabGroupTitle, persistentTabId));
             }
         }

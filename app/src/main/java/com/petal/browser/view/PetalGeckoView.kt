@@ -203,6 +203,12 @@ class PetalGeckoView @JvmOverloads constructor(
                 title?.let {
                     currentTitle = it
                     album.setAlbumTitle(it, currentUrl)
+                    val act = getHostActivity()
+                    if (act is com.petal.browser.activity.BrowserActivity) {
+                        act.runOnUiThread {
+                            act.updateOmniBox()
+                        }
+                    }
                 }
             }
 
