@@ -43,6 +43,22 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.asComposePath
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.graphics.shapes.CornerRounding
+import androidx.graphics.shapes.Morph
+import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.toPath
+
 /**
  * Petal Material 3 Expressive ContainedLoadingIndicator composable.
  * Displays an indeterminate loading indicator filling available screen bounds.
@@ -68,7 +84,7 @@ fun ContainedLoadingIndicator(modifier: Modifier = Modifier) {
 }
 
 /**
- * RefreshBar pull-to-refresh loading indicator utilizing [ContainedLoadingIndicator].
+ * RefreshBar pull-to-refresh loading indicator utilizing clean stroke-free morphing indicator.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -95,12 +111,6 @@ fun RefreshBarLoadingIndicator(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                // Fixed height tall enough to contain the circle's full travel range
-                // (its own ~58dp size plus the largest translationY offset used below,
-                // 64dp, plus margin). translationY is a paint-time transform - it never
-                // changes this Box's measured size, so without reserving space for the
-                // worst case up front, the ComposeView hosting this clips the circle
-                // wherever its un-translated resting bounds happened to end.
                 .height(140.dp)
                 .zIndex(500f)
                 .padding(top = 12.dp),
@@ -111,10 +121,10 @@ fun RefreshBarLoadingIndicator(
             val currentScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.3f + (pullProgress * 0.7f)).coerceIn(0.3f, 1.0f)
 
             Surface(
-                shape = androidx.compose.foundation.shape.CircleShape,
+                shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                tonalElevation = 12.dp,
-                shadowElevation = 12.dp,
+                tonalElevation = 10.dp,
+                shadowElevation = 10.dp,
                 modifier = Modifier
                     .graphicsLayer {
                         translationY = if (isVisible) offsetY.toPx() else 0f
@@ -125,13 +135,62 @@ fun RefreshBarLoadingIndicator(
             ) {
                 Box(
                     modifier = Modifier
-                        .padding(8.dp)
-                        .requiredSize(42.dp),
+                        .size(48.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    ContainedLoadingIndicator(
-                        modifier = Modifier.requiredSize(38.dp)
+                    val infiniteTransition = rememberInfiniteTransition(label = "refreshBarIndicatorTransition")
+
+                    val morphProgress by infiniteTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1800, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "morphProgress"
                     )
+
+                    val rotationAngle by infiniteTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 360f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(3600, easing = LinearEasing)
+                        ),
+                        label = "rotationAngle"
+                    )
+
+                    val indicatorColor = MaterialTheme.colorScheme.primary
+
+                    Canvas(modifier = Modifier.size(24.dp)) {
+                        val radius = size.minDimension / 2f
+                        val center = size.width / 2f
+
+                        val pentagon = RoundedPolygon(
+                            numVertices = 5,
+                            radius = radius,
+                            centerX = center,
+                            centerY = center,
+                            rounding = CornerRounding(radius * 0.25f)
+                        )
+
+                        val triangle = RoundedPolygon(
+                            numVertices = 3,
+                            radius = radius,
+                            centerX = center,
+                            centerY = center,
+                            rounding = CornerRounding(radius * 0.35f)
+                        )
+
+                        val morph = Morph(pentagon, triangle)
+                        val composePath = morph.toPath(morphProgress).asComposePath()
+
+                        rotate(degrees = rotationAngle) {
+                            drawPath(
+                                path = composePath,
+                                color = indicatorColor
+                            )
+                        }
+                    }
                 }
             }
         }
