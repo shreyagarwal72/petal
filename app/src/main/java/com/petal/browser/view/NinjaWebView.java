@@ -1183,7 +1183,16 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     }
 
     public static String getProfile() {
-        return sp.getString("profile", "profileStandard");
+        if (sp == null) {
+            android.content.Context ctx = com.petal.browser.PetalApplication.getInstance();
+            if (ctx != null) {
+                sp = PreferenceManager.getDefaultSharedPreferences(ctx);
+            }
+        }
+        if (sp != null) {
+            return sp.getString("profile", "profileStandard");
+        }
+        return "profileStandard";
     }
 
     public AlbumController getPredecessor() {
