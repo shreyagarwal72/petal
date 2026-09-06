@@ -1422,10 +1422,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     if (query != null && !query.trim().isEmpty()) {
                         String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, query.trim());
                         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(targetUrl);
                             showAlbum(currentAlbumController, targetUrl);
                         } else if (ninjaWebView != null) {
-                            ninjaWebView.loadUrl(targetUrl);
                             showAlbum(currentAlbumController, targetUrl);
                         }
                     } else {
@@ -1450,10 +1448,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, u);
                     }
                     if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(targetUrl);
                         showAlbum(currentAlbumController, targetUrl);
                     } else if (ninjaWebView != null) {
-                        ninjaWebView.loadUrl(targetUrl);
                         showAlbum(currentAlbumController, targetUrl);
                     }
                 }
@@ -2732,10 +2728,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             hideSearch();
             String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(this, query.trim());
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(targetUrl);
                 showAlbum(currentAlbumController, targetUrl);
             } else if (ninjaWebView != null) {
-                ninjaWebView.loadUrl(targetUrl);
                 showAlbum(currentAlbumController, targetUrl);
             } else {
                 addAlbum(null, targetUrl, true);
@@ -3559,18 +3553,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     if (result != null && !result.trim().isEmpty()) {
                         String targetUrl = com.petal.browser.unit.BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
                         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(targetUrl);
                             showAlbum(currentAlbumController, targetUrl);
                         } else if (currentAlbumController != null && ninjaWebView != null) {
-                            ninjaWebView.loadUrl(targetUrl);
                             showAlbum(currentAlbumController, targetUrl);
                         } else if (BrowserContainer.size() > 0) {
                             AlbumController controller = BrowserContainer.get(0);
-                            if (controller instanceof com.petal.browser.view.PetalGeckoView) {
-                                ((com.petal.browser.view.PetalGeckoView) controller).loadUrl(targetUrl);
-                            } else if (controller instanceof NinjaWebView) {
-                                ((NinjaWebView) controller).loadUrl(targetUrl);
-                            }
                             showAlbum(controller, targetUrl);
                         } else {
                             addAlbum(null, targetUrl, true);
@@ -4973,10 +4960,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         if (result != null && !result.trim().isEmpty()) {
                             String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, result.trim());
                             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(targetUrl);
                                 showAlbum(currentAlbumController, targetUrl);
                             } else if (ninjaWebView != null) {
-                                ninjaWebView.loadUrl(targetUrl);
                                 showAlbum(currentAlbumController, targetUrl);
                             } else {
                                 addAlbum(null, targetUrl, true);
