@@ -177,8 +177,10 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<AllowOrDeny>? {
                 val uri = request.uri
                 if (BrowserUnit.isHomePage(uri)) {
-                    session.loadUri("about:blank")
                     album.setAlbumTitle("Petal Home", "petal://home")
+                    if (uri.equals("about:blank", ignoreCase = true)) {
+                        return GeckoResult.fromValue(AllowOrDeny.ALLOW)
+                    }
                     return GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
 
