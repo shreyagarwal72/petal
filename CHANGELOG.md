@@ -1,3 +1,13 @@
+### v2.8.2
+- **🎬 Native GeckoView MediaSession & Picture-in-Picture Engine**:
+  - **Gecko MediaSession Integration**: Wired GeckoView's native `GeckoSession.mediaSessionDelegate` (`MediaSession.Delegate`) directly into `PetalMediaBridge`, detecting HTML5 play, pause, stop, position scrubbing, and track duration events across all Gecko tabs.
+  - **Fluid Picture-in-Picture Control & Dimension Tracking**: Video aspect ratio, resolution updates, and remote PiP actions (Play/Pause, Rewind 10s, Forward 10s) route bi-directionally to active Gecko media sessions with dynamic source rect hints.
+  - **Foreground Media Session Service**: Synchronized notification controls, scrubber progress, speed adjustments, and mute toggles with `PetalMediaSessionService`.
+- **🐛 Edge Back Gesture Fix (Issue #6)**:
+  - **Resolved False Overlay State**: Fixed back gesture handling in `BrowserActivity` by properly recognizing `PetalGeckoView` as a primary browsing surface rather than an overlay screen, restoring edge back-swipe navigation across all tabs.
+- **🔒 Zero Data Loss Guarantee**:
+  - Full backward compatibility across saved tabs, bookmarks, SQLite history, and user preferences.
+
 ### v2.8.1
 - **🐛 PetalMediaBridge NullPointerException & WebView Deferred Binding Fix**:
   - **Deferred WebView Binding**: Resolved launch `NullPointerException` inside `PetalMediaBridge` by implementing safe deferred binding (`attachWebView(WebView)`) and null-safe bridge initialization for GeckoView tabs.

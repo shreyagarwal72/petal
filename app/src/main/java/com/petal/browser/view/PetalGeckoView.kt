@@ -34,6 +34,7 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
+import org.mozilla.geckoview.MediaSession
 import java.util.function.Consumer
 
 /**
@@ -342,6 +343,87 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
+        // Native GeckoView MediaSession Delegate for HTML5 Media & PiP Tracking
+        session.mediaSessionDelegate = object : MediaSession.Delegate {
+            override fun onActivated(session: GeckoSession, mediaSession: MediaSession) {
+                mediaBridge?.setActiveGeckoMediaSession(mediaSession)
+            }
+
+            override fun onDeactivated(session: GeckoSession, mediaSession: MediaSession) {
+                if (mediaBridge?.activeGeckoMediaSession == mediaSession) {
+                    mediaBridge?.setActiveGeckoMediaSession(null)
+                }
+            }
+
+            override fun onPlay(session: GeckoSession, mediaSession: MediaSession) {
+                mediaBridge?.setActiveGeckoMediaSession(mediaSession)
+                val act = getHostActivity() ?: return
+                act.runOnUiThread {
+                    val l = mediaBridge?.listener
+                    val meta = mediaSession.metadata
+                    val title = meta?.title ?: currentTitle
+                    val pos = (mediaSession.position * 1000).toLong()
+                    val dur = (mediaSession.duration * 1000).toLong()
+                    l?.onMediaPlayingStateChanged(true)
+                    l?.onMediaPlay(title, pos, dur)
+                }
+            }
+
+            override fun onPause(session: GeckoSession, mediaSession: MediaSession) {
+                val act = getHostActivity() ?: return
+                act.runOnUiThread {
+                    val l = mediaBridge?.listener
+                    val pos = (mediaSession.position * 1000).toLong()
+                    val dur = (mediaSession.duration * 1000).toLong()
+                    l?.onMediaPlayingStateChanged(false)
+                    l?.onMediaPause(pos, dur)
+                }
+            }
+
+            override fun onStop(session: GeckoSession, mediaSession: MediaSession) {
+                val act = getHostActivity() ?: return
+                act.runOnUiThread {
+                    val l = mediaBridge?.listener
+                    val pos = (mediaSession.position * 1000).toLong()
+                    val dur = (mediaSession.duration * 1000).toLong()
+                    l?.onMediaPlayingStateChanged(false)
+                    l?.onMediaPause(pos, dur)
+                }
+            }
+
+            override fun onPositionState(session: GeckoSession, mediaSession: MediaSession, state: MediaSession.PositionState) {
+                val act = getHostActivity() ?: return
+                act.runOnUiThread {
+                    val l = mediaBridge?.listener
+                    val pos = (state.position * 1000).toLong()
+                    val dur = (state.duration * 1000).toLong()
+                    l?.onMediaProgress(pos, dur)
+                }
+            }
+
+            override fun onFullscreen(session: GeckoSession, mediaSession: MediaSession, enabled: Boolean, meta: MediaSession.ElementMetadata?) {
+                if (meta != null && meta.width > 0 && meta.height > 0) {
+                    val act = getHostActivity() ?: return
+                    act.runOnUiThread {
+                        mediaBridge?.listener?.onVideoDimensionsChanged(meta.width.toInt(), meta.height.toInt())
+                    }
+                }
+            }
+
+            override fun onMetadata(session: GeckoSession, mediaSession: MediaSession, meta: MediaSession.Metadata) {
+                val act = getHostActivity() ?: return
+                act.runOnUiThread {
+                    val l = mediaBridge?.listener
+                    val title = meta.title ?: currentTitle
+                    val pos = (mediaSession.position * 1000).toLong()
+                    val dur = (mediaSession.duration * 1000).toLong()
+                    if (mediaSession.isActive) {
+                        l?.onMediaPlay(title, pos, dur)
+                    }
+                }
+            }
+        }
+
         applySettings()
     }
 
@@ -541,6 +623,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun setMediaBridge(bridge: PetalMediaBridge?) {
         this.mediaBridge = bridge
+        bridge?.attachGeckoView(this)
     }
 
     fun getPwaManager(): PetalPwaManager? = pwaManager

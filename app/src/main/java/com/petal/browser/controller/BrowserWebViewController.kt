@@ -94,7 +94,7 @@ object BrowserWebViewController {
         // Configure Media Bridge
         val bridge = PetalMediaBridge(
             activity,
-            null,
+            geckoView,
             object : PetalMediaBridge.MediaStateListener {
                 override fun onMediaPlay(title: String?, positionMs: Long, durationMs: Long) {
                     activity.isMediaPlaying = true
