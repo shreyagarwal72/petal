@@ -345,8 +345,7 @@ fun PetalUpdateSheetContent(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var isDownloading by remember { mutableStateOf(false) }
-    var downloadProgress by remember { mutableIntStateOf(0) }
+    var isDownloadEnqueued by remember { mutableStateOf(false) }
 
     var fetchedNotes by remember(updateInfo.releaseNotes) { mutableStateOf<String?>(null) }
     var isFetchingNotes by remember(updateInfo.releaseNotes) { mutableStateOf(false) }
@@ -376,20 +375,20 @@ fun PetalUpdateSheetContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Header Icon Badge
             Surface(
                 shape = CircleShape,
                 color = if (updateInfo.isUpdateAvailable) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(60.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = if (updateInfo.isUpdateAvailable) Icons.Rounded.SystemUpdate else Icons.Rounded.CheckCircle,
                         contentDescription = null,
                         tint = if (updateInfo.isUpdateAvailable) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(30.dp)
                     )
                 }
             }
@@ -405,10 +404,24 @@ fun PetalUpdateSheetContent(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    modifier = Modifier.padding(top = 2.dp)
+                ) {
+                    Text(
+                        text = updateInfo.versionName,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+
                 Text(
-                    text = if (updateInfo.isUpdateAvailable) "Squashed bugs, added magic. Ready to install!" else "Running the latest release (${updateInfo.versionName})",
+                    text = if (updateInfo.isUpdateAvailable) "Squashed bugs, added magic. Ready to download & install!" else "Running the latest release with all the newest features.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
@@ -434,7 +447,7 @@ fun PetalUpdateSheetContent(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
-                        text = "What's New in ${updateInfo.versionName}",
+                        text = "What's New",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 6.dp)
@@ -460,52 +473,58 @@ fun PetalUpdateSheetContent(
 
             // Action Buttons
             if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
-                if (isDownloading) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                if (isDownloadEnqueued) {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        val progressFraction = (downloadProgress / 100f).coerceIn(0f, 1f)
-                        LinearWavyProgressIndicator(
-                            progress = { progressFraction },
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(10.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "Downloading update... $downloadProgress%",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.DownloadDone,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Downloading in Background",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Text(
+                                    text = "Download won't stop if app is closed. Installer will open automatically.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
                     }
                 } else {
                     Button(
                         onClick = {
                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                            isDownloading = true
-                            coroutineScope.launch(Dispatchers.IO) {
-                                downloadAndInstallApk(
-                                    context = context,
-                                    apkUrl = updateInfo.downloadUrl,
-                                    version = updateInfo.versionName,
-                                    onProgress = { progress ->
-                                        coroutineScope.launch(Dispatchers.Main) {
-                                             downloadProgress = progress
-                                             if (progress >= 100) isDownloading = false
-                                        }
-                                    }
-                                )
-                            }
+                            isDownloadEnqueued = true
+                            com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueueSystemUpdateDownload(
+                                context = context,
+                                downloadUrl = updateInfo.downloadUrl,
+                                version = updateInfo.versionName
+                            )
                         },
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
                         Icon(Icons.Rounded.FileDownload, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Install Update Now")
+                        Text("Download & Install Update")
                     }
                 }
             }
@@ -572,98 +591,7 @@ private fun fetchMarkdownFromUrl(urlStr: String): String {
     }
 }
 
-private fun downloadAndInstallApk(
-    context: android.content.Context,
-    apkUrl: String,
-    version: String,
-    onProgress: (Int) -> Unit
-) {
-    try {
-        val downloadsDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
-        val apkFile = File(downloadsDir, "petal_update_${version.replace(Regex("[^a-zA-Z0-9]"), "_")}.apk")
-        if (apkFile.exists()) apkFile.delete()
 
-        var currentUrl = apkUrl
-        var conn: HttpURLConnection? = null
-        var redirects = 0
-        while (redirects < 5) {
-            val url = URL(currentUrl)
-            conn = url.openConnection() as HttpURLConnection
-            conn.setRequestProperty("User-Agent", "PetalBrowserApp/$version")
-            conn.instanceFollowRedirects = true
-            conn.connectTimeout = 10000
-            conn.readTimeout = 10000
-            val status = conn.responseCode
-            if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == 307 || status == 308) {
-                val redirectUrl = conn.getHeaderField("Location")
-                if (!redirectUrl.isNullOrEmpty()) {
-                    currentUrl = redirectUrl
-                    redirects++
-                    continue
-                }
-            }
-            break
-        }
-
-        if (conn == null || conn.responseCode != HttpURLConnection.HTTP_OK) {
-            throw Exception("HTTP connection failed: ${conn?.responseCode}")
-        }
-
-        val totalSize = conn.contentLength
-        val inputStream = conn.inputStream
-        val outputStream = apkFile.outputStream()
-
-        val buffer = ByteArray(8192)
-        var downloaded = 0
-        var bytesRead: Int
-        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-            outputStream.write(buffer, 0, bytesRead)
-            downloaded += bytesRead
-            if (totalSize > 0) {
-                onProgress((downloaded * 100L / totalSize).toInt())
-            }
-        }
-        outputStream.flush()
-        outputStream.close()
-        inputStream.close()
-
-        onProgress(100)
-        installApk(context, apkFile)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        onProgress(0)
-    }
-}
-
-private fun installApk(context: android.content.Context, apkFile: File) {
-    try {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            if (!context.packageManager.canRequestPackageInstalls()) {
-                val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                    data = Uri.parse("package:${context.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-                com.petal.browser.view.NinjaToast.show(context, "Please grant permission to install updates")
-                return
-            }
-        }
-
-        val apkUri = androidx.core.content.FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            apkFile
-        )
-
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(apkUri, "application/vnd.android.package-archive")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
-        }
-        context.startActivity(installIntent)
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-}
 
 @Composable
 fun PetalChangelogHistorySheetContent(
