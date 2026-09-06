@@ -160,14 +160,14 @@ fun UpdaterSettingsScreenContent(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Petal v ()",
+                                        text = "Petal v$appVersionName ($appVersionCode)",
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = "Channel: GitHub Official • Last Checked: ",
+                                        text = "Channel: GitHub Official • Last Checked: $formattedLastCheck",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,

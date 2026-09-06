@@ -194,17 +194,20 @@ fun AppearanceSettingsScreenContent(
                     }
                 )
 
-                // Custom Fonts & Accent Themes Card
-                SettingsCategoryCard(title = "Custom Fonts & Accent Themes", iconRes = com.petal.browser.R.drawable.brightness_medium_filled) {
+                // Section 1: App Theme & Dynamic Color Palette
+                SettingsCategoryCard(
+                    title = "Theme & Color Palette",
+                    iconRes = com.petal.browser.R.drawable.brightness_medium_filled
+                ) {
                     Text(
-                        "Customize app typography and accent style",
+                        "Customize app color schemes, dynamic theming and OLED black mode",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     // Theme Mode Chips
                     Text(
-                        "App Theme Mode:",
+                        "Theme Mode:",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -248,6 +251,194 @@ fun AppearanceSettingsScreenContent(
                             }
                         }
                     }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Preset Color Palettes
+                    Text(
+                        "Preset Color Palettes:",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    val paletteScrollState = rememberScrollState()
+                    ScrollFadeRow(
+                        scrollState = paletteScrollState,
+                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(paletteScrollState)
+                        ) {
+                            PetalPalettes.forEach { pal ->
+                                val isSelected = paletteId == pal.id && !dynamicColor
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(pal.seed)
+                                        .border(
+                                            width = if (isSelected) 3.dp else 0.dp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                            shape = CircleShape
+                                        )
+                                        .clickable {
+                                            onPaletteIdChange(pal.id)
+                                            onDynamicColorChange(false)
+                                            PetalSearchWidgetProvider.updateAllWidgets(context)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isSelected) {
+                                        Icon(Icons.Rounded.Check, contentDescription = pal.label, tint = Color.White, modifier = Modifier.size(20.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Palette Style Swatches
+                    Text(
+                        "Palette Harmony Style:",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    val currentPalette = remember(paletteId) {
+                        PetalPalettes.firstOrNull { it.id == paletteId } ?: PetalPalettes.first()
+                    }
+                    val isEffectiveAmoled = isDarkTheme && amoledMode
+                    val activeBaseScheme = remember(currentPalette, isDarkTheme, isEffectiveAmoled) {
+                        if (isDarkTheme) {
+                            if (isEffectiveAmoled) currentPalette.dark.applyAmoled() else currentPalette.dark
+                        } else {
+                            currentPalette.light
+                        }
+                    }
+                    val activePreviewScheme = remember(activeBaseScheme, colorStyle) {
+                        activeBaseScheme.applyStyle(colorStyle)
+                    }
+                    val styleSchemes = remember(activeBaseScheme) {
+                        ColorStyle.entries.associateWith { style ->
+                            activeBaseScheme.applyStyle(style)
+                        }
+                    }
+
+                    val paletteStyleScrollState = rememberScrollState()
+                    ScrollFadeRow(
+                        scrollState = paletteStyleScrollState,
+                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(paletteStyleScrollState)
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            ColorStyle.entries.forEach { style ->
+                                val swatchScheme = styleSchemes[style] ?: activePreviewScheme
+                                PaletteSwatchSquare(
+                                    scheme = swatchScheme,
+                                    selected = colorStyle == style,
+                                    onClick = {
+                                        onColorStyleChange(style)
+                                        PetalSearchWidgetProvider.updateAllWidgets(context)
+                                    },
+                                    modifier = Modifier.size(64.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                            Text(
+                                text = colorStyle.label,
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = colorStyle.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Live Mini Browser Skeleton Preview
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Theme Live Skeleton Preview:",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    MiniBrowserSkeletonPreview(
+                        scheme = activePreviewScheme,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Material You Dynamic Color Toggle
+                    ToggleRow(
+                        title = "Material You Dynamic Color",
+                        subtitle = "Adapt accent colors from your system wallpaper (Android 12+)",
+                        icon = Icons.Rounded.ColorLens,
+                        checked = dynamicColor,
+                        onCheckedChange = { newValue ->
+                            onDynamicColorChange(newValue)
+                            PetalSearchWidgetProvider.updateAllWidgets(context)
+                        }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // AMOLED Black Toggle
+                    ToggleRow(
+                        title = "AMOLED Black Dark Mode",
+                        subtitle = if (isDarkTheme) "Pure black background ladder for OLED displays" else "Disabled in Light Mode (Requires Dark theme)",
+                        icon = Icons.Rounded.DarkMode,
+                        checked = amoledMode && isDarkTheme,
+                        enabled = isDarkTheme,
+                        onCheckedChange = { newValue ->
+                            onAmoledModeChange(newValue)
+                            PetalSearchWidgetProvider.updateAllWidgets(context)
+                        }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Expressive Colors Toggle
+                    ToggleRow(
+                        title = "Expressive Container Colors",
+                        subtitle = "Use vibrant container tint contrast for background and surfaces",
+                        icon = Icons.Rounded.Palette,
+                        checked = expressiveColors,
+                        onCheckedChange = onExpressiveColorsChange
+                    )
+                }
+
+                // Section 2: Custom Fonts & Typography
+                SettingsCategoryCard(
+                    title = "Typography & Fonts",
+                    iconRes = com.petal.browser.R.drawable.database_filled
+                ) {
+                    Text(
+                        "Choose typography style or load custom TrueType / OpenType font files",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
                     // Font Family Chips
                     Text(
@@ -318,99 +509,6 @@ fun AppearanceSettingsScreenContent(
                         }
                     }
 
-                    // Live Mini Browser Skeleton Preview
-                    Text(
-                        "Palette Theme Live Preview:",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    val currentPalette = remember(paletteId) {
-                        PetalPalettes.firstOrNull { it.id == paletteId } ?: PetalPalettes.first()
-                    }
-                    val isEffectiveAmoled = isDarkTheme && amoledMode
-                    val activeBaseScheme = remember(currentPalette, isDarkTheme, isEffectiveAmoled) {
-                        if (isDarkTheme) {
-                            if (isEffectiveAmoled) currentPalette.dark.applyAmoled() else currentPalette.dark
-                        } else {
-                            currentPalette.light
-                        }
-                    }
-                    val activePreviewScheme = remember(activeBaseScheme, colorStyle) {
-                        activeBaseScheme.applyStyle(colorStyle)
-                    }
-                    val styleSchemes = remember(activeBaseScheme) {
-                        ColorStyle.entries.associateWith { style ->
-                            activeBaseScheme.applyStyle(style)
-                        }
-                    }
-
-                    MiniBrowserSkeletonPreview(
-                        scheme = activePreviewScheme,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    )
-
-                    Spacer(Modifier.height(6.dp))
-
-                    // Palette Style Swatches
-                    Text(
-                        "Palette Style:",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        "Select dynamic color harmony style for accent roles and surfaces",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    val paletteStyleScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = paletteStyleScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(paletteStyleScrollState)
-                                .padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            ColorStyle.entries.forEach { style ->
-                                val swatchScheme = styleSchemes[style] ?: activePreviewScheme
-                                PaletteSwatchSquare(
-                                    scheme = swatchScheme,
-                                    selected = colorStyle == style,
-                                    onClick = {
-                                        onColorStyleChange(style)
-                                        PetalSearchWidgetProvider.updateAllWidgets(context)
-                                    },
-                                    modifier = Modifier.size(68.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = colorStyle.label,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = activePreviewScheme.onSurface
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = activePreviewScheme.tertiaryContainer,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = colorStyle.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = activePreviewScheme.onTertiaryContainer,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                        )
-                    }
-
                     // Custom Font File Picker UI
                     AnimatedVisibility(visible = appFont == AppFont.CUSTOM) {
                         Surface(
@@ -452,113 +550,13 @@ fun AppearanceSettingsScreenContent(
                             }
                         }
                     }
+                }
 
-                    // Accent Style Chips
-                    Text(
-                        "Select Accent Color Style:",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    val accentStyleScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = accentStyleScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(accentStyleScrollState),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            ColorStyle.values().forEach { style ->
-                                FilterChip(
-                                    selected = colorStyle == style,
-                                    onClick = { onColorStyleChange(style) },
-                                    label = { Text(style.label) },
-                                    leadingIcon = if (colorStyle == style) {
-                                        { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
-                                )
-                            }
-                        }
-                    }
-
-                    // Preset Color Palettes
-                    Text(
-                        "Preset Color Palettes:",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    val paletteScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = paletteScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(paletteScrollState)
-                        ) {
-                            PetalPalettes.forEach { pal ->
-                                val isSelected = paletteId == pal.id && !dynamicColor
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(CircleShape)
-                                        .background(pal.seed)
-                                        .border(
-                                            width = if (isSelected) 3.dp else 0.dp,
-                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                            shape = CircleShape
-                                        )
-                                        .clickable {
-                                            onPaletteIdChange(pal.id)
-                                            onDynamicColorChange(false)
-                                            PetalSearchWidgetProvider.updateAllWidgets(context)
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (isSelected) {
-                                        Icon(Icons.Rounded.Check, contentDescription = pal.label, tint = Color.White, modifier = Modifier.size(20.dp))
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // Material You Dynamic Color Toggle
-                    ToggleRow(
-                        title = "Material You Dynamic Color",
-                        subtitle = "Adapt accent colors from your system wallpaper (Android 12+)",
-                        icon = Icons.Rounded.ColorLens,
-                        checked = dynamicColor,
-                        onCheckedChange = { newValue ->
-                            onDynamicColorChange(newValue)
-                            PetalSearchWidgetProvider.updateAllWidgets(context)
-                        }
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // AMOLED Black Toggle
-                    ToggleRow(
-                        title = "AMOLED Black Dark Mode",
-                        subtitle = if (isDarkTheme) "Pure black background ladder for OLED displays" else "Disabled in Light Mode (Requires Dark theme)",
-                        icon = Icons.Rounded.DarkMode,
-                        checked = amoledMode && isDarkTheme,
-                        enabled = isDarkTheme,
-                        onCheckedChange = { newValue ->
-                            onAmoledModeChange(newValue)
-                            PetalSearchWidgetProvider.updateAllWidgets(context)
-                        }
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
+                // Section 3: Layout & Ambient Morphing Shapes
+                SettingsCategoryCard(
+                    title = "Layout & Expressive Motion",
+                    iconRes = com.petal.browser.R.drawable.layers_filled
+                ) {
                     // Floating Tab Bar Toggle
                     ToggleRow(
                         title = "Floating Tab Bar",
@@ -640,21 +638,13 @@ fun AppearanceSettingsScreenContent(
                             }
                         }
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // Expressive Colors Toggle
-                    ToggleRow(
-                        title = "Expressive Container Colors",
-                        subtitle = "Use vibrant container tint contrast for background and surfaces",
-                        icon = Icons.Rounded.Palette,
-                        checked = expressiveColors,
-                        onCheckedChange = onExpressiveColorsChange
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // High Refresh Rate Toggle
+                // Section 4: Display Refresh Rate & Performance
+                SettingsCategoryCard(
+                    title = "Display & Performance",
+                    icon = Icons.Rounded.Speed
+                ) {
                     ToggleRow(
                         title = "High Refresh Rate (120Hz+)",
                         subtitle = "Force 120Hz/144Hz peak display refresh rate and smooth 120 FPS frame pacing (Detected hardware peak: ${maxDetectedRefreshRate.toInt()} Hz)",
@@ -687,8 +677,12 @@ private fun AppearanceHeroBanner(
     val isDarkSelected = selectedTheme == ThemeConfig.DARK
     val isLightSelected = selectedTheme == ThemeConfig.LIGHT
 
+    val containerColor = MaterialTheme.colorScheme.primaryContainer
+    val onContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     val cardBgColor by animateColorAsState(
-        targetValue = if (isDarkSelected) Color(0xFF2E1A47) else Color(0xFF5B21B6),
+        targetValue = containerColor,
         animationSpec = androidx.compose.animation.core.tween(500),
         label = "heroCardBg"
     )
@@ -727,7 +721,7 @@ private fun AppearanceHeroBanner(
         ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.25f),
+                color = onContainerColor.copy(alpha = 0.12f),
                 modifier = Modifier
                     .size(48.dp)
                     .align(Alignment.TopEnd)
@@ -743,7 +737,7 @@ private fun AppearanceHeroBanner(
                         Icon(
                             imageVector = if (dark) Icons.Rounded.Nightlight else Icons.Rounded.LightMode,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = onContainerColor,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -758,13 +752,13 @@ private fun AppearanceHeroBanner(
                 Text(
                     text = "Appearance",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color = Color.White
+                    color = onContainerColor
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = "Turn it into pure eye candy.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.85f)
+                    color = onContainerColor.copy(alpha = 0.85f)
                 )
                 Spacer(Modifier.height(24.dp))
 
@@ -775,8 +769,8 @@ private fun AppearanceHeroBanner(
                     Surface(
                         onClick = { onThemeSelected(ThemeConfig.DARK) },
                         shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFF0F0B15),
-                        border = if (isDarkSelected) BorderStroke(3.dp, Color.White) else null,
+                        color = Color(0xFF141218),
+                        border = if (isDarkSelected) BorderStroke(3.dp, primaryColor) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                         modifier = Modifier
                             .weight(1f)
                             .height(72.dp)
@@ -796,7 +790,7 @@ private fun AppearanceHeroBanner(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xFFB8A0E8))
+                                    .background(primaryColor)
                                     .then(if (isDarkSelected) Modifier.petalShimmerEffect() else Modifier)
                             )
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -805,14 +799,14 @@ private fun AppearanceHeroBanner(
                                         .width(64.dp)
                                         .height(8.dp)
                                         .clip(CircleShape)
-                                        .background(Color.White.copy(alpha = 0.6f))
+                                        .background(Color.White.copy(alpha = 0.7f))
                                 )
                                 Box(
                                     modifier = Modifier
                                         .width(42.dp)
                                         .height(6.dp)
                                         .clip(CircleShape)
-                                        .background(Color.White.copy(alpha = 0.35f))
+                                        .background(Color.White.copy(alpha = 0.4f))
                                 )
                             }
                         }
@@ -821,8 +815,8 @@ private fun AppearanceHeroBanner(
                     Surface(
                         onClick = { onThemeSelected(ThemeConfig.LIGHT) },
                         shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFFF3E8FF),
-                        border = if (isLightSelected) BorderStroke(3.dp, Color(0xFF5B21B6)) else null,
+                        color = Color(0xFFF7F2FA),
+                        border = if (isLightSelected) BorderStroke(3.dp, primaryColor) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                         modifier = Modifier
                             .weight(1f)
                             .height(72.dp)
@@ -842,7 +836,7 @@ private fun AppearanceHeroBanner(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xFF5B21B6))
+                                    .background(primaryColor)
                                     .then(if (isLightSelected) Modifier.petalShimmerEffect() else Modifier)
                             )
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -851,14 +845,14 @@ private fun AppearanceHeroBanner(
                                         .width(64.dp)
                                         .height(8.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF5B21B6).copy(alpha = 0.6f))
+                                        .background(Color(0xFF1D1B20).copy(alpha = 0.7f))
                                 )
                                 Box(
                                     modifier = Modifier
                                         .width(42.dp)
                                         .height(6.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF5B21B6).copy(alpha = 0.35f))
+                                        .background(Color(0xFF1D1B20).copy(alpha = 0.4f))
                                 )
                             }
                         }

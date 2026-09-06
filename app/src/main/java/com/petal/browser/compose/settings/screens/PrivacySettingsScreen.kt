@@ -208,8 +208,11 @@ fun PrivacySettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Privacy & Shield Protection Card
-                SettingsCategoryCard(title = "Privacy & Shield Protection", iconRes = com.petal.browser.R.drawable.layers_filled) {
+                // ── Section 1: Shield & Anti-Tracking Protection ──
+                SettingsCategoryCard(
+                    title = "Shield & Anti-Tracking",
+                    iconRes = com.petal.browser.R.drawable.layers_filled
+                ) {
                     ToggleRow(
                         title = "Ad & Tracker Shield",
                         subtitle = "uBlock Origin & AdGuard-grade Trie filter engine & scriptlets",
@@ -289,6 +292,20 @@ fun PrivacySettingsScreenContent(
                         checked = trimReferrers,
                         onCheckedChange = onTrimReferrersChange
                     )
+                }
+
+                // ── Section 2: Security & Authentication ──
+                SettingsCategoryCard(
+                    title = "Security & Passkeys",
+                    icon = Icons.Rounded.Lock
+                ) {
+                    ToggleRow(
+                        title = "HTTPS Security Enforcer",
+                        subtitle = "Automatically upgrade connections to HTTPS",
+                        icon = Icons.Rounded.Lock,
+                        checked = httpsOnly,
+                        onCheckedChange = onHttpsOnlyChange
+                    )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
@@ -298,6 +315,20 @@ fun PrivacySettingsScreenContent(
                         icon = Icons.Rounded.Key,
                         checked = webauthnEnabled,
                         onCheckedChange = onWebauthnEnabledChange
+                    )
+                }
+
+                // ── Section 3: Web Content & Navigation ──
+                SettingsCategoryCard(
+                    title = "Web Content & Navigation",
+                    icon = Icons.Rounded.Code
+                ) {
+                    ToggleRow(
+                        title = "Enable JavaScript",
+                        subtitle = "Required for modern web features",
+                        icon = Icons.Rounded.Code,
+                        checked = javaScriptEnabled,
+                        onCheckedChange = onJavaScriptEnabledChange
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -318,26 +349,6 @@ fun PrivacySettingsScreenContent(
                         icon = Icons.Rounded.TabUnselected,
                         checked = openRedirectsInBackground,
                         onCheckedChange = onOpenRedirectsInBackgroundChange
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    ToggleRow(
-                        title = "HTTPS Security Enforcer",
-                        subtitle = "Automatically upgrade connections to HTTPS",
-                        icon = Icons.Rounded.Lock,
-                        checked = httpsOnly,
-                        onCheckedChange = onHttpsOnlyChange
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    ToggleRow(
-                        title = "Enable JavaScript",
-                        subtitle = "Required for modern web features",
-                        icon = Icons.Rounded.Code,
-                        checked = javaScriptEnabled,
-                        onCheckedChange = onJavaScriptEnabledChange
                     )
                 }
 
