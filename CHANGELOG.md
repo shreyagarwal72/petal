@@ -1,3 +1,18 @@
+### v2.8 - Bye Bye WebView, Hello Gecko Gecko! 🦎💨
+
+- **🦎 Full Mozilla GeckoView 154 Engine Migration**:
+  - **Complete Engine Transition**: Fully transitioned web page rendering, session management, and DOM handling across all tabs and popups to Mozilla GeckoView 154. Zero legacy Android System WebView instances are running for browsing.
+  - **Identified as Gecko / Firefox**: Web standards test suites and browsers accurately identify Petal as powered by modern Gecko 154.
+  - **Chrome-Style Tab Rehydration & Zero Data Loss**: Upgraded session serialization and persistence to save and restore GeckoView tabs, group titles, active indexes, and URLs seamlessly across app restarts.
+- **✨ Material 3 Expressive Context Menu**:
+  - **Next-Gen Bottom Sheet Context Surfaces**: Long-pressing web links, images, video elements, audio streams, and text selection opens a sleek Material 3 Expressive bottom sheet with rounded action cards and fluid micro-interactions.
+  - **Rich Action Suites**: One-tap quick actions for Tab Groups, Incognito tabs, Lens visual search, Petal Scanner, media downloads, copy URL/text, and web search.
+- **🎯 Dynamic Address Bar & Gesture Integration**:
+  - Bound omnibox status, SSL indicators, favicons, and page progress directly to GeckoView session delegates.
+  - Smooth nested scrolling physics for automatic address bar collapse/expand.
+- **🔒 Zero Data Loss Guarantee**:
+  - Full backward compatibility across saved tabs, bookmarks, SQLite history, and user preferences.
+
 ### v2.7.4
 
 - **🔍 Gesture Diagnostics & Stability**:

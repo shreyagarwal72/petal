@@ -1,0 +1,6 @@
+v2.8 - Bye Bye WebView, Hello Gecko Gecko! 🦎💨
+
+• Complete migration to Mozilla GeckoView 154: zero legacy WebView instances remaining.
+• Material 3 Expressive Context Menu: sleek bottom sheets for long-pressing links, images, video, audio, and text selections.
+• Chrome-style tab rehydration & persistence for GeckoView tabs and groups.
+• Fluid address bar collapsing and omnibox synchronization with zero data loss.
