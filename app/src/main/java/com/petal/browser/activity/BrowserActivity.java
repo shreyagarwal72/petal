@@ -241,7 +241,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public long filterBy;
     public boolean filter;
     public ValueCallback<Uri[]> filePathCallback = null;
-    public AlbumController currentAlbumController = null;
+    public static AlbumController currentAlbumController = null;
     public ValueCallback<Uri[]> mFilePathCallback;
     public String mCameraPhotoPath = null;
     public com.petal.browser.media.PetalMediaSessionService mediaService;
