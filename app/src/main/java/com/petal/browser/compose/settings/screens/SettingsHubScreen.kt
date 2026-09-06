@@ -54,7 +54,11 @@ fun SettingsHubScreen(
     val matchingItems = searchResult.matchingItems
     val didYouMean = searchResult.didYouMean
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
         M3ExpressiveVariableBackground(pageSeed = "settings_hub")
 
         Column(modifier = Modifier.fillMaxSize()) {

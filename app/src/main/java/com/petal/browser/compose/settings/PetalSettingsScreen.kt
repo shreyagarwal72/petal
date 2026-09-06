@@ -28,7 +28,6 @@ import com.petal.browser.compose.settings.screens.*
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
-import com.petal.browser.ui.components.ScreenWrapper
 import com.petal.browser.ui.theme.*
 
 enum class SettingsCategory(val title: String, val subtitle: String, val iconRes: Int) {
@@ -142,13 +141,11 @@ object PetalSettingsBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
-                    ScreenWrapper {
-                        PetalSettingsScreen(
-                            backgroundSnapshot = snapshotBitmap,
-                            initialCategory = initialCategory,
-                            onBackPress = onBackPress
-                        )
-                    }
+                    PetalSettingsScreen(
+                        backgroundSnapshot = snapshotBitmap,
+                        initialCategory = initialCategory,
+                        onBackPress = onBackPress
+                    )
                 }
             }
         }
