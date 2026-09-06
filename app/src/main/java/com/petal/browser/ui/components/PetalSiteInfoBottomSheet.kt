@@ -27,23 +27,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
 import com.petal.browser.unit.HelperUnit
+import com.petal.browser.browser.AlbumController
 import com.petal.browser.view.NinjaWebView
+import com.petal.browser.view.PetalGeckoView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalSiteInfoBottomSheet(
-    webView: NinjaWebView?,
+    albumController: AlbumController?,
     onDismissRequest: () -> Unit,
     onResetSiteData: () -> Unit
 ) {
     val context = LocalContext.current
-    val currentUrl = webView?.url ?: ""
+    val geckoView = albumController as? PetalGeckoView
+    val webView = albumController as? NinjaWebView
+
+    val currentUrl = albumController?.url ?: ""
     val domain = remember(currentUrl) { HelperUnit.domain(currentUrl) }
-    val favicon: Bitmap? = webView?.favicon
+    val favicon: Bitmap? = geckoView?.getFavicon() ?: webView?.favicon
 
     val sslCertificate: SslCertificate? = webView?.certificate
     val isHttps = currentUrl.startsWith("https://")
-    val isSecure = isHttps && sslCertificate != null
+    val isSecure = isHttps && (geckoView != null || sslCertificate != null)
 
     // Cookie Count for domain
     var cookieCount by remember(currentUrl) {
@@ -57,7 +62,7 @@ fun PetalSiteInfoBottomSheet(
 
     // SharedPreferences for site permission states
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    val profile = remember { NinjaWebView.getProfile() }
+    val profile = remember { PetalGeckoView.getProfile(context) }
 
     var isCameraAllowed by remember { mutableStateOf(sp.getBoolean(profile + "_camera", false)) }
     var isMicAllowed by remember { mutableStateOf(sp.getBoolean(profile + "_microphone", false)) }
@@ -295,7 +300,7 @@ fun PetalSiteInfoBottomSheet(
                         if (allowed && context is android.app.Activity) {
                             HelperUnit.grantPermissionsCamera(context)
                         }
-                        webView?.reloadWithoutInit()
+                        geckoView?.reloadWithoutInit() ?: webView?.reloadWithoutInit()
                     },
                     shape = getGroupItemShape(0, 4),
                     leadingIcon = {
@@ -318,7 +323,7 @@ fun PetalSiteInfoBottomSheet(
                         if (allowed && context is android.app.Activity) {
                             HelperUnit.grantPermissionsMic(context)
                         }
-                        webView?.reloadWithoutInit()
+                        geckoView?.reloadWithoutInit() ?: webView?.reloadWithoutInit()
                     },
                     shape = getGroupItemShape(1, 4),
                     leadingIcon = {
@@ -346,7 +351,7 @@ fun PetalSiteInfoBottomSheet(
                                 GeolocationPermissions.getInstance().clear(domain)
                             } catch (ignored: Exception) {}
                         }
-                        webView?.reloadWithoutInit()
+                        geckoView?.reloadWithoutInit() ?: webView?.reloadWithoutInit()
                     },
                     shape = getGroupItemShape(2, 4),
                     leadingIcon = {

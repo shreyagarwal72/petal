@@ -11,14 +11,16 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.browser.AlbumController
 import com.petal.browser.view.NinjaWebView
+import com.petal.browser.view.PetalGeckoView
 
 object PetalSiteInfoBridge {
 
     @JvmStatic
     fun showSiteInfoBottomSheet(
         activity: ComponentActivity,
-        webView: NinjaWebView?,
+        albumController: AlbumController?,
         onResetSiteData: Runnable
     ) {
         activity.runOnUiThread {
@@ -50,7 +52,7 @@ object PetalSiteInfoBridge {
                             var showSheet by remember { mutableStateOf(true) }
                             if (showSheet) {
                                 PetalSiteInfoBottomSheet(
-                                    webView = webView,
+                                    albumController = albumController,
                                     onDismissRequest = {
                                         showSheet = false
                                         val parentView = composeView?.parent as? android.view.ViewGroup

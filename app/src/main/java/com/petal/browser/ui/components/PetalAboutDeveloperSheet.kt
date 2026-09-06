@@ -251,10 +251,18 @@ fun PetalAboutDeveloperSheetContent(
                                         }
                                     } else {
                                         val activity = context as? com.petal.browser.activity.BrowserActivity
-                                        if (activity != null && activity.ninjaWebView != null) {
+                                        if (activity != null) {
                                             onClose()
-                                            activity.ninjaWebView.loadUrl(url)
-                                            activity.showAlbum(activity.currentAlbumController, url)
+                                            val ctrl = activity.currentAlbumController
+                                            if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                                                ctrl.loadUrl(url)
+                                                activity.showAlbum(ctrl, url)
+                                            } else if (activity.ninjaWebView != null) {
+                                                activity.ninjaWebView.loadUrl(url)
+                                                activity.showAlbum(activity.currentAlbumController, url)
+                                            } else {
+                                                activity.addAlbum(null, url, true)
+                                            }
                                         } else {
                                             BrowserUnit.intentURL(context, Uri.parse(url))
                                         }
@@ -1094,11 +1102,15 @@ fun PetalCreditsSheetContent(
                                             val activity = context as? com.petal.browser.activity.BrowserActivity
                                             if (activity != null) {
                                                 onClose()
-                                                activity.ninjaWebView?.let { wv ->
-                                                    wv.loadUrl(credit.url)
+                                                val ctrl = activity.currentAlbumController
+                                                if (ctrl is com.petal.browser.view.PetalGeckoView) {
+                                                    ctrl.loadUrl(credit.url)
+                                                    activity.showAlbum(ctrl, credit.url)
+                                                } else if (activity.ninjaWebView != null) {
+                                                    activity.ninjaWebView.loadUrl(credit.url)
                                                     activity.showAlbum(activity.currentAlbumController, credit.url)
-                                                } ?: run {
-                                                    BrowserUnit.intentURL(context, Uri.parse(credit.url))
+                                                } else {
+                                                    activity.addAlbum(null, credit.url, true)
                                                 }
                                             } else {
                                                 BrowserUnit.intentURL(context, Uri.parse(credit.url))
