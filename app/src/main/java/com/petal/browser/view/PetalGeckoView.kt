@@ -253,16 +253,18 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onNewSession(session: GeckoSession, uri: String): GeckoResult<GeckoSession>? {
-                val act = getHostActivity()
-                if (act is com.petal.browser.activity.BrowserActivity) {
-                    val newView = PetalGeckoView(act)
-                    newView.isIncognito = isIncognito
-                    act.runOnUiThread {
-                        act.addAlbum(newView.title, uri, true, isIncognito)
+                val act = getHostActivity() as? com.petal.browser.activity.BrowserActivity ?: return null
+                val result = GeckoResult<GeckoSession>()
+                act.runOnUiThread {
+                    val popup = act.addAlbumForPopup("Sign-in", isIncognito)
+                    val popupSession = (popup as? PetalGeckoView)?.session
+                    if (popupSession != null) {
+                        result.complete(popupSession)
+                    } else {
+                        result.completeExceptionally(IllegalStateException("Could not create sign-in window"))
                     }
-                    return GeckoResult.fromValue(newView.session)
                 }
-                return null
+                return result
             }
         }
 
