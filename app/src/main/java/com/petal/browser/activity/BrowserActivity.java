@@ -5266,13 +5266,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 NinjaToast.show(this, "No active web page to install");
                 return;
             }
+            com.petal.browser.pwa.PetalPwaManager manager = null;
             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                if (gv.getPwaManager() == null) {
-                    gv.setPwaManager(new com.petal.browser.pwa.PetalPwaManager(this, gv, null));
-                }
-                gv.getPwaManager().installCurrentPwa(this);
+                manager = gv.getPwaManager();
+                if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, gv, null); gv.setPwaManager(manager); }
+            } else if (currentAlbumController instanceof com.petal.browser.view.NinjaWebView) {
+                com.petal.browser.view.NinjaWebView webView = (com.petal.browser.view.NinjaWebView) currentAlbumController;
+                manager = webView.getPwaManager();
+                if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, webView, null); webView.setPwaManager(manager); }
             }
+            if (manager != null) manager.installCurrentPwa(this);
+            else NinjaToast.show(this, "No active web page to install");
         } catch (Exception e) {
             e.printStackTrace();
             NinjaToast.show(this, "Failed to install app");
