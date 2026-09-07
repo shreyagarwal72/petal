@@ -257,12 +257,18 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity() as? com.petal.browser.activity.BrowserActivity ?: return null
                 val result = GeckoResult<GeckoSession>()
                 act.runOnUiThread {
-                    val popup = act.addAlbumForPopup("Sign-in", isIncognito)
-                    val popupSession = (popup as? PetalGeckoView)?.session
-                    if (popupSession != null) {
-                        result.complete(popupSession)
-                    } else {
-                        result.completeExceptionally(IllegalStateException("Could not create sign-in window"))
+                    try {
+                        if (act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) {
+                            result.completeExceptionally(IllegalStateException("Browser is closing"))
+                            return@runOnUiThread
+                        }
+                        val popup = act.addAlbumForPopup("Sign-in", isIncognito)
+                        val popupSession = (popup as? PetalGeckoView)?.session
+                        if (popupSession != null && popupSession.isOpen) result.complete(popupSession)
+                        else result.completeExceptionally(IllegalStateException("Could not create sign-in window"))
+                    } catch (t: Throwable) {
+                        android.util.Log.e(TAG, "Failed to create sign-in popup", t)
+                        result.completeExceptionally(t)
                     }
                 }
                 return result
