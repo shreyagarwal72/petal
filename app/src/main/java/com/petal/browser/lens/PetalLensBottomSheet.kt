@@ -87,6 +87,16 @@ fun PetalLensBottomSheet(
             onDismissRequest()
         }
     }
+    val galleryChooserLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try { PetalLensManager.launchLensForImageUri(context, uri) }
+            catch (_: Exception) { PetalLensManager.launchGoogleLensApp(context) }
+            onDismissRequest()
+        }
+    }
+
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -315,18 +325,32 @@ fun PetalLensBottomSheet(
                         }
                         Column {
                             Text(
-                                text = "System Picker",
+                                text = "Android System Picker",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Files / Drive",
+                                text = "Photos picker",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
+            }
+
+            OutlinedButton(
+                onClick = {
+                    PetalHapticEngine.getInstance(context).playClick(context)
+                    try { galleryChooserLauncher.launch("image/*") }
+                    catch (_: Exception) { PetalLensManager.launchGoogleLensApp(context); onDismissRequest() }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Gallery Chooser")
             }
 
             // Builtin Photos Gallery Grid
