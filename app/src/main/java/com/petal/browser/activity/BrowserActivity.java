@@ -4472,9 +4472,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         ArrayList<String> openTabs = new ArrayList<>();
         for (int i = 0; i < BrowserContainer.size(); i++) {
-            if (currentAlbumController == BrowserContainer.get(i))
-                openTabs.add(0, ((NinjaWebView) (BrowserContainer.get(i))).getUrl());
-            else openTabs.add(((NinjaWebView) (BrowserContainer.get(i))).getUrl());
+            AlbumController controller = BrowserContainer.get(i);
+            if (controller == null) continue;
+            String url = controller.getUrl();
+            if (url == null) url = "";
+            if (controller == currentAlbumController) {
+                openTabs.add(0, url);
+            } else {
+                openTabs.add(url);
+            }
         }
         sp.edit().putString("openTabs", TextUtils.join("‚‗‚", openTabs)).apply();
         com.petal.browser.unit.TabSessionManager.saveSession(this);
