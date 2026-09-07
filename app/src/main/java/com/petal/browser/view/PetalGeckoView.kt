@@ -264,7 +264,9 @@ class PetalGeckoView @JvmOverloads constructor(
                         }
                         val popup = act.addAlbumForPopup("Sign-in", isIncognito)
                         val popupSession = (popup as? PetalGeckoView)?.session
-                        if (popupSession != null && popupSession.isOpen) result.complete(popupSession)
+                        // Gecko opens the newly-created session asynchronously. Reading isOpen
+                        // here races that transition and can crash OAuth/login redirects.
+                        if (popupSession != null) result.complete(popupSession)
                         else result.completeExceptionally(IllegalStateException("Could not create sign-in window"))
                     } catch (t: Throwable) {
                         android.util.Log.e(TAG, "Failed to create sign-in popup", t)
