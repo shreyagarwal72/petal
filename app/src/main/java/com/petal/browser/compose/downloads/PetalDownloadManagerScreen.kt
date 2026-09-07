@@ -12,6 +12,9 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.app.Activity
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -59,6 +62,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -257,6 +263,34 @@ fun PetalDownloadManagerScreen(
 ) {
     val context = LocalContext.current
 
+
+    val hostActivity = context as? Activity
+    var showNotificationPermissionDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        val permissionMissing = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        val notificationsDisabled = !NotificationManagerCompat.from(context).areNotificationsEnabled()
+        showNotificationPermissionDialog = permissionMissing || notificationsDisabled
+    }
+    if (showNotificationPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showNotificationPermissionDialog = false },
+            icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
+            title = { Text("Enable download tracking") },
+            text = { Text("Allow notifications to see live download progress, speed, completion, pause, resume, and retry actions. Downloads still work if you decline.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showNotificationPermissionDialog = false
+                    if (hostActivity != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        ActivityCompat.requestPermissions(hostActivity, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 4102)
+                    } else {
+                        try { context.startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)) } catch (_: Exception) {}
+                    }
+                }) { Text("Allow notifications") }
+            },
+            dismissButton = { TextButton(onClick = { showNotificationPermissionDialog = false }) { Text("Not now") } }
+        )
+    }
     // Downloads now flow through Fetch2 (see BrowserUnit.download), which is the only
     // engine here that actually supports pause/resume. PetalFetchDownloadBridge listens
     // to it live, so this list updates instantly on progress/pause/resume/completion
@@ -285,6 +319,7 @@ fun PetalDownloadManagerScreen(
             DownloadSortOption.SIZE_DESC -> downloadList.sortedByDescending { if (it.totalSize > 0) it.totalSize else it.bytesDownloaded }
             DownloadSortOption.SIZE_ASC -> downloadList.sortedBy { if (it.totalSize > 0) it.totalSize else it.bytesDownloaded }
             DownloadSortOption.STATUS -> downloadList.sortedWith(
+
                 compareBy<DownloadItem> {
                     when (it.status) {
                         DownloadManager.STATUS_RUNNING -> 0
@@ -554,6 +589,7 @@ private fun DownloadRowItem(
     var showRenameDialog by remember { mutableStateOf(false) }
     var renameInput by remember { mutableStateOf(item.fileName) }
     val context = LocalContext.current
+
 
     if (showRenameDialog) {
         AlertDialog(

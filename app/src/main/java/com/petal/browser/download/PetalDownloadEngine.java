@@ -45,6 +45,9 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
+import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
 
 import okhttp3.OkHttpClient;
 
@@ -63,7 +66,12 @@ public class PetalDownloadEngine {
         Context appContext = context.getApplicationContext();
 
         // Custom robust OkHttpClient for segmented parallel downloading
+        Dispatcher dispatcher = new Dispatcher(Executors.newFixedThreadPool(32));
+        dispatcher.setMaxRequests(64);
+        dispatcher.setMaxRequestsPerHost(16);
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .dispatcher(dispatcher)
+                .connectionPool(new ConnectionPool(32, 5, TimeUnit.MINUTES))
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS)
@@ -75,7 +83,7 @@ public class PetalDownloadEngine {
         // Configure parallel multi-part segmentation downloader
         // PARALLEL chunking splits large payloads across concurrent threads for maximum throughput
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
-                .setDownloadConcurrentLimit(12)
+                .setDownloadConcurrentLimit(24)
                 .setProgressReportingInterval(100L)
                 .setAutoRetryMaxAttempts(10)
                 .enableAutoStart(true)
