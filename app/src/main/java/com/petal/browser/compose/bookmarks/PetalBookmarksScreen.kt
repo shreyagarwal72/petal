@@ -148,20 +148,12 @@ fun PetalBookmarksScreen(
 
     var overflowMenuExpanded by remember { mutableStateOf(false) }
 
-    // Backup Export & Import SAF Activity Launchers (supports JSON & HTML)
+    // Bookmark Export & Import SAF Activity Launchers (JSON only)
     val exportJsonLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { targetUri ->
         if (targetUri != null) {
-            BookmarkHtmlImporterExporter.exportToUri(context, targetUri, format = "json")
-        }
-    }
-
-    val exportHtmlLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/html")
-    ) { targetUri ->
-        if (targetUri != null) {
-            BookmarkHtmlImporterExporter.exportToUri(context, targetUri, format = "html")
+            BookmarkHtmlImporterExporter.exportToUri(context, targetUri)
         }
     }
 
@@ -230,7 +222,7 @@ fun PetalBookmarksScreen(
                                 onDismissRequest = { overflowMenuExpanded = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Import Bookmarks (JSON / HTML)") },
+                                    text = { Text("Import Bookmarks (JSON)") },
                                     leadingIcon = {
                                         Icon(
                                             Icons.Rounded.FileUpload,
@@ -240,11 +232,11 @@ fun PetalBookmarksScreen(
                                     },
                                     onClick = {
                                         overflowMenuExpanded = false
-                                        importLauncher.launch(arrayOf("application/json", "text/html", "text/plain", "*/*"))
+                                        importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Export Backup (JSON)") },
+                                    text = { Text("Export Bookmarks (JSON)") },
                                     leadingIcon = {
                                         Icon(
                                             Icons.Rounded.DataObject,
@@ -255,20 +247,6 @@ fun PetalBookmarksScreen(
                                     onClick = {
                                         overflowMenuExpanded = false
                                         exportJsonLauncher.launch("petal_bookmarks.json")
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Export Bookmarks (HTML)") },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Rounded.FileDownload,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    },
-                                    onClick = {
-                                        overflowMenuExpanded = false
-                                        exportHtmlLauncher.launch("bookmarks.html")
                                     }
                                 )
                                 if (!rawBookmarks.isNullOrEmpty()) {
