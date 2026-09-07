@@ -88,8 +88,6 @@ class PetalGeckoView @JvmOverloads constructor(
     private var isIncognito: Boolean = false
     private var isForegroundTab: Boolean = false
     private var isStopped: Boolean = false
-    private var lastCrashRecoveryTime: Long = 0L
-    private var crashRecoveryCount: Int = 0
 
     private var tabId: String = "tab_${System.currentTimeMillis()}_${Math.abs(hashCode())}"
     private var tabGroupId: String? = null
