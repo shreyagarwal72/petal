@@ -34,6 +34,7 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
+import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.MediaSession
 import java.util.function.Consumer
 
@@ -309,27 +310,20 @@ class PetalGeckoView @JvmOverloads constructor(
                 recoverCrashedSession()
             }
 
-
-            override fun onExternalResponse(session: GeckoSession, response: GeckoSession.WebResponseInfo) {
+            override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
                 val responseUrl = response.uri
                 if (responseUrl.isNullOrBlank()) return
-                val act = getHostActivity()
-                val fileName = android.webkit.URLUtil.guessFileName(
-                    responseUrl,
-                    response.filename,
-                    response.contentType
-                )
-                val mimeType = response.contentType?.takeIf { it.isNotBlank() }
-                val size = response.contentLength
-                act?.runOnUiThread {
+                val act = getHostActivity() ?: return
+                val fileName = android.webkit.URLUtil.guessFileName(responseUrl, null, null)
+                act.runOnUiThread {
                     com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
                         act,
                         responseUrl,
-                        response.filename,
-                        mimeType,
-                        size,
+                        null,
+                        null,
+                        0L,
                     ) { confirmedName ->
-                        BrowserUnit.download(act, responseUrl, confirmedName.ifBlank { fileName }, mimeType)
+                        BrowserUnit.download(act, responseUrl, confirmedName.ifBlank { fileName }, null)
                     }
                 }
             }
