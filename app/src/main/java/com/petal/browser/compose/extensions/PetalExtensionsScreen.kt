@@ -439,6 +439,27 @@ private fun AddExtensionSheet(
                 }
             }
 
+            Spacer(Modifier.height(12.dp))
+            val context = LocalContext.current
+            FilledTonalButton(
+                onClick = {
+                    try {
+                        context.startActivity(
+                            android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse(PetalExtensionManager.amoAndroidBrowseUrl)
+                            )
+                        )
+                    } catch (ignored: Exception) {}
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Find more extensions")
+            }
+
             Spacer(Modifier.height(20.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
             Spacer(Modifier.height(16.dp))
