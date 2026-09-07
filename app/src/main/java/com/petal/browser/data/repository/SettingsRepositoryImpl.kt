@@ -280,6 +280,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE, com.petal.browser.unit.ExternalDownloadManagerHelper.MODE_IN_APP) ?: com.petal.browser.unit.ExternalDownloadManagerHelper.MODE_IN_APP
     }
 
+    override val autoPreviewDownloadedImages: Flow<Boolean> = preferenceFlow("sp_auto_preview_downloaded_images") {
+        sp.getBoolean("sp_auto_preview_downloaded_images", true)
+    }
+
     // ── Setters ───────────────────────────────────────────────────────────────
     override suspend fun setAppFont(font: AppFont) {
         sp.edit().putString("sp_app_font", font.name).apply()
@@ -515,5 +519,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setDownloadManagerMode(mode: String) {
         sp.edit().putString(com.petal.browser.unit.ExternalDownloadManagerHelper.PREF_DOWNLOAD_MANAGER_MODE, mode).apply()
+    }
+
+    override suspend fun setAutoPreviewDownloadedImages(enabled: Boolean) {
+        sp.edit().putBoolean("sp_auto_preview_downloaded_images", enabled).apply()
     }
 }

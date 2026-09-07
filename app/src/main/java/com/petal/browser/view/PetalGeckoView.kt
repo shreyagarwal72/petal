@@ -332,7 +332,7 @@ class PetalGeckoView @JvmOverloads constructor(
                     }
                     return
                 }
-                val fileName = android.webkit.URLUtil.guessFileName(responseUrl, null, null)
+                val fileName = HelperUnit.resolveFileName(responseUrl, null, null)
                 act.runOnUiThread {
                     com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
                         act, responseUrl, null, null, 0L
