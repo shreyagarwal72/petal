@@ -73,6 +73,7 @@ class PetalApplication : Application() {
             override fun onActivityStopped(activity: Activity) {
                 startedActivityCount = maxOf(0, startedActivityCount - 1)
                 if (startedActivityCount == 0 && activity.isFinishing) {
+                    com.petal.browser.logger.PetalAppLogger.markCleanExit(this@PetalApplication)
                     val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
                     if (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) {
                         BrowserUnit.clearOnExit(this@PetalApplication)
@@ -82,6 +83,7 @@ class PetalApplication : Application() {
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityDestroyed(activity: Activity) {
                 if (activity.isFinishing) {
+                    com.petal.browser.logger.PetalAppLogger.markCleanExit(this@PetalApplication)
                     val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
                     if (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) {
                         BrowserUnit.clearOnExit(this@PetalApplication)
