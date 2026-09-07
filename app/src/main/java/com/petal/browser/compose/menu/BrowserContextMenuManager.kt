@@ -69,7 +69,7 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadLink() {
                     try {
-                        val fileName = URLUtil.guessFileName(imageURL, null, null)
+                        val fileName = HelperUnit.resolveFileName(imageURL, null, null)
                         BrowserUnit.download(activity, imageURL, fileName, null)
                         NinjaToast.show(activity, "Download started")
                     } catch (e: Exception) {
@@ -198,7 +198,7 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadLink() {
                     try {
-                        val fileName = URLUtil.guessFileName(urlResult, null, null)
+                        val fileName = HelperUnit.resolveFileName(urlResult, null, null)
                         BrowserUnit.download(activity, urlResult, fileName, null)
                         NinjaToast.show(activity, "Download started")
                     } catch (e: Exception) {
@@ -296,7 +296,7 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadVideo() {
                     try {
-                        val fileName = URLUtil.guessFileName(cleanVideoUrl, null, "video/mp4")
+                        val fileName = HelperUnit.resolveFileName(cleanVideoUrl, null, "video/mp4")
                         BrowserUnit.download(activity, cleanVideoUrl, fileName, null)
                         NinjaToast.show(activity, "Video download started")
                     } catch (e: Exception) {
@@ -348,7 +348,7 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadAudio() {
                     try {
-                        val fileName = URLUtil.guessFileName(audioUrl, null, "audio/*")
+                        val fileName = HelperUnit.resolveFileName(audioUrl, null, "audio/*")
                         BrowserUnit.download(activity, audioUrl, fileName, null)
                         NinjaToast.show(activity, "Audio download started")
                     } catch (e: Exception) {

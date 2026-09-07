@@ -12,6 +12,7 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.graphics.BitmapFactory
 import android.app.Activity
 import android.Manifest
 import android.content.pm.PackageManager
@@ -25,6 +26,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -51,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
@@ -262,6 +265,8 @@ fun PetalDownloadManagerScreen(
     onBackPress: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val autoPreviewDownloadedImages = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        .getBoolean("sp_auto_preview_downloaded_images", true)
 
 
     val hostActivity = context as? Activity
@@ -519,6 +524,9 @@ fun PetalDownloadManagerScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 24.dp)
                 ) {
+                    if (autoPreviewDownloadedImages) {
+                        item { DownloadedImagePreviewStrip(downloadList) }
+                    }
                     groupedDownloads.forEach { (dateHeader, items) ->
                         stickyHeader(key = dateHeader) {
                             Surface(
@@ -571,6 +579,31 @@ fun PetalDownloadManagerScreen(
 }
 }
 }
+
+@Composable
+private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
+    val images = downloads.filter { it.status == DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }.take(6)
+    if (images.isEmpty()) return
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text("Downloaded images", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            images.forEach { item ->
+                val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, item.localUri) {
+                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        runCatching { BitmapFactory.decodeFile(Uri.parse(item.localUri).path ?: item.localUri) }.getOrNull()
+                    }
+                }
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.weight(1f).height(if (images.size == 1) 220.dp else 130.dp).clickable { }) {
+                    if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)))
+                    else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
+                }
+            }
+        }
+    }
+}
+
+private fun isPreviewImage(name: String): Boolean = name.substringAfterLast('.', "").lowercase(Locale.US) in setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "avif")
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
