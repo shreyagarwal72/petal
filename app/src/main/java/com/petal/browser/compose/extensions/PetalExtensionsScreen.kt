@@ -447,7 +447,6 @@ private fun AddExtensionSheet(
             }
 
             Spacer(Modifier.height(20.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
             Spacer(Modifier.height(16.dp))
 
             Text(
@@ -638,7 +637,6 @@ private fun ExtensionPopupDialog(
                         Icon(Icons.Rounded.Close, contentDescription = "Close")
                     }
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 AndroidView(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     factory = { ctx ->
