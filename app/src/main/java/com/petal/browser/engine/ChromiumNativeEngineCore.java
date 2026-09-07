@@ -2,8 +2,6 @@ package com.petal.browser.engine;
 
 import android.content.Context;
 import android.util.Log;
-import com.petal.browser.flags.ChromeFlagsManager;
-import java.util.List;
 
 /**
  * Chromium Native Core Engine Controller.
@@ -17,12 +15,6 @@ public class ChromiumNativeEngineCore {
     public static synchronized void initialize(Context context) {
         if (isNativeLibraryLoaded) return;
         try {
-            // Apply C++ Command Line switches generated from petal://flags
-            List<String> switchesList = ChromeFlagsManager.getNativeCommandLineSwitches(context);
-            for (String switchArg : switchesList) {
-                Log.i(TAG, "Chromium Native Switch: " + switchArg);
-            }
-
             // Attempt loading native Chromium library if compiled via Cloud CI
             try {
                 System.loadLibrary("chrome");

@@ -439,7 +439,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         // Let Chromium handle the window/canvas background naturally without forced opaque paint
 
         WebSettings webSettings = getSettings();
-        com.petal.browser.flags.ChromeFlagsManager.applyFlagsToWebSettings(context, webSettings);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             webSettings.setOffscreenPreRaster(true);
         }
@@ -865,13 +864,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         if (listStandard.isWhite(url)) profile = HelperUnit.domain(urlToLoad);
 
         String targetUrl = BrowserUnit.queryWrapper(context, urlToLoad);
-
-        if (com.petal.browser.flags.ChromeFlagsManager.isFlagsUrl(targetUrl) || com.petal.browser.flags.ChromeFlagsManager.isFlagsUrl(url)) {
-            if (context instanceof androidx.activity.ComponentActivity) {
-                com.petal.browser.flags.PetalChromeFlagsBridge.showFlags((androidx.activity.ComponentActivity) context, null);
-            }
-            return;
-        }
 
         // Intercept home scheme URLs so WebView stays on about:blank and does not trigger net::ERR_UNKNOWN_URL_SCHEME
         if (BrowserUnit.isHomePage(targetUrl) || BrowserUnit.isHomePage(urlToLoad) || BrowserUnit.isHomePage(url)) {
