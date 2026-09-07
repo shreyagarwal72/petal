@@ -1023,11 +1023,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         finishAndRemoveTask();
                     } else {
                         lastBackPressTime = currentTime;
-                        NinjaToast.show(BrowserActivity.this, "Press back again to exit Petal");
+                        showExitConfirmationDialog();
                     }
                 }
             }
         }
+    }
+
+    private void showExitConfirmationDialog() {
+        if (isFinishing() || isDestroyed()) return;
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Leave Petal Browser?")
+                .setMessage("Do you want to exit the browser?")
+                .setNegativeButton("Stay", null)
+                .setPositiveButton("Exit", (dialog, which) -> finishAndRemoveTask())
+                .setOnDismissListener(dialog -> lastBackPressTime = 0L)
+                .show();
     }
 
     /**
