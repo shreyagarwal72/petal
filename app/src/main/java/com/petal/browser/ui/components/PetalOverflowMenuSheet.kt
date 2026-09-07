@@ -454,11 +454,13 @@ fun PetalOverflowMenuSheet(
                         title = if (isBookmarked) "Remove bookmark" else "Add bookmark",
                         onClick = onToggleBookmark
                     )
+                if (!isHomePage) {
                     MenuRowItem(
                         icon = Icons.Rounded.InstallMobile,
                         title = "Install as App",
                         onClick = onInstallPwa
                     )
+                }
                 }
 
                 HorizontalDivider(
