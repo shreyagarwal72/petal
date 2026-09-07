@@ -92,9 +92,6 @@ fun SettingsCategoryCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-
             content()
         }
     }
