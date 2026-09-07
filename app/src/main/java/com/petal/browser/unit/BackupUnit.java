@@ -105,11 +105,16 @@ public class BackupUnit {
         try {
             File publicDocs = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS);
             File backupDir = new File(publicDocs, "browser_backup");
-            if (backupDir.exists() && backupDir.canWrite()) {
-                return backupDir;
+            if (!backupDir.exists()) {
+                backupDir.mkdirs();
             }
-            if (backupDir.mkdirs() || (backupDir.exists() && backupDir.canWrite())) {
-                return backupDir;
+            if (backupDir.exists()) {
+                // Verify real write access by testing a temporary file
+                File testFile = new File(backupDir, ".write_test_" + System.currentTimeMillis());
+                if (testFile.createNewFile()) {
+                    testFile.delete();
+                    return backupDir;
+                }
             }
         } catch (Throwable ignored) {}
         File internalBackupDir = new File(context.getFilesDir(), "browser_backup");
