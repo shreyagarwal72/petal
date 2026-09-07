@@ -1,6 +1,7 @@
 package com.petal.browser
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -8,6 +9,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Process
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.petal.browser.engine.ChromiumNativeEngineCore
@@ -50,6 +52,16 @@ class PetalApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // GeckoView starts helper processes for GPU, content tabs and crash
+        // handling. Android creates our Application in each of them too. A
+        // GeckoRuntime must only ever be created by the browser process: doing
+        // so in CrashHelper starts another Gecko instance there, after which
+        // Gecko terminates the browser process a few seconds after launch.
+        if (!isMainProcess()) {
+            Log.i(TAG, "Skipping browser initialization in helper process")
+            return
+        }
+
         try {
             com.petal.browser.logger.PetalAppLogger.init(this)
             com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(this)
@@ -112,6 +124,18 @@ class PetalApplication : Application() {
                 Log.e(TAG, "Failed to refresh widgets after night mode change", e)
             }
         }
+    }
+
+    private fun isMainProcess(): Boolean {
+        val processName = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            Application.getProcessName()
+        } else {
+            val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            activityManager?.runningAppProcesses
+                ?.firstOrNull { it.pid == Process.myPid() }
+                ?.processName
+        }
+        return processName == packageName
     }
 
     companion object {
