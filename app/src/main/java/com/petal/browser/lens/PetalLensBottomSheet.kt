@@ -76,7 +76,7 @@ fun PetalLensBottomSheet(
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
             try {
@@ -280,7 +280,7 @@ fun PetalLensBottomSheet(
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
                         try {
-                            galleryLauncher.launch("image/*")
+                            galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         } catch (e: Exception) {
                             PetalLensManager.launchGoogleLensApp(context)
                             onDismissRequest()
@@ -417,7 +417,7 @@ fun PetalLensBottomSheet(
                             onClick = {
                                 PetalHapticEngine.getInstance(context).playClick(context)
                                 try {
-                                    galleryLauncher.launch("image/*")
+                                    galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                                 } catch (e: Exception) {
                                     PetalLensManager.launchGoogleLensApp(context)
                                     onDismissRequest()
