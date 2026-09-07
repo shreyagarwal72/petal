@@ -309,6 +309,30 @@ class PetalGeckoView @JvmOverloads constructor(
                 recoverCrashedSession()
             }
 
+
+            override fun onExternalResponse(session: GeckoSession, response: GeckoSession.WebResponseInfo) {
+                val responseUrl = response.uri
+                if (responseUrl.isNullOrBlank()) return
+                val act = getHostActivity()
+                val fileName = android.webkit.URLUtil.guessFileName(
+                    responseUrl,
+                    response.filename,
+                    response.contentType
+                )
+                val mimeType = response.contentType?.takeIf { it.isNotBlank() }
+                val size = response.contentLength
+                act?.runOnUiThread {
+                    com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
+                        act,
+                        responseUrl,
+                        response.filename,
+                        mimeType,
+                        size,
+                    ) { confirmedName ->
+                        BrowserUnit.download(act, responseUrl, confirmedName.ifBlank { fileName }, mimeType)
+                    }
+                }
+            }
             override fun onKill(session: GeckoSession) {
                 // Same recovery as onCrash: the OS/Gecko killed the content process
                 // (e.g. under memory pressure), leaving the session closed and unusable.
