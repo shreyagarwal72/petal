@@ -181,6 +181,10 @@ object BrowserNavigationDelegate {
                     PetalAiSearchBridge.showAiSearchResult(activity, "")
                 }
 
+                override fun onOpenExtensions() {
+                    activity.showExtensionsScreen()
+                }
+
                 override fun onTriggerMediaMode() {
                     val isPipSupported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
                     val isAutoPipEnabled = prefs.getBoolean("sp_auto_pip", true)
