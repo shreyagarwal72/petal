@@ -45,7 +45,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
@@ -149,16 +148,8 @@ fun PetalExtensionsScreen(
                 ExpressiveHeader(
                     title = "Extensions",
                     subtitle = if (extensions.isEmpty()) "Firefox add-ons, powered by GeckoView" else "${extensions.size} installed",
-                    onBack = onDismiss,
-                    actions = {
-                        HeaderActionIcon(
-                            icon = Icons.Rounded.Refresh,
-                            contentDescription = "Refresh",
-                            onClick = { PetalExtensionManager.refresh() }
-                        )
-                    }
+                    onBack = onDismiss
                 )
-
                 if (busy) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
