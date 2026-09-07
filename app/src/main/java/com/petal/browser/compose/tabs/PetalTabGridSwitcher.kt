@@ -149,10 +149,27 @@ fun PetalTabGridSwitcher(
         tabGroups = PetalTabGroupManager.getAllGroups(context)
     }
 
+    // Inactive / Archived Tabs state
+    var inactiveTabs by remember { mutableStateOf(PetalInactiveTabManager.getInactiveTabs(context)) }
+    var isInactiveSheetVisible by remember { mutableStateOf(false) }
+    fun refreshInactiveTabs() {
+        inactiveTabs = PetalInactiveTabManager.getInactiveTabs(context)
+    }
+
     LaunchedEffect(tabs) {
         val openTabIds = tabs.map { it.id }.toSet()
         PetalTabGroupManager.syncWithOpenTabs(context, openTabIds)
         refreshGroups()
+        // Record active tab access
+        tabs.find { it.isSelected }?.let { activeTab ->
+            PetalInactiveTabManager.recordTabAccess(context, activeTab.id)
+        }
+        // Auto-archive inactive or duplicate tabs if eligible
+        val archivedTabs = PetalInactiveTabManager.evaluateAndArchiveInactiveTabs(context, tabs)
+        if (archivedTabs.isNotEmpty()) {
+            archivedTabs.forEach { onTabClose(it) }
+            refreshInactiveTabs()
+        }
     }
 
     // Drag-and-drop tab merging bookkeeping
@@ -435,6 +452,73 @@ fun PetalTabGridSwitcher(
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    // ── Inactive Items Banner (Chrome / Brave style matching image.png) ──
+                    val inactiveCount = inactiveTabs.size
+                    val thresholdDays = PetalInactiveTabManager.getThresholdDays(context)
+                    if (inactiveCount > 0 && selectedCategory == TabCategory.REGULAR && searchQuery.isBlank()) {
+                        Spacer(Modifier.height(10.dp))
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isInactiveSheetVisible = true }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
+                                        modifier = Modifier.size(38.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.TabUnselected,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text(
+                                            text = if (inactiveCount == 1) "(1) inactive item" else "($inactiveCount) inactive items",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = if (thresholdDays > 0) "Tabs and groups not used for $thresholdDays day${if (thresholdDays == 1) "" else "s"}..." else "Archived and duplicate tabs...",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+
+                                Icon(
+                                    imageVector = Icons.Rounded.ChevronRight,
+                                    contentDescription = "View Inactive Items",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 // ── Body: Grid / List / Groups / Empty states ────────────────────────
@@ -754,6 +838,58 @@ fun PetalTabGridSwitcher(
                 refreshGroups()
                 inspectingGroup = updated
             }
+        )
+    }
+
+    // Modal Sheet showing Inactive / Archived Tabs
+    if (isInactiveSheetVisible) {
+        PetalInactiveTabsSheet(
+            inactiveTabs = inactiveTabs,
+            onRestoreTab = { tabToRestore ->
+                PetalInactiveTabManager.restoreInactiveTab(context, tabToRestore)
+                refreshInactiveTabs()
+                onRestoreTab?.invoke(
+                    PetalTabItem(
+                        id = tabToRestore.id,
+                        title = tabToRestore.title,
+                        url = tabToRestore.url,
+                        isIncognito = tabToRestore.isIncognito,
+                        groupId = tabToRestore.groupId,
+                        groupTitle = tabToRestore.groupTitle,
+                        groupColorHex = tabToRestore.groupColorHex
+                    )
+                )
+            },
+            onRestoreAllTabs = {
+                val restored = PetalInactiveTabManager.restoreAllInactiveTabs(context)
+                refreshInactiveTabs()
+                restored.forEach { tabToRestore ->
+                    onRestoreTab?.invoke(
+                        PetalTabItem(
+                            id = tabToRestore.id,
+                            title = tabToRestore.title,
+                            url = tabToRestore.url,
+                            isIncognito = tabToRestore.isIncognito,
+                            groupId = tabToRestore.groupId,
+                            groupTitle = tabToRestore.groupTitle,
+                            groupColorHex = tabToRestore.groupColorHex
+                        )
+                    )
+                }
+            },
+            onCloseTab = { tabToClose ->
+                PetalInactiveTabManager.removeInactiveTab(context, tabToClose.id)
+                refreshInactiveTabs()
+            },
+            onCloseAllInactive = {
+                PetalInactiveTabManager.clearAllInactiveTabs(context)
+                refreshInactiveTabs()
+            },
+            onOpenSettings = {
+                isInactiveSheetVisible = false
+                onOpenSettings()
+            },
+            onDismiss = { isInactiveSheetVisible = false }
         )
     }
 }
