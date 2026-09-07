@@ -6,14 +6,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ChevronRight
+import androidx.compose.material.icons.automirrored.rounded.Launch
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Launch
-import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.TabUnselected
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -269,14 +273,14 @@ fun MiscSettingsScreenContent(
                     ToggleRow(
                         title = "Auto Open External Apps",
                         subtitle = "Allow YouTube, Maps & Play Store links to open in external native apps instead of Petal",
-                        icon = Icons.Rounded.Launch,
+                        icon = Icons.AutoMirrored.Rounded.Launch,
                         checked = autoOpenApps,
                         onCheckedChange = onAutoOpenAppsChange
                     )
                 }
 
                 // Tabs & Inactive Tabs Management Card
-                var showInactiveSheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                var showInactiveSheet by remember { mutableStateOf(false) }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
                 val thresholdPref = sp.getString(com.petal.browser.compose.tabs.PetalInactiveTabManager.PREF_INACTIVE_DAYS_THRESHOLD, "21") ?: "21"
                 val thresholdSummary = when (thresholdPref) {
@@ -318,7 +322,7 @@ fun MiscSettingsScreenContent(
                                 )
                             }
                             Icon(
-                                imageVector = Icons.Rounded.ChevronRight,
+                                imageVector = Icons.AutoMirrored.Rounded.ChevronRight,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(22.dp)
