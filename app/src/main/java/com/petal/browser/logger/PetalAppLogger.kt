@@ -128,11 +128,16 @@ object PetalAppLogger {
         val lastHandledExitTime = sp.getLong(PREF_LAST_HANDLED_EXIT_TIME, 0L)
 
         val latestAbnormalExit = exitReasons.firstOrNull { exitInfo ->
+            val isNormalSelfExit = exitInfo.reason == android.app.ApplicationExitInfo.REASON_SIGNALED &&
+                    (exitInfo.description?.contains("exit_self", ignoreCase = true) == true ||
+                     exitInfo.status == 0 ||
+                     exitInfo.status == 9)
+
             val isCrashOrAnr = when (exitInfo.reason) {
                 android.app.ApplicationExitInfo.REASON_CRASH_NATIVE,
                 android.app.ApplicationExitInfo.REASON_CRASH,
-                android.app.ApplicationExitInfo.REASON_ANR,
-                android.app.ApplicationExitInfo.REASON_SIGNALED -> true
+                android.app.ApplicationExitInfo.REASON_ANR -> true
+                android.app.ApplicationExitInfo.REASON_SIGNALED -> !isNormalSelfExit
                 else -> false
             }
             isCrashOrAnr && exitInfo.timestamp > lastCleanExitTime && exitInfo.timestamp > lastHandledExitTime
