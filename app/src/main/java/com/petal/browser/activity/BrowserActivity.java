@@ -677,13 +677,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     com.petal.browser.unit.TabSessionManager.loadSession(this);
             if (savedSession != null && !savedSession.isEmpty()) {
                 com.petal.browser.view.PetalGeckoView activeRestoredGeckoView = null;
-                boolean foregroundRestored = false;
+                int activeIndex = -1;
+                for (int i = 0; i < savedSession.size(); i++) {
+                    if (savedSession.get(i).isActive) {
+                        activeIndex = i;
+                        break;
+                    }
+                }
+                if (activeIndex < 0) activeIndex = 0;
+
                 for (int i = 0; i < savedSession.size(); i++) {
                     com.petal.browser.unit.TabSessionManager.TabStateRecord record = savedSession.get(i);
-                    if (record == null) continue;
-                    boolean isForegroundTab = !foregroundRestored &&
-                            (record.isActive || (i == 0 && BrowserContainer.size() == 0));
-
+                    boolean isForegroundTab = i == activeIndex;
                     if (isForegroundTab) {
                         com.petal.browser.view.PetalGeckoView restoredGeckoView =
                                 com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
@@ -707,11 +712,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         }
                         BrowserContainer.add(restoredGeckoView);
                         activeRestoredGeckoView = restoredGeckoView;
-                        foregroundRestored = true;
                     } else {
-                        BrowserContainer.add(new com.petal.browser.browser.PlaceholderAlbumController(
-                                this, record.title, record.url, record.persistentTabId,
-                                record.tabGroupId, record.tabGroupTitle, record.isIncognito, null));
+                        com.petal.browser.browser.PlaceholderAlbumController placeholder =
+                                new com.petal.browser.browser.PlaceholderAlbumController(
+                                        this, record.title, record.url, null, record.persistentTabId,
+                                        record.tabGroupId, record.tabGroupTitle, record.isIncognito
+                                );
+                        BrowserContainer.add(placeholder);
                     }
                 }
                 if (activeRestoredGeckoView != null) {
@@ -1368,40 +1375,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         if (controller == null) return;
 
-        // Saved background tabs are metadata-only until the user activates them.
+        // Saved background tabs are lightweight placeholders. Materialize exactly
+        // the selected slot when it is first shown, preserving its position/ID.
         if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
             com.petal.browser.browser.PlaceholderAlbumController placeholder =
                     (com.petal.browser.browser.PlaceholderAlbumController) controller;
             int slot = BrowserContainer.indexOf(controller);
-            if (slot >= 0) {
-                String targetUrl = overrideUrl != null ? overrideUrl : placeholder.getUrl();
-                com.petal.browser.view.PetalGeckoView restoredGeckoView =
-                        com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
-                                this, placeholder.getTitle(), placeholder.getUrl(), true, placeholder.isIncognito());
-                if (placeholder.getTabId() != null && !placeholder.getTabId().isEmpty()) {
-                    restoredGeckoView.setTabId(placeholder.getTabId());
-                }
-                restoredGeckoView.setBrowserController(this);
-                if (placeholder.getTabGroupId() != null && !placeholder.getTabGroupId().isEmpty()) {
-                    restoredGeckoView.setTabGroupId(placeholder.getTabGroupId());
-                    restoredGeckoView.setTabGroupTitle(placeholder.getTabGroupTitle());
-                }
-                if (placeholder.getTitle() != null && !placeholder.getTitle().isEmpty()) {
-                    restoredGeckoView.setAlbumTitle(placeholder.getTitle(), placeholder.getUrl());
-                }
-                BrowserContainer.replace(slot, restoredGeckoView);
-                controller = restoredGeckoView;
-                if (targetUrl == null || targetUrl.trim().isEmpty() || isHomePage(targetUrl)) {
-                    restoredGeckoView.loadUrl("about:blank");
-                } else {
-                    restoredGeckoView.loadUrl(targetUrl);
-                }
+            if (slot < 0) return;
+            String savedTitle = placeholder.getTitle();
+            String savedUrl = placeholder.getUrl();
+            String targetUrl = overrideUrl != null ? overrideUrl : savedUrl;
+            com.petal.browser.view.PetalGeckoView materialized =
+                    com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
+                            this, savedTitle, savedUrl, true, placeholder.isIncognito());
+            if (placeholder.getTabId() != null && !placeholder.getTabId().isEmpty()) {
+                materialized.setTabId(placeholder.getTabId());
+            }
+            materialized.setBrowserController(this);
+            if (savedTitle != null && !savedTitle.isEmpty()) {
+                materialized.setAlbumTitle(savedTitle, savedUrl);
+            }
+            if (placeholder.getTabGroupId() != null && !placeholder.getTabGroupId().isEmpty()) {
+                materialized.setTabGroupId(placeholder.getTabGroupId());
+                materialized.setTabGroupTitle(placeholder.getTabGroupTitle());
+            }
+            BrowserContainer.replace(slot, materialized);
+            controller = materialized;
+            if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
+                materialized.loadUrl(targetUrl);
+            } else {
+                materialized.loadUrl("about:blank");
             }
         }
 
-        if (controller == null) return;
         View av = controller.getAlbumView();
-        if (av == null) return;
         if (currentAlbumController != null) {
             if (currentAlbumController instanceof NinjaWebView) {
                 ((NinjaWebView) currentAlbumController).updatePreviewCache();
