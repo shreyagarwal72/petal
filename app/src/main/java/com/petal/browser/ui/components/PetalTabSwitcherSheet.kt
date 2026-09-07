@@ -52,6 +52,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.BrowserContainer
+import com.petal.browser.browser.PlaceholderAlbumController
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 data class TabModel(
@@ -116,13 +117,12 @@ object PetalTabSwitcherBridge {
                                     val rawUrl = try { album.getUrl() } catch (_: Exception) { null }
                                     val isIncognitoTab = (album is com.petal.browser.view.PetalGeckoView && album.isIncognito()) ||
                                             ((album is com.petal.browser.view.NinjaWebView) && album.isIncognito())
-                                    val faviconBitmap = if (album is com.petal.browser.view.PetalGeckoView) {
-                                        album.getFavicon()
-                                    } else if (album is com.petal.browser.view.NinjaWebView) {
-                                        album.getFavicon()
-                                    } else if (album is com.petal.browser.browser.PlaceholderAlbumController) {
-                                        album.getFavicon()
-                                    } else null
+                                    val faviconBitmap = when (album) {
+                                        is com.petal.browser.view.PetalGeckoView -> album.getFavicon()
+                                        is com.petal.browser.view.NinjaWebView -> album.getFavicon()
+                                        is PlaceholderAlbumController -> album.getFavicon()
+                                        else -> null
+                                    }
                                     val previewBitmap = if (album is com.petal.browser.view.PetalGeckoView) {
                                         album.getCachedPreviewBitmap()
                                     } else if (album is com.petal.browser.view.NinjaWebView) {
@@ -136,9 +136,19 @@ object PetalTabSwitcherBridge {
                                     }
                                     val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equals("about:blank", ignoreCase = true) || rawUrl.startsWith("file:///android_asset/")) "Petal Home" else rawUrl
                                     val group = com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(context, album.hashCode().toString())
-                                    val webViewGroupId = if (album is com.petal.browser.view.PetalGeckoView) album.getTabGroupId() else if (album is com.petal.browser.view.NinjaWebView) album.tabGroupId else if (album is com.petal.browser.browser.PlaceholderAlbumController) album.getTabGroupId() else null
+                                    val webViewGroupId = when (album) {
+                                        is com.petal.browser.view.PetalGeckoView -> album.getTabGroupId()
+                                        is com.petal.browser.view.NinjaWebView -> album.tabGroupId
+                                        is PlaceholderAlbumController -> album.getTabGroupId()
+                                        else -> null
+                                    }
                                     val effectiveGroupId = group?.id ?: webViewGroupId
-                                    val effectiveGroupTitle = group?.title ?: (if (album is com.petal.browser.view.PetalGeckoView) album.getTabGroupTitle() else if (album is com.petal.browser.view.NinjaWebView) album.tabGroupTitle else if (album is com.petal.browser.browser.PlaceholderAlbumController) album.getTabGroupTitle() else null)
+                                    val effectiveGroupTitle = group?.title ?: when (album) {
+                                        is com.petal.browser.view.PetalGeckoView -> album.getTabGroupTitle()
+                                        is com.petal.browser.view.NinjaWebView -> album.tabGroupTitle
+                                        is PlaceholderAlbumController -> album.getTabGroupTitle()
+                                        else -> null
+                                    }
                                     val effectiveGroupColor = group?.colorHex
 
                                     com.petal.browser.compose.tabs.PetalTabItem(
