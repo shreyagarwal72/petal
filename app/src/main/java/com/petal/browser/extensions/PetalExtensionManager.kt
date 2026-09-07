@@ -119,8 +119,60 @@ object PetalExtensionManager {
             description = "Automatically dismisses cookie consent popups.",
             amoSlug = "istilldontcareaboutcookies",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/istilldontcareaboutcookies/"
+        ),
+        CatalogEntry(
+            id = "youtube-high-definition",
+            name = "YouTube High Definition",
+            description = "Automatically plays YouTube videos in HD, resizes the player, and adds auto-stop and mute.",
+            amoSlug = "youtube-high-definition",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/youtube-high-definition/"
+        ),
+        CatalogEntry(
+            id = "view-page-archive",
+            name = "Web Archives",
+            description = "View archived and cached versions of web pages, such as the Wayback Machine and Archive.is.",
+            amoSlug = "view-page-archive",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/view-page-archive/"
+        ),
+        CatalogEntry(
+            id = "tomato-clock",
+            name = "Tomato Clock",
+            description = "A simple Pomodoro-style timer for managing your productivity.",
+            amoSlug = "tomato-clock",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/tomato-clock/"
+        ),
+        CatalogEntry(
+            id = "video-background-play-fix",
+            name = "Video Background Play Fix",
+            description = "Keeps videos playing in the background by blocking the Page Visibility and Fullscreen APIs.",
+            amoSlug = "video-background-play-fix",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/video-background-play-fix/"
+        ),
+        CatalogEntry(
+            id = "google-search-fixer",
+            name = "Google Search Fixer",
+            description = "Overrides the user-agent on Google Search so it serves the Chrome-style search experience.",
+            amoSlug = "google-search-fixer",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/google-search-fixer/"
+        ),
+        CatalogEntry(
+            id = "cookie-editor",
+            name = "Cookie-Editor",
+            description = "Create, edit, search, and delete cookies for the current tab.",
+            amoSlug = "cookie-editor",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/cookie-editor/"
+        ),
+        CatalogEntry(
+            id = "adguard-adblocker",
+            name = "AdGuard AdBlocker",
+            description = "Blocks ads and pop-ups on Facebook, YouTube, and every other website.",
+            amoSlug = "adguard-adblocker",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/adguard-adblocker/"
         )
     )
+
+    /** AMO's Android extensions catalog - opened by "Find more extensions". */
+    const val amoAndroidBrowseUrl = "https://addons.mozilla.org/en-US/android/"
 
     private val _extensions = MutableStateFlow<List<InstalledExtension>>(emptyList())
     val extensions: StateFlow<List<InstalledExtension>> = _extensions.asStateFlow()
