@@ -255,8 +255,6 @@ object PetalExtensionManager {
                 "That extension isn't signed by Mozilla, so it can't be installed."
             WebExtension.InstallException.ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE ->
                 "That AMO listing isn't an installable extension."
-            WebExtension.InstallException.ErrorCodes.ERROR_INCORRECT_CERTIFICATE ->
-                "The extension's signature couldn't be verified."
             WebExtension.InstallException.ErrorCodes.ERROR_BLOCKLISTED ->
                 "This extension has been blocklisted by Mozilla for safety reasons."
             WebExtension.InstallException.ErrorCodes.ERROR_INCOMPATIBLE ->
