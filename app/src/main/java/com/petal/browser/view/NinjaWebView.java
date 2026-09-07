@@ -850,7 +850,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             url = url.replace(tracking, "");
         }
 
-        String urlToLoad = BrowserUnit.redirectURL( this, sp, url);
+        String urlToLoad = BrowserUnit.redirectURL(sp, url);
 
         if (!Objects.equals(HelperUnit.domain(this.getUrl()), HelperUnit.domain(urlToLoad)) && sp.getBoolean("sp_standard_always", true)) {
             sp.edit().putString("profile", "profileStandard").apply();
