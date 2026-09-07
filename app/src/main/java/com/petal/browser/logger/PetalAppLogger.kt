@@ -59,6 +59,9 @@ object PetalAppLogger {
     private const val CRASH_LOG_FILENAME = "last_crash.log"
     const val PREF_CRASH_REPORT_MODE = "sp_crash_report_mode" // "auto" or "off"
 
+    private const val PREF_LAST_CLEAN_EXIT_TIME = "sp_last_clean_exit_timestamp"
+    private const val PREF_LAST_HANDLED_EXIT_TIME = "sp_last_handled_exit_timestamp"
+
     private val logBuffer = ConcurrentLinkedQueue<String>()
     private val crashTraces = ConcurrentLinkedQueue<String>()
 
@@ -67,25 +70,39 @@ object PetalAppLogger {
 
     @JvmStatic
     fun init(context: Context) {
-        // Read previous crash report from disk if exists
+        val appContext = context.applicationContext ?: context
+
+        // 1. Read previous crash report from disk if exists
         try {
-            val crashFile = File(context.filesDir, CRASH_LOG_FILENAME)
+            val crashFile = File(appContext.filesDir, CRASH_LOG_FILENAME)
             if (crashFile.exists()) {
                 val content = crashFile.readText()
                 if (content.isNotBlank()) {
                     lastCrashReport = content
-                    crashTraces.add(content)
+                    if (!crashTraces.contains(content)) {
+                        crashTraces.add(content)
+                    }
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to read crash log from disk", e)
         }
 
+        // 2. On Android 11+ (API 30+), inspect Historical Process Exit Reasons for Native Crashes (e.g. SIGSEGV in libxul/Gecko) or ANRs
+        if (lastCrashReport.isNullOrBlank() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                inspectHistoricalExitReasons(appContext)
+            } catch (e: Throwable) {
+                Log.w(TAG, "Failed to inspect historical process exit reasons", e)
+            }
+        }
+
+        // 3. Register global UncaughtExceptionHandler
         if (defaultUncaughtHandler == null) {
             defaultUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
                 try {
-                    handleCrash(context, thread, throwable)
+                    handleCrash(appContext, thread, throwable)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error recording uncaught crash", e)
                 } finally {
@@ -94,6 +111,92 @@ object PetalAppLogger {
             }
             log(TAG, "PetalAppLogger initialized successfully")
         }
+    }
+
+    /**
+     * Inspects Android 11+ ApplicationExitInfo for native crashes (SIGSEGV, SIGBUS, SIGABRT in libxul or runtime)
+     * or unhandled ANRs that bypass standard Java UncaughtExceptionHandler.
+     */
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    private fun inspectHistoricalExitReasons(context: Context) {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager ?: return
+        val exitReasons = am.getHistoricalProcessExitReasons(context.packageName, 0, 5)
+        if (exitReasons.isEmpty()) return
+
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val lastCleanExitTime = sp.getLong(PREF_LAST_CLEAN_EXIT_TIME, 0L)
+        val lastHandledExitTime = sp.getLong(PREF_LAST_HANDLED_EXIT_TIME, 0L)
+
+        val latestAbnormalExit = exitReasons.firstOrNull { exitInfo ->
+            val isCrashOrAnr = when (exitInfo.reason) {
+                android.app.ApplicationExitInfo.REASON_CRASH_NATIVE,
+                android.app.ApplicationExitInfo.REASON_CRASH,
+                android.app.ApplicationExitInfo.REASON_ANR,
+                android.app.ApplicationExitInfo.REASON_SIGNALED -> true
+                else -> false
+            }
+            isCrashOrAnr && exitInfo.timestamp > lastCleanExitTime && exitInfo.timestamp > lastHandledExitTime
+        } ?: return
+
+        val reasonStr = when (latestAbnormalExit.reason) {
+            android.app.ApplicationExitInfo.REASON_CRASH_NATIVE -> "NATIVE_CRASH (SIGSEGV / Native Library Crash, e.g. libxul.so)"
+            android.app.ApplicationExitInfo.REASON_CRASH -> "FATAL_CRASH (Uncaught Runtime Exception)"
+            android.app.ApplicationExitInfo.REASON_ANR -> "APPLICATION_NOT_RESPONDING (ANR)"
+            android.app.ApplicationExitInfo.REASON_SIGNALED -> "SIGNALED_TERMINATION (Killed by Linux Signal)"
+            else -> "EXIT_REASON_${latestAbnormalExit.reason}"
+        }
+
+        val tombstoneTrace = try {
+            latestAbnormalExit.traceInputStream?.bufferedReader()?.use { it.readText() }
+        } catch (_: Throwable) {
+            null
+        }
+
+        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date(latestAbnormalExit.timestamp))
+        val report = buildString {
+            append("=== PETAL BROWSER HISTORICAL NATIVE / PROCESS CRASH ===\n")
+            append("Timestamp: $timestamp\n")
+            append("Process Name: ${latestAbnormalExit.processName} (PID ${latestAbnormalExit.pid})\n")
+            append("Exit Reason: $reasonStr\n")
+            append("Exit Status: ${latestAbnormalExit.status}\n")
+            append("Description: ${latestAbnormalExit.description ?: "None"}\n")
+            append("App Version: ${try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Throwable) { "Unknown" }}\n")
+            append("Android OS: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})\n")
+            append("Device: ${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})\n")
+            if (!tombstoneTrace.isNullOrBlank()) {
+                append("\nTombstone / Native Trace:\n")
+                append(tombstoneTrace.take(8000))
+                append("\n")
+            }
+        }
+
+        lastCrashReport = report
+        crashTraces.add(report)
+        sp.edit().putLong(PREF_LAST_HANDLED_EXIT_TIME, latestAbnormalExit.timestamp).apply()
+
+        try {
+            val crashFile = File(context.filesDir, CRASH_LOG_FILENAME)
+            FileOutputStream(crashFile).use { fos ->
+                fos.write(report.toByteArray(Charsets.UTF_8))
+                fos.flush()
+                try {
+                    fos.fd.sync()
+                } catch (_: Throwable) {}
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to persist historical crash report", e)
+        }
+    }
+
+    /**
+     * Marks clean shutdown timestamp to prevent false-positive crash prompts on next launch.
+     */
+    @JvmStatic
+    fun markCleanExit(context: Context) {
+        try {
+            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            sp.edit().putLong(PREF_LAST_CLEAN_EXIT_TIME, System.currentTimeMillis()).apply()
+        } catch (_: Throwable) {}
     }
 
     @JvmStatic
