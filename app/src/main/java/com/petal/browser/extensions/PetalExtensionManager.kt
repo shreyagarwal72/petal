@@ -306,8 +306,9 @@ object PetalExtensionManager {
                 "Petal couldn't access that file."
             WebExtension.InstallException.ErrorCodes.ERROR_SIGNEDSTATE_REQUIRED ->
                 "That extension isn't signed by Mozilla, so it can't be installed."
-            WebExtension.InstallException.ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE ->
-                "That AMO listing isn't an installable extension."
+            WebExtension.InstallException.ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE,
+            WebExtension.InstallException.ErrorCodes.ERROR_UNSUPPORTED_ADDON_TYPE ->
+                "This Firefox add-on type is not supported on Android. Choose an extension listed for Firefox Android."
             WebExtension.InstallException.ErrorCodes.ERROR_BLOCKLISTED ->
                 "This extension has been blocklisted by Mozilla for safety reasons."
             WebExtension.InstallException.ErrorCodes.ERROR_INCOMPATIBLE ->
