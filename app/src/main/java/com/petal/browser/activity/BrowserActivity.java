@@ -549,7 +549,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
-                predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing;
+                predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing && contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView) && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView);
                 if (predictiveBackStartedOnOverlay) {
                     predictiveBackSwipeEdge = backEvent.getSwipeEdge();
                     // Compose owns the overlay animation; do not also transform the Activity root.
@@ -946,6 +946,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * nav / predictive back) below, so both routes behave identically.
      */
     public void performBackNavigation() {
+        if (isOverlayScreenShowing && contentFrame != null && contentFrame.getChildCount() > 0 && (contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView || contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView)) {
+            isOverlayScreenShowing = false;
+            pendingOverlayBackAction = null;
+        }
         if (currentAlbumController instanceof NinjaWebView) {
             ninjaWebView = (NinjaWebView) currentAlbumController;
         }

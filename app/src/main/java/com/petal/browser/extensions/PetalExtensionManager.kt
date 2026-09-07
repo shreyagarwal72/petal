@@ -82,7 +82,7 @@ object PetalExtensionManager {
         val amoListingUrl: String
     ) {
         /** AMO's permanent "always the latest signed build" redirect for this add-on. */
-        val downloadUrl: String get() = "https://addons.mozilla.org/firefox/downloads/latest/$amoSlug/latest.xpi"
+        val downloadUrl: String get() = "https://addons.mozilla.org/android/downloads/latest/$amoSlug/latest.xpi"
     }
 
     val catalog: List<CatalogEntry> = listOf(
@@ -452,7 +452,7 @@ object PetalExtensionManager {
         val segments = parsed.pathSegments
         val addonIndex = segments.indexOf("addon")
         val slug = segments.getOrNull(addonIndex + 1)?.takeIf { it.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*")) }
-        return if (slug != null) "https://addons.mozilla.org/firefox/downloads/latest/$slug/latest.xpi" else parsed.toString().takeIf { parsed.path?.endsWith(".xpi", ignoreCase = true) == true }
+        return if (slug != null) "https://addons.mozilla.org/android/downloads/latest/$slug/latest.xpi" else parsed.toString().takeIf { parsed.path?.endsWith(".xpi", ignoreCase = true) == true }
     }
 
     private fun toInstalled(ext: WebExtension): InstalledExtension {
