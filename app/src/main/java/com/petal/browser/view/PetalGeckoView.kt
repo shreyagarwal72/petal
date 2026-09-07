@@ -633,6 +633,8 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun canGoBack(): Boolean = canGoBackVal
 
+    fun hasBackHistory(): Boolean = canGoBackVal || backHistoryUrls.isNotEmpty()
+
     fun canGoForward(): Boolean = canGoForwardVal
 
     fun goBack() {
@@ -642,6 +644,11 @@ class PetalGeckoView @JvmOverloads constructor(
                 backHistoryUrls.removeAt(backHistoryUrls.size - 1)
             }
             session.goBack()
+        } else {
+            val previousUrl = backHistoryUrls.removeLastOrNull() ?: return
+            isNavigatingHistory = true
+            currentUrl = previousUrl
+            session.loadUri(previousUrl)
         }
     }
 

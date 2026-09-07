@@ -986,7 +986,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             searchOnSiteInput.setText("");
             searchOnSiteLayout.setVisibility(GONE);
             appBar.setVisibility(VISIBLE);
-        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView && ((com.petal.browser.view.PetalGeckoView) currentAlbumController).canGoBack()) {
+        } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView && ((com.petal.browser.view.PetalGeckoView) currentAlbumController).hasBackHistory()) {
             sp.edit().putBoolean("backPressed", true).apply();
             com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
             gv.stopLoading();
