@@ -332,6 +332,13 @@ object PetalSettingsSearchIndex {
             keywords = listOf("double back", "exit", "close app", "accidental exit", "back button")
         ),
 
+        SettingsSearchItem(
+            id = "tabs_inactive",
+            title = "Tabs & Inactive Tabs",
+            subtitle = "Configure inactive tab timing, duplicate archiving and automatic cleanup",
+            category = SettingsCategory.TABS,
+            keywords = listOf("tabs", "inactive", "archive", "tab cleanup", "duplicate tabs")
+        ),
         // ==================== MISCELLANEOUS ====================
         SettingsSearchItem(
             id = "misc_default_download_manager",
@@ -353,13 +360,6 @@ object PetalSettingsSearchIndex {
             subtitle = "Automatically verify latest GitHub releases and notify when a new APK update is available",
             category = SettingsCategory.MISCELLANEOUS,
             keywords = listOf("update on launch", "auto check updates", "version check", "release notify")
-        ),
-        SettingsSearchItem(
-            id = "misc_inactive_tabs",
-            title = "Inactive Tabs & Auto-Archival",
-            subtitle = "Automatically move unused tabs (7, 14, 21 days) to inactive, archive duplicate tabs, and auto-close after 3 months",
-            category = SettingsCategory.MISCELLANEOUS,
-            keywords = listOf("inactive tabs", "inactive", "archive duplicate tabs", "archive tabs", "close inactive tabs", "tab cleanup", "tab management", "unused tabs", "duplicate tabs")
         ),
 
         // ==================== DATA & BACKUP ====================
