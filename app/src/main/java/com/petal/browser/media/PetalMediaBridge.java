@@ -319,14 +319,12 @@ public class PetalMediaBridge {
         if (!autoPip) return false;
 
         try {
-            PictureInPictureParams.Builder builder = new PictureInPictureParams.Builder();
-            if (customView != null && customView.getWidth() > 0 && customView.getHeight() > 0) {
-                Rational aspectRatio = new Rational(customView.getWidth(), customView.getHeight());
-                builder.setAspectRatio(aspectRatio);
-            } else {
-                builder.setAspectRatio(new Rational(16, 9));
+            if (activity instanceof com.petal.browser.activity.BrowserActivity) {
+                com.petal.browser.media.BrowserMediaDelegate.triggerSystemPipMode(
+                        (com.petal.browser.activity.BrowserActivity) activity);
+                return true;
             }
-            return activity.enterPictureInPictureMode(builder.build());
+            return false;
         } catch (Exception e) {
             return false;
         }
