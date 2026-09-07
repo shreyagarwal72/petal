@@ -83,7 +83,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     private val childHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)
     val geckoView: GeckoView = GeckoView(context)
-    val session: GeckoSession = GeckoSession()
+    var session: GeckoSession = GeckoSession()
 
     private val sp: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private var isIncognito: Boolean = false
@@ -641,10 +641,13 @@ class PetalGeckoView @JvmOverloads constructor(
                 return
             }
 
-            val runtime = PetalGeckoRuntime.getOrCreate(context)
-            if (!session.isOpen) {
-                session.open(runtime)
-            }
+            // A killed Gecko content process leaves its GeckoSession permanently unusable.
+            // Recreate the session and all delegates instead of reopening the dead instance.
+            try { geckoView.releaseSession() } catch (_: Throwable) {}
+            try { if (session.isOpen) session.close() } catch (_: Throwable) {}
+            session = GeckoSession()
+            initGeckoSession()
+            // Rebinding a fresh session also gives GeckoView a new compositor surface.
             // Reopening the session alone isn't enough: GeckoView's compositor can stay
             // bound to the dead content process's Surface, so the reloaded page finishes
             // "loading" (title/progress/URL bar all update via the delegates above) but no
