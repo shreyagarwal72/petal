@@ -1,6 +1,7 @@
 package com.petal.browser.extensions
 
 import android.content.Context
+import android.net.Uri
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.preference.PreferenceManager
@@ -357,11 +358,18 @@ object PetalExtensionManager {
 
     /** Installs a `.xpi` from any https URL (an AMO listing's download link, or a direct file). */
     fun install(uri: String, onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }) {
+        val installUri = normalizeInstallUri(uri)
+        if (installUri == null) {
+            val message = "Use a secure .xpi download link or an addons.mozilla.org add-on page."
+            _lastError.value = message
+            onResult(false, message)
+            return
+        }
         val ctx = appContext ?: return
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
         _busy.value = true
         _lastError.value = null
-        controller.install(uri, WebExtensionController.INSTALLATION_METHOD_MANAGER)
+        controller.install(installUri, WebExtensionController.INSTALLATION_METHOD_MANAGER)
             .accept({ extension ->
                 _busy.value = false
                 if (extension != null) {
@@ -427,11 +435,23 @@ object PetalExtensionManager {
                             }
                         }
                     }, { /* icon optional */ })
+
                 } catch (ignored: Exception) {}
             }
         }, {
             Log.w(TAG, "Failed to list extensions", it)
         })
+    }
+
+    private fun normalizeInstallUri(value: String): String? {
+        val parsed = try { Uri.parse(value.trim()) } catch (_: Exception) { return null }
+        if (!parsed.scheme.equals("https", ignoreCase = true)) return null
+        val host = parsed.host?.lowercase() ?: return null
+        if (host != "addons.mozilla.org" && host != "www.addons.mozilla.org") return parsed.toString().takeIf { parsed.path?.endsWith(".xpi", ignoreCase = true) == true }
+        val segments = parsed.pathSegments
+        val addonIndex = segments.indexOf("addon")
+        val slug = segments.getOrNull(addonIndex + 1)?.takeIf { it.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*")) }
+        return if (slug != null) "https://addons.mozilla.org/firefox/downloads/latest/$slug/latest.xpi" else parsed.toString().takeIf { parsed.path?.endsWith(".xpi", ignoreCase = true) == true }
     }
 
     private fun toInstalled(ext: WebExtension): InstalledExtension {
