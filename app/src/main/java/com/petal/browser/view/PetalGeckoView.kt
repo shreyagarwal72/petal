@@ -600,6 +600,21 @@ class PetalGeckoView @JvmOverloads constructor(
         val redirected = BrowserUnit.redirectURL(sp, url)
         val targetUrl = BrowserUnit.queryWrapper(context, redirected)
 
+        // APKMirror download endpoints are file responses, not pages. Rendering the
+        // download.php response in Gecko can create a large transient document and
+        // trigger an Android low-memory kill before the download starts.
+        val targetUri = try { android.net.Uri.parse(targetUrl) } catch (_: Exception) { null }
+        val isApkMirrorDownload = targetUri?.host?.endsWith("apkmirror.com", ignoreCase = true) == true &&
+            (targetUri.path?.contains("/download.php", ignoreCase = true) == true ||
+             targetUri.path?.endsWith(".apk", ignoreCase = true) == true)
+        if (isApkMirrorDownload) {
+            val activity = getHostActivity()
+            if (activity != null) {
+                BrowserUnit.download(activity, targetUrl, HelperUnit.resolveFileName(targetUrl, null, "application/vnd.android.package-archive"), "application/vnd.android.package-archive")
+                return
+            }
+        }
+
         if (BrowserUnit.isHomePage(targetUrl) || BrowserUnit.isHomePage(url)) {
             session.loadUri("about:blank")
             currentUrl = "about:blank"
