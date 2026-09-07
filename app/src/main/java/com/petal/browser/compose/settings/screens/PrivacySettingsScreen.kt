@@ -241,9 +241,6 @@ fun PrivacySettingsScreenContent(
                             }
                         }
                     }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "Block Third-Party Tracking Cookies",
                         subtitle = "Isolate and block cross-site cookies used for ad tracking",
@@ -251,9 +248,6 @@ fun PrivacySettingsScreenContent(
                         checked = blockThirdPartyCookies,
                         onCheckedChange = onBlockThirdPartyCookiesChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "Canvas, Audio & Font Fingerprint Shield",
                         subtitle = "Randomize canvas, WebGL, AudioContext, and font geometry to defeat browser fingerprinting",
@@ -261,9 +255,6 @@ fun PrivacySettingsScreenContent(
                         checked = fingerprintProtection,
                         onCheckedChange = onFingerprintProtectionChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "WebRTC IP Leak Shield",
                         subtitle = "Prevent local & public IP address leaks via WebRTC STUN/TURN queries",
@@ -271,9 +262,6 @@ fun PrivacySettingsScreenContent(
                         checked = webrtcProtection,
                         onCheckedChange = onWebrtcProtectionChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "Do Not Track & Global Privacy Control (GPC)",
                         subtitle = "Broadcast DNT: 1 and Sec-GPC: 1 signals requesting websites not to sell or share your data",
@@ -281,9 +269,6 @@ fun PrivacySettingsScreenContent(
                         checked = dntGpc,
                         onCheckedChange = onDntGpcChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "Strict Referrer Trimming",
                         subtitle = "Strip cross-origin URL paths from referrer headers to protect browsing privacy",
@@ -305,9 +290,6 @@ fun PrivacySettingsScreenContent(
                         checked = httpsOnly,
                         onCheckedChange = onHttpsOnlyChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "WebAuthn & Passkey Support",
                         subtitle = "Allow websites to authenticate passwordless sign-ins using biometric passkeys, hardware tokens & Google Password Manager",
@@ -329,9 +311,6 @@ fun PrivacySettingsScreenContent(
                         checked = javaScriptEnabled,
                         onCheckedChange = onJavaScriptEnabledChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "Block Popup Windows",
                         subtitle = "Prevent unwanted popups and redirect windows",
@@ -339,9 +318,6 @@ fun PrivacySettingsScreenContent(
                         checked = blockPopups,
                         onCheckedChange = onBlockPopupsChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "Open Redirect Links in Background",
                         subtitle = "Detect external redirect links and spawn them silently in a background tab",

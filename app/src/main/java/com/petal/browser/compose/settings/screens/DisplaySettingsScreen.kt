@@ -192,9 +192,6 @@ fun DisplaySettingsScreenContent(
                             }
                         }
                     }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Text Font Scale Slider & Live Box
                     Surface(
                         shape = RoundedCornerShape(18.dp),
@@ -330,9 +327,6 @@ fun DisplaySettingsScreenContent(
                             }
                         }
                     }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "Force Enable Zoom (Override Viewport)",
                         subtitle = "Override website viewport locks (user-scalable=no) to allow pinch-to-zoom on all pages",

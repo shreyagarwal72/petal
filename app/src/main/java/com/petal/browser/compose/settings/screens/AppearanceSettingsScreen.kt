@@ -251,9 +251,6 @@ fun AppearanceSettingsScreenContent(
                             }
                         }
                     }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Preset Color Palettes
                     Text(
                         "Preset Color Palettes:",
@@ -387,9 +384,6 @@ fun AppearanceSettingsScreenContent(
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Material You Dynamic Color Toggle
                     ToggleRow(
                         title = "Material You Dynamic Color",
@@ -401,9 +395,6 @@ fun AppearanceSettingsScreenContent(
                             PetalSearchWidgetProvider.updateAllWidgets(context)
                         }
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // AMOLED Black Toggle
                     ToggleRow(
                         title = "AMOLED Black Dark Mode",
@@ -416,9 +407,6 @@ fun AppearanceSettingsScreenContent(
                             PetalSearchWidgetProvider.updateAllWidgets(context)
                         }
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Expressive Colors Toggle
                     ToggleRow(
                         title = "Expressive Container Colors",
@@ -565,9 +553,6 @@ fun AppearanceSettingsScreenContent(
                         checked = floatingTabBar,
                         onCheckedChange = onFloatingTabBarChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Material 3 Expressive Background Morphing Shapes Toggle
                     ToggleRow(
                         title = "M3 Expressive Morphing Shapes",

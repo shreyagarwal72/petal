@@ -123,9 +123,6 @@ fun UpdaterSettingsScreenContent(
                         checked = checkUpdateOnLaunch,
                         onCheckedChange = onCheckUpdateOnLaunchChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Channel & Version Hero Card
                     Surface(
                         shape = RoundedCornerShape(18.dp),
@@ -263,9 +260,6 @@ fun UpdaterSettingsScreenContent(
                             NinjaToast.show(context, if (mode == "auto") "Crash reporting set to Auto" else "Crash reporting disabled")
                         }
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Diagnostic Actions: Export ZIP Logs
                     OutlinedButton(
                         onClick = {
