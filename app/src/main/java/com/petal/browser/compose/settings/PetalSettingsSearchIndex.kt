@@ -354,6 +354,13 @@ object PetalSettingsSearchIndex {
             category = SettingsCategory.MISCELLANEOUS,
             keywords = listOf("update on launch", "auto check updates", "version check", "release notify")
         ),
+        SettingsSearchItem(
+            id = "misc_inactive_tabs",
+            title = "Inactive Tabs & Auto-Archival",
+            subtitle = "Automatically move unused tabs (7, 14, 21 days) to inactive, archive duplicate tabs, and auto-close after 3 months",
+            category = SettingsCategory.MISCELLANEOUS,
+            keywords = listOf("inactive tabs", "inactive", "archive duplicate tabs", "archive tabs", "close inactive tabs", "tab cleanup", "tab management", "unused tabs", "duplicate tabs")
+        ),
 
         // ==================== DATA & BACKUP ====================
         SettingsSearchItem(
