@@ -277,9 +277,6 @@ fun ExperimentalSettingsScreenContent(
                             }
                         }
                     }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     ToggleRow(
                         title = "Double Back Exit",
                         subtitle = "Press back twice quickly to exit the browser",

@@ -213,9 +213,6 @@ fun SearchHomeSettingsScreenContent(
                             shape = RoundedCornerShape(14.dp)
                         )
                     }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Background Audio & Video Playback
                     ToggleRow(
                         title = "Background Audio & Video Playback",
@@ -224,9 +221,6 @@ fun SearchHomeSettingsScreenContent(
                         checked = backgroundPlay,
                         onCheckedChange = onBackgroundPlayChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Auto Picture-in-Picture
                     ToggleRow(
                         title = if (isPipSupported) "Auto Picture-in-Picture (PiP)" else "Auto Picture-in-Picture (Not Supported)",
@@ -236,9 +230,6 @@ fun SearchHomeSettingsScreenContent(
                         enabled = isPipSupported,
                         onCheckedChange = onAutoPipChange
                     )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                     // Force Dark Mode for Web Content
                     ToggleRow(
                         title = "Force Dark Web Content",
