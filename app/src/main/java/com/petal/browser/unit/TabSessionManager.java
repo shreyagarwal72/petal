@@ -136,7 +136,18 @@ public class TabSessionManager {
 
         for (int i = 0; i < albumList.size(); i++) {
             AlbumController album = albumList.get(i);
-            if (album instanceof com.petal.browser.view.PetalGeckoView) {
+            if (album instanceof com.petal.browser.browser.PlaceholderAlbumController) {
+                com.petal.browser.browser.PlaceholderAlbumController placeholder =
+                        (com.petal.browser.browser.PlaceholderAlbumController) album;
+                if (placeholder.isIncognito()) continue;
+                String url = placeholder.getUrl();
+                if (url == null || url.trim().isEmpty()) url = "about:blank";
+                String title = placeholder.getTitle();
+                if (title == null || title.trim().isEmpty()) title = url;
+                records.add(new TabStateRecord(i, title, url, 0, 0, false,
+                        false, "", now,
+                        placeholder.getTabGroupId(), placeholder.getTabGroupTitle(), placeholder.getTabId()));
+            } else if (album instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView geckoView = (com.petal.browser.view.PetalGeckoView) album;
                 if (geckoView.isIncognito()) {
                     continue;
