@@ -109,7 +109,10 @@ object BookmarkHtmlImporterExporter {
 
                 // Open output stream with write fallback ("rwt" -> "wt" -> "w")
                 val outputStream = try {
-                    context.contentResolver.openOutputStream(destinationUri, "rwt")
+                    // SAF providers commonly create a zero-byte document for rwt and
+                    // do not expose a seekable FileDescriptor. Plain write mode is
+                    // portable across DocumentsProvider implementations.
+                    context.contentResolver.openOutputStream(destinationUri, "w")
                 } catch (e: Exception) {
                     null
                 } ?: try {
