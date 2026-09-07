@@ -59,6 +59,7 @@ interface PetalOverflowMenuActionHandler {
     fun onOpenSettings()
     fun onTriggerMediaMode() {}
     fun onOpenPetalAi() {}
+    fun onOpenExtensions() {}
 }
 
 object PetalOverflowBridge {
@@ -217,6 +218,10 @@ object PetalOverflowBridge {
                             onOpenPetalAi = {
                                 dialog.dismiss()
                                 handler.onOpenPetalAi()
+                            },
+                            onOpenExtensions = {
+                                dialog.dismiss()
+                                handler.onOpenExtensions()
                             }
                         )
                     }
@@ -264,7 +269,8 @@ fun PetalOverflowMenuSheet(
     onViewSource: () -> Unit,
     onOpenSettings: () -> Unit,
     onTriggerMediaMode: () -> Unit = {},
-    onOpenPetalAi: () -> Unit = {}
+    onOpenPetalAi: () -> Unit = {},
+    onOpenExtensions: () -> Unit = {}
 ) {
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(false) }
@@ -535,6 +541,13 @@ fun PetalOverflowMenuSheet(
                         )
                     }
                 }
+
+                MenuRowItem(
+                    icon = Icons.Rounded.Extension,
+                    title = "Extensions",
+                    subtitle = "Install Firefox add-ons",
+                    onClick = onOpenExtensions
+                )
 
                 MenuRowItem(
                     icon = Icons.Rounded.Settings,
