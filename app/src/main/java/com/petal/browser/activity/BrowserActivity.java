@@ -3454,8 +3454,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void hideSearch() {
-        dialogSearch.cancel();
-        try {dialogCustomSearches.cancel();} catch (Exception e) {Log.i(TAG, "dialogCustomSearches:" + e);}
+        if (dialogSearch != null) {
+            dialogSearch.cancel();
+        }
+        if (dialogCustomSearches != null) {
+            try { dialogCustomSearches.cancel(); } catch (Exception e) { Log.i(TAG, "dialogCustomSearches:" + e); }
+        }
     }
 
     public void hideOverview() {

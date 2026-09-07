@@ -100,16 +100,28 @@ public class BackupUnit {
         HelperUnit.setupDialog(activity, dialog);
     }
 
+    public static File getSafeBackupDir(Context context) {
+        if (context == null) return null;
+        try {
+            File publicDocs = Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS);
+            File backupDir = new File(publicDocs, "browser_backup");
+            if (backupDir.exists() && backupDir.canWrite()) {
+                return backupDir;
+            }
+            if (backupDir.mkdirs() || (backupDir.exists() && backupDir.canWrite())) {
+                return backupDir;
+            }
+        } catch (Throwable ignored) {}
+        File internalBackupDir = new File(context.getFilesDir(), "browser_backup");
+        if (!internalBackupDir.exists()) {
+            try { internalBackupDir.mkdirs(); } catch (Throwable ignored) {}
+        }
+        return internalBackupDir;
+    }
+
     public static void makeBackupDir(Context context) {
         if (context == null) return;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            Log.d("Petal", "Verzeichnis-Erstellung wird automatisch vom MediaStore verwaltet.");
-        } else {
-            File backupDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "browser_backup");
-            if (!backupDir.exists() && !backupDir.mkdirs()) {
-                Log.e("Petal", "Ordner konnte auf altem Gerät nicht erstellt werden.");
-            }
-        }
+        getSafeBackupDir(context);
     }
 
     public static void backupToJson(Activity context, boolean backupBookmarks, boolean backupHistory, boolean backupSavedSites, boolean backupSettings) {
@@ -223,8 +235,7 @@ public class BackupUnit {
                     backupJson.put("settings", settingsObj);
                 }
 
-                File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
-                if (!backupDir.exists()) backupDir.mkdirs();
+                File backupDir = getSafeBackupDir(context);
                 File jsonFile = new File(backupDir, "petal_browser_backup.json");
 
                 BufferedWriter writer = new BufferedWriter(new FileWriter(jsonFile, false));
@@ -608,9 +619,15 @@ public class BackupUnit {
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try {
-                File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
-                File jsonFile = new File(backupDir, "petal_browser_backup.json");
-                if (!jsonFile.exists()) {
+                File backupDir = getSafeBackupDir(context);
+                File jsonFile = backupDir != null ? new File(backupDir, "petal_browser_backup.json") : null;
+                if (jsonFile == null || !jsonFile.exists()) {
+                    File fallbackFile = new File(new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup"), "petal_browser_backup.json");
+                    if (fallbackFile.exists()) {
+                        jsonFile = fallbackFile;
+                    }
+                }
+                if (jsonFile == null || !jsonFile.exists()) {
                     handler.post(() -> NinjaToast.show(context, "No backup file found at Documents/browser_backup/petal_browser_backup.json"));
                     return;
                 }
@@ -924,8 +941,7 @@ public class BackupUnit {
                 }
                 backupJson.put("settings", settingsObj);
 
-                File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
-                if (!backupDir.exists()) backupDir.mkdirs();
+                File backupDir = getSafeBackupDir(context);
                 File jsonFile = new File(backupDir, "petal_downgrade_snapshot.json");
 
                 BufferedWriter writer = new BufferedWriter(new FileWriter(jsonFile, false));
@@ -933,7 +949,7 @@ public class BackupUnit {
                 writer.close();
                 Log.i("Petal", "Automatic downgrade protection backup saved: " + jsonFile.getAbsolutePath());
             } catch (Exception e) {
-                Log.e("Petal", "Failed to save automatic version snapshot", e);
+                Log.e("Petal", "Failed to save automatic version snapshot: " + e.getMessage());
             }
         });
     }
@@ -954,8 +970,7 @@ public class BackupUnit {
 
     public static void exportBookmarksSimple(Context context) {
         if (context == null) return;
-        File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
-        if (!backupDir.exists()) backupDir.mkdirs();
+        File backupDir = getSafeBackupDir(context);
         File htmlFile = new File(backupDir, "petal_bookmarks.html");
         try {
             RecordAction action = new RecordAction(context);
@@ -974,9 +989,15 @@ public class BackupUnit {
 
     public static void importBookmarksSimple(Context context) {
         if (context == null) return;
-        File backupDir = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup");
-        File htmlFile = new File(backupDir, "petal_bookmarks.html");
-        if (!htmlFile.exists()) {
+        File backupDir = getSafeBackupDir(context);
+        File htmlFile = backupDir != null ? new File(backupDir, "petal_bookmarks.html") : null;
+        if (htmlFile == null || !htmlFile.exists()) {
+            File fallbackFile = new File(new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS), "browser_backup"), "petal_bookmarks.html");
+            if (fallbackFile.exists()) {
+                htmlFile = fallbackFile;
+            }
+        }
+        if (htmlFile == null || !htmlFile.exists()) {
             NinjaToast.show(context, "No bookmarks file found at Documents/browser_backup/petal_bookmarks.html");
             return;
         }
