@@ -319,9 +319,7 @@ object PetalAiResearchEngine {
         Thread {
             try {
                 val responseText = when (provider) {
-                        val endpoint = normalizeOpenAiChatEndpoint(rawEndpoint)
-                        callOpenAiCompatibleApi(endpoint, apiKey, model, systemPrompt, userPrompt)
-                    }
+                    AiProvider.GEMINI -> callGeminiApi(apiKey, model, systemPrompt, userPrompt)
                     AiProvider.GROQ -> {
                         val extraParams = when (model) {
                             "openai/gpt-oss-120b" -> mapOf("reasoning_effort" to "medium", "include_reasoning" to false)
@@ -335,11 +333,7 @@ object PetalAiResearchEngine {
                         if (!validateEndpoint(rawEndpoint)) {
                             throw IllegalArgumentException("Endpoint must be https:// or an http:// private-LAN address (e.g. localhost, 192.168.x.x)")
                         }
-                        val endpoint = if (rawEndpoint.endsWith("/chat/completions")) {
-                            rawEndpoint
-                        } else {
-                            rawEndpoint.trimEnd('/') + "/chat/completions"
-                        }
+                        val endpoint = normalizeOpenAiChatEndpoint(rawEndpoint)
                         callOpenAiCompatibleApi(endpoint, apiKey, model, systemPrompt, userPrompt)
                     }
                 }
@@ -391,19 +385,27 @@ object PetalAiResearchEngine {
 
         val response = httpClient.newCall(request).execute()
         val responseBody = response.body?.string() ?: ""
-
-        if (!response.isSuccessful) {
-            val errMessage = try {
-                val errJson = JSONObject(responseBody)
-                errJson.optJSONObject("error")?.optString("message") ?: responseBody
-            } catch (e: Exception) {
-                "HTTP ${response.code}: ${response.message}"
+        response.use {
+            if (!response.isSuccessful) {
+                val errMessage = try {
+                    val errJson = JSONObject(responseBody)
+                    errJson.optJSONObject("error")?.optString("message") ?: responseBody
+                } catch (_: Exception) {
+                    "HTTP ${response.code}: ${response.message}"
+                }
+                throw RuntimeException(errMessage)
             }
+        }
         val resJson = JSONObject(responseBody)
         val choices = resJson.optJSONArray("choices") ?: throw RuntimeException("This endpoint did not return an OpenAI-compatible choices response.")
         val content = choices.optJSONObject(0)?.optJSONObject("message")?.opt("content")
         return when (content) {
             is String -> content.takeIf { it.isNotBlank() } ?: throw RuntimeException("The model returned an empty response.")
+            is JSONArray -> (0 until content.length()).joinToString("") { index -> content.optJSONObject(index)?.optString("text") ?: content.optString(index) }.ifBlank { throw RuntimeException("The model returned an empty response.") }
+            else -> throw RuntimeException("The model response did not contain message content.")
+        }
+    }
+
     private fun normalizeOpenAiChatEndpoint(value: String): String {
         val base = value.trim().trimEnd('/')
         return when {
@@ -411,13 +413,6 @@ object PetalAiResearchEngine {
             base.endsWith("/v1") -> "$base/chat/completions"
             else -> "$base/v1/chat/completions"
         }
-    }
-
-            is JSONArray -> (0 until content.length()).joinToString("") { index -> content.optJSONObject(index)?.optString("text") ?: content.optString(index) }.ifBlank { throw RuntimeException("The model returned an empty response.") }
-            else -> throw RuntimeException("The model response did not contain message content.")
-        }
-        if (choices.length() == 0) throw RuntimeException("No response choices returned by API.")
-        return choices.getJSONObject(0).getJSONObject("message").getString("content")
     }
 
     private fun callGeminiApi(
