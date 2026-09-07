@@ -1991,9 +1991,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 mainContent.setPadding(0, 0, 0, 0);
 
                 addressBar.setLayoutParams(addrParams);
-                if (progressBarCompose != null) progressBarCompose.setLayoutParams(progComposeParams);
+                if (progressBarCompose != null && progComposeParams != null) progressBarCompose.setLayoutParams(progComposeParams);
                 mainContent.setLayoutParams(contentParams);
 
+                // Re-layout the RelativeLayout after changing ABOVE/BELOW rules. This is
+                // especially important when switching to bottom position from settings.
+                View root = addressBar.getParent() instanceof View ? (View) addressBar.getParent() : null;
+                if (root != null) root.requestLayout();
                 addressBar.bringToFront();
                 addressBar.requestLayout();
                 mainContent.requestLayout();

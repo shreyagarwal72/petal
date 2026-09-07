@@ -221,6 +221,7 @@ fun ExperimentalSettingsScreenContent(
                                 onClick = {
                                     onAddressBarPositionChange("TOP")
                                     (context as? BrowserActivity)?.applyAddressBarPosition()
+                                    (context as? BrowserActivity)?.window?.decorView?.post { (context as? BrowserActivity)?.applyAddressBarPosition() }
                                 },
                                 label = { Text("Top (Default)") },
                                 leadingIcon = if (addressBarPosition == "TOP") {
@@ -232,6 +233,7 @@ fun ExperimentalSettingsScreenContent(
                                 onClick = {
                                     onAddressBarPositionChange("BOTTOM")
                                     (context as? BrowserActivity)?.applyAddressBarPosition()
+                                    (context as? BrowserActivity)?.window?.decorView?.post { (context as? BrowserActivity)?.applyAddressBarPosition() }
                                 },
                                 label = { Text("Bottom") },
                                 leadingIcon = if (addressBarPosition == "BOTTOM") {
