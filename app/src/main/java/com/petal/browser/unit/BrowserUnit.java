@@ -390,4 +390,26 @@ public class BrowserUnit {
     }
 
 }
+    public static String redirectURL(SharedPreferences sp, String url) {
+        if (url == null) return null;
+        try {
+            List<CustomRedirect> redirects = CustomRedirectsHelper.getRedirects(sp);
+            for (CustomRedirect redirect : redirects) {
+                if (redirect != null && redirect.getSource() != null && redirect.getTarget() != null &&
+                        url.contains(redirect.getSource()) && sp != null && sp.getBoolean(redirect.getSource(), true)) {
+                    return url.replace(redirect.getSource(), redirect.getTarget());
+                }
+            }
+        } catch (Exception e) { Log.e("Redirect error", e.toString()); }
+        return url;
+    }
+
+    public static boolean isHomePage(String url) {
+        if (url == null || url.trim().isEmpty()) return true;
+        String clean = url.trim().toLowerCase(Locale.ROOT);
+        return clean.equals("about:blank") || clean.equals("about:home") ||
+                clean.equals("petal://home") || clean.equals("petal://start") ||
+                clean.contains("petal_home.html") || clean.startsWith("file:///android_asset/");
+    }
+
 }
