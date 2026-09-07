@@ -113,6 +113,19 @@ class PetalApplication : Application() {
         }
     }
 
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (!isMainProcess()) return
+        // Tab previews are disposable; release their decoded bitmaps before Android
+        // kills Gecko's content process under background memory pressure.
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            TabThumbnailCache.clearMemory()
+        }
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
+            TabThumbnailCache.evictAll()
+        }
+    }
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         val nightModeBits = newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK

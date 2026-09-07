@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 public final class TabThumbnailCache {
 
     private static final String TAG = "TabThumbnailCache";
-    private static final int MAX_ENTRIES = 24;
+    private static final int MAX_ENTRIES = 12;
     private static File diskCacheDir = null;
 
     private static final LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(MAX_ENTRIES);
@@ -46,7 +46,7 @@ public final class TabThumbnailCache {
         
         // Proportional resize (contain/fit scale) instead of aggressive center-cropping
         Bitmap resized = bitmap;
-        int maxDimension = 640;
+        int maxDimension = 360;
         if (bitmap.getWidth() > maxDimension || bitmap.getHeight() > maxDimension) {
             float aspect = (float) bitmap.getWidth() / (float) bitmap.getHeight();
             int newWidth, newHeight;
@@ -87,6 +87,9 @@ public final class TabThumbnailCache {
         cache.remove(safeKey);
         return null;
     }
+
+    /** Releases only decoded thumbnails while retaining disk previews. */
+    public static void clearMemory() { cache.evictAll(); }
 
     /** Call when a tab is explicitly closed to clear both memory and disk caches. */
     public static void remove(@Nullable String tabId) {
