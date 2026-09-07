@@ -552,15 +552,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing;
                 if (predictiveBackStartedOnOverlay) {
                     predictiveBackSwipeEdge = backEvent.getSwipeEdge();
-                    beginPredictiveBackGesture();
+                    // Compose owns the overlay animation; do not also transform the Activity root.
                 }
             }
 
             @Override
             public void handleOnBackProgressed(@NonNull androidx.activity.BackEventCompat backEvent) {
-                if (predictiveBackStartedOnOverlay) {
-                    applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
-                }
+                // Compose PredictiveBackHandler owns overlay progress; Activity root remains stable.
             }
 
             @Override
