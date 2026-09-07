@@ -319,13 +319,8 @@ object PetalAiResearchEngine {
         Thread {
             try {
                 val responseText = when (provider) {
-                    AiProvider.GEMINI -> {
-                        val thinkingLevel = when (model) {
-                            "gemini-3.5-flash-lite" -> "low"
-                            "gemini-3.6-flash" -> "minimal"
-                            else -> null
-                        }
-                        callGeminiApi(apiKey, model, systemPrompt, userPrompt, thinkingLevel)
+                        val endpoint = normalizeOpenAiChatEndpoint(rawEndpoint)
+                        callOpenAiCompatibleApi(endpoint, apiKey, model, systemPrompt, userPrompt)
                     }
                     AiProvider.GROQ -> {
                         val extraParams = when (model) {
@@ -404,11 +399,23 @@ object PetalAiResearchEngine {
             } catch (e: Exception) {
                 "HTTP ${response.code}: ${response.message}"
             }
-            throw RuntimeException("API Error ($errMessage)")
-        }
-
         val resJson = JSONObject(responseBody)
-        val choices = resJson.getJSONArray("choices")
+        val choices = resJson.optJSONArray("choices") ?: throw RuntimeException("This endpoint did not return an OpenAI-compatible choices response.")
+        val content = choices.optJSONObject(0)?.optJSONObject("message")?.opt("content")
+        return when (content) {
+            is String -> content.takeIf { it.isNotBlank() } ?: throw RuntimeException("The model returned an empty response.")
+    private fun normalizeOpenAiChatEndpoint(value: String): String {
+        val base = value.trim().trimEnd('/')
+        return when {
+            base.endsWith("/chat/completions") -> base
+            base.endsWith("/v1") -> "$base/chat/completions"
+            else -> "$base/v1/chat/completions"
+        }
+    }
+
+            is JSONArray -> (0 until content.length()).joinToString("") { index -> content.optJSONObject(index)?.optString("text") ?: content.optString(index) }.ifBlank { throw RuntimeException("The model returned an empty response.") }
+            else -> throw RuntimeException("The model response did not contain message content.")
+        }
         if (choices.length() == 0) throw RuntimeException("No response choices returned by API.")
         return choices.getJSONObject(0).getJSONObject("message").getString("content")
     }

@@ -282,7 +282,7 @@ fun PetalOmniboxPage(
 
             suggestions = localMatches
 
-            val liveSuggestionsEnabled = sp.getBoolean("sp_enable_live_suggestions", true)
+            val liveSuggestionsEnabled = true
             if (liveSuggestionsEnabled) {
                 delay(200)
                 val searchEngine = sp.getString("sp_search_engine", "0")

@@ -163,15 +163,6 @@ fun SearchHomeSettingsScreenContent(
                         }
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    ToggleRow(
-                        title = "Live Search Recommendations",
-                        subtitle = "Fetch live autocomplete suggestions from Google, DuckDuckGo, or Bing while typing",
-                        icon = Icons.Rounded.Search,
-                        checked = enableLiveSuggestions,
-                        onCheckedChange = onEnableLiveSuggestionsChange
-                    )
                 }
 
                 // Homepage & Media Playback Card
