@@ -276,10 +276,10 @@ fun PetalBottomNavBar(
             }
         }
     } else {
-        // Flat Bottom Navigation Bar
+        // Material 3 Expressive Non-Floating Bottom Navigation Bar
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = 3.dp,
+            tonalElevation = 2.dp,
             shadowElevation = 4.dp,
             modifier = modifier.fillMaxWidth()
         ) {
@@ -291,66 +291,120 @@ fun PetalBottomNavBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceAround,
+                        .height(72.dp)
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = onHomeClick,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            painter = androidx.compose.ui.res.painterResource(if (selectedTab == PetalNavTab.HOME) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home),
-                            contentDescription = "Home",
-                            tint = if (selectedTab == PetalNavTab.HOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    ExpressiveNavTabItem(
+                        selected = selectedTab == PetalNavTab.HOME,
+                        label = "Home",
+                        index = 0,
+                        icon = { isSelected, tint ->
+                            val iconScale by animateFloatAsState(
+                                targetValue = if (isSelected) 1.15f else 1.0f,
+                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                label = "home_expressive_scale"
+                            )
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(
+                                    if (isSelected) com.petal.browser.R.drawable.home_filled else com.petal.browser.R.drawable.home
+                                ),
+                                contentDescription = "Home",
+                                tint = tint,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .graphicsLayer {
+                                        scaleX = iconScale
+                                        scaleY = iconScale
+                                    }
+                            )
+                        },
+                        onClick = onHomeClick
+                    )
 
-                    IconButton(
-                        onClick = onNewTabClick,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Add,
-                            contentDescription = "New Tab",
-                            tint = if (selectedTab == PetalNavTab.NEW_TAB) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    ExpressiveNavTabItem(
+                        selected = selectedTab == PetalNavTab.NEW_TAB,
+                        label = newTabLabel,
+                        index = 1,
+                        icon = { isSelected, tint ->
+                            val rotationAngle by animateFloatAsState(
+                                targetValue = if (isSelected) 90f else 0f,
+                                animationSpec = spring(dampingRatio = 0.68f, stiffness = 450f),
+                                label = "add_expressive_rotation"
+                            )
+                            val iconScale by animateFloatAsState(
+                                targetValue = if (isSelected) 1.15f else 1.0f,
+                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                label = "add_expressive_scale"
+                            )
+                            Icon(
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = "New Tab",
+                                tint = tint,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .graphicsLayer {
+                                        rotationZ = rotationAngle
+                                        scaleX = iconScale
+                                        scaleY = iconScale
+                                    }
+                            )
+                        },
+                        onClick = onNewTabClick
+                    )
 
-                    val tabsInteractionSource = remember { MutableInteractionSource() }
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .combinedClickable(
-                                interactionSource = tabsInteractionSource,
-                                indication = ripple(bounded = false, radius = 24.dp),
-                                onClick = onTabsClick,
-                                onLongClick = handleTabsLongClick
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        TabCountBadge(
-                            color = if (selectedTab == PetalNavTab.TABS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            count = animatedCount,
-                            scale = badgeScale.value
-                        )
-                    }
+                    ExpressiveNavTabItem(
+                        selected = selectedTab == PetalNavTab.TABS,
+                        label = "Tabs",
+                        badgeText = if (animatedCount > 99) "99+" else animatedCount.toString(),
+                        index = 2,
+                        icon = { isSelected, tint ->
+                            val iconScale by animateFloatAsState(
+                                targetValue = if (isSelected) 1.12f else 1.0f,
+                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                label = "tabs_expressive_scale"
+                            )
+                            TabCountBadge(
+                                color = tint,
+                                count = animatedCount,
+                                scale = badgeScale.value * iconScale
+                            )
+                        },
+                        onClick = onTabsClick,
+                        onLongClick = handleTabsLongClick
+                    )
 
-                    IconButton(
-                        onClick = onMenuClick,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = "Menu",
-                            tint = if (selectedTab == PetalNavTab.MENU) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    ExpressiveNavTabItem(
+                        selected = selectedTab == PetalNavTab.MENU,
+                        label = "Menu",
+                        index = 3,
+                        icon = { isSelected, tint ->
+                            val rotationAngle by animateFloatAsState(
+                                targetValue = if (isSelected) 180f else 0f,
+                                animationSpec = spring(dampingRatio = 0.70f, stiffness = 420f),
+                                label = "menu_expressive_rotation"
+                            )
+                            val iconScale by animateFloatAsState(
+                                targetValue = if (isSelected) 1.15f else 1.0f,
+                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                label = "menu_expressive_scale"
+                            )
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = "Menu",
+                                tint = tint,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .graphicsLayer {
+                                        rotationZ = rotationAngle
+                                        scaleX = iconScale
+                                        scaleY = iconScale
+                                    }
+                            )
+                        },
+                        onClick = onMenuClick
+                    )
                 }
             }
         }
@@ -481,6 +535,125 @@ private fun TabCountBadge(color: Color, count: Int, scale: Float) {
             ),
             color = color,
             textAlign = TextAlign.Center
+        )
+    }
+}
+
+/**
+ * Material 3 Expressive Tab Item for the non-floating (flat) bottom navigation bar.
+ * Features:
+ * - Active pill indicator with smooth spring expansion & morphing
+ * - Tactile press scaling (bouncy feedback)
+ * - Animated icon colors and typography scaling
+ * - Dynamic badge overlay
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun ExpressiveNavTabItem(
+    selected: Boolean,
+    label: String,
+    index: Int,
+    icon: @Composable (isSelected: Boolean, tint: Color) -> Unit,
+    onClick: () -> Unit,
+    badgeText: String? = null,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "expressive_press_scale_$index"
+    )
+
+    val activeIndicatorWidth by animateDpAsState(
+        targetValue = if (selected) 64.dp else 40.dp,
+        animationSpec = spring(
+            dampingRatio = 0.75f,
+            stiffness = 380f
+        ),
+        label = "expressive_indicator_width_$index"
+    )
+
+    val activeIndicatorHeight by animateDpAsState(
+        targetValue = if (selected) 32.dp else 32.dp,
+        animationSpec = spring(
+            dampingRatio = 0.75f,
+            stiffness = 380f
+        ),
+        label = "expressive_indicator_height_$index"
+    )
+
+    val indicatorBgColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
+        label = "expressive_indicator_bg_$index"
+    )
+
+    val contentTint by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
+        label = "expressive_content_tint_$index"
+    )
+
+    val labelColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
+        label = "expressive_label_color_$index"
+    )
+
+    val labelWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+
+    Column(
+        horizontalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.Center,
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            .clip(RoundedCornerShape(16.dp))
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = ripple(bounded = true, radius = 32.dp),
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .semantics { contentDescription = label }
+    ) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = indicatorBgColor,
+            modifier = Modifier
+                .width(activeIndicatorWidth)
+                .height(activeIndicatorHeight)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                icon(selected, contentTint)
+            }
+        }
+
+        Spacer(Modifier.height(3.dp))
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = labelWeight,
+                letterSpacing = 0.2.sp,
+                fontSize = 11.sp
+            ),
+            color = labelColor,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }
