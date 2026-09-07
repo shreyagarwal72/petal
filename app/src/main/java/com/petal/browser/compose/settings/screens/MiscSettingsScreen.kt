@@ -6,12 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ChevronRight
-import androidx.compose.material.icons.automirrored.rounded.Launch
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Speed
-import androidx.compose.material.icons.rounded.TabUnselected
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -273,7 +268,7 @@ fun MiscSettingsScreenContent(
                     ToggleRow(
                         title = "Auto Open External Apps",
                         subtitle = "Allow YouTube, Maps & Play Store links to open in external native apps instead of Petal",
-                        icon = Icons.AutoMirrored.Rounded.Launch,
+                        icon = Icons.Rounded.Launch,
                         checked = autoOpenApps,
                         onCheckedChange = onAutoOpenAppsChange
                     )
@@ -322,7 +317,7 @@ fun MiscSettingsScreenContent(
                                 )
                             }
                             Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ChevronRight,
+                                imageVector = Icons.Rounded.ChevronRight,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(22.dp)
