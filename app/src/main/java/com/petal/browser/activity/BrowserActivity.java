@@ -758,6 +758,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } catch (Exception e) {
             e.printStackTrace();
         }
+        try {
+            com.petal.browser.ui.components.PetalCrashReportingBridge.showCrashRecoveryPromptIfNeeded(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (sp != null) {
             int currentVersionCode = 0;
             try {

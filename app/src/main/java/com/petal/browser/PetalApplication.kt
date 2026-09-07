@@ -34,6 +34,9 @@ class PetalApplication : Application() {
     }
 
     override fun attachBaseContext(base: Context) {
+        try {
+            com.petal.browser.logger.PetalAppLogger.init(base)
+        } catch (_: Throwable) {}
         super.attachBaseContext(com.petal.browser.unit.HelperUnit.applyLanguage(base))
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             try {
