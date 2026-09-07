@@ -451,8 +451,14 @@ object PetalExtensionManager {
         if (host != "addons.mozilla.org" && host != "www.addons.mozilla.org") return parsed.toString().takeIf { parsed.path?.endsWith(".xpi", ignoreCase = true) == true }
         val segments = parsed.pathSegments
         val addonIndex = segments.indexOf("addon")
+        val downloadsIndex = segments.indexOfFirst { it.equals("downloads", ignoreCase = true) }
         val slug = segments.getOrNull(addonIndex + 1)?.takeIf { it.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*")) }
-        return if (slug != null) "https://addons.mozilla.org/android/downloads/latest/$slug/latest.xpi" else parsed.toString().takeIf { parsed.path?.endsWith(".xpi", ignoreCase = true) == true }
+            ?: segments.getOrNull(downloadsIndex + 2)?.takeIf { it.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*")) }
+        // AMO also emits /firefox/downloads/latest/... links. Always move these to
+        // the Android channel; otherwise GeckoView downloads a desktop-only package.
+        return if (slug != null && (addonIndex >= 0 || downloadsIndex >= 0)) {
+            "https://addons.mozilla.org/android/downloads/latest/$slug/latest.xpi"
+        } else parsed.toString().takeIf { parsed.path?.endsWith(".xpi", ignoreCase = true) == true }
     }
 
     private fun toInstalled(ext: WebExtension): InstalledExtension {
