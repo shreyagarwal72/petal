@@ -5201,7 +5201,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         try {
-            View albumView = geckoView.getAlbumView();
+            View albumView = geckoView.getTabView();
             if (albumView != null && tab_container != null) {
                 if (albumView.getParent() != null) {
                     ((ViewGroup) albumView.getParent()).removeView(albumView);
