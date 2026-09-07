@@ -610,7 +610,7 @@ private fun ExpressiveNavTabItem(
     val labelWeight = if (selected) FontWeight.Bold else FontWeight.Medium
 
     Column(
-        horizontalAlignment = Alignment.CenterVertically,
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = modifier
             .graphicsLayer {
