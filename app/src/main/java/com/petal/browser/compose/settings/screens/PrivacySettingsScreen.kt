@@ -22,7 +22,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.compose.settings.viewmodel.PrivacySettingsViewModel
-import com.petal.browser.flags.PetalChromeFlagsBridge
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 
@@ -440,41 +439,6 @@ fun PrivacySettingsScreenContent(
                     }
                 }
 
-                // Chrome & Petal Flags Card
-                SettingsCategoryCard(title = "Experimental Petal & Chrome Flags", iconRes = com.petal.browser.R.drawable.build_filled) {
-                    Surface(
-                        onClick = {
-                            if (context is ComponentActivity) {
-                                PetalChromeFlagsBridge.showFlags(context, null)
-                            }
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "Petal & Chrome Experimental Flags (petal://flags)",
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                                )
-                                Text(
-                                    "Enable or disable WebGPU, hardware acceleration, force dark mode, HTTP/3 QUIC, and experimental Web APIs",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
-                                )
-                            }
-                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(32.dp))
             }
         }
     }

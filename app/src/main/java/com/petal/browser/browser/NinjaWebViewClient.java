@@ -554,13 +554,6 @@ public class NinjaWebViewClient extends WebViewClient {
         if (request == null || request.getUrl() == null) return false;
         final Uri uri = request.getUrl();
         String url = uri.toString();
-        if (com.petal.browser.flags.ChromeFlagsManager.isFlagsUrl(url)) {
-            if (context instanceof androidx.activity.ComponentActivity) {
-                com.petal.browser.flags.PetalChromeFlagsBridge.showFlags((androidx.activity.ComponentActivity) context, null);
-            }
-            return true;
-        }
-
         if (url.startsWith("petal://") || com.petal.browser.unit.BrowserUnit.isHomePage(url)) {
             com.petal.browser.unit.BrowserUnit.intentURL(context, uri);
             return true;
