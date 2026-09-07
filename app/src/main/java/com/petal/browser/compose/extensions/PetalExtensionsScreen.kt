@@ -487,7 +487,7 @@ private fun AddExtensionSheet(
             text = { Text("Browse Mozilla Android add-ons, then paste an add-on page or download link here to install it.") },
             confirmButton = { TextButton(onClick = {
                 showMozillaCatalogPrompt = false
-                try { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(PetalExtensionManager.amoAndroidBrowseUrl))) } catch (_: Exception) {}
+                (context as? com.petal.browser.activity.BrowserActivity)?.addAlbum("Firefox Add-ons", PetalExtensionManager.amoAndroidBrowseUrl, false)
             }) { Text("Open Mozilla Add-ons") } },
             dismissButton = { TextButton(onClick = { showMozillaCatalogPrompt = false }) { Text("Cancel") } }
         )

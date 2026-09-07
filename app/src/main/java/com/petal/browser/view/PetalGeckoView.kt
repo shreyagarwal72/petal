@@ -314,14 +314,22 @@ class PetalGeckoView @JvmOverloads constructor(
                 val responseUrl = response.uri
                 if (responseUrl.isNullOrBlank()) return
                 val act = getHostActivity() ?: return
+                val parsed = try { android.net.Uri.parse(responseUrl) } catch (_: Exception) { null }
+                val isMozillaXpi = parsed?.host?.equals("addons.mozilla.org", ignoreCase = true) == true &&
+                    parsed.path?.contains("/downloads/", ignoreCase = true) == true &&
+                    parsed.path?.endsWith(".xpi", ignoreCase = true) == true
+                if (isMozillaXpi) {
+                    act.runOnUiThread {
+                        com.petal.browser.extensions.PetalExtensionManager.install(responseUrl) { success, message ->
+                            com.petal.browser.view.NinjaToast.show(act, message ?: if (success) "Extension installed" else "Extension installation failed")
+                        }
+                    }
+                    return
+                }
                 val fileName = android.webkit.URLUtil.guessFileName(responseUrl, null, null)
                 act.runOnUiThread {
                     com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
-                        act,
-                        responseUrl,
-                        null,
-                        null,
-                        0L,
+                        act, responseUrl, null, null, 0L
                     ) { confirmedName ->
                         BrowserUnit.download(act, responseUrl, confirmedName.ifBlank { fileName }, null)
                     }
