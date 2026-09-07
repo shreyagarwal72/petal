@@ -360,6 +360,7 @@ fun ApiIntegrationsSettingsScreenContent(
         )
     }
 
+                    }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                 Spacer(Modifier.height(32.dp))
