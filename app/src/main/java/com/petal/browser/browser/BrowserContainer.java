@@ -21,6 +21,10 @@ public class BrowserContainer {
         list.add(index, controller);
     }
 
+    public synchronized static void replace(int index, AlbumController controller) {
+        list.set(index, controller);
+    }
+
     public synchronized static void remove(AlbumController controller) {
         if (controller instanceof PetalGeckoView) {
             ((PetalGeckoView) controller).destroy();
