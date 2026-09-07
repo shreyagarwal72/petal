@@ -71,7 +71,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
         @JvmStatic
         fun getDerivedDesktopUserAgent(context: Context): String {
-            return "Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0"
+            return "Mozilla/5.0 (X11; Linux x86_64; rv:154.0) Gecko/20100101 Firefox/154.0"
         }
     }
 
@@ -88,6 +88,9 @@ class PetalGeckoView @JvmOverloads constructor(
     private var isIncognito: Boolean = false
     private var isForegroundTab: Boolean = false
     private var isStopped: Boolean = false
+    private var lastCrashRecoveryTime: Long = 0L
+    private var crashRecoveryCount: Int = 0
+
     private var tabId: String = "tab_${System.currentTimeMillis()}_${Math.abs(hashCode())}"
     private var tabGroupId: String? = null
     private var tabGroupTitle: String? = null
@@ -140,7 +143,7 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     private fun initGeckoSession() {
-        val runtime = PetalGeckoRuntime.getOrCreate(context)
+        val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
         session.open(runtime)
         geckoView.setSession(session)
 
