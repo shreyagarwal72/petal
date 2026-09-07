@@ -4986,7 +4986,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 sp.edit().putBoolean("show_overview", false).apply();
                 getIntent().setAction("");
                 addAlbum(null, Objects.requireNonNull(getIntent().getData()).toString(), true);
-                BrowserUnit.openInBackground(activity, ninjaWebView);
             }
         } else if ("postLink".equals(action)) {
             sp.edit().putBoolean("show_overview", false).apply();
