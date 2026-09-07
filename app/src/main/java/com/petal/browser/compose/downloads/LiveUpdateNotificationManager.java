@@ -204,11 +204,11 @@ public class LiveUpdateNotificationManager {
 
             // Set progress or segment tracking if methods are present
             if (isIndeterminate) {
-                Method setIndeterminateMethod = progressStyleClass.getMethod("setIndeterminate", boolean.class);
+                Method setIndeterminateMethod = progressStyleClass.getMethod("setProgressIndeterminate", boolean.class);
                 setIndeterminateMethod.invoke(progressStyle, true);
             } else {
-                Method setProgressMethod = progressStyleClass.getMethod("setProgress", int.class, int.class);
-                setProgressMethod.invoke(progressStyle, 100, progressPercent);
+                Method setProgressMethod = progressStyleClass.getMethod("setProgress", int.class);
+                setProgressMethod.invoke(progressStyle, progressPercent);
             }
 
             // Set short critical live text / chip text if supported on ProgressStyle
@@ -239,6 +239,10 @@ public class LiveUpdateNotificationManager {
             } catch (NoSuchMethodException ignored) {}
 
             try {
+                try {
+                    Method requestPromotedMethod = Notification.Builder.class.getMethod("setRequestPromotedOngoing", boolean.class);
+                    requestPromotedMethod.invoke(builder, !isPaused);
+                } catch (NoSuchMethodException ignored) {}
                 Method setPromotedOngoing = Notification.Builder.class.getMethod("setPromotedOngoing", boolean.class);
                 setPromotedOngoing.invoke(builder, !isPaused);
             } catch (NoSuchMethodException ignored) {}
