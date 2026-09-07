@@ -144,8 +144,7 @@ public class TabSessionManager {
                 if (url == null || url.trim().isEmpty()) url = "about:blank";
                 String title = placeholder.getTitle();
                 if (title == null || title.trim().isEmpty()) title = url;
-                records.add(new TabStateRecord(i, title, url, 0, 0, false,
-                        false, "", now,
+                records.add(new TabStateRecord(i, title, url, 0, 0, false, false, "", now,
                         placeholder.getTabGroupId(), placeholder.getTabGroupTitle(), placeholder.getTabId()));
             } else if (album instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.view.PetalGeckoView geckoView = (com.petal.browser.view.PetalGeckoView) album;
