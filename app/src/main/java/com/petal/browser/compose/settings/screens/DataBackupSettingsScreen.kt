@@ -10,8 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudUpload
-import androidx.compose.material.icons.rounded.FileDownload
-import androidx.compose.material.icons.rounded.FileUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.BackupUnit
-import com.petal.browser.unit.BookmarkHtmlImporterExporter
 
 @Composable
 fun DataBackupSettingsScreen(
@@ -81,21 +78,6 @@ fun DataBackupSettingsScreen(
         }
     }
 
-    val exportBookmarksHtmlLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/html")
-    ) { uri: Uri? ->
-        if (uri != null) {
-            BookmarkHtmlImporterExporter.exportToUri(context, uri, format = "html")
-        }
-    }
-
-    val importBookmarksHtmlLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            BookmarkHtmlImporterExporter.importFromUri(context, uri)
-        }
-    }
 
     if (showBackupDialog) {
         AlertDialog(
@@ -270,51 +252,6 @@ fun DataBackupSettingsScreen(
                         }
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Text(
-                        "HTML Bookmarks (Standard Netscape Format — Chrome, Firefox, Safari):",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedButton(
-                            onClick = { exportBookmarksHtmlLauncher.launch("bookmarks.html") },
-                            shape = RoundedCornerShape(14.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Rounded.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Export HTML", maxLines = 1)
-                            }
-                        }
-
-                        OutlinedButton(
-                            onClick = { importBookmarksHtmlLauncher.launch(arrayOf("text/html", "text/plain", "*/*")) },
-                            shape = RoundedCornerShape(14.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Rounded.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Import HTML", maxLines = 1)
-                            }
-                        }
-                    }
                 }
 
                 Spacer(Modifier.height(32.dp))

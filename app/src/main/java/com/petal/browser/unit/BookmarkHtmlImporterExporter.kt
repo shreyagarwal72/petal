@@ -1,11 +1,10 @@
 /*
  * BookmarkHtmlImporterExporter.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Standard Netscape Bookmark Format (HTML) Importer and Exporter for Petal Browser.
+ * JSON Bookmark Importer and Exporter for Petal Browser.
  *
  * Implements:
- *   • Standard HTML Export compatible with Chrome, Firefox, Safari, Edge, Brave
- *   • Robust HTML parsing supporting <A HREF="...">, ADD_DATE, LAST_MODIFIED, and nested folders
+ *   • JSON Export/Import for Petal's bookmark format
  *   • Scoped Storage (SAF / MediaStore / InputStream / OutputStream) integration
  *   • Duplicate URL detection and database transaction batching
  *
@@ -23,14 +22,11 @@ import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.view.NinjaToast
 import java.io.BufferedReader
-import java.io.BufferedWriter
 import java.io.InputStreamReader
-import java.io.OutputStreamWriter
 import java.util.concurrent.Executors
-import java.util.regex.Pattern
 
 object BookmarkHtmlImporterExporter {
-    private const val TAG = "BookmarkHtmlImportExport"
+    private const val TAG = "BookmarkImportExport"
 
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -55,13 +51,18 @@ object BookmarkHtmlImporterExporter {
 
     /**
      * Generates modern JSON backup string from bookmarks.
+     * Uses explicit getURL() to avoid Kotlin JVM property synthesis issues with getURL() vs getUrl().
      */
     fun exportToJsonString(bookmarks: List<Record>): String {
         val items = bookmarks.mapNotNull { record ->
-            val u = record.url?.trim() ?: return@mapNotNull null
+            val u = record.getURL()?.trim() ?: return@mapNotNull null
             if (u.isEmpty() || u.equals("about:blank", ignoreCase = true)) return@mapNotNull null
             val t = record.title?.trim()?.ifEmpty { u } ?: u
-            val bookmarkTime = if (record.time > 0) record.time else if (record.iconColor > 0) record.iconColor else System.currentTimeMillis()
+            val bookmarkTime = when {
+                record.time > 0 -> record.time
+                record.iconColor > 0 -> record.iconColor
+                else -> System.currentTimeMillis()
+            }
             BookmarkJsonItem(
                 title = t,
                 url = u,
@@ -80,45 +81,7 @@ object BookmarkHtmlImporterExporter {
     }
 
     /**
-     * Generates standard Netscape Bookmark File HTML string from a list of records.
-     */
-    fun exportToHtmlString(bookmarks: List<Record>): String {
-        val sb = StringBuilder()
-        sb.append("<!DOCTYPE NETSCAPE-Bookmark-file-1>\n")
-        sb.append("<!-- This is an automatically generated file.\n")
-        sb.append("     It will be read and overwritten.\n")
-        sb.append("     DO NOT EDIT! -->\n")
-        sb.append("<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">\n")
-        sb.append("<TITLE>Bookmarks</TITLE>\n")
-        sb.append("<H1>Bookmarks</H1>\n")
-        sb.append("<DL><p>\n")
-
-        for (record in bookmarks) {
-            val url = record.url?.trim() ?: continue
-            if (url.isEmpty() || url.equals("about:blank", ignoreCase = true)) continue
-
-            val title = record.title?.trim()?.ifEmpty { url } ?: url
-            val escapedTitle = escapeHtml(title)
-            val escapedUrl = escapeHtml(url)
-            val addDate = when {
-                record.time > 0 -> record.time / 1000L
-                record.iconColor > 0 -> record.iconColor / 1000L
-                else -> System.currentTimeMillis() / 1000L
-            }
-
-            sb.append("    <DT><A HREF=\"").append(escapedUrl)
-                .append("\" ADD_DATE=\"").append(addDate)
-                .append("\">").append(escapedTitle)
-                .append("</A>\n")
-        }
-
-        sb.append("</DL><p>\n")
-        return sb.toString()
-    }
-
-    /**
-     * Exports all bookmarks to a target Storage Access Framework (SAF) Uri.
-     * Supports both JSON and HTML depending on filename/URI or format parameter.
+     * Exports all bookmarks to a target Storage Access Framework (SAF) Uri as JSON.
      */
     @JvmOverloads
     fun exportToUri(context: Context, destinationUri: Uri, format: String = "json", onComplete: ((Boolean, Int) -> Unit)? = null) {
@@ -130,30 +93,19 @@ object BookmarkHtmlImporterExporter {
                 action.close()
 
                 val validBookmarks = bookmarks.filter {
-                    val u = it.url?.trim() ?: ""
+                    val u = it.getURL()?.trim() ?: ""
                     u.isNotEmpty() && !u.equals("about:blank", ignoreCase = true)
-                }
-
-                val uriStr = destinationUri.toString().lowercase()
-                val isJson = if (uriStr.contains(".html") || uriStr.contains(".htm")) {
-                    false
-                } else if (uriStr.contains(".json")) {
-                    true
-                } else {
-                    format.equals("json", ignoreCase = true)
                 }
 
                 if (validBookmarks.isEmpty()) {
                     mainHandler.post {
                         NinjaToast.show(context, "No bookmarks found to export")
+                        onComplete?.invoke(false, 0)
                     }
+                    return@execute
                 }
 
-                val content = if (isJson) {
-                    exportToJsonString(validBookmarks)
-                } else {
-                    exportToHtmlString(validBookmarks)
-                }
+                val content = exportToJsonString(validBookmarks)
 
                 // Open output stream with write fallback ("rwt" -> "wt" -> "w")
                 val outputStream = try {
@@ -179,10 +131,9 @@ object BookmarkHtmlImporterExporter {
                     } catch (_: Exception) {}
                 }
 
-                val formatLabel = if (isJson) "JSON" else "HTML"
-                Log.i(TAG, "Exported ${validBookmarks.size} bookmarks to $formatLabel: $destinationUri (${bytes.size} bytes)")
+                Log.i(TAG, "Exported ${validBookmarks.size} bookmarks to JSON: $destinationUri (${bytes.size} bytes)")
                 mainHandler.post {
-                    NinjaToast.show(context, "Exported ${validBookmarks.size} bookmarks ($formatLabel) successfully")
+                    NinjaToast.show(context, "Exported ${validBookmarks.size} bookmarks successfully")
                     onComplete?.invoke(true, validBookmarks.size)
                 }
             } catch (e: Exception) {
@@ -196,8 +147,7 @@ object BookmarkHtmlImporterExporter {
     }
 
     /**
-     * Parses standard Netscape Bookmark HTML or JSON input and imports records into the bookmarks database.
-     * Automatically detects whether file is JSON or HTML.
+     * Parses JSON bookmark file and imports records into the bookmarks database.
      */
     @JvmOverloads
     fun importFromUri(context: Context, sourceUri: Uri, onComplete: ((Boolean, Int) -> Unit)? = null) {
@@ -208,11 +158,7 @@ object BookmarkHtmlImporterExporter {
                 } ?: throw IllegalStateException("Could not open file stream")
 
                 val trimmed = rawContent.trim()
-                val parsedRecords = if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-                    parseJsonBookmarks(trimmed)
-                } else {
-                    parseHtmlBookmarks(trimmed)
-                }
+                val parsedRecords = parseJsonBookmarks(trimmed)
 
                 if (parsedRecords.isEmpty()) {
                     mainHandler.post {
@@ -227,7 +173,7 @@ object BookmarkHtmlImporterExporter {
                 var importedCount = 0
 
                 for (record in parsedRecords) {
-                    val url = record.url ?: continue
+                    val url = record.getURL() ?: continue
                     if (!action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
                         action.addBookmark(record)
                         importedCount++
@@ -253,7 +199,6 @@ object BookmarkHtmlImporterExporter {
     private fun parseJsonBookmarks(content: String): List<Record> {
         val list = ArrayList<Record>()
         try {
-            val gson = com.google.gson.Gson()
             if (content.startsWith("{")) {
                 val jsonObject = com.google.gson.JsonParser.parseString(content).asJsonObject
                 if (jsonObject.has("bookmarks")) {
@@ -266,12 +211,12 @@ object BookmarkHtmlImporterExporter {
                             val title = obj.get("title")?.asString?.trim()?.ifEmpty { url } ?: url
                             val time = obj.get("time")?.asLong ?: System.currentTimeMillis()
                             val iconColor = obj.get("iconColor")?.asLong ?: 1L
-                            list.add(Record().apply {
-                                this.title = title
-                                this.url = url
-                                this.time = time
-                                this.iconColor = iconColor
-                            })
+                            val record = Record()
+                            record.setURL(url)
+                            record.title = title
+                            record.setTime(time)
+                            record.setIconColor(iconColor)
+                            list.add(record)
                         }
                     }
                 }
@@ -285,77 +230,18 @@ object BookmarkHtmlImporterExporter {
                         val title = obj.get("title")?.asString?.trim()?.ifEmpty { url } ?: url
                         val time = obj.get("time")?.asLong ?: System.currentTimeMillis()
                         val iconColor = obj.get("iconColor")?.asLong ?: 1L
-                        list.add(Record().apply {
-                            this.title = title
-                            this.url = url
-                            this.time = time
-                            this.iconColor = iconColor
-                        })
+                        val record = Record()
+                        record.setURL(url)
+                        record.title = title
+                        record.setTime(time)
+                        record.setIconColor(iconColor)
+                        list.add(record)
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "JSON parsing fallback to HTML", e)
-            return parseHtmlBookmarks(content)
+            Log.w(TAG, "JSON parsing failed", e)
         }
         return list
-    }
-
-    private fun parseHtmlBookmarks(content: String): List<Record> {
-        val parsedRecords = ArrayList<Record>()
-        val anchorPattern = Pattern.compile("<a\\s+[^>]*?href=[\"'](.*?)[\"'][^>]*>(.*?)</a>", Pattern.CASE_INSENSITIVE or Pattern.DOTALL)
-        val addDatePattern = Pattern.compile("add_date=[\"']?(\\d+)[\"']?", Pattern.CASE_INSENSITIVE)
-
-        val matcher = anchorPattern.matcher(content)
-        while (matcher.find()) {
-            val rawUrl = matcher.group(1)?.trim() ?: ""
-            val rawTitle = matcher.group(2)?.trim() ?: ""
-
-            if (rawUrl.isNotEmpty() && !rawUrl.equals("about:blank", ignoreCase = true)) {
-                val unescapedUrl = unescapeHtml(rawUrl)
-                val unescapedTitle = unescapeHtml(rawTitle).ifEmpty { unescapedUrl }
-
-                var time = System.currentTimeMillis()
-                val fullTag = matcher.group(0) ?: ""
-                val dateMatcher = addDatePattern.matcher(fullTag)
-                if (dateMatcher.find()) {
-                    try {
-                        val seconds = dateMatcher.group(1)?.toLongOrNull() ?: 0L
-                        if (seconds > 0) {
-                            time = seconds * 1000L
-                        }
-                    } catch (_: Exception) {}
-                }
-
-                val record = Record().apply {
-                    title = unescapedTitle
-                    url = unescapedUrl
-                    this.time = time
-                    iconColor = 1
-                }
-                parsedRecords.add(record)
-            }
-        }
-        return parsedRecords
-    }
-
-    private fun escapeHtml(text: String): String {
-        return text
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&#39;")
-    }
-
-    private fun unescapeHtml(text: String): String {
-        return text
-            .replace("&amp;", "&")
-            .replace("&lt;", "<")
-            .replace("&gt;", ">")
-            .replace("&quot;", "\"")
-            .replace("&#39;", "'")
-            .replace("&#x27;", "'")
-            .replace("&apos;", "'")
     }
 }
