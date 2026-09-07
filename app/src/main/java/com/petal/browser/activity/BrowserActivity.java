@@ -2151,13 +2151,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (progressBar != null) {
-            if (!isInternalPage) {
+            // The Compose LinearWavy indicator is the website loading indicator.
+            // Keep the legacy Material bar hidden so the two lines never overlap.
+            if (progressBarCompose != null) {
+                progressBar.setVisibility(GONE);
+            } else if (!isInternalPage) {
                 progressBar.setProgressCompat(progress, true);
-                if (progress < 100) {
-                    progressBar.setVisibility(VISIBLE);
-                } else {
-                    progressBar.setVisibility(GONE);
-                }
+                progressBar.setVisibility(progress < 100 ? VISIBLE : GONE);
             } else {
                 progressBar.setVisibility(GONE);
             }
