@@ -473,6 +473,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         
         sp = PreferenceManager.getDefaultSharedPreferences(context);
         com.petal.browser.unit.PetalSessionHistoryManager.initSession();
+        com.petal.browser.extensions.PetalExtensionManager.attach(context);
 
         try {
             Intent mediaServiceIntent = new Intent(this, com.petal.browser.media.PetalMediaSessionService.class);
@@ -3680,6 +3681,34 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void showBookmarks() {
         showBookmarksPage();
+    }
+
+    public void showExtensionsScreen() {
+        try {
+            captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
+            contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_ext = findViewById(R.id.fab_bubble);
+            if (fab_bubble_ext != null) fab_bubble_ext.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
+            View extensionsView = com.petal.browser.compose.extensions.PetalExtensionsBridge.createExtensionsView(
+                BrowserActivity.this,
+                () -> {
+                    showAlbum(currentAlbumController);
+                    return kotlin.Unit.INSTANCE;
+                }
+            );
+            presentComposeScreen(extensionsView);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void showCreditsScreen() {
