@@ -598,7 +598,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
-                        com.petal.browser.logger.PetalAppLogger.toast(context, "Page repeatedly crashed. Stopped auto-reloading.")
+                        com.petal.browser.view.NinjaToast.show(context, "Page repeatedly crashed. Stopped auto-reloading.")
                     }
                 }
                 return
