@@ -109,6 +109,8 @@ class PetalGeckoView @JvmOverloads constructor(
     private var lastScrollHapticY: Int = 0
     private var currentScrollY: Int = 0
     private var currentScrollX: Int = 0
+    private var lastCrashRecoveryTime: Long = 0L
+    private var crashRecoveryCount: Int = 0
 
     val loadingProgressBar = com.google.android.material.progressindicator.LinearProgressIndicator(context).apply {
         isIndeterminate = false
@@ -583,6 +585,25 @@ class PetalGeckoView @JvmOverloads constructor(
      */
     private fun recoverCrashedSession() {
         try {
+            val now = System.currentTimeMillis()
+            if (now - lastCrashRecoveryTime < 8000L) {
+                crashRecoveryCount++
+            } else {
+                crashRecoveryCount = 1
+            }
+            lastCrashRecoveryTime = now
+
+            if (crashRecoveryCount > 3) {
+                android.util.Log.e(TAG, "Repeated GeckoSession crash detected ($crashRecoveryCount times in short window). Halting recovery loop.")
+                val act = getHostActivity()
+                if (act is com.petal.browser.activity.BrowserActivity) {
+                    act.runOnUiThread {
+                        com.petal.browser.logger.PetalAppLogger.toast(context, "Page repeatedly crashed. Stopped auto-reloading.")
+                    }
+                }
+                return
+            }
+
             val runtime = PetalGeckoRuntime.getOrCreate(context)
             if (!session.isOpen) {
                 session.open(runtime)

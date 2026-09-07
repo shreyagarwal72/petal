@@ -169,7 +169,7 @@ dependencies {
     // published for the org.mozilla.geckoview:geckoview artifact on maven.mozilla.org
     // (verified via https://mvnrepository.com/artifact/org.mozilla.geckoview/geckoview,
     // corresponds to the Firefox 154 release train, built/published Aug 25, 2026).
-    implementation 'org.mozilla.geckoview:geckoview:154.0.20260824154132'
+    implementation 'org.mozilla.geckoview:geckoview:155.0.20260903215306'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.51.1'
