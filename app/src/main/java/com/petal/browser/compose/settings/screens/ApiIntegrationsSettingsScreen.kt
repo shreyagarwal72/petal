@@ -58,6 +58,7 @@ fun ApiIntegrationsSettingsScreenContent(
     var isFetchingModels by remember { mutableStateOf(false) }
     var isKeyVisible by remember { mutableStateOf(false) }
     var testResultMsg by remember { mutableStateOf<String?>(null) }
+    var showCustomAiGuide by remember { mutableStateOf(false) }
     var isTestingKey by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -125,6 +126,11 @@ fun ApiIntegrationsSettingsScreenContent(
                     }
 
                     if (selectedProvider == AiProvider.CUSTOM) {
+                        TextButton(onClick = { showCustomAiGuide = true }) {
+                            Icon(Icons.Rounded.Info, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("How to connect a custom AI")
+                        }
                         Spacer(Modifier.height(4.dp))
                         OutlinedTextField(
                             value = customEndpoint,
@@ -345,17 +351,16 @@ fun ApiIntegrationsSettingsScreenContent(
                             }
                         }
                     }
+    if (showCustomAiGuide) {
+        AlertDialog(
+            onDismissRequest = { showCustomAiGuide = false },
+            title = { Text("Connect any OpenAI-compatible AI") },
+            text = { Text("1. Choose Custom AI.\n\n2. From your provider dashboard, copy its OpenAI-compatible base URL (for example https://provider.example/v1). Petal adds /chat/completions automatically.\n\n3. Create and paste an API key if the provider requires one; local servers may leave it blank.\n\n4. Enter the exact model ID shown by the provider, or use Fetch Models.\n\n5. Tap Test Connection before using Petal AI.\n\nUse HTTPS for internet providers. HTTP is allowed only for private/local network servers such as Ollama or LM Studio.") },
+            confirmButton = { TextButton(onClick = { showCustomAiGuide = false }) { Text("Got it") } }
+        )
+    }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    ToggleRow(
-                        title = "Live Search Recommendations",
-                        subtitle = "Fetch live autocomplete suggestions from Google, DuckDuckGo, or Bing while typing",
-                        icon = Icons.Rounded.Search,
-                        checked = enableLiveSuggestions,
-                        onCheckedChange = onEnableLiveSuggestionsChange
-                    )
-                }
 
                 Spacer(Modifier.height(32.dp))
             }
