@@ -67,7 +67,12 @@ object PetalLiveAlertManager {
                         it.status == DownloadManager.STATUS_PAUSED
                     }
 
-                    if (activeItems.isEmpty()) {
+                    // Fetch2 can briefly publish an empty snapshot while the app is
+                    // backgrounded or its database is being reopened. Do not stop the
+                    // foreground service (which would make downloads appear paused) on
+                    // that transient state; only shut it down after a real non-empty,
+                    // terminal snapshot.
+                    if (items.isNotEmpty() && activeItems.isEmpty()) {
                         PetalDownloadService.stopIfNoActiveDownloads(context)
                     }
 
