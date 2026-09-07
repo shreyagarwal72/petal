@@ -16,6 +16,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -376,12 +378,15 @@ private fun AddExtensionSheet(
     onInstall: (String) -> Unit
 ) {
     var manualUrl by remember { mutableStateOf("") }
+    var showMozillaCatalogPrompt by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val busy by PetalExtensionManager.busy.collectAsState()
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 24.dp)
         ) {
@@ -440,18 +445,8 @@ private fun AddExtensionSheet(
             }
 
             Spacer(Modifier.height(12.dp))
-            val context = LocalContext.current
             FilledTonalButton(
-                onClick = {
-                    try {
-                        context.startActivity(
-                            android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse(PetalExtensionManager.amoAndroidBrowseUrl)
-                            )
-                        )
-                    } catch (ignored: Exception) {}
-                },
+                onClick = { showMozillaCatalogPrompt = true },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -493,6 +488,20 @@ private fun AddExtensionSheet(
             }
         }
     }
+    if (showMozillaCatalogPrompt) {
+        AlertDialog(
+            onDismissRequest = { showMozillaCatalogPrompt = false },
+            icon = { Icon(Icons.Rounded.Extension, contentDescription = null) },
+            title = { Text("Find Firefox extensions") },
+            text = { Text("Browse Mozilla Android add-ons, then paste an add-on page or download link here to install it.") },
+            confirmButton = { TextButton(onClick = {
+                showMozillaCatalogPrompt = false
+                try { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(PetalExtensionManager.amoAndroidBrowseUrl))) } catch (_: Exception) {}
+            }) { Text("Open Mozilla Add-ons") } },
+            dismissButton = { TextButton(onClick = { showMozillaCatalogPrompt = false }) { Text("Cancel") } }
+        )
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
