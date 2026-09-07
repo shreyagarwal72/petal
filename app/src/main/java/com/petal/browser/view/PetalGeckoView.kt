@@ -294,6 +294,13 @@ class PetalGeckoView @JvmOverloads constructor(
                 // is the root cause of "page loads but shows blank" that a manual reload
                 // happens to fix (reload re-triggers loadUrl, masking the real problem).
                 android.util.Log.w(TAG, "GeckoSession content process crashed for $currentUrl - reopening session")
+                com.petal.browser.logger.PetalAppLogger.e(TAG, "GeckoSession content process crashed for $currentUrl")
+                com.petal.browser.logger.PetalAppLogger.recordProcessCrash(
+                    context,
+                    TAG,
+                    "GeckoView Content Process Crash (SIGSEGV / Native Termination)",
+                    "Active URL: $currentUrl | Title: $currentTitle"
+                )
                 recoverCrashedSession()
             }
 
@@ -301,6 +308,13 @@ class PetalGeckoView @JvmOverloads constructor(
                 // Same recovery as onCrash: the OS/Gecko killed the content process
                 // (e.g. under memory pressure), leaving the session closed and unusable.
                 android.util.Log.w(TAG, "GeckoSession content process killed for $currentUrl - reopening session")
+                com.petal.browser.logger.PetalAppLogger.e(TAG, "GeckoSession content process killed for $currentUrl")
+                com.petal.browser.logger.PetalAppLogger.recordProcessCrash(
+                    context,
+                    TAG,
+                    "GeckoView Content Process Killed (OS OOM / Low Memory Kill)",
+                    "Active URL: $currentUrl | Title: $currentTitle"
+                )
                 recoverCrashedSession()
             }
 

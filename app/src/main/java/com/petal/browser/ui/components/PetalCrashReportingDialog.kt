@@ -37,6 +37,13 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -55,9 +62,53 @@ import com.petal.browser.view.NinjaToast
  * Provides instant options to view the trace, export full diagnostic logs (.zip),
  * and report directly on GitHub.
  */
+object PetalCrashReportingBridge {
+    @JvmStatic
+    fun showCrashRecoveryPromptIfNeeded(activity: ComponentActivity) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(activity)
+        val reportMode = sp.getString(PetalAppLogger.PREF_CRASH_REPORT_MODE, "auto") ?: "auto"
+        if (reportMode == "off" || !PetalAppLogger.hasPendingCrashReport()) {
+            return
+        }
+
+        activity.runOnUiThread {
+            try {
+                var composeView: ComposeView? = null
+                composeView = ComposeView(activity).apply {
+                    setViewTreeLifecycleOwner(activity)
+                    setViewTreeViewModelStoreOwner(activity)
+                    setViewTreeSavedStateRegistryOwner(activity)
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+                    setContent {
+                        PetalExpressiveTheme {
+                            PetalCrashRecoveryHost(
+                                onDismiss = {
+                                    val parent = composeView?.parent as? android.view.ViewGroup
+                                    parent?.removeView(composeView)
+                                }
+                            )
+                        }
+                    }
+                }
+                val rootView = activity.findViewById<android.view.ViewGroup>(android.R.id.content)
+                rootView?.addView(
+                    composeView,
+                    android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+}
+
 @Composable
 fun PetalCrashRecoveryHost(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDismiss: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -68,14 +119,17 @@ fun PetalCrashRecoveryHost(
     }
     var showFullTraceDialog by remember { mutableStateOf(false) }
 
+    val handleDismiss: () -> Unit = {
+        showCrashDialog = false
+        PetalAppLogger.clearPendingCrashReport(context)
+        onDismiss?.invoke()
+    }
+
     if (showCrashDialog) {
         val crashReport = remember { PetalAppLogger.getLastCrashReport() ?: "" }
 
         AlertDialog(
-            onDismissRequest = {
-                showCrashDialog = false
-                PetalAppLogger.clearPendingCrashReport(context)
-            },
+            onDismissRequest = handleDismiss,
             icon = {
                 Surface(
                     shape = CircleShape,
@@ -134,8 +188,7 @@ fun PetalCrashRecoveryHost(
                     onClick = {
                         PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.7f)
                         PetalAppLogger.openGitHubCrashIssue(context, crashReport)
-                        showCrashDialog = false
-                        PetalAppLogger.clearPendingCrashReport(context)
+                        handleDismiss()
                     },
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -156,10 +209,7 @@ fun PetalCrashRecoveryHost(
                         Text("View Log")
                     }
                     TextButton(
-                        onClick = {
-                            showCrashDialog = false
-                            PetalAppLogger.clearPendingCrashReport(context)
-                        }
+                        onClick = handleDismiss
                     ) {
                         Text("Dismiss")
                     }

@@ -149,9 +149,58 @@ object PetalAppLogger {
 
         try {
             val crashFile = File(context.filesDir, CRASH_LOG_FILENAME)
-            crashFile.writeText(report)
+            FileOutputStream(crashFile).use { fos ->
+                fos.write(report.toByteArray(Charsets.UTF_8))
+                fos.flush()
+                try {
+                    fos.fd.sync()
+                } catch (_: Throwable) {}
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to persist crash dump file", e)
+        }
+    }
+
+    /**
+     * Records a critical process termination or native crash (e.g. GeckoView content process crash/kill)
+     * so it is properly captured in logs and surfaced in the crash recovery dialog.
+     */
+    @JvmStatic
+    fun recordProcessCrash(context: Context, tag: String, reason: String, details: String = "") {
+        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
+        val report = buildString {
+            append("=== PETAL BROWSER PROCESS CRASH / TERMINATION ===\n")
+            append("Timestamp: $timestamp\n")
+            append("Source: $tag\n")
+            append("Reason: $reason\n")
+            if (details.isNotBlank()) {
+                append("Details: $details\n")
+            }
+            append("App Version: ${try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Throwable) { "Unknown" }}\n")
+            append("Android OS: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})\n")
+            append("Device: ${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})\n")
+            append("\n--- Last In-Memory Logs Before Event ---\n")
+            logBuffer.toList().takeLast(40).forEach { line ->
+                append(line)
+                append("\n")
+            }
+        }
+
+        crashTraces.add(report)
+        lastCrashReport = report
+        e(tag, "Process crash recorded: $reason $details")
+
+        try {
+            val crashFile = File(context.filesDir, CRASH_LOG_FILENAME)
+            FileOutputStream(crashFile).use { fos ->
+                fos.write(report.toByteArray(Charsets.UTF_8))
+                fos.flush()
+                try {
+                    fos.fd.sync()
+                } catch (_: Throwable) {}
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to persist process crash dump file", e)
         }
     }
 
