@@ -80,40 +80,45 @@ fun PetalInactiveTabsSheet(
 
             Column(modifier = Modifier.fillMaxSize()) {
                 // Header Bar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Inactive tabs",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = if (thresholdDays > 0) "Tabs not used for $thresholdDays days" else "Archived and duplicate tabs",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        IconButton(onClick = onOpenSettings) {
-                            Icon(
-                                Icons.Rounded.Settings,
-                                contentDescription = "Inactive Settings",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text(
+                                text = "Inactive Tabs",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            val subtitleText = if (thresholdDays > 0) {
+                                "Tabs idle for ${thresholdDays} day${if (thresholdDays == 1) "" else "s"} · ${inactiveTabs.size} archived"
+                            } else {
+                                "${inactiveTabs.size} archived & duplicate tabs"
+                            }
+                            Text(
+                                text = subtitleText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        IconButton(onClick = onDismiss) {
-                            Icon(
-                                Icons.Rounded.Close,
-                                contentDescription = "Close",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                            IconButton(onClick = onOpenSettings) {
+                                Icon(
+                                    Icons.Rounded.Settings,
+                                    contentDescription = "Settings",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            IconButton(onClick = onDismiss) {
+                                Icon(
+                                    Icons.Rounded.Close,
+                                    contentDescription = "Close",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
@@ -139,7 +144,7 @@ fun PetalInactiveTabsSheet(
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(28.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -160,21 +165,22 @@ fun PetalInactiveTabsSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(
+                        FilledTonalButton(
                             onClick = onRestoreAllTabs,
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Icon(Icons.Rounded.Unarchive, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
                             Text("Restore all (${inactiveTabs.size})")
                         }
 
-                        TextButton(
+                        OutlinedButton(
                             onClick = onCloseAllInactive,
-                            colors = ButtonDefaults.textButtonColors(
+                            colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Icon(Icons.Rounded.DeleteSweep, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
@@ -197,7 +203,7 @@ fun PetalInactiveTabsSheet(
                             modifier = Modifier.padding(32.dp)
                         ) {
                             Surface(
-                                shape = CircleShape,
+                                shape = RoundedCornerShape(28.dp),
                                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 modifier = Modifier.size(56.dp)
                             ) {
@@ -216,7 +222,7 @@ fun PetalInactiveTabsSheet(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Tabs you haven't used for a while will appear here to reduce clutter.",
+                                text = "Tabs you haven't used for a while will appear here to reduce clutter. You can adjust the threshold in settings.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.fillMaxWidth(0.85f)
@@ -235,7 +241,8 @@ fun PetalInactiveTabsSheet(
                             InactiveTabItemCard(
                                 tab = tab,
                                 onRestore = { onRestoreTab(tab) },
-                                onClose = { onCloseTab(tab) }
+                                onClose = { onCloseTab(tab) },
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }
@@ -330,12 +337,18 @@ private fun InactiveTabItemCard(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onRestore) {
+                FilledIconButton(
+                    onClick = onRestore,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
                         Icons.Rounded.Unarchive,
                         contentDescription = "Restore tab",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
                 IconButton(onClick = onClose) {

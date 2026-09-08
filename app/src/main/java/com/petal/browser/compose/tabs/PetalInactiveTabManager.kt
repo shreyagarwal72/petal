@@ -30,7 +30,8 @@ object PetalInactiveTabManager {
     private const val KEY_INACTIVE_TABS_JSON = "inactive_tabs_json"
     private const val KEY_TAB_ACCESS_MAP_JSON = "tab_access_map_json"
 
-    const val PREF_INACTIVE_DAYS_THRESHOLD = "sp_inactive_days_threshold" // "never", "7", "14", "21"
+    const val PREF_INACTIVE_DAYS_THRESHOLD = "sp_inactive_days_threshold" // "never", "7", "14", "21", "custom"
+    const val PREF_CUSTOM_INACTIVE_DAYS = "sp_inactive_custom_days" // Int, default 21, range 1-365
     const val PREF_ARCHIVE_DUPLICATES = "sp_archive_duplicate_tabs" // Boolean
     const val PREF_AUTO_CLOSE_INACTIVE_3_MONTHS = "sp_auto_close_inactive_3_months" // Boolean
 
@@ -92,7 +93,7 @@ object PetalInactiveTabManager {
     @Synchronized
     fun getTabLastAccess(context: Context, tabId: String): Long {
         init(context)
-        return tabAccessMap[tabId] ?: System.currentTimeMillis()
+        return tabAccessMap[tabId] ?: 0L
     }
 
     @Synchronized
@@ -116,6 +117,7 @@ object PetalInactiveTabManager {
             "7" -> 7
             "14" -> 14
             "21" -> 21
+            "custom" -> defSp.getInt(PREF_CUSTOM_INACTIVE_DAYS, 21).coerceIn(1, 365)
             else -> 21
         }
     }
