@@ -187,10 +187,12 @@ object BrowserNavigationDelegate {
 
                 override fun onTriggerMediaMode() {
                     val isPipSupported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
-                    val isAutoPipEnabled = prefs.getBoolean("sp_auto_pip", true)
                     val isBgPlayEnabled = prefs.getBoolean("sp_background_play", false)
 
-                    if (isPipSupported && isAutoPipEnabled) {
+                    // This is an explicit user action. Auto-PiP controls only
+                    // automatic entry when minimizing the app and must not block
+                    // the manual PiP command from the overflow menu.
+                    if (isPipSupported) {
                         activity.triggerSystemPipMode()
                     } else if (isBgPlayEnabled) {
                         NinjaToast.show(activity, "Background media playback active")
