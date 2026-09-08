@@ -13,9 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
 import androidx.preference.PreferenceManager
 import com.petal.browser.compose.tabs.PetalInactiveTabManager
 import com.petal.browser.ui.components.ExpressiveHeader
@@ -23,6 +23,14 @@ import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.SettingsSection
 
+/**
+ * Inactive Tabs Settings Screen — Material 3 Expressive redesign.
+ *
+ * Threshold picker: SingleChoiceSegmentedButtonRow (Never / 7d / 14d / 21d / Custom).
+ * Custom option reveals an animated Slider (1–365 days) with a live day-count badge.
+ * Toggles use IconSwitch for Archive Duplicates and Auto-Close.
+ * Informational card at bottom explains inactive tab behaviour.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InactiveSettingsScreen(
@@ -36,7 +44,7 @@ fun InactiveSettingsScreen(
         mutableStateOf(sp.getString(PetalInactiveTabManager.PREF_INACTIVE_DAYS_THRESHOLD, "21") ?: "21")
     }
     var customDays by remember {
-        mutableIntStateOf(sp.getInt(PetalInactiveTabManager.PREF_CUSTOM_INACTIVE_DAYS, 21))
+        mutableIntStateOf(sp.getInt(PetalInactiveTabManager.PREF_CUSTOM_INACTIVE_DAYS, 21).coerceIn(1, 365))
     }
     var archiveDuplicates by remember {
         mutableStateOf(sp.getBoolean(PetalInactiveTabManager.PREF_ARCHIVE_DUPLICATES, true))
@@ -70,7 +78,14 @@ fun InactiveSettingsScreen(
                 // ── Inactivity Threshold ──
                 SettingsSection(
                     title = "Inactivity Threshold",
-                    icon = { Icon(Icons.Rounded.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
+                    icon = {
+                        Icon(
+                            Icons.Rounded.Timer,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 ) {
                     Text(
                         text = "Move tabs that haven't been opened for this long to the Inactive section.",
@@ -86,11 +101,20 @@ fun InactiveSettingsScreen(
                                 selected = thresholdPref == key,
                                 onClick = {
                                     thresholdPref = key
-                                    sp.edit().putString(PetalInactiveTabManager.PREF_INACTIVE_DAYS_THRESHOLD, key).apply()
+                                    sp.edit().putString(
+                                        PetalInactiveTabManager.PREF_INACTIVE_DAYS_THRESHOLD, key
+                                    ).apply()
                                 },
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = thresholdOptions.size),
-                                icon = { SegmentedButtonDefaults.ActiveIcon(active = thresholdPref == key) },
-                                label = { Text(label, style = MaterialTheme.typography.labelMedium) }
+                                shape = SegmentedButtonDefaults.itemShape(
+                                    index = index,
+                                    count = thresholdOptions.size
+                                ),
+                                icon = {
+                                    SegmentedButtonDefaults.ActiveIcon(active = thresholdPref == key)
+                                },
+                                label = {
+                                    Text(label, style = MaterialTheme.typography.labelMedium)
+                                }
                             )
                         }
                     }
@@ -103,7 +127,9 @@ fun InactiveSettingsScreen(
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
                         ) {
                             Column(
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
@@ -124,7 +150,7 @@ fun InactiveSettingsScreen(
                                         color = MaterialTheme.colorScheme.primaryContainer
                                     ) {
                                         Text(
-                                            text = "$customDays days",
+                                            text = "$customDays day${if (customDays == 1) "" else "s"}",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -136,7 +162,9 @@ fun InactiveSettingsScreen(
                                     value = customDays.toFloat(),
                                     onValueChange = { v ->
                                         customDays = v.toInt().coerceIn(1, 365)
-                                        sp.edit().putInt(PetalInactiveTabManager.PREF_CUSTOM_INACTIVE_DAYS, customDays).apply()
+                                        sp.edit().putInt(
+                                            PetalInactiveTabManager.PREF_CUSTOM_INACTIVE_DAYS, customDays
+                                        ).apply()
                                     },
                                     valueRange = 1f..365f,
                                     modifier = Modifier.fillMaxWidth()
@@ -145,8 +173,16 @@ fun InactiveSettingsScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("1 day", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("365 days", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        "1 day",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        "365 days",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }
@@ -156,26 +192,39 @@ fun InactiveSettingsScreen(
                 // ── Auto-Archive ──
                 SettingsSection(
                     title = "Auto-Archive",
-                    icon = { Icon(Icons.Rounded.Archive, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp)) }
+                    icon = {
+                        Icon(
+                            Icons.Rounded.Archive,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 ) {
-                    // Archive duplicates
+                    // Archive duplicate tabs
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp, vertical = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column(
-                                modifier = Modifier.weight(1f).padding(end = 16.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 16.dp),
                                 verticalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
                                 Text(
                                     "Archive duplicate tabs",
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
@@ -189,30 +238,38 @@ fun InactiveSettingsScreen(
                                 icon = Icons.Rounded.ContentCopy,
                                 onCheckedChange = {
                                     archiveDuplicates = it
-                                    sp.edit().putBoolean(PetalInactiveTabManager.PREF_ARCHIVE_DUPLICATES, it).apply()
+                                    sp.edit().putBoolean(
+                                        PetalInactiveTabManager.PREF_ARCHIVE_DUPLICATES, it
+                                    ).apply()
                                 }
                             )
                         }
                     }
 
-                    // Auto-close 3 months
+                    // Auto-close after 3 months
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp, vertical = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column(
-                                modifier = Modifier.weight(1f).padding(end = 16.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 16.dp),
                                 verticalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
                                 Text(
                                     "Auto-close after 3 months",
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    ),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
@@ -226,7 +283,9 @@ fun InactiveSettingsScreen(
                                 icon = Icons.Rounded.DeleteSweep,
                                 onCheckedChange = {
                                     autoClose3Months = it
-                                    sp.edit().putBoolean(PetalInactiveTabManager.PREF_AUTO_CLOSE_INACTIVE_3_MONTHS, it).apply()
+                                    sp.edit().putBoolean(
+                                        PetalInactiveTabManager.PREF_AUTO_CLOSE_INACTIVE_3_MONTHS, it
+                                    ).apply()
                                 }
                             )
                         }
@@ -248,7 +307,9 @@ fun InactiveSettingsScreen(
                             Icons.Rounded.Info,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(18.dp).padding(top = 1.dp)
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(top = 1.dp)
                         )
                         Text(
                             "Inactive tabs are preserved with their history and can be restored at any time from the Inactive section in the tab switcher.",
