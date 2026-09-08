@@ -454,14 +454,14 @@ fun PetalOverflowMenuSheet(
                         title = if (isBookmarked) "Remove bookmark" else "Add bookmark",
                         onClick = onToggleBookmark
                     )
-                if (!isHomePage) {
-                    MenuRowItem(
-                        icon = Icons.Rounded.InstallMobile,
-                        title = "Install as App",
-                        onClick = onInstallPwa
-                    )
                 }
-                }
+
+                MenuRowItem(
+                    icon = Icons.Rounded.Extension,
+                    title = "Extensions",
+                    subtitle = "Install Firefox add-ons",
+                    onClick = onOpenExtensions
+                )
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -544,12 +544,13 @@ fun PetalOverflowMenuSheet(
                     }
                 }
 
-                MenuRowItem(
-                    icon = Icons.Rounded.Extension,
-                    title = "Extensions",
-                    subtitle = "Install Firefox add-ons",
-                    onClick = onOpenExtensions
-                )
+                if (!isHomePage) {
+                    MenuRowItem(
+                        icon = Icons.Rounded.InstallMobile,
+                        title = "Install as App",
+                        onClick = onInstallPwa
+                    )
+                }
 
                 MenuRowItem(
                     icon = Icons.Rounded.Settings,
