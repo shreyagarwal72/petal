@@ -20,7 +20,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -187,7 +186,9 @@ fun PetalExtensionsScreen(
                                 onUninstall = {
                                     PetalExtensionManager.uninstall(ext.raw)
                                 },
-                                
+                                onOpenPopup = {
+                                    PetalExtensionManager.triggerBrowserAction(ext.id)
+                                }
                             )
                         }
                     }
@@ -315,7 +316,8 @@ private fun ExtensionRow(
     extension: PetalExtensionManager.InstalledExtension,
     onToggleEnabled: (Boolean) -> Unit,
     onOpen: () -> Unit,
-    onUninstall: () -> Unit
+    onUninstall: () -> Unit,
+    onOpenPopup: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     Surface(
@@ -323,8 +325,7 @@ private fun ExtensionRow(
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .animateContentSize()
+            .clip(RoundedCornerShape(20.dp))
             .clickable { onOpen() }
     ) {
         Row(
@@ -568,9 +569,8 @@ private fun ExtensionDetailSheet(
                 Spacer(Modifier.height(12.dp))
                 Text(extension.description, style = MaterialTheme.typography.bodyMedium)
             }
-            // Only extensions with a reported browser/page action expose the
-            // explicit popup entry point. Options pages are separate and remain available below.
-            if (extension.enabled && extension.hasPopup) {
+            // Only extensions that actually declare a popup expose the action.
+            if (extension.enabled && extension.supportsPopup) {
                 Spacer(Modifier.height(16.dp))
                 FilledTonalButton(
                     onClick = {
@@ -695,16 +695,13 @@ private fun ExtensionPopupDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            shadowElevation = 8.dp,
             modifier = Modifier
-                .fillMaxWidth(0.94f)
-                .heightIn(min = 260.dp, max = 560.dp)
+                .fillMaxWidth(0.92f)
+                .heightIn(min = 220.dp, max = 520.dp)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Expressive M3 popup header with a clear drag-free action row.
                 // Title bar: optional extension icon + name + close button
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -751,7 +748,6 @@ private fun ExtensionPopupDialog(
                                 ViewGroup.LayoutParams.MATCH_PARENT
                             )
                             setSession(popup.session)
-                            popup.session.setActive(true)
                         }
                     },
                     onRelease = { view -> view.releaseSession() }

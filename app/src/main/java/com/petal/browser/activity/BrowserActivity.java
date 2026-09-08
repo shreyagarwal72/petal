@@ -550,6 +550,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         browserBackCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
+                // Web content (especially GeckoView) may update gesture-exclusion rects
+                // while a page is loading. Clear them immediately when Android starts the
+                // predictive-back gesture so both websites and the Petal homepage receive it.
+                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
+                } else if (ninjaWebView != null) {
+                    ninjaWebView.resetGestureExclusionRects();
+                }
                 predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing && contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView) && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView);
                 if (predictiveBackStartedOnOverlay) {
                     predictiveBackSwipeEdge = backEvent.getSwipeEdge();
@@ -596,6 +604,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
+        // Never allow browser content to reserve the system back edges.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            getWindow().getDecorView().post(() -> {
+                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
+                } else if (ninjaWebView != null) {
+                    ninjaWebView.resetGestureExclusionRects();
+                }
+                resetGestureExclusionRects();
+            });
+        }
         predictiveBackRoot = findViewById(R.id.main);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -3891,7 +3910,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) targetUrl.openConnection();
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(5000);
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:155.0) Gecko/155.0 Firefox/155.0");
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:154.0) Gecko/154.0 Firefox/154.0");
                     java.io.InputStream in = conn.getInputStream();
                     java.io.FileOutputStream out = new java.io.FileOutputStream(archiveFile);
                     byte[] buffer = new byte[8192];

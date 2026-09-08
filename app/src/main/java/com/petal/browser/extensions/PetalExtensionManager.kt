@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.provider.OpenableColumns
 import android.util.Log
 import java.io.File
+import java.util.zip.ZipFile
+import org.json.JSONObject
 import androidx.preference.PreferenceManager
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,7 +73,7 @@ object PetalExtensionManager {
         val homepageUrl: String?,
         val amoListingUrl: String?,
         val optionsPageUrl: String?,
-        val hasPopup: Boolean,
+        val supportsPopup: Boolean,
         val icon: Bitmap?,
         val raw: WebExtension
     )
@@ -193,6 +195,9 @@ object PetalExtensionManager {
     private val _pendingPopup = MutableStateFlow<PendingPopup?>(null)
     val pendingPopup: StateFlow<PendingPopup?> = _pendingPopup.asStateFlow()
 
+    /** Latest default browser/page action for each installed extension. */
+    private val actionByExtensionId = mutableMapOf<String, WebExtension.Action>()
+
     private val _busy = MutableStateFlow(false)
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
 
@@ -201,10 +206,6 @@ object PetalExtensionManager {
 
     @Volatile private var attached = false
     @Volatile private var appContext: Context? = null
-
-    // Tracks whether GeckoView has reported a browser/page action for an extension.
-    // The UI only exposes “Open extension” for extensions that actually have an action.
-    private val actionExtensions = mutableSetOf<String>()
 
     /** Idempotent - safe to call from every Activity#onCreate. */
     @JvmStatic
@@ -291,7 +292,6 @@ object PetalExtensionManager {
             }
 
             override fun onUninstalled(extension: WebExtension) {
-                actionExtensions.remove(extension.id)
                 refresh()
             }
 
@@ -341,8 +341,10 @@ object PetalExtensionManager {
                 session: GeckoSession?,
                 action: WebExtension.Action
             ) {
+                // Keep the latest default action so the Extensions page can invoke the
+                // real WebExtension action instead of manufacturing a popup session.
                 if (session == null) {
-                    actionExtensions.add(ext.id)
+                    synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
                     refresh()
                 }
             }
@@ -353,7 +355,7 @@ object PetalExtensionManager {
                 action: WebExtension.Action
             ) {
                 if (session == null) {
-                    actionExtensions.add(ext.id)
+                    synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
                     refresh()
                 }
             }
@@ -361,25 +363,20 @@ object PetalExtensionManager {
             override fun onOpenPopup(
                 ext: WebExtension,
                 action: WebExtension.Action
-            ): GeckoResult<GeckoSession>? = openPopupSession(ext)
+            ): GeckoResult<GeckoSession>? = createPopupSession(ext)
 
             override fun onTogglePopup(
                 ext: WebExtension,
                 action: WebExtension.Action
-            ): GeckoResult<GeckoSession>? = openPopupSession(ext)
+            ): GeckoResult<GeckoSession>? = createPopupSession(ext)
         })
     }
 
-    private fun openPopupSession(extension: WebExtension): GeckoResult<GeckoSession>? {
-        if (appContext == null) return null
-        // GeckoView calls onOpenPopup/onTogglePopup again on repeated toolbar taps
-        // before this method's previous GeckoResult has necessarily finished being
-        // consumed. Without this guard, a second call created and opened a brand
-        // new GeckoSession while the first one was still live, and Gecko's own
-        // internal session-claiming logic would then hit an already-claimed
-        // session and crash with "Must use an unopened GeckoSession instance".
-        // Always close out any existing popup session for this (or any other)
-        // extension first, so there's never more than one open at a time.
+    private fun createPopupSession(extension: WebExtension): GeckoResult<GeckoSession>? {
+        // IMPORTANT: GeckoView requires this session to be completely unopened. Gecko
+        // owns opening it and loading the extension popup after this callback returns.
+        // Opening it here makes Gecko reject/skip the popup document, which produced
+        // the large blank white dialog seen in Petal.
         _pendingPopup.value?.session?.let { existing ->
             try {
                 existing.setActive(false)
@@ -388,9 +385,6 @@ object PetalExtensionManager {
         }
         _pendingPopup.value = null
 
-        // IMPORTANT: return an unopened session. GeckoView's Action.openPopup(...)
-        // owns the popup URI and opens/loads this session. Opening it here races Gecko's
-        // popup setup and can result in a blank popup.
         val popupSession = GeckoSession()
         _pendingPopup.value = PendingPopup(
             extensionId = extension.id,
@@ -427,11 +421,23 @@ object PetalExtensionManager {
             _lastError.value = "Extension not found."
             return
         }
-        if (!ext.enabled || !ext.hasPopup) {
-            _lastError.value = "This extension doesn't provide an openable popup."
+        if (!ext.enabled || !ext.supportsPopup) return
+
+        val action = synchronized(actionByExtensionId) { actionByExtensionId[extensionId] }
+        if (action == null) {
+            _lastError.value = "This extension action is not ready yet."
             return
         }
-        openPopupSession(ext.raw)
+
+        // This is the supported GeckoView path. Action.click() causes Gecko to invoke
+        // onOpenPopup/onTogglePopup with the real action context, including the popup
+        // document and extension APIs.
+        try {
+            action.click()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to click extension action", e)
+            _lastError.value = "Couldn't open the extension."
+        }
     }
 
     /**
@@ -599,6 +605,9 @@ object PetalExtensionManager {
         controller.list().accept({ list ->
             val items = (list ?: emptyList()).map { ext -> toInstalled(ext) }
             _extensions.value = items
+            synchronized(actionByExtensionId) {
+                actionByExtensionId.keys.retainAll(items.map { it.id }.toSet())
+            }
             // Load icons asynchronously and patch them in once ready (best-effort, 96px).
             list?.forEach { ext ->
                 try {
@@ -615,6 +624,42 @@ object PetalExtensionManager {
         }, {
             Log.w(TAG, "Failed to list extensions", it)
         })
+    }
+
+
+    /**
+     * Detects whether the installed package declares an action/browser/page-action popup.
+     * GeckoView's Action object intentionally exposes the action's runtime properties but not
+     * its manifest popup URL, so the installed XPI manifest is the reliable source for this UI.
+     */
+    private fun extensionHasPopup(extension: WebExtension): Boolean {
+        return try {
+            val location = Uri.parse(extension.location)
+            if (!location.scheme.equals("file", ignoreCase = true)) return false
+            val path = location.path ?: return false
+            val file = File(path)
+            val manifestText = if (file.isDirectory) {
+                File(file, "manifest.json").takeIf { it.isFile }?.readText()
+            } else {
+                ZipFile(file).use { zip ->
+                    zip.getEntry("manifest.json")?.let { entry ->
+                        zip.getInputStream(entry).bufferedReader().use { it.readText() }
+                    }
+                }
+            } ?: return false
+
+            val manifest = JSONObject(manifestText)
+            fun hasPopup(key: String): Boolean {
+                val value = manifest.optJSONObject(key) ?: return false
+                val popup = value.optString("default_popup", "")
+                return popup.isNotBlank()
+            }
+
+            hasPopup("action") || hasPopup("browser_action") || hasPopup("page_action")
+        } catch (e: Exception) {
+            Log.d(TAG, "Unable to inspect popup declaration for ${extension.id}", e)
+            false
+        }
     }
 
     private fun normalizeInstallUri(value: String): String? {
@@ -669,7 +714,7 @@ object PetalExtensionManager {
             homepageUrl = meta.homepageUrl,
             amoListingUrl = meta.amoListingUrl,
             optionsPageUrl = meta.optionsPageUrl,
-            hasPopup = actionExtensions.contains(ext.id),
+            supportsPopup = extensionHasPopup(ext),
             icon = null,
             raw = ext
         )

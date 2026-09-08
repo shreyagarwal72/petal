@@ -72,7 +72,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
         @JvmStatic
         fun getDerivedDesktopUserAgent(context: Context): String {
-            return "Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0"
+            return "Mozilla/5.0 (X11; Linux x86_64; rv:154.0) Gecko/20100101 Firefox/154.0"
         }
     }
 
@@ -150,6 +150,9 @@ class PetalGeckoView @JvmOverloads constructor(
             session.open(runtime)
         }
         geckoView.setSession(session)
+        // GeckoView owns the actual content surface. Clear its exclusion rects after
+        // every session attachment so Android's edge back gesture remains available.
+        resetGestureExclusionRects()
 
         // Progress & Loading Delegate
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
@@ -171,6 +174,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
+                        resetGestureExclusionRects()
                         act.updateOmniBox()
                         act.updateAddressBar()
                         act.updatePersistentBottomNav()
@@ -248,6 +252,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
+                        resetGestureExclusionRects()
                         act.updateOmniBox()
                         act.updateAddressBar()
                         act.updatePersistentBottomNav()
@@ -1056,10 +1061,26 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun pauseTimers() {}
 
+    /**
+     * Keep both the wrapper and GeckoView's actual rendering child out of Android's
+     * system-gesture exclusion regions. GeckoView can recreate/update its child view
+     * during navigation, so clearing only the wrapper is not sufficient for Android 13+
+     * predictive-back gestures.
+     */
     fun resetGestureExclusionRects() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
                 systemGestureExclusionRects = java.util.Collections.emptyList()
+            } catch (ignored: Exception) {}
+            try {
+                geckoView.systemGestureExclusionRects = java.util.Collections.emptyList()
+            } catch (ignored: Exception) {}
+            try {
+                geckoView.post {
+                    try {
+                        geckoView.systemGestureExclusionRects = java.util.Collections.emptyList()
+                    } catch (ignored: Exception) {}
+                }
             } catch (ignored: Exception) {}
         }
     }
@@ -1069,6 +1090,7 @@ class PetalGeckoView @JvmOverloads constructor(
             try {
                 super.setSystemGestureExclusionRects(java.util.Collections.emptyList())
             } catch (ignored: Exception) {}
+            resetGestureExclusionRects()
         }
     }
 
