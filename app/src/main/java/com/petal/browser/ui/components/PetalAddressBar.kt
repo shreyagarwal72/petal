@@ -152,7 +152,7 @@ fun PetalAddressBar(
         shadowElevation = 6.dp,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 12.dp, vertical = 5.dp)
             .pointerInput(isSwipeTabsEnabled) {
                 if (!isSwipeTabsEnabled) return@pointerInput
                 detectHorizontalDragGestures(
@@ -180,7 +180,7 @@ fun PetalAddressBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .height(54.dp)
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
