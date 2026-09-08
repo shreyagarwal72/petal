@@ -387,6 +387,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     // now use the same values via PetalScreenWrapper.
     // ---------------------------------------------------------------------
     private View predictiveBackRoot;
+    private OnBackPressedCallback browserBackCallback;
     private boolean predictiveBackGestureActive = false;
     private float predictiveBackProgress = 0f;
     // Which edge the in-flight gesture started from - must be remembered so the
@@ -546,7 +547,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         EdgeToEdge.enable(this);
 
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+        browserBackCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
                 predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing && contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView) && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView);
@@ -591,7 +592,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     resetPredictiveBackVisuals();
                 }
             }
-        });
+        };
+        getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
         predictiveBackRoot = findViewById(R.id.main);
@@ -852,6 +854,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void onResume() {
+        if (browserBackCallback != null) browserBackCallback.setEnabled(true);
         super.onResume();
         predictiveBackStartedOnOverlay = false;
         applyAddressBarPosition();
