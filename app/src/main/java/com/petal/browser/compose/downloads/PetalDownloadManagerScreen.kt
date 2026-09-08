@@ -588,7 +588,6 @@ fun PetalDownloadManagerScreen(
 }
 }
 
-@Composable
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
