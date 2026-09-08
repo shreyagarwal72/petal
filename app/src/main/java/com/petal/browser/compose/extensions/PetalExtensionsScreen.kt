@@ -486,7 +486,9 @@ private fun AddExtensionSheet(
             text = { Text("Browse Mozilla Android add-ons, then paste an add-on page or download link here to install it.") },
             confirmButton = { TextButton(onClick = {
                 showMozillaCatalogPrompt = false
-                (context as? com.petal.browser.activity.BrowserActivity)?.addAlbum("Firefox Add-ons", PetalExtensionManager.amoAndroidBrowseUrl, false)
+                // foreground=true - otherwise this silently opens a background tab while the
+                // Extensions overlay stays on screen, which looks like the button did nothing.
+                (context as? com.petal.browser.activity.BrowserActivity)?.addAlbum("Firefox Add-ons", PetalExtensionManager.amoAndroidBrowseUrl, true)
             }) { Text("Open Mozilla Add-ons") } },
             dismissButton = { TextButton(onClick = { showMozillaCatalogPrompt = false }) { Text("Cancel") } }
         )
@@ -518,10 +520,10 @@ private fun ExtensionDetailSheet(
             DetailRow(icon = Icons.Rounded.VisibilityOff, title = "Allow in Private tabs", checked = extension.allowedInPrivateBrowsing, onCheckedChange = onTogglePrivate)
             Spacer(Modifier.height(8.dp))
             extension.amoListingUrl?.let { url ->
-                DetailLinkRow(icon = Icons.Rounded.OpenInNew, title = "View on addons.mozilla.org", url = url)
+                DetailLinkRow(icon = Icons.Rounded.OpenInNew, title = "View on addons.mozilla.org", url = url, onDismiss = onDismiss)
             }
             extension.optionsPageUrl?.let { url ->
-                DetailLinkRow(icon = Icons.Rounded.Settings, title = "Extension settings", url = url)
+                DetailLinkRow(icon = Icons.Rounded.Settings, title = "Extension settings", url = url, onDismiss = onDismiss)
             }
             Spacer(Modifier.height(16.dp))
             OutlinedButton(
@@ -552,15 +554,27 @@ private fun DetailRow(icon: ImageVector, title: String, checked: Boolean, onChec
 }
 
 @Composable
-private fun DetailLinkRow(icon: ImageVector, title: String, url: String) {
+private fun DetailLinkRow(icon: ImageVector, title: String, url: String, onDismiss: () -> Unit = {}) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                try {
-                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
-                } catch (ignored: Exception) {}
+                // An extension's options page is a moz-extension://<id>/... URL - only
+                // GeckoView understands that scheme, no app on the system is registered
+                // for it, so a system ACTION_VIEW intent just throws (silently, since it
+                // was caught and swallowed) and the tap looked like it did nothing. Open
+                // it as a normal Petal tab instead, which works for this and for the
+                // regular https:// AMO listing link alike.
+                val activity = context as? com.petal.browser.activity.BrowserActivity
+                if (activity != null) {
+                    onDismiss()
+                    activity.addAlbum(title, url, true)
+                } else {
+                    try {
+                        context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                    } catch (ignored: Exception) {}
+                }
             }
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
