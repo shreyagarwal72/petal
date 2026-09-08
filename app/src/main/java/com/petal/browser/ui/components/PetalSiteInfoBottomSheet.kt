@@ -1,6 +1,7 @@
 package com.petal.browser.ui.components
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.net.http.SslCertificate
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
@@ -46,9 +47,22 @@ fun PetalSiteInfoBottomSheet(
     val domain = remember(currentUrl) { HelperUnit.domain(currentUrl) }
     val favicon: Bitmap? = geckoView?.getFavicon() ?: webView?.favicon
 
+    // Use the actual URL scheme as the source of truth for transport security.
+    // GeckoView does not expose the WebView-style SslCertificate, so checking
+    // for a certificate (or for a GeckoView instance) incorrectly marked some
+    // HTTPS pages as insecure. HTTPS means the connection is encrypted; an
+    // available WebView certificate is used only to show additional details.
+    val urlScheme = remember(currentUrl) {
+        try {
+            Uri.parse(currentUrl.trim()).scheme?.lowercase() ?: ""
+        } catch (_: Exception) {
+            ""
+        }
+    }
+    val isHttps = urlScheme == "https"
+    val isHttp = urlScheme == "http"
     val sslCertificate: SslCertificate? = webView?.certificate
-    val isHttps = currentUrl.startsWith("https://")
-    val isSecure = isHttps && (geckoView != null || sslCertificate != null)
+    val isSecure = isHttps
 
     // Cookie Count for domain
     var cookieCount by remember(currentUrl) {
@@ -131,9 +145,17 @@ fun PetalSiteInfoBottomSheet(
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            text = if (isSecure) "Connection is secure" else if (isHttps) "SSL Encrypted" else "Connection not secure",
+                            text = when {
+                                isHttps -> "Connection is secure"
+                                isHttp -> "Connection not secure"
+                                else -> "Connection status unavailable"
+                            },
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (isSecure || isHttps) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                            color = when {
+                                isHttps -> Color(0xFF2E7D32)
+                                isHttp -> MaterialTheme.colorScheme.error
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
                     }
                 }
@@ -162,30 +184,47 @@ fun PetalSiteInfoBottomSheet(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isSecure || isHttps) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error),
+                            .background(
+                                if (isHttps) MaterialTheme.colorScheme.primary
+                                else if (isHttp) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.secondary
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (isSecure || isHttps) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                            imageVector = when {
+                                isHttps -> Icons.Rounded.Lock
+                                isHttp -> Icons.Rounded.LockOpen
+                                else -> Icons.Rounded.HelpOutline
+                            },
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = if (isHttp) MaterialTheme.colorScheme.onError
+                            else MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (isSecure) "Valid Security Certificate" else if (isHttps) "HTTPS Encrypted Connection" else "Unencrypted Connection",
+                            text = when {
+                                isHttps && sslCertificate != null -> "Valid Security Certificate"
+                                isHttps -> "Encrypted Connection"
+                                isHttp -> "Unencrypted Connection"
+                                else -> "Connection status unavailable"
+                            },
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        val certDetails = remember(sslCertificate) {
-                            if (sslCertificate != null) {
-                                "Issued to: ${sslCertificate.issuedTo.cName}\nIssued by: ${sslCertificate.issuedBy.oName}"
-                            } else if (isHttps) {
-                                "Your information is private when sent to this site."
-                            } else {
-                                "You should not enter sensitive info on this site."
+                        val certDetails = remember(sslCertificate, isHttps, isHttp) {
+                            when {
+                                sslCertificate != null && isHttps ->
+                                    "Issued to: ${sslCertificate.issuedTo.cName}\nIssued by: ${sslCertificate.issuedBy.oName}"
+                                isHttps ->
+                                    "Your information is encrypted when sent to this site."
+                                isHttp ->
+                                    "You should not enter sensitive info on this site."
+                                else ->
+                                    "Security information is unavailable for this page."
                             }
                         }
                         Spacer(Modifier.height(2.dp))
