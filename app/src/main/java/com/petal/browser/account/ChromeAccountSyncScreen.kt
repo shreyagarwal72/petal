@@ -700,10 +700,7 @@ private fun RenderUserProfileContent(
                         }
                     )
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
+                    Spacer(Modifier.height(8.dp))
 
                     // Auto-Clear on Exit Preference
                     var isClearOnExit by remember { mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) }
@@ -743,10 +740,7 @@ private fun RenderUserProfileContent(
                         }
                     )
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
+                    Spacer(Modifier.height(8.dp))
 
                     // HTTPS-Only Mode Status
                     var isHttpsOnly by remember { mutableStateOf(sp.getBoolean("sp_https_only", true)) }
