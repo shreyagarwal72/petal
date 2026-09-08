@@ -960,6 +960,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onStop();
     }
 
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        // Proactively suspend background GeckoView tabs under memory pressure so the OS
+        // doesn't OOM-kill the content process mid-session. Levels RUNNING_LOW (10),
+        // RUNNING_CRITICAL (15), and COMPLETE (80) are the most urgent signals.
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            try {
+                for (int i = 0; i < com.petal.browser.browser.BrowserContainer.size(); i++) {
+                    com.petal.browser.browser.AlbumController controller =
+                        com.petal.browser.browser.BrowserContainer.get(i);
+                    if (controller == currentAlbumController) continue; // keep foreground tab alive
+                    if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                        com.petal.browser.view.PetalGeckoView gv =
+                            (com.petal.browser.view.PetalGeckoView) controller;
+                        // Suspend the background session — GeckoView will stop compositing
+                        // and reduce native memory footprint for that content process.
+                        try { gv.getSession().setActive(false); } catch (Exception ignored) {}
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error trimming background GeckoView memory", e);
+            }
+        }
+    }
+
     private long lastBackPressTime = 0;
 
     /**
@@ -1688,7 +1714,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
             ));
-            contentFrame.addView(av);
+            // FIX: GeckoView.onAttachedToWindow() → GeckoView$Display.acquire() →
+            // onGlobalLayout() calls windowInsets.getInsets() which crashes with a NPE
+            // when the window's insets are not yet available (e.g. right after activity
+            // resume from an overlay/history screen). Deferring via post() ensures the
+            // view is only attached after the window is fully laid out with valid insets.
+            if (av instanceof com.petal.browser.view.PetalGeckoView
+                    && (contentFrame.getWindowToken() == null || !contentFrame.isAttachedToWindow())) {
+                final android.view.View avFinal = av;
+                contentFrame.post(() -> {
+                    try {
+                        if (contentFrame.isAttachedToWindow()) {
+                            contentFrame.addView(avFinal);
+                        }
+                    } catch (Exception ignored) {}
+                });
+            } else {
+                contentFrame.addView(av);
+            }
             if (appBar != null) appBar.setVisibility(VISIBLE);
             View downloadBanner = findViewById(R.id.download_banner_compose);
             if (downloadBanner != null) downloadBanner.setVisibility(VISIBLE);

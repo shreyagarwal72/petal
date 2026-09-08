@@ -777,6 +777,7 @@ class PetalGeckoView @JvmOverloads constructor(
             try { if (session.isOpen) session.close() } catch (_: Throwable) {}
             session = GeckoSession()
             initGeckoSession()
+
             // Rebinding a fresh session also gives GeckoView a new compositor surface.
             // Reopening the session alone isn't enough: GeckoView's compositor can stay
             // bound to the dead content process's Surface, so the reloaded page finishes
@@ -785,15 +786,31 @@ class PetalGeckoView @JvmOverloads constructor(
             // Detaching and reattaching the underlying GeckoView forces it through
             // onDetachedFromWindow/onAttachedToWindow, which makes GeckoView bind a fresh
             // GeckoDisplay/Surface to the new content process instead of the stale one.
+            //
+            // FIX: Defer the addView() inside post() so that onAttachedToWindow fires only
+            // after the window has been fully laid out and has valid WindowInsets.
+            // Without this deferral, GeckoView$Display.onGlobalLayout() calls
+            // windowInsets.getInsets() on a null WindowInsets reference → NPE crash.
+            val urlToRestore = currentUrl
             val parent = geckoView.parent as? ViewGroup
             if (parent != null) {
                 val index = parent.indexOfChild(geckoView)
                 parent.removeView(geckoView)
-                parent.addView(geckoView, index)
-            }
-            val urlToRestore = currentUrl
-            if (urlToRestore.isNotEmpty() && !urlToRestore.equals("about:blank", ignoreCase = true)) {
-                session.loadUri(urlToRestore)
+                // Post the re-attach to the next layout pass so the window's insets are ready.
+                post {
+                    try {
+                        parent.addView(geckoView, index)
+                        if (urlToRestore.isNotEmpty() && !urlToRestore.equals("about:blank", ignoreCase = true)) {
+                            session.loadUri(urlToRestore)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e(TAG, "Failed to re-attach GeckoView after session recovery: ${e.message}", e)
+                    }
+                }
+            } else {
+                if (urlToRestore.isNotEmpty() && !urlToRestore.equals("about:blank", ignoreCase = true)) {
+                    session.loadUri(urlToRestore)
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e(TAG, "Failed to recover crashed GeckoSession: ${e.message}", e)
