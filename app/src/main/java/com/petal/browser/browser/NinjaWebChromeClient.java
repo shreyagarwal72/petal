@@ -103,13 +103,12 @@ public class NinjaWebChromeClient extends WebChromeClient {
         String url = ninjaWebView.getUrl();
         String title = ninjaWebView.getTitle();
         ninjaWebView.updateTitle(progress);
-        assert title != null;
-        if (title.isEmpty()) ninjaWebView.updateTitle(HelperUnit.domain(url), url);
+        if (title == null || title.isEmpty()) ninjaWebView.updateTitle(HelperUnit.domain(url), url);
         else ninjaWebView.updateTitle(title,url);
     }
     @Override
     public boolean onCreateWindow(WebView view, boolean dialog, boolean userGesture, android.os.Message resultMsg) {
-        if (!userGesture) {
+        if (!userGesture || resultMsg == null || resultMsg.obj == null) {
             return false;
         }
         Context context = view.getContext();

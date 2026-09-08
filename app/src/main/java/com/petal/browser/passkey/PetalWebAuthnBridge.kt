@@ -249,7 +249,8 @@ object PetalWebAuthnBridge {
         @JavascriptInterface
         fun createPasskey(requestJson: String, callbackId: String) {
             val context = webView.context
-            val activity = (context as? Activity) ?: return
+            val activity = (context as? Activity)
+            if (activity == null || activity.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && activity.isDestroyed)) return
 
             bridgeScope.launch {
                 try {
@@ -279,7 +280,8 @@ object PetalWebAuthnBridge {
         @JavascriptInterface
         fun getPasskey(requestJson: String, callbackId: String) {
             val context = webView.context
-            val activity = (context as? Activity) ?: return
+            val activity = (context as? Activity)
+            if (activity == null || activity.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && activity.isDestroyed)) return
 
             bridgeScope.launch {
                 try {
