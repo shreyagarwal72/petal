@@ -175,12 +175,162 @@ fun SettingsSection(
     }
 }
 
+
+/**
+ * Petal containment design system inspired by Zenith's Material 3 Expressive surfaces.
+ *
+ * This layer intentionally contains NO icon treatment. It owns only containment:
+ * tonal surface, shape, spacing, interaction and grouped-corner behavior. Content
+ * such as icons, text and controls remains the responsibility of the caller.
+ */
+object PetalContainmentDefaults {
+    val shape = RoundedCornerShape(24.dp)
+    val groupedMiddleShape = RoundedCornerShape(8.dp)
+    val contentPaddingHorizontal = 20.dp
+    val contentPaddingVertical = 20.dp
+    val contentSpacing = 16.dp
+    val sectionSpacing = 12.dp
+    val groupSpacing = 4.dp
+    val standardColor: Color
+        @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
+    val elevatedColor: Color
+        @Composable get() = MaterialTheme.colorScheme.surfaceContainer
+}
+
+/**
+ * Low-level Petal containment surface. It owns only tonal color, shape and interaction;
+ * it deliberately does not impose padding or any icon treatment.
+ */
+@Composable
+fun PetalContainmentSurface(
+    modifier: Modifier = Modifier,
+    shape: Shape = PetalContainmentDefaults.shape,
+    containerColor: Color = PetalContainmentDefaults.standardColor,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    enabled: Boolean = true,
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    if (onClick == null) {
+        Surface(
+            modifier = modifier.fillMaxWidth(),
+            shape = shape,
+            color = containerColor,
+            contentColor = contentColor,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
+        ) {
+            Column(modifier = Modifier.fillMaxWidth(), content = content)
+        }
+    } else {
+        Surface(
+            onClick = onClick,
+            modifier = modifier.fillMaxWidth(),
+            shape = shape,
+            color = containerColor,
+            contentColor = contentColor,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
+            enabled = enabled
+        ) {
+            Column(modifier = Modifier.fillMaxWidth(), content = content)
+        }
+    }
+}
+
+/**
+ * Standard padded Petal containment. Content remains responsible for icons and controls.
+ */
+@Composable
+fun PetalContainment(
+    modifier: Modifier = Modifier,
+    shape: Shape = PetalContainmentDefaults.shape,
+    containerColor: Color = PetalContainmentDefaults.standardColor,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    enabled: Boolean = true,
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    PetalContainmentSurface(
+        modifier = modifier,
+        shape = shape,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        enabled = enabled,
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = PetalContainmentDefaults.contentPaddingHorizontal,
+                    vertical = PetalContainmentDefaults.contentPaddingVertical
+                ),
+            verticalArrangement = Arrangement.spacedBy(PetalContainmentDefaults.contentSpacing),
+            content = content
+        )
+    }
+}
+
+/**
+ * Non-clickable padded containment for rich content whose children own interaction.
+ */
+@Composable
+fun PetalContainmentBox(
+    modifier: Modifier = Modifier,
+    shape: Shape = PetalContainmentDefaults.shape,
+    containerColor: Color = PetalContainmentDefaults.standardColor,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    PetalContainment(
+        modifier = modifier,
+        shape = shape,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        content = content
+    )
+}
+
+/**
+ * Zenith-style grouped containment: 24.dp outer corners and 8.dp inner corners,
+ * with a small 4.dp gap between siblings so each item remains visually contained.
+ */
+@Composable
+fun PetalContainmentGroup(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(PetalContainmentDefaults.groupSpacing),
+        content = content
+    )
+}
+
+/**
+ * Semantic section label for containment groups. No icon slot by design.
+ */
+@Composable
+fun PetalContainmentSectionLabel(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        fontWeight = FontWeight.Bold,
+        modifier = modifier.padding(start = 8.dp)
+    )
+}
+
 /**
  * Standard Contained Settings Item ported from RvSystemMonitor SettingsMenuItem / Card specification.
  *
  * Spec:
  * - Card with 0.dp elevation
- * - containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+ * - containerColor = PetalContainmentDefaults.standardColor
  * - Row padding: 20.dp
  * - Badge Box: 48.dp, clip RoundedCornerShape(12.dp), background MaterialTheme.colorScheme.primary
  * - Icon tint: onPrimary
@@ -204,7 +354,7 @@ fun SettingsItem(
                 .graphicsLayer(rotationZ = 180f)
         )
     },
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    containerColor: Color = PetalContainmentDefaults.standardColor,
     shape: Shape = RoundedCornerShape(24.dp),
     enabled: Boolean = true,
     onClick: () -> Unit
@@ -326,7 +476,7 @@ fun SwitchSettingItem(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     leadingIcon: (@Composable () -> Unit)? = null,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    containerColor: Color = PetalContainmentDefaults.standardColor,
     shape: Shape = RoundedCornerShape(24.dp),
     enabled: Boolean = true
 ) {
@@ -449,7 +599,7 @@ fun ExpressiveCategoryItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(24.dp),
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    containerColor: Color = PetalContainmentDefaults.standardColor,
     badgeColor: Color = MaterialTheme.colorScheme.primary,
     iconColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {
@@ -534,59 +684,22 @@ fun SettingsCardContainer(
     icon: ImageVector? = null,
     iconPainter: Painter? = null,
     modifier: Modifier = Modifier,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-    shape: Shape = RoundedCornerShape(24.dp),
+    containerColor: Color = PetalContainmentDefaults.standardColor,
+    shape: Shape = PetalContainmentDefaults.shape,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
-        shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = modifier.fillMaxWidth()
+    PetalContainmentBox(
+        modifier = modifier,
+        containerColor = containerColor,
+        shape = shape
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (iconPainter != null) {
-                        Icon(
-                            painter = iconPainter,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else if (icon != null) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            content()
-        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        content()
     }
 }
 
@@ -600,7 +713,7 @@ fun ContainedSelectionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
-    containerColor: Color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+    containerColor: Color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f) else PetalContainmentDefaults.standardColor,
     shape: Shape = RoundedCornerShape(24.dp),
     content: @Composable () -> Unit
 ) {
