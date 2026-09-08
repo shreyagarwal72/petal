@@ -435,6 +435,24 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
                 return result
             }
+
+            // Autofill is disabled at the runtime level (loginAutofillEnabled = false),
+            // but these are overridden defensively so Gecko never falls through to the
+            // default interface behavior if autofill is re-enabled later without this
+            // being revisited. Dismissing immediately is safe and crash-free.
+            override fun onLoginSave(
+                session: GeckoSession,
+                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSaveOption>
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(request.dismiss())
+            }
+
+            override fun onLoginSelect(
+                session: GeckoSession,
+                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.LoginSelectOption>
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(request.dismiss())
+            }
         }
 
         // Scroll Delegate for Tactile Haptics and Address Bar Collapsing
