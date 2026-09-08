@@ -81,8 +81,14 @@ object PetalExtensionManager {
         val amoSlug: String,
         val amoListingUrl: String
     ) {
-        /** AMO's permanent "always the latest signed build" redirect for this add-on. */
-        val downloadUrl: String get() = "https://addons.mozilla.org/android/downloads/latest/$amoSlug/latest.xpi"
+        /**
+         * AMO's permanent "always the latest signed build" redirect for this add-on.
+         * NOTE: this must be the "/firefox/downloads/latest/" path - AMO has no
+         * "/android/downloads/" endpoint. Firefox and Firefox for Android share the
+         * same add-on catalog/redirect; only the *listing* pages have an "/android/"
+         * variant, not the download links.
+         */
+        val downloadUrl: String get() = "https://addons.mozilla.org/firefox/downloads/latest/$amoSlug/latest.xpi"
     }
 
     val catalog: List<CatalogEntry> = listOf(
@@ -463,18 +469,31 @@ object PetalExtensionManager {
     private fun normalizeInstallUri(value: String): String? {
         val parsed = try { Uri.parse(value.trim()) } catch (_: Exception) { return null }
         if (!parsed.scheme.equals("https", ignoreCase = true)) return null
+
+        // Already a real, resolved package link (e.g. GeckoView's own onExternalResponse
+        // handed us the final "/firefox/downloads/file/<id>/name.xpi" URL after following
+        // AMO's redirect chain, or the user gave a direct .xpi link). Never rewrite this -
+        // it is already correct, and reconstructing a "slug" out of its path segments
+        // (previous bug: grabbed the numeric file id and built a dead /android/downloads/
+        // URL from it) just replaces a working link with a broken one.
+        if (parsed.path?.endsWith(".xpi", ignoreCase = true) == true) {
+            return parsed.toString()
+        }
+
         val host = parsed.host?.lowercase() ?: return null
-        if (host != "addons.mozilla.org" && host != "www.addons.mozilla.org") return parsed.toString().takeIf { parsed.path?.endsWith(".xpi", ignoreCase = true) == true }
+        if (host != "addons.mozilla.org" && host != "www.addons.mozilla.org") return null
+
+        // An AMO *listing* page (.../addon/<slug>/ or .../android/addon/<slug>/) - resolve
+        // it to the permanent "latest signed build" redirect. This is always the
+        // "/firefox/downloads/latest/" path: AMO has no "/android/downloads/" endpoint:
+        // Firefox and Firefox for Android share one add-on catalog, and only the listing
+        // pages (not downloads) have a separate "/android/" URL variant.
         val segments = parsed.pathSegments
         val addonIndex = segments.indexOf("addon")
-        val downloadsIndex = segments.indexOfFirst { it.equals("downloads", ignoreCase = true) }
         val slug = segments.getOrNull(addonIndex + 1)?.takeIf { it.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*")) }
-            ?: segments.getOrNull(downloadsIndex + 2)?.takeIf { it.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*")) }
-        // AMO also emits /firefox/downloads/latest/... links. Always move these to
-        // the Android channel; otherwise GeckoView downloads a desktop-only package.
-        return if (slug != null && (addonIndex >= 0 || downloadsIndex >= 0)) {
-            "https://addons.mozilla.org/android/downloads/latest/$slug/latest.xpi"
-        } else parsed.toString().takeIf { parsed.path?.endsWith(".xpi", ignoreCase = true) == true }
+        return if (addonIndex >= 0 && slug != null) {
+            "https://addons.mozilla.org/firefox/downloads/latest/$slug/latest.xpi"
+        } else null
     }
 
     private fun toInstalled(ext: WebExtension): InstalledExtension {
