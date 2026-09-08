@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.HelperUnit
+import com.petal.browser.predictive.PetalPredictiveBackSurface
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,6 +59,10 @@ fun PetalInactiveTabsSheet(
         }
     }
 
+    PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = onDismiss
+    ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -178,11 +183,6 @@ fun PetalInactiveTabsSheet(
                     }
                 }
 
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
                 // Content List
                 if (filteredTabs.isEmpty()) {
                     Box(
@@ -242,6 +242,7 @@ fun PetalInactiveTabsSheet(
                 }
             }
         }
+    }
     }
 }
 
