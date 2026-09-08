@@ -3950,15 +3950,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     return kotlin.Unit.INSTANCE;
                 },
                 shortcut -> {
-                    showAlbum(currentAlbumController);
-                    if (shortcut != null && shortcut.getUrl() != null) {
-                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(shortcut.getUrl());
-                        } else if (ninjaWebView != null) {
-                            ninjaWebView.loadUrl(shortcut.getUrl());
-                        } else {
-                            addAlbum(null, shortcut.getUrl(), true);
-                        }
+                    // Do not reuse the currently attached GeckoSession while the
+                    // Compose account overlay is being removed. Opening a fresh
+                    // tab avoids a session/view lifecycle race and preserves the
+                    // page the user came from.
+                    if (shortcut != null && shortcut.getUrl() != null && !shortcut.getUrl().trim().isEmpty()) {
+                        addAlbum(shortcut.getLabel(), shortcut.getUrl().trim(), true);
                     }
                     return kotlin.Unit.INSTANCE;
                 }
