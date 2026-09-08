@@ -274,14 +274,17 @@ public class PetalPwaManager {
     public void installCurrentPwa(Activity activity) {
         if (activity == null) return;
 
+        // GeckoView/WebView state must be read on the UI thread. Reading the active
+        // controller from the worker thread can return null or fail while the tab is
+        // transitioning, making Install as App silently do nothing.
+        final String pageUrl = albumController != null ? albumController.getUrl() : (webView != null ? webView.getUrl() : null);
+        if (pageUrl == null || pageUrl.isEmpty() || "about:blank".equalsIgnoreCase(pageUrl)) {
+            activity.runOnUiThread(() -> Toast.makeText(activity, "Cannot install empty page as app", Toast.LENGTH_SHORT).show());
+            return;
+        }
+
         new Thread(() -> {
             try {
-                String pageUrl = albumController != null ? albumController.getUrl() : (webView != null ? webView.getUrl() : null);
-                if (pageUrl == null || pageUrl.isEmpty() || "about:blank".equalsIgnoreCase(pageUrl)) {
-                    activity.runOnUiThread(() -> Toast.makeText(activity, "Cannot install empty page as app", Toast.LENGTH_SHORT).show());
-                    return;
-                }
-
                 String targetUrl = pageUrl;
                 String rawTitle = null;
 
