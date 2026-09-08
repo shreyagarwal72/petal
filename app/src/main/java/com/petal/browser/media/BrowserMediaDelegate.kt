@@ -27,6 +27,8 @@ import com.petal.browser.activity.BrowserActivity
  */
 object BrowserMediaDelegate {
 
+    private const val TAG = "BrowserMediaDelegate"
+
     const val ACTION_PIP_CONTROL = "com.petal.browser.media.ACTION_PIP_CONTROL"
     const val EXTRA_CONTROL_TYPE = "control_type"
     const val CONTROL_TYPE_PLAY = 1
@@ -187,14 +189,25 @@ object BrowserMediaDelegate {
 
     @JvmStatic
     fun triggerSystemPipMode(activity: BrowserActivity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
+            activity.isFinishing || activity.isChangingConfigurations ||
+            activity.isInPictureInPictureMode
+        ) return
+
+        // onUserLeaveHint can arrive before Android has finished its activity
+        // transition. Defer the request to the next UI frame so the system can
+        // accept the PiP transaction reliably (especially on Android 12+).
+        activity.window?.decorView?.post {
+            if (activity.isFinishing || activity.isChangingConfigurations || activity.isInPictureInPictureMode) return@post
             try {
                 registerPipReceiver(activity)
                 val params = buildPipParams(activity, true)
                 if (params != null) {
                     activity.enterPictureInPictureMode(params)
                 }
-            } catch (ignored: Exception) {}
+            } catch (error: Exception) {
+                android.util.Log.w(TAG, "Unable to enter Picture-in-Picture", error)
+            }
         }
     }
 
