@@ -224,6 +224,32 @@ class PetalGeckoView @JvmOverloads constructor(
                 canGoForwardVal = canGoForward
             }
 
+            // onPageStart only fires with the URL that was originally requested. If the
+            // server responds with a redirect, or the page later calls history.pushState/
+            // replaceState (every SPA route change - Google included), the actual displayed
+            // location moves on but onPageStart never fires again, so currentUrl (and the
+            // address bar bound to it) was left showing the stale, pre-redirect/pre-navigation
+            // URL indefinitely. onLocationChange is GeckoView's dedicated callback for exactly
+            // this - it fires whenever the visible top-level location changes, redirect or not.
+            override fun onLocationChange(
+                session: GeckoSession,
+                url: String?,
+                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
+                hasUserGesture: Boolean
+            ) {
+                if (url.isNullOrBlank() || url.equals(currentUrl, ignoreCase = true)) return
+                currentUrl = url
+                album.setAlbumTitle(currentTitle, url)
+                val act = getHostActivity()
+                if (act is com.petal.browser.activity.BrowserActivity) {
+                    act.runOnUiThread {
+                        act.updateOmniBox()
+                        act.updateAddressBar()
+                        act.updatePersistentBottomNav()
+                    }
+                }
+            }
+
             override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<AllowOrDeny>? {
                 val uri = request.uri
                 if (BrowserUnit.isHomePage(uri)) {
@@ -607,24 +633,42 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun applySettings() {
-        val desktopEnabled = sp.getBoolean("sp_desktop_site", false)
-        session.settings.userAgentMode = if (desktopEnabled) {
-            GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
-        } else {
-            GeckoSessionSettings.USER_AGENT_MODE_MOBILE
-        }
+        val profile = getProfile(context)
+        // BrowserNavigationDelegate's "Desktop site" toggle saves under "${profile}_desktop"
+        // (e.g. "profileStandard_desktop") - this used to read the unrelated, never-written
+        // "sp_desktop_site" key instead, so the toggle reverted to mobile on the very next
+        // navigation, new tab, or session restore. "sp_desktop_site" is kept as a fallback
+        // only for anyone who had it set from an older build.
+        val desktopEnabled = sp.getBoolean("${profile}_desktop", sp.getBoolean("sp_desktop_site", false))
+        applyDesktopMode(desktopEnabled)
         session.settings.useTrackingProtection = true
         val enableJs = sp.getBoolean("sp_javascript", true)
         session.settings.allowJavascript = enableJs
     }
 
     fun setDesktopMode(enabled: Boolean) {
+        applyDesktopMode(enabled)
+        session.reload()
+    }
+
+    /**
+     * GeckoView decoupled the desktop viewport from userAgentMode: setting USER_AGENT_MODE_DESKTOP
+     * alone no longer gives the page a desktop-width layout, it only changes the UA string. Without
+     * also setting viewportMode, sites saw a desktop User-Agent but Gecko still laid the page out
+     * in the narrow mobile viewport - pages reported themselves as "desktop" yet still rendered
+     * zoomed-in/broken as if on a phone. Both must be set together for "Desktop site" to work.
+     */
+    private fun applyDesktopMode(enabled: Boolean) {
         session.settings.userAgentMode = if (enabled) {
             GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
         } else {
             GeckoSessionSettings.USER_AGENT_MODE_MOBILE
         }
-        session.reload()
+        session.settings.viewportMode = if (enabled) {
+            GeckoSessionSettings.VIEWPORT_MODE_DESKTOP
+        } else {
+            GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
