@@ -1035,13 +1035,38 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     private void showExitConfirmationDialog() {
         if (isFinishing() || isDestroyed()) return;
-        new MaterialAlertDialogBuilder(this)
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
+                .setIcon(com.petal.browser.R.drawable.icon_close)
                 .setTitle("Leave Petal Browser?")
                 .setMessage("Do you want to exit the browser?")
                 .setNegativeButton("Stay", null)
                 .setPositiveButton("Exit", (dialog, which) -> finishAndRemoveTask())
-                .setOnDismissListener(dialog -> lastBackPressTime = 0L)
-                .show();
+                .setOnDismissListener(dialog -> lastBackPressTime = 0L);
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(ignored -> {
+            android.widget.Button stay = dialog.getButton(android.content.DialogInterface.BUTTON_NEGATIVE);
+            android.widget.Button exit = dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE);
+            if (stay != null) {
+                stay.setAllCaps(false);
+                stay.setTextColor(com.google.android.material.color.MaterialColors.getColor(stay, com.google.android.material.R.attr.colorPrimary));
+            }
+            if (exit != null) {
+                exit.setAllCaps(false);
+                exit.setTextColor(com.google.android.material.color.MaterialColors.getColor(exit, com.google.android.material.R.attr.colorOnErrorContainer));
+                exit.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                        com.google.android.material.color.MaterialColors.getColor(exit, com.google.android.material.R.attr.colorErrorContainer)));
+                exit.setPadding(28, 0, 28, 0);
+            }
+            android.view.View content = dialog.getWindow() != null ? dialog.getWindow().getDecorView() : null;
+            if (content != null) {
+                content.setScaleX(0.92f);
+                content.setScaleY(0.92f);
+                content.setAlpha(0f);
+                content.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(260L)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+            }
+        });
+        dialog.show();
     }
 
     /**
