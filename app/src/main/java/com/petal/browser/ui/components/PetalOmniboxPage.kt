@@ -195,7 +195,7 @@ fun PetalOmniboxPage(
         val existing = sp.getStringSet("sp_search_history_queries", emptySet())?.toMutableSet() ?: mutableSetOf()
         existing.remove(normalized)
         existing.add(normalized)
-        sp.edit().putStringSet("sp_search_history_queries", existing.takeLast(40).toSet()).apply()
+        sp.edit().putStringSet("sp_search_history_queries", existing.toList().takeLast(40).toSet()).apply()
         onQuerySubmitted(normalized)
     }
     val snackbarHostState = remember { SnackbarHostState() }
