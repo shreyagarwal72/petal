@@ -31,23 +31,51 @@ public class ImageActionHelper {
         }
 
         try {
-            String fileName = URLUtil.guessFileName(imageUrl, null, "image/jpeg");
-            if (!fileName.contains(".")) {
-                fileName += ".jpg";
-            }
-
             if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
-                com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(
-                    context,
-                    imageUrl,
-                    fileName,
-                    null,
-                    null,
-                    null
-                );
-                NinjaToast.show(context, "Image download started");
+                // Resolve the real filename/extension from the server's actual headers
+                // before enqueueing - PetalDownloadEngine hands the destination filename
+                // to Fetch2 up front and never renames the file afterward, so guessing
+                // "image/jpeg" here previously mislabeled PNG/WebP/GIF/AVIF images that
+                // don't have a clean extension in their URL.
+                new Thread(() -> {
+                    String resolvedFileName;
+                    try {
+                        Request headRequest = new Request.Builder().url(imageUrl).head().build();
+                        okhttp3.Response response = okHttpClient.newCall(headRequest).execute();
+                        String contentDisposition = response.header("Content-Disposition");
+                        String contentType = response.header("Content-Type");
+                        response.close();
+                        resolvedFileName = com.petal.browser.download.SafeDownloadValues.fileName(
+                            imageUrl, contentDisposition, contentType != null ? contentType : "image/jpeg");
+                    } catch (Exception e) {
+                        // HEAD request failed (timeout, blocked, offline) - fall back to the
+                        // previous URL-only guess rather than blocking/failing the download.
+                        String fallback = URLUtil.guessFileName(imageUrl, null, "image/jpeg");
+                        if (!fallback.contains(".")) {
+                            fallback += ".jpg";
+                        }
+                        resolvedFileName = fallback;
+                    }
+                    String finalFileName = resolvedFileName;
+                    com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(
+                        context,
+                        imageUrl,
+                        finalFileName,
+                        null,
+                        null,
+                        null
+                    );
+                    if (context instanceof android.app.Activity) {
+                        ((android.app.Activity) context).runOnUiThread(() ->
+                            NinjaToast.show(context, "Image download started"));
+                    }
+                }).start();
             } else {
-                // Handle Base64 or local URIs directly
+                // Handle Base64 or local URIs directly - no HTTP headers to fetch.
+                String fileName = URLUtil.guessFileName(imageUrl, null, "image/jpeg");
+                if (!fileName.contains(".")) {
+                    fileName += ".jpg";
+                }
                 downloadImageDirectly(context, imageUrl, fileName);
             }
         } catch (Exception e) {
