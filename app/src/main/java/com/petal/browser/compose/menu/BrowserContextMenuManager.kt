@@ -2,11 +2,13 @@ package com.petal.browser.compose.menu
 
 import android.net.Uri
 import android.webkit.URLUtil
+import androidx.lifecycle.lifecycleScope
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
+import com.petal.browser.download.DownloadFileNameResolver
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.unit.ImageActionHelper
@@ -69,9 +71,10 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadLink() {
                     try {
-                        val fileName = HelperUnit.resolveFileName(imageURL, null, null)
-                        BrowserUnit.download(activity, imageURL, fileName, null)
-                        NinjaToast.show(activity, "Download started")
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, imageURL) { fileName, mimeType ->
+                            BrowserUnit.download(activity, imageURL, fileName, mimeType)
+                            NinjaToast.show(activity, "Download started")
+                        }
                     } catch (e: Exception) {
                         NinjaToast.show(activity, "Failed to start download")
                     }
@@ -198,9 +201,10 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadLink() {
                     try {
-                        val fileName = HelperUnit.resolveFileName(urlResult, null, null)
-                        BrowserUnit.download(activity, urlResult, fileName, null)
-                        NinjaToast.show(activity, "Download started")
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, urlResult) { fileName, mimeType ->
+                            BrowserUnit.download(activity, urlResult, fileName, mimeType)
+                            NinjaToast.show(activity, "Download started")
+                        }
                     } catch (e: Exception) {
                         NinjaToast.show(activity, "Failed to start download")
                     }
@@ -296,9 +300,10 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadVideo() {
                     try {
-                        val fileName = HelperUnit.resolveFileName(cleanVideoUrl, null, "video/mp4")
-                        BrowserUnit.download(activity, cleanVideoUrl, fileName, null)
-                        NinjaToast.show(activity, "Video download started")
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, cleanVideoUrl, fallbackMimeType = "video/mp4") { fileName, mimeType ->
+                            BrowserUnit.download(activity, cleanVideoUrl, fileName, mimeType)
+                            NinjaToast.show(activity, "Video download started")
+                        }
                     } catch (e: Exception) {
                         NinjaToast.show(activity, "Failed to start video download")
                     }
@@ -348,9 +353,10 @@ object BrowserContextMenuManager {
 
                 override fun onDownloadAudio() {
                     try {
-                        val fileName = HelperUnit.resolveFileName(audioUrl, null, "audio/*")
-                        BrowserUnit.download(activity, audioUrl, fileName, null)
-                        NinjaToast.show(activity, "Audio download started")
+                        DownloadFileNameResolver.resolve(activity.lifecycleScope, audioUrl) { fileName, mimeType ->
+                            BrowserUnit.download(activity, audioUrl, fileName, mimeType)
+                            NinjaToast.show(activity, "Audio download started")
+                        }
                     } catch (e: Exception) {
                         NinjaToast.show(activity, "Failed to start audio download")
                     }
