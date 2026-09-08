@@ -189,6 +189,15 @@ fun PetalOmniboxPage(
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    fun submitSearch(query: String) {
+        val normalized = query.trim()
+        if (normalized.isBlank()) return
+        val existing = sp.getStringSet("sp_search_history_queries", emptySet())?.toMutableSet() ?: mutableSetOf()
+        existing.remove(normalized)
+        existing.add(normalized)
+        sp.edit().putStringSet("sp_search_history_queries", existing.takeLast(40).toSet()).apply()
+        onQuerySubmitted(normalized)
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val cleanedInitialQuery = remember(initialQuery) {
         val trimmed = initialQuery.trim()
@@ -266,7 +275,9 @@ fun PetalOmniboxPage(
     LaunchedEffect(queryState.text, removedSuggestions) {
         val currentText = queryState.text.trim()
         if (currentText.isEmpty()) {
-            suggestions = localHistoryList
+            val savedQueries = sp.getStringSet("sp_search_history_queries", emptySet())?.toList().orEmpty()
+            suggestions = (savedQueries.asReversed() + localHistoryList)
+                .distinctBy { it.lowercase() }
                 .filter { !removedSuggestions.contains(it) }
                 .take(8)
                 .map { OmniboxSuggestion(it, isHistory = true) }
@@ -427,7 +438,7 @@ fun PetalOmniboxPage(
                                             }
                                             IconButton(onClick = {
                                                 PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
-                                                    if (result.isNotBlank()) onQuerySubmitted(result.trim())
+                                                    if (result.isNotBlank()) submitSearch(result.trim())
                                                 }
                                             }) {
                                                 Icon(
@@ -443,7 +454,7 @@ fun PetalOmniboxPage(
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 keyboardActions = KeyboardActions(onSearch = {
                                     if (queryState.text.isNotBlank()) {
-                                        onQuerySubmitted(queryState.text.trim())
+                                        submitSearch(queryState.text.trim())
                                     }
                                 }),
                                 shape = RoundedCornerShape(50),
@@ -613,7 +624,7 @@ fun PetalOmniboxPage(
                             copiedUrl?.let { url ->
                                 Surface(
                                     onClick = {
-                                        onQuerySubmitted(url)
+                                        submitSearch(url)
                                     },
                                     shape = RoundedCornerShape(24.dp),
                                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -713,7 +724,7 @@ fun PetalOmniboxPage(
                                         }
 
                                         Surface(
-                                            onClick = { onQuerySubmitted(shortcut.url) },
+                                            onClick = { submitSearch(shortcut.url) },
                                             shape = RoundedCornerShape(16.dp),
                                             color = MaterialTheme.colorScheme.surfaceContainer,
                                             tonalElevation = 1.dp,
@@ -845,7 +856,7 @@ fun PetalOmniboxPage(
                                                         onClick = {
                                                             val trimmed = item.query.trim()
                                                             if (trimmed.isNotEmpty()) {
-                                                                onQuerySubmitted(trimmed)
+                                                                submitSearch(trimmed)
                                                             }
                                                         },
                                                         onLongClick = {
