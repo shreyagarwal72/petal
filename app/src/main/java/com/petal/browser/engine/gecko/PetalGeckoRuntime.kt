@@ -44,6 +44,7 @@ object PetalGeckoRuntime {
             .webManifest(true)
             .extensionsProcessEnabled(true)
             .extensionsWebAPIEnabled(true)
+            .loginAutofillEnabled(false)
 
         val newRuntime = GeckoRuntime.create(appContext, settingsBuilder.build())
         runtime = newRuntime
