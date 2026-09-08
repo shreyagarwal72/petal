@@ -369,9 +369,17 @@ fun PetalDownloadManagerScreen(
         }
     }
 
-    val groupedDownloads = remember(sortedDownloadList, sortOption) {
+    // Completed images are represented by the preview strip below. Keep active,
+    // failed, and paused image downloads in the file list so their controls remain
+    // available, but do not render a second completed-image row.
+    val listDownloads = remember(sortedDownloadList, autoPreviewDownloadedImages) {
+        if (autoPreviewDownloadedImages) {
+            sortedDownloadList.filterNot { it.status == DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) }
+        } else sortedDownloadList
+    }
+    val groupedDownloads = remember(listDownloads, sortOption) {
         if (sortOption == DownloadSortOption.DATE_DESC || sortOption == DownloadSortOption.DATE_ASC) {
-            sortedDownloadList.groupBy { item -> formatDateHeader(item.timestampMs) }
+            listDownloads.groupBy { item -> formatDateHeader(item.timestampMs) }
         } else {
             val header = when (sortOption) {
                 DownloadSortOption.NAME_ASC -> "Sorted by Name (A-Z)"
@@ -381,7 +389,7 @@ fun PetalDownloadManagerScreen(
                 DownloadSortOption.STATUS -> "Sorted by Status"
                 else -> "All Downloads"
             }
-            mapOf(header to sortedDownloadList)
+            mapOf(header to listDownloads)
         }
     }
 
@@ -581,7 +589,11 @@ fun PetalDownloadManagerScreen(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
+    val context = LocalContext.current
+    var menuItem by remember { mutableStateOf<DownloadItem?>(null) }
     val images = downloads.filter { it.status == DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }.take(6)
     if (images.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -594,9 +606,20 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                         runCatching { BitmapFactory.decodeFile(Uri.parse(item.localUri).path ?: item.localUri) }.getOrNull()
                     }
                 }
-                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.weight(1f).height(if (images.size == 1) 220.dp else 130.dp).clickable { }) {
-                    if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)))
-                    else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
+                Box(modifier = Modifier.weight(1f)) {
+                    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier
+                        .fillMaxWidth()
+                        .height(if (images.size == 1) 220.dp else 130.dp)
+                        .combinedClickable(onClick = { openDownloadedFile(context, item) }, onLongClick = { menuItem = item })) {
+                        if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)))
+                        else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
+                    }
+                    DropdownMenu(expanded = menuItem?.id == item.id, onDismissRequest = { menuItem = null }) {
+                        DropdownMenuItem(text = { Text("Open") }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) }, onClick = { menuItem = null; openDownloadedFile(context, item) })
+                        DropdownMenuItem(text = { Text("Share") }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { menuItem = null; shareDownloadedFile(context, item) })
+                        DropdownMenuItem(text = { Text("Copy Link") }, leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { menuItem = null; copyDownloadLink(context, item.fileUrl) })
+                        DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) }, onClick = { menuItem = null; deleteDownloadedFile(context, item) })
+                    }
                 }
             }
         }
