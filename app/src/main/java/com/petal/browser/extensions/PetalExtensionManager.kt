@@ -382,6 +382,48 @@ object PetalExtensionManager {
     }
 
     /**
+     * Manually triggers the browser-action (toolbar popup) for an installed extension from the UI.
+     *
+     * GeckoView's [WebExtension.Action.click] dispatches the standard
+     * `GeckoView:BrowserAction:Click` / `GeckoView:PageAction:Click` internal event, which
+     * Gecko then routes back through our [attachActionDelegate]'s `onTogglePopup`/`onOpenPopup`
+     * callback – meaning the existing [openPopupSession] path runs exactly as if the user had
+     * tapped the real toolbar button inside a browsing session.
+     *
+     * For extensions that have no popup URL at all (e.g., they only inject scripts), the click
+     * still goes through; Gecko simply won't call back with a popupUri and nothing visible happens.
+     * In that case, we show a friendly error message via [_lastError].
+     */
+    fun triggerBrowserAction(extensionId: String) {
+        val ext = _extensions.value.find { it.id == extensionId } ?: run {
+            _lastError.value = "Extension not found."
+            return
+        }
+        val raw = ext.raw
+        val action = raw.browserAction ?: raw.pageAction
+        if (action != null) {
+            // click() fires the standard GeckoView toolbar-button click event.
+            // If the extension has a popup URL, Gecko calls back onTogglePopup/onOpenPopup
+            // on our ActionDelegate (attached in attachActionDelegate), which then invokes
+            // openPopupSession and sets _pendingPopup for the UI to render.
+            action.click()
+        } else {
+            // Extension has no browser_action or page_action manifest entry at all -
+            // it's purely a background/content-script extension with no toolbar UI.
+            _lastError.value = "\"${ext.name}\" has no popup UI."
+        }
+    }
+
+    /**
+     * Returns true if the extension has a [WebExtension.Action] defined (browserAction or
+     * pageAction), meaning [triggerBrowserAction] may produce a visible popup dialog.
+     */
+    fun hasBrowserAction(extensionId: String): Boolean {
+        val ext = _extensions.value.find { it.id == extensionId } ?: return false
+        return ext.raw.browserAction != null || ext.raw.pageAction != null
+    }
+
+    /**
      * Installs a `.xpi` file the user opened from *outside* the browser - tapped in Downloads,
      * a file manager, shared from another app, etc. The incoming [uri] is almost always a
      * `content://` Uri whose read permission is only granted for the lifetime of the original

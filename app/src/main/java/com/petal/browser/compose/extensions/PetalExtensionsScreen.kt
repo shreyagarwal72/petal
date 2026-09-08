@@ -185,6 +185,9 @@ fun PetalExtensionsScreen(
                                 },
                                 onUninstall = {
                                     PetalExtensionManager.uninstall(ext.raw)
+                                },
+                                onOpenPopup = {
+                                    PetalExtensionManager.triggerBrowserAction(ext.id)
                                 }
                             )
                         }
@@ -241,6 +244,9 @@ fun PetalExtensionsScreen(
                             context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
                         } catch (ignored: Exception) {}
                     }
+                },
+                onOpenPopup = {
+                    PetalExtensionManager.triggerBrowserAction(ext.id)
                 }
             )
         } else {
@@ -310,7 +316,8 @@ private fun ExtensionRow(
     extension: PetalExtensionManager.InstalledExtension,
     onToggleEnabled: (Boolean) -> Unit,
     onOpen: () -> Unit,
-    onUninstall: () -> Unit
+    onUninstall: () -> Unit,
+    onOpenPopup: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     Surface(
@@ -372,6 +379,16 @@ private fun ExtensionRow(
                 icon = Icons.Rounded.Check,
                 onCheckedChange = onToggleEnabled
             )
+            // Popup launch button — only visible for enabled extensions
+            if (extension.enabled) {
+                IconButton(onClick = onOpenPopup) {
+                    Icon(
+                        Icons.Rounded.PlayArrow,
+                        contentDescription = "Open popup",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
             Box {
                 IconButton(onClick = { showMenu = true }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = "More options")
@@ -547,7 +564,8 @@ private fun ExtensionDetailSheet(
     onDismiss: () -> Unit,
     onTogglePrivate: (Boolean) -> Unit,
     onUninstall: () -> Unit,
-    onOpenLink: (title: String, url: String) -> Unit
+    onOpenLink: (title: String, url: String) -> Unit,
+    onOpenPopup: () -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
@@ -560,6 +578,24 @@ private fun ExtensionDetailSheet(
             if (extension.description.isNotBlank()) {
                 Spacer(Modifier.height(12.dp))
                 Text(extension.description, style = MaterialTheme.typography.bodyMedium)
+            }
+            // "Open extension" button — only shown when extension is enabled
+            if (extension.enabled) {
+                Spacer(Modifier.height(16.dp))
+                FilledTonalButton(
+                    onClick = {
+                        // Dismiss the sheet first so the popup dialog renders on top of
+                        // the main screen, not on top of the bottom sheet.
+                        onDismiss()
+                        onOpenPopup()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Rounded.OpenInBrowser, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Open extension")
+                }
             }
             Spacer(Modifier.height(16.dp))
             DetailRow(icon = Icons.Rounded.VisibilityOff, title = "Allow in Private tabs", checked = extension.allowedInPrivateBrowsing, onCheckedChange = onTogglePrivate)
@@ -661,6 +697,12 @@ private fun ExtensionPopupDialog(
     popup: PetalExtensionManager.PendingPopup,
     onDismiss: () -> Unit
 ) {
+    // Look up the installed extension to get its icon for the title bar.
+    val extensions by PetalExtensionManager.extensions.collectAsState()
+    val extIcon = remember(popup.extensionId, extensions) {
+        extensions.find { it.id == popup.extensionId }?.icon
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(24.dp),
@@ -670,20 +712,43 @@ private fun ExtensionPopupDialog(
                 .heightIn(min = 220.dp, max = 520.dp)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
+                // Title bar: optional extension icon + name + close button
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    // Extension icon (24dp) if available, else a generic Extension icon
+                    val bmp = extIcon
+                    if (bmp != null) {
+                        Image(
+                            bitmap = bmp.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                        )
+                    } else {
+                        Icon(
+                            Icons.Rounded.Extension,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     Text(
                         popup.extensionName,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Rounded.Close, contentDescription = "Close")
                     }
                 }
+                HorizontalDivider()
                 AndroidView(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     factory = { ctx ->
