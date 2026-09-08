@@ -42,6 +42,8 @@ object PetalGeckoRuntime {
             .javaScriptEnabled(sp.getBoolean("profileStandard_javascript", true))
             .consoleOutput(false)
             .webManifest(true)
+            .extensionsProcessEnabled(true)
+            .extensionsWebAPIEnabled(true)
 
         val newRuntime = GeckoRuntime.create(appContext, settingsBuilder.build())
         runtime = newRuntime
