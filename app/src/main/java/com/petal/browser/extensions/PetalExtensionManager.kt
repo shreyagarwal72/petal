@@ -3,7 +3,9 @@ package com.petal.browser.extensions
 import android.content.Context
 import android.net.Uri
 import android.graphics.Bitmap
+import android.provider.OpenableColumns
 import android.util.Log
+import java.io.File
 import androidx.preference.PreferenceManager
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -379,6 +381,66 @@ object PetalExtensionManager {
         _pendingPopup.value = null
     }
 
+    /**
+     * Installs a `.xpi` file the user opened from *outside* the browser - tapped in Downloads,
+     * a file manager, shared from another app, etc. The incoming [uri] is almost always a
+     * `content://` Uri whose read permission is only granted for the lifetime of the original
+     * VIEW/SEND intent; GeckoView's native (Necko) downloader has no access to that grant and
+     * can't resolve arbitrary content providers, so the bytes are copied into the app's own
+     * cache directory first and a plain `file://` path (which GeckoView can always read) is
+     * installed instead. This is what makes `.xpi` files "just work" natively from anywhere on
+     * the device, not only from https:// download links followed inside Petal itself.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun installFromContentUri(context: Context, uri: Uri, onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }) {
+        val appCtx = context.applicationContext
+        appContext = appCtx
+        _busy.value = true
+        _lastError.value = null
+        try {
+            val resolver = appCtx.contentResolver
+            var displayName = uri.lastPathSegment?.substringAfterLast('/') ?: "extension.xpi"
+            if (uri.scheme.equals("content", ignoreCase = true)) {
+                try {
+                    resolver.query(uri, null, null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            if (idx != -1) cursor.getString(idx)?.let { displayName = it }
+                        }
+                    }
+                } catch (ignored: Exception) {}
+            }
+            if (!displayName.endsWith(".xpi", ignoreCase = true)) displayName = "$displayName.xpi"
+
+            val cacheDir = File(appCtx.cacheDir, "extension-installs").apply { mkdirs() }
+            val destFile = File(cacheDir, "install_${System.currentTimeMillis()}_${displayName.replace(Regex("[^A-Za-z0-9._-]"), "_")}")
+
+            val input = resolver.openInputStream(uri)
+            if (input == null) {
+                _busy.value = false
+                val message = "Petal couldn't access that file."
+                _lastError.value = message
+                onResult(false, message)
+                return
+            }
+            input.use { stream -> destFile.outputStream().use { output -> stream.copyTo(output) } }
+
+            install(Uri.fromFile(destFile).toString()) { success, message ->
+                // Best-effort cleanup - GeckoView has already read the package by the time
+                // install()'s callback fires, whether it succeeded or failed.
+                try { destFile.delete() } catch (ignored: Exception) {}
+                onResult(success, message)
+            }
+        } catch (e: Exception) {
+            _busy.value = false
+            val message = "Couldn't read that extension file."
+            _lastError.value = message
+            Log.w(TAG, "installFromContentUri failed", e)
+            onResult(false, message)
+        }
+    }
+
     /** Installs a `.xpi` from any https URL (an AMO listing's download link, or a direct file). */
     fun install(uri: String, onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }) {
         val installUri = normalizeInstallUri(uri)
@@ -468,6 +530,15 @@ object PetalExtensionManager {
 
     private fun normalizeInstallUri(value: String): String? {
         val parsed = try { Uri.parse(value.trim()) } catch (_: Exception) { return null }
+
+        // A local `.xpi` package already resolved to a real file path (see
+        // installFromContentUri, used when the user opens a downloaded/shared .xpi from
+        // outside the browser) - GeckoView's installer reads these directly. Never rewrite
+        // this into an AMO url.
+        if (parsed.scheme.equals("file", ignoreCase = true)) {
+            return parsed.toString()
+        }
+
         if (!parsed.scheme.equals("https", ignoreCase = true)) return null
 
         // Already a real, resolved package link (e.g. GeckoView's own onExternalResponse
