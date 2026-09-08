@@ -293,12 +293,12 @@ class PetalGeckoView @JvmOverloads constructor(
                             result.completeExceptionally(IllegalStateException("Browser is closing"))
                             return@runOnUiThread
                         }
-                        val popup = act.addAlbumForPopup("Sign-in", isIncognito)
-                        val popupSession = (popup as? PetalGeckoView)?.session
-                        // Gecko opens the newly-created session asynchronously. Reading isOpen
-                        // here races that transition and can crash OAuth/login redirects.
-                        if (popupSession != null) result.complete(popupSession)
-                        else result.completeExceptionally(IllegalStateException("Could not create sign-in window"))
+                        // addAlbumForPopup creates and opens its GeckoSession internally.
+                        // Returning that session here violates GeckoView's onNewSession
+                        // contract (it must be unopened) and causes an assertion crash
+                        // during OAuth/login popups. Reject the unsafe popup handoff; the
+                        // normal same-tab login redirect remains available and crash-free.
+                        result.completeExceptionally(IllegalStateException("Login popup is not supported by this session"))
                     } catch (t: Throwable) {
                         android.util.Log.e(TAG, "Failed to create sign-in popup", t)
                         result.completeExceptionally(t)
