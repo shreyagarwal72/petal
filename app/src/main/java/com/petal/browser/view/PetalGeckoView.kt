@@ -334,12 +334,29 @@ class PetalGeckoView @JvmOverloads constructor(
                     }
                     return
                 }
-                val fileName = HelperUnit.resolveFileName(responseUrl, null, null)
+                // GeckoView's WebResponse carries the server's real Content-Disposition and
+                // Content-Type headers - previously these were discarded (passed as null),
+                // so every download fell back to guessing a name purely from the URL path.
+                // For signed CDN links, dynamic endpoints, or any URL without a clean
+                // "name.ext" tail, that guess had nothing to go on and produced a wrong
+                // name and/or wrong extension. Reading the real headers here fixes that
+                // for every download that goes through the GeckoView engine.
+                val headers = response.headers
+                val contentDisposition = headers?.entries?.firstOrNull {
+                    it.key.equals("Content-Disposition", ignoreCase = true)
+                }?.value
+                val mimeType = headers?.entries?.firstOrNull {
+                    it.key.equals("Content-Type", ignoreCase = true)
+                }?.value
+                val fileName = HelperUnit.resolveFileName(responseUrl, contentDisposition, mimeType)
+                val contentLength = headers?.entries?.firstOrNull {
+                    it.key.equals("Content-Length", ignoreCase = true)
+                }?.value?.toLongOrNull() ?: 0L
                 act.runOnUiThread {
                     com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
-                        act, responseUrl, null, null, 0L
+                        act, responseUrl, contentDisposition, mimeType, contentLength
                     ) { confirmedName ->
-                        BrowserUnit.download(act, responseUrl, confirmedName.ifBlank { fileName }, null)
+                        BrowserUnit.download(act, responseUrl, confirmedName.ifBlank { fileName }, mimeType)
                     }
                 }
             }
