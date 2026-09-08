@@ -110,7 +110,7 @@ fun InactiveSettingsScreen(
                                     count = thresholdOptions.size
                                 ),
                                 icon = {
-                                    SegmentedButtonDefaults.ActiveIcon(active = thresholdPref == key)
+                                    SegmentedButtonDefaults.Icon(active = thresholdPref == key)
                                 },
                                 label = {
                                     Text(label, style = MaterialTheme.typography.labelMedium)
