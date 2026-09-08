@@ -164,7 +164,7 @@ dependencies {
 
     // Mozilla GeckoView (Release channel, stable 154 train)
     // Avoid unverified snapshots (such as 155.0.20260903215306) which trigger libxul.so SIGSEGV on Android 16.
-    implementation 'org.mozilla.geckoview:geckoview:154.0.20260824154132'
+    implementation 'org.mozilla.geckoview:geckoview:155.0.20260903215306'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.51.1'

@@ -3891,7 +3891,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) targetUrl.openConnection();
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(5000);
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:154.0) Gecko/154.0 Firefox/154.0");
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:155.0) Gecko/155.0 Firefox/155.0");
                     java.io.InputStream in = conn.getInputStream();
                     java.io.FileOutputStream out = new java.io.FileOutputStream(archiveFile);
                     byte[] buffer = new byte[8192];
