@@ -336,6 +336,22 @@ object PetalExtensionManager {
 
     private fun openPopupSession(extension: WebExtension): GeckoResult<GeckoSession>? {
         val ctx = appContext ?: return null
+        // GeckoView calls onOpenPopup/onTogglePopup again on repeated toolbar taps
+        // before this method's previous GeckoResult has necessarily finished being
+        // consumed. Without this guard, a second call created and opened a brand
+        // new GeckoSession while the first one was still live, and Gecko's own
+        // internal session-claiming logic would then hit an already-claimed
+        // session and crash with "Must use an unopened GeckoSession instance".
+        // Always close out any existing popup session for this (or any other)
+        // extension first, so there's never more than one open at a time.
+        _pendingPopup.value?.session?.let { existing ->
+            try {
+                existing.setActive(false)
+                existing.close()
+            } catch (ignored: Exception) {}
+        }
+        _pendingPopup.value = null
+
         val runtime = PetalGeckoRuntime.getOrCreate(ctx)
         val popupSession = GeckoSession()
         popupSession.open(runtime)
