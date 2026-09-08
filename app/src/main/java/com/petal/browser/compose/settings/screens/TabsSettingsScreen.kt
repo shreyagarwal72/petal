@@ -40,6 +40,13 @@ fun TabsSettingsScreen(
         mutableStateOf(sp.getBoolean("sp_auto_open_tab_groups_other_devices", true))
     }
 
+    var showInactiveSettings by remember { mutableStateOf(false) }
+
+    if (showInactiveSettings) {
+        InactiveSettingsScreen(onNavigateBack = { showInactiveSettings = false }, modifier = modifier)
+        return
+    }
+
     val thresholdSummary = remember(thresholdPref) {
         when (thresholdPref) {
             "never" -> "Never"
@@ -75,7 +82,10 @@ fun TabsSettingsScreen(
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onNavigateToInactiveSettings() }
+                        .clickable {
+                            showInactiveSettings = true
+                            onNavigateToInactiveSettings()
+                        }
                 ) {
                     Row(
                         modifier = Modifier
