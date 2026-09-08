@@ -821,22 +821,16 @@ fun PetalOmniboxPage(
 
                                     LazyColumn(
                                         modifier = Modifier.fillMaxWidth(),
-                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         itemsIndexed(
                                             items = suggestions,
                                             key = { _, item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
                                         ) { index, item ->
-                                            if (index > 0) {
-                                                HorizontalDivider(
-                                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                                                    modifier = Modifier.padding(horizontal = 12.dp)
-                                                )
-                                            }
-
                                             Surface(
                                                 shape = RoundedCornerShape(16.dp),
-                                                color = Color.Transparent,
+                                                color = MaterialTheme.colorScheme.surfaceContainerLow,
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     // Rows fade in/out and slide smoothly into their
