@@ -401,22 +401,43 @@ object PetalExtensionManager {
         try {
             val resolver = appCtx.contentResolver
             var displayName = uri.lastPathSegment?.substringAfterLast('/') ?: "extension.xpi"
+            var mimeType: String? = null
+
             if (uri.scheme.equals("content", ignoreCase = true)) {
                 try {
                     resolver.query(uri, null, null, null, null)?.use { cursor ->
                         if (cursor.moveToFirst()) {
-                            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                            if (idx != -1) cursor.getString(idx)?.let { displayName = it }
+                            val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            if (nameIdx != -1) cursor.getString(nameIdx)?.let { displayName = it }
+                            val typeIdx = cursor.getColumnIndex("mime_type")
+                            if (typeIdx != -1) cursor.getString(typeIdx)?.let { mimeType = it }
                         }
                     }
                 } catch (ignored: Exception) {}
+                mimeType = mimeType ?: resolver.getType(uri)
             }
+
+            val isXpi = displayName.endsWith(".xpi", ignoreCase = true) ||
+                mimeType.equals("application/x-xpinstall", ignoreCase = true)
+            if (!isXpi) {
+                val message = "Please select a Firefox extension file (.xpi)."
+                _busy.value = false
+                _lastError.value = message
+                onResult(false, message)
+                return
+            }
+
             if (!displayName.endsWith(".xpi", ignoreCase = true)) displayName = "$displayName.xpi"
 
             val cacheDir = File(appCtx.cacheDir, "extension-installs").apply { mkdirs() }
-            val destFile = File(cacheDir, "install_${System.currentTimeMillis()}_${displayName.replace(Regex("[^A-Za-z0-9._-]"), "_")}")
+            val safeName = displayName.replace(Regex("[^A-Za-z0-9._-]"), "_")
+            val destFile = File(cacheDir, "install_${System.currentTimeMillis()}_$safeName")
 
-            val input = resolver.openInputStream(uri)
+            val input = if (uri.scheme.equals("file", ignoreCase = true)) {
+                java.io.FileInputStream(File(requireNotNull(uri.path)))
+            } else {
+                resolver.openInputStream(uri)
+            }
             if (input == null) {
                 _busy.value = false
                 val message = "Petal couldn't access that file."
@@ -424,11 +445,18 @@ object PetalExtensionManager {
                 onResult(false, message)
                 return
             }
-            input.use { stream -> destFile.outputStream().use { output -> stream.copyTo(output) } }
 
-            install(Uri.fromFile(destFile).toString()) { success, message ->
-                // Best-effort cleanup - GeckoView has already read the package by the time
-                // install()'s callback fires, whether it succeeded or failed.
+            input.use { stream ->
+                destFile.outputStream().use { output -> stream.copyTo(output) }
+            }
+
+            // GeckoView explicitly distinguishes local-file installation from an add-on
+            // manager/remote installation. Use the correct method so imported .xpi files
+            // follow the native local-package path.
+            install(
+                Uri.fromFile(destFile).toString(),
+                WebExtensionController.INSTALLATION_METHOD_FROM_FILE
+            ) { success, message ->
                 try { destFile.delete() } catch (ignored: Exception) {}
                 onResult(success, message)
             }
@@ -443,6 +471,14 @@ object PetalExtensionManager {
 
     /** Installs a `.xpi` from any https URL (an AMO listing's download link, or a direct file). */
     fun install(uri: String, onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }) {
+        install(uri, WebExtensionController.INSTALLATION_METHOD_MANAGER, onResult)
+    }
+
+    private fun install(
+        uri: String,
+        installationMethod: String,
+        onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }
+    ) {
         val installUri = normalizeInstallUri(uri)
         if (installUri == null) {
             val message = "Use a secure .xpi download link or an addons.mozilla.org add-on page."
@@ -454,7 +490,7 @@ object PetalExtensionManager {
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
         _busy.value = true
         _lastError.value = null
-        controller.install(installUri, WebExtensionController.INSTALLATION_METHOD_MANAGER)
+        controller.install(installUri, installationMethod)
             .accept({ extension ->
                 _busy.value = false
                 if (extension != null) {

@@ -13,6 +13,8 @@ package com.petal.browser.compose.extensions
 
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -198,7 +200,12 @@ fun PetalExtensionsScreen(
         AddExtensionSheet(
             onDismiss = { showAddSheet = false },
             onInstall = { url ->
-                PetalExtensionManager.install(url) { success, message ->
+                PetalExtensionManager.install(url) { success, _ ->
+                    if (success) showAddSheet = false
+                }
+            },
+            onInstallFile = { uri ->
+                PetalExtensionManager.installFromContentUri(context, uri) { success, _ ->
                     if (success) showAddSheet = false
                 }
             }
@@ -385,12 +392,18 @@ private fun ExtensionRow(
 @Composable
 private fun AddExtensionSheet(
     onDismiss: () -> Unit,
-    onInstall: (String) -> Unit
+    onInstall: (String) -> Unit,
+    onInstallFile: (android.net.Uri) -> Unit
 ) {
     var manualUrl by remember { mutableStateOf("") }
     var showMozillaCatalogPrompt by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val busy by PetalExtensionManager.busy.collectAsState()
+    val xpiPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let(onInstallFile)
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState()) {
         Column(
@@ -455,6 +468,18 @@ private fun AddExtensionSheet(
             }
 
             Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = { xpiPicker.launch(arrayOf("*/*")) },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Import .xpi file")
+            }
+
+            Spacer(Modifier.height(8.dp))
             FilledTonalButton(
                 onClick = { showMozillaCatalogPrompt = true },
                 modifier = Modifier.fillMaxWidth(),

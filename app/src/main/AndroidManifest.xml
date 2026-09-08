@@ -164,6 +164,16 @@
                 <!-- Verpflichtend, damit Android die URI unabhängig vom Namen an die App übergibt -->
                 <data android:mimeType="*/*" />
             </intent-filter>
+            
+            <!-- Firefox WebExtension package import (.xpi). This makes Petal a native
+                 target for extension packages shared from Downloads/file managers. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/x-xpinstall" />
+            </intent-filter>
 
             <!-- Text über das Android 'Teilen'-Menü empfangen -->
             <intent-filter>

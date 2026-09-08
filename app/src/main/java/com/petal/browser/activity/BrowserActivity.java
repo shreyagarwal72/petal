@@ -3772,7 +3772,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View extensionsView = com.petal.browser.compose.extensions.PetalExtensionsBridge.createExtensionsView(
                 BrowserActivity.this,
                 () -> {
+                    // Fully dismiss the Compose overlay before navigating to an extension
+                    // options page. Leaving contentFrame populated makes the newly-created
+                    // Gecko tab sit behind the Extensions screen, so "Extension settings"
+                    // appears to do nothing.
+                    isOverlayScreenShowing = false;
+                    contentFrame.removeAllViews();
                     showAlbum(currentAlbumController);
+                    updatePersistentBottomNav();
+                    updateOmniBox();
                     return kotlin.Unit.INSTANCE;
                 }
             );
