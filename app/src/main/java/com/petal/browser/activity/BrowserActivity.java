@@ -4902,6 +4902,28 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else if ("file".equals(dataUri.getScheme())) {
                 fileName = dataUri.getLastPathSegment();
             }
+
+            // 1a. Firefox WebExtension packages (.xpi) - install natively instead of falling
+            // through to the plain-text viewer below (or being rejected by it). File managers
+            // and the Downloads app usually tag these "application/x-xpinstall"; fall back to
+            // the file extension for providers that report a generic type instead.
+            boolean isXpiMime = mimeType != null && mimeType.equalsIgnoreCase("application/x-xpinstall");
+            boolean isXpiName = fileName != null && fileName.toLowerCase(Locale.ROOT).endsWith(".xpi");
+            if (isXpiMime || isXpiName) {
+                sp.edit().putBoolean("show_overview", false).apply();
+                getIntent().setAction("");
+                com.petal.browser.extensions.PetalExtensionManager.installFromContentUri(this, dataUri, (success, message) -> {
+                    runOnUiThread(() -> {
+                        NinjaToast.show(this, message != null ? message : (success ? "Extension installed" : "Extension installation failed"));
+                        if (success) {
+                            showExtensionsScreen();
+                        }
+                    });
+                    return kotlin.Unit.INSTANCE;
+                });
+                return;
+            }
+
             // 2. Dateiendung prüfen und filtern
             if (fileName != null) {
                 String extension = "";
