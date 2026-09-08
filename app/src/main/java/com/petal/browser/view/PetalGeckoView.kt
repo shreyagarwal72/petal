@@ -143,7 +143,12 @@ class PetalGeckoView @JvmOverloads constructor(
 
     private fun initGeckoSession() {
         val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
-        session.open(runtime)
+        // GeckoView requires open() to receive a brand-new, unopened session.
+        // Recovery and view reattachment can race with the initial setup, so do
+        // not call open again when this session is already attached/open.
+        if (!session.isOpen) {
+            session.open(runtime)
+        }
         geckoView.setSession(session)
 
         // Progress & Loading Delegate
