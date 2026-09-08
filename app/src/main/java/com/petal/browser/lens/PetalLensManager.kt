@@ -136,9 +136,28 @@ object PetalLensManager {
             }
         }
 
-        // 1. Try Google Lens direct attachment intent via Google App
+        // Prefer the standalone Google Lens app when an image is supplied. This is
+        // especially important for Snap Photo: the camera result must not fall back
+        // into Petal's Lens web page or a generic camera handler.
         try {
-            val intent = Intent("lens.intent.action.LENS_ATTACHMENT").apply {
+            val standaloneIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                putExtra(Intent.EXTRA_STREAM, sharableUri)
+                clipData = android.content.ClipData.newRawUri("Lens Image", sharableUri)
+                setPackage("com.google.ar.lens")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(standaloneIntent)
+            return
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "Standalone Lens app image handoff failed", e)
+        }
+
+        // Google Search's Lens attachment activity is the next best route on
+        // devices that bundle Lens inside the Google app instead of shipping a
+        // separate standalone Lens activity.
+        try {
+            val attachmentIntent = Intent("lens.intent.action.LENS_ATTACHMENT").apply {
                 setPackage("com.google.android.googlequicksearchbox")
                 setDataAndType(sharableUri, "image/*")
                 clipData = android.content.ClipData.newRawUri("Lens Image", sharableUri)
@@ -146,27 +165,10 @@ object PetalLensManager {
                 addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(intent)
+            context.startActivity(attachmentIntent)
             return
         } catch (e: Exception) {
-            android.util.Log.w(TAG, "Direct lens attachment intent failed", e)
-        }
-
-        // 2. Try Google Lens standalone app via ACTION_SEND
-        try {
-            val standaloneIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/*"
-                putExtra(Intent.EXTRA_STREAM, sharableUri)
-                clipData = android.content.ClipData.newRawUri("Lens Image", sharableUri)
-                setPackage("com.google.ar.lens")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(standaloneIntent)
-            return
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "Standalone lens send failed", e)
+            android.util.Log.w(TAG, "Google app Lens attachment handoff failed", e)
         }
 
         // 3. Try Google QuickSearchBox ACTION_SEND
