@@ -72,7 +72,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
         @JvmStatic
         fun getDerivedDesktopUserAgent(context: Context): String {
-            return "Mozilla/5.0 (X11; Linux x86_64; rv:154.0) Gecko/20100101 Firefox/154.0"
+            return "Mozilla/5.0 (X11; Linux x86_64; rv:155.0) Gecko/20100101 Firefox/155.0"
         }
     }
 
@@ -291,22 +291,30 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onNewSession(session: GeckoSession, uri: String): GeckoResult<GeckoSession>? {
                 val act = getHostActivity() as? com.petal.browser.activity.BrowserActivity ?: return null
+                if (act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) return null
+
+                // GeckoView's onNewSession contract: return a brand-new, UNOPENED GeckoSession.
+                // GeckoView itself will call open() on it. Once open, we adopt it into a new
+                // popup tab via adoptPopupSession() — which reuses the already-open session
+                // without calling open() a second time (which would crash).
+                val popupSession = GeckoSession(GeckoSessionSettings.Builder()
+                    .usePrivateMode(this@PetalGeckoView.isIncognito)
+                    .build())
                 val result = GeckoResult<GeckoSession>()
+                result.complete(popupSession)
+
                 act.runOnUiThread {
                     try {
                         if (act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) {
-                            result.completeExceptionally(IllegalStateException("Browser is closing"))
+                            if (popupSession.isOpen) popupSession.close()
                             return@runOnUiThread
                         }
-                        // addAlbumForPopup creates and opens its GeckoSession internally.
-                        // Returning that session here violates GeckoView's onNewSession
-                        // contract (it must be unopened) and causes an assertion crash
-                        // during OAuth/login popups. Reject the unsafe popup handoff; the
-                        // normal same-tab login redirect remains available and crash-free.
-                        result.completeExceptionally(IllegalStateException("Login popup is not supported by this session"))
+                        // Create a fully configured popup tab that adopts the session
+                        // GeckoView already opened for us.
+                        act.adoptPopupGeckoSession(popupSession, isIncognito)
                     } catch (t: Throwable) {
-                        android.util.Log.e(TAG, "Failed to create sign-in popup", t)
-                        result.completeExceptionally(t)
+                        android.util.Log.e(TAG, "Failed to create login popup tab", t)
+                        if (popupSession.isOpen) popupSession.close()
                     }
                 }
                 return result
@@ -624,6 +632,24 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         applySettings()
+    }
+
+    /**
+     * Adopts a GeckoSession that was already opened by GeckoView's [onNewSession] callback.
+     * Closes the auto-created session from [initGeckoSession], swaps in the popup session,
+     * re-registers all delegates, and attaches it to the GeckoView surface.
+     *
+     * MUST be called on the main thread after GeckoView has called session.open() on popupSession.
+     */
+    @MainThread
+    fun adoptPopupSession(popupSession: GeckoSession) {
+        // Close and discard the session that initGeckoSession created automatically.
+        if (session.isOpen && session !== popupSession) {
+            session.close()
+        }
+        session = popupSession
+        // Re-init all delegates on the adopted session without calling open() again.
+        initGeckoSession()
     }
 
     private fun updateProgress(progress: Int) {

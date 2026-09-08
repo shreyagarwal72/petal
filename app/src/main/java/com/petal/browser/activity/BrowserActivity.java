@@ -5317,6 +5317,57 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         return currentAlbumController;
     }
 
+    /**
+     * Adopts an already-opened GeckoSession (returned from GeckoView's onNewSession callback)
+     * into a new foreground popup tab. Unlike addAlbumForPopup, this does NOT call session.open()
+     * again — GeckoView already opened the session per its onNewSession contract.
+     * Calling open() a second time would cause an assertion crash.
+     */
+    public synchronized void adoptPopupGeckoSession(org.mozilla.geckoview.GeckoSession popupSession, boolean isIncognito) {
+        try {
+            com.petal.browser.view.PetalGeckoView geckoView =
+                com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
+                    this, getString(R.string.app_name), null, true, isIncognito
+                );
+            // Replace the auto-created session with the one GeckoView opened for us.
+            // adoptSession() swaps the underlying session without calling open() again.
+            geckoView.adoptPopupSession(popupSession);
+
+            geckoView.setBrowserController(this);
+            geckoView.setAlbumTitle(getString(R.string.app_name), "about:blank");
+
+            if (currentAlbumController != null) {
+                geckoView.setPredecessor(currentAlbumController);
+                int index = com.petal.browser.browser.BrowserContainer.indexOf(currentAlbumController) + 1;
+                com.petal.browser.browser.BrowserContainer.add(geckoView, index);
+            } else {
+                com.petal.browser.browser.BrowserContainer.add(geckoView);
+            }
+
+            geckoView.setBrowserController(this);
+            hideOverview();
+            geckoView.activate();
+            if (dialogOverview != null) dialogOverview.cancel();
+            showAlbum(geckoView);
+
+            try {
+                android.view.View albumView = geckoView.getTabView();
+                if (albumView != null && tab_container != null) {
+                    if (albumView.getParent() != null) {
+                        ((android.view.ViewGroup) albumView.getParent()).removeView(albumView);
+                    }
+                    tab_container.addView(albumView, android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+                }
+            } catch (Exception ignored) {}
+
+            updateOmniBox();
+            updatePersistentBottomNav();
+        } catch (Exception e) {
+            android.util.Log.e("BrowserActivity", "Failed to adopt popup GeckoSession", e);
+        }
+    }
+
     public synchronized void addAlbumInGroup(String title, final String url, final boolean foreground, final String groupId, final String groupTitle) {
         setWebView(title, url, foreground, false);
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
