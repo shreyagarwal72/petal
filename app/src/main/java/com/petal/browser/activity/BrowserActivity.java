@@ -1048,7 +1048,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             android.widget.Button exit = dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE);
             if (stay != null) {
                 stay.setAllCaps(false);
-                stay.setTextColor(com.google.android.material.color.MaterialColors.getColor(stay, com.google.android.material.R.attr.colorPrimary));
+                stay.setTextColor(com.google.android.material.color.MaterialColors.getColor(stay, android.R.attr.colorPrimary));
             }
             if (exit != null) {
                 exit.setAllCaps(false);
