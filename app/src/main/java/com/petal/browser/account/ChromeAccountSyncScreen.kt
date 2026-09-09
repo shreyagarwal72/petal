@@ -406,6 +406,425 @@ private fun RenderUserProfileContent(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+            // Main User Profile Hero Card — containment style matched to Clear Browsing Data screen
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        contentAlignment = Alignment.BottomEnd,
+                        modifier = Modifier.bouncyClickable {
+                            val permanentFile = java.io.File(context.filesDir, "petal_user_avatar.png")
+                            if (profile.avatarType == AvatarType.GALLERY_URI && permanentFile.exists() && permanentFile.length() > 0) {
+                                pendingCropUri = Uri.fromFile(permanentFile)
+                                showCropDialog = true
+                            } else {
+                                openAvatarMediaPicker()
+                            }
+                        }
+                    ) {
+                        ProfileAvatarDisplay(profile = profile, sizeDp = 88)
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            border = BorderStroke(2.dp, MaterialTheme.colorScheme.surfaceContainerLow),
+                            modifier = Modifier.size(30.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = if (profile.avatarType == AvatarType.GALLERY_URI && !profile.customAvatarUri.isNullOrEmpty()) Icons.Rounded.Crop else Icons.Rounded.AddPhotoAlternate,
+                                    contentDescription = "Change Profile Picture",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Mimport androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import coil.compose.AsyncImage
+import com.petal.browser.ui.theme.isDynamicColorSupported
+import com.petal.browser.compose.home.PetalShortcut
+import com.petal.browser.ui.components.IconSwitch
+import com.petal.browser.ui.components.PetalAboutDeveloperBridge
+import com.petal.browser.ui.components.PetalThemedSnackbarHost
+import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.defaultPaletteId
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
+import kotlinx.coroutines.launch
+
+@Composable
+fun ProfileAvatarDisplay(
+    profile: GoogleUserProfile,
+    sizeDp: Int = 72,
+    modifier: Modifier = Modifier
+) {
+    val size = sizeDp.dp
+    val context = LocalContext.current
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            profile.avatarType == AvatarType.GOOGLE_URL && !profile.avatarUrl.isNullOrEmpty() -> {
+                AsyncImage(
+                    model = profile.avatarUrl,
+                    contentDescription = "Profile Photo",
+                    modifier = Modifier.size(size).clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            profile.avatarType == AvatarType.GALLERY_URI -> {
+                val avatarFile = remember(profile.customAvatarUri, profile.avatarTimestamp) {
+                    val file = java.io.File(context.filesDir, "petal_user_avatar.png")
+                    if (file.exists() && file.length() > 0) file else null
+                }
+
+                val imageSource: Any? = avatarFile ?: profile.customAvatarUri
+
+                if (imageSource != null) {
+                    val imageModel = remember(imageSource, profile.avatarTimestamp, avatarFile?.lastModified(), avatarFile?.length()) {
+                        coil.request.ImageRequest.Builder(context)
+                            .data(imageSource)
+                            .memoryCachePolicy(coil.request.CachePolicy.WRITE_ONLY)
+                            .diskCachePolicy(coil.request.CachePolicy.WRITE_ONLY)
+                            .crossfade(true)
+                            .build()
+                    }
+                    AsyncImage(
+                        model = imageModel,
+                        contentDescription = "Custom Photo",
+                        modifier = Modifier.size(size).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    val initial = profile.displayName.trim().take(1).ifEmpty { "P" }.uppercase()
+                    Text(
+                        text = initial,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == "app_icon" -> {
+                AsyncImage(
+                    model = com.petal.browser.R.mipmap.ic_launcher,
+                    contentDescription = "App Icon Avatar",
+                    modifier = Modifier.size(size * 0.7f),
+                    contentScale = ContentScale.Fit
+                )
+            }
+            else -> {
+                val iconVector = getPresetMaterialIcon(profile.avatarPresetId)
+                if (iconVector != null) {
+                    Icon(
+                        imageVector = iconVector,
+                        contentDescription = "Preset Avatar",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(size * 0.5f)
+                    )
+                } else {
+                    val initial = profile.displayName.trim().take(1).ifEmpty { "P" }.uppercase()
+                    Text(
+                        text = initial,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+    }
+}
+
+fun getPresetMaterialIcon(presetId: String): androidx.compose.ui.graphics.vector.ImageVector? {
+    return when (presetId) {
+        "petal_flower" -> Icons.Rounded.LocalFlorist
+        "cosmic_star" -> Icons.Rounded.Star
+        "cyber_shield" -> Icons.Rounded.Shield
+        "rocket_boost" -> Icons.Rounded.RocketLaunch
+        "ocean_wave" -> Icons.Rounded.Water
+        "ninja_cat" -> Icons.Rounded.Pets
+        "sparkle" -> Icons.Rounded.AutoAwesome
+        "bot_avatar" -> Icons.Rounded.SmartToy
+        else -> null
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PetalUserProfileScreen(
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
+    onBack: () -> Unit,
+    onOpenOAuth: (PetalShortcut) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val profile = GoogleAccountManager.currentProfile
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var isSigningIn by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    var isExpressiveFeatureTiles by remember { mutableStateOf(sp.getBoolean("sp_expressive_feature_tiles", true)) }
+
+    LaunchedEffect(Unit) {
+        GoogleAccountManager.init(context)
+    }
+
+    DisposableEffect(sp) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "sp_expressive_feature_tiles") {
+                isExpressiveFeatureTiles = sp.getBoolean("sp_expressive_feature_tiles", true)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
+    val legacySignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { activityResult ->
+        val result = GoogleAccountManager.handleLegacySignInResult(context, activityResult.data)
+        if (result is GoogleSignInResult.Success) {
+            isSigningIn = false
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
+            }
+        } else {
+            // If legacy intent returns failure/cancellation, seamlessly fall back to Credential Manager UI
+            coroutineScope.launch {
+                when (val fallbackResult = GoogleAccountManager.signIn(context)) {
+                    is GoogleSignInResult.Success -> {
+                        snackbarHostState.showSnackbar("Signed in as ${fallbackResult.profile.email}")
+                    }
+                    is GoogleSignInResult.Failure -> {
+                        if (result is GoogleSignInResult.Failure) {
+                            snackbarHostState.showSnackbar(result.message)
+                        }
+                    }
+                }
+                isSigningIn = false
+            }
+        }
+    }
+
+    fun startGoogleSignIn() {
+        if (isSigningIn) return
+        isSigningIn = true
+        coroutineScope.launch {
+            try {
+                val intent = GoogleAccountManager.createLegacySignInIntent(context)
+                legacySignInLauncher.launch(intent)
+            } catch (e: Throwable) {
+                // Fallback to Credential Manager if Play Services auth client fails
+                when (val result = GoogleAccountManager.signIn(context)) {
+                    is GoogleSignInResult.Success -> {
+                        snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
+                    }
+                    is GoogleSignInResult.Failure -> {
+                        snackbarHostState.showSnackbar(result.message)
+                    }
+                }
+                isSigningIn = false
+            }
+        }
+    }
+
+    var showAppLockConfigPage by remember { mutableStateOf(false) }
+
+    com.petal.browser.predictive.PetalPredictiveBackSurface(
+        enabled = true,
+        onBack = {
+            if (showAppLockConfigPage) {
+                showAppLockConfigPage = false
+            } else {
+                onBack()
+            }
+        },
+    ) {
+        // Always keep both layers in composition so exit animations can play.
+        // Profile sits behind (isBehind=true) and dims/parallaxes during predictive back;
+        // AppLockConfig slides in over it and AnimatedVisibility handles its enter/exit.
+        Box(modifier = Modifier.fillMaxSize()) {
+            com.petal.browser.predictive.PetalScreenWrapper(
+                isBehind = showAppLockConfigPage,
+                backgroundSnapshot = if (!showAppLockConfigPage) backgroundSnapshot else null
+            ) {
+                RenderUserProfileContent(
+                    profile = profile,
+                    isLoading = isLoading,
+                    isSigningIn = isSigningIn,
+                    isExpressiveFeatureTiles = isExpressiveFeatureTiles,
+                    snackbarHostState = snackbarHostState,
+                    onBack = onBack,
+                    onOpenOAuth = onOpenOAuth,
+                    onStartGoogleSignIn = { startGoogleSignIn() },
+                    onOpenAppLockConfig = { showAppLockConfigPage = true },
+                    modifier = modifier
+                )
+            }
+            AnimatedVisibility(
+                visible = showAppLockConfigPage,
+                enter = slideInHorizontally(
+                    initialOffsetX = { it / 3 },
+                    animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                ) + fadeIn(animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))),
+                exit = slideOutHorizontally(
+                    targetOffsetX = { it },
+                    animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                ) + scaleOut(
+                    targetScale = 0.85f,
+                    animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+                )
+            ) {
+                com.petal.browser.compose.security.PetalAppLockConfigScreen(
+                    onBack = { showAppLockConfigPage = false },
+                    wrapPredictive = false
+                )
+            }
+        }
+
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RenderUserProfileContent(
+    profile: GoogleUserProfile,
+    isLoading: Boolean,
+    isSigningIn: Boolean,
+    isExpressiveFeatureTiles: Boolean,
+    snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
+    onOpenOAuth: (PetalShortcut) -> Unit,
+    onStartGoogleSignIn: () -> Unit,
+    onOpenAppLockConfig: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+
+    var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
+    var showCropDialog by remember { mutableStateOf(false) }
+    var showMediaPickerSheet by remember { mutableStateOf(false) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val tempFile = java.io.File(context.cacheDir, "temp_avatar_crop.png")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    java.io.FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                if (tempFile.exists() && tempFile.length() > 0) {
+                    pendingCropUri = Uri.fromFile(tempFile)
+                    showCropDialog = true
+                } else {
+                    pendingCropUri = uri
+                    showCropDialog = true
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PetalProfile", "Error caching selected avatar uri", e)
+                pendingCropUri = uri
+                showCropDialog = true
+            }
+        }
+    }
+
+    val requestMediaPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val granted = results.values.any { it }
+        if (granted) {
+            showMediaPickerSheet = true
+        } else {
+            // If permissions denied, fall back seamlessly to system file picker
+            galleryLauncher.launch("image/*")
+        }
+    }
+
+    fun openAvatarMediaPicker() {
+        if (com.petal.browser.media.PetalMediaPickerManager.hasMediaPermissions(context)) {
+            showMediaPickerSheet = true
+        } else {
+            val perms = com.petal.browser.media.PetalMediaPickerManager.getRequiredMediaPermissions()
+            requestMediaPermissionLauncher.launch(perms)
+        }
+    }
+
+    var showEditNameDialog by remember { mutableStateOf(false) }
+    var nameInput by remember(profile.displayName) { mutableStateOf<String>(profile.displayName ?: "") }
+
+    Scaffold(
+        topBar = {
+            com.petal.browser.ui.components.ExpressiveHeader(
+                title = "User Accounts & Profile",
+                subtitle = "Manage account & preferences",
+                onBack = onBack,
+                maxTitleLines = 1,
+                maxSubtitleLines = 1
+            )
+        },
+        snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier.fillMaxSize()
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            com.petal.browser.ui.components.M3ExpressiveVariableBackground(pageSeed = "account_page")
+
+        if (isLoading) {
+            com.petal.browser.compose.composable.ContainedLoadingIndicator(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
