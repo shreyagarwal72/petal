@@ -63,6 +63,8 @@ interface PetalLinkContextMenuHandler {
     fun onDialPhoneNumber(tel: String) {}
     fun onSendEmail(mailto: String) {}
     fun onOpenMapLocation(geo: String) {}
+    /** Opens the image in Petal's built-in full-screen image viewer */
+    fun onViewInPetalViewer() {}
 }
 
 private data class MenuItemSpec(
@@ -263,6 +265,10 @@ fun PetalLinkContextMenuSheet(
                     }
                     isImage -> {
                         listOf(
+                            MenuItemSpec("View in Petal Viewer", Icons.Rounded.Image) {
+                                onDismiss()
+                                handler.onViewInPetalViewer()
+                            },
                             MenuItemSpec("Open image in new tab", Icons.Rounded.OpenInNew) {
                                 onDismiss()
                                 handler.onOpenImageInNewTab()

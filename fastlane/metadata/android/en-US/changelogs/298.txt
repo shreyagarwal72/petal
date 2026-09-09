@@ -1,0 +1,26 @@
+v2.9.8 — 🖼️ Peek-a-Petal: The Image Viewer Arrives!
+
+✨ Built-in Image Viewer
+• Brand new Material 3 Expressive image viewer — native, offline-first, no WebView needed
+• HorizontalPager gallery: swipe between downloaded images
+• Pinch-to-zoom (0.8×–5×), pan, double-tap zoom toggle (1× ↔ 2.5×)
+• Single-tap auto-hide controls with smooth fade animations
+• Rotate, Share, Delete (with Undo), Set as Wallpaper, Copy URL
+• Image Info sheet: dimensions, file size, date, path, source URL
+
+🌐 Web Image Support
+• Long-press any image on a website → "View in Petal Viewer" in context menu
+• Remote images loaded via Coil — works on any HTTP/HTTPS image URL
+
+📤 External Source Support
+• Open images from Files, Gallery, or any app using "Open with Petal"
+• Share images from other apps directly into the Petal Viewer
+• Supports content:// and file:// URIs
+
+📥 Downloads Page Integration
+• Tap image in Downloads preview strip → opens full-screen viewer
+• Image row items now launch the viewer instead of the system opener
+• Long-press preview strip → "View Image" and "Open in app" options
+
+🐛 Bug Fixes & Stability
+• Merged upstream fixes for progress bar rendering and GeckoView

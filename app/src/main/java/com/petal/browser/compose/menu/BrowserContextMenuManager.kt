@@ -129,6 +129,21 @@ object BrowserContextMenuManager {
                 }
 
                 override fun onDownloadVideo() {}
+
+                override fun onViewInPetalViewer() {
+                    if (imageURL.isNotBlank()) {
+                        activity.runOnUiThread {
+                            val view = com.petal.browser.compose.downloads.PetalImageViewerBridge.createWebViewerView(
+                                activity,
+                                imageURL,
+                                HelperUnit.domain(imageURL)
+                            ) {
+                                activity.runOnUiThread { activity.performBackNavigation() }
+                            }
+                            activity.presentComposeScreen(view)
+                        }
+                    }
+                }
             }
         )
     }

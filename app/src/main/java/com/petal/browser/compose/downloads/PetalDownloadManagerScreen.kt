@@ -574,7 +574,18 @@ fun PetalDownloadManagerScreen(
                                     }
                                 },
                                 onDeleteItem = { performStagedDelete(listOf(item)) },
-                                onOpenFile = { openDownloadedFile(context, item) }
+                                onOpenFile = {
+                                    val activity = context as? com.petal.browser.activity.BrowserActivity
+                                    if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName)) {
+                                        val allImages = sortedDownloadList.filter { it.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }
+                                        val view = PetalImageViewerBridge.createViewerView(activity, item, allImages) {
+                                            activity.runOnUiThread { activity.performBackNavigation() }
+                                        }
+                                        activity.runOnUiThread { activity.presentComposeScreen(view) }
+                                    } else {
+                                        openDownloadedFile(context, item)
+                                    }
+                                }
                             )
                         }
                     }
@@ -609,12 +620,35 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                     Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier
                         .fillMaxWidth()
                         .height(if (images.size == 1) 220.dp else 130.dp)
-                        .combinedClickable(onClick = { openDownloadedFile(context, item) }, onLongClick = { menuItem = item })) {
+                        .combinedClickable(
+                            onClick = {
+                                val activity = context as? com.petal.browser.activity.BrowserActivity
+                                if (activity != null) {
+                                    val view = PetalImageViewerBridge.createViewerView(activity, item, images) {
+                                        activity.runOnUiThread { activity.performBackNavigation() }
+                                    }
+                                    activity.runOnUiThread { activity.presentComposeScreen(view) }
+                                } else {
+                                    openDownloadedFile(context, item)
+                                }
+                            },
+                            onLongClick = { menuItem = item }
+                        )) {
                         if (bitmap != null) Image(bitmap!!.asImageBitmap(), contentDescription = item.fileName, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)))
                         else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Image, null) }
                     }
                     DropdownMenu(expanded = menuItem?.id == item.id, onDismissRequest = { menuItem = null }) {
-                        DropdownMenuItem(text = { Text("Open") }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) }, onClick = { menuItem = null; openDownloadedFile(context, item) })
+                        DropdownMenuItem(text = { Text("View Image") }, leadingIcon = { Icon(Icons.Rounded.Image, null) }, onClick = {
+                            menuItem = null
+                            val activity = context as? com.petal.browser.activity.BrowserActivity
+                            if (activity != null) {
+                                val view = PetalImageViewerBridge.createViewerView(activity, item, images) {
+                                    activity.runOnUiThread { activity.performBackNavigation() }
+                                }
+                                activity.runOnUiThread { activity.presentComposeScreen(view) }
+                            } else openDownloadedFile(context, item)
+                        })
+                        DropdownMenuItem(text = { Text("Open in app") }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) }, onClick = { menuItem = null; openDownloadedFile(context, item) })
                         DropdownMenuItem(text = { Text("Share") }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { menuItem = null; shareDownloadedFile(context, item) })
                         DropdownMenuItem(text = { Text("Copy Link") }, leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { menuItem = null; copyDownloadLink(context, item.fileUrl) })
                         DropdownMenuItem(text = { Text("Delete", color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) }, onClick = { menuItem = null; deleteDownloadedFile(context, item) })

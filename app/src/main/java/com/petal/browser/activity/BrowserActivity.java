@@ -5000,6 +5000,61 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         String url = intent.getStringExtra(Intent.EXTRA_TEXT);
         Uri dataUri = intent.getData();
         String mimeType = intent.getType();
+
+        // ── External image: Open With / Share image → Petal built-in viewer ─
+        boolean isImageMime = mimeType != null && mimeType.startsWith("image/");
+        if (Intent.ACTION_VIEW.equals(action) && dataUri != null && isImageMime) {
+            sp.edit().putBoolean("show_overview", false).apply();
+            getIntent().setAction("");
+            String displayName = null;
+            try (android.database.Cursor c = getContentResolver().query(dataUri,
+                    new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+                if (c != null && c.moveToFirst()) {
+                    int idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    if (idx != -1) displayName = c.getString(idx);
+                }
+            } catch (Exception ignored) {}
+            if (displayName == null) displayName = dataUri.getLastPathSegment();
+            final String finalDisplayName = displayName;
+            final Uri finalUri = dataUri;
+            runOnUiThread(() -> {
+                android.view.View view = com.petal.browser.compose.downloads.PetalImageViewerBridge.createExternalViewerView(
+                    BrowserActivity.this, finalUri, finalDisplayName,
+                    () -> { runOnUiThread(this::performBackNavigation); return kotlin.Unit.INSTANCE; }
+                );
+                presentComposeScreen(view);
+            });
+            return;
+        }
+        if (Intent.ACTION_SEND.equals(action) && isImageMime) {
+            Uri sharedUri = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU)
+                ? intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri.class)
+                : intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (sharedUri != null) {
+                sp.edit().putBoolean("show_overview", false).apply();
+                getIntent().setAction("");
+                String displayName2 = null;
+                try (android.database.Cursor c = getContentResolver().query(sharedUri,
+                        new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+                    if (c != null && c.moveToFirst()) {
+                        int idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                        if (idx != -1) displayName2 = c.getString(idx);
+                    }
+                } catch (Exception ignored) {}
+                if (displayName2 == null) displayName2 = sharedUri.getLastPathSegment();
+                final String finalName2 = displayName2;
+                final Uri finalUri2 = sharedUri;
+                runOnUiThread(() -> {
+                    android.view.View view = com.petal.browser.compose.downloads.PetalImageViewerBridge.createExternalViewerView(
+                        BrowserActivity.this, finalUri2, finalName2,
+                        () -> { runOnUiThread(this::performBackNavigation); return kotlin.Unit.INSTANCE; }
+                    );
+                    presentComposeScreen(view);
+                });
+                return;
+            }
+        }
+
         if ("".equals(action)) {
             Log.i(TAG, "resumed FOSS browser");
         } else if (filePathCallback != null) {

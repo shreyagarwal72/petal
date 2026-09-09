@@ -1,3 +1,35 @@
+### v2.9.8 — 🖼️ Peek-a-Petal: The Image Viewer Arrives!
+
+#### 🎨 UI/UX — Built-in Image Viewer
+- **Native Material 3 Expressive Image Viewer**: Full-screen offline-capable viewer using `HorizontalPager`, `detectTransformGestures`, and Compose animation — zero new dependencies for local images
+- **Pinch-to-zoom** (0.8×–5×), **pan** when zoomed, **double-tap** toggle zoom (1× ↔ 2.5×) with spring animation
+- **Gallery mode**: swipe left/right between downloaded images in a session
+- **Auto-hide controls**: single tap shows/hides top bar + bottom bar with a 3.5s countdown
+- **Top bar**: back button, filename + "X of Y" counter, Share, Copy URL, Open in external app (⋮ menu)
+- **Bottom bar**: translucent pill with Rotate (90° CW, animated), Delete (with Undo snackbar), Set as Wallpaper, Info
+- **Image Info bottom sheet**: dimensions, file size, modified date, full path, source URL
+- **Predictive back** swipe-to-dismiss via `PetalPredictiveBackSurface`
+
+#### 🌐 Web Image Support
+- **Long-press any image on a website** → new "View in Petal Viewer" option added as the first item in the image context menu
+- Remote images loaded via **Coil** with crossfade — works on any HTTP/HTTPS image URL, with loading/error states
+
+#### 📤 External Source Support
+- **Open With**: Petal now appears as an image viewer option when opening images from Files, Gallery, or any app (`ACTION_VIEW image/*`)
+- **Share to Petal**: receive shared images from any app directly into the viewer (`ACTION_SEND image/*`)
+- Supports `content://` and `file://` URIs with proper `ContentResolver` display name resolution
+
+#### 📥 Downloads Page Integration
+- **Preview strip tap** → opens full-screen image viewer instead of system opener
+- **Row item tap** → launches viewer for image file types
+- **Long-press preview strip** → "View Image" (Petal viewer) + "Open in app" (system) options
+
+#### 🐛 Bug Fixes & Stability
+- Merged upstream: progress bar rendering fix, GeckoView touch improvements
+- Delete button hidden for remote/external images (can't delete what wasn't downloaded)
+
+---
+
 ### v2.9 - Warp Speed Downloads & Background Magic 🚀⚡
 - **⚡ Streamlined External Download Dispatch (Issue #6)**:
   - **Instant External Handoff**: When an external download manager (1DM, ADM, AB Download Manager, Navi) is selected, Petal skips redundant in-app download confirmation prompts and dispatches download URLs, cookies, and headers directly to the external app.
