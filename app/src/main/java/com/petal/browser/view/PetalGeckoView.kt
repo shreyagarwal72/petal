@@ -133,9 +133,8 @@ class PetalGeckoView @JvmOverloads constructor(
             session.open(runtime)
         }
         geckoView.setSession(session)
-        // GeckoView owns the actual content surface. Clear its exclusion rects after
-        // every session attachment so Android's edge back gesture remains available.
-        resetGestureExclusionRects()
+        // Do not mutate GeckoView's compositor child hierarchy during session attachment.
+        // Edge-gesture handling is performed lazily from dispatchTouchEvent().
 
         // Progress & Loading Delegate
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
@@ -157,7 +156,9 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
-                        resetGestureExclusionRects()
+                        // Do not touch GeckoView's compositor child hierarchy during
+                        // navigation. Login/OAuth redirects can recreate that hierarchy
+                        // concurrently and walking it here can trigger a native crash.
                         act.updateOmniBox()
                         act.updateAddressBar()
                         act.updatePersistentBottomNav()
@@ -235,7 +236,8 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
-                        resetGestureExclusionRects()
+                        // Location changes include login/OAuth redirects. Keep this callback
+                        // UI-only; Gecko owns its compositor child lifecycle.
                         act.updateOmniBox()
                         act.updateAddressBar()
                         act.updatePersistentBottomNav()

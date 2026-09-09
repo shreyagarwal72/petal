@@ -583,10 +583,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         }
         this.addJavascriptInterface(new WebAppInterface(context), "AndroidInterface");
         this.addJavascriptInterface(
-            new com.petal.browser.passkey.PetalWebAuthnBridge.WebAuthnJavascriptInterface(this),
-            "PetalWebAuthn"
-        );
-        this.addJavascriptInterface(
             new com.petal.browser.accessibility.PetalAccessibilityEngine.AccessibilityJavascriptInterface(title -> {
                 if (context instanceof com.petal.browser.activity.BrowserActivity) {
                     ((com.petal.browser.activity.BrowserActivity) context).runOnUiThread(() -> {
@@ -602,18 +598,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             com.petal.browser.engine.petal.SystemWebViewCredentials.INSTANCE.configure(this);
         } catch (Throwable t) {
             Log.w(TAG, "System credentials configuration bypassed: " + t.getMessage());
-        }
-
-        try {
-            if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.DOCUMENT_START_SCRIPT)) {
-                androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
-                    this,
-                    com.petal.browser.passkey.PetalWebAuthnBridge.WEBAUTHN_POLYFILL_JS,
-                    java.util.Collections.singleton("*")
-                );
-            }
-        } catch (Throwable t) {
-            Log.w(TAG, "Document start script not supported: " + t.getMessage());
         }
 
         profile = profileOriginal;
