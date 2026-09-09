@@ -303,20 +303,35 @@ class PetalGeckoView @JvmOverloads constructor(
                 val result = GeckoResult<GeckoSession>()
                 result.complete(popupSession)
 
-                act.runOnUiThread {
-                    try {
-                        if (act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) {
+                // Gecko opens the returned session asynchronously. Never adopt it until
+                // that open has completed: initGeckoSession() would otherwise open it first,
+                // and Gecko would then fail its own pending open with "Must use an unopened
+                // GeckoSession instance". This is most visible on OAuth/login popups.
+                val adoptWhenOpened = object : Runnable {
+                    private var attempts = 0
+
+                    override fun run() {
+                        try {
+                            if (act.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && act.isDestroyed)) {
+                                if (popupSession.isOpen) popupSession.close()
+                                return
+                            }
+                            if (!popupSession.isOpen) {
+                                if (++attempts <= 30) {
+                                    postDelayed(this, 16L)
+                                } else {
+                                    android.util.Log.w(TAG, "Popup GeckoSession did not open; skipping adoption")
+                                }
+                                return
+                            }
+                            act.adoptPopupGeckoSession(popupSession, isIncognito)
+                        } catch (t: Throwable) {
+                            android.util.Log.e(TAG, "Failed to create login popup tab", t)
                             if (popupSession.isOpen) popupSession.close()
-                            return@runOnUiThread
                         }
-                        // Create a fully configured popup tab that adopts the session
-                        // GeckoView already opened for us.
-                        act.adoptPopupGeckoSession(popupSession, isIncognito)
-                    } catch (t: Throwable) {
-                        android.util.Log.e(TAG, "Failed to create login popup tab", t)
-                        if (popupSession.isOpen) popupSession.close()
                     }
                 }
+                act.runOnUiThread(adoptWhenOpened)
                 return result
             }
         }
