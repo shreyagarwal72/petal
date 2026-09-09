@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -138,11 +139,24 @@ fun RefreshBarLoadingIndicator(
         ) {
             val offsetY = if (isRefreshing) 24.dp else if (!isVisible) 0.dp else (pullProgress.coerceIn(0f, 1f) * 64.dp.value).dp
             val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.8f).coerceIn(0f, 1f)
-            val currentScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.3f + (pullProgress * 0.7f)).coerceIn(0.3f, 1.0f)
+            val targetScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.3f + (pullProgress * 0.7f)).coerceIn(0.3f, 1.0f)
+            // Bouncy settle once the indicator commits to refreshing (target snaps to 1.0),
+            // rather than animating every intermediate value while the user is still dragging -
+            // that keeps the live pull feeling 1:1 with the finger, and only the final pop-in
+            // overshoots and settles.
+            val currentScale by animateFloatAsState(
+                targetValue = targetScale,
+                animationSpec = if (isRefreshing) {
+                    spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+                } else {
+                    spring(stiffness = Spring.StiffnessHigh)
+                },
+                label = "RefreshBarIndicatorScale"
+            )
 
             ZenithContainedLoadingIndicator(
                 modifier = Modifier
-                    .requiredSize(58.dp)
+                    .requiredSize(50.dp)
                     .graphicsLayer {
                         translationY = if (isVisible) offsetY.toPx() else 0f
                         alpha = if (isVisible) currentOpacity else 0f
