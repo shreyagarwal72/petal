@@ -62,17 +62,10 @@ fun PetalInactiveTabsSheet(
         enabled = true,
         onBack = onDismiss
     ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-        },
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        modifier = modifier.fillMaxHeight(0.92f)
+    // Inactive tabs is a full navigation page, not a bottom-sheet overlay.
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+        modifier = modifier.fillMaxSize()
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             M3ExpressiveVariableBackground(pageSeed = "inactive_tabs_sheet")
