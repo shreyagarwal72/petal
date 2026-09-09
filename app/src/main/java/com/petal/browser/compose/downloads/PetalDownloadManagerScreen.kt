@@ -1247,26 +1247,10 @@ private fun deleteMultipleFiles(context: Context, items: List<DownloadItem>) {
 
 @Composable
 private fun DownloadsEmptyState() {
-    val showBud = com.petal.browser.ui.components.rememberShowBudMascot()
-    if (showBud) {
-        androidx.compose.foundation.layout.Box(
-            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-            contentAlignment = androidx.compose.ui.Alignment.Center
-        ) {
-            com.petal.browser.ui.components.PetalMascot(
-                expression = com.petal.browser.ui.components.BudExpression.Happy,
-                size = 80.dp,
-                playEntrance = true,
-                enableIdleBreathing = true,
-                modifier = androidx.compose.ui.Modifier.padding(top = 48.dp, bottom = 12.dp)
-            )
-        }
-    }
     com.petal.browser.ui.components.EmptyStateBlob(
         illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.DOWNLOADS,
         title = "No Downloads Yet",
-        description = "Files you download will appear here",
-        fraction = if (showBud) 0.72f else 0.85f
+        description = "Files you download will appear here"
     )
 }
 

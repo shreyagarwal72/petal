@@ -74,9 +74,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.petal.browser.R
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.HelperUnit
-import com.petal.browser.ui.components.BudExpression
-import com.petal.browser.ui.components.PetalMascot
-import androidx.compose.foundation.layout.offset
 import kotlinx.coroutines.launch
 
 object PetalWelcomeBridge {
@@ -461,7 +458,7 @@ private fun WelcomeStepPage() {
 
     Spacer(Modifier.height(24.dp))
 
-    // App Hero Icon & Badge Card — Bud greets users on first launch
+    // App Hero Icon & Badge Card
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -471,36 +468,20 @@ private fun WelcomeStepPage() {
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Bud is front-and-center as the hero illustration with the app icon beside it
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shadowElevation = 6.dp,
+                modifier = Modifier.size(84.dp)
             ) {
-                PetalMascot(
-                    expression = BudExpression.Excited,
-                    size = 100.dp,
-                    playEntrance = true,
-                    enableIdleBreathing = true
-                )
-                // Small app icon badge at the bottom-right of Bud
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 4.dp,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .align(Alignment.BottomEnd)
-                        .offset(x = (-16).dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Image(
-                            painter = appIconPainter,
-                            contentDescription = "Petal Logo",
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(CircleShape)
-                        )
-                    }
+                Box(contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = appIconPainter,
+                        contentDescription = "Petal Logo",
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                    )
                 }
             }
 

@@ -16,10 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
 import com.petal.browser.compose.tabs.PetalInactiveTabManager
-import com.petal.browser.ui.components.BudExpression
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
-import com.petal.browser.ui.components.PetalMascot
 import com.petal.browser.ui.components.PetalMascotPrefs
 
 /**
@@ -199,65 +197,6 @@ fun TabsSettingsScreen(
                                 checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
                             )
                         )
-                    }
-                }
-
-                // Bud live preview — shown only when the mascot toggle is on
-                if (showBudMascot) {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        val expressions = remember { listOf(
-                            BudExpression.Neutral,
-                            BudExpression.Happy,
-                            BudExpression.Thinking,
-                            BudExpression.Searching,
-                            BudExpression.Sleeping,
-                            BudExpression.Excited,
-                            BudExpression.Error
-                        )}
-                        var currentExprIndex by remember { mutableIntStateOf(0) }
-                        androidx.compose.runtime.LaunchedEffect(Unit) {
-                            while (true) {
-                                kotlinx.coroutines.delay(2000)
-                                currentExprIndex = (currentExprIndex + 1) % expressions.size
-                            }
-                        }
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = "Meet Bud",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            PetalMascot(
-                                expression = expressions[currentExprIndex],
-                                size = 80.dp,
-                                playEntrance = false,
-                                enableIdleBreathing = true,
-                                onClick = { currentExprIndex = (currentExprIndex + 1) % expressions.size }
-                            )
-                            Text(
-                                text = when (expressions[currentExprIndex]) {
-                                    is BudExpression.Neutral  -> "Resting"
-                                    is BudExpression.Happy    -> "Happy"
-                                    is BudExpression.Thinking -> "Thinking"
-                                    is BudExpression.Searching -> "Searching"
-                                    is BudExpression.Sleeping -> "Sleeping"
-                                    is BudExpression.Excited  -> "Excited"
-                                    is BudExpression.Error    -> "Error"
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
                 }
             }

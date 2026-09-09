@@ -318,39 +318,6 @@ fun InactiveSettingsScreen(
                         )
                     }
                 }
-
-                // Bud sleeping preview — shows what happens to inactive tabs
-                Surface(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    modifier = androidx.compose.ui.Modifier.fillMaxWidth()
-                ) {
-                    androidx.compose.foundation.layout.Column(
-                        modifier = androidx.compose.ui.Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Inactive tabs go to sleep 💤",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        com.petal.browser.ui.components.PetalMascot(
-                            expression = com.petal.browser.ui.components.BudExpression.Sleeping,
-                            size = 72.dp,
-                            playEntrance = false,
-                            enableIdleBreathing = true
-                        )
-                        Text(
-                            text = "Bud shows you which tabs haven't been visited lately.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                    }
-                }
             }
         }
     }
