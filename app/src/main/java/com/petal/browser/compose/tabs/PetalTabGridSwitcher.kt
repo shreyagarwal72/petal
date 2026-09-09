@@ -59,6 +59,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.components.BudExpression
+import com.petal.browser.ui.components.PetalMascot
+import com.petal.browser.ui.components.rememberShowBudMascot
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -1012,52 +1015,61 @@ private fun RegularTabEmptyIllustration(
     containerColor: Color,
     phoneColor: Color
 ) {
+    // Bud represents the "no tabs open" state when the "Show Bud mascot" preference
+    // is enabled; otherwise this falls back to the original phone/tab illustration.
     Box(
-        modifier = Modifier.size(90.dp),
+        modifier = Modifier.size(96.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Back phone / tab outline (offset to bottom-right)
-        Canvas(
-            modifier = Modifier
-                .size(width = 46.dp, height = 66.dp)
-                .offset(x = 8.dp, y = 5.dp)
-        ) {
-            val cornerRadius = CornerRadius(12.dp.toPx())
-            val strokeWidth = 3.dp.toPx()
-            drawRoundRect(
-                color = phoneColor.copy(alpha = 0.55f),
-                size = size,
-                cornerRadius = cornerRadius,
-                style = Stroke(width = strokeWidth)
+        if (rememberShowBudMascot()) {
+            PetalMascot(
+                size = 96.dp,
+                expression = BudExpression.Neutral
             )
-        }
+        } else {
+            // Back phone / tab outline (offset to bottom-right)
+            Canvas(
+                modifier = Modifier
+                    .size(width = 46.dp, height = 66.dp)
+                    .offset(x = 8.dp, y = 5.dp)
+            ) {
+                val cornerRadius = CornerRadius(12.dp.toPx())
+                val strokeWidth = 3.dp.toPx()
+                drawRoundRect(
+                    color = phoneColor.copy(alpha = 0.55f),
+                    size = size,
+                    cornerRadius = cornerRadius,
+                    style = Stroke(width = strokeWidth)
+                )
+            }
 
-        // Front phone / tab (main device card)
-        Box(
-            modifier = Modifier
-                .offset(x = (-5).dp, y = (-3).dp)
-                .size(width = 44.dp, height = 64.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(containerColor)
-                .border(3.2.dp, phoneColor, RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            // Speaker / Camera notch at top
+            // Front phone / tab (main device card)
             Box(
                 modifier = Modifier
-                    .padding(top = 5.dp)
-                    .size(width = 12.dp, height = 2.5.dp)
-                    .clip(CircleShape)
-                    .background(phoneColor)
-            )
-            // Screen inner viewport preview
-            Box(
-                modifier = Modifier
-                    .padding(top = 13.dp, start = 5.dp, end = 5.dp, bottom = 6.dp)
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(phoneColor.copy(alpha = 0.2f))
-            )
+                    .offset(x = (-5).dp, y = (-3).dp)
+                    .size(width = 44.dp, height = 64.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(containerColor)
+                    .border(3.2.dp, phoneColor, RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                // Speaker / Camera notch at top
+                Box(
+                    modifier = Modifier
+                        .padding(top = 5.dp)
+                        .size(width = 12.dp, height = 2.5.dp)
+                        .clip(CircleShape)
+                        .background(phoneColor)
+                )
+                // Screen inner viewport preview
+                Box(
+                    modifier = Modifier
+                        .padding(top = 13.dp, start = 5.dp, end = 5.dp, bottom = 6.dp)
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(phoneColor.copy(alpha = 0.2f))
+                )
+            }
         }
     }
 }

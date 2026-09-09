@@ -18,6 +18,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.compose.tabs.PetalInactiveTabManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalMascotPrefs
 
 /**
  * Tabs Settings Overview Screen matching Chrome/Brave layout from images.png:
@@ -38,6 +39,9 @@ fun TabsSettingsScreen(
     }
     var autoOpenFromOtherDevices by remember {
         mutableStateOf(sp.getBoolean("sp_auto_open_tab_groups_other_devices", true))
+    }
+    var showBudMascot by remember {
+        mutableStateOf(sp.getBoolean(PetalMascotPrefs.PREF_SHOW_MASCOT, PetalMascotPrefs.DEFAULT_SHOW_MASCOT))
     }
 
     var showInactiveSettings by remember { mutableStateOf(false) }
@@ -144,6 +148,49 @@ fun TabsSettingsScreen(
                             onCheckedChange = {
                                 autoOpenFromOtherDevices = it
                                 sp.edit().putBoolean("sp_auto_open_tab_groups_other_devices", it).apply()
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        )
+                    }
+                }
+
+                // Show Bud Mascot Switch
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 18.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f).padding(end = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = "Show Bud mascot",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Show Petal's mascot in empty tab states and the crash recovery dialog",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Switch(
+                            checked = showBudMascot,
+                            onCheckedChange = {
+                                showBudMascot = it
+                                sp.edit().putBoolean(PetalMascotPrefs.PREF_SHOW_MASCOT, it).apply()
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.primary,
