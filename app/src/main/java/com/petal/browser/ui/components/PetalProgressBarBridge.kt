@@ -1,25 +1,18 @@
 package com.petal.browser.ui.components
 
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.preference.PreferenceManager
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
@@ -104,23 +97,13 @@ fun PetalFancyWebLoadingBar(
     progress: Float,
     visible: Boolean
 ) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(),
-        exit = fadeOut()
-    ) {
-        // Use the same expressive linear treatment Zenith uses: a thick rounded
-        // wavy active stroke plus a subtle track.  The 12.dp container gives the
-        // wave enough vertical room to read clearly without changing any of the
-        // pull-to-refresh / contained loading surfaces.
-        val coercedProgress = progress.coerceIn(0f, 1f)
+    if (visible) {
+        // Use the exact Material 3 Expressive component used by Essentials
+        // in its App Updates downloader. No custom canvas, sizing, colors,
+        // animation, or wrapper styling is applied here.
         LinearWavyProgressIndicator(
-            progress = { coercedProgress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(12.dp),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+            progress = { progress.coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
