@@ -100,6 +100,11 @@ public class NinjaWebViewClient extends WebViewClient {
         }
         super.onPageFinished(view, url);
 
+        if (context instanceof com.petal.browser.activity.BrowserActivity) {
+            // Explicitly finish the web indicator so it cannot remain stale when
+            // WebView skips a final progress callback.
+            ((com.petal.browser.activity.BrowserActivity) context).updateProgress(100);
+        }
 
 
         if (ninjaWebView.isForeground()) ninjaWebView.invalidate();
@@ -187,7 +192,15 @@ public class NinjaWebViewClient extends WebViewClient {
             super.onPageStarted(view, url, favicon);
 
             if (context instanceof com.petal.browser.activity.BrowserActivity) {
-                ((com.petal.browser.activity.BrowserActivity) context).onTabUrlStarted(ninjaWebView, url);
+                com.petal.browser.activity.BrowserActivity activity =
+                        (com.petal.browser.activity.BrowserActivity) context;
+                activity.onTabUrlStarted(ninjaWebView, url);
+                // Start the web loading indicator immediately. WebView can otherwise
+                // reach its first onProgressChanged callback only after enough work
+                // has already happened for the short loading state to be missed.
+                // BrowserActivity.updateProgress() still filters internal pages and
+                // pull-to-refresh, so this only affects normal web navigation.
+                activity.updateProgress(5);
             }
 
         String profile = NinjaWebView.getProfile();
