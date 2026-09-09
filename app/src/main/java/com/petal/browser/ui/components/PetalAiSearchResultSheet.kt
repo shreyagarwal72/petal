@@ -44,6 +44,9 @@ import com.petal.browser.compose.ai.PetalAiSearchManager
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.components.BudExpression
+import com.petal.browser.ui.components.PetalMascot
+import com.petal.browser.ui.components.rememberShowBudMascot
 
 object PetalAiSearchBridge {
     @JvmStatic
@@ -358,11 +361,20 @@ fun PetalAiSearchResultSheet(
                             .padding(28.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(36.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                            strokeWidth = 3.dp
-                        )
+                        if (rememberShowBudMascot()) {
+                            PetalMascot(
+                                expression = BudExpression.Searching,
+                                size = 80.dp,
+                                playEntrance = true,
+                                enableIdleBreathing = true
+                            )
+                        } else {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(36.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 3.dp
+                            )
+                        }
                         Spacer(Modifier.height(16.dp))
                         Text(
                             text = "Searching web & generating answer with ${selectedProvider.displayName}...",

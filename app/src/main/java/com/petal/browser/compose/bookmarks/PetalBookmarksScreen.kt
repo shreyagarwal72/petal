@@ -312,6 +312,20 @@ fun PetalBookmarksScreen(
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else if (filteredBookmarks.isEmpty()) {
+                    val showBud = com.petal.browser.ui.components.rememberShowBudMascot()
+                    if (showBud) {
+                        androidx.compose.foundation.layout.Box(
+                            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                            contentAlignment = androidx.compose.ui.Alignment.Center
+                        ) {
+                            com.petal.browser.ui.components.PetalMascot(
+                                expression = com.petal.browser.ui.components.BudExpression.Happy,
+                                size = 80.dp,
+                                playEntrance = true,
+                                modifier = androidx.compose.ui.Modifier.padding(top = 48.dp, bottom = 8.dp)
+                            )
+                        }
+                    }
                     com.petal.browser.ui.components.EmptyStateBlob(
                         illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.BOOKMARKS,
                         title = if (searchQuery.isEmpty()) "No Bookmarks Saved Yet" else "No Matching Bookmarks",

@@ -304,6 +304,22 @@ fun PetalHistoryScreen(
                             }
 
                             if (filteredHistory.isEmpty()) {
+                                item(key = "empty_bud") {
+                                    val showBud = com.petal.browser.ui.components.rememberShowBudMascot()
+                                    if (showBud) {
+                                        androidx.compose.foundation.layout.Box(
+                                            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                                            contentAlignment = androidx.compose.ui.Alignment.Center
+                                        ) {
+                                            com.petal.browser.ui.components.PetalMascot(
+                                                expression = com.petal.browser.ui.components.BudExpression.Neutral,
+                                                size = 80.dp,
+                                                playEntrance = true,
+                                                modifier = androidx.compose.ui.Modifier.padding(top = 48.dp, bottom = 8.dp)
+                                            )
+                                        }
+                                    }
+                                }
                                 item(key = "empty_state") {
                                     com.petal.browser.ui.components.EmptyStateBlob(
                                         illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.HISTORY,

@@ -32,6 +32,9 @@ import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.ResearchMode
 import com.petal.browser.unit.BrowserUnit
+import com.petal.browser.ui.components.BudExpression
+import com.petal.browser.ui.components.PetalMascot
+import com.petal.browser.ui.components.rememberShowBudMascot
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -442,11 +445,19 @@ fun PetalAiResearchSheet(
                     .height(50.dp)
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.5.dp
-                    )
+                    if (rememberShowBudMascot()) {
+                        PetalMascot(
+                            expression = BudExpression.Thinking,
+                            size = 28.dp,
+                            playEntrance = false
+                        )
+                    } else {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.5.dp
+                        )
+                    }
                     Spacer(Modifier.width(10.dp))
                     Text("Researching Webpage with ${selectedProvider.displayName}...")
                 } else {
