@@ -166,13 +166,29 @@
             </intent-filter>
             
             <!-- Firefox WebExtension package import (.xpi). This makes Petal a native
-                 target for extension packages shared from Downloads/file managers. -->
+                 target for extension packages shared from Downloads/file managers.
+                 Each <data> tag must carry its own scheme+mimeType together - splitting
+                 them across sibling <data> tags (previous version) left the mimeType-only
+                 tag with no scheme, which most file managers' VIEW intents (content:// URI
+                 + explicit MIME type set together) failed to match, so tapping a .xpi in
+                 Downloads never resolved Petal as a target at all. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="content" />
-                <data android:scheme="file" />
-                <data android:mimeType="application/x-xpinstall" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" android:mimeType="application/x-xpinstall" />
+                <data android:scheme="file" android:mimeType="application/x-xpinstall" />
+            </intent-filter>
+
+            <!-- Some file managers/download managers omit the MIME type and instead rely on
+                 the .xpi file extension alone (a bare file:// or content:// VIEW intent with
+                 no mimeType set). Match on the extension as a fallback path. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" android:host="*" android:pathPattern=".*\\.xpi" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.xpi" />
             </intent-filter>
 
             <!-- Text über das Android 'Teilen'-Menü empfangen -->
