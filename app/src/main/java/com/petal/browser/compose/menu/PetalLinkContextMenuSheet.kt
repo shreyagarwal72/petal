@@ -1,6 +1,7 @@
 package com.petal.browser.compose.menu
 
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -85,7 +86,14 @@ fun PetalLinkContextMenuSheet(
     Surface(
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                )
+            )
     ) {
         Column(
             modifier = Modifier

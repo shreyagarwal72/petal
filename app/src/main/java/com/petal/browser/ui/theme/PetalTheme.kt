@@ -227,8 +227,9 @@ fun PetalExpressiveTheme(
         com.petal.browser.haptics.LocalVibrationIntensity provides com.petal.browser.haptics.VibrationIntensity.LIGHT,
         androidx.compose.ui.platform.LocalHapticFeedback provides hapticFeedback
     ) {
-        MaterialTheme(
+        androidx.compose.material3.MaterialExpressiveTheme(
             colorScheme = colorScheme,
+            motionScheme = androidx.compose.material3.MotionScheme.expressive(),
             typography = petalTypography(appFont, fontWidth, fontWeight, fontRoundness, gsFlexSettings, customFontPath, customFontSettings),
             content = content
         )

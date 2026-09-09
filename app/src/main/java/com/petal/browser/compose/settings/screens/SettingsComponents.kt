@@ -1,6 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -41,7 +42,14 @@ fun SettingsCategoryCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                )
+            ),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
