@@ -54,6 +54,9 @@ import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.PetalAboutDeveloperBridge
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.components.SettingsItem
+import com.petal.browser.ui.components.SwitchSettingItem
+import com.petal.browser.ui.components.getGroupItemShape
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.defaultPaletteId
 import androidx.compose.foundation.gestures.detectTransformGestures
