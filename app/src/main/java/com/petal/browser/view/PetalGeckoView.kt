@@ -114,17 +114,24 @@ class PetalGeckoView @JvmOverloads constructor(
     private var lastCrashRecoveryTime: Long = 0L
     private var crashRecoveryCount: Int = 0
 
-    val loadingProgressBar = com.google.android.material.progressindicator.LinearProgressIndicator(context).apply {
-        isIndeterminate = false
-        max = 100
-        progress = 0
-        trackThickness = (3 * resources.displayMetrics.density).toInt()
-        val typedValue = android.util.TypedValue()
-        if (context.theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true) ||
-            context.theme.resolveAttribute(android.R.attr.colorPrimary, typedValue, true)) {
-            setIndicatorColor(typedValue.data)
+    // GeckoView uses the same Zenith Material 3 Expressive web-loading indicator
+    // as the Android WebView path. This is deliberately local to GeckoView so it
+    // does not touch pull-to-refresh or the contained loading indicator.
+    private var loadingProgressBar: androidx.compose.ui.platform.ComposeView? = null
+
+    private fun createLoadingProgressBar() {
+        val activity = getHostActivity() as? androidx.activity.ComponentActivity ?: return
+        val progressView = com.petal.browser.ui.components.PetalProgressBarBridge.createProgressView(activity).apply {
+            visibility = View.VISIBLE
         }
-        visibility = View.GONE
+        loadingProgressBar = progressView
+        val progressParams = LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = android.view.Gravity.TOP
+        }
+        addView(progressView, progressParams)
     }
 
     init {
@@ -133,10 +140,7 @@ class PetalGeckoView @JvmOverloads constructor(
             geckoView,
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
-        val progressParams = LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            gravity = android.view.Gravity.TOP
-        }
-        addView(loadingProgressBar, progressParams)
+        createLoadingProgressBar()
         initGeckoSession()
         album.setBrowserController(globalBrowserController)
     }
@@ -669,12 +673,19 @@ class PetalGeckoView @JvmOverloads constructor(
 
     private fun updateProgress(progress: Int) {
         post {
-            if (progress >= 100 || progress == BrowserUnit.LOADING_STOPPED || isStopped) {
-                loadingProgressBar.visibility = View.GONE
-                loadingProgressBar.progress = 0
-            } else {
-                loadingProgressBar.visibility = View.VISIBLE
-                loadingProgressBar.setProgressCompat(progress, true)
+            val progressView = loadingProgressBar
+            if (progressView != null) {
+                if (progress >= 100 || progress == BrowserUnit.LOADING_STOPPED || isStopped) {
+                    com.petal.browser.ui.components.PetalProgressBarBridge.hide(progressView)
+                } else {
+                    // Feed GeckoView's real page-load progress into the same Zenith
+                    // expressive wavy indicator used by the WebView path. The bridge
+                    // also keeps a small visible leading segment at the beginning.
+                    com.petal.browser.ui.components.PetalProgressBarBridge.updateProgress(
+                        progressView,
+                        progress
+                    )
+                }
             }
         }
         if (isForegroundTab && globalBrowserController != null) {
@@ -1208,6 +1219,7 @@ class PetalGeckoView @JvmOverloads constructor(
         session.setActive(false)
         session.close()
         geckoView.releaseSession()
+        loadingProgressBar = null
         removeAllViews()
     }
 
