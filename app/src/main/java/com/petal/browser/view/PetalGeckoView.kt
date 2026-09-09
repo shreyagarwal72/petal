@@ -1113,7 +1113,10 @@ class PetalGeckoView @JvmOverloads constructor(
     fun resetGestureExclusionRects() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
-                systemGestureExclusionRects = java.util.Collections.emptyList()
+                // Call the framework implementation directly. Assigning the
+                // property here dispatches to our override and recursively
+                // re-enters this method until the process stack overflows.
+                super.setSystemGestureExclusionRects(java.util.Collections.emptyList())
             } catch (ignored: Exception) {}
             try {
                 geckoView.systemGestureExclusionRects = java.util.Collections.emptyList()
