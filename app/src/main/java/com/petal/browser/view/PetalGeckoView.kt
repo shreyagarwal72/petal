@@ -1121,13 +1121,27 @@ class PetalGeckoView @JvmOverloads constructor(
             try {
                 geckoView.systemGestureExclusionRects = java.util.Collections.emptyList()
             } catch (ignored: Exception) {}
+            clearChildGestureExclusionRects(geckoView)
             try {
                 geckoView.post {
                     try {
                         geckoView.systemGestureExclusionRects = java.util.Collections.emptyList()
                     } catch (ignored: Exception) {}
+                    clearChildGestureExclusionRects(geckoView)
                 }
             } catch (ignored: Exception) {}
+        }
+    }
+
+    /** GeckoView can recreate nested rendering children after first paint. */
+    private fun clearChildGestureExclusionRects(view: View) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || view !is ViewGroup) return
+        for (index in 0 until view.childCount) {
+            val child = view.getChildAt(index) ?: continue
+            try {
+                child.systemGestureExclusionRects = java.util.Collections.emptyList()
+            } catch (_: Exception) {}
+            clearChildGestureExclusionRects(child)
         }
     }
 

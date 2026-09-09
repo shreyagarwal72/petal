@@ -1813,6 +1813,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 });
             }
         }
+        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView && contentFrame != null) {
+            contentFrame.post(() -> {
+                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
+                }
+            });
+        }
+
         updateOmniBox();
         applyAddressBarPosition();
         updatePersistentBottomNav();
