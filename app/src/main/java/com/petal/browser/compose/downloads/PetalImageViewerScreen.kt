@@ -5,7 +5,7 @@
  * Material 3 Expressive — offline-first, works on all image sources:
  *   • Local downloaded files (Downloads page preview strip + row items)
  *   • Web/remote URLs (long-press on website images → context menu)
- *   • External share intents (ACTION_SEND image/*, ACTION_VIEW image/*)
+ *   • External share intents (ACTION_SEND and ACTION_VIEW for image MIME types)
  *
  * Features:
  *  - HorizontalPager gallery (swipe left/right between images)
