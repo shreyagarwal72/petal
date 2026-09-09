@@ -1148,11 +1148,21 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
-    /** GeckoView can recreate nested rendering children after first paint. */
+    /**
+     * GeckoView can recreate nested rendering children after first paint, and it does so
+     * from its own native compositor callbacks - not guaranteed to be serialized with this
+     * walk in a way that keeps the child list stable mid-iteration. Snapshotting childCount
+     * once and re-checking bounds on every access (instead of trusting a live index into a
+     * tree that may shrink/mutate underneath us) avoids touching a child GeckoView has
+     * already started tearing down, which previously caused a native SIGSEGV in libxul.so
+     * when this ran during a page navigation (e.g. right after a login form redirect).
+     */
     private fun clearChildGestureExclusionRects(view: View) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || view !is ViewGroup) return
-        for (index in 0 until view.childCount) {
-            val child = view.getChildAt(index) ?: continue
+        val snapshotCount = view.childCount
+        for (index in 0 until snapshotCount) {
+            if (index >= view.childCount) break
+            val child = try { view.getChildAt(index) } catch (_: Exception) { null } ?: continue
             try {
                 child.systemGestureExclusionRects = java.util.Collections.emptyList()
             } catch (_: Exception) {}
@@ -1169,11 +1179,25 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Only ACTION_DOWN near the left/right screen edge can be the start of a predictive-back
+     * swipe, so that's the only case that needs exclusion rects cleared. Previously this ran
+     * on every DOWN/UP/CANCEL anywhere on screen - including a normal tap on a login button -
+     * which walked GeckoView's live rendering child tree on every such tap. That coincided with
+     * Gecko recreating its own compositor child view during the post-login page navigation,
+     * which is what caused the native crash. Restricting this to edge-swipe starts removes
+     * that walk from the ordinary tap/login path entirely.
+     */
+    private val edgeSwipeThresholdPx: Float
+        get() = resources.displayMetrics.density * 24f
+
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val action = ev.actionMasked
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                resetGestureExclusionRects()
+            if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+                val nearEdge = ev.x <= edgeSwipeThresholdPx || ev.x >= width - edgeSwipeThresholdPx
+                if (nearEdge) {
+                    resetGestureExclusionRects()
+                }
             }
         }
         return super.dispatchTouchEvent(ev)
