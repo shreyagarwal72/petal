@@ -2231,8 +2231,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public synchronized void updateProgress(int progress) {
+        // GeckoView and WebView share this progress surface. Always resolve the URL
+        // from the active AlbumController first; relying on ninjaWebView here can
+        // incorrectly classify a GeckoView tab as an internal/home page and hide
+        // the indicator.
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            runOnUiThread(() -> updateProgress(progress));
+            return;
+        }
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
-        String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+        String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
         boolean isInternalPage = currentUrl != null && (
             currentUrl.startsWith("petal://settings") ||
             currentUrl.startsWith("petal://history") ||
