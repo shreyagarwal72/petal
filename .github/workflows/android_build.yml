@@ -43,23 +43,37 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ -n "$SIGNING_KEY" ]; then
-            echo "Using repository SIGNING_KEY secret..."
-            echo "$SIGNING_KEY" | base64 -d > app/release.keystore
+            echo "✅ Using SIGNING_KEY secret — decoding keystore..."
+            echo "$SIGNING_KEY" | base64 -d > /tmp/signing.keystore
             STORE_PASS="$KEY_STORE_PASSWORD"
             KEY_PASS="$KEY_PASSWORD"
             ALIAS_NAME="$ALIAS"
+            echo "🔑 Secret keystore alias: $ALIAS_NAME"
+            keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1 | head -6
           else
-            echo "SIGNING_KEY secret is not configured."
-            if [ -f app/release.keystore ]; then
-              echo "Using existing repository app/release.keystore..."
+            echo "⚠️  SIGNING_KEY secret not set — using app/release.keystore from repo"
+            if [ ! -f app/release.keystore ]; then
+              echo "❌ No release.keystore found in repo either! Generating temporary key (NOT for production)..."
+              keytool -genkey -v -keystore /tmp/signing.keystore -storepass android \
+                -alias releasekey -keypass android -keyalg RSA -keysize 2048 \
+                -validity 10000 -dname "CN=Android Release, O=Android, C=US"
             else
-              echo "Generating temporary release signing key..."
-              keytool -genkey -v -keystore app/release.keystore -storepass android -alias releasekey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Release, O=Android, C=US"
+              cp app/release.keystore /tmp/signing.keystore
             fi
             STORE_PASS="android"
             KEY_PASS="android"
             ALIAS_NAME="releasekey"
+            echo "🔑 Repo keystore alias: $ALIAS_NAME"
+            keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1 | head -6
           fi
+
+          # Verify the alias actually exists in the keystore before signing
+          if ! keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1 | grep -q "$ALIAS_NAME"; then
+            echo "❌ ERROR: Alias '$ALIAS_NAME' not found in keystore! Aborting."
+            keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1
+            exit 1
+          fi
+          echo "✅ Alias '$ALIAS_NAME' verified in keystore."
 
           ANDROID_SDK_BUILD_TOOLS=$(find $ANDROID_HOME/build-tools -mindepth 1 -maxdepth 1 | sort -V | tail -n 1)
           echo "Using Android Build-Tools: $ANDROID_SDK_BUILD_TOOLS"
@@ -68,13 +82,13 @@ jobs:
           for apk in app/build/outputs/apk/release/*.apk; do
             if [ -f "$apk" ]; then
               filename=$(basename "$apk")
-              aligned_apk="aligned_$filename"
+              aligned_apk="/tmp/aligned_$filename"
               final_apk="signed_apks/$filename"
 
               $ANDROID_SDK_BUILD_TOOLS/zipalign -v -p 4 "$apk" "$aligned_apk"
 
               $ANDROID_SDK_BUILD_TOOLS/apksigner sign \
-                --ks app/release.keystore \
+                --ks /tmp/signing.keystore \
                 --ks-pass pass:"$STORE_PASS" \
                 --key-pass pass:"$KEY_PASS" \
                 --ks-key-alias "$ALIAS_NAME" \
@@ -85,6 +99,7 @@ jobs:
               rm -f "$aligned_apk"
             fi
           done
+
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
