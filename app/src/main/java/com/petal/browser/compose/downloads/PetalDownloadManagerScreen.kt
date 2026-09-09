@@ -1050,7 +1050,7 @@ private fun DownloadProgressRing(
     }
 }
 
-private fun openDownloadedFile(context: Context, item: DownloadItem) {
+internal fun openDownloadedFile(context: Context, item: DownloadItem) {
     try {
         var contentUri: Uri? = null
         var mimeType: String? = null
@@ -1152,7 +1152,7 @@ private fun copyDownloadLink(context: Context, url: String) {
     }
 }
 
-private fun shareDownloadedFile(context: Context, item: DownloadItem) {
+internal fun shareDownloadedFile(context: Context, item: DownloadItem) {
     try {
         var contentUri: Uri? = null
         val localUriString = item.localUri

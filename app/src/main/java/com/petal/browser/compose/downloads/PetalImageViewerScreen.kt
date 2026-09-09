@@ -23,7 +23,6 @@
 
 package com.petal.browser.compose.downloads
 
-import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -941,7 +940,7 @@ private fun setAsWallpaper(context: Context, item: DownloadItem) {
             )
         } else rawUri
 
-        val intent = Intent(WallpaperManager.ACTION_ATTACH_DATA).apply {
+        val intent = Intent(Intent.ACTION_ATTACH_DATA).apply {
             setDataAndType(contentUri, "image/*")
             putExtra("mimeType", "image/*")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
