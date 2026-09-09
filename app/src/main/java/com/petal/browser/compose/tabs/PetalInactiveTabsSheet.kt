@@ -20,6 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.HelperUnit
 import com.petal.browser.predictive.PetalPredictiveBackSurface
@@ -72,53 +74,26 @@ fun PetalInactiveTabsSheet(
 
             Column(modifier = Modifier.fillMaxSize()) {
 
-                // ── M3 Expressive Header ──
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 20.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                            Text(
-                                text = "Inactive Tabs",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            val subtitleText = if (thresholdDays > 0) {
-                                "Idle for $thresholdDays day${if (thresholdDays == 1) "" else "s"} · ${inactiveTabs.size} archived"
-                            } else {
-                                "${inactiveTabs.size} archived & duplicate tabs"
-                            }
-                            Text(
-                                text = subtitleText,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                            IconButton(onClick = onOpenSettings) {
-                                Icon(
-                                    Icons.Rounded.Settings,
-                                    contentDescription = "Inactive Settings",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            IconButton(onClick = onDismiss) {
-                                Icon(
-                                    Icons.Rounded.Close,
-                                    contentDescription = "Close",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                // ── M3 Expressive Header (shared component, matches rest of app) ──
+                val subtitleText = remember(thresholdDays, inactiveTabs.size) {
+                    if (thresholdDays > 0) {
+                        "Idle for $thresholdDays day${if (thresholdDays == 1) "" else "s"} · ${inactiveTabs.size} archived"
+                    } else {
+                        "${inactiveTabs.size} archived & duplicate tabs"
                     }
                 }
+                ExpressiveHeader(
+                    title = "Inactive Tabs",
+                    subtitle = subtitleText,
+                    onBack = onDismiss,
+                    actions = {
+                        HeaderActionIcon(
+                            icon = Icons.Rounded.Settings,
+                            contentDescription = "Inactive Settings",
+                            onClick = onOpenSettings
+                        )
+                    }
+                )
 
                 // ── Search Box ──
                 OutlinedTextField(

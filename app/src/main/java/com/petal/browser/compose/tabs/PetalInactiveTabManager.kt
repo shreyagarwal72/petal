@@ -149,6 +149,16 @@ object PetalInactiveTabManager {
         val archiveDuplicates = isArchiveDuplicatesEnabled(context)
         val autoClose3Months = isAutoClose3MonthsEnabled(context)
 
+        // 0. Seed access time for any open tab we haven't recorded yet. Without this,
+        // getTabLastAccess() falls back to 0L (the epoch) for a tab that simply hasn't
+        // been individually selected since app start, which made `now - lastAccess`
+        // always exceed the threshold and archived brand-new tabs immediately.
+        for (tab in openTabs) {
+            if (!tabAccessMap.containsKey(tab.id)) {
+                tabAccessMap[tab.id] = now
+            }
+        }
+
         // 1. Clean up 3-month-old inactive tabs
         if (autoClose3Months) {
             val threeMonthsMs = TimeUnit.DAYS.toMillis(90)
@@ -159,8 +169,11 @@ object PetalInactiveTabManager {
 
         // 2. Duplicate detection (keep the most recently accessed copy, archive older copies)
         if (archiveDuplicates && openTabs.size > 1) {
-            val urlGroups = openTabs.filter { !it.isIncognito && it.url.isNotBlank() && it.url != "about:blank" }
-                .groupBy { it.url.trim().lowercase() }
+            val urlGroups = openTabs.filter {
+                !it.isIncognito && it.url.isNotBlank() &&
+                    it.url != "about:blank" &&
+                    !it.url.equals("Petal Home", ignoreCase = true)
+            }.groupBy { it.url.trim().lowercase() }
 
             for ((_, duplicateTabs) in urlGroups) {
                 if (duplicateTabs.size > 1) {
