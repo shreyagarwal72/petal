@@ -109,14 +109,18 @@ fun PetalFancyWebLoadingBar(
         enter = fadeIn(),
         exit = fadeOut()
     ) {
+        // Use the same expressive linear treatment Zenith uses: a thick rounded
+        // wavy active stroke plus a subtle track.  The 12.dp container gives the
+        // wave enough vertical room to read clearly without changing any of the
+        // pull-to-refresh / contained loading surfaces.
         val coercedProgress = progress.coerceIn(0f, 1f)
         LinearWavyProgressIndicator(
             progress = { coercedProgress },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(10.dp),
+                .height(12.dp),
             color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
         )
     }
 }
