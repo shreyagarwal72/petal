@@ -403,16 +403,13 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
             }
             override fun onKill(session: GeckoSession) {
-                // Same recovery as onCrash: the OS/Gecko killed the content process
-                // (e.g. under memory pressure), leaving the session closed and unusable.
-                android.util.Log.w(TAG, "GeckoSession content process killed for $currentUrl - reopening session")
-                com.petal.browser.logger.PetalAppLogger.e(TAG, "GeckoSession content process killed for $currentUrl")
-                com.petal.browser.logger.PetalAppLogger.recordProcessCrash(
-                    context,
-                    TAG,
-                    "GeckoView Content Process Killed (OS OOM / Low Memory Kill)",
-                    "Active URL: $currentUrl | Title: $currentTitle"
-                )
+                // The OS/Gecko killed the content process (almost always a routine low-memory
+                // kill under system memory pressure, not an actual app fault). The session is
+                // reopened transparently below, so this is intentionally NOT reported as a
+                // crash - recordProcessCrash() is deliberately not called here so it can no
+                // longer trigger the crash-reporting dialog on next launch. A plain debug log
+                // line is kept for local troubleshooting only.
+                android.util.Log.w(TAG, "GeckoSession content process killed for $currentUrl (low memory) - reopening session")
                 recoverCrashedSession()
             }
 
