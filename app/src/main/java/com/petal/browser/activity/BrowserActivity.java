@@ -612,7 +612,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } else if (ninjaWebView != null) {
                     ninjaWebView.resetGestureExclusionRects();
                 }
-                resetGestureExclusionRects();
             });
         }
         predictiveBackRoot = findViewById(R.id.main);
