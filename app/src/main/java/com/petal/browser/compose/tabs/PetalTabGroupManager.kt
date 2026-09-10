@@ -148,6 +148,7 @@ object PetalTabGroupManager {
     }
 
     @Synchronized
+    @JvmStatic
     fun addTabToGroup(context: Context, groupId: String, tabId: String): PetalTabGroup? {
         init(context)
         val group = groupsMap[groupId] ?: return null
