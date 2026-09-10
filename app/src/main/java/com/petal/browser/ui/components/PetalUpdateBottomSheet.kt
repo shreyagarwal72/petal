@@ -601,6 +601,7 @@ fun PetalChangelogHistorySheetContent(
     val context = LocalContext.current
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -660,7 +661,8 @@ fun PetalChangelogHistorySheetContent(
                         Card(
                             shape = RoundedCornerShape(28.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                contentColor = MaterialTheme.colorScheme.onSurface
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -708,6 +710,7 @@ fun PetalChangelogHistorySheetContent(
                                     Surface(
                                         shape = RoundedCornerShape(14.dp),
                                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        contentColor = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         PetalMarkdownText(
