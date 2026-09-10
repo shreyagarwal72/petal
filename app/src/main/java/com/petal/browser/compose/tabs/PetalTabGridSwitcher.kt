@@ -848,6 +848,7 @@ fun PetalTabGridSwitcher(
             onRestoreTab = { tabToRestore ->
                 PetalInactiveTabManager.restoreInactiveTab(context, tabToRestore)
                 refreshInactiveTabs()
+                isInactiveSheetVisible = false
                 onRestoreTab?.invoke(
                     PetalTabItem(
                         id = tabToRestore.id,
@@ -863,6 +864,7 @@ fun PetalTabGridSwitcher(
             onRestoreAllTabs = {
                 val restored = PetalInactiveTabManager.restoreAllInactiveTabs(context)
                 refreshInactiveTabs()
+                isInactiveSheetVisible = false
                 restored.forEach { tabToRestore ->
                     onRestoreTab?.invoke(
                         PetalTabItem(

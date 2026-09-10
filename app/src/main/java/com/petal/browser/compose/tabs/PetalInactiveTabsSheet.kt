@@ -272,7 +272,7 @@ private fun InactiveTabItemCard(
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+        tonalElevation = 1.dp,
         modifier = modifier
             .fillMaxWidth()
             .clickable { onRestore() }
@@ -291,7 +291,7 @@ private fun InactiveTabItemCard(
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.size(38.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
