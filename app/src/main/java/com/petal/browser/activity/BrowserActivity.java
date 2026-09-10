@@ -2145,6 +2145,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     ((NinjaWebView) controller).destroy();
                     com.petal.browser.unit.TabThumbnailCache.remove(((NinjaWebView) controller).getTabId());
                 } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                    com.petal.browser.unit.TabThumbnailCache.remove(((com.petal.browser.view.PetalGeckoView) controller).getTabId());
                     ((com.petal.browser.view.PetalGeckoView) controller).destroy();
                 }
                 com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
@@ -2172,6 +2173,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (controller instanceof NinjaWebView) {
                 ((NinjaWebView) controller).destroy();
             } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                com.petal.browser.unit.TabThumbnailCache.remove(((com.petal.browser.view.PetalGeckoView) controller).getTabId());
                 ((com.petal.browser.view.PetalGeckoView) controller).destroy();
             }
             boolean isClosingCurrent = (controller == currentAlbumController);

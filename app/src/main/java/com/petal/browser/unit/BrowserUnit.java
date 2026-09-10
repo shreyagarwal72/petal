@@ -258,10 +258,8 @@ public class BrowserUnit {
             }
         }
 
-        // 3. Clear session tab thumbnails and reset open tabs state
-        try {
-            TabThumbnailCache.evictAll();
-        } catch (Exception ignored) {}
+        // 3. Keep tab thumbnails across app exits. They are removed only when the
+        // corresponding tab is explicitly closed or all tabs are explicitly closed.
         try {
             sp.edit().putString("openTabs", "").apply();
         } catch (Exception ignored) {}
