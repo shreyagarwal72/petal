@@ -321,12 +321,20 @@ fun PetalLinkContextMenuSheet(
                 }
             }
 
-            primaryActions.forEach { spec ->
-                ContextMenuItemRow(
-                    icon = spec.icon,
-                    title = spec.title,
-                    onClick = spec.onClick
-                )
+            Surface(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow
+            ) {
+                Column {
+                    primaryActions.forEach { spec ->
+                        ContextMenuItemRow(
+                            icon = spec.icon,
+                            title = spec.title,
+                            onClick = spec.onClick
+                        )
+                    }
+                }
             }
 
             HorizontalDivider(
@@ -404,12 +412,20 @@ fun PetalLinkContextMenuSheet(
                 }
             }
 
-            shareActions.forEach { spec ->
-                ContextMenuItemRow(
-                    icon = spec.icon,
-                    title = spec.title,
-                    onClick = spec.onClick
-                )
+            Surface(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow
+            ) {
+                Column {
+                    shareActions.forEach { spec ->
+                        ContextMenuItemRow(
+                            icon = spec.icon,
+                            title = spec.title,
+                            onClick = spec.onClick
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(8.dp))
