@@ -5,9 +5,9 @@ import android.webkit.URLUtil
 import androidx.lifecycle.lifecycleScope
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity
-import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
+import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import com.petal.browser.download.DownloadFileNameResolver
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.HelperUnit
@@ -243,12 +243,6 @@ object BrowserContextMenuManager {
                     }
                 }
 
-                override fun onScanImage() {
-                    if (urlResult.isNotBlank()) {
-                        PetalImageScannerBridge.show(activity, urlResult)
-                    }
-                }
-
                 override fun onShareImage() {
                     if (urlResult.isNotBlank()) {
                         ImageActionHelper.shareImage(activity, urlResult)
@@ -257,6 +251,12 @@ object BrowserContextMenuManager {
 
                 override fun onShareLink() {
                     activity.shareLink(HelperUnit.domain(urlResult), urlResult)
+                }
+
+                override fun onScanImage() {
+                    if (urlResult.isNotBlank()) {
+                        PetalImageScannerBridge.show(activity, urlResult)
+                    }
                 }
 
                 override fun onSearchWithGoogleLens() {
