@@ -695,6 +695,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     com.petal.browser.unit.TabSessionManager.loadSession(this);
             if (savedSession != null && !savedSession.isEmpty()) {
                 com.petal.browser.view.PetalGeckoView activeRestoredGeckoView = null;
+                String activeRestoredUrl = null;
                 int activeIndex = -1;
                 for (int i = 0; i < savedSession.size(); i++) {
                     if (savedSession.get(i).isActive) {
@@ -716,11 +717,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             restoredGeckoView.setTabId(record.persistentTabId);
                         }
                         restoredGeckoView.setBrowserController(this);
-                        if (record.url != null && !record.url.isEmpty() && !isHomePage(record.url)) {
-                            restoredGeckoView.loadUrl(record.url);
-                        } else {
-                            restoredGeckoView.loadUrl("about:blank");
-                        }
+                        activeRestoredUrl = record.url;
                         if (record.title != null && !record.title.isEmpty()) {
                             restoredGeckoView.setAlbumTitle(record.title, record.url);
                         }
@@ -743,6 +740,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     showAlbum(activeRestoredGeckoView);
                 } else if (BrowserContainer.size() > 0) {
                     showAlbum(BrowserContainer.get(0));
+                }
+                final String urlToRestore = activeRestoredUrl;
+                if (urlToRestore != null && activeRestoredGeckoView != null) {
+                    activeRestoredGeckoView.post(() -> activeRestoredGeckoView.loadUrl(
+                            urlToRestore.isEmpty() || isHomePage(urlToRestore) ? "about:blank" : urlToRestore));
                 }
             }
         } catch (Exception e) {
