@@ -113,7 +113,6 @@ private fun PetalPagePreviewSheet(
     val previewGeckoView = remember { PetalGeckoView(context) }
 
     DisposableEffect(url) {
-        previewGeckoView.loadUrl(url)
         onDispose {
             previewGeckoView.destroy()
         }
@@ -194,6 +193,7 @@ private fun PetalPagePreviewSheet(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT
                             )
+                            post { loadUrl(url) }
                         }
                     },
                     modifier = Modifier.fillMaxSize(),
