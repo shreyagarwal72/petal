@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,9 +13,12 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,7 +45,7 @@ import com.petal.browser.ui.components.getGroupItemShape
 fun SettingsHubScreen(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    onCategoryClick: (SettingsCategory) -> Unit,
+    onCategoryClick: (SettingsCategory, String?) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -54,6 +58,17 @@ fun SettingsHubScreen(
     val matchingItems = searchResult.matchingItems
     val didYouMean = searchResult.didYouMean
 
+    var isSearchOpen by rememberSaveable { mutableStateOf(searchQuery.isNotBlank()) }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(isSearchOpen) {
+        if (isSearchOpen && searchQuery.isEmpty()) {
+            try {
+                focusRequester.requestFocus()
+            } catch (_: Exception) {}
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -65,31 +80,52 @@ fun SettingsHubScreen(
             ExpressiveHeader(
                 title = "Settings",
                 subtitle = "Browser Preferences & Customization",
-                onBack = onNavigateBack
+                onBack = onNavigateBack,
+                actions = {
+                    HeaderActionIcon(
+                        icon = if (isSearchOpen) Icons.Rounded.Close else Icons.Rounded.Search,
+                        contentDescription = if (isSearchOpen) "Close search" else "Search settings",
+                        onClick = {
+                            if (isSearchOpen) {
+                                isSearchOpen = false
+                                onSearchQueryChange("")
+                            } else {
+                                isSearchOpen = true
+                            }
+                        }
+                    )
+                }
             )
 
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp),
-                placeholder = { Text("Search settings...") },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { onSearchQueryChange("") }) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Clear")
+            AnimatedVisibility(
+                visible = isSearchOpen,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 6.dp)
+                        .focusRequester(focusRequester),
+                    placeholder = { Text("Search settings...") },
+                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { onSearchQueryChange("") }) {
+                                Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                            }
                         }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
                 )
-            )
+            }
 
             // Typo / Misspelling Suggestion Banner
             if (isSearching && didYouMean != null) {
@@ -148,6 +184,18 @@ fun SettingsHubScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                // Feature Banner Carousel from Zenith (displayed when not actively searching)
+                if (!isSearching) {
+                    item {
+                        PetalFeaturedCarousel(
+                            onCategoryClick = onCategoryClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                        )
+                    }
+                }
+
                 // Matching Detailed Settings Items (when searching)
                 if (isSearching && matchingItems.isNotEmpty()) {
                     item {
@@ -164,7 +212,7 @@ fun SettingsHubScreen(
                         SearchItemCard(
                             item = item,
                             shape = shape,
-                            onClick = { onCategoryClick(item.category) }
+                            onClick = { onCategoryClick(item.category, item.id) }
                         )
                     }
 
@@ -191,7 +239,7 @@ fun SettingsHubScreen(
                             subtitle = category.subtitle,
                             icon = painterResource(category.iconRes),
                             shape = shape,
-                            onClick = { onCategoryClick(category) }
+                            onClick = { onCategoryClick(category, null) }
                         )
                     }
                 } else if (isSearching && matchingItems.isEmpty()) {

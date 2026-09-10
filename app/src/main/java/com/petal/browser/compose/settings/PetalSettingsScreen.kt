@@ -175,7 +175,7 @@ fun PetalSettingsScreen(
                     SettingsHubScreen(
                         searchQuery = searchQuery,
                         onSearchQueryChange = { searchQuery = it },
-                        onCategoryClick = { currentCategory = it },
+                        onCategoryClick = { category, _ -> currentCategory = category },
                         onNavigateBack = onBackPress
                     )
                 }
@@ -196,7 +196,7 @@ fun PetalSettingsScreen(
                 SettingsHubScreen(
                     searchQuery = searchQuery,
                     onSearchQueryChange = { searchQuery = it },
-                    onCategoryClick = { currentCategory = it },
+                    onCategoryClick = { category, _ -> currentCategory = category },
                     onNavigateBack = onBackPress
                 )
             }
