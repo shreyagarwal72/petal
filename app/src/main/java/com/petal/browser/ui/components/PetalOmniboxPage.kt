@@ -824,7 +824,7 @@ fun PetalOmniboxPage(
                                         ) { index, item ->
                                             Surface(
                                                 shape = RoundedCornerShape(16.dp),
-                                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                                color = MaterialTheme.colorScheme.surfaceContainer,
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     // Rows fade in/out and slide smoothly into their

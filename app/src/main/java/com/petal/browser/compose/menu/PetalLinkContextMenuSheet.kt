@@ -189,11 +189,7 @@ fun PetalLinkContextMenuSheet(
             }
 
             Spacer(Modifier.height(8.dp))
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-            )
+            Spacer(Modifier.height(8.dp))
 
             // Primary Navigation Actions
             val primaryActions = remember(isImage, isVideo, isAudio, selectedText, linkUrl) {
@@ -337,11 +333,7 @@ fun PetalLinkContextMenuSheet(
                 }
             }
 
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-            )
+            Spacer(Modifier.height(8.dp))
 
             // Clipboard & Sharing Actions
             val shareActions = remember(isImage, isVideo, isAudio, selectedText, linkUrl) {

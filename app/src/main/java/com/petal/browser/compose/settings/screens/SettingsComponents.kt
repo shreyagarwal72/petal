@@ -59,12 +59,14 @@ fun SettingsCategoryCard(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Tight rhythm for controls inside one category; category screens
+            // provide the larger separation between cards.
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Card Header matching main settings page icon badge style
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (iconRes != null || icon != null) {
