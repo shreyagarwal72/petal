@@ -31,7 +31,8 @@ public class ImageActionHelper {
         }
 
         try {
-            if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+            String scheme = Uri.parse(imageUrl).getScheme();
+            if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
                 // Resolve the real filename/extension from the server's actual headers
                 // before enqueueing - PetalDownloadEngine hands the destination filename
                 // to Fetch2 up front and never renames the file afterward, so guessing
@@ -57,14 +58,13 @@ public class ImageActionHelper {
                         resolvedFileName = fallback;
                     }
                     String finalFileName = resolvedFileName;
-                    com.petal.browser.download.PetalDownloadEngine.getInstance(context).enqueueDownload(
-                        context,
-                        imageUrl,
-                        finalFileName,
-                        null,
-                        null,
-                        null
-                    );
+                    // Use the browser download entry point so the request carries the
+                    // WebView's cookies, user agent, permission handling, and the same
+                    // retry/notification pipeline as normal downloads. Directly
+                    // enqueueing here omitted those headers, which breaks hotlinked,
+                    // signed, and authenticated image URLs even though they display in
+                    // the page.
+                    BrowserUnit.download(context, imageUrl, finalFileName, "image/*");
                     if (context instanceof android.app.Activity) {
                         ((android.app.Activity) context).runOnUiThread(() ->
                             NinjaToast.show(context, "Image download started"));
