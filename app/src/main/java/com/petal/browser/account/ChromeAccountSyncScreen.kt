@@ -546,7 +546,7 @@ private fun RenderUserProfileContent(
                             Surface(
                                 shape = CircleShape,
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                border = if (isSelected) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                                border = if (isSelected) BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary) else null,
                                 modifier = Modifier
                                     .size(52.dp)
                                     .bouncyClickable { GoogleAccountManager.updateAvatarPreset(context, presetId) }

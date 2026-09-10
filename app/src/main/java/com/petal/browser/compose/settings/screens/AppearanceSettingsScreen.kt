@@ -692,7 +692,6 @@ private fun AppearanceHeroBanner(
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = cardBgColor,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
