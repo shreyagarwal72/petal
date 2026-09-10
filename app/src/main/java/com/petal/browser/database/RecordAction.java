@@ -46,6 +46,7 @@ public class RecordAction {
         values.put(RecordUnit.COLUMN_TITLE, record.getTitle().trim());
         values.put(RecordUnit.COLUMN_URL, record.getURL().trim());
         values.put(RecordUnit.COLUMN_TIME, record.getIconColor());
+        values.put(RecordUnit.COLUMN_IS_READING_LIST, record.isReadingList() ? 1 : 0);
         database.insert(RecordUnit.TABLE_BOOKMARK, null, values);
     }
 
@@ -61,6 +62,7 @@ public class RecordAction {
                         RecordUnit.COLUMN_TITLE,
                         RecordUnit.COLUMN_URL,
                         RecordUnit.COLUMN_TIME
+                        ,RecordUnit.COLUMN_IS_READING_LIST
                 },
                 null,
                 null,
@@ -122,6 +124,7 @@ public class RecordAction {
                         RecordUnit.COLUMN_TITLE,
                         RecordUnit.COLUMN_URL,
                         RecordUnit.COLUMN_TIME
+                        ,RecordUnit.COLUMN_IS_READING_LIST
                 },
                 null,
                 null,
@@ -295,6 +298,9 @@ public class RecordAction {
         record.setTitle(cursor.getString(0));
         record.setURL(cursor.getString(1));
         record.setTime(cursor.getLong(2));
+        if (type == BOOKMARK_ITEM && cursor.getColumnCount() > 3) {
+            record.setReadingList(cursor.getInt(3) != 0);
+        }
 
         if (type == BOOKMARK_ITEM) {
             record.setIconColor(record.getTime());
