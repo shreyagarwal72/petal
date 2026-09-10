@@ -475,8 +475,6 @@ fun PetalOmniboxPage(
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
                                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                tonalElevation = 2.dp,
-                                shadowElevation = 1.dp,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -628,8 +626,6 @@ fun PetalOmniboxPage(
                                     },
                                     shape = RoundedCornerShape(24.dp),
                                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    tonalElevation = 3.dp,
-                                    shadowElevation = 2.dp,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -818,28 +814,36 @@ fun PetalOmniboxPage(
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                                         verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        itemsIndexed(
-                                            items = suggestions,
-                                            key = { _, item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
-                                        ) { index, item ->
-                                            Surface(
-                                                shape = RoundedCornerShape(16.dp),
-                                                color = MaterialTheme.colorScheme.surfaceContainer,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    // Rows fade in/out and slide smoothly into their
-                                                    // new position as `suggestions` is replaced on
-                                                    // every keystroke, instead of the list just
-                                                    // popping to its new contents.
-                                                    .animateItem(
-                                                        fadeInSpec = tween(220),
-                                                        fadeOutSpec = tween(150),
-                                                        placementSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioNoBouncy,
-                                                            stiffness = Spring.StiffnessMediumLow
-                                                        )
-                                                    )
-                                                    .clip(RoundedCornerShape(16.dp))
+                                         itemsIndexed(
+                                             items = suggestions,
+                                             key = { _, item -> "${if (item.isHistory) "h" else "s"}_${item.query}" }
+                                         ) { index, item ->
+                                             val itemShape = getGroupItemShape(
+                                                 index = index,
+                                                 count = suggestions.size,
+                                                 topCorner = 16.dp,
+                                                 bottomCorner = 16.dp,
+                                                 middleCorner = 6.dp,
+                                                 singleCorner = 16.dp
+                                             )
+                                             Surface(
+                                                 shape = itemShape,
+                                                 color = MaterialTheme.colorScheme.surfaceContainer,
+                                                 modifier = Modifier
+                                                     .fillMaxWidth()
+                                                     // Rows fade in/out and slide smoothly into their
+                                                     // new position as `suggestions` is replaced on
+                                                     // every keystroke, instead of the list just
+                                                     // popping to its new contents.
+                                                     .animateItem(
+                                                         fadeInSpec = tween(220),
+                                                         fadeOutSpec = tween(150),
+                                                         placementSpec = spring(
+                                                             dampingRatio = Spring.DampingRatioNoBouncy,
+                                                             stiffness = Spring.StiffnessMediumLow
+                                                         )
+                                                     )
+                                                     .clip(itemShape)
                                                     .combinedClickable(
                                                         onClick = {
                                                             val trimmed = item.query.trim()

@@ -321,7 +321,7 @@ private fun ExtensionRow(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -441,7 +441,7 @@ private fun AddExtensionSheet(
             Spacer(Modifier.height(8.dp))
             PetalExtensionManager.catalog.forEach { entry ->
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()

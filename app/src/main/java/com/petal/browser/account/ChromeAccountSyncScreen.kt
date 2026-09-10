@@ -823,58 +823,16 @@ private fun RenderUserProfileContent(
                 )
             }
 
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.primary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.database_filled),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Storage & Data Audit",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Inspect application storage & manage browsing data",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(14.dp))
-
-                    // Storage Consumption Summary Card
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            run {
+                val storageItemCount = 2
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // Item 0: Web Cache & App Storage with Clear action
+                    Surface(
+                        shape = getGroupItemShape(0, storageItemCount),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -901,7 +859,7 @@ private fun RenderUserProfileContent(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.restore_page_filled),
+                                            painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.database_filled),
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                             modifier = Modifier.size(22.dp)
@@ -923,7 +881,7 @@ private fun RenderUserProfileContent(
 
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                                 ) {
                                     Text(
                                         text = cacheSizeMb,
@@ -972,8 +930,7 @@ private fun RenderUserProfileContent(
                         }
                     }
 
-                    Spacer(Modifier.height(12.dp))
-
+                    // Item 1: Clear Browsing Data
                     SettingsItem(
                         title = "Clear Browsing Data",
                         subtitle = "Select & remove history, cookies, web storage, autofill & permissions",
@@ -984,8 +941,7 @@ private fun RenderUserProfileContent(
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         },
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = RoundedCornerShape(16.dp),
+                        shape = getGroupItemShape(1, storageItemCount),
                         onClick = { showClearDataDialog = true }
                     )
                 }
