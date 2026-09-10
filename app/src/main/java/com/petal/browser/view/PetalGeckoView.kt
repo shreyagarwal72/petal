@@ -1151,7 +1151,6 @@ class PetalGeckoView @JvmOverloads constructor(
             try {
                 super.setSystemGestureExclusionRects(java.util.Collections.emptyList())
             } catch (ignored: Exception) {}
-            resetGestureExclusionRects()
         }
     }
 
@@ -1164,18 +1163,7 @@ class PetalGeckoView @JvmOverloads constructor(
      * which is what caused the native crash. Restricting this to edge-swipe starts removes
      * that walk from the ordinary tap/login path entirely.
      */
-    private val edgeSwipeThresholdPx: Float
-        get() = resources.displayMetrics.density * 24f
-
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
-                val nearEdge = ev.x <= edgeSwipeThresholdPx || ev.x >= width - edgeSwipeThresholdPx
-                if (nearEdge) {
-                    resetGestureExclusionRects()
-                }
-            }
-        }
         return super.dispatchTouchEvent(ev)
     }
 
