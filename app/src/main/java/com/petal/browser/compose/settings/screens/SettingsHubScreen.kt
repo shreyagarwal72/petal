@@ -28,6 +28,7 @@ import com.petal.browser.compose.settings.PetalSettingsSearchIndex
 import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.compose.settings.SettingsSearchItem
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.SettingsMenuItem
 import com.petal.browser.ui.components.getGroupItemShape

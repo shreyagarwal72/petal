@@ -31,6 +31,7 @@ import com.petal.browser.ui.components.availableSearchEngines
 fun SearchHomeSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null,
     viewModel: SearchHomeSettingsViewModel = hiltViewModel()
 ) {
     val searchEngineIndex by viewModel.searchEngineIndex.collectAsStateWithLifecycle()
@@ -57,6 +58,7 @@ fun SearchHomeSettingsScreen(
         onForceDarkModeChange = viewModel::setForceDarkMode,
         onEnableLiveSuggestionsChange = viewModel::setEnableLiveSuggestions,
         onNavigateBack = onNavigateBack,
+        targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
     )
 }
@@ -79,6 +81,7 @@ fun SearchHomeSettingsScreenContent(
     onForceDarkModeChange: (Boolean) -> Unit,
     onEnableLiveSuggestionsChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
+    targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -126,7 +129,12 @@ fun SearchHomeSettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Default Search Engine Card
-                SettingsCategoryCard(title = "Default Search Engine", iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded) {
+                SettingsCategoryCard(
+                    title = "Default Search Engine",
+                    iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded,
+                    cardId = "search_engine",
+                    targetHighlightId = targetHighlightItemId
+                ) {
                     val currentEngineName = remember(searchEngineIndex) {
                         val idx = searchEngineIndex.toIntOrNull() ?: 0
                         availableSearchEngines.find { it.index == idx }?.name ?: "Google"
@@ -166,7 +174,12 @@ fun SearchHomeSettingsScreenContent(
                 }
 
                 // Homepage & Media Playback Card
-                SettingsCategoryCard(title = "Homepage & Media Playback", iconRes = com.petal.browser.R.drawable.home_filled) {
+                SettingsCategoryCard(
+                    title = "Homepage & Media Playback",
+                    iconRes = com.petal.browser.R.drawable.home_filled,
+                    cardId = "search_homepage",
+                    targetHighlightId = targetHighlightItemId
+                ) {
                     Text(
                         "Custom Homepage:",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),

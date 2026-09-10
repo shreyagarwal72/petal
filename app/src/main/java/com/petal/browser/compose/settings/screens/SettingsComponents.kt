@@ -1,23 +1,26 @@
 package com.petal.browser.compose.settings.screens
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.*
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -27,23 +30,101 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.PetalSlider
+import kotlinx.coroutines.delay
+
+fun isSettingHighlightMatch(cardId: String?, targetHighlightId: String?): Boolean {
+    if (cardId.isNullOrBlank() || targetHighlightId.isNullOrBlank()) return false
+    val c = cardId.trim().lowercase()
+    val t = targetHighlightId.trim().lowercase()
+    return c == t || t.startsWith("${c}_") || c.startsWith("${t}_") || c.contains(t) || t.contains(c)
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+fun Modifier.highlightableSetting(
+    cardId: String?,
+    targetHighlightId: String?,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(20.dp)
+): Modifier = composed {
+    val isMatched = remember(cardId, targetHighlightId) {
+        isSettingHighlightMatch(cardId, targetHighlightId)
+    }
+    var isHighlighted by remember { mutableStateOf(false) }
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+
+    LaunchedEffect(cardId, targetHighlightId) {
+        if (isMatched) {
+            isHighlighted = true
+            try {
+                bringIntoViewRequester.bringIntoView()
+            } catch (_: Exception) {}
+            delay(1000L)
+            isHighlighted = false
+        }
+    }
+
+    val borderWidth by animateDpAsState(
+        targetValue = if (isHighlighted) 2.5.dp else 0.dp,
+        animationSpec = tween(durationMillis = 300),
+        label = "highlightBorder"
+    )
+
+    this
+        .bringIntoViewRequester(bringIntoViewRequester)
+        .then(
+            if (borderWidth > 0.dp) {
+                Modifier.border(borderWidth, MaterialTheme.colorScheme.primary, shape)
+            } else Modifier
+        )
+}
 
 /**
  * Unified Contained Settings Category Card matching main hub specification:
  * Outer Card with surfaceVariant 70% alpha, 24dp corners, 0dp elevation.
  * Integrated header featuring 48.dp primary-colored badge with 12.dp rounded corners,
  * onPrimary icon tint, SemiBold titleMedium typography, and horizontal divider.
+ * Supports dynamic 1-second visual highlight and auto-scroll when targeted from settings search.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SettingsCategoryCard(
     title: String,
+    modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     iconRes: Int? = null,
+    cardId: String? = null,
+    targetHighlightId: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val isMatched = remember(cardId, targetHighlightId) {
+        isSettingHighlightMatch(cardId, targetHighlightId)
+    }
+    var isHighlighted by remember { mutableStateOf(false) }
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+
+    LaunchedEffect(cardId, targetHighlightId) {
+        if (isMatched) {
+            isHighlighted = true
+            try {
+                bringIntoViewRequester.bringIntoView()
+            } catch (_: Exception) {}
+            delay(1000L) // Highlight for 1 second
+            isHighlighted = false
+        }
+    }
+
+    val borderWidth by animateDpAsState(
+        targetValue = if (isHighlighted) 2.5.dp else 0.dp,
+        animationSpec = tween(durationMillis = 300),
+        label = "highlightBorder"
+    )
+    val highlightBorder = if (borderWidth > 0.dp) {
+        BorderStroke(borderWidth, MaterialTheme.colorScheme.primary)
+    } else null
+
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .bringIntoViewRequester(bringIntoViewRequester)
             .animateContentSize(
                 animationSpec = androidx.compose.animation.core.spring(
                     dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
@@ -52,15 +133,18 @@ fun SettingsCategoryCard(
             ),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = if (isHighlighted) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLow
+            },
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = highlightBorder,
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isHighlighted) 4.dp else 0.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            // Tight rhythm for controls inside one category; category screens
-            // provide the larger separation between cards.
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Card Header matching main settings page icon badge style
