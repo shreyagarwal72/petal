@@ -42,7 +42,6 @@ interface PetalLinkContextMenuHandler {
     fun onOpenInNewTab() {}
     fun onOpenInNewTabInGroup() {}
     fun onOpenInIncognitoTab() {}
-    fun onOpenInNewWindow() {}
     fun onPreviewPage() {}
     fun onCopyLinkAddress() {}
     fun onCopyLinkText() {}
@@ -312,10 +311,6 @@ fun PetalLinkContextMenuSheet(
                             MenuItemSpec("Open in Incognito tab", Icons.Rounded.VisibilityOff) {
                                 onDismiss()
                                 handler.onOpenInIncognitoTab()
-                            },
-                            MenuItemSpec("Open in new window", Icons.Rounded.OpenInBrowser) {
-                                onDismiss()
-                                handler.onOpenInNewWindow()
                             },
                             MenuItemSpec("Preview page", Icons.Rounded.FindInPage) {
                                 onDismiss()

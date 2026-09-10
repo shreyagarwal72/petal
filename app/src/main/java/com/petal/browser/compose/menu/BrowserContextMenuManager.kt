@@ -75,9 +75,6 @@ object BrowserContextMenuManager {
                     activity.addAlbum(HelperUnit.domain(imageURL), imageURL, false, true)
                 }
 
-                override fun onOpenInNewWindow() {
-                    launchInNewWindow(activity, imageURL)
-                }
 
                 override fun onPreviewPage() {
                     PetalPagePreviewBridge.show(activity, imageURL)
@@ -235,9 +232,6 @@ object BrowserContextMenuManager {
                     activity.addAlbum(HelperUnit.domain(urlResult), urlResult, false, true)
                 }
 
-                override fun onOpenInNewWindow() {
-                    launchInNewWindow(activity, urlResult)
-                }
 
                 override fun onPreviewPage() {
                     PetalPagePreviewBridge.show(activity, urlResult)
@@ -376,9 +370,6 @@ object BrowserContextMenuManager {
 
                 override fun onOpenInNewTabInGroup() {}
                 override fun onOpenInIncognitoTab() {}
-                override fun onOpenInNewWindow() {}
-                override fun onPreviewPage() {}
-                override fun onCopyLinkText() {}
                 override fun onDownloadLink() {}
                 override fun onOpenImageInNewTab() {}
                 override fun onCopyImage() {}
