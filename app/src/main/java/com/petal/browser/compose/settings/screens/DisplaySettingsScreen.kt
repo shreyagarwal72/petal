@@ -33,6 +33,7 @@ import com.petal.browser.ui.components.ScrollFadeRow
 fun DisplaySettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null,
     viewModel: DisplaySettingsViewModel = hiltViewModel()
 ) {
     val touchHaptics by viewModel.touchHaptics.collectAsStateWithLifecycle()
@@ -71,6 +72,7 @@ fun DisplaySettingsScreen(
         onAddressBarSwipeTabsChange = viewModel::setAddressBarSwipeTabs,
         onAddressBarQuickActionsChange = viewModel::setAddressBarQuickActions,
         onNavigateBack = onNavigateBack,
+        targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
     )
 }
@@ -100,6 +102,7 @@ fun DisplaySettingsScreenContent(
     onAddressBarSwipeTabsChange: (Boolean) -> Unit,
     onAddressBarQuickActionsChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
+    targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -124,7 +127,12 @@ fun DisplaySettingsScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Accessibility & Display Options Card
-                SettingsCategoryCard(title = "Accessibility & Display Options", iconRes = com.petal.browser.R.drawable.mobile_vibrate_filled) {
+                SettingsCategoryCard(
+                    title = "Accessibility & Display Options",
+                    iconRes = com.petal.browser.R.drawable.mobile_vibrate_filled,
+                    cardId = "display",
+                    targetHighlightId = targetHighlightItemId
+                ) {
                     ToggleRow(
                         title = "Predictive Back Animations",
                         subtitle = "Enable fluid predictive back gesture scaling and slide transitions across all screens",
@@ -195,7 +203,7 @@ fun DisplaySettingsScreenContent(
                     // Text Font Scale Slider & Live Box
                     Surface(
                         shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -229,7 +237,7 @@ fun DisplaySettingsScreenContent(
                             Spacer(Modifier.height(12.dp))
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
@@ -253,7 +261,7 @@ fun DisplaySettingsScreenContent(
                     // Default Page Zoom Slider & Live Box
                     Surface(
                         shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -287,7 +295,7 @@ fun DisplaySettingsScreenContent(
                             Spacer(Modifier.height(12.dp))
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {

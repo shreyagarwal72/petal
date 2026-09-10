@@ -30,6 +30,7 @@ import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 fun PrivacySettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null,
     viewModel: PrivacySettingsViewModel = hiltViewModel()
 ) {
     val adBlockEnabled by viewModel.adBlockEnabled.collectAsStateWithLifecycle()
@@ -74,6 +75,7 @@ fun PrivacySettingsScreen(
         onPrivateDnsModeChange = viewModel::setPrivateDnsMode,
         onCustomDohUrlChange = viewModel::setCustomDohUrl,
         onNavigateBack = onNavigateBack,
+        targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
     )
 }
@@ -108,6 +110,7 @@ fun PrivacySettingsScreenContent(
     onPrivateDnsModeChange: (String) -> Unit,
     onCustomDohUrlChange: (String) -> Unit,
     onNavigateBack: () -> Unit,
+    targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -210,7 +213,9 @@ fun PrivacySettingsScreenContent(
                 // ── Section 1: Shield & Anti-Tracking Protection ──
                 SettingsCategoryCard(
                     title = "Shield & Anti-Tracking",
-                    iconRes = com.petal.browser.R.drawable.layers_filled
+                    iconRes = com.petal.browser.R.drawable.layers_filled,
+                    cardId = "privacy_adblock",
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     ToggleRow(
                         title = "Ad & Tracker Shield",
@@ -281,7 +286,9 @@ fun PrivacySettingsScreenContent(
                 // ── Section 2: Security & Authentication ──
                 SettingsCategoryCard(
                     title = "Security & Passkeys",
-                    icon = Icons.Rounded.Lock
+                    icon = Icons.Rounded.Lock,
+                    cardId = "privacy_security",
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     ToggleRow(
                         title = "HTTPS Security Enforcer",
@@ -302,7 +309,9 @@ fun PrivacySettingsScreenContent(
                 // ── Section 3: Web Content & Navigation ──
                 SettingsCategoryCard(
                     title = "Web Content & Navigation",
-                    icon = Icons.Rounded.Code
+                    icon = Icons.Rounded.Code,
+                    cardId = "privacy_cookies",
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     ToggleRow(
                         title = "Enable JavaScript",
@@ -328,7 +337,12 @@ fun PrivacySettingsScreenContent(
                 }
 
                 // Private DNS Protection Card
-                SettingsCategoryCard(title = "Private DNS Protection", iconRes = com.petal.browser.R.drawable.database_filled) {
+                SettingsCategoryCard(
+                    title = "Private DNS Protection",
+                    iconRes = com.petal.browser.R.drawable.database_filled,
+                    cardId = "privacy_private_dns",
+                    targetHighlightId = targetHighlightItemId
+                ) {
                     Text(
                         "Encrypt DNS queries to prevent tracking & block malicious content:",
                         style = MaterialTheme.typography.bodySmall,
@@ -348,8 +362,8 @@ fun PrivacySettingsScreenContent(
                         Surface(
                             onClick = { onPrivateDnsModeChange(mode) },
                             shape = RoundedCornerShape(16.dp),
-                            color = if (privateDnsMode == mode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-                            border = if (privateDnsMode == mode) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+                            color = if (privateDnsMode == mode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            border = if (privateDnsMode == mode) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -366,7 +380,7 @@ fun PrivacySettingsScreenContent(
                                     Text(
                                         text = desc,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = if (privateDnsMode == mode) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (privateDnsMode == mode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 if (privateDnsMode == mode) {

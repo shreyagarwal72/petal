@@ -43,6 +43,7 @@ import com.petal.browser.widget.PetalSearchWidgetProvider
 fun AppearanceSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null,
     viewModel: AppearanceSettingsViewModel = hiltViewModel()
 ) {
     val appFont by viewModel.appFont.collectAsStateWithLifecycle()
@@ -56,7 +57,6 @@ fun AppearanceSettingsScreen(
     val amoledMode by viewModel.amoledMode.collectAsStateWithLifecycle()
     val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
     val floatingTabBar by viewModel.floatingTabBar.collectAsStateWithLifecycle()
-    val expressiveColors by viewModel.expressiveColors.collectAsStateWithLifecycle()
     val expressiveBgShapes by viewModel.expressiveBgShapes.collectAsStateWithLifecycle()
     val bgShapeChangeMode by viewModel.bgShapeChangeMode.collectAsStateWithLifecycle()
     val bgShapeRotationMin by viewModel.bgShapeRotationMin.collectAsStateWithLifecycle()
@@ -75,7 +75,6 @@ fun AppearanceSettingsScreen(
         amoledMode = amoledMode,
         themeConfig = themeConfig,
         floatingTabBar = floatingTabBar,
-        expressiveColors = expressiveColors,
         expressiveBgShapes = expressiveBgShapes,
         bgShapeChangeMode = bgShapeChangeMode,
         bgShapeRotationMin = bgShapeRotationMin,
@@ -92,13 +91,13 @@ fun AppearanceSettingsScreen(
         onAmoledModeChange = viewModel::setAmoledMode,
         onThemeConfigChange = viewModel::setThemeConfig,
         onFloatingTabBarChange = viewModel::setFloatingTabBar,
-        onExpressiveColorsChange = viewModel::setExpressiveColors,
         onExpressiveBgShapesChange = viewModel::setExpressiveBgShapes,
         onBgShapeChangeModeChange = viewModel::setBgShapeChangeMode,
         onBgShapeRotationMinChange = viewModel::setBgShapeRotationMin,
         onHighRefreshRateChange = viewModel::setHighRefreshRate,
         onCustomFontNameChange = viewModel::setCustomFontName,
         onNavigateBack = onNavigateBack,
+        targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
     )
 }
@@ -116,7 +115,6 @@ fun AppearanceSettingsScreenContent(
     amoledMode: Boolean,
     themeConfig: ThemeConfig,
     floatingTabBar: Boolean,
-    expressiveColors: Boolean,
     expressiveBgShapes: Boolean,
     bgShapeChangeMode: String,
     bgShapeRotationMin: Int,
@@ -133,13 +131,13 @@ fun AppearanceSettingsScreenContent(
     onAmoledModeChange: (Boolean) -> Unit,
     onThemeConfigChange: (ThemeConfig) -> Unit,
     onFloatingTabBarChange: (Boolean) -> Unit,
-    onExpressiveColorsChange: (Boolean) -> Unit,
     onExpressiveBgShapesChange: (Boolean) -> Unit,
     onBgShapeChangeModeChange: (String) -> Unit,
     onBgShapeRotationMinChange: (Int) -> Unit,
     onHighRefreshRateChange: (Boolean) -> Unit,
     onCustomFontNameChange: (String) -> Unit,
     onNavigateBack: () -> Unit,
+    targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -181,23 +179,12 @@ fun AppearanceSettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Hero Banner
-                AppearanceHeroBanner(
-                    selectedTheme = themeConfig,
-                    onThemeSelected = { newTheme ->
-                        onThemeConfigChange(newTheme)
-                        when (newTheme) {
-                            ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                            ThemeConfig.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                            ThemeConfig.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                        }
-                    }
-                )
-
                 // Section 1: App Theme & Dynamic Color Palette
                 SettingsCategoryCard(
                     title = "Theme & Color Palette",
-                    iconRes = com.petal.browser.R.drawable.brightness_medium_filled
+                    iconRes = com.petal.browser.R.drawable.brightness_medium_filled,
+                    cardId = "appearance_theme",
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
                         "Customize app color schemes, dynamic theming and OLED black mode",
@@ -370,20 +357,6 @@ fun AppearanceSettingsScreenContent(
                         }
                     }
 
-                    // Live Mini Browser Skeleton Preview
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Theme Live Skeleton Preview:",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    MiniBrowserSkeletonPreview(
-                        scheme = activePreviewScheme,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    )
                     // Material You Dynamic Color Toggle
                     ToggleRow(
                         title = "Material You Dynamic Color",
@@ -407,20 +380,14 @@ fun AppearanceSettingsScreenContent(
                             PetalSearchWidgetProvider.updateAllWidgets(context)
                         }
                     )
-                    // Expressive Colors Toggle
-                    ToggleRow(
-                        title = "Expressive Container Colors",
-                        subtitle = "Use vibrant container tint contrast for background and surfaces",
-                        icon = Icons.Rounded.Palette,
-                        checked = expressiveColors,
-                        onCheckedChange = onExpressiveColorsChange
-                    )
                 }
 
                 // Section 2: Custom Fonts & Typography
                 SettingsCategoryCard(
                     title = "Typography & Fonts",
-                    iconRes = com.petal.browser.R.drawable.database_filled
+                    iconRes = com.petal.browser.R.drawable.database_filled,
+                    cardId = "appearance_font",
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
                         "Choose typography style or load custom TrueType / OpenType font files",
@@ -543,7 +510,9 @@ fun AppearanceSettingsScreenContent(
                 // Section 3: Layout & Ambient Morphing Shapes
                 SettingsCategoryCard(
                     title = "Layout & Expressive Motion",
-                    iconRes = com.petal.browser.R.drawable.layers_filled
+                    iconRes = com.petal.browser.R.drawable.layers_filled,
+                    cardId = "appearance_layout",
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     // Floating Tab Bar Toggle
                     ToggleRow(
@@ -628,7 +597,9 @@ fun AppearanceSettingsScreenContent(
                 // Section 4: Display Refresh Rate & Performance
                 SettingsCategoryCard(
                     title = "Display & Performance",
-                    icon = Icons.Rounded.Speed
+                    icon = Icons.Rounded.Speed,
+                    cardId = "appearance_refresh",
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     ToggleRow(
                         title = "High Refresh Rate (120Hz+)",
@@ -652,224 +623,6 @@ fun AppearanceSettingsScreenContent(
             }
         }
     }
-}
-
-@Composable
-private fun AppearanceHeroBanner(
-    selectedTheme: ThemeConfig,
-    onThemeSelected: (ThemeConfig) -> Unit
-) {
-    val isDarkSelected = selectedTheme == ThemeConfig.DARK
-    val isLightSelected = selectedTheme == ThemeConfig.LIGHT
-
-    val containerColor = MaterialTheme.colorScheme.primaryContainer
-    val onContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
-    val primaryColor = MaterialTheme.colorScheme.primary
-
-    val cardBgColor by animateColorAsState(
-        targetValue = containerColor,
-        animationSpec = androidx.compose.animation.core.tween(500),
-        label = "heroCardBg"
-    )
-
-    val darkCardScale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isDarkSelected) 1.05f else 1.0f,
-        animationSpec = spring(
-            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
-            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
-        ),
-        label = "darkScale"
-    )
-    val lightCardScale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isLightSelected) 1.05f else 1.0f,
-        animationSpec = spring(
-            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
-            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
-        ),
-        label = "lightScale"
-    )
-
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = cardBgColor,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = onContainerColor.copy(alpha = 0.12f),
-                modifier = Modifier
-                    .size(48.dp)
-                    .align(Alignment.TopEnd)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    AnimatedContent(
-                        targetState = isDarkSelected,
-                        transitionSpec = {
-                            (scaleIn() + fadeIn()).togetherWith(scaleOut() + fadeOut())
-                        },
-                        label = "badgeIcon"
-                    ) { dark ->
-                        Icon(
-                            imageVector = if (dark) Icons.Rounded.Nightlight else Icons.Rounded.LightMode,
-                            contentDescription = null,
-                            tint = onContainerColor,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 40.dp)
-            ) {
-                Text(
-                    text = "Appearance",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color = onContainerColor
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = "Turn it into pure eye candy.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = onContainerColor.copy(alpha = 0.85f)
-                )
-                Spacer(Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Surface(
-                        onClick = { onThemeSelected(ThemeConfig.DARK) },
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFF141218),
-                        border = if (isDarkSelected) BorderStroke(3.dp, primaryColor) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(72.dp)
-                            .graphicsLayer {
-                                scaleX = darkCardScale
-                                scaleY = darkCardScale
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(primaryColor)
-                                    .then(if (isDarkSelected) Modifier.petalShimmerEffect() else Modifier)
-                            )
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(64.dp)
-                                        .height(8.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.White.copy(alpha = 0.7f))
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .width(42.dp)
-                                        .height(6.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.White.copy(alpha = 0.4f))
-                                )
-                            }
-                        }
-                    }
-
-                    Surface(
-                        onClick = { onThemeSelected(ThemeConfig.LIGHT) },
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFFF7F2FA),
-                        border = if (isLightSelected) BorderStroke(3.dp, primaryColor) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(72.dp)
-                            .graphicsLayer {
-                                scaleX = lightCardScale
-                                scaleY = lightCardScale
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(primaryColor)
-                                    .then(if (isLightSelected) Modifier.petalShimmerEffect() else Modifier)
-                            )
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(64.dp)
-                                        .height(8.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFF1D1B20).copy(alpha = 0.7f))
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .width(42.dp)
-                                        .height(6.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFF1D1B20).copy(alpha = 0.4f))
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun Modifier.petalShimmerEffect(): Modifier = composed {
-    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "Shimmer Transition")
-    val translateAnim by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            animation = androidx.compose.animation.core.tween(durationMillis = 1200, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Restart,
-        ),
-        label = "Shimmer Offset",
-    )
-
-    background(
-        brush = androidx.compose.ui.graphics.Brush.linearGradient(
-            colors = listOf(
-                Color.White.copy(alpha = 0.0f),
-                Color.White.copy(alpha = 0.4f),
-                Color.White.copy(alpha = 0.0f),
-            ),
-            start = androidx.compose.ui.geometry.Offset.Zero,
-            end = androidx.compose.ui.geometry.Offset(x = translateAnim, y = translateAnim),
-        ),
-    )
 }
 
 @Composable
@@ -944,156 +697,6 @@ private fun PaletteSwatchSquare(
                                     .background(scheme.surfaceContainerHighest)
                             )
                         }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MiniBrowserSkeletonPreview(
-    scheme: ColorScheme,
-    modifier: Modifier = Modifier
-) {
-    val sizeFactor = 0.85f
-    fun scaled(dp: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp = (dp.value * sizeFactor).dp
-
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Surface(
-            color = scheme.surfaceContainerLow,
-            shape = RoundedCornerShape(scaled(24.dp)),
-            border = BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = 0.5f)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(scaled(14.dp)),
-                verticalArrangement = Arrangement.spacedBy(scaled(10.dp))
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(scaled(20.dp)),
-                    color = scheme.surfaceContainerHigh,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(scaled(38.dp))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = scaled(10.dp)),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(scaled(6.dp))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(scaled(14.dp))
-                                    .clip(CircleShape)
-                                    .background(scheme.primary)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .width(scaled(100.dp))
-                                    .height(scaled(10.dp))
-                                    .clip(RoundedCornerShape(scaled(6.dp)))
-                                    .background(scheme.onSurfaceVariant.copy(alpha = 0.35f))
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .size(scaled(20.dp))
-                                .clip(CircleShape)
-                                .background(scheme.secondaryContainer)
-                        )
-                    }
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(scaled(16.dp)),
-                    color = scheme.primaryContainer,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(scaled(85.dp))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(scaled(12.dp)),
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(scaled(110.dp))
-                                    .height(scaled(14.dp))
-                                    .clip(RoundedCornerShape(scaled(6.dp)))
-                                    .background(scheme.onPrimaryContainer.copy(alpha = 0.6f))
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(scaled(18.dp))
-                                    .clip(CircleShape)
-                                    .background(scheme.tertiary)
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.6f)
-                                .height(scaled(8.dp))
-                                .clip(RoundedCornerShape(scaled(4.dp)))
-                                .background(scheme.onPrimaryContainer.copy(alpha = 0.3f))
-                        )
-                    }
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(scaled(50.dp)),
-                    color = scheme.surfaceContainerHighest,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(scaled(34.dp))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = scaled(14.dp)),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(scaled(20.dp))
-                                .clip(RoundedCornerShape(scaled(10.dp)))
-                                .background(scheme.primary)
-                        )
-                        Spacer(Modifier.width(scaled(8.dp)))
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(scaled(20.dp))
-                                .clip(RoundedCornerShape(scaled(10.dp)))
-                                .background(scheme.secondary)
-                        )
-                        Spacer(Modifier.width(scaled(8.dp)))
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(scaled(20.dp))
-                                .clip(RoundedCornerShape(scaled(10.dp)))
-                                .background(scheme.tertiary)
-                        )
                     }
                 }
             }
