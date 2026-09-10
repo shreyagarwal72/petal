@@ -235,7 +235,20 @@ fun PetalUserProfileScreen(
         coroutineScope.launch {
             try {
                 val intent = GoogleAccountManager.createLegacySignInIntent(context)
-                legacySignInLauncher.launch(intent)
+                if (intent != null) {
+                    legacySignInLauncher.launch(intent)
+                } else {
+                    // Fallback to Credential Manager if legacy intent cannot be constructed
+                    when (val result = GoogleAccountManager.signIn(context)) {
+                        is GoogleSignInResult.Success -> {
+                            snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
+                        }
+                        is GoogleSignInResult.Failure -> {
+                            snackbarHostState.showSnackbar(result.message)
+                        }
+                    }
+                    isSigningIn = false
+                }
             } catch (e: Throwable) {
                 // Fallback to Credential Manager if Play Services auth client fails
                 when (val result = GoogleAccountManager.signIn(context)) {
@@ -498,6 +511,71 @@ private fun RenderUserProfileContent(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    Spacer(Modifier.height(14.dp))
+
+                    if (profile.isSignedIn) {
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    GoogleAccountManager.signOut(context)
+                                    snackbarHostState.showSnackbar("Signed out successfully")
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Logout,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Sign Out",
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                            )
+                        }
+                    } else {
+                        Button(
+                            onClick = { onStartGoogleSignIn() },
+                            enabled = !isSigningIn,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                        ) {
+                            if (isSigningIn) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "Signing in...",
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Rounded.AccountCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "Sign in with Google",
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(Modifier.height(18.dp))
 

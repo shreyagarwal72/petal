@@ -1,6 +1,8 @@
 package com.petal.browser.account
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.util.Base64
 import androidx.compose.runtime.getValue
@@ -276,21 +278,41 @@ object GoogleAccountManager {
     // OAuth config. Uses the classic Intent + onActivityResult-style flow instead of
     // Credential Manager's IPC path.
 
-    private fun buildLegacySignInClient(context: Context): GoogleSignInClient {
-        val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(WEB_CLIENT_ID)
-            .requestEmail()
-            .requestProfile()
-            .build()
-        return GoogleSignIn.getClient(context, options)
+    fun findActivity(context: Context): Activity? {
+        var ctx = context
+        while (ctx is ContextWrapper) {
+            if (ctx is Activity) return ctx
+            ctx = ctx.baseContext
+        }
+        return null
+    }
+
+    private fun buildLegacySignInClient(context: Context): GoogleSignInClient? {
+        val targetContext = findActivity(context) ?: context
+        return try {
+            val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(WEB_CLIENT_ID)
+                .requestEmail()
+                .requestProfile()
+                .build()
+            GoogleSignIn.getClient(targetContext, options)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            null
+        }
     }
 
     /**
      * Returns the Intent to launch (via an ActivityResultLauncher) to start the legacy
      * Google Sign-In account picker + consent flow.
      */
-    fun createLegacySignInIntent(context: Context): Intent {
-        return buildLegacySignInClient(context).signInIntent
+    fun createLegacySignInIntent(context: Context): Intent? {
+        return try {
+            buildLegacySignInClient(context)?.signInIntent
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            null
+        }
     }
 
     /**
@@ -324,7 +346,7 @@ object GoogleAccountManager {
      */
     suspend fun legacySignOut(context: Context) {
         try {
-            buildLegacySignInClient(context).signOut()
+            buildLegacySignInClient(context)?.signOut()
         } catch (e: Throwable) {
             e.printStackTrace()
         }
@@ -349,7 +371,13 @@ object GoogleAccountManager {
      * Auth to show the account picker UI).
      */
     suspend fun signIn(context: Context): GoogleSignInResult {
-        val credentialManager = CredentialManager.create(context)
+        val activityContext = findActivity(context) ?: context
+        val credentialManager = try {
+            CredentialManager.create(activityContext)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            return GoogleSignInResult.Failure("CredentialManager unavailable: ${e.message}")
+        }
 
         val response = try {
             // Attempt 1: silent request for an already-authorized Google account.
@@ -361,7 +389,7 @@ object GoogleAccountManager {
             val request = GetCredentialRequest.Builder()
                 .addCredentialOption(googleIdOption)
                 .build()
-            credentialManager.getCredential(context, request)
+            credentialManager.getCredential(activityContext, request)
         } catch (e: GetCredentialException) {
             e.printStackTrace()
             try {
@@ -370,10 +398,13 @@ object GoogleAccountManager {
                 val request = GetCredentialRequest.Builder()
                     .addCredentialOption(signInOption)
                     .build()
-                credentialManager.getCredential(context, request)
+                credentialManager.getCredential(activityContext, request)
             } catch (e2: GetCredentialException) {
                 e2.printStackTrace()
                 return GoogleSignInResult.Failure(e2.message ?: "Sign-in was cancelled or unavailable")
+            } catch (e2: Throwable) {
+                e2.printStackTrace()
+                return GoogleSignInResult.Failure(e2.message ?: "Sign-in error")
             }
         } catch (e: Throwable) {
             e.printStackTrace()
