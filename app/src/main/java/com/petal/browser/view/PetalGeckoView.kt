@@ -640,9 +640,20 @@ class PetalGeckoView @JvmOverloads constructor(
      */
     @MainThread
     fun adoptPopupSession(popupSession: GeckoSession) {
-        // Close and discard the session that initGeckoSession created automatically.
-        if (session.isOpen && session !== popupSession) {
-            session.close()
+        // Detach the automatically-created session from GeckoView before closing it.
+        // Closing an attached session while an OAuth/login popup is being adopted can
+        // race Gecko's compositor teardown and crash the native content process.
+        if (session !== popupSession) {
+            try {
+                geckoView.releaseSession()
+            } catch (_: Throwable) {
+                // Older GeckoView builds may already have released the view.
+            }
+            try {
+                if (session.isOpen) session.close()
+            } catch (_: Throwable) {
+                // The session may have completed teardown between the checks.
+            }
         }
         session = popupSession
         // Re-init all delegates on the adopted session without calling open() again.
