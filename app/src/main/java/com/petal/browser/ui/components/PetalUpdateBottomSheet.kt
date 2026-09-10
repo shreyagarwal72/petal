@@ -453,7 +453,7 @@ fun PetalUpdateSheetContent(
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(28.dp),
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -607,20 +607,20 @@ fun PetalChangelogHistorySheetContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = 24.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(52.dp)
+                modifier = Modifier.size(64.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Rounded.History,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             }
@@ -658,27 +658,27 @@ fun PetalChangelogHistorySheetContent(
                 ) {
                     items(releases) { rel ->
                         Card(
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(28.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
+                            Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Surface(
-                                        color = MaterialTheme.colorScheme.primary,
+                                        color = MaterialTheme.colorScheme.tertiary,
                                         shape = CircleShape
                                     ) {
                                         Text(
                                             text = rel.versionName,
                                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onPrimary
+                                            color = MaterialTheme.colorScheme.onTertiary
                                         )
                                     }
                                     if (rel.releaseUrl.isNotBlank()) {
