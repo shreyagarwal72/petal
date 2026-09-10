@@ -202,8 +202,8 @@ fun DisplaySettingsScreenContent(
                     }
                     // Text Font Scale Slider & Live Box
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -260,8 +260,8 @@ fun DisplaySettingsScreenContent(
 
                     // Default Page Zoom Slider & Live Box
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(

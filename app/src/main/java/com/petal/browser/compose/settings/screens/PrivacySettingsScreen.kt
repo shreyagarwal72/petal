@@ -362,8 +362,7 @@ fun PrivacySettingsScreenContent(
                         Surface(
                             onClick = { onPrivateDnsModeChange(mode) },
                             shape = RoundedCornerShape(16.dp),
-                            color = if (privateDnsMode == mode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                            border = if (privateDnsMode == mode) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            color = if (privateDnsMode == mode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(

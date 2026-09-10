@@ -643,19 +643,14 @@ private fun PaletteSwatchSquare(
             label = "paletteOuterCorner"
         )
         val outlinePadding by animateDpAsState(
-            targetValue = if (selected) 4.dp else 0.dp,
+            targetValue = if (selected) 3.dp else 0.dp,
             label = "paletteOutlinePadding"
-        )
-        val borderWidth by animateDpAsState(
-            targetValue = if (selected) 2.dp else 0.dp,
-            label = "paletteBorderWidth"
         )
 
         Surface(
             onClick = onClick,
-            color = scheme.surfaceContainerHighest,
+            color = if (selected) scheme.primaryContainer else scheme.surfaceContainerHighest,
             shape = RoundedCornerShape(outerCorner),
-            border = if (borderWidth > 0.dp) BorderStroke(borderWidth, scheme.primary) else null,
             modifier = Modifier.fillMaxSize()
         ) {
             Box(

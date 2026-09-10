@@ -119,7 +119,7 @@ fun PetalLinkContextMenuSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
@@ -188,7 +188,6 @@ fun PetalLinkContextMenuSheet(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
             Spacer(Modifier.height(8.dp))
 
             // Primary Navigation Actions
@@ -317,23 +316,26 @@ fun PetalLinkContextMenuSheet(
                 }
             }
 
-            Surface(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow
-            ) {
-                Column {
-                    primaryActions.forEach { spec ->
-                        ContextMenuItemRow(
-                            icon = spec.icon,
-                            title = spec.title,
-                            onClick = spec.onClick
-                        )
+            if (primaryActions.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                ) {
+                    Column {
+                        primaryActions.forEachIndexed { index, spec ->
+                            val shape = getGroupItemShape(index, primaryActions.size, topCorner = 20.dp, bottomCorner = 20.dp, middleCorner = 6.dp, singleCorner = 20.dp)
+                            ContextMenuItemRow(
+                                icon = spec.icon,
+                                title = spec.title,
+                                shape = shape,
+                                onClick = spec.onClick
+                            )
+                        }
                     }
                 }
+                Spacer(Modifier.height(8.dp))
             }
-
-            Spacer(Modifier.height(8.dp))
 
             // Clipboard & Sharing Actions
             val shareActions = remember(isImage, isVideo, isAudio, selectedText, linkUrl) {
@@ -404,23 +406,26 @@ fun PetalLinkContextMenuSheet(
                 }
             }
 
-            Surface(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow
-            ) {
-                Column {
-                    shareActions.forEach { spec ->
-                        ContextMenuItemRow(
-                            icon = spec.icon,
-                            title = spec.title,
-                            onClick = spec.onClick
-                        )
+            if (shareActions.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                ) {
+                    Column {
+                        shareActions.forEachIndexed { index, spec ->
+                            val shape = getGroupItemShape(index, shareActions.size, topCorner = 20.dp, bottomCorner = 20.dp, middleCorner = 6.dp, singleCorner = 20.dp)
+                            ContextMenuItemRow(
+                                icon = spec.icon,
+                                title = spec.title,
+                                shape = shape,
+                                onClick = spec.onClick
+                            )
+                        }
                     }
                 }
+                Spacer(Modifier.height(8.dp))
             }
-
-            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -429,12 +434,14 @@ fun PetalLinkContextMenuSheet(
 private fun ContextMenuItemRow(
     icon: ImageVector,
     title: String,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(0.dp),
     onClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(shape)
             .clickable(onClick = {
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
                     .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)

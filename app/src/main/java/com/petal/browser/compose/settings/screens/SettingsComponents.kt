@@ -71,17 +71,17 @@ fun Modifier.highlightableSetting(
     this
         .bringIntoViewRequester(bringIntoViewRequester)
         .then(
-            if (borderWidth > 0.dp) {
-                Modifier.border(borderWidth, MaterialTheme.colorScheme.primary, shape)
+            if (isHighlighted) {
+                Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f), shape)
             } else Modifier
         )
 }
 
 /**
  * Unified Contained Settings Category Card matching main hub specification:
- * Outer Card with surfaceVariant 70% alpha, 24dp corners, 0dp elevation.
+ * Outer Card with surfaceContainerLow, 24dp corners, 0dp elevation.
  * Integrated header featuring 48.dp primary-colored badge with 12.dp rounded corners,
- * onPrimary icon tint, SemiBold titleMedium typography, and horizontal divider.
+ * onPrimary icon tint, SemiBold titleMedium typography.
  * Supports dynamic 1-second visual highlight and auto-scroll when targeted from settings search.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -112,15 +112,6 @@ fun SettingsCategoryCard(
         }
     }
 
-    val borderWidth by animateDpAsState(
-        targetValue = if (isHighlighted) 2.5.dp else 0.dp,
-        animationSpec = tween(durationMillis = 300),
-        label = "highlightBorder"
-    )
-    val highlightBorder = if (borderWidth > 0.dp) {
-        BorderStroke(borderWidth, MaterialTheme.colorScheme.primary)
-    } else null
-
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -134,14 +125,13 @@ fun SettingsCategoryCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isHighlighted) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
             } else {
                 MaterialTheme.colorScheme.surfaceContainerLow
             },
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        border = highlightBorder,
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isHighlighted) 4.dp else 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -201,11 +191,11 @@ fun ToggleRow(
 ) {
     val contentAlpha = if (enabled) 1f else 0.38f
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
     ) {
         Row(

@@ -142,7 +142,7 @@ fun SearchHomeSettingsScreenContent(
 
                     Surface(
                         onClick = { showEngineSheet = true },
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth()
                     ) {
