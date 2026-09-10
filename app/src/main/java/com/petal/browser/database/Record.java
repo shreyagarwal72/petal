@@ -10,6 +10,7 @@ public class Record {
     private long time;
     private String filename;
     private int ordinal;
+    private boolean isReadingList;
 
     public Record() {
         this.title = null;
@@ -18,6 +19,7 @@ public class Record {
         this.iconColor = 0L;
         this.filename = null;
         this.ordinal = 0;
+        this.isReadingList = false;
     }
 
     public Record(String title, String url, long time, long iconColor) {
@@ -27,6 +29,7 @@ public class Record {
         this.iconColor = iconColor;
         this.filename = null;
         this.ordinal = 0;
+        this.isReadingList = false;
     }
 
     public Record(String title, String url, String filename, int ordinal) {
@@ -88,5 +91,13 @@ public class Record {
 
     public void setOrdinal(int ordinal) {
         this.ordinal = ordinal;
+    }
+
+    public boolean isReadingList() {
+        return isReadingList;
+    }
+
+    public void setReadingList(boolean readingList) {
+        this.isReadingList = readingList;
     }
 }

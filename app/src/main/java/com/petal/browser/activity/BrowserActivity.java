@@ -5387,16 +5387,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
 
-    public void setWebView(String title, final String url, final boolean foreground) {
-        setWebView(title, url, foreground, false);
+    public com.petal.browser.view.PetalGeckoView setWebView(String title, final String url, final boolean foreground) {
+        return setWebView(title, url, foreground, false);
     }
 
-    public void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito) {
-        setWebView(title, url, foreground, isIncognito, false);
+    public com.petal.browser.view.PetalGeckoView setWebView(String title, final String url, final boolean foreground, final boolean isIncognito) {
+        return setWebView(title, url, foreground, isIncognito, false);
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito, final boolean isPopup) {
+    public com.petal.browser.view.PetalGeckoView setWebView(String title, final String url, final boolean foreground, final boolean isIncognito, final boolean isPopup) {
         com.petal.browser.view.PetalGeckoView geckoView = com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
             this, title, url, foreground, isIncognito
         );
@@ -5447,6 +5447,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         updateOmniBox();
         updatePersistentBottomNav();
+        return geckoView;
     }
 
     public synchronized void addAlbum(String title, final String url, final boolean foreground) {
@@ -5513,16 +5514,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
-    public synchronized void addAlbumInGroup(String title, final String url, final boolean foreground, final String groupId, final String groupTitle) {
-        setWebView(title, url, foreground, false);
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-            com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-            gv.setTabGroupId(groupId);
-            gv.setTabGroupTitle(groupTitle);
-        } else if (ninjaWebView != null) {
-            ninjaWebView.setTabGroupId(groupId);
-            ninjaWebView.setTabGroupTitle(groupTitle);
-        }
+    /**
+     * Opens a new tab and registers it as a member of the given tab group, both
+     * on the tab object itself (tabGroupId/tabGroupTitle, used for rendering)
+     * and in PetalTabGroupManager's persisted group membership list, using the
+     * tab's real ID from setWebView's return value rather than currentAlbumController
+     * - which only updates for foreground tabs and cannot be relied on here since
+     * "open in new tab in group" opens the new tab in the background.
+     */
+    public synchronized String addAlbumInGroup(String title, final String url, final boolean foreground, final String groupId, final String groupTitle) {
+        com.petal.browser.view.PetalGeckoView newTab = setWebView(title, url, foreground, false);
+        if (newTab == null) return null;
+
+        String newTabId = newTab.getTabId();
+        newTab.setTabGroupId(groupId);
+        newTab.setTabGroupTitle(groupTitle);
+        com.petal.browser.compose.tabs.PetalTabGroupManager.addTabToGroup(this, groupId, newTabId);
+        return newTabId;
     }
 
     public void triggerRebirth(Context context) {

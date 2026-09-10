@@ -13,6 +13,9 @@ import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -123,6 +127,7 @@ fun PetalBookmarksScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showClearConfirm by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var showReadingListOnly by remember { mutableStateOf(false) }
 
     // Load bookmarks from SQLite database asynchronously
     var rawBookmarks by remember { mutableStateOf<List<Record>?>(null) }
@@ -169,13 +174,14 @@ fun PetalBookmarksScreen(
         }
     }
 
-    val filteredBookmarks = remember(searchQuery, rawBookmarks) {
+    val filteredBookmarks = remember(searchQuery, rawBookmarks, showReadingListOnly) {
         val list = rawBookmarks ?: emptyList()
+        val scoped = if (showReadingListOnly) list.filter { it.isReadingList } else list
         if (searchQuery.isBlank()) {
-            list
+            scoped
         } else {
             val query = searchQuery.trim().lowercase()
-            list.filter { record ->
+            scoped.filter { record ->
                 (record.title?.lowercase()?.contains(query) == true) ||
                 (record.url?.lowercase()?.contains(query) == true)
             }
@@ -303,6 +309,43 @@ fun PetalBookmarksScreen(
                 )
 
                 Spacer(Modifier.height(8.dp))
+
+                // Reading List filter chip row - Material 3 Expressive FilterChip with a
+                // springy scale-in, matching the bouncy selection feel used elsewhere in
+                // Petal's Compose surfaces rather than a static Material 3 toggle.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val readingListCount = remember(rawBookmarks) {
+                        rawBookmarks?.count { it.isReadingList } ?: 0
+                    }
+                    val chipScale by animateFloatAsState(
+                        targetValue = if (showReadingListOnly) 1f else 0.96f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        ),
+                        label = "readingListChipScale"
+                    )
+                    FilterChip(
+                        selected = showReadingListOnly,
+                        onClick = { showReadingListOnly = !showReadingListOnly },
+                        label = { Text(if (readingListCount > 0) "Reading List ($readingListCount)" else "Reading List") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.AutoStories,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        modifier = Modifier.graphicsLayer(scaleX = chipScale, scaleY = chipScale)
+                    )
+                }
+
+                Spacer(Modifier.height(4.dp))
 
                 if (rawBookmarks == null) {
                     Box(
@@ -479,7 +522,7 @@ private fun BookmarkCardItem(
                     )
                 } else {
                     Icon(
-                        Icons.Rounded.Bookmark,
+                        if (record.isReadingList) Icons.Rounded.AutoStories else Icons.Rounded.Bookmark,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
@@ -503,6 +546,20 @@ private fun BookmarkCardItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (record.isReadingList) {
+                    Spacer(Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    ) {
+                        Text(
+                            text = "Reading List",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
 
             IconButton(onClick = onDelete) {

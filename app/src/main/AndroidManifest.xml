@@ -133,6 +133,7 @@
             android:windowSoftInputMode="adjustResize"
             android:fitsSystemWindows="false"
             android:exported="true"
+            android:resizeableActivity="true"
             android:launchMode="singleTask">
 
             <intent-filter>

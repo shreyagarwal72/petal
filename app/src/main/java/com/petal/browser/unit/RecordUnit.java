@@ -28,14 +28,23 @@ public class RecordUnit {
     public static final String COLUMN_DOMAIN = "DOMAIN";
     public static final String COLUMN_FILENAME = "FILENAME";
     public static final String COLUMN_ORDINAL = "ORDINAL";
+    public static final String COLUMN_IS_READING_LIST = "IS_READING_LIST";
 
     public static final String CREATE_BOOKMARK = "CREATE TABLE "
             + TABLE_BOOKMARK
             + " ("
             + " " + COLUMN_TITLE + " text,"
             + " " + COLUMN_URL + " text,"
-            + " " + COLUMN_TIME + " integer"
+            + " " + COLUMN_TIME + " integer,"
+            + " " + COLUMN_IS_READING_LIST + " integer default 0"
             + ")";
+
+    // Only used by RecordHelper.onUpgrade() to add the reading-list flag to an
+    // existing BOOKMARK table without touching already-saved rows; not used on
+    // fresh installs, where CREATE_BOOKMARK above already includes the column.
+    public static final String ALTER_BOOKMARK_ADD_READING_LIST = "ALTER TABLE "
+            + TABLE_BOOKMARK
+            + " ADD COLUMN " + COLUMN_IS_READING_LIST + " integer default 0";
 
     public static final String CREATE_HISTORY = "CREATE TABLE "
             + TABLE_HISTORY
