@@ -40,7 +40,8 @@ object PetalBrowserPermissionDialog {
             !granted(Manifest.permission.RECORD_AUDIO) ||
             !granted(Manifest.permission.ACCESS_FINE_LOCATION) ||
             (Build.VERSION.SDK_INT >= 33 && !granted(Manifest.permission.POST_NOTIFICATIONS)) ||
-            (Build.VERSION.SDK_INT >= 33 && !granted(Manifest.permission.READ_MEDIA_IMAGES) && !granted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED))
+            (Build.VERSION.SDK_INT >= 33 && !granted(Manifest.permission.READ_MEDIA_IMAGES) && !granted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)) ||
+            (Build.VERSION.SDK_INT < 33 && !granted(Manifest.permission.READ_EXTERNAL_STORAGE))
     }
 
     @JvmStatic
@@ -73,6 +74,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
     val location = permissionRefresh.let { granted(Manifest.permission.ACCESS_FINE_LOCATION) }
     val notifications = Build.VERSION.SDK_INT < 33 || permissionRefresh.let { granted(Manifest.permission.POST_NOTIFICATIONS) }
     val media = Build.VERSION.SDK_INT < 33 || permissionRefresh.let { granted(Manifest.permission.READ_MEDIA_IMAGES) || granted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) }
+    val storage = Build.VERSION.SDK_INT >= 33 || permissionRefresh.let { granted(Manifest.permission.READ_EXTERNAL_STORAGE) }
     val missing = !camera || !microphone || !location || !notifications || !media
     DisposableEffect(Unit) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
@@ -93,6 +95,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
             PermissionRow("Location", "Maps and location-aware websites", Icons.Outlined.LocationOn, location) { activity?.let { request.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) } }
             if (Build.VERSION.SDK_INT >= 33) PermissionRow("Notifications", "Download progress and browser alerts", Icons.Outlined.Notifications, notifications) { request.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) }
             if (Build.VERSION.SDK_INT >= 33) PermissionRow("Photos and videos", "File uploads and media selection", Icons.Outlined.PhotoLibrary, media) { request.launch(arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)) }
+            if (Build.VERSION.SDK_INT < 33) PermissionRow("Files and media", "File uploads and downloads", Icons.Outlined.Folder, storage) { request.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)) }
             Spacer(Modifier.height(16.dp))
             if (missing) Text("You can grant any permission later from Android Settings.", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
             Button(onClick = onDone, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) { Text(if (missing) "Continue" else "Everything is ready") }
