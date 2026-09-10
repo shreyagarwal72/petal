@@ -550,19 +550,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         browserBackCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
-                // Web content (especially GeckoView) may update gesture-exclusion rects
-                // while a page is loading. Clear them immediately when Android starts the
-                // predictive-back gesture so both websites and the Petal homepage receive it.
-                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
-                } else if (ninjaWebView != null) {
-                    ninjaWebView.resetGestureExclusionRects();
-                }
-                predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing && contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView) && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView);
-                if (predictiveBackStartedOnOverlay) {
-                    predictiveBackSwipeEdge = backEvent.getSwipeEdge();
-                    // Compose owns the overlay animation; do not also transform the Activity root.
-                }
+                // Browser content intentionally uses ordinary back navigation. Do not inspect
+                // or transform GeckoView/WebView while Android is previewing a gesture.
             }
 
             @Override
@@ -573,32 +562,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             @Override
             public void handleOnBackPressed() {
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                boolean overlayDismissedByGesture = predictiveBackStartedOnOverlay;
                 predictiveBackStartedOnOverlay = false;
-
-                // Check if an actual overlay screen is still showing in contentFrame
-                View topContent = (contentFrame != null && contentFrame.getChildCount() > 0) ? contentFrame.getChildAt(0) : null;
-                boolean isBrowserView = (topContent instanceof NinjaWebView) || (topContent instanceof com.petal.browser.view.PetalGeckoView);
-                boolean hasOverlayView = isOverlayScreenShowing || (topContent != null && !isBrowserView);
-
-                if (overlayDismissedByGesture && !hasOverlayView) {
-                    // Compose's PredictiveBackHandler handled the dismiss animation and showed the album
-                    resetPredictiveBackVisuals();
-                } else {
-                    performBackNavigation();
-                    resetPredictiveBackVisuals();
-                }
+                performBackNavigation();
             }
 
             @Override
             public void handleOnBackCancelled() {
-                boolean wasOverlay = predictiveBackStartedOnOverlay;
                 predictiveBackStartedOnOverlay = false;
-                if (wasOverlay) {
-                    settlePredictiveBackGesture(false);
-                } else {
-                    resetPredictiveBackVisuals();
-                }
             }
         };
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
