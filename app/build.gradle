@@ -162,8 +162,9 @@ dependencies {
     // Hidden API bypass for non-SDK interface access (e.g. GeckoThread on Android 15/16)
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
 
-    // Mozilla GeckoView (Release channel, stable 154 train)
-    // Avoid unverified snapshots (such as 155.0.20260903215306) which trigger libxul.so SIGSEGV on Android 16.
+    // Mozilla GeckoView (Release channel, latest stable release).
+    // Keep this pinned to an exact release so dependency resolution never
+    // silently downgrades the browser engine or substitutes a nightly build.
     implementation 'org.mozilla.geckoview:geckoview:155.0.20260903215306'
 
     // Dagger Hilt Dependency Injection
