@@ -795,6 +795,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             e.printStackTrace();
         }
         if (sp != null) {
+            if (com.petal.browser.ui.components.PetalBrowserPermissionDialog.shouldShow(this)) {
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() ->
+                        com.petal.browser.ui.components.PetalBrowserPermissionDialog.show(this), 350L);
+            }
             int currentVersionCode = 0;
             try {
                 currentVersionCode = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
