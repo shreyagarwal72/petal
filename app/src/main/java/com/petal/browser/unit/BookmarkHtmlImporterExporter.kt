@@ -107,20 +107,17 @@ object BookmarkHtmlImporterExporter {
 
                 val content = exportToJsonString(validBookmarks)
 
-                // Open output stream with write fallback ("rwt" -> "wt" -> "w")
+                // Open output stream with write fallback ("wt" -> "w" -> default)
                 val outputStream = try {
-                    // SAF providers commonly create a zero-byte document for rwt and
-                    // do not expose a seekable FileDescriptor. Plain write mode is
-                    // portable across DocumentsProvider implementations.
-                    context.contentResolver.openOutputStream(destinationUri, "w")
-                } catch (e: Exception) {
-                    null
-                } ?: try {
                     context.contentResolver.openOutputStream(destinationUri, "wt")
                 } catch (e: Exception) {
                     null
                 } ?: try {
                     context.contentResolver.openOutputStream(destinationUri, "w")
+                } catch (e: Exception) {
+                    null
+                } ?: try {
+                    context.contentResolver.openOutputStream(destinationUri)
                 } catch (e: Exception) {
                     null
                 } ?: throw IllegalStateException("Could not open destination storage stream")

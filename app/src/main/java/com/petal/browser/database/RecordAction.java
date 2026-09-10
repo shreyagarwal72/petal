@@ -124,7 +124,6 @@ public class RecordAction {
                         RecordUnit.COLUMN_TITLE,
                         RecordUnit.COLUMN_URL,
                         RecordUnit.COLUMN_TIME
-                        ,RecordUnit.COLUMN_IS_READING_LIST
                 },
                 null,
                 null,

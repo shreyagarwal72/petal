@@ -103,6 +103,7 @@ class PetalGeckoView @JvmOverloads constructor(
     private var canGoForwardVal: Boolean = false
     private val backHistoryUrls: java.util.ArrayList<String> = java.util.ArrayList()
     private var isNavigatingHistory: Boolean = false
+    private var lastRecordedHistoryUrl: String? = null
     private var favicon: Bitmap? = null
 
     private var mediaBridge: PetalMediaBridge? = null
@@ -181,22 +182,7 @@ class PetalGeckoView @JvmOverloads constructor(
                     }
                 }
 
-                if (!isIncognito && currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true) && !currentUrl.startsWith("about:")) {
-                    try {
-                        val action = com.petal.browser.database.RecordAction(context)
-                        action.open(true)
-                        if (action.checkUrl(currentUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)) {
-                            action.deleteURL(currentUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
-                        }
-                        action.addHistory(com.petal.browser.database.Record(currentTitle, currentUrl, System.currentTimeMillis(), 0))
-                        action.close()
-                        com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(currentUrl)
-                    } catch (ignored: Exception) {}
-
-                    try {
-                        com.petal.browser.unit.TabSessionManager.saveSession(context)
-                    } catch (ignored: Exception) {}
-                }
+                recordHistoryVisit(currentUrl, currentTitle)
             }
 
             override fun onProgressChange(session: GeckoSession, progress: Int) {
@@ -243,6 +229,7 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.updatePersistentBottomNav()
                     }
                 }
+                recordHistoryVisit(url, currentTitle)
             }
 
             override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<AllowOrDeny>? {
@@ -332,6 +319,9 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.runOnUiThread {
                             act.updateOmniBox()
                         }
+                    }
+                    if (it.isNotBlank() && it != "Petal Start" && it != "Petal Home" && currentUrl.isNotBlank()) {
+                        recordHistoryVisit(currentUrl, it)
                     }
                 }
             }
@@ -629,6 +619,43 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         applySettings()
+    }
+
+    /**
+     * Records or updates a history entry for the currently visited page, ensuring
+     * fallback titles when empty and capturing single-page application (SPA) navigations.
+     */
+    private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null) {
+        if (isIncognito || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) || targetUrl.startsWith("about:", ignoreCase = true)) {
+            return
+        }
+        val rawTitle = titleToRecord ?: currentTitle
+        val effectiveTitle = if (rawTitle.isBlank() || rawTitle == "Petal Start" || rawTitle == "Petal Home") {
+            try {
+                val host = android.net.Uri.parse(targetUrl).host
+                if (!host.isNullOrBlank()) host else targetUrl
+            } catch (_: Exception) {
+                targetUrl
+            }
+        } else {
+            rawTitle
+        }
+
+        try {
+            val action = com.petal.browser.database.RecordAction(context)
+            action.open(true)
+            if (action.checkUrl(targetUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)) {
+                action.deleteURL(targetUrl, com.petal.browser.unit.RecordUnit.TABLE_HISTORY)
+            }
+            action.addHistory(com.petal.browser.database.Record(effectiveTitle, targetUrl, System.currentTimeMillis(), 0))
+            action.close()
+            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(targetUrl)
+            lastRecordedHistoryUrl = targetUrl
+        } catch (_: Exception) {}
+
+        try {
+            com.petal.browser.unit.TabSessionManager.saveSession(context)
+        } catch (_: Exception) {}
     }
 
     /**
