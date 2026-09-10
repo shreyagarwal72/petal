@@ -712,8 +712,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     showAlbum(BrowserContainer.get(0));
                 }
                 final String urlToRestore = activeRestoredUrl;
-                if (urlToRestore != null && activeRestoredGeckoView != null) {
-                    activeRestoredGeckoView.post(() -> activeRestoredGeckoView.loadUrl(
+                final com.petal.browser.view.PetalGeckoView restoredActiveView = activeRestoredGeckoView;
+                if (urlToRestore != null && restoredActiveView != null) {
+                    restoredActiveView.post(() -> restoredActiveView.loadUrl(
                             urlToRestore.isEmpty() || isHomePage(urlToRestore) ? "about:blank" : urlToRestore));
                 }
             }
