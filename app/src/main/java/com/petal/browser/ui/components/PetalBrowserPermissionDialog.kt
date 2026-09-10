@@ -56,6 +56,13 @@ object PetalBrowserPermissionDialog {
             setContent { PetalExpressiveTheme { BrowserPermissionSheet { dialog.dismiss() } } }
         }
         dialog.setContentView(view)
+        dialog.setOnShowListener {
+            // Give Compose a real, bounded viewport. Without an expanded sheet,
+            // BottomSheetBehavior can consume vertical drags while the content is
+            // still wrap-content, making the permission list feel stuck.
+            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            dialog.behavior.skipCollapsed = true
+        }
         dialog.show()
     }
 }
@@ -84,7 +91,15 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.9f)
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Icon(Icons.Outlined.Security, null, Modifier.size(52.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(12.dp))
             Text("Permissions Required", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
