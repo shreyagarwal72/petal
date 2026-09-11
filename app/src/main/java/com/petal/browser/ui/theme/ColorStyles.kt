@@ -448,8 +448,8 @@ private val DefaultDark = darkColorScheme(
 )
 
 val PetalPalettes: List<PetalPalette> = listOf(
-    PetalPalette("default", "Indigo", Color(0xFF4D568D), DefaultLight, DefaultDark),
     PetalPalette("petal", "Petal Pink", Color(0xFFD81B60), PetalLight, PetalDark),
+    PetalPalette("default", "Indigo", Color(0xFF4D568D), DefaultLight, DefaultDark),
     PetalPalette("tide", "Tide", Color(0xFF00A88E), TideLight, TideDark),
     PetalPalette("zen", "Zen", Color(0xFF445E91), ZenLight, ZenDark),
     PetalPalette("ember", "Ember", Color(0xFFB4552D), EmberLight, EmberDark),

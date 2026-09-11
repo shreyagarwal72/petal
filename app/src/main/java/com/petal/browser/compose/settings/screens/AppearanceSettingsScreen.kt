@@ -2,6 +2,7 @@ package com.petal.browser.compose.settings.screens
 
 import android.app.Activity
 import android.content.Context
+import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
@@ -294,12 +295,13 @@ fun AppearanceSettingsScreenContent(
                         PetalPalettes.firstOrNull { it.id == paletteId } ?: PetalPalettes.first()
                     }
                     val isEffectiveAmoled = isDarkTheme && amoledMode
-                    val activeBaseScheme = remember(currentPalette, isDarkTheme, isEffectiveAmoled) {
-                        if (isDarkTheme) {
-                            if (isEffectiveAmoled) currentPalette.dark.applyAmoled() else currentPalette.dark
+                    val activeBaseScheme = remember(currentPalette, dynamicColor, isDarkTheme, isEffectiveAmoled, context) {
+                        val base = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            if (isDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
                         } else {
-                            currentPalette.light
+                            if (isDarkTheme) currentPalette.dark else currentPalette.light
                         }
+                        if (isDarkTheme && isEffectiveAmoled) base.applyAmoled() else base
                     }
                     val activePreviewScheme = remember(activeBaseScheme, colorStyle) {
                         activeBaseScheme.applyStyle(colorStyle)

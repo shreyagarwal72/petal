@@ -77,7 +77,7 @@ private fun getWidgetColorScheme(context: Context): androidx.compose.material3.C
             flags == Configuration.UI_MODE_NIGHT_YES
         }
     }
-    val paletteId = sp.getString("sp_palette_id", "tide") ?: "tide"
+    val paletteId = sp.getString("sp_palette_id", "petal") ?: "petal"
     val useDynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
     val isAmoled = sp.getBoolean("sp_amoled", false)
     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"

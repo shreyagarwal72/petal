@@ -38,7 +38,7 @@ val isDynamicColorSupported: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 val defaultPaletteId: String
-    get() = if (isDynamicColorSupported) "tide" else "petal"
+    get() = "petal"
 
 enum class ThemeConfig {
     FOLLOW_SYSTEM, LIGHT, DARK
