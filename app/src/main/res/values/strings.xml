@@ -184,4 +184,8 @@
     <string name="action_simulate_crash">Simulate Crash</string>
     <string name="action_export_logs">Export Logs (.zip)</string>
     <string name="crash_toast_recovered">Petal recovered from a crash. Diagnostic report saved.</string>
+
+    <!-- App Updates -->
+    <string name="downloading_update_progress">Downloading update (%1$d%%)</string>
+    <string name="action_install_update">Download &amp; Install Update</string>
 </resources>

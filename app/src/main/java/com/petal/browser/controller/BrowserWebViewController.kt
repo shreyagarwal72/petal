@@ -79,14 +79,16 @@ object BrowserWebViewController {
     }
 
     @JvmStatic
+    @JvmOverloads
     fun createAndConfigureGeckoView(
         activity: BrowserActivity,
         title: String?,
         url: String?,
         foreground: Boolean,
-        isIncognito: Boolean
+        isIncognito: Boolean,
+        adoptedSession: org.mozilla.geckoview.GeckoSession? = null
     ): PetalGeckoView {
-        val geckoView = PetalGeckoView(activity)
+        val geckoView = PetalGeckoView(context = activity, adoptedSession = adoptedSession)
         if (isIncognito) {
             geckoView.setIncognito(true)
         }

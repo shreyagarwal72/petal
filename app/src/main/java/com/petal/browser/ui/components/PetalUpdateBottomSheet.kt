@@ -346,6 +346,8 @@ fun PetalUpdateSheetContent(
     val coroutineScope = rememberCoroutineScope()
 
     var isDownloadEnqueued by remember { mutableStateOf(false) }
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableIntStateOf(0) }
 
     var fetchedNotes by remember(updateInfo.releaseNotes) { mutableStateOf<String?>(null) }
     var isFetchingNotes by remember(updateInfo.releaseNotes) { mutableStateOf(false) }
@@ -473,7 +475,35 @@ fun PetalUpdateSheetContent(
 
             // Action Buttons
             if (updateInfo.isUpdateAvailable && updateInfo.downloadUrl.isNotBlank()) {
-                if (isDownloadEnqueued) {
+                if (isDownloading) {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            LinearWavyProgressIndicator(
+                                progress = { downloadProgress / 100f },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            )
+                            Text(
+                                text = "Downloading update ($downloadProgress%)",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else if (isDownloadEnqueued) {
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
@@ -512,12 +542,30 @@ fun PetalUpdateSheetContent(
                     Button(
                         onClick = {
                             PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                            isDownloadEnqueued = true
-                            com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueueSystemUpdateDownload(
-                                context = context,
-                                downloadUrl = updateInfo.downloadUrl,
-                                version = updateInfo.versionName
-                            )
+                            isDownloading = true
+                            coroutineScope.launch {
+                                val success = com.petal.browser.unit.PetalUpdateInstallerReceiver.downloadAndInstallApk(
+                                    context = context,
+                                    apkUrl = updateInfo.downloadUrl,
+                                    version = updateInfo.versionName,
+                                    onProgressUpdate = { progress ->
+                                        downloadProgress = progress
+                                        if (progress >= 100) {
+                                            isDownloading = false
+                                        }
+                                    }
+                                )
+                                if (!success) {
+                                    isDownloading = false
+                                    // Fall back to background system DownloadManager if stream download fails
+                                    isDownloadEnqueued = true
+                                    com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueueSystemUpdateDownload(
+                                        context = context,
+                                        downloadUrl = updateInfo.downloadUrl,
+                                        version = updateInfo.versionName
+                                    )
+                                }
+                            }
                         },
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth().height(48.dp)

@@ -5452,11 +5452,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             com.petal.browser.view.PetalGeckoView geckoView =
                 com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
-                    this, getString(R.string.app_name), null, true, isIncognito
+                    this, getString(R.string.app_name), null, true, isIncognito, popupSession
                 );
-            // Replace the auto-created session with the one GeckoView opened for us.
-            // adoptSession() swaps the underlying session without calling open() again.
-            geckoView.adoptPopupSession(popupSession);
+            // In case geckoView was constructed without adoptedSession, keep adoptPopupSession as a safeguard
+            if (geckoView.getSession() != popupSession) {
+                geckoView.adoptPopupSession(popupSession);
+            }
 
             geckoView.setBrowserController(this);
             geckoView.setAlbumTitle(getString(R.string.app_name), "about:blank");

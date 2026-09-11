@@ -34,7 +34,12 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.preference.PreferenceManager
 import com.petal.browser.view.NinjaToast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * BroadcastReceiver triggered when the system DownloadManager completes downloading
@@ -82,6 +87,75 @@ class PetalUpdateInstallerReceiver : BroadcastReceiver() {
         const val KEY_UPDATE_DOWNLOAD_ID = "sp_active_update_download_id"
         const val KEY_UPDATE_FILE_PATH = "sp_active_update_file_path"
         const val KEY_UPDATE_VERSION = "sp_active_update_version"
+
+        @JvmStatic
+        suspend fun downloadAndInstallApk(
+            context: Context,
+            apkUrl: String,
+            version: String,
+            onProgressUpdate: (Int) -> Unit
+        ): Boolean = withContext(Dispatchers.IO) {
+            var connection: HttpURLConnection? = null
+            var output: FileOutputStream? = null
+            try {
+                val cleanVersion = version.replace(Regex("[^a-zA-Z0-9]"), "_")
+                val fileName = "Petal_v${cleanVersion}.apk"
+                val downloadsDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
+                    ?: context.filesDir
+                val destinationFile = File(downloadsDir, fileName)
+                if (destinationFile.exists()) {
+                    destinationFile.delete()
+                }
+
+                val url = URL(apkUrl)
+                connection = (url.openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 15000
+                    readTimeout = 30000
+                    instanceFollowRedirects = true
+                    setRequestProperty("User-Agent", "PetalBrowserApp")
+                }
+                connection.connect()
+
+                val fileLength = connection.contentLength
+                val input = connection.inputStream
+                output = FileOutputStream(destinationFile)
+
+                val data = ByteArray(8192)
+                var total: Long = 0
+                var count: Int
+                var lastReportedProgress = -1
+
+                while (input.read(data).also { count = it } != -1) {
+                    total += count
+                    if (fileLength > 0) {
+                        val progress = ((total * 100) / fileLength).toInt()
+                        if (progress != lastReportedProgress) {
+                            lastReportedProgress = progress
+                            withContext(Dispatchers.Main) {
+                                onProgressUpdate(progress)
+                            }
+                        }
+                    }
+                    output.write(data, 0, count)
+                }
+                output.flush()
+
+                withContext(Dispatchers.Main) {
+                    onProgressUpdate(100)
+                    installDownloadedApk(context, destinationFile)
+                }
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "In-app update download failed: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    NinjaToast.show(context, "Update download failed: ${e.message}")
+                }
+                false
+            } finally {
+                try { output?.close() } catch (_: Exception) {}
+                try { connection?.disconnect() } catch (_: Exception) {}
+            }
+        }
 
         @JvmStatic
         fun enqueueSystemUpdateDownload(context: Context, downloadUrl: String, version: String): Long {

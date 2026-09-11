@@ -49,7 +49,8 @@ import java.util.function.Consumer
 class PetalGeckoView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
+    defStyleAttr: Int = 0,
+    adoptedSession: GeckoSession? = null
 ) : FrameLayout(context, attrs, defStyleAttr), AlbumController, NestedScrollingChild3 {
 
     companion object {
@@ -83,7 +84,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     private val childHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)
     val geckoView: GeckoView = GeckoView(context)
-    var session: GeckoSession = GeckoSession()
+    var session: GeckoSession = adoptedSession ?: GeckoSession()
 
     private val sp: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private var isIncognito: Boolean = false
