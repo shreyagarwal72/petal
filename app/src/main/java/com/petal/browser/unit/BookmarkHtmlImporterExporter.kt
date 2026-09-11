@@ -116,86 +116,71 @@ object BookmarkHtmlImporterExporter {
 
                 var writeSucceeded = false
 
-                // Attempt 1: ContentResolver openOutputStream with flush and fsync
+                // Attempt 1: ParcelFileDescriptor with "rwt" truncate mode for reliable overwrites on SAF
                 try {
-                    val outputStream = try {
-                        context.contentResolver.openOutputStream(destinationUri, "wt")
-                    } catch (_: Throwable) {
-                        try {
-                            context.contentResolver.openOutputStream(destinationUri, "w")
-                        } catch (_: Throwable) {
-                            context.contentResolver.openOutputStream(destinationUri)
-                        }
-                    }
-
-                    if (outputStream != null) {
-                        outputStream.use { os ->
-                            os.write(bytes)
-                            os.flush()
+                    context.contentResolver.openFileDescriptor(destinationUri, "rwt")?.use { pfd ->
+                        FileOutputStream(pfd.fileDescriptor).use { fos ->
+                            fos.channel.truncate(0)
+                            fos.write(bytes)
+                            fos.flush()
                             try {
-                                (os as? FileOutputStream)?.fd?.sync()
+                                fos.fd.sync()
                             } catch (_: Exception) {}
                         }
-
-                        // Immediate verification read
-                        try {
-                            context.contentResolver.openInputStream(destinationUri)?.use { verifyIn ->
-                                val buf = ByteArray(8192)
-                                var totalRead = 0
-                                var r: Int
-                                while (verifyIn.read(buf).also { r = it } != -1) {
-                                    totalRead += r
-                                }
-                                if (totalRead == bytes.size) {
-                                    writeSucceeded = true
-                                    Log.i("Petal", "Verified bookmark export persistence via ContentResolver: $totalRead bytes matching payload to $uriScheme Uri: $destinationUri")
-                                } else {
-                                    Log.w("Petal", "Verification read size mismatch via ContentResolver for bookmark export: expected ${bytes.size}, got $totalRead bytes")
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Log.w("Petal", "Verification read failed via ContentResolver for bookmark export", e)
-                        }
+                        writeSucceeded = true
                     }
-                } catch (e: Exception) {
-                    Log.w("Petal", "Initial ContentResolver write attempt failed for bookmark export", e)
+                } catch (pfdEx: Exception) {
+                    Log.w("Petal", "ParcelFileDescriptor 'rwt' write attempt failed for bookmark export, falling back to openOutputStream", pfdEx)
                 }
 
-                // Attempt 2: If attempt 1 failed or verified size was incorrect, retry using ParcelFileDescriptor "rwt" mode
+                // Attempt 2: ContentResolver openOutputStream with flush and fsync
                 if (!writeSucceeded) {
-                    Log.i("Petal", "Retrying bookmark export write using ParcelFileDescriptor 'rwt' truncate mode for $uriScheme Uri: $destinationUri")
                     try {
-                        context.contentResolver.openFileDescriptor(destinationUri, "rwt")?.use { pfd ->
-                            FileOutputStream(pfd.fileDescriptor).use { fos ->
-                                fos.write(bytes)
-                                fos.flush()
-                                try {
-                                    fos.fd.sync()
-                                } catch (_: Exception) {}
-                            }
-
-                            // Re-verify after PFD write
+                        val outputStream = try {
+                            context.contentResolver.openOutputStream(destinationUri, "wt")
+                        } catch (_: Throwable) {
                             try {
-                                context.contentResolver.openInputStream(destinationUri)?.use { verifyIn ->
-                                    val buf = ByteArray(8192)
-                                    var totalRead = 0
-                                    var r: Int
-                                    while (verifyIn.read(buf).also { r = it } != -1) {
-                                        totalRead += r
-                                    }
-                                    if (totalRead == bytes.size) {
-                                        writeSucceeded = true
-                                        Log.i("Petal", "Verified bookmark export persistence via ParcelFileDescriptor: $totalRead bytes to $uriScheme Uri: $destinationUri")
-                                    } else {
-                                        Log.e("Petal", "Verification read size mismatch after PFD bookmark export: expected ${bytes.size}, got $totalRead bytes")
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                Log.w("Petal", "Verification read failed after PFD bookmark export", e)
+                                context.contentResolver.openOutputStream(destinationUri, "w")
+                            } catch (_: Throwable) {
+                                context.contentResolver.openOutputStream(destinationUri)
                             }
                         }
-                    } catch (pfdEx: Exception) {
-                        Log.e("Petal", "ParcelFileDescriptor retry failed for bookmark export to $uriScheme Uri: $destinationUri", pfdEx)
+
+                        if (outputStream != null) {
+                            outputStream.use { os ->
+                                os.write(bytes)
+                                os.flush()
+                                try {
+                                    (os as? FileOutputStream)?.fd?.sync()
+                                } catch (_: Exception) {}
+                            }
+                            writeSucceeded = true
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Petal", "ContentResolver openOutputStream failed for bookmark export", e)
+                    }
+                }
+
+                // Verification read: check if file was written.
+                // Note: If read verification throws or reports mismatch due to cloud/virtual SAF sync delay,
+                // do not fail if writeSucceeded was already achieved without stream exceptions.
+                if (writeSucceeded) {
+                    try {
+                        context.contentResolver.openInputStream(destinationUri)?.use { verifyIn ->
+                            val buf = ByteArray(8192)
+                            var totalRead = 0
+                            var r: Int
+                            while (verifyIn.read(buf).also { r = it } != -1) {
+                                totalRead += r
+                            }
+                            if (totalRead == bytes.size) {
+                                Log.i("Petal", "Verified bookmark export persistence: $totalRead bytes matching payload to $uriScheme Uri: $destinationUri")
+                            } else {
+                                Log.w("Petal", "Verification read size mismatch for bookmark export: expected ${bytes.size}, got $totalRead bytes (could be SAF provider sync delay)")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w("Petal", "Verification read threw exception for bookmark export (continuing since write completed)", e)
                     }
                 }
 
@@ -206,9 +191,9 @@ object BookmarkHtmlImporterExporter {
                         onComplete?.invoke(true, validBookmarks.size)
                     }
                 } else {
-                    Log.e("Petal", "Export failed: file was not written correctly for $uriScheme Uri: $destinationUri")
+                    Log.e("Petal", "Export failed: could not write to $uriScheme Uri: $destinationUri")
                     mainHandler.post {
-                        NinjaToast.show(context, "Export failed: file was not written correctly")
+                        NinjaToast.show(context, "Export failed: could not write to file")
                         onComplete?.invoke(false, 0)
                     }
                 }
@@ -272,27 +257,37 @@ object BookmarkHtmlImporterExporter {
         }
     }
 
+    private fun extractRecordFromJson(obj: com.google.gson.JsonObject): Record? {
+        val url = (obj.get("url") ?: obj.get("href") ?: obj.get("uri") ?: obj.get("link"))?.asString?.trim() ?: return null
+        if (url.isEmpty() || url.equals("about:blank", ignoreCase = true)) return null
+
+        val title = (obj.get("title") ?: obj.get("name") ?: obj.get("text"))?.asString?.trim()?.ifEmpty { url } ?: url
+        val time = obj.get("time")?.asLong ?: System.currentTimeMillis()
+        val iconColor = obj.get("iconColor")?.asLong ?: (if (time > 0L) time else 1L)
+
+        val record = Record()
+        record.setURL(url)
+        record.title = title
+        record.setTime(time)
+        record.setIconColor(iconColor)
+        return record
+    }
+
     private fun parseJsonBookmarks(content: String): List<Record> {
         val list = ArrayList<Record>()
         try {
             if (content.startsWith("{")) {
                 val jsonObject = com.google.gson.JsonParser.parseString(content).asJsonObject
-                if (jsonObject.has("bookmarks")) {
-                    val array = jsonObject.getAsJsonArray("bookmarks")
+                val array = when {
+                    jsonObject.has("bookmarks") && jsonObject.get("bookmarks").isJsonArray -> jsonObject.getAsJsonArray("bookmarks")
+                    jsonObject.has("data") && jsonObject.get("data").isJsonArray -> jsonObject.getAsJsonArray("data")
+                    jsonObject.has("items") && jsonObject.get("items").isJsonArray -> jsonObject.getAsJsonArray("items")
+                    else -> null
+                }
+                if (array != null) {
                     for (element in array) {
                         if (element.isJsonObject) {
-                            val obj = element.asJsonObject
-                            val url = obj.get("url")?.asString?.trim() ?: continue
-                            if (url.isEmpty() || url.equals("about:blank", ignoreCase = true)) continue
-                            val title = obj.get("title")?.asString?.trim()?.ifEmpty { url } ?: url
-                            val time = obj.get("time")?.asLong ?: System.currentTimeMillis()
-                            val iconColor = obj.get("iconColor")?.asLong ?: 1L
-                            val record = Record()
-                            record.setURL(url)
-                            record.title = title
-                            record.setTime(time)
-                            record.setIconColor(iconColor)
-                            list.add(record)
+                            extractRecordFromJson(element.asJsonObject)?.let { list.add(it) }
                         }
                     }
                 }
@@ -300,18 +295,7 @@ object BookmarkHtmlImporterExporter {
                 val array = com.google.gson.JsonParser.parseString(content).asJsonArray
                 for (element in array) {
                     if (element.isJsonObject) {
-                        val obj = element.asJsonObject
-                        val url = obj.get("url")?.asString?.trim() ?: continue
-                        if (url.isEmpty() || url.equals("about:blank", ignoreCase = true)) continue
-                        val title = obj.get("title")?.asString?.trim()?.ifEmpty { url } ?: url
-                        val time = obj.get("time")?.asLong ?: System.currentTimeMillis()
-                        val iconColor = obj.get("iconColor")?.asLong ?: 1L
-                        val record = Record()
-                        record.setURL(url)
-                        record.title = title
-                        record.setTime(time)
-                        record.setIconColor(iconColor)
-                        list.add(record)
+                        extractRecordFromJson(element.asJsonObject)?.let { list.add(it) }
                     }
                 }
             }

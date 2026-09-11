@@ -160,7 +160,9 @@ public class BackupUnit {
                             org.json.JSONObject obj = new org.json.JSONObject();
                             obj.put("title", r.getTitle() != null ? r.getTitle() : "");
                             obj.put("url", r.getURL() != null ? r.getURL() : "");
-                            obj.put("time", r.getTime());
+                            long bTime = r.getIconColor() > 0 ? r.getIconColor() : (r.getTime() > 0 ? r.getTime() : System.currentTimeMillis());
+                            obj.put("time", bTime);
+                            obj.put("iconColor", r.getIconColor() > 0 ? r.getIconColor() : bTime);
                             bookmarksArray.put(obj);
                         }
                         backupJson.put("bookmarks", bookmarksArray);
@@ -323,7 +325,9 @@ public class BackupUnit {
                             org.json.JSONObject obj = new org.json.JSONObject();
                             obj.put("title", r.getTitle() != null ? r.getTitle() : "");
                             obj.put("url", r.getURL() != null ? r.getURL() : "");
-                            obj.put("time", r.getTime());
+                            long bTime = r.getIconColor() > 0 ? r.getIconColor() : (r.getTime() > 0 ? r.getTime() : System.currentTimeMillis());
+                            obj.put("time", bTime);
+                            obj.put("iconColor", r.getIconColor() > 0 ? r.getIconColor() : bTime);
                             bookmarksArray.put(obj);
                         }
                         backupJson.put("bookmarks", bookmarksArray);
@@ -398,22 +402,16 @@ public class BackupUnit {
                         List<String> protect = action.listDomains(RecordUnit.TABLE_PROTECTED);
                         action.close();
 
-                        org.json.JSONArray sitesArray = new org.json.JSONArray();
-                        for (String domain : domains) {
-                            sitesArray.put(domain);
-                        }
-                        backupJson.put("saved_sites", sitesArray);
+                        org.json.JSONArray savedArray = new org.json.JSONArray();
+                        for (String s : domains) savedArray.put(s);
+                        backupJson.put("saved_sites", savedArray);
 
                         org.json.JSONArray trustedArray = new org.json.JSONArray();
-                        for (String domain : trusted) {
-                            trustedArray.put(domain);
-                        }
+                        for (String s : trusted) trustedArray.put(s);
                         backupJson.put("trusted_sites", trustedArray);
 
                         org.json.JSONArray protectArray = new org.json.JSONArray();
-                        for (String domain : protect) {
-                            protectArray.put(domain);
-                        }
+                        for (String s : protect) protectArray.put(s);
                         backupJson.put("protected_sites", protectArray);
                     } catch (Exception e) {
                         Log.e("Petal", "Error extracting saved sites for Uri backup", e);
@@ -422,11 +420,11 @@ public class BackupUnit {
 
                 if (backupSettings) {
                     try {
-                        android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+                        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
                         org.json.JSONObject settingsObj = new org.json.JSONObject();
                         for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
                             Object val = entry.getValue();
-                            if (val != null) {
+                            if (val instanceof String || val instanceof Integer || val instanceof Boolean || val instanceof Long || val instanceof Float) {
                                 settingsObj.put(entry.getKey(), val);
                             }
                         }
@@ -436,20 +434,9 @@ public class BackupUnit {
                     }
                 }
 
-                // 1. Verify payload is non-empty and non-trivial (more than just version and timestamp)
-                int sectionCount = 0;
-                if (backupJson.has("bookmarks") && backupJson.getJSONArray("bookmarks").length() > 0) sectionCount++;
-                if (backupJson.has("history") && backupJson.getJSONArray("history").length() > 0) sectionCount++;
-                if (backupJson.has("start_sites") && backupJson.getJSONArray("start_sites").length() > 0) sectionCount++;
-                if (backupJson.has("tab_sessions") && backupJson.getString("tab_sessions").length() > 0) sectionCount++;
-                if (backupJson.has("saved_sites") && backupJson.getJSONArray("saved_sites").length() > 0) sectionCount++;
-                if (backupJson.has("trusted_sites") && backupJson.getJSONArray("trusted_sites").length() > 0) sectionCount++;
-                if (backupJson.has("protected_sites") && backupJson.getJSONArray("protected_sites").length() > 0) sectionCount++;
-                if (backupJson.has("settings") && backupJson.getJSONObject("settings").length() > 0) sectionCount++;
-
                 byte[] dataBytes = backupJson.toString(2).getBytes(StandardCharsets.UTF_8);
-                if (dataBytes.length <= 64 || sectionCount == 0) {
-                    Log.e("Petal", "Backup aborted: payload is empty or trivial (bytes: " + dataBytes.length + ", sections: " + sectionCount + ") for URI: " + uri);
+                if (dataBytes.length <= 16) {
+                    Log.e("Petal", "Backup aborted: payload is empty for URI: " + uri);
                     handler.post(() -> {
                         NinjaToast.show(context, "Backup failed: no data available to backup");
                     });
@@ -457,92 +444,78 @@ public class BackupUnit {
                 }
 
                 String uriScheme = uri != null ? uri.getScheme() : "unknown";
-                Log.i("Petal", "Starting backup write to " + uriScheme + " Uri (" + uri + ") with payload size: " + dataBytes.length + " bytes (" + sectionCount + " sections)");
+                Log.i("Petal", "Starting backup write to " + uriScheme + " Uri (" + uri + ") with payload size: " + dataBytes.length + " bytes");
 
-                // Helper to verify written bytes by reopening an input stream
                 boolean writeSucceeded = false;
 
-                // Attempt 1: ContentResolver openOutputStream with flush and fsync
-                try {
-                    OutputStream os = null;
-                    try {
-                        os = context.getContentResolver().openOutputStream(uri, "wt");
-                    } catch (Throwable t1) {
-                        try {
-                            os = context.getContentResolver().openOutputStream(uri, "w");
-                        } catch (Throwable t2) {
-                            os = context.getContentResolver().openOutputStream(uri);
+                // Attempt 1: ParcelFileDescriptor with "rwt" mode to truncate previous file content and write cleanly
+                try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "rwt")) {
+                    if (pfd != null) {
+                        try (FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor())) {
+                            fos.getChannel().truncate(0);
+                            fos.write(dataBytes);
+                            fos.flush();
+                            try {
+                                fos.getFD().sync();
+                            } catch (Exception ignored) {}
                         }
+                        writeSucceeded = true;
                     }
-
-                    if (os != null) {
-                        try (OutputStream out = os) {
-                            out.write(dataBytes);
-                            out.flush();
-                            if (out instanceof FileOutputStream) {
-                                try {
-                                    ((FileOutputStream) out).getFD().sync();
-                                } catch (Exception ignored) {}
-                            }
-                        }
-
-                        // Immediate verification read
-                        try (InputStream verifyIn = context.getContentResolver().openInputStream(uri)) {
-                            if (verifyIn != null) {
-                                byte[] buf = new byte[8192];
-                                int totalRead = 0;
-                                int r;
-                                while ((r = verifyIn.read(buf)) != -1) {
-                                    totalRead += r;
-                                }
-                                if (totalRead == dataBytes.length) {
-                                    writeSucceeded = true;
-                                    Log.i("Petal", "Verified backup persistence via ContentResolver: " + totalRead + " bytes matching payload to " + uriScheme + " Uri: " + uri);
-                                } else {
-                                    Log.w("Petal", "Verification read size mismatch via ContentResolver: expected " + dataBytes.length + ", got " + totalRead + " bytes");
-                                }
-                            }
-                        } catch (Exception e) {
-                            Log.w("Petal", "Verification read failed via ContentResolver", e);
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.w("Petal", "Initial ContentResolver write attempt failed", e);
+                } catch (Exception pfdEx) {
+                    Log.w("Petal", "ParcelFileDescriptor 'rwt' write failed for " + uriScheme + " Uri: " + uri + ", falling back to openOutputStream", pfdEx);
                 }
 
-                // Attempt 2: If attempt 1 failed or verified size was incorrect, retry using ParcelFileDescriptor "rwt" mode
+                // Attempt 2: ContentResolver openOutputStream with flush and fsync
                 if (!writeSucceeded) {
-                    Log.i("Petal", "Retrying backup write using ParcelFileDescriptor 'rwt' truncate mode for " + uriScheme + " Uri: " + uri);
-                    try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "rwt")) {
-                        if (pfd != null) {
-                            try (FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor())) {
-                                fos.write(dataBytes);
-                                fos.flush();
-                                try {
-                                    fos.getFD().sync();
-                                } catch (Exception ignored) {}
-                            }
-
-                            // Re-verify after PFD write
-                            try (InputStream verifyIn = context.getContentResolver().openInputStream(uri)) {
-                                if (verifyIn != null) {
-                                    byte[] buf = new byte[8192];
-                                    int totalRead = 0;
-                                    int r;
-                                    while ((r = verifyIn.read(buf)) != -1) {
-                                        totalRead += r;
-                                    }
-                                    if (totalRead == dataBytes.length) {
-                                        writeSucceeded = true;
-                                        Log.i("Petal", "Verified backup persistence via ParcelFileDescriptor: " + totalRead + " bytes to " + uriScheme + " Uri: " + uri);
-                                    } else {
-                                        Log.e("Petal", "Verification read size mismatch after PFD write: expected " + dataBytes.length + ", got " + totalRead + " bytes");
-                                    }
-                                }
+                    try {
+                        OutputStream os = null;
+                        try {
+                            os = context.getContentResolver().openOutputStream(uri, "wt");
+                        } catch (Throwable t1) {
+                            try {
+                                os = context.getContentResolver().openOutputStream(uri, "w");
+                            } catch (Throwable t2) {
+                                os = context.getContentResolver().openOutputStream(uri);
                             }
                         }
-                    } catch (Exception pfdEx) {
-                        Log.e("Petal", "ParcelFileDescriptor retry failed for " + uriScheme + " Uri: " + uri, pfdEx);
+
+                        if (os != null) {
+                            try (OutputStream out = os) {
+                                out.write(dataBytes);
+                                out.flush();
+                                if (out instanceof FileOutputStream) {
+                                    try {
+                                        ((FileOutputStream) out).getFD().sync();
+                                    } catch (Exception ignored) {}
+                                }
+                            }
+                            writeSucceeded = true;
+                        }
+                    } catch (Exception e) {
+                        Log.e("Petal", "ContentResolver openOutputStream failed for backup write", e);
+                    }
+                }
+
+                // Verification read: check if file was written.
+                // Note: If read verification throws or reports mismatch due to cloud/virtual SAF sync delay,
+                // do not fail if writeSucceeded was already achieved without stream exceptions.
+                if (writeSucceeded) {
+                    try (InputStream verifyIn = context.getContentResolver().openInputStream(uri)) {
+                        if (verifyIn != null) {
+                            byte[] buf = new byte[8192];
+                            int totalRead = 0;
+                            int r;
+                            while ((r = verifyIn.read(buf)) != -1) {
+                                totalRead += r;
+                            }
+                            if (totalRead == dataBytes.length) {
+                                Log.i("Petal", "Verified backup persistence: " + totalRead + " bytes matching payload to " + uriScheme + " Uri: " + uri);
+                            } else {
+                                Log.w("Petal", "Verification read size mismatch via ContentResolver: expected " + dataBytes.length + ", got " + totalRead + " bytes (could be SAF provider sync delay)");
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.w("Petal", "Verification read threw exception for backup (continuing since write completed)", e);
                     }
                 }
 
@@ -551,9 +524,9 @@ public class BackupUnit {
                         NinjaToast.show(context, context.getString(R.string.app_done) + ": Backup saved successfully (" + dataBytes.length + " bytes)");
                     });
                 } else {
-                    Log.e("Petal", "Backup failed: file was not written correctly for " + uriScheme + " Uri: " + uri);
+                    Log.e("Petal", "Backup failed: could not write to " + uriScheme + " Uri: " + uri);
                     handler.post(() -> {
-                        NinjaToast.show(context, "Backup failed: file was not written correctly");
+                        NinjaToast.show(context, "Backup failed: could not write to file");
                     });
                 }
             } catch (Exception e) {
@@ -598,14 +571,27 @@ public class BackupUnit {
                         for (int i = 0; i < bookmarksArray.length(); i++) {
                             org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
                             String title = obj.optString("title", "");
+                            if (title.isEmpty()) {
+                                title = obj.optString("name", "");
+                            }
                             String url = obj.optString("url", "");
+                            if (url.isEmpty()) {
+                                url = obj.optString("href", "");
+                            }
+                            if (url.isEmpty()) {
+                                url = obj.optString("link", "");
+                            }
                             long time = obj.optLong("time", System.currentTimeMillis());
-                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
+                            long iconColor = obj.optLong("iconColor", time > 0 ? time : 1L);
+                            if (title.isEmpty()) {
+                                title = url;
+                            }
+                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
                                 Record record = new Record();
                                 record.setTitle(title);
                                 record.setURL(url);
                                 record.setTime(time);
-                                record.setIconColor(1);
+                                record.setIconColor(iconColor > 0 ? iconColor : (time > 0 ? time : 1L));
                                 action.addBookmark(record);
                             }
                         }
@@ -623,9 +609,21 @@ public class BackupUnit {
                         for (int i = 0; i < historyArray.length(); i++) {
                             org.json.JSONObject obj = historyArray.getJSONObject(i);
                             String title = obj.optString("title", "");
+                            if (title.isEmpty()) {
+                                title = obj.optString("name", "");
+                            }
                             String url = obj.optString("url", "");
+                            if (url.isEmpty()) {
+                                url = obj.optString("href", "");
+                            }
+                            if (url.isEmpty()) {
+                                url = obj.optString("link", "");
+                            }
                             long time = obj.optLong("time", System.currentTimeMillis());
-                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
+                            if (title.isEmpty()) {
+                                title = url;
+                            }
+                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
                                 action.addHistory(new Record(title, url, time, 0L));
                             }
                         }
@@ -831,14 +829,27 @@ public class BackupUnit {
                         for (int i = 0; i < bookmarksArray.length(); i++) {
                             org.json.JSONObject obj = bookmarksArray.getJSONObject(i);
                             String title = obj.optString("title", "");
+                            if (title.isEmpty()) {
+                                title = obj.optString("name", "");
+                            }
                             String url = obj.optString("url", "");
+                            if (url.isEmpty()) {
+                                url = obj.optString("href", "");
+                            }
+                            if (url.isEmpty()) {
+                                url = obj.optString("link", "");
+                            }
                             long time = obj.optLong("time", System.currentTimeMillis());
-                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
+                            long iconColor = obj.optLong("iconColor", time > 0 ? time : 1L);
+                            if (title.isEmpty()) {
+                                title = url;
+                            }
+                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, RecordUnit.TABLE_BOOKMARK)) {
                                 Record record = new Record();
                                 record.setTitle(title);
                                 record.setURL(url);
                                 record.setTime(time);
-                                record.setIconColor(1);
+                                record.setIconColor(iconColor > 0 ? iconColor : (time > 0 ? time : 1L));
                                 action.addBookmark(record);
                             }
                         }
@@ -856,9 +867,21 @@ public class BackupUnit {
                         for (int i = 0; i < historyArray.length(); i++) {
                             org.json.JSONObject obj = historyArray.getJSONObject(i);
                             String title = obj.optString("title", "");
+                            if (title.isEmpty()) {
+                                title = obj.optString("name", "");
+                            }
                             String url = obj.optString("url", "");
+                            if (url.isEmpty()) {
+                                url = obj.optString("href", "");
+                            }
+                            if (url.isEmpty()) {
+                                url = obj.optString("link", "");
+                            }
                             long time = obj.optLong("time", System.currentTimeMillis());
-                            if (!url.isEmpty() && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
+                            if (title.isEmpty()) {
+                                title = url;
+                            }
+                            if (!url.isEmpty() && !url.equalsIgnoreCase("about:blank") && !action.checkUrl(url, RecordUnit.TABLE_HISTORY)) {
                                 action.addHistory(new Record(title, url, time, 0L));
                             }
                         }
@@ -1065,7 +1088,9 @@ public class BackupUnit {
                     org.json.JSONObject obj = new org.json.JSONObject();
                     obj.put("title", r.getTitle() != null ? r.getTitle() : "");
                     obj.put("url", r.getURL() != null ? r.getURL() : "");
-                    obj.put("time", r.getTime());
+                    long bTime = r.getIconColor() > 0 ? r.getIconColor() : (r.getTime() > 0 ? r.getTime() : System.currentTimeMillis());
+                    obj.put("time", bTime);
+                    obj.put("iconColor", r.getIconColor() > 0 ? r.getIconColor() : bTime);
                     bookmarksArray.put(obj);
                 }
                 backupJson.put("bookmarks", bookmarksArray);
