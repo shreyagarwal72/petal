@@ -289,10 +289,10 @@ class PetalGeckoView @JvmOverloads constructor(
                                 return
                             }
                             if (!popupSession.isOpen) {
-                                if (++attempts <= 30) {
+                                if (++attempts <= 120) {
                                     postDelayed(this, 16L)
                                 } else {
-                                    android.util.Log.w(TAG, "Popup GeckoSession did not open; skipping adoption")
+                                    android.util.Log.w(TAG, "Popup GeckoSession did not open in time; skipping adoption")
                                 }
                                 return
                             }
@@ -331,6 +331,34 @@ class PetalGeckoView @JvmOverloads constructor(
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
                         // Fullscreen sync with Material 3 app bars
+                    }
+                }
+            }
+
+            override fun onCloseRequest(session: GeckoSession) {
+                // When an OAuth or web login window/tab invokes window.close() after completion,
+                // safely close this popup tab and return focus to the predecessor tab.
+                val act = getHostActivity()
+                if (act is com.petal.browser.activity.BrowserActivity) {
+                    act.runOnUiThread {
+                        try {
+                            act.removeAlbum(this@PetalGeckoView)
+                        } catch (e: Exception) {
+                            android.util.Log.e(TAG, "Failed to close tab on window.close() request", e)
+                        }
+                    }
+                }
+            }
+
+            override fun onFocusRequest(session: GeckoSession) {
+                val act = getHostActivity()
+                if (act is com.petal.browser.activity.BrowserActivity) {
+                    act.runOnUiThread {
+                        try {
+                            act.showAlbum(this@PetalGeckoView)
+                        } catch (e: Exception) {
+                            android.util.Log.e(TAG, "Failed to focus tab on onFocusRequest", e)
+                        }
                     }
                 }
             }
@@ -440,7 +468,7 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
-        // Material 3 Prompt Delegate (Alerts, Confirms, Prompts)
+        // Material 3 Prompt Delegate (Alerts, Confirms, Prompts, Auth, Choice, Text, Popups)
         session.promptDelegate = object : GeckoSession.PromptDelegate {
             override fun onAlertPrompt(session: GeckoSession, prompt: GeckoSession.PromptDelegate.AlertPrompt): GeckoResult<GeckoSession.PromptDelegate.PromptResponse> {
                 val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
@@ -482,6 +510,124 @@ class PetalGeckoView @JvmOverloads constructor(
                     builder.show()
                 }
                 return result
+            }
+
+            override fun onAuthPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.AuthPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                val act = getHostActivity() ?: return GeckoResult.fromValue(prompt.dismiss())
+                act.runOnUiThread {
+                    val layout = android.widget.LinearLayout(act).apply {
+                        orientation = android.widget.LinearLayout.VERTICAL
+                        val pad = (16 * resources.displayMetrics.density).toInt()
+                        setPadding(pad, pad / 2, pad, pad / 2)
+                    }
+                    val userEdit = android.widget.EditText(act).apply {
+                        hint = "Username"
+                        prompt.authOptions.username?.let { setText(it) }
+                    }
+                    val passEdit = android.widget.EditText(act).apply {
+                        hint = "Password"
+                        inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    }
+                    val isPasswordOnly = (prompt.authOptions.flags and GeckoSession.PromptDelegate.AuthPrompt.AuthOptions.Flags.ONLY_PASSWORD) != 0
+                    if (!isPasswordOnly) layout.addView(userEdit)
+                    layout.addView(passEdit)
+
+                    val dialogTitle = prompt.title ?: prompt.authOptions.uri ?: act.getString(R.string.app_name)
+                    MaterialAlertDialogBuilder(act)
+                        .setTitle(dialogTitle)
+                        .setMessage(prompt.message ?: "Sign In")
+                        .setView(layout)
+                        .setPositiveButton(android.R.string.ok) { dialog, _ ->
+                            dialog.dismiss()
+                            val enteredPassword = passEdit.text.toString()
+                            if (isPasswordOnly) {
+                                result.complete(prompt.confirm(enteredPassword))
+                            } else {
+                                val enteredUser = userEdit.text.toString()
+                                result.complete(prompt.confirm(enteredUser, enteredPassword))
+                            }
+                        }
+                        .setNegativeButton(android.R.string.cancel) { dialog, _ ->
+                            dialog.dismiss()
+                            result.complete(prompt.dismiss())
+                        }
+                        .setOnCancelListener {
+                            result.complete(prompt.dismiss())
+                        }
+                        .show()
+                }
+                return result
+            }
+
+            override fun onTextPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.TextPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                val act = getHostActivity() ?: return GeckoResult.fromValue(prompt.dismiss())
+                act.runOnUiThread {
+                    val input = android.widget.EditText(act).apply {
+                        prompt.defaultValue?.let { setText(it) }
+                        selectAll()
+                    }
+                    val container = android.widget.FrameLayout(act).apply {
+                        val pad = (20 * resources.displayMetrics.density).toInt()
+                        setPadding(pad, pad / 2, pad, pad / 2)
+                        addView(input)
+                    }
+                    MaterialAlertDialogBuilder(act)
+                        .setTitle(prompt.title ?: act.getString(R.string.app_name))
+                        .setMessage(prompt.message ?: "")
+                        .setView(container)
+                        .setPositiveButton(android.R.string.ok) { dialog, _ ->
+                            dialog.dismiss()
+                            result.complete(prompt.confirm(input.text.toString()))
+                        }
+                        .setNegativeButton(android.R.string.cancel) { dialog, _ ->
+                            dialog.dismiss()
+                            result.complete(prompt.dismiss())
+                        }
+                        .setOnCancelListener {
+                            result.complete(prompt.dismiss())
+                        }
+                        .show()
+                }
+                return result
+            }
+
+            override fun onChoicePrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.ChoicePrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                // Safe dismissal avoids unhandled choice/menu prompt exceptions during form submissions
+                return GeckoResult.fromValue(prompt.dismiss())
+            }
+
+            override fun onPopupPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.PopupPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                // Allow popup window requests (such as OAuth sign-in windows)
+                return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+            }
+
+            override fun onBeforeUnloadPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.BeforeUnloadPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                // Automatically allow unload during navigation/redirects
+                return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
+            }
+
+            override fun onRepostConfirmPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.RepostConfirmPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
             }
 
             // Autofill is disabled at the runtime level (loginAutofillEnabled = false),

@@ -182,7 +182,6 @@ fun PetalUserProfileScreen(
     val profile = GoogleAccountManager.currentProfile
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    var isSigningIn by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -200,68 +199,6 @@ fun PetalUserProfileScreen(
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
-
-    val legacySignInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { activityResult ->
-        val result = GoogleAccountManager.handleLegacySignInResult(context, activityResult.data)
-        if (result is GoogleSignInResult.Success) {
-            isSigningIn = false
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
-            }
-        } else {
-            // If legacy intent returns failure/cancellation, seamlessly fall back to Credential Manager UI
-            coroutineScope.launch {
-                when (val fallbackResult = GoogleAccountManager.signIn(context)) {
-                    is GoogleSignInResult.Success -> {
-                        snackbarHostState.showSnackbar("Signed in as ${fallbackResult.profile.email}")
-                    }
-                    is GoogleSignInResult.Failure -> {
-                        if (result is GoogleSignInResult.Failure) {
-                            snackbarHostState.showSnackbar(result.message)
-                        }
-                    }
-                }
-                isSigningIn = false
-            }
-        }
-    }
-
-    fun startGoogleSignIn() {
-        if (isSigningIn) return
-        isSigningIn = true
-        coroutineScope.launch {
-            try {
-                val intent = GoogleAccountManager.createLegacySignInIntent(context)
-                if (intent != null) {
-                    legacySignInLauncher.launch(intent)
-                } else {
-                    // Fallback to Credential Manager if legacy intent cannot be constructed
-                    when (val result = GoogleAccountManager.signIn(context)) {
-                        is GoogleSignInResult.Success -> {
-                            snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
-                        }
-                        is GoogleSignInResult.Failure -> {
-                            snackbarHostState.showSnackbar(result.message)
-                        }
-                    }
-                    isSigningIn = false
-                }
-            } catch (e: Throwable) {
-                // Fallback to Credential Manager if Play Services auth client fails
-                when (val result = GoogleAccountManager.signIn(context)) {
-                    is GoogleSignInResult.Success -> {
-                        snackbarHostState.showSnackbar("Signed in as ${result.profile.email}")
-                    }
-                    is GoogleSignInResult.Failure -> {
-                        snackbarHostState.showSnackbar(result.message)
-                    }
-                }
-                isSigningIn = false
-            }
-        }
     }
 
     var showAppLockConfigPage by remember { mutableStateOf(false) }
@@ -287,12 +224,10 @@ fun PetalUserProfileScreen(
                 RenderUserProfileContent(
                     profile = profile,
                     isLoading = isLoading,
-                    isSigningIn = isSigningIn,
                     isExpressiveFeatureTiles = isExpressiveFeatureTiles,
                     snackbarHostState = snackbarHostState,
                     onBack = onBack,
                     onOpenOAuth = onOpenOAuth,
-                    onStartGoogleSignIn = { startGoogleSignIn() },
                     onOpenAppLockConfig = { showAppLockConfigPage = true },
                     modifier = modifier
                 )
@@ -326,12 +261,10 @@ fun PetalUserProfileScreen(
 private fun RenderUserProfileContent(
     profile: GoogleUserProfile,
     isLoading: Boolean,
-    isSigningIn: Boolean,
     isExpressiveFeatureTiles: Boolean,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onOpenOAuth: (PetalShortcut) -> Unit,
-    onStartGoogleSignIn: () -> Unit,
     onOpenAppLockConfig: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -507,75 +440,10 @@ private fun RenderUserProfileContent(
                     Spacer(Modifier.height(2.dp))
 
                     Text(
-                        text = if (profile.isSignedIn) profile.email else "Petal Explorer Profile",
+                        text = "Petal Explorer Profile",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    Spacer(Modifier.height(14.dp))
-
-                    if (profile.isSignedIn) {
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    GoogleAccountManager.signOut(context)
-                                    snackbarHostState.showSnackbar("Signed out successfully")
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            ),
-                            shape = RoundedCornerShape(16.dp),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Logout,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = "Sign Out",
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
-                            )
-                        }
-                    } else {
-                        Button(
-                            onClick = { onStartGoogleSignIn() },
-                            enabled = !isSigningIn,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            shape = RoundedCornerShape(16.dp),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
-                        ) {
-                            if (isSigningIn) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    text = "Signing in...",
-                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Rounded.AccountCircle,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    text = "Sign in with Google",
-                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
-                                )
-                            }
-                        }
-                    }
 
                     Spacer(Modifier.height(18.dp))
 
@@ -662,31 +530,6 @@ private fun RenderUserProfileContent(
                 }
             }
 
-            // Tappable-only Google Web Accounts SSO item — shared SettingsItem containment
-            SettingsItem(
-                title = "Open Google Accounts Web SSO",
-                subtitle = "Launch Google Accounts login page to sign in to Google Web Services (YouTube, Gmail, Drive, Maps)",
-                leadingIcon = {
-                    Icon(
-                        painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.home_filled),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                shape = RoundedCornerShape(24.dp),
-                onClick = {
-                    onOpenOAuth(
-                        PetalShortcut(
-                            "Google Accounts SSO",
-                            "https://accounts.google.com/ServiceLogin?hl=en",
-                            "https://accounts.google.com/ServiceLogin?hl=en",
-                            Color(0xFF4285F4)
-                        )
-                    )
-                },
-                modifier = Modifier.bouncyClickable()
-            )
 
             // Section 1: SECURITY & PRIVACY — eyebrow label matched to Clear Browsing Data screen
             Text(
