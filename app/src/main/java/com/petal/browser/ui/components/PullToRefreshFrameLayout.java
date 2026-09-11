@@ -173,4 +173,13 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         }
         super.requestDisallowInterceptTouchEvent(disallowIntercept);
     }
+
+    @Override
+    public boolean gatherTransparentRegion(android.graphics.Region region) {
+        try {
+            return super.gatherTransparentRegion(region);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

@@ -10,6 +10,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.graphics.Region
 import android.widget.FrameLayout
 import androidx.annotation.MainThread
 import androidx.annotation.NonNull
@@ -83,7 +84,7 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     private val childHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)
-    val geckoView: GeckoView = GeckoView(context)
+    val geckoView: GeckoView = SafeGeckoView(context)
     var session: GeckoSession = adoptedSession ?: GeckoSession()
 
     private val sp: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -1471,4 +1472,47 @@ class PetalGeckoView @JvmOverloads constructor(
 
     override fun dispatchNestedPreFling(velocityX: Float, velocityY: Float): Boolean =
         childHelper.dispatchNestedPreFling(velocityX, velocityY)
+
+    override fun gatherTransparentRegion(region: Region?): Boolean {
+        return try {
+            super.gatherTransparentRegion(region)
+        } catch (e: Exception) {
+            false
+        }
+    }
 }
+
+/**
+ * SafeGeckoView
+ * ─────────────────────────────────────────────────────────────────────────
+ * GeckoView subclass that safely wraps gatherTransparentRegion().
+ * On Android 16 (SDK 36) and modern OEM devices (Realme/OPPO/OnePlus ColorOS),
+ * triggering a login/autofill popup or IME transition triggers ViewRootImpl
+ * performTraversals() -> gatherTransparentRegion(). GeckoView.gatherTransparentRegion()
+ * invokes its private Display.onGlobalLayout(), which unconditionally attempts to call
+ * windowInsets.getInsets(...) on mSurfaceWrapper.getView().getRootWindowInsets().
+ * When the window or decor view has not yet attached its window insets or during
+ * transient window focus/IME changes, getRootWindowInsets() returns null, triggering a
+ * fatal NullPointerException on the main thread:
+ * "Attempt to invoke virtual method 'android.graphics.Insets android.view.WindowInsets.getInsets(int)' on a null object reference".
+ *
+ * Intercepting gatherTransparentRegion() with a try-catch guarantees that transient
+ * null root WindowInsets will never crash the browser process, allowing layout traversal
+ * to complete normally.
+ */
+class SafeGeckoView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : GeckoView(context, attrs, defStyleAttr) {
+
+    override fun gatherTransparentRegion(region: Region?): Boolean {
+        return try {
+            super.gatherTransparentRegion(region)
+        } catch (e: NullPointerException) {
+            android.util.Log.w("SafeGeckoView", "Handled GeckoView gatherTransparentRegion NPE: ${e.message}")
+            false
+        }
+    }
+}
+
