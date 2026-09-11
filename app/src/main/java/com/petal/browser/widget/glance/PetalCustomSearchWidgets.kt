@@ -220,7 +220,7 @@ private fun Petal1Content() {
                     .fillMaxHeight()
                     .defaultWeight()
                     .clickable(searchAction)
-            )
+            ) {}
 
             // Centered: Scalloped Flower-Petal Badge holding "P"
             Box(
@@ -242,7 +242,7 @@ private fun Petal1Content() {
                     .fillMaxHeight()
                     .defaultWeight()
                     .clickable(searchAction)
-            )
+            ) {}
 
             // Far Right: Camera / Lens Scanner Action
             Box(
