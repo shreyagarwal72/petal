@@ -910,6 +910,16 @@ val petalAppCredits = listOf(
         icon = Icons.Rounded.PlayCircle,
         containerColor = Color(0xFFE91E63),
         tags = listOf("Video Player", "Wavy Seekbar", "Compose UI", "PiP Mode")
+    ),
+    AppCreditItem(
+        title = "Duo-animation (Apple Duo)",
+        developer = "Atomicx7",
+        role = "iPhone Duo Fold 3D Gyro Motion & Frosted Glass Shader",
+        description = "Physics-based device tilt motion model, AGSL runtime shader with Vogel-disk blur and 3D folding perspective transformation.",
+        url = "https://github.com/Atomicx7/Duo-animation",
+        icon = Icons.Rounded.Animation,
+        containerColor = Color(0xFF3F51B5),
+        tags = listOf("Apple Duo", "AGSL Shader", "Motion Model", "Gyroscope")
     )
 )
 

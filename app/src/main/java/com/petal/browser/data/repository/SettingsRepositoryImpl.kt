@@ -203,6 +203,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_touch_haptics", true)
     }
 
+    override val scrollHaptics: Flow<Boolean> = preferenceFlow("sp_scroll_haptics") {
+        sp.getBoolean("sp_scroll_haptics", true)
+    }
+
     override val predictiveBack: Flow<Boolean> = preferenceFlow(PetalPredictiveJunction.KEY_PREDICTIVE_BACK_ENABLED) {
         sp.getBoolean(PetalPredictiveJunction.KEY_PREDICTIVE_BACK_ENABLED, true)
     }
@@ -282,6 +286,39 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val autoPreviewDownloadedImages: Flow<Boolean> = preferenceFlow("sp_auto_preview_downloaded_images") {
         sp.getBoolean("sp_auto_preview_downloaded_images", true)
+    }
+
+    // ── Apple Duo (BETA) Animation ───────────────────────────────────────────
+    override val appleDuoEnabled: Flow<Boolean> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_ENABLED) {
+        sp.getBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_ENABLED, false)
+    }
+
+    override val appleDuoWebsites: Flow<Boolean> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_WEBSITES) {
+        sp.getBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_WEBSITES, true)
+    }
+
+    override val appleDuoUseSensor: Flow<Boolean> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_USE_SENSOR) {
+        sp.getBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_USE_SENSOR, true)
+    }
+
+    override val appleDuoManualTilt: Flow<Float> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_MANUAL_TILT) {
+        sp.getFloat(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_MANUAL_TILT, 0f)
+    }
+
+    override val appleDuoAutoRecenter: Flow<Boolean> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_AUTO_RECENTER) {
+        sp.getBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_AUTO_RECENTER, true)
+    }
+
+    override val appleDuoEyeDistance: Flow<Float> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_EYE_DISTANCE) {
+        sp.getFloat(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_EYE_DISTANCE, 450f)
+    }
+
+    override val appleDuoBlurSpread: Flow<Float> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_BLUR_SPREAD) {
+        sp.getFloat(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_BLUR_SPREAD, 0.12f)
+    }
+
+    override val appleDuoDarkening: Flow<Float> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_DARKENING) {
+        sp.getFloat(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_DARKENING, 0.015f)
     }
 
     // ── Setters ───────────────────────────────────────────────────────────────
@@ -445,6 +482,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.edit().putBoolean("sp_touch_haptics", enabled).apply()
     }
 
+    override suspend fun setScrollHaptics(enabled: Boolean) {
+        sp.edit().putBoolean("sp_scroll_haptics", enabled).apply()
+    }
+
     override suspend fun setPredictiveBack(enabled: Boolean) {
         PetalPredictiveJunction.setPredictiveBackEnabled(sp, enabled)
     }
@@ -523,5 +564,37 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setAutoPreviewDownloadedImages(enabled: Boolean) {
         sp.edit().putBoolean("sp_auto_preview_downloaded_images", enabled).apply()
+    }
+
+    override suspend fun setAppleDuoEnabled(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_ENABLED, enabled).apply()
+    }
+
+    override suspend fun setAppleDuoWebsites(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_WEBSITES, enabled).apply()
+    }
+
+    override suspend fun setAppleDuoUseSensor(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_USE_SENSOR, enabled).apply()
+    }
+
+    override suspend fun setAppleDuoManualTilt(tilt: Float) {
+        sp.edit().putFloat(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_MANUAL_TILT, tilt).apply()
+    }
+
+    override suspend fun setAppleDuoAutoRecenter(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_AUTO_RECENTER, enabled).apply()
+    }
+
+    override suspend fun setAppleDuoEyeDistance(distance: Float) {
+        sp.edit().putFloat(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_EYE_DISTANCE, distance).apply()
+    }
+
+    override suspend fun setAppleDuoBlurSpread(spread: Float) {
+        sp.edit().putFloat(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_BLUR_SPREAD, spread).apply()
+    }
+
+    override suspend fun setAppleDuoDarkening(darkening: Float) {
+        sp.edit().putFloat(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_DARKENING, darkening).apply()
     }
 }

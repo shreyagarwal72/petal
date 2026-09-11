@@ -37,6 +37,7 @@ fun DisplaySettingsScreen(
     viewModel: DisplaySettingsViewModel = hiltViewModel()
 ) {
     val touchHaptics by viewModel.touchHaptics.collectAsStateWithLifecycle()
+    val scrollHaptics by viewModel.scrollHaptics.collectAsStateWithLifecycle()
     val predictiveBack by viewModel.predictiveBack.collectAsStateWithLifecycle()
     val depthBlur by viewModel.depthBlur.collectAsStateWithLifecycle()
     val fontSizeScale by viewModel.fontSizeScale.collectAsStateWithLifecycle()
@@ -50,6 +51,7 @@ fun DisplaySettingsScreen(
 
     DisplaySettingsScreenContent(
         touchHaptics = touchHaptics,
+        scrollHaptics = scrollHaptics,
         predictiveBack = predictiveBack,
         depthBlur = depthBlur,
         fontSizeScale = fontSizeScale,
@@ -61,6 +63,7 @@ fun DisplaySettingsScreen(
         addressBarSwipeTabs = addressBarSwipeTabs,
         addressBarQuickActions = addressBarQuickActions,
         onTouchHapticsChange = viewModel::setTouchHaptics,
+        onScrollHapticsChange = viewModel::setScrollHaptics,
         onPredictiveBackChange = viewModel::setPredictiveBack,
         onDepthBlurChange = viewModel::setDepthBlur,
         onFontSizeScaleChange = viewModel::setFontSizeScale,
@@ -80,6 +83,7 @@ fun DisplaySettingsScreen(
 @Composable
 fun DisplaySettingsScreenContent(
     touchHaptics: Boolean,
+    scrollHaptics: Boolean,
     predictiveBack: Boolean,
     depthBlur: Boolean,
     fontSizeScale: Float,
@@ -91,6 +95,7 @@ fun DisplaySettingsScreenContent(
     addressBarSwipeTabs: Boolean,
     addressBarQuickActions: Boolean,
     onTouchHapticsChange: (Boolean) -> Unit,
+    onScrollHapticsChange: (Boolean) -> Unit,
     onPredictiveBackChange: (Boolean) -> Unit,
     onDepthBlurChange: (Boolean) -> Unit,
     onFontSizeScaleChange: (Float) -> Unit,
@@ -151,55 +156,30 @@ fun DisplaySettingsScreenContent(
 
                     ToggleRow(
                         title = "Touch Haptics Engine",
-                        subtitle = "Vibrate with Ever-Haptics tactile feedback on button presses and UI gestures",
+                        subtitle = "Tactile feedback on button presses and UI interactions",
                         icon = Icons.Rounded.Vibration,
                         checked = touchHaptics,
                         onCheckedChange = { newValue ->
                             onTouchHapticsChange(newValue)
                             if (newValue) {
-                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
+                                PetalHapticEngine.getInstance(context).playClick(context)
                             }
                         }
                     )
 
-                    if (touchHaptics) {
-                        var testPattern by remember { mutableStateOf(PetalHapticEngine.Pattern.CLICK) }
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "Haptic Pattern Test & Preview:",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            val hapticPatternScrollState = rememberScrollState()
-                            ScrollFadeRow(
-                                scrollState = hapticPatternScrollState,
-                                edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .horizontalScroll(hapticPatternScrollState),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    PetalHapticEngine.Pattern.values().forEach { pattern ->
-                                        FilterChip(
-                                            selected = testPattern == pattern,
-                                            onClick = {
-                                                testPattern = pattern
-                                                PetalHapticEngine.getInstance(context).play(pattern, 0.75f)
-                                            },
-                                            label = { Text(pattern.name.replace("_", " ")) }
-                                        )
-                                    }
-                                }
+                    ToggleRow(
+                        title = "Scroll Haptics",
+                        subtitle = "Subtle tactile feedback while scrolling web pages and lists",
+                        icon = Icons.Rounded.TouchApp,
+                        checked = scrollHaptics,
+                        enabled = touchHaptics,
+                        onCheckedChange = { newValue ->
+                            onScrollHapticsChange(newValue)
+                            if (newValue && touchHaptics) {
+                                PetalHapticEngine.getInstance(context).playClick(context)
                             }
                         }
-                    }
+                    )
                     // Text Font Scale Slider & Live Box
                     Surface(
                         shape = RoundedCornerShape(16.dp),

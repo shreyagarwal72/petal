@@ -56,6 +56,7 @@ interface SettingsRepository {
 
     // Accessibility & Display
     val touchHaptics: Flow<Boolean>
+    val scrollHaptics: Flow<Boolean>
     val predictiveBack: Flow<Boolean>
     val depthBlur: Flow<Boolean>
     val fontSizeScale: Flow<Float>
@@ -78,6 +79,16 @@ interface SettingsRepository {
     val torrentEngineMode: Flow<String>
     val downloadManagerMode: Flow<String>
     val autoPreviewDownloadedImages: Flow<Boolean>
+
+    // Apple Duo (BETA) Animation
+    val appleDuoEnabled: Flow<Boolean>
+    val appleDuoWebsites: Flow<Boolean>
+    val appleDuoUseSensor: Flow<Boolean>
+    val appleDuoManualTilt: Flow<Float>
+    val appleDuoAutoRecenter: Flow<Boolean>
+    val appleDuoEyeDistance: Flow<Float>
+    val appleDuoBlurSpread: Flow<Float>
+    val appleDuoDarkening: Flow<Float>
 
     // Setters
     suspend fun setAppFont(font: AppFont)
@@ -121,6 +132,7 @@ interface SettingsRepository {
     suspend fun setCustomDohUrl(url: String)
 
     suspend fun setTouchHaptics(enabled: Boolean)
+    suspend fun setScrollHaptics(enabled: Boolean)
     suspend fun setPredictiveBack(enabled: Boolean)
     suspend fun setDepthBlur(enabled: Boolean)
     suspend fun setFontSizeScale(scale: Float)
@@ -142,4 +154,13 @@ interface SettingsRepository {
     suspend fun setTorrentEngineMode(mode: String)
     suspend fun setDownloadManagerMode(mode: String)
     suspend fun setAutoPreviewDownloadedImages(enabled: Boolean)
+
+    suspend fun setAppleDuoEnabled(enabled: Boolean)
+    suspend fun setAppleDuoWebsites(enabled: Boolean)
+    suspend fun setAppleDuoUseSensor(enabled: Boolean)
+    suspend fun setAppleDuoManualTilt(tilt: Float)
+    suspend fun setAppleDuoAutoRecenter(enabled: Boolean)
+    suspend fun setAppleDuoEyeDistance(distance: Float)
+    suspend fun setAppleDuoBlurSpread(spread: Float)
+    suspend fun setAppleDuoDarkening(darkening: Float)
 }

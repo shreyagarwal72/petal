@@ -238,14 +238,10 @@ fun PetalExpressiveTheme(
 
 private class PetalHapticFeedback(private val context: Context) : androidx.compose.ui.hapticfeedback.HapticFeedback {
     override fun performHapticFeedback(hapticFeedbackType: androidx.compose.ui.hapticfeedback.HapticFeedbackType) {
-        val pattern = when (hapticFeedbackType) {
-            androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress ->
-                com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK
-            androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove ->
-                com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK
-            else ->
-                com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK
-        }
-        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playIfEnabled(context, pattern, 0.75f)
+        com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playIfEnabled(
+            context,
+            com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
+            0.85f
+        )
     }
 }

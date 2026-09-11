@@ -80,7 +80,7 @@ public class PetalHapticEngine {
             lastMs.compareAndSet(prev, now);
         }
 
-        float clamped = Math.max(0f, Math.min(1f, intensity));
+        float clamped = Math.max(0.1f, Math.min(1f, intensity));
         VibrationEffect effect = effectFor(pattern, clamped);
 
         // For rapid succession tap sequences, avoid canceling subtle ticks so feedback feels smooth
@@ -92,7 +92,10 @@ public class PetalHapticEngine {
 
         if (effect != null) {
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && touchAttrs != null) {
+                    vibrator.vibrate(effect, touchAttrs);
+                    return true;
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     vibrator.vibrate(effect);
                     return true;
                 } else {
@@ -105,10 +108,14 @@ public class PetalHapticEngine {
         // Multi-tiered fallback for devices lacking hardware primitive composition
         try {
             long durationMs = (pattern == Pattern.DOUBLE_CLICK || pattern == Pattern.HEAVY_CLICK) ? 40L : 20L;
-            int amplitude = Math.max(1, Math.min(255, (int) (clamped * 255f)));
+            int amplitude = Math.max(120, Math.min(255, (int) (clamped * 255f)));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 VibrationEffect fallbackEffect = VibrationEffect.createOneShot(durationMs, amplitude);
-                vibrator.vibrate(fallbackEffect);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && touchAttrs != null) {
+                    vibrator.vibrate(fallbackEffect, touchAttrs);
+                } else {
+                    vibrator.vibrate(fallbackEffect);
+                }
             } else {
                 vibrator.vibrate(durationMs);
             }
@@ -134,6 +141,16 @@ public class PetalHapticEngine {
         try {
             return androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
                     .getBoolean("sp_touch_haptics", true);
+        } catch (Throwable ignored) {
+            return true;
+        }
+    }
+
+    public static boolean isScrollHapticsEnabled(Context context) {
+        if (context == null) return true;
+        try {
+            android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+            return sp.getBoolean("sp_touch_haptics", true) && sp.getBoolean("sp_scroll_haptics", true);
         } catch (Throwable ignored) {
             return true;
         }
@@ -167,11 +184,11 @@ public class PetalHapticEngine {
     }
 
     public void playClick(Context context) {
-        playIfEnabled(context, Pattern.CLICK, 0.75f, 0L);
+        playIfEnabled(context, Pattern.CLICK, 0.85f, 0L);
     }
 
     public void playTick(Context context) {
-        playIfEnabled(context, Pattern.TICK, 0.5f, 0L);
+        playIfEnabled(context, Pattern.CLICK, 0.65f, 0L);
     }
 
     private VibrationEffect effectFor(Pattern pattern, float intensity) {

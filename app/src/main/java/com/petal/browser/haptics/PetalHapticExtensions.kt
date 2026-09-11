@@ -16,12 +16,7 @@ import androidx.compose.ui.semantics.Role
  * Performs custom haptic feedback using PetalHapticEngine, mapped from RvSystem-Monitor.
  */
 private fun performRvHapticFeedback(context: Context, intensity: VibrationIntensity) {
-    val pattern = when (intensity) {
-        VibrationIntensity.LIGHT -> PetalHapticEngine.Pattern.TICK
-        VibrationIntensity.MEDIUM -> PetalHapticEngine.Pattern.CLICK
-        VibrationIntensity.STRONG -> PetalHapticEngine.Pattern.HEAVY_CLICK
-    }
-    PetalHapticEngine.getInstance(context).playIfEnabled(context, pattern, 0.75f)
+    PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.CLICK, 0.85f)
 }
 
 /**

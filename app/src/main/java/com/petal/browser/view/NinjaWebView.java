@@ -118,8 +118,10 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         // Tactile Scroll Haptics (Inspired by Ever-Haptics)
         if (Math.abs(t - lastScrollHapticY) > 36) {
             lastScrollHapticY = t;
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(getContext())
-                    .playIfEnabled(getContext(), com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.45f, 60L);
+            if (com.petal.browser.haptics.PetalHapticEngine.isScrollHapticsEnabled(getContext())) {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(getContext())
+                        .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.45f, 60L);
+            }
         }
 
         if (onScrollChangeListener != null) {

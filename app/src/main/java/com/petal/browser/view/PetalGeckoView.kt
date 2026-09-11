@@ -708,8 +708,10 @@ class PetalGeckoView @JvmOverloads constructor(
                 act.runOnUiThread {
                     if (Math.abs(scrollY - lastScrollHapticY) > 36) {
                         lastScrollHapticY = scrollY
-                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                            .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.45f, 60L)
+                        if (com.petal.browser.haptics.PetalHapticEngine.isScrollHapticsEnabled(context)) {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.45f, 60L)
+                        }
                     }
 
                     onScrollChangeListener?.let { listener ->

@@ -129,8 +129,7 @@ fun Modifier.bouncyClickable(
             indication = null,
             enabled = enabled,
             onClick = {
-                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context).playClick(context)
                 onClick()
             },
         )

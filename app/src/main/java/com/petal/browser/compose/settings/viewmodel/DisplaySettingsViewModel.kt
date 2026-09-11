@@ -18,6 +18,9 @@ class DisplaySettingsViewModel @Inject constructor(
     val touchHaptics: StateFlow<Boolean> = settingsRepository.touchHaptics
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val scrollHaptics: StateFlow<Boolean> = settingsRepository.scrollHaptics
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val predictiveBack: StateFlow<Boolean> = settingsRepository.predictiveBack
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -50,6 +53,10 @@ class DisplaySettingsViewModel @Inject constructor(
 
     fun setTouchHaptics(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setTouchHaptics(enabled)
+    }
+
+    fun setScrollHaptics(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setScrollHaptics(enabled)
     }
 
     fun setPredictiveBack(enabled: Boolean) = viewModelScope.launch {

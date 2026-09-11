@@ -23,6 +23,7 @@ import android.app.Dialog;
 import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import com.petal.browser.appleduo.AppleDuoManager;
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
@@ -585,6 +586,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
         }
         predictiveBackRoot = findViewById(R.id.main);
+        AppleDuoManager.INSTANCE.init(getApplication());
+        AppleDuoManager.INSTANCE.attachTargetView(predictiveBackRoot, false);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             boolean isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
@@ -1237,6 +1240,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             screen.setTranslationX(0f);
             contentFrame.addView(screen);
         }
+        AppleDuoManager.INSTANCE.onContentSwitched(false);
     }
 
     @Override
@@ -1801,6 +1805,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updateOmniBox();
         applyAddressBarPosition();
         updatePersistentBottomNav();
+        boolean isWebPage = !isHomePage(url) && !"about:blank".equalsIgnoreCase(url) && !"petal://incognito".equalsIgnoreCase(url);
+        AppleDuoManager.INSTANCE.onContentSwitched(isWebPage);
         View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         if (refreshBarCompose != null) {
             refreshBarCompose.bringToFront();
