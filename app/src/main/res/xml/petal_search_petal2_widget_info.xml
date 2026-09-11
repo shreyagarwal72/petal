@@ -10,6 +10,8 @@
     android:maxResizeHeight="120dp"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/glance_default_layout"
+    android:previewImage="@drawable/preview_widget_petal2"
+    android:previewLayout="@layout/preview_widget_petal2_layout"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/widget_search_petal2_desc" />

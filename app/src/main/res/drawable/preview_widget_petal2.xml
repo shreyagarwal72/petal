@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Accurate Live Preview Vector for Petal #2 Search Widget (Material 3 Expressive) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="280dp"
+    android:height="56dp"
+    android:viewportWidth="280"
+    android:viewportHeight="56">
+
+    <!-- Outer Surface Container Pill (height 56, corner radius 28) -->
+    <path
+        android:fillColor="@color/md_theme_surfaceVariant"
+        android:pathData="M28,0 L252,0 A28,28 0 0 1 280,28 A28,28 0 0 1 252,56 L28,56 A28,28 0 0 1 0,28 A28,28 0 0 1 28,0 Z" />
+
+    <!-- Embedded Left Search Pill Button (x=8..130, y=7..49, corner radius 21) -->
+    <path
+        android:fillColor="@color/md_theme_surface"
+        android:pathData="M29,7 L109,7 A21,21 0 0 1 130,28 A21,21 0 0 1 109,49 L29,49 A21,21 0 0 1 8,28 A21,21 0 0 1 29,7 Z" />
+
+    <!-- Magnifying Glass Icon inside Search Pill (x=24, y=28) -->
+    <path
+        android:strokeColor="@color/md_theme_primary"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M24,31 C21.8,31 20,29.2 20,27 C20,24.8 21.8,23 24,23 C26.2,23 28,24.8 28,27 C28,27.9 27.65,28.7 27.1,29.3 L30.5,32.7 M27.1,29.3 C26.3,29.8 25.2,30.1 24,30.1" />
+
+    <!-- Expressive Action Squircle 1: AI Assistant (primaryContainer, cx=155, cy=28, size=40, r=14) -->
+    <path
+        android:fillColor="@color/md_theme_primaryContainer"
+        android:pathData="M149,8 L161,8 A14,14 0 0 1 175,22 L175,34 A14,14 0 0 1 161,48 L149,48 A14,14 0 0 1 135,34 L135,22 A14,14 0 0 1 149,8 Z" />
+    <!-- AI Sparkles Icon -->
+    <path
+        android:fillColor="@color/md_theme_onPrimaryContainer"
+        android:pathData="M155,19 L156.4,24.6 L162,26 L156.4,27.4 L155,33 L153.6,27.4 L148,26 L153.6,24.6 Z" />
+
+    <!-- Expressive Action Squircle 2: Incognito Private Browsing (secondaryContainer, cx=201, cy=28, size=40, r=14) -->
+    <path
+        android:fillColor="@color/md_theme_secondaryContainer"
+        android:pathData="M195,8 L207,8 A14,14 0 0 1 221,22 L221,34 A14,14 0 0 1 207,48 L195,48 A14,14 0 0 1 181,34 L181,22 A14,14 0 0 1 195,8 Z" />
+    <!-- Incognito Icon -->
+    <path
+        android:fillColor="@color/md_theme_onSecondaryContainer"
+        android:pathData="M201,18 A10,10 0 0 0 191,28 A10,10 0 0 0 201,38 A10,10 0 0 0 211,28 A10,10 0 0 0 201,18 Z M201,20 A8,8 0 0 1 209,28 A8,8 0 0 1 201,36 A8,8 0 0 1 193,28 A8,8 0 0 1 201,20 Z M201,22 A6,6 0 0 0 195,28 A6,6 0 0 0 201,34 A6,6 0 0 0 207,28 A6,6 0 0 0 201,22 Z" />
+
+    <!-- Expressive Action Squircle 3: Visual Lens (tertiaryContainer, cx=247, cy=28, size=40, r=14) -->
+    <path
+        android:fillColor="@color/md_theme_tertiaryContainer"
+        android:pathData="M241,8 L253,8 A14,14 0 0 1 267,22 L267,34 A14,14 0 0 1 253,48 L241,48 A14,14 0 0 1 227,34 L227,22 A14,14 0 0 1 241,8 Z" />
+    <!-- Lens Icon -->
+    <path
+        android:fillColor="@color/md_theme_onTertiaryContainer"
+        android:pathData="M247,23 A5,5 0 1 0 247,33 A5,5 0 1 0 247,23 Z M239,21 A2,2 0 0 1 241,19 L253,19 A2,2 0 0 1 255,21 L255,35 A2,2 0 0 1 253,37 L241,37 A2,2 0 0 1 239,35 Z M241,21 L253,21 L253,35 L241,35 Z" />
+</vector>
