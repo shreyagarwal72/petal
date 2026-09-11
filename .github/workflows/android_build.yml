@@ -67,13 +67,19 @@ jobs:
             keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1 | head -6
           fi
 
-          # Verify the alias actually exists in the keystore before signing
-          if ! keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1 | grep -q "$ALIAS_NAME"; then
-            echo "❌ ERROR: Alias '$ALIAS_NAME' not found in keystore! Aborting."
+          # Determine alias: if ALIAS_NAME is provided and found, use it; otherwise detect alias dynamically from keystore
+          DETECTED_ALIAS=$(keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>/dev/null | grep 'PrivateKeyEntry' | head -n 1 | awk -F ',' '{print $1}' | xargs)
+          if [ -n "$ALIAS_NAME" ] && keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1 | grep -q "$ALIAS_NAME"; then
+            echo "✅ Specified alias '$ALIAS_NAME' verified in keystore."
+          elif [ -n "$DETECTED_ALIAS" ]; then
+            echo "⚠️ Specified alias '$ALIAS_NAME' not matched, but detected PrivateKeyEntry alias '$DETECTED_ALIAS' in keystore. Using '$DETECTED_ALIAS'."
+            ALIAS_NAME="$DETECTED_ALIAS"
+          else
+            echo "❌ ERROR: No valid signing alias found in keystore! Aborting."
             keytool -list -keystore /tmp/signing.keystore -storepass "$STORE_PASS" 2>&1
             exit 1
           fi
-          echo "✅ Alias '$ALIAS_NAME' verified in keystore."
+          echo "🔑 Final signing alias: $ALIAS_NAME"
 
           ANDROID_SDK_BUILD_TOOLS=$(find $ANDROID_HOME/build-tools -mindepth 1 -maxdepth 1 | sort -V | tail -n 1)
           echo "Using Android Build-Tools: $ANDROID_SDK_BUILD_TOOLS"
