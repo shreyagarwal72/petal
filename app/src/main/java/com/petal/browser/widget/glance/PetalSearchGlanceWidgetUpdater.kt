@@ -23,6 +23,9 @@ object PetalSearchGlanceWidgetUpdater {
                 PetalExpressiveGlanceWidget().updateAll(appContext)
                 PetalShortcutsGlanceWidget().updateAll(appContext)
                 PetalModeSwitchGlanceWidget().updateAll(appContext)
+                PetalSearchPetal1Widget().updateAll(appContext)
+                PetalSearchPetal2Widget().updateAll(appContext)
+                PetalSearchPetal3Widget().updateAll(appContext)
             } catch (e: Exception) {
                 android.util.Log.e("PetalWidgetUpdater", "Error updating Glance search widgets", e)
             }

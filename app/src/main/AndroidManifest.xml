@@ -305,6 +305,42 @@
                 android:resource="@xml/petal_mode_switch_widget_info" />
         </receiver>
 
+        <receiver
+            android:name="com.petal.browser.widget.glance.PetalSearchPetal1WidgetReceiver"
+            android:label="@string/widget_search_petal1_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/petal_search_petal1_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.petal.browser.widget.glance.PetalSearchPetal2WidgetReceiver"
+            android:label="@string/widget_search_petal2_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/petal_search_petal2_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.petal.browser.widget.glance.PetalSearchPetal3WidgetReceiver"
+            android:label="@string/widget_search_petal3_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/petal_search_petal3_widget_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
