@@ -4,8 +4,8 @@ package com.petal.browser.widget;
  * Action constants for Petal's home screen search widget.
  *
  * The widget itself is now implemented with Jetpack Glance (Material 3 Expressive
- * components) — see {@link com.petal.browser.widget.glance.PetalSearchGlanceWidget} and
- * {@link com.petal.browser.widget.glance.PetalSearchGlanceWidgetReceiver}, which is what's
+ * components) — see {@link com.petal.browser.widget.glance.PetalSearchPetal1Widget} and
+ * {@link com.petal.browser.widget.glance.PetalSearchPetal1WidgetReceiver}, which is what's
  * registered as the actual AppWidgetProvider in AndroidManifest.xml.
  *
  * This class survives only as the single shared source of truth for the widget's
@@ -28,6 +28,7 @@ public final class PetalSearchWidgetProvider {
     public static final String ACTION_OPEN_DOWNLOADS = "com.petal.browser.action.OPEN_DOWNLOADS";
     public static final String ACTION_OPEN_NEW_TAB = "com.petal.browser.action.OPEN_NEW_TAB";
     public static final String ACTION_OPEN_LENS = "com.petal.browser.action.OPEN_LENS";
+    public static final String ACTION_OPEN_SNAP_CAMERA = "com.petal.browser.action.OPEN_SNAP_CAMERA";
 
     /** Refreshes every placed instance of the widget, e.g. after a theme/palette change. */
     public static void updateAllWidgets(android.content.Context context) {

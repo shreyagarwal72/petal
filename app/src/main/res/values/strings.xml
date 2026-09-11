@@ -162,20 +162,12 @@
     <string name="app_intro_a">Thanks for using Petal!</string>
     <string name="app_intro_b">The currently opened website is the WIKI of Petal. This site is also saved as your first Bookmark. On the WIKI you can find helpful tips and links.</string>
 
-    <string name="widget_quick_search_name">Petal Search (Classic Bar)</string>
-    <string name="widget_quick_search_desc">Classic search bar with AI and Voice shortcuts.</string>
-    <string name="widget_expressive_bar_name">Petal Search (Expressive Island)</string>
-    <string name="widget_expressive_bar_desc">Material 3 Expressive search bar with Scallop monogram badge and action island.</string>
-    <string name="widget_search_petal1_name">Petal #1 (Scallop Flower Petal)</string>
-    <string name="widget_search_petal1_desc">Pill search bar with centered scalloped flower-petal badge, AI sparkle, and Lens scanner.</string>
-    <string name="widget_search_petal2_name">Petal #2 (Action Island Trio)</string>
-    <string name="widget_search_petal2_desc">Pill container with embedded search button and circular action trio: AI, Incognito, and Scanner.</string>
-    <string name="widget_search_petal3_name">Petal #3 (Minimalist Brand Pill)</string>
+    <string name="widget_search_petal1_name">Petal #1</string>
+    <string name="widget_search_petal1_desc">Material 3 Expressive pill search bar with gradient P emblem, AI sparkle, voice, and camera scanner. Expands with shortcuts when resized.</string>
+    <string name="widget_search_petal2_name">Petal #2</string>
+    <string name="widget_search_petal2_desc">Material 3 Expressive search bar with embedded search pill and action island.</string>
+    <string name="widget_search_petal3_name">Petal #3</string>
     <string name="widget_search_petal3_desc">Minimalist horizontal pill bar with circular brand badge on left and AI shortcut on right.</string>
-    <string name="widget_shortcuts_name">Petal Shortcuts &amp; Bookmarks</string>
-    <string name="widget_shortcuts_desc">Quick access grid for favorite shortcuts and bookmarks.</string>
-    <string name="widget_mode_switch_name">Petal Mode Switcher</string>
-    <string name="widget_mode_switch_desc">Instant toggle between Standard and Incognito browsing mode.</string>
 
     <!-- Crash Reporting & Diagnostic Tracker -->
     <string name="crash_reporting_title">Crash &amp; Diagnostic Reporting</string>

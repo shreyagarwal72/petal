@@ -16,13 +16,8 @@ object PetalSearchGlanceWidgetUpdater {
     @JvmStatic
     fun refresh(context: Context) {
         val appContext = context.applicationContext
-        PetalSearchGlanceWidget.clearShapeCache()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                PetalSearchGlanceWidget().updateAll(appContext)
-                PetalExpressiveGlanceWidget().updateAll(appContext)
-                PetalShortcutsGlanceWidget().updateAll(appContext)
-                PetalModeSwitchGlanceWidget().updateAll(appContext)
                 PetalSearchPetal1Widget().updateAll(appContext)
                 PetalSearchPetal2Widget().updateAll(appContext)
                 PetalSearchPetal3Widget().updateAll(appContext)

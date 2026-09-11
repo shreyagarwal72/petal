@@ -7,7 +7,7 @@
     android:targetCellWidth="4"
     android:targetCellHeight="1"
     android:maxResizeWidth="500dp"
-    android:maxResizeHeight="120dp"
+    android:maxResizeHeight="240dp"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/glance_default_layout"
     android:resizeMode="horizontal|vertical"

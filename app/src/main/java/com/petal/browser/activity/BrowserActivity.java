@@ -5277,12 +5277,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             };
             runOrDeferPendingWidgetAction();
+        } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA.equals(action)) {
+            try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
+            getIntent().setAction("");
+            sp.edit().putBoolean("show_overview", false).apply();
+            pendingWidgetAction = () -> {
+                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this, true);
+            };
+            runOrDeferPendingWidgetAction();
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_LENS.equals(action)) {
             try { overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out); } catch (Exception ignored) {}
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             pendingWidgetAction = () -> {
-                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this);
+                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this, false);
             };
             runOrDeferPendingWidgetAction();
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO.equals(action)) {

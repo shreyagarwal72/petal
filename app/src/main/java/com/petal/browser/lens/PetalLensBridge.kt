@@ -26,7 +26,8 @@ object PetalLensBridge {
     private var activeDialog: BottomSheetDialog? = null
 
     @JvmStatic
-    fun showLensBottomSheet(activity: ComponentActivity) {
+    @JvmOverloads
+    fun showLensBottomSheet(activity: ComponentActivity, autoSnapCamera: Boolean = false) {
         activity.runOnUiThread {
             try {
                 activeDialog?.dismiss()
@@ -89,6 +90,7 @@ object PetalLensBridge {
                         paletteId = paletteId
                     ) {
                         PetalLensBottomSheet(
+                            autoSnapCamera = autoSnapCamera,
                             onDismissRequest = {
                                 try {
                                     if (dialog.isShowing) {

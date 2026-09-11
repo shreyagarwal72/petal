@@ -46,6 +46,7 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun PetalLensBottomSheet(
+    autoSnapCamera: Boolean = false,
     onDismissRequest: () -> Unit
 ) {
     val context = LocalContext.current
@@ -97,7 +98,6 @@ fun PetalLensBottomSheet(
         }
     }
 
-
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success: Boolean ->
@@ -147,6 +147,24 @@ fun PetalLensBottomSheet(
             launchCameraInternal()
         } else {
             Toast.makeText(context, "Camera permission is required to snap a photo", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Auto-trigger snap camera feature if requested from widget or shortcut
+    var didTriggerAutoCamera by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(autoSnapCamera) {
+        if (autoSnapCamera && !didTriggerAutoCamera) {
+            didTriggerAutoCamera = true
+            val hasCameraPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (hasCameraPermission) {
+                launchCameraInternal()
+            } else {
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
         }
     }
 
