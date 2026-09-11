@@ -77,7 +77,7 @@ fun PetalAppLockConfigScreen(
 
     val content = @Composable {
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
+            snackbarHost = { com.petal.browser.ui.components.PetalThemedSnackbarHost(snackbarHostState) },
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0)
         ) { innerPadding ->

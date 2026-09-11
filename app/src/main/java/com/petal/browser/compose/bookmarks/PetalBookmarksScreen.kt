@@ -188,6 +188,9 @@ fun PetalBookmarksScreen(
         }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
         onBack = onDismiss,
@@ -195,6 +198,12 @@ fun PetalBookmarksScreen(
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = {
+            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(16.dp)
+            )
+        },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -371,13 +380,32 @@ fun PetalBookmarksScreen(
                                 record = record,
                                 onClick = { onOpenUrl(record.url) },
                                 onDelete = {
+                                    val deletedRecord = record
                                     try {
                                         val action = RecordAction(context)
                                         action.open(true)
-                                        action.deleteURL(record.url, RecordUnit.TABLE_BOOKMARK)
+                                        action.deleteURL(deletedRecord.url, RecordUnit.TABLE_BOOKMARK)
                                         action.close()
                                     } catch (_: Exception) {}
                                     reloadBookmarks()
+
+                                    coroutineScope.launch {
+                                        val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "Bookmark"
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Deleted \"$displayTitle\"",
+                                            actionLabel = "Undo",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            try {
+                                                val action = RecordAction(context)
+                                                action.open(true)
+                                                action.addBookmark(deletedRecord)
+                                                action.close()
+                                            } catch (_: Exception) {}
+                                            reloadBookmarks()
+                                        }
+                                    }
                                 }
                             )
                         }

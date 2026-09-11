@@ -197,6 +197,9 @@ fun PetalHistoryScreen(
         )
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
         onBack = onDismiss,
@@ -204,6 +207,12 @@ fun PetalHistoryScreen(
     com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = {
+            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(16.dp)
+            )
+        },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -329,14 +338,41 @@ fun PetalHistoryScreen(
                                         ),
                                         onSelect = { record.url?.let(onOpenUrl) },
                                         onDelete = {
+                                            val deletedRecord = record
+                                            val deletedIndex = rawHistory?.indexOfFirst { it.url == record.url } ?: -1
                                             try {
                                                 val action = RecordAction(context)
                                                 action.open(true)
-                                                action.deleteURL(record.url, RecordUnit.TABLE_HISTORY)
+                                                action.deleteURL(deletedRecord.url, RecordUnit.TABLE_HISTORY)
                                                 action.close()
-                                                rawHistory = rawHistory?.filter { it.url != record.url } ?: emptyList()
+                                                rawHistory = rawHistory?.filter { it.url != deletedRecord.url } ?: emptyList()
                                             } catch (e: Exception) {
                                                 e.printStackTrace()
+                                            }
+                                            coroutineScope.launch {
+                                                val displayTitle = deletedRecord.title?.takeIf { it.isNotBlank() } ?: deletedRecord.url ?: "History item"
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Deleted \"$displayTitle\"",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) {
+                                                    try {
+                                                        val action = RecordAction(context)
+                                                        action.open(true)
+                                                        action.addHistory(deletedRecord)
+                                                        action.close()
+                                                        val current = rawHistory?.toMutableList() ?: mutableListOf()
+                                                        if (deletedIndex in 0..current.size) {
+                                                            current.add(deletedIndex, deletedRecord)
+                                                        } else {
+                                                            current.add(deletedRecord)
+                                                        }
+                                                        rawHistory = current
+                                                    } catch (e: Exception) {
+                                                        e.printStackTrace()
+                                                    }
+                                                }
                                             }
                                         }
                                     )

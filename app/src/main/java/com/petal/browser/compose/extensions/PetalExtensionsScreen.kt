@@ -45,6 +45,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import kotlinx.coroutines.launch
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
@@ -118,6 +119,7 @@ fun PetalExtensionsScreen(
     var showAddSheet by remember { mutableStateOf(false) }
     var detailExtensionId by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { PetalExtensionManager.attach(context); PetalExtensionManager.refresh() }
 
@@ -133,7 +135,12 @@ fun PetalExtensionsScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(16.dp)
+            )
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddSheet = true },
@@ -184,7 +191,19 @@ fun PetalExtensionsScreen(
                                     detailExtensionId = ext.id
                                 },
                                 onUninstall = {
+                                    val extName = ext.name
+                                    val fallbackInstallUrl = ext.amoListingUrl ?: ext.homepageUrl
                                     PetalExtensionManager.uninstall(ext.raw)
+                                    coroutineScope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Uninstalled \"$extName\"",
+                                            actionLabel = if (!fallbackInstallUrl.isNullOrBlank()) "Undo" else null,
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed && !fallbackInstallUrl.isNullOrBlank()) {
+                                            PetalExtensionManager.install(fallbackInstallUrl)
+                                        }
+                                    }
                                 },
                                 onOpenPopup = {
                                     PetalExtensionManager.triggerBrowserAction(ext.id)
@@ -223,8 +242,20 @@ fun PetalExtensionsScreen(
                 onDismiss = { detailExtensionId = null },
                 onTogglePrivate = { allowed -> PetalExtensionManager.setAllowedInPrivateBrowsing(ext.raw, allowed) },
                 onUninstall = {
+                    val extName = ext.name
+                    val fallbackInstallUrl = ext.amoListingUrl ?: ext.homepageUrl
                     PetalExtensionManager.uninstall(ext.raw)
                     detailExtensionId = null
+                    coroutineScope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Uninstalled \"$extName\"",
+                            actionLabel = if (!fallbackInstallUrl.isNullOrBlank()) "Undo" else null,
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed && !fallbackInstallUrl.isNullOrBlank()) {
+                            PetalExtensionManager.install(fallbackInstallUrl)
+                        }
+                    }
                 },
                 onOpenLink = { linkTitle, url ->
                     // Opening a link (extension settings / AMO listing) needs to fully leave

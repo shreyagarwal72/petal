@@ -314,7 +314,10 @@ fun PetalImageViewerScreen(
                 containerColor = Color.Black,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 snackbarHost = {
-                    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.navigationBarsPadding())
+                    com.petal.browser.ui.components.PetalThemedSnackbarHost(
+                        hostState = snackbarHostState,
+                        modifier = Modifier.navigationBarsPadding()
+                    )
                 },
             ) { innerPadding ->
 
