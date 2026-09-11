@@ -122,11 +122,6 @@ class PetalGeckoView @JvmOverloads constructor(
             geckoView,
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-                resetGestureExclusionRects()
-            }
-        }
         initGeckoSession()
         album.setBrowserController(globalBrowserController)
     }
@@ -1347,41 +1342,10 @@ class PetalGeckoView @JvmOverloads constructor(
                 // property here dispatches to our override and recursively
                 // re-enters this method until the process stack overflows.
                 super.setSystemGestureExclusionRects(java.util.Collections.emptyList())
-            } catch (ignored: Exception) {}
+            } catch (_: Throwable) {}
             try {
                 geckoView.systemGestureExclusionRects = java.util.Collections.emptyList()
-            } catch (ignored: Exception) {}
-            clearChildGestureExclusionRects(geckoView)
-            try {
-                geckoView.post {
-                    try {
-                        geckoView.systemGestureExclusionRects = java.util.Collections.emptyList()
-                    } catch (ignored: Exception) {}
-                    clearChildGestureExclusionRects(geckoView)
-                }
-            } catch (ignored: Exception) {}
-        }
-    }
-
-    /**
-     * GeckoView can recreate nested rendering children after first paint, and it does so
-     * from its own native compositor callbacks - not guaranteed to be serialized with this
-     * walk in a way that keeps the child list stable mid-iteration. Snapshotting childCount
-     * once and re-checking bounds on every access (instead of trusting a live index into a
-     * tree that may shrink/mutate underneath us) avoids touching a child GeckoView has
-     * already started tearing down, which previously caused a native SIGSEGV in libxul.so
-     * when this ran during a page navigation (e.g. right after a login form redirect).
-     */
-    private fun clearChildGestureExclusionRects(view: View) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || view !is ViewGroup) return
-        val snapshotCount = view.childCount
-        for (index in 0 until snapshotCount) {
-            if (index >= view.childCount) break
-            val child = try { view.getChildAt(index) } catch (_: Exception) { null } ?: continue
-            try {
-                child.systemGestureExclusionRects = java.util.Collections.emptyList()
-            } catch (_: Exception) {}
-            clearChildGestureExclusionRects(child)
+            } catch (_: Throwable) {}
         }
     }
 
