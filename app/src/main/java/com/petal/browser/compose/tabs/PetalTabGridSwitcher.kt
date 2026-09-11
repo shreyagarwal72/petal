@@ -389,6 +389,15 @@ fun PetalTabGridSwitcher(
                                 )
                                 HorizontalDivider()
                                 DropdownMenuItem(
+                                    text = { Text("Inactive Tabs Settings") },
+                                    leadingIcon = { Icon(Icons.Rounded.Tune, contentDescription = null, tint = accentColor) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        onOpenSettings()
+                                    }
+                                )
+                                HorizontalDivider()
+                                DropdownMenuItem(
                                     text = { Text("Close All Tabs") },
                                     leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                     onClick = {

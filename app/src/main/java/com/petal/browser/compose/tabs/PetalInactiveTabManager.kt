@@ -199,6 +199,8 @@ object PetalInactiveTabManager {
                             if (inactiveTabsList.none { it.id == inactive.id }) {
                                 inactiveTabsList.add(0, inactive)
                             }
+                            // Guarantee that inactive tabs do not cache their thumbnails in app
+                            com.petal.browser.unit.TabThumbnailCache.remove(duplicateTab.id)
                         }
                     }
                 }
@@ -228,6 +230,8 @@ object PetalInactiveTabManager {
                     if (inactiveTabsList.none { it.id == inactive.id }) {
                         inactiveTabsList.add(0, inactive)
                     }
+                    // Guarantee that inactive tabs do not cache their thumbnails in app
+                    com.petal.browser.unit.TabThumbnailCache.remove(tab.id)
                 }
             }
         }
@@ -260,12 +264,14 @@ object PetalInactiveTabManager {
         init(context)
         inactiveTabsList.removeAll { it.id == inactiveTabId }
         tabAccessMap.remove(inactiveTabId)
+        com.petal.browser.unit.TabThumbnailCache.remove(inactiveTabId)
         persist(context)
     }
 
     @Synchronized
     fun clearAllInactiveTabs(context: Context) {
         init(context)
+        inactiveTabsList.forEach { com.petal.browser.unit.TabThumbnailCache.remove(it.id) }
         inactiveTabsList.clear()
         persist(context)
     }
