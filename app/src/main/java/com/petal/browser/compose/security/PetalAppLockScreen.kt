@@ -62,6 +62,11 @@ fun PetalAppLockScreen(
             errorMessage = null
             isUnlockedSuccess = true
             PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
+            val activity = context as? android.app.Activity
+            val decor = activity?.window?.decorView
+            if (decor != null) {
+                com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor)
+            }
             onUnlocked()
         } else {
             errorMessage = "Incorrect app password. Please try again."
@@ -107,12 +112,20 @@ fun PetalAppLockScreen(
         AlertDialog(
             onDismissRequest = { showChoiceDialog = false },
             icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Security,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp)
-                )
+                Surface(
+                    shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Security,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
             },
             title = {
                 Text(
@@ -126,6 +139,7 @@ fun PetalAppLockScreen(
                 Text(
                     text = "Select how you would like to authenticate and unlock Petal Browser.",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
             },
@@ -135,11 +149,11 @@ fun PetalAppLockScreen(
                         showChoiceDialog = false
                         triggerBiometricUnlock()
                     },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Icon(Icons.Rounded.Fingerprint, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Use Fingerprint")
+                    Text("Use Fingerprint", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -147,11 +161,11 @@ fun PetalAppLockScreen(
                     onClick = {
                         showChoiceDialog = false
                     },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Icon(Icons.Rounded.Key, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Use Password")
+                    Text("Use Password", fontWeight = FontWeight.SemiBold)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

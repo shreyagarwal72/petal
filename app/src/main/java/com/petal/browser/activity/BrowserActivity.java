@@ -487,22 +487,39 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (sp.getBoolean("sp_app_lock_enabled", false)) {
             String lockType = sp.getString("sp_app_lock_type", "FINGERPRINT");
             if ("FINGERPRINT".equals(lockType) || sp.getBoolean("sp_biometric_lock", false)) {
-                com.petal.browser.security.BiometricLockManager.authenticate(
+                com.petal.browser.compose.security.PetalBiometricOverlayBridge.show(
                     this,
                     "Petal Browser Locked",
-                    "Authenticate using biometric or PIN to continue",
+                    "Confirm your fingerprint to access Petal Browser",
                     new Runnable() {
                         @Override
                         public void run() {
-                            // Success: user authenticated
-                            com.petal.browser.ui.layout.LiquidRippleEffect.trigger(BrowserActivity.this.getWindow().getDecorView());
+                            // Success: user authenticated with liquid ripple triggered
                         }
                     },
-                    new java.util.function.Consumer<String>() {
+                    new Runnable() {
                         @Override
-                        public void accept(String error) {
-                            Toast.makeText(BrowserActivity.this, "Authentication required: " + error, Toast.LENGTH_SHORT).show();
+                        public void run() {
+                            Toast.makeText(BrowserActivity.this, "Authentication required", Toast.LENGTH_SHORT).show();
                             finish();
+                        }
+                    },
+                    sp.getString("sp_app_lock_passcode", "").isEmpty() ? null : new Runnable() {
+                        @Override
+                        public void run() {
+                            com.petal.browser.compose.security.PetalAppLockBridge.showLockOverlay(
+                                BrowserActivity.this,
+                                new Runnable() {
+                                    @Override
+                                    public void run() {}
+                                },
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        finish();
+                                    }
+                                }
+                            );
                         }
                     }
                 );
