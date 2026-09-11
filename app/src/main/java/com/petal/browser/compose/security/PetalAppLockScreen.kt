@@ -32,13 +32,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Shape
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressivePasswordShapes
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
+import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -53,9 +57,12 @@ fun PetalAppLockScreen(
 
     val savedPasscode = remember { sp.getString("sp_app_lock_passcode", "1234") ?: "1234" }
     val isBiometricAllowed = remember { sp.getBoolean("sp_biometric_lock", false) }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     var enteredPasscode by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isUnlockedSuccess by remember { mutableStateOf(false) }
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
 
     fun verifyPasscode() {
         if (enteredPasscode.trim() == savedPasscode.trim()) {
@@ -176,7 +183,8 @@ fun PetalAppLockScreen(
     val content = @Composable {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            snackbarHost = { PetalThemedSnackbarHost(hostState = snackbarHostState) }
         ) { innerPadding ->
             Box(
                 modifier = Modifier
@@ -303,17 +311,112 @@ fun PetalAppLockScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                     }
 
-                    TextButton(
-                        onClick = {
-                            enteredPasscode = ""
-                            errorMessage = null
-                        }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Clear Input")
+                        TextButton(
+                            onClick = {
+                                enteredPasscode = ""
+                                errorMessage = null
+                            }
+                        ) {
+                            Text("Clear Input")
+                        }
+
+                        TextButton(
+                            onClick = {
+                                showForgotPasswordDialog = true
+                            },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Forgot Password?")
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (showForgotPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showForgotPasswordDialog = false },
+            icon = {
+                Surface(
+                    shape = com.petal.browser.ui.theme.PetalMaterialShapes.Burst.toShape(),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.WarningAmber,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+            },
+            title = {
+                Text(
+                    text = "Forgot Password?",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Text(
+                    text = "Petal uses on-device hardware encryption. To regain access without your password, all app data (bookmarks, browsing history, saved passwords, downloads records, cookies, and app settings) must be completely erased.\n\nThis action cannot be undone.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Start
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showForgotPasswordDialog = false
+                        com.petal.browser.unit.BrowserUnit.eraseAllAppData(context)
+                        PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "All app data has been erased. Please do not forget your password again!",
+                                duration = SnackbarDuration.Long
+                            )
+                            delay(1600L)
+                            val activity = context as? android.app.Activity
+                            val decor = activity?.window?.decorView
+                            if (decor != null) {
+                                com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor)
+                            }
+                            onUnlocked()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Erase All Data & Unlock", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = {
+                        showForgotPasswordDialog = false
+                    },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Cancel", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = RoundedCornerShape(28.dp)
+        )
     }
 
     if (wrapPredictive) {

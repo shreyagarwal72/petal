@@ -359,6 +359,101 @@ public class BrowserUnit {
         editor.apply();
     }
 
+    /**
+     * Completely erases all app data (shared preferences, databases, cache, web storage, cookies, files).
+     * Used for total factory reset when recovering from forgotten app lock password.
+     */
+    public static void eraseAllAppData(Context context) {
+        if (context == null) return;
+        try {
+            // 1. Clear SharedPreferences completely
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+            sp.edit().clear().commit();
+
+            // Clear any other shared preference files
+            try {
+                File prefsDir = new File(context.getApplicationInfo().dataDir, "shared_prefs");
+                if (prefsDir.exists() && prefsDir.isDirectory()) {
+                    File[] prefFiles = prefsDir.listFiles();
+                    if (prefFiles != null) {
+                        for (File f : prefFiles) {
+                            f.delete();
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            // 2. Clear Databases (Bookmarks, History, Webview DBs)
+            try {
+                context.deleteDatabase("Ninja4.db");
+                context.deleteDatabase("item_icon.db");
+                context.deleteDatabase("passwords.db");
+                context.deleteDatabase("autofill.db");
+                context.deleteDatabase("downloads.db");
+                File dbDir = new File(context.getApplicationInfo().dataDir, "databases");
+                if (dbDir.exists() && dbDir.isDirectory()) {
+                    File[] dbs = dbDir.listFiles();
+                    if (dbs != null) {
+                        for (File db : dbs) {
+                            db.delete();
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            // 3. Clear Cookies and WebStorage
+            try {
+                CookieManager cookieManager = CookieManager.getInstance();
+                cookieManager.flush();
+                cookieManager.removeAllCookies(null);
+            } catch (Exception ignored) {}
+            try {
+                WebStorage.getInstance().deleteAllData();
+            } catch (Exception ignored) {}
+
+            // 4. Clear Caches
+            try {
+                CacheManager.clearAllCache(context, null);
+            } catch (Exception ignored) {}
+
+            // 5. Clear App Cache and Code Cache directories
+            try {
+                File cacheDir = context.getCacheDir();
+                deleteRecursive(cacheDir);
+                File codeCacheDir = context.getCodeCacheDir();
+                deleteRecursive(codeCacheDir);
+            } catch (Exception ignored) {}
+
+            // 6. Clear App Internal Files directory (excluding lib)
+            try {
+                File filesDir = context.getFilesDir();
+                deleteRecursive(filesDir);
+            } catch (Exception ignored) {}
+
+            // 7. Clear WebView internal app_webview data
+            try {
+                File webviewDir = new File(context.getApplicationInfo().dataDir, "app_webview");
+                deleteRecursive(webviewDir);
+            } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Log.e("BrowserUnit", "Error erasing all app data", e);
+        }
+    }
+
+    private static void deleteRecursive(File fileOrDirectory) {
+        if (fileOrDirectory != null && fileOrDirectory.exists()) {
+            if (fileOrDirectory.isDirectory()) {
+                File[] children = fileOrDirectory.listFiles();
+                if (children != null) {
+                    for (File child : children) {
+                        deleteRecursive(child);
+                    }
+                }
+            }
+            fileOrDirectory.delete();
+        }
+    }
+
     public static void intentURL(Context context, Uri uri) {
         if (context == null || uri == null) return;
         String uriStr = uri.toString();
@@ -383,11 +478,11 @@ public class BrowserUnit {
                         activity.startActivity(intent);
                     }
                     return;
-}
+                }
+            }
         }
     }
 
-}
     public static String redirectURL(SharedPreferences sp, String url) {
         if (url == null) return null;
         try {
