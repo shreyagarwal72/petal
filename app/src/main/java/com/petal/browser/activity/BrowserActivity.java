@@ -495,6 +495,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void run() {
                             // Success: user authenticated
+                            com.petal.browser.ui.layout.LiquidRippleEffect.trigger(BrowserActivity.this.getWindow().getDecorView());
                         }
                     },
                     new java.util.function.Consumer<String>() {

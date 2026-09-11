@@ -80,6 +80,10 @@ fun PetalAppLockScreen(
                     errorMessage = null
                     isUnlockedSuccess = true
                     PetalHapticEngine.getInstance(context).playIfEnabled(context, PetalHapticEngine.Pattern.DOUBLE_CLICK, 0.9f)
+                    val decor = activity.window?.decorView
+                    if (decor != null) {
+                        com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor)
+                    }
                     onUnlocked()
                 },
                 java.util.function.Consumer { error ->

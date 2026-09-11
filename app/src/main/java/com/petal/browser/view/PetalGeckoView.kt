@@ -1500,11 +1500,9 @@ class PetalGeckoView @JvmOverloads constructor(
  * null root WindowInsets will never crash the browser process, allowing layout traversal
  * to complete normally.
  */
-class SafeGeckoView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : GeckoView(context, attrs, defStyleAttr) {
+class SafeGeckoView : GeckoView {
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
     override fun gatherTransparentRegion(region: Region?): Boolean {
         return try {
