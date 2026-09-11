@@ -34,8 +34,6 @@ fun ExperimentalSettingsScreen(
 ) {
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val addressBarPosition by viewModel.addressBarPosition.collectAsStateWithLifecycle()
-    val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle()
-    val appLockPasscode by viewModel.appLockPasscode.collectAsStateWithLifecycle()
     val doubleBackExit by viewModel.doubleBackExit.collectAsStateWithLifecycle()
 
     val appleDuoEnabled by viewModel.appleDuoEnabled.collectAsStateWithLifecycle()
@@ -53,8 +51,6 @@ fun ExperimentalSettingsScreen(
     ExperimentalSettingsScreenContent(
         appLanguage = appLanguage,
         addressBarPosition = addressBarPosition,
-        appLockEnabled = appLockEnabled,
-        appLockPasscode = appLockPasscode,
         doubleBackExit = doubleBackExit,
         appleDuoEnabled = appleDuoEnabled,
         appleDuoWebsites = appleDuoWebsites,
@@ -69,8 +65,6 @@ fun ExperimentalSettingsScreen(
         appleDuoHasSensor = appleDuoHasSensor,
         onAppLanguageChange = viewModel::setAppLanguage,
         onAddressBarPositionChange = viewModel::setAddressBarPosition,
-        onAppLockEnabledChange = viewModel::setAppLockEnabled,
-        onAppLockPasscodeChange = viewModel::setAppLockPasscode,
         onDoubleBackExitChange = viewModel::setDoubleBackExit,
         onAppleDuoEnabledChange = viewModel::setAppleDuoEnabled,
         onAppleDuoWebsitesChange = viewModel::setAppleDuoWebsites,
@@ -90,8 +84,6 @@ fun ExperimentalSettingsScreen(
 fun ExperimentalSettingsScreenContent(
     appLanguage: String,
     addressBarPosition: String,
-    appLockEnabled: Boolean,
-    appLockPasscode: String,
     doubleBackExit: Boolean,
     appleDuoEnabled: Boolean,
     appleDuoWebsites: Boolean,
@@ -106,8 +98,6 @@ fun ExperimentalSettingsScreenContent(
     appleDuoHasSensor: Boolean,
     onAppLanguageChange: (String) -> Unit,
     onAddressBarPositionChange: (String) -> Unit,
-    onAppLockEnabledChange: (Boolean) -> Unit,
-    onAppLockPasscodeChange: (String) -> Unit,
     onDoubleBackExitChange: (Boolean) -> Unit,
     onAppleDuoEnabledChange: (Boolean) -> Unit,
     onAppleDuoWebsitesChange: (Boolean) -> Unit,
@@ -122,62 +112,7 @@ fun ExperimentalSettingsScreenContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var showPasscodeDialog by remember { mutableStateOf(false) }
 
-    if (showPasscodeDialog) {
-        var tempPasscode by remember { mutableStateOf(appLockPasscode) }
-        var dialogError by remember { mutableStateOf<String?>(null) }
-
-        AlertDialog(
-            onDismissRequest = { showPasscodeDialog = false },
-            title = {
-                Text(
-                    text = "Configure Security Passcode",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "Enter a security passcode. Typed characters will be masked with Material 3 Expressive shapes.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    PetalShapedPasswordInput(
-                        value = tempPasscode,
-                        onValueChange = {
-                            tempPasscode = it
-                            if (dialogError != null) dialogError = null
-                        },
-                        hintText = "New Passcode",
-                        isError = dialogError != null,
-                        accentColor = MaterialTheme.colorScheme.primary,
-                        onUnlock = {
-                            if (tempPasscode.trim().length >= 4) {
-                                onAppLockPasscodeChange(tempPasscode.trim())
-                                showPasscodeDialog = false
-                            } else {
-                                dialogError = "Passcode must be at least 4 characters"
-                            }
-                        },
-                        unlockButtonText = "Save"
-                    )
-                    if (dialogError != null) {
-                        Text(
-                            text = dialogError!!,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showPasscodeDialog = false }) {
-                    Text("Close")
-                }
-            }
-        )
-    }
 
     Box(modifier = modifier.fillMaxSize()) {
         M3ExpressiveVariableBackground(pageSeed = "experimental_settings")
@@ -298,39 +233,8 @@ fun ExperimentalSettingsScreenContent(
                     }
                 }
 
-                // Security & Navigation Safeguards Card
-                SettingsCategoryCard(title = "Security & Navigation Safeguards", icon = Icons.Rounded.Lock) {
-                    ToggleRow(
-                        title = "App Lock Protection",
-                        subtitle = "Protect Petal with biometric authentication or custom passcode",
-                        icon = Icons.Rounded.Lock,
-                        checked = appLockEnabled,
-                        onCheckedChange = { enabled ->
-                            onAppLockEnabledChange(enabled)
-                            if (enabled && appLockPasscode.isBlank()) {
-                                showPasscodeDialog = true
-                            }
-                        }
-                    )
-
-                    if (appLockEnabled) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (appLockPasscode.isBlank()) "No passcode configured" else "Passcode configured",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            TextButton(onClick = { showPasscodeDialog = true }) {
-                                Text(if (appLockPasscode.isBlank()) "Set Passcode" else "Change Passcode")
-                            }
-                        }
-                    }
+                // Navigation Safeguards Card
+                SettingsCategoryCard(title = "Navigation Safeguards", icon = Icons.Rounded.ExitToApp) {
                     ToggleRow(
                         title = "Double Back Exit",
                         subtitle = "Press back twice quickly to exit the browser",

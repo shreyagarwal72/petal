@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:elevation="12dp" />
+        android:elevation="24dp" />
 
     <!-- Persistent Bottom Navigation Container with Reserved Height -->
     <RelativeLayout

@@ -21,11 +21,7 @@ class ExperimentalSettingsViewModel @Inject constructor(
     val addressBarPosition: StateFlow<String> = settingsRepository.addressBarPosition
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "TOP")
 
-    val appLockEnabled: StateFlow<Boolean> = settingsRepository.appLockEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    val appLockPasscode: StateFlow<String> = settingsRepository.appLockPasscode
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
     val doubleBackExit: StateFlow<Boolean> = settingsRepository.doubleBackExit
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -67,13 +63,7 @@ class ExperimentalSettingsViewModel @Inject constructor(
         settingsRepository.setAddressBarPosition(position)
     }
 
-    fun setAppLockEnabled(enabled: Boolean) = viewModelScope.launch {
-        settingsRepository.setAppLockEnabled(enabled)
-    }
 
-    fun setAppLockPasscode(passcode: String) = viewModelScope.launch {
-        settingsRepository.setAppLockPasscode(passcode)
-    }
 
     fun setDoubleBackExit(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setDoubleBackExit(enabled)
