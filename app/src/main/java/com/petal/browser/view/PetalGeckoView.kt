@@ -647,6 +647,55 @@ class PetalGeckoView @JvmOverloads constructor(
             ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
                 return GeckoResult.fromValue(request.dismiss())
             }
+
+            override fun onCreditCardSave(
+                session: GeckoSession,
+                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSaveOption>
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(request.dismiss())
+            }
+
+            override fun onCreditCardSelect(
+                session: GeckoSession,
+                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSelectOption>
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(request.dismiss())
+            }
+
+            override fun onAddressSave(
+                session: GeckoSession,
+                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSaveOption>
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(request.dismiss())
+            }
+
+            override fun onAddressSelect(
+                session: GeckoSession,
+                request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.AddressSelectOption>
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(request.dismiss())
+            }
+
+            override fun onSelectIdentityCredentialProvider(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(prompt.dismiss())
+            }
+
+            override fun onSelectIdentityCredentialAccount(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(prompt.dismiss())
+            }
+
+            override fun onShowPrivacyPolicyIdentityCredential(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                return GeckoResult.fromValue(prompt.dismiss())
+            }
         }
 
         // Scroll Delegate for Tactile Haptics and Address Bar Collapsing
