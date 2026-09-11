@@ -39,12 +39,14 @@ import androidx.core.content.ContextCompat;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import android.os.ParcelFileDescriptor;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
@@ -434,36 +436,126 @@ public class BackupUnit {
                     }
                 }
 
-                byte[] dataBytes = backupJson.toString(2).getBytes(StandardCharsets.UTF_8);
+                // 1. Verify payload is non-empty and non-trivial (more than just version and timestamp)
+                int sectionCount = 0;
+                if (backupJson.has("bookmarks") && backupJson.getJSONArray("bookmarks").length() > 0) sectionCount++;
+                if (backupJson.has("history") && backupJson.getJSONArray("history").length() > 0) sectionCount++;
+                if (backupJson.has("start_sites") && backupJson.getJSONArray("start_sites").length() > 0) sectionCount++;
+                if (backupJson.has("tab_sessions") && backupJson.getString("tab_sessions").length() > 0) sectionCount++;
+                if (backupJson.has("saved_sites") && backupJson.getJSONArray("saved_sites").length() > 0) sectionCount++;
+                if (backupJson.has("trusted_sites") && backupJson.getJSONArray("trusted_sites").length() > 0) sectionCount++;
+                if (backupJson.has("protected_sites") && backupJson.getJSONArray("protected_sites").length() > 0) sectionCount++;
+                if (backupJson.has("settings") && backupJson.getJSONObject("settings").length() > 0) sectionCount++;
 
-                OutputStream os = null;
+                byte[] dataBytes = backupJson.toString(2).getBytes(StandardCharsets.UTF_8);
+                if (dataBytes.length <= 64 || sectionCount == 0) {
+                    Log.e("Petal", "Backup aborted: payload is empty or trivial (bytes: " + dataBytes.length + ", sections: " + sectionCount + ") for URI: " + uri);
+                    handler.post(() -> {
+                        NinjaToast.show(context, "Backup failed: no data available to backup");
+                    });
+                    return;
+                }
+
+                String uriScheme = uri != null ? uri.getScheme() : "unknown";
+                Log.i("Petal", "Starting backup write to " + uriScheme + " Uri (" + uri + ") with payload size: " + dataBytes.length + " bytes (" + sectionCount + " sections)");
+
+                // Helper to verify written bytes by reopening an input stream
+                boolean writeSucceeded = false;
+
+                // Attempt 1: ContentResolver openOutputStream with flush and fsync
                 try {
-                    os = context.getContentResolver().openOutputStream(uri, "wt");
-                } catch (Throwable t1) {
+                    OutputStream os = null;
                     try {
-                        os = context.getContentResolver().openOutputStream(uri, "w");
-                    } catch (Throwable t2) {
-                        os = context.getContentResolver().openOutputStream(uri);
+                        os = context.getContentResolver().openOutputStream(uri, "wt");
+                    } catch (Throwable t1) {
+                        try {
+                            os = context.getContentResolver().openOutputStream(uri, "w");
+                        } catch (Throwable t2) {
+                            os = context.getContentResolver().openOutputStream(uri);
+                        }
+                    }
+
+                    if (os != null) {
+                        try (OutputStream out = os) {
+                            out.write(dataBytes);
+                            out.flush();
+                            if (out instanceof FileOutputStream) {
+                                try {
+                                    ((FileOutputStream) out).getFD().sync();
+                                } catch (Exception ignored) {}
+                            }
+                        }
+
+                        // Immediate verification read
+                        try (InputStream verifyIn = context.getContentResolver().openInputStream(uri)) {
+                            if (verifyIn != null) {
+                                byte[] buf = new byte[8192];
+                                int totalRead = 0;
+                                int r;
+                                while ((r = verifyIn.read(buf)) != -1) {
+                                    totalRead += r;
+                                }
+                                if (totalRead == dataBytes.length) {
+                                    writeSucceeded = true;
+                                    Log.i("Petal", "Verified backup persistence via ContentResolver: " + totalRead + " bytes matching payload to " + uriScheme + " Uri: " + uri);
+                                } else {
+                                    Log.w("Petal", "Verification read size mismatch via ContentResolver: expected " + dataBytes.length + ", got " + totalRead + " bytes");
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.w("Petal", "Verification read failed via ContentResolver", e);
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w("Petal", "Initial ContentResolver write attempt failed", e);
+                }
+
+                // Attempt 2: If attempt 1 failed or verified size was incorrect, retry using ParcelFileDescriptor "rwt" mode
+                if (!writeSucceeded) {
+                    Log.i("Petal", "Retrying backup write using ParcelFileDescriptor 'rwt' truncate mode for " + uriScheme + " Uri: " + uri);
+                    try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "rwt")) {
+                        if (pfd != null) {
+                            try (FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor())) {
+                                fos.write(dataBytes);
+                                fos.flush();
+                                try {
+                                    fos.getFD().sync();
+                                } catch (Exception ignored) {}
+                            }
+
+                            // Re-verify after PFD write
+                            try (InputStream verifyIn = context.getContentResolver().openInputStream(uri)) {
+                                if (verifyIn != null) {
+                                    byte[] buf = new byte[8192];
+                                    int totalRead = 0;
+                                    int r;
+                                    while ((r = verifyIn.read(buf)) != -1) {
+                                        totalRead += r;
+                                    }
+                                    if (totalRead == dataBytes.length) {
+                                        writeSucceeded = true;
+                                        Log.i("Petal", "Verified backup persistence via ParcelFileDescriptor: " + totalRead + " bytes to " + uriScheme + " Uri: " + uri);
+                                    } else {
+                                        Log.e("Petal", "Verification read size mismatch after PFD write: expected " + dataBytes.length + ", got " + totalRead + " bytes");
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception pfdEx) {
+                        Log.e("Petal", "ParcelFileDescriptor retry failed for " + uriScheme + " Uri: " + uri, pfdEx);
                     }
                 }
 
-                if (os == null) {
-                    throw new java.io.IOException("Could not open destination storage output stream for URI: " + uri);
+                if (writeSucceeded) {
+                    handler.post(() -> {
+                        NinjaToast.show(context, context.getString(R.string.app_done) + ": Backup saved successfully (" + dataBytes.length + " bytes)");
+                    });
+                } else {
+                    Log.e("Petal", "Backup failed: file was not written correctly for " + uriScheme + " Uri: " + uri);
+                    handler.post(() -> {
+                        NinjaToast.show(context, "Backup failed: file was not written correctly");
+                    });
                 }
-
-                try (OutputStream out = os) {
-                    out.write(dataBytes);
-                    out.flush();
-                    try {
-                        if (out instanceof FileOutputStream) {
-                            ((FileOutputStream) out).getFD().sync();
-                        }
-                    } catch (Exception ignored) {}
-                }
-
-                handler.post(() -> {
-                    NinjaToast.show(context, context.getString(R.string.app_done) + ": Backup saved successfully");
-                });
             } catch (Exception e) {
                 Log.e("Petal", "backupToUri error", e);
                 handler.post(() -> {

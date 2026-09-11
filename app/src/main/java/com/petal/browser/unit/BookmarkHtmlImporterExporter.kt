@@ -17,11 +17,14 @@ import android.content.Context
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
 import com.petal.browser.view.NinjaToast
 import java.io.BufferedReader
+import java.io.FileOutputStream
+import java.io.InputStream
 import java.io.InputStreamReader
 import java.util.concurrent.Executors
 
@@ -106,38 +109,111 @@ object BookmarkHtmlImporterExporter {
                 }
 
                 val content = exportToJsonString(validBookmarks)
-
-                // Open output stream with write fallback ("wt" -> "w" -> default)
-                val outputStream = try {
-                    context.contentResolver.openOutputStream(destinationUri, "wt")
-                } catch (e: Exception) {
-                    null
-                } ?: try {
-                    context.contentResolver.openOutputStream(destinationUri, "w")
-                } catch (e: Exception) {
-                    null
-                } ?: try {
-                    context.contentResolver.openOutputStream(destinationUri)
-                } catch (e: Exception) {
-                    null
-                } ?: throw IllegalStateException("Could not open destination storage stream")
-
                 val bytes = content.toByteArray(Charsets.UTF_8)
-                outputStream.use { os ->
-                    os.write(bytes)
-                    os.flush()
-                    try {
-                        (os as? java.io.FileOutputStream)?.fd?.sync()
-                    } catch (_: Exception) {}
+                val uriScheme = destinationUri.scheme ?: "unknown"
+
+                Log.i("Petal", "Starting bookmark export to $uriScheme Uri ($destinationUri) with payload size: ${bytes.size} bytes (${validBookmarks.size} bookmarks)")
+
+                var writeSucceeded = false
+
+                // Attempt 1: ContentResolver openOutputStream with flush and fsync
+                try {
+                    val outputStream = try {
+                        context.contentResolver.openOutputStream(destinationUri, "wt")
+                    } catch (_: Throwable) {
+                        try {
+                            context.contentResolver.openOutputStream(destinationUri, "w")
+                        } catch (_: Throwable) {
+                            context.contentResolver.openOutputStream(destinationUri)
+                        }
+                    }
+
+                    if (outputStream != null) {
+                        outputStream.use { os ->
+                            os.write(bytes)
+                            os.flush()
+                            try {
+                                (os as? FileOutputStream)?.fd?.sync()
+                            } catch (_: Exception) {}
+                        }
+
+                        // Immediate verification read
+                        try {
+                            context.contentResolver.openInputStream(destinationUri)?.use { verifyIn ->
+                                val buf = ByteArray(8192)
+                                var totalRead = 0
+                                var r: Int
+                                while (verifyIn.read(buf).also { r = it } != -1) {
+                                    totalRead += r
+                                }
+                                if (totalRead == bytes.size) {
+                                    writeSucceeded = true
+                                    Log.i("Petal", "Verified bookmark export persistence via ContentResolver: $totalRead bytes matching payload to $uriScheme Uri: $destinationUri")
+                                } else {
+                                    Log.w("Petal", "Verification read size mismatch via ContentResolver for bookmark export: expected ${bytes.size}, got $totalRead bytes")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.w("Petal", "Verification read failed via ContentResolver for bookmark export", e)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w("Petal", "Initial ContentResolver write attempt failed for bookmark export", e)
                 }
 
-                Log.i(TAG, "Exported ${validBookmarks.size} bookmarks to JSON: $destinationUri (${bytes.size} bytes)")
-                mainHandler.post {
-                    NinjaToast.show(context, "Exported ${validBookmarks.size} bookmarks successfully")
-                    onComplete?.invoke(true, validBookmarks.size)
+                // Attempt 2: If attempt 1 failed or verified size was incorrect, retry using ParcelFileDescriptor "rwt" mode
+                if (!writeSucceeded) {
+                    Log.i("Petal", "Retrying bookmark export write using ParcelFileDescriptor 'rwt' truncate mode for $uriScheme Uri: $destinationUri")
+                    try {
+                        context.contentResolver.openFileDescriptor(destinationUri, "rwt")?.use { pfd ->
+                            FileOutputStream(pfd.fileDescriptor).use { fos ->
+                                fos.write(bytes)
+                                fos.flush()
+                                try {
+                                    fos.fd.sync()
+                                } catch (_: Exception) {}
+                            }
+
+                            // Re-verify after PFD write
+                            try {
+                                context.contentResolver.openInputStream(destinationUri)?.use { verifyIn ->
+                                    val buf = ByteArray(8192)
+                                    var totalRead = 0
+                                    var r: Int
+                                    while (verifyIn.read(buf).also { r = it } != -1) {
+                                        totalRead += r
+                                    }
+                                    if (totalRead == bytes.size) {
+                                        writeSucceeded = true
+                                        Log.i("Petal", "Verified bookmark export persistence via ParcelFileDescriptor: $totalRead bytes to $uriScheme Uri: $destinationUri")
+                                    } else {
+                                        Log.e("Petal", "Verification read size mismatch after PFD bookmark export: expected ${bytes.size}, got $totalRead bytes")
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.w("Petal", "Verification read failed after PFD bookmark export", e)
+                            }
+                        }
+                    } catch (pfdEx: Exception) {
+                        Log.e("Petal", "ParcelFileDescriptor retry failed for bookmark export to $uriScheme Uri: $destinationUri", pfdEx)
+                    }
+                }
+
+                if (writeSucceeded) {
+                    Log.i("Petal", "Exported ${validBookmarks.size} bookmarks to JSON: $destinationUri (${bytes.size} bytes)")
+                    mainHandler.post {
+                        NinjaToast.show(context, "Exported ${validBookmarks.size} bookmarks successfully (${bytes.size} bytes)")
+                        onComplete?.invoke(true, validBookmarks.size)
+                    }
+                } else {
+                    Log.e("Petal", "Export failed: file was not written correctly for $uriScheme Uri: $destinationUri")
+                    mainHandler.post {
+                        NinjaToast.show(context, "Export failed: file was not written correctly")
+                        onComplete?.invoke(false, 0)
+                    }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to export bookmarks", e)
+                Log.e("Petal", "Failed to export bookmarks", e)
                 mainHandler.post {
                     NinjaToast.show(context, "Export failed: ${e.message}")
                     onComplete?.invoke(false, 0)
