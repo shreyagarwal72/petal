@@ -121,6 +121,11 @@ class PetalGeckoView @JvmOverloads constructor(
             geckoView,
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                resetGestureExclusionRects()
+            }
+        }
         initGeckoSession()
         album.setBrowserController(globalBrowserController)
     }
@@ -1389,14 +1394,21 @@ class PetalGeckoView @JvmOverloads constructor(
 
     /**
      * Only ACTION_DOWN near the left/right screen edge can be the start of a predictive-back
-     * swipe, so that's the only case that needs exclusion rects cleared. Previously this ran
-     * on every DOWN/UP/CANCEL anywhere on screen - including a normal tap on a login button -
-     * which walked GeckoView's live rendering child tree on every such tap. That coincided with
-     * Gecko recreating its own compositor child view during the post-login page navigation,
-     * which is what caused the native crash. Restricting this to edge-swipe starts removes
-     * that walk from the ordinary tap/login path entirely.
+     * swipe, so that's the only case that needs exclusion rects cleared. Previously this was
+     * running on every touch or completely omitted. Restricting this to edge touches (e.g. 48dp
+     * edge zone) ensures Android's system back gesture isn't blocked by GeckoView's internal
+     * exclusion rects, while completely keeping login taps and page taps away from iterating
+     * compositor child views.
      */
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            val edgeZone = (48f * resources.displayMetrics.density).toInt()
+            val screenWidth = resources.displayMetrics.widthPixels
+            val rawX = ev.rawX
+            if (rawX < edgeZone || rawX > (screenWidth - edgeZone)) {
+                resetGestureExclusionRects()
+            }
+        }
         return super.dispatchTouchEvent(ev)
     }
 
