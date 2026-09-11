@@ -519,7 +519,7 @@ private fun Petal2Content() {
     val searchAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     val aiAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH))
     val incognitoAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO))
-    val lensAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_LENS))
+    val snapCameraAction = actionStartActivity(widgetActionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA))
 
     Box(
         modifier = GlanceModifier
@@ -579,13 +579,13 @@ private fun Petal2Content() {
 
             Spacer(modifier = GlanceModifier.width(6.dp))
 
-            // Lens Action Squircle Button - tertiaryContainer
+            // Camera / Lens Action Squircle Button - tertiaryContainer (direct snap photo / Lens handoff)
             SquircleGlanceActionButton(
-                iconRes = R.drawable.ic_lens,
-                contentDescription = "Visual Lens",
+                iconRes = R.drawable.ic_lens_camera_google,
+                contentDescription = "Visual Camera Scanner",
                 containerColor = GlanceTheme.colors.tertiaryContainer,
                 contentColor = GlanceTheme.colors.onTertiaryContainer,
-                action = lensAction
+                action = snapCameraAction
             )
         }
     }

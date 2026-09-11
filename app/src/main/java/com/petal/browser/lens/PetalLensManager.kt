@@ -19,20 +19,57 @@ object PetalLensManager {
 
     private const val TAG = "PetalLens"
 
+    private val LENS_STANDALONE_COMPONENTS = listOf(
+        ComponentName("com.google.ar.lens", "com.google.vr.apps.ornament.app.lens.LensLauncherActivity"),
+        ComponentName("com.google.ar.lens", "com.google.vr.lens.LensCaptureActivity")
+    )
+
+    private val GOOGLE_APP_LENS_COMPONENTS = listOf(
+        ComponentName("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensExportedActivity"),
+        ComponentName("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensActivity")
+    )
+
     /**
-     * Directly launches the native Google Lens app or search intent.
+     * Checks whether a native Google Lens application or Google app Lens search activity is installed
+     * and queryable on the system (excluding web fallback).
      */
     @JvmStatic
-    fun launchGoogleLensApp(context: Context) {
-        PetalHapticEngine.getInstance(context).playClick(context)
-        
-        // 1. Standalone Google Lens app launcher activities
-        val lensComponents = listOf(
-            ComponentName("com.google.ar.lens", "com.google.vr.apps.ornament.app.lens.LensLauncherActivity"),
-            ComponentName("com.google.ar.lens", "com.google.vr.lens.LensCaptureActivity")
-        )
+    fun isGoogleLensAppAvailable(context: Context): Boolean {
+        val pm = context.packageManager
+        // 1. Check standalone Lens app launcher components
+        for (comp in LENS_STANDALONE_COMPONENTS) {
+            val intent = Intent(Intent.ACTION_MAIN).apply {
+                component = comp
+                addCategory(Intent.CATEGORY_LAUNCHER)
+            }
+            if (intent.resolveActivity(pm) != null) return true
+        }
 
-        for (comp in lensComponents) {
+        // 2. Check Google App Lens activities
+        for (comp in GOOGLE_APP_LENS_COMPONENTS) {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                component = comp
+            }
+            if (intent.resolveActivity(pm) != null) return true
+        }
+
+        // 3. Check generic Lens standalone package launch intent
+        val launchIntent = pm.getLaunchIntentForPackage("com.google.ar.lens")
+        if (launchIntent != null) return true
+
+        return false
+    }
+
+    /**
+     * Attempts to directly launch the native Google Lens app or Google App Lens feature.
+     * Returns true if successfully launched, false otherwise (never falls back to web).
+     */
+    @JvmStatic
+    fun launchGoogleLensAppOnly(context: Context): Boolean {
+        PetalHapticEngine.getInstance(context).playClick(context)
+
+        // 1. Standalone Google Lens app launcher activities
+        for (comp in LENS_STANDALONE_COMPONENTS) {
             try {
                 val intent = Intent(Intent.ACTION_MAIN).apply {
                     component = comp
@@ -40,28 +77,46 @@ object PetalLensManager {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(intent)
-                return
+                return true
             } catch (_: Exception) {}
         }
 
         // 2. Google App Lens Search Activity / Action
-        val googleAppComponents = listOf(
-            ComponentName("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensExportedActivity"),
-            ComponentName("com.google.android.googlequicksearchbox", "com.google.android.apps.search.lens.LensActivity")
-        )
-
-        for (comp in googleAppComponents) {
+        for (comp in GOOGLE_APP_LENS_COMPONENTS) {
             try {
                 val intent = Intent(Intent.ACTION_VIEW).apply {
                     component = comp
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(intent)
-                return
+                return true
             } catch (_: Exception) {}
         }
 
-        // 3. Fallback to Google Lens web URL inside the browser / active activity
+        // 3. Generic standalone Lens launch intent
+        try {
+            val launchIntent = context.packageManager.getLaunchIntentForPackage("com.google.ar.lens")
+            if (launchIntent != null) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(launchIntent)
+                return true
+            }
+        } catch (_: Exception) {}
+
+        return false
+    }
+
+    /**
+     * Directly launches the native Google Lens app or search intent.
+     * Falls back to Google Lens web URL if no native app is available.
+     */
+    @JvmStatic
+    fun launchGoogleLensApp(context: Context) {
+        if (launchGoogleLensAppOnly(context)) {
+            return
+        }
+
+        // Fallback to Google Lens web URL inside the browser / active activity
         try {
             if (context is com.petal.browser.activity.BrowserActivity) {
                 context.addAlbum("Google Lens", "https://lens.google.com", true)

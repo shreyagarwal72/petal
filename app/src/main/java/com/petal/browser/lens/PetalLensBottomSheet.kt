@@ -150,20 +150,25 @@ fun PetalLensBottomSheet(
         }
     }
 
-    // Auto-trigger snap camera feature if requested from widget or shortcut
+    // Auto-trigger snap camera feature if requested from widget or shortcut:
+    // Tries to redirect directly to the Google Lens app first, falling back to camera capture if unavailable.
     var didTriggerAutoCamera by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(autoSnapCamera) {
         if (autoSnapCamera && !didTriggerAutoCamera) {
             didTriggerAutoCamera = true
-            val hasCameraPermission = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (hasCameraPermission) {
-                launchCameraInternal()
+            if (PetalLensManager.launchGoogleLensAppOnly(context)) {
+                onDismissRequest()
             } else {
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                val hasCameraPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.CAMERA
+                ) == PackageManager.PERMISSION_GRANTED
+
+                if (hasCameraPermission) {
+                    launchCameraInternal()
+                } else {
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }
             }
         }
     }
@@ -250,15 +255,19 @@ fun PetalLensBottomSheet(
                 Card(
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
-                        val hasCameraPermission = ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED
-
-                        if (hasCameraPermission) {
-                            launchCameraInternal()
+                        if (PetalLensManager.launchGoogleLensAppOnly(context)) {
+                            onDismissRequest()
                         } else {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            val hasCameraPermission = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.CAMERA
+                            ) == PackageManager.PERMISSION_GRANTED
+
+                            if (hasCameraPermission) {
+                                launchCameraInternal()
+                            } else {
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
                         }
                     },
                     shape = RoundedCornerShape(16.dp),

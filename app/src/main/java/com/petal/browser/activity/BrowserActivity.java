@@ -5293,7 +5293,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getIntent().setAction("");
             sp.edit().putBoolean("show_overview", false).apply();
             pendingWidgetAction = () -> {
-                com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this, true);
+                if (!com.petal.browser.lens.PetalLensManager.launchGoogleLensAppOnly(this)) {
+                    com.petal.browser.lens.PetalLensBridge.showLensBottomSheet(this, true);
+                }
             };
             runOrDeferPendingWidgetAction();
         } else if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_LENS.equals(action)) {
