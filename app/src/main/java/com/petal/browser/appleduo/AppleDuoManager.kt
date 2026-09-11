@@ -84,6 +84,60 @@ object AppleDuoManager {
     private var currentIsWebsite: Boolean = false
     private var initialized = false
 
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { sp, key ->
+        when (key) {
+            PREF_KEY_ENABLED -> {
+                val en = sp.getBoolean(PREF_KEY_ENABLED, false)
+                _isEnabled.value = en
+                if (en) {
+                    if (_useSensor.value) motionModel?.start()
+                } else {
+                    motionModel?.stop()
+                    clearShaderEffectFromActiveView()
+                }
+                applyShaderEffectToActiveView()
+            }
+            PREF_KEY_WEBSITES -> {
+                _showInWebsites.value = sp.getBoolean(PREF_KEY_WEBSITES, true)
+                applyShaderEffectToActiveView()
+            }
+            PREF_KEY_USE_SENSOR -> {
+                val use = sp.getBoolean(PREF_KEY_USE_SENSOR, true)
+                _useSensor.value = use
+                if (use && _isEnabled.value) {
+                    motionModel?.start()
+                } else {
+                    motionModel?.stop()
+                    updateManualTilt(_manualTilt.value)
+                }
+            }
+            PREF_KEY_MANUAL_TILT -> {
+                val mt = sp.getFloat(PREF_KEY_MANUAL_TILT, 0f)
+                _manualTilt.value = mt
+                if (!_useSensor.value) {
+                    updateManualTilt(mt)
+                }
+            }
+            PREF_KEY_AUTO_RECENTER -> {
+                val ar = sp.getBoolean(PREF_KEY_AUTO_RECENTER, true)
+                _autoRecenter.value = ar
+                motionModel?.setAutoRecenterEnabled(ar)
+            }
+            PREF_KEY_EYE_DISTANCE -> {
+                _eyeDistance.value = sp.getFloat(PREF_KEY_EYE_DISTANCE, 450f)
+                applyShaderEffectToActiveView()
+            }
+            PREF_KEY_BLUR_SPREAD -> {
+                _blurSpread.value = sp.getFloat(PREF_KEY_BLUR_SPREAD, 0.12f)
+                applyShaderEffectToActiveView()
+            }
+            PREF_KEY_DARKENING -> {
+                _darkening.value = sp.getFloat(PREF_KEY_DARKENING, 0.015f)
+                applyShaderEffectToActiveView()
+            }
+        }
+    }
+
     fun init(application: Application) {
         if (initialized) return
         initialized = true
@@ -121,59 +175,7 @@ object AppleDuoManager {
             }
         }
 
-        prefs.registerOnSharedPreferenceChangeListener { sp, key ->
-            when (key) {
-                PREF_KEY_ENABLED -> {
-                    val en = sp.getBoolean(PREF_KEY_ENABLED, false)
-                    _isEnabled.value = en
-                    if (en) {
-                        if (_useSensor.value) motionModel?.start()
-                    } else {
-                        motionModel?.stop()
-                        clearShaderEffectFromActiveView()
-                    }
-                    applyShaderEffectToActiveView()
-                }
-                PREF_KEY_WEBSITES -> {
-                    _showInWebsites.value = sp.getBoolean(PREF_KEY_WEBSITES, true)
-                    applyShaderEffectToActiveView()
-                }
-                PREF_KEY_USE_SENSOR -> {
-                    val use = sp.getBoolean(PREF_KEY_USE_SENSOR, true)
-                    _useSensor.value = use
-                    if (use && _isEnabled.value) {
-                        motionModel?.start()
-                    } else {
-                        motionModel?.stop()
-                        updateManualTilt(_manualTilt.value)
-                    }
-                }
-                PREF_KEY_MANUAL_TILT -> {
-                    val mt = sp.getFloat(PREF_KEY_MANUAL_TILT, 0f)
-                    _manualTilt.value = mt
-                    if (!_useSensor.value) {
-                        updateManualTilt(mt)
-                    }
-                }
-                PREF_KEY_AUTO_RECENTER -> {
-                    val ar = sp.getBoolean(PREF_KEY_AUTO_RECENTER, true)
-                    _autoRecenter.value = ar
-                    motionModel?.setAutoRecenterEnabled(ar)
-                }
-                PREF_KEY_EYE_DISTANCE -> {
-                    _eyeDistance.value = sp.getFloat(PREF_KEY_EYE_DISTANCE, 450f)
-                    applyShaderEffectToActiveView()
-                }
-                PREF_KEY_BLUR_SPREAD -> {
-                    _blurSpread.value = sp.getFloat(PREF_KEY_BLUR_SPREAD, 0.12f)
-                    applyShaderEffectToActiveView()
-                }
-                PREF_KEY_DARKENING -> {
-                    _darkening.value = sp.getFloat(PREF_KEY_DARKENING, 0.015f)
-                    applyShaderEffectToActiveView()
-                }
-            }
-        }
+        prefs.registerOnSharedPreferenceChangeListener(prefListener)
 
         if (_isEnabled.value && _useSensor.value) {
             motionModel?.start()
@@ -225,6 +227,52 @@ object AppleDuoManager {
         }
     }
 
+    fun setEnabled(enabled: Boolean) {
+        _isEnabled.value = enabled
+        if (enabled) {
+            if (_useSensor.value) motionModel?.start()
+        } else {
+            motionModel?.stop()
+            clearShaderEffectFromActiveView()
+        }
+        applyShaderEffectToActiveView()
+    }
+
+    fun setShowInWebsites(show: Boolean) {
+        _showInWebsites.value = show
+        applyShaderEffectToActiveView()
+    }
+
+    fun setUseSensor(use: Boolean) {
+        _useSensor.value = use
+        if (use && _isEnabled.value) {
+            motionModel?.start()
+        } else {
+            motionModel?.stop()
+            updateManualTilt(_manualTilt.value)
+        }
+    }
+
+    fun setAutoRecenter(auto: Boolean) {
+        _autoRecenter.value = auto
+        motionModel?.setAutoRecenterEnabled(auto)
+    }
+
+    fun setEyeDistance(distance: Float) {
+        _eyeDistance.value = distance
+        applyShaderEffectToActiveView()
+    }
+
+    fun setBlurSpread(spread: Float) {
+        _blurSpread.value = spread
+        applyShaderEffectToActiveView()
+    }
+
+    fun setDarkening(darkening: Float) {
+        _darkening.value = darkening
+        applyShaderEffectToActiveView()
+    }
+
     fun setManualTilt(degrees: Float) {
         _manualTilt.value = degrees
         motionModel?.setManualTilt(degrees)
@@ -261,6 +309,11 @@ object AppleDuoManager {
 
     fun applyShaderEffectToActiveView() {
         val view = currentActiveView ?: return
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            view.post { applyShaderEffectToActiveView() }
+            return
+        }
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             clearShaderEffect(view)
             return
@@ -306,6 +359,7 @@ object AppleDuoManager {
 
             val renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "content")
             view.setRenderEffect(renderEffect)
+            view.invalidate()
         } catch (e: Exception) {
             Log.e(TAG, "Failed applying RenderEffect to view", e)
         }
@@ -316,9 +370,15 @@ object AppleDuoManager {
     }
 
     private fun clearShaderEffect(view: View?) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && view != null) {
+        if (view == null) return
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            view.post { clearShaderEffect(view) }
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 view.setRenderEffect(null)
+                view.invalidate()
             } catch (ignored: Exception) {}
         }
     }

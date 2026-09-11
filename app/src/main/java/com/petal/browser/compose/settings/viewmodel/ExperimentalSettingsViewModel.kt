@@ -70,35 +70,42 @@ class ExperimentalSettingsViewModel @Inject constructor(
     }
 
     fun setAppleDuoEnabled(enabled: Boolean) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setEnabled(enabled)
         settingsRepository.setAppleDuoEnabled(enabled)
     }
 
     fun setAppleDuoWebsites(enabled: Boolean) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setShowInWebsites(enabled)
         settingsRepository.setAppleDuoWebsites(enabled)
     }
 
     fun setAppleDuoUseSensor(enabled: Boolean) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setUseSensor(enabled)
         settingsRepository.setAppleDuoUseSensor(enabled)
     }
 
     fun setAppleDuoManualTilt(tilt: Float) = viewModelScope.launch {
-        settingsRepository.setAppleDuoManualTilt(tilt)
         com.petal.browser.appleduo.AppleDuoManager.setManualTilt(tilt)
+        settingsRepository.setAppleDuoManualTilt(tilt)
     }
 
     fun setAppleDuoAutoRecenter(enabled: Boolean) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setAutoRecenter(enabled)
         settingsRepository.setAppleDuoAutoRecenter(enabled)
     }
 
     fun setAppleDuoEyeDistance(distance: Float) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setEyeDistance(distance)
         settingsRepository.setAppleDuoEyeDistance(distance)
     }
 
     fun setAppleDuoBlurSpread(spread: Float) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setBlurSpread(spread)
         settingsRepository.setAppleDuoBlurSpread(spread)
     }
 
     fun setAppleDuoDarkening(darkening: Float) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setDarkening(darkening)
         settingsRepository.setAppleDuoDarkening(darkening)
     }
 

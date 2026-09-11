@@ -66,17 +66,14 @@ half4 main(float2 fragCoord) {
 
     float radius = blurSpread * gap;
 
-    // Whole blur kernel misses the UI: black.
-    if (hit.x < -radius || hit.y < -radius ||
-        hit.x > size.x + radius || hit.y > size.y + radius) {
-        return half4(0.0, 0.0, 0.0, 1.0);
-    }
+    // Clamp hit coordinate to valid surface dimensions to avoid edge-artifacts
+    float2 clampedHit = clamp(hit, float2(0.0), size);
 
     // Frosted glass absorbs: dim in proportion to how much it scatters.
     float atten = max(1.0 - darkening * radius, 0.0);
 
     if (radius < 0.5) {
-        return content.eval(hit) * half(atten);
+        return content.eval(clampedHit) * half(atten);
     }
 
     // Vogel disk with per-pixel rotation (banding becomes frosted-glass grain).
@@ -91,7 +88,8 @@ half4 main(float2 fragCoord) {
         float w = 1.0 - step(tapsF, fi);
         float r = radius * sqrt((fi + 0.5) / tapsF);
         float a = fi * GOLDEN_ANGLE + rotation;
-        sum += content.eval(hit + r * float2(cos(a), sin(a))).rgb * half(w);
+        float2 samplePos = clamp(clampedHit + r * float2(cos(a), sin(a)), float2(0.0), size);
+        sum += content.eval(samplePos).rgb * half(w);
         wsum += w;
     }
     half3 avg = sum / half(max(wsum, 1.0));
