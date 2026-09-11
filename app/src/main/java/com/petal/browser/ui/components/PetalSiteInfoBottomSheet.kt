@@ -47,22 +47,27 @@ fun PetalSiteInfoBottomSheet(
     val domain = remember(currentUrl) { HelperUnit.domain(currentUrl) }
     val favicon: Bitmap? = geckoView?.getFavicon() ?: webView?.favicon
 
-    // Use the actual URL scheme as the source of truth for transport security.
-    // GeckoView does not expose the WebView-style SslCertificate, so checking
-    // for a certificate (or for a GeckoView instance) incorrectly marked some
-    // HTTPS pages as insecure. HTTPS means the connection is encrypted; an
-    // available WebView certificate is used only to show additional details.
-    val urlScheme = remember(currentUrl) {
+    // Check GeckoView SecurityInformation if available, plus URL scheme
+    val geckoSecurity = geckoView?.currentSecurityInfo
+    val effectiveUrl = remember(currentUrl) {
+        val trimmed = currentUrl.trim()
+        if (trimmed.isEmpty()) ""
+        else if (trimmed.contains("://")) trimmed
+        else "https://$trimmed"
+    }
+    val urlScheme = remember(effectiveUrl) {
         try {
-            Uri.parse(currentUrl.trim()).scheme?.lowercase() ?: ""
+            val uri = Uri.parse(effectiveUrl)
+            uri.scheme?.lowercase() ?: ""
         } catch (_: Exception) {
             ""
         }
     }
-    val isHttps = urlScheme == "https"
+    val isHttps = urlScheme == "https" || geckoSecurity?.isSecure == true
     val isHttp = urlScheme == "http"
+    val isInternalPage = currentUrl.startsWith("petal:") || currentUrl.startsWith("about:")
     val sslCertificate: SslCertificate? = webView?.certificate
-    val isSecure = isHttps
+    val isSecure = isHttps || (isInternalPage && currentUrl.isNotEmpty())
 
     // Cookie Count for domain
     var cookieCount by remember(currentUrl) {
@@ -147,12 +152,13 @@ fun PetalSiteInfoBottomSheet(
                         Text(
                             text = when {
                                 isHttps -> "Connection is secure"
+                                isInternalPage -> "Internal browser page"
                                 isHttp -> "Connection not secure"
                                 else -> "Connection status unavailable"
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             color = when {
-                                isHttps -> Color(0xFF2E7D32)
+                                isHttps || isInternalPage -> Color(0xFF2E7D32)
                                 isHttp -> MaterialTheme.colorScheme.error
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                             }
@@ -185,7 +191,7 @@ fun PetalSiteInfoBottomSheet(
                             .size(48.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(
-                                if (isHttps) MaterialTheme.colorScheme.primary
+                                if (isHttps || isInternalPage) MaterialTheme.colorScheme.primary
                                 else if (isHttp) MaterialTheme.colorScheme.error
                                 else MaterialTheme.colorScheme.secondary
                             ),
@@ -193,7 +199,7 @@ fun PetalSiteInfoBottomSheet(
                     ) {
                         Icon(
                             imageVector = when {
-                                isHttps -> Icons.Rounded.Lock
+                                isHttps || isInternalPage -> Icons.Rounded.Lock
                                 isHttp -> Icons.Rounded.LockOpen
                                 else -> Icons.Rounded.HelpOutline
                             },
@@ -209,20 +215,25 @@ fun PetalSiteInfoBottomSheet(
                             text = when {
                                 isHttps && sslCertificate != null -> "Valid Security Certificate"
                                 isHttps -> "Encrypted Connection"
+                                isInternalPage -> "Secure Local Origin"
                                 isHttp -> "Unencrypted Connection"
                                 else -> "Connection status unavailable"
                             },
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        val certDetails = remember(sslCertificate, isHttps, isHttp) {
+                        val certDetails = remember(sslCertificate, isHttps, isHttp, isInternalPage, geckoSecurity) {
                             when {
                                 sslCertificate != null && isHttps ->
                                     "Issued to: ${sslCertificate.issuedTo.cName}\nIssued by: ${sslCertificate.issuedBy.oName}"
+                                geckoSecurity?.host != null && isHttps ->
+                                    "Host: ${geckoSecurity.host}\nYour connection is encrypted and verified."
                                 isHttps ->
                                     "Your information is encrypted when sent to this site."
+                                isInternalPage ->
+                                    "This page is part of Petal Browser and does not send network data."
                                 isHttp ->
-                                    "You should not enter sensitive info on this site."
+                                    "You should not enter sensitive info on this site (unencrypted HTTP)."
                                 else ->
                                     "Security information is unavailable for this page."
                             }

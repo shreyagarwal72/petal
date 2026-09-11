@@ -3017,7 +3017,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
                     com.petal.browser.ui.components.PetalSiteInfoBridge.showSiteInfoBottomSheet(
                         this,
-                        ninjaWebView,
+                        currentAlbumController != null ? currentAlbumController : ninjaWebView,
                         () -> {
                             if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                                 ((com.petal.browser.view.PetalGeckoView) currentAlbumController).reload();
@@ -3724,12 +3724,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 favicon = ninjaWebView.getFavicon();
             }
 
+            boolean isIncognitoTab = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
+                    ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
+                    : (ninjaWebView != null && ninjaWebView.isIncognito());
+
             View omniboxView = com.petal.browser.ui.components.PetalOmniboxBridge.createOmniboxView(
                 BrowserActivity.this,
                 initialQuery != null ? initialQuery : "",
                 pageTitle != null ? pageTitle : "",
                 pageUrl != null ? pageUrl : "",
                 favicon,
+                isIncognitoTab,
                 () -> {
                     showAlbum(currentAlbumController);
                     return kotlin.Unit.INSTANCE;
@@ -5055,6 +5060,60 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 runOnUiThread(() -> {
                     android.view.View view = com.petal.browser.compose.downloads.PetalImageViewerBridge.createExternalViewerView(
                         BrowserActivity.this, finalUri2, finalName2,
+                        () -> { runOnUiThread(this::performBackNavigation); return kotlin.Unit.INSTANCE; }
+                    );
+                    presentComposeScreen(view);
+                });
+                return;
+            }
+        }
+        // ── External PDF: Open With / Share PDF → Petal built-in PDF viewer ──
+        boolean isPdfMime = "application/pdf".equalsIgnoreCase(mimeType) ||
+                (dataUri != null && dataUri.toString().toLowerCase().endsWith(".pdf"));
+        if (Intent.ACTION_VIEW.equals(action) && dataUri != null && isPdfMime) {
+            sp.edit().putBoolean("show_overview", false).apply();
+            getIntent().setAction("");
+            String displayName = null;
+            try (android.database.Cursor c = getContentResolver().query(dataUri,
+                    new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+                if (c != null && c.moveToFirst()) {
+                    int idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    if (idx != -1) displayName = c.getString(idx);
+                }
+            } catch (Exception ignored) {}
+            if (displayName == null) displayName = dataUri.getLastPathSegment();
+            final String finalDisplayName = displayName != null ? displayName : "Document.pdf";
+            final Uri finalUri = dataUri;
+            runOnUiThread(() -> {
+                android.view.View view = com.petal.browser.compose.pdf.PetalPdfViewerBridge.createPdfViewerView(
+                    BrowserActivity.this, finalUri, finalDisplayName,
+                    () -> { runOnUiThread(this::performBackNavigation); return kotlin.Unit.INSTANCE; }
+                );
+                presentComposeScreen(view);
+            });
+            return;
+        }
+        if (Intent.ACTION_SEND.equals(action) && isPdfMime) {
+            Uri sharedUri = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU)
+                ? intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri.class)
+                : intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (sharedUri != null) {
+                sp.edit().putBoolean("show_overview", false).apply();
+                getIntent().setAction("");
+                String displayName = null;
+                try (android.database.Cursor c = getContentResolver().query(sharedUri,
+                        new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+                    if (c != null && c.moveToFirst()) {
+                        int idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                        if (idx != -1) displayName = c.getString(idx);
+                    }
+                } catch (Exception ignored) {}
+                if (displayName == null) displayName = sharedUri.getLastPathSegment();
+                final String finalDisplayName = displayName != null ? displayName : "Document.pdf";
+                final Uri finalUri = sharedUri;
+                runOnUiThread(() -> {
+                    android.view.View view = com.petal.browser.compose.pdf.PetalPdfViewerBridge.createPdfViewerView(
+                        BrowserActivity.this, finalUri, finalDisplayName,
                         () -> { runOnUiThread(this::performBackNavigation); return kotlin.Unit.INSTANCE; }
                     );
                     presentComposeScreen(view);

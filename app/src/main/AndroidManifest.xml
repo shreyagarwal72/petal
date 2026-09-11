@@ -207,6 +207,28 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
 
+            <!-- Open PDF files in Petal's built-in Material 3 Expressive PDF viewer (ACTION_VIEW) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:mimeType="application/pdf" />
+                <data android:scheme="file" android:mimeType="application/pdf" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:host="*" android:pathPattern=".*\\.pdf" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.pdf" />
+            </intent-filter>
+
+            <!-- Receive shared PDF documents from other apps (ACTION_SEND application/pdf) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+
             <!-- Text über das Android 'Teilen'-Menü empfangen -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />

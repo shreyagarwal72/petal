@@ -107,6 +107,9 @@ object PetalIncognitoSessionManager {
     @JvmStatic
     fun flushSessionData(context: Context) {
         try {
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            sp.edit().remove("sp_incognito_search_history_queries").apply()
+
             if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE)) {
                 val incognitoProfile = androidx.webkit.ProfileStore.getInstance().getProfile("PetalIncognitoProfile")
                 incognitoProfile?.webStorage?.deleteAllData()

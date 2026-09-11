@@ -115,6 +115,7 @@ object PetalOmniboxBridge {
         pageTitle: String = "",
         pageUrl: String = "",
         favicon: Bitmap? = null,
+        isIncognito: Boolean = false,
         onBackPress: () -> Unit,
         onQuerySubmitted: (String) -> Unit
     ): ComposeView {
@@ -162,6 +163,7 @@ object PetalOmniboxBridge {
                         pageTitle = pageTitle,
                         pageUrl = pageUrl,
                         favicon = favicon,
+                        isIncognito = isIncognito,
                         onQuerySubmitted = { query ->
                             onQuerySubmitted(query)
                             onBackPress()
@@ -182,6 +184,7 @@ fun PetalOmniboxPage(
     pageTitle: String = "",
     pageUrl: String = "",
     favicon: Bitmap? = null,
+    isIncognito: Boolean = false,
     onQuerySubmitted: (String) -> Unit,
     onBackPress: () -> Unit
 ) {
@@ -192,10 +195,18 @@ fun PetalOmniboxPage(
     fun submitSearch(query: String) {
         val normalized = query.trim()
         if (normalized.isBlank()) return
-        val existing = sp.getStringSet("sp_search_history_queries", emptySet())?.toMutableSet() ?: mutableSetOf()
-        existing.remove(normalized)
-        existing.add(normalized)
-        sp.edit().putStringSet("sp_search_history_queries", existing.toList().takeLast(40).toSet()).apply()
+        if (isIncognito) {
+            val incognitoKey = "sp_incognito_search_history_queries"
+            val existing = sp.getStringSet(incognitoKey, emptySet())?.toMutableSet() ?: mutableSetOf()
+            existing.remove(normalized)
+            existing.add(normalized)
+            sp.edit().putStringSet(incognitoKey, existing.toList().takeLast(20).toSet()).apply()
+        } else {
+            val existing = sp.getStringSet("sp_search_history_queries", emptySet())?.toMutableSet() ?: mutableSetOf()
+            existing.remove(normalized)
+            existing.add(normalized)
+            sp.edit().putStringSet("sp_search_history_queries", existing.toList().takeLast(40).toSet()).apply()
+        }
         onQuerySubmitted(normalized)
     }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -250,32 +261,36 @@ fun PetalOmniboxPage(
         )
     }
 
-    // Fetch local search/browsing history from SQLite database. Only page TITLES are
-    // used as suggestion text - raw URLs are deliberately left out so every row in the
-    // suggestions list reads like a normal search query (Chrome/Google-style), never a
-    // pasted-looking link. Clicking a title-based suggestion still just re-searches for
-    // that text via onQuerySubmitted, same as any other suggestion.
-    val localHistoryList = remember {
-        val list = mutableListOf<String>()
-        try {
-            val action = RecordAction(context)
-            action.open(false)
-            val records: List<Record> = action.listHistory(context)
-            action.close()
-            records.forEach { r ->
-                if (!r.title.isNullOrBlank()) list.add(r.title)
+    // Fetch local search/browsing history from SQLite database (only when not in Incognito).
+    val localHistoryList = remember(isIncognito) {
+        if (isIncognito) {
+            emptyList<String>()
+        } else {
+            val list = mutableListOf<String>()
+            try {
+                val action = RecordAction(context)
+                action.open(false)
+                val records: List<Record> = action.listHistory(context)
+                action.close()
+                records.forEach { r ->
+                    if (!r.title.isNullOrBlank()) list.add(r.title)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+            list.distinct()
         }
-        list.distinct()
     }
 
     // Debounced search query handler with robust long multi-word query support
-    LaunchedEffect(queryState.text, removedSuggestions) {
+    LaunchedEffect(queryState.text, removedSuggestions, isIncognito) {
         val currentText = queryState.text.trim()
         if (currentText.isEmpty()) {
-            val savedQueries = sp.getStringSet("sp_search_history_queries", emptySet())?.toList().orEmpty()
+            val savedQueries = if (isIncognito) {
+                sp.getStringSet("sp_incognito_search_history_queries", emptySet())?.toList().orEmpty()
+            } else {
+                sp.getStringSet("sp_search_history_queries", emptySet())?.toList().orEmpty()
+            }
             suggestions = (savedQueries.asReversed() + localHistoryList)
                 .distinctBy { it.lowercase() }
                 .filter { !removedSuggestions.contains(it) }
@@ -883,12 +898,10 @@ fun PetalOmniboxPage(
 
                                                     Spacer(Modifier.width(14.dp))
 
-                                                    Text(
+                                                    StartEllipsisText(
                                                         text = item.query,
                                                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                                         color = MaterialTheme.colorScheme.onSurface,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis,
                                                         modifier = Modifier.weight(1f)
                                                     )
 
@@ -1005,3 +1018,69 @@ fun PetalOmniboxPage(
         )
     }
 }
+
+/**
+ * Text component that truncates from the START with an ellipsis ("...")
+ * when the query string is longer than can fit in a single line, ensuring
+ * that the trailing words the user is typing/seeking remain completely visible.
+ */
+@Composable
+private fun StartEllipsisText(
+    text: String,
+    style: androidx.compose.ui.text.TextStyle,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    BoxWithConstraints(modifier = modifier) {
+        val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val availableWidthPx = with(density) { maxWidth.toPx() }
+
+        val displayText = remember(text, availableWidthPx, style) {
+            if (availableWidthPx <= 0f || text.length <= 15) {
+                text
+            } else {
+                val fullMeasure = textMeasurer.measure(
+                    text = text,
+                    style = style,
+                    maxLines = 1
+                )
+                if (fullMeasure.size.width <= availableWidthPx) {
+                    text
+                } else {
+                    // Binary search or iterative trim from start with leading ellipsis
+                    val prefix = "…"
+                    var low = 0
+                    var high = text.length - 1
+                    var bestResult = text
+
+                    while (low <= high) {
+                        val mid = (low + high) / 2
+                        val candidate = prefix + text.substring(mid)
+                        val candidateMeasure = textMeasurer.measure(
+                            text = candidate,
+                            style = style,
+                            maxLines = 1
+                        )
+                        if (candidateMeasure.size.width <= availableWidthPx) {
+                            bestResult = candidate
+                            high = mid - 1 // Try to include more text (smaller start index)
+                        } else {
+                            low = mid + 1 // Need to truncate more from start
+                        }
+                    }
+                    bestResult
+                }
+            }
+        }
+
+        Text(
+            text = displayText,
+            style = style,
+            color = color,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
+

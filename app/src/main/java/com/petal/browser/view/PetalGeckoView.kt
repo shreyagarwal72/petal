@@ -107,6 +107,8 @@ class PetalGeckoView @JvmOverloads constructor(
     private var isNavigatingHistory: Boolean = false
     private var lastRecordedHistoryUrl: String? = null
     private var favicon: Bitmap? = null
+    var currentSecurityInfo: GeckoSession.ProgressDelegate.SecurityInformation? = null
+        private set
 
     private var mediaBridge: PetalMediaBridge? = null
     private var pwaManager: PetalPwaManager? = null
@@ -192,7 +194,9 @@ class PetalGeckoView @JvmOverloads constructor(
                 updateProgress(progress)
             }
 
-            override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {}
+            override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {
+                currentSecurityInfo = securityInfo
+            }
         }
 
         // Navigation Delegate

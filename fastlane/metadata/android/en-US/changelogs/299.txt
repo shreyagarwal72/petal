@@ -1,0 +1,20 @@
+v2.9.9 — 📄 Featherweight PDF Engine & Crystal Security ✨
+
+✨ Pure Material 3 Expressive PDF Viewer (ImageToolbox Inspired)
+• Full native PDF viewing powered by Android's hardware-accelerated PdfRenderer
+• Multi-page smooth continuous scroll with LazyColumn, pinch-to-zoom (0.8x-5.0x) & pan
+• Double-tap zoom toggle (1x ↔ 2.4x) with spring animations
+• Floating glassmorphism M3 action bars with auto-hide timer
+• Interactive page indicator pill with quick jump modal (slider + number input)
+• Live thumbnail skimmer bottom sheet for fast page skimming
+• Instant direct printing & PDF export via Android PrintManager
+• Document info sheet: file size, page count, modification date, location path
+• Open PDF files from Downloads or external "Open with" / "Share" intents
+
+🔍 Omnibox & Search UX Improvements
+• Smart start truncation (...) for long search suggestions so ending search terms stay visible
+• Incognito mode search history isolation & automatic cleanup on tab close
+
+🔒 Live Security & Connection Fixes
+• Fixed live connection status and security certificate display in site info bottom sheet
+• GitHub CI/CD build resolution

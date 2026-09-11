@@ -1,3 +1,27 @@
+### v2.9.9 — 📄 Featherweight PDF Engine & Crystal Security ✨
+
+#### 🎨 UI/UX — Pure Material 3 Expressive PDF Viewer (Inspired by ImageToolbox)
+- **Built-in Pure M3 Expressive PDF Viewer**: Native, zero-bloat PDF viewing experience powered entirely by Android's native `android.graphics.pdf.PdfRenderer` — no heavy external binary dependencies or tracking.
+- **Multi-Page Continuous Scroll & Gestures**: Smooth, hardware-accelerated continuous vertical scrolling with `LazyColumn`, responsive pinch-to-zoom (0.8× to 5.0×), pan gestures, and double-tap zoom toggle (1× ↔ 2.4×) with spring dynamics.
+- **Expressive Floating App Bars**: Floating translucent glassmorphism top and bottom action bars with auto-hide timer (4s) and tap-to-toggle gesture.
+- **Top Bar Controls**: Quick document title, interactive page indicator pill ("Page X of Y • Tap to jump"), one-tap Android `PrintManager` integration (print to wireless printer or save as PDF), system share sheet, and document info sheet.
+- **Thumbnail Skimmer Drawer**: Bottom sheet modal grid (`GridCells.Fixed(3)`) rendering live asynchronous page thumbnails for rapid visual skimming and direct page hopping.
+- **Jump to Page Modal**: Interactive page navigation dialog featuring an expressive M3 slider alongside direct numerical input.
+- **Document Metadata Inspector**: Detailed modal bottom sheet displaying file name, page count, formatted file size, modification timestamp, MIME type, and local URI path.
+- **Integrated System Ingress**:
+  - Automatically handles `application/pdf` and `.pdf` file intents via `ACTION_VIEW` and `ACTION_SEND`.
+  - Downloads page integration: Tapping any downloaded `.pdf` file opens it instantly in Petal's built-in PDF viewer.
+
+#### 🔍 Omnibox & Search UX Enhancements
+- **Intelligent Start Truncation (`...`) for Long Queries**: Long search suggestion strings now gracefully hide starting words with a leading ellipsis while preserving trailing query words, ensuring what you are actively typing and searching remains fully visible.
+- **Incognito Search Privacy Isolation**: Omnibox search suggestions in Incognito tabs are strictly segregated into independent session storage, never exposed to regular browsing tabs, and fully wiped on closing Incognito tabs.
+
+#### 🔒 Security & Live Connection Status Fix
+- **Live Connection Status**: Fixed the "Connection status unavailable" issue in the site information bottom sheet by resolving `currentAlbumController` and inspecting GeckoView's real-time `SecurityInformation` (`currentSecurityInfo`), HTTPS transport state, and local internal page schemes (`petal:`, `about:`).
+- **CI/CD Build Fix**: Restored missing `PreferenceManager` import in `BackupUnit.java`.
+
+---
+
 ### v2.9.8 — 🖼️ Peek-a-Petal: The Image Viewer Arrives!
 
 #### 🎨 UI/UX — Built-in Image Viewer

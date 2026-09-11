@@ -582,6 +582,24 @@ fun PetalDownloadManagerScreen(
                                             activity.runOnUiThread { activity.performBackNavigation() }
                                         }
                                         activity.runOnUiThread { activity.presentComposeScreen(view) }
+                                    } else if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && item.fileName.endsWith(".pdf", ignoreCase = true)) {
+                                        val rawUri = item.localUri?.let { Uri.parse(it) }
+                                        val targetUri = if (rawUri != null && (rawUri.scheme == "file" || rawUri.scheme == null)) {
+                                            val file = java.io.File(rawUri.path ?: item.localUri!!.removePrefix("file://"))
+                                            if (file.exists()) {
+                                                androidx.core.content.FileProvider.getUriForFile(activity, activity.packageName + ".fileprovider", file)
+                                            } else rawUri
+                                        } else rawUri
+                                        if (targetUri != null) {
+                                            val view = com.petal.browser.compose.pdf.PetalPdfViewerBridge.createPdfViewerView(
+                                                activity, targetUri, item.fileName
+                                            ) {
+                                                activity.runOnUiThread { activity.performBackNavigation() }
+                                            }
+                                            activity.runOnUiThread { activity.presentComposeScreen(view) }
+                                        } else {
+                                            openDownloadedFile(context, item)
+                                        }
                                     } else {
                                         openDownloadedFile(context, item)
                                     }
