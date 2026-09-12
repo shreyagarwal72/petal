@@ -139,6 +139,7 @@ class PetalGeckoView @JvmOverloads constructor(
             session.open(runtime)
         }
         geckoView.setSession(session)
+        session.setActive(true)
         // Do not mutate GeckoView's compositor child hierarchy during session attachment.
         // Edge-gesture handling is performed lazily from dispatchTouchEvent().
 

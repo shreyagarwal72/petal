@@ -2031,12 +2031,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
 
                     boolean hasBottomNav = bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE;
+                    addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                     if (hasBottomNav) {
-                        addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
-                        addrParams.bottomMargin = (int) HelperUnit.convertDpToPixel(2f, context);
+                        int navHeight = bottomNavContainer.getHeight();
+                        if (navHeight <= 0) {
+                            navHeight = (int) HelperUnit.convertDpToPixel(64f, context);
+                        }
+                        addrParams.bottomMargin = navHeight + (int) HelperUnit.convertDpToPixel(2f, context);
                         addressBar.setPadding(0, 0, 0, 0);
                     } else {
-                        addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                         addrParams.bottomMargin = 0;
                         addressBar.setPadding(0, 0, 0, navBarBottomInset);
                     }

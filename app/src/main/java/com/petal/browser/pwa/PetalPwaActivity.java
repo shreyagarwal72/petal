@@ -58,7 +58,6 @@ public class PetalPwaActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        HelperUnit.applyTheme(this);
         setContentView(R.layout.activity_pwa);
 
         contentFrame = findViewById(R.id.pwa_content_frame);
