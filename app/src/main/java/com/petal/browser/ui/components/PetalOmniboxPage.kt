@@ -87,6 +87,7 @@ import com.petal.browser.database.RecordAction
 import com.petal.browser.ui.theme.*
 import com.petal.browser.unit.SearchSuggestionsManager
 import kotlinx.coroutines.delay
+import org.json.JSONArray
 import java.net.URI
 
 data class OmniboxSuggestion(
@@ -192,20 +193,52 @@ fun PetalOmniboxPage(
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    fun submitSearch(query: String) {
+    fun getSavedSearchHistory(): List<String> {
+        val listKey = if (isIncognito) "sp_incognito_search_history_list" else "sp_search_history_list"
+        val legacyKey = if (isIncognito) "sp_incognito_search_history_queries" else "sp_search_history_queries"
+        val raw = sp.getString(listKey, null)
+        if (!raw.isNullOrBlank()) {
+            return try {
+                val json = JSONArray(raw)
+                val result = mutableListOf<String>()
+                for (i in 0 until json.length()) {
+                    val s = json.optString(i)
+                    if (!s.isNullOrBlank()) result.add(s)
+                }
+                result
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+        // Fallback and migrate from legacy StringSet if available
+        val legacy = sp.getStringSet(legacyKey, null)
+        if (!legacy.isNullOrEmpty()) {
+            val list = legacy.toList()
+            val jsonStr = JSONArray(list).toString()
+            sp.edit().putString(listKey, jsonStr).remove(legacyKey).apply()
+            return list
+        }
+        return emptyList()
+    }
+
+    fun submitSearch(query: String, saveToHistory: Boolean = false) {
         val normalized = query.trim()
         if (normalized.isBlank()) return
-        if (isIncognito) {
-            val incognitoKey = "sp_incognito_search_history_queries"
-            val existing = sp.getStringSet(incognitoKey, emptySet())?.toMutableSet() ?: mutableSetOf()
-            existing.remove(normalized)
-            existing.add(normalized)
-            sp.edit().putStringSet(incognitoKey, existing.toList().takeLast(20).toSet()).apply()
-        } else {
-            val existing = sp.getStringSet("sp_search_history_queries", emptySet())?.toMutableSet() ?: mutableSetOf()
-            existing.remove(normalized)
-            existing.add(normalized)
-            sp.edit().putStringSet("sp_search_history_queries", existing.toList().takeLast(40).toSet()).apply()
+        if (saveToHistory) {
+            val listKey = if (isIncognito) "sp_incognito_search_history_list" else "sp_search_history_list"
+            val legacyKey = if (isIncognito) "sp_incognito_search_history_queries" else "sp_search_history_queries"
+            val limit = if (isIncognito) 20 else 40
+            val currentList = getSavedSearchHistory().toMutableList()
+            // Remove any existing entry with the same query (case-insensitive) so it moves to top
+            currentList.removeAll { it.equals(normalized, ignoreCase = true) }
+            // Add latest search at index 0 (top rank)
+            currentList.add(0, normalized)
+            val trimmedList = currentList.take(limit)
+            val jsonStr = JSONArray(trimmedList).toString()
+            sp.edit()
+                .putString(listKey, jsonStr)
+                .remove(legacyKey)
+                .apply()
         }
         onQuerySubmitted(normalized)
     }
@@ -285,28 +318,36 @@ fun PetalOmniboxPage(
     // Debounced search query handler with robust long multi-word query support
     LaunchedEffect(queryState.text, removedSuggestions, isIncognito) {
         val currentText = queryState.text.trim()
+        val savedQueries = getSavedSearchHistory()
         if (currentText.isEmpty()) {
-            val savedQueries = if (isIncognito) {
-                sp.getStringSet("sp_incognito_search_history_queries", emptySet())?.toList().orEmpty()
-            } else {
-                sp.getStringSet("sp_search_history_queries", emptySet())?.toList().orEmpty()
-            }
-            suggestions = (savedQueries.asReversed() + localHistoryList)
+            // Rank most recent searches directly at the top in exact MRU order (index 0 is newest)
+            suggestions = (savedQueries + localHistoryList)
                 .distinctBy { it.lowercase() }
                 .filter { !removedSuggestions.contains(it) }
                 .take(8)
                 .map { OmniboxSuggestion(it, isHistory = true) }
         } else {
             val queryTokens = currentText.lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
-            val localMatches = localHistoryList
-                .filter { title ->
-                    val lower = title.lowercase()
-                    (lower.contains(currentText.lowercase()) || queryTokens.all { lower.contains(it) }) && !removedSuggestions.contains(title)
+            val savedMatches = savedQueries
+                .filter { query ->
+                    val lower = query.lowercase()
+                    (lower.contains(currentText.lowercase()) || queryTokens.all { lower.contains(it) }) && !removedSuggestions.contains(query)
                 }
                 .take(4)
                 .map { OmniboxSuggestion(it, isHistory = true) }
 
-            suggestions = localMatches
+            val localMatches = localHistoryList
+                .filter { title ->
+                    val lower = title.lowercase()
+                    (lower.contains(currentText.lowercase()) || queryTokens.all { lower.contains(it) }) &&
+                            !removedSuggestions.contains(title) &&
+                            savedMatches.none { it.query.equals(title, ignoreCase = true) }
+                }
+                .take(4 - savedMatches.size)
+                .map { OmniboxSuggestion(it, isHistory = true) }
+
+            val historyMatches = savedMatches + localMatches
+            suggestions = historyMatches
 
             val liveSuggestionsEnabled = true
             if (liveSuggestionsEnabled) {
@@ -319,7 +360,7 @@ fun PetalOmniboxPage(
                 }
                 fetch(currentText) { engineResults ->
                     val combined = mutableListOf<OmniboxSuggestion>()
-                    combined.addAll(localMatches)
+                    combined.addAll(historyMatches)
                     engineResults.forEach { res ->
                         val trimmedRes = res.trim()
                         if (trimmedRes.isNotEmpty() && !removedSuggestions.contains(trimmedRes) && combined.none { it.query.equals(trimmedRes, ignoreCase = true) }) {
@@ -333,8 +374,8 @@ fun PetalOmniboxPage(
                     suggestions = combined
                 }
             } else {
-                if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && localMatches.none { it.query.equals(currentText, ignoreCase = true) }) {
-                    suggestions = listOf(OmniboxSuggestion(currentText, isHistory = false)) + localMatches
+                if (currentText.length >= 2 && !removedSuggestions.contains(currentText) && historyMatches.none { it.query.equals(currentText, ignoreCase = true) }) {
+                    suggestions = listOf(OmniboxSuggestion(currentText, isHistory = false)) + historyMatches
                 }
             }
         }
@@ -453,7 +494,7 @@ fun PetalOmniboxPage(
                                             }
                                             IconButton(onClick = {
                                                 PetalVoiceSearchBridge.showVoiceSearchSheet(activity) { result ->
-                                                    if (result.isNotBlank()) submitSearch(result.trim())
+                                                    if (result.isNotBlank()) submitSearch(result.trim(), saveToHistory = true)
                                                 }
                                             }) {
                                                 Icon(
@@ -469,7 +510,7 @@ fun PetalOmniboxPage(
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 keyboardActions = KeyboardActions(onSearch = {
                                     if (queryState.text.isNotBlank()) {
-                                        submitSearch(queryState.text.trim())
+                                        submitSearch(queryState.text.trim(), saveToHistory = true)
                                     }
                                 }),
                                 shape = RoundedCornerShape(50),
@@ -970,7 +1011,13 @@ fun PetalOmniboxPage(
                         val newSet = (removedSuggestions + targetQuery).toSet()
                         removedSuggestions = newSet
                         sp.edit().putStringSet("sp_removed_suggestions", newSet).apply()
-                        suggestions = suggestions.filter { it.query != targetQuery }
+
+                        // Remove from persistent search history list as well
+                        val listKey = if (isIncognito) "sp_incognito_search_history_list" else "sp_search_history_list"
+                        val updatedList = getSavedSearchHistory().filterNot { it.equals(targetQuery, ignoreCase = true) }
+                        sp.edit().putString(listKey, JSONArray(updatedList).toString()).apply()
+
+                        suggestions = suggestions.filter { !it.query.equals(targetQuery, ignoreCase = true) }
 
                         if (item.isHistory) {
                             Thread {
@@ -995,6 +1042,13 @@ fun PetalOmniboxPage(
                                 val restoredSet = (removedSuggestions - targetQuery).toSet()
                                 removedSuggestions = restoredSet
                                 sp.edit().putStringSet("sp_removed_suggestions", restoredSet).apply()
+                                if (item.isHistory) {
+                                    val currentHistory = getSavedSearchHistory().toMutableList()
+                                    if (currentHistory.none { it.equals(targetQuery, ignoreCase = true) }) {
+                                        currentHistory.add(0, targetQuery)
+                                        sp.edit().putString(listKey, JSONArray(currentHistory).toString()).apply()
+                                    }
+                                }
                             }
                         }
                     },
