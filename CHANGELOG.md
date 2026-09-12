@@ -1,3 +1,50 @@
+### v3.0 — 🌸 Petal: The Grand Milestone (v2.0 to v3.0 Evolution) 🚀🦎
+
+> *"Personal Window to the Web — Completely Gecko-Powered, Zero Trackers, Native Viewers & Seamless Custom Tabs."*
+
+Welcome to **Petal 3.0**! This monumental milestone celebrates Petal's complete evolutionary journey from a lightweight browser shell into a modern, privacy-first flagship powerhouse powered by Mozilla GeckoView. Here is everything built, perfected, and unified across the entire v2.0 → v3.0 era:
+
+---
+
+#### 🦎 1. The GeckoView Quantum Leap (v2.8 – v3.0)
+- **Bye Bye WebView, Hello Gecko 154!**: Full migration from Android System WebView to Mozilla GeckoView 154. True modern web standards compliance, sandboxed multi-process tab architecture, and zero Google WebView tracking.
+- **Gecko MediaSession & Picture-in-Picture**: Bidirectional HTML5 media session bridge supporting lock-screen controls, notification scrubbers, speed controls, and smooth PiP transitions with dynamic aspect ratio tracking.
+- **Chrome-Style Session Rehydration**: Bulletproof session restoration preserving open tabs, tab groupings, scroll positions, and navigation history across app restarts.
+- **Rock-Solid Gestures & Touch Streams**: Clean edge-swipe back navigation, predictive back gesture support, and touch arbitration across pull-to-refresh containers and GeckoView.
+
+#### 🚀 2. AndroidX Custom Tabs Provider & Lightweight Shell (New in v3.0)
+- **Official Custom Tabs Provider**: Petal now acts as an Android Custom Tabs provider via `androidx.browser:browser`. External apps (Twitter/X, Reddit, Gmail, etc.) can now launch Petal as their native in-app browser overlay.
+- **Bound Provider Service (`PetalCustomTabsService`)**: Implements session negotiation, warm handshakes, and pre-render signals (`android.support.customtabs.action.CustomTabsService`).
+- **Dedicated Overlay Activity (`PetalCustomTabActivity`)**: Lightweight, distraction-free overlay hosting an isolated `PetalGeckoView` session with full tracking protection, secure HTTPS indicator, and a one-tap **"Open in Petal"** button to promote sessions into full multi-tab browsing.
+
+#### 🎨 3. Native Media, File & Document Viewers (v2.7 – v2.9.9)
+- **Native Video Player & Wavy Seekbar (v2.7)**: mpvEx-inspired native video overlay featuring an animated squiggly seekbar, vertical gesture HUDs for brightness and volume, 10s skip intervals, and playback speed selectors (with smart bypass for YouTube).
+- **Material 3 Expressive Image Viewer (v2.9.8)**: Full-screen offline image viewer with pinch-to-zoom (0.8×–5.0×), double-tap spring zoom, gallery mode, wallpaper setter, image info bottom sheet, and web long-press integration ("View in Petal Viewer").
+- **Featherweight PDF Engine (v2.9.9)**: Zero-dependency, native `PdfRenderer`-powered document viewer featuring continuous vertical scrolling, thumbnail skimmer drawer, jump-to-page slider, system printing integration, and metadata inspection.
+- **Universal File Viewer 60 FPS Engine (v3.0)**: Smooth virtualized text rendering with horizontal single-scroll containment, dynamic **Word Wrap** toggle, and optimized rendering for DOCX and XLSX tables.
+
+#### 🕵️ 4. Incognito Stealth & Privacy Redefined (New in v3.0)
+- **Material 3 Expressive Incognito Redesign**: Chrome-inspired clean layout featuring an ambient-glowing detective fedora hero badge, bulleted privacy breakdowns, and an interactive privacy safeguards dialog.
+- **Decoy Omnibox Search Bar**: Pill-shaped search bar with tactile haptic bounce, Google Lens visual search, and voice search integration.
+- **Isolated Incognito Session Suggester**: Segregated omnibox query suggestions that vanish completely upon closing private tabs.
+- **Expressive Cookie Shield**: One-tap card toggle for blocking third-party tracking cookies with animated thumb transitions.
+
+#### ⚡ 5. Speed, Downloads & Network Privacy (v2.6 – v2.9)
+- **High-Speed Segmented Downloader**: 12-thread segmented downloading powered by Fetch2 and OkHttp with auto-resume, RFC 5987 UTF-8 filename decoding, and smart network recovery.
+- **Instant External Download Dispatch (v2.9)**: Instant URL handoff to 1DM, ADM, AB Download Manager, and Navi without confirmation dialog interruptions.
+- **Advanced Content Blocker**: High-performance request interceptor equipped with EasyList, HaGeZi, and uAssets host filter engines alongside dynamic cosmetic filters.
+- **Custom DNS-over-HTTPS (DoH)**: Built-in encrypted DNS support for Cloudflare, NextDNS, and custom user-defined DoH endpoints.
+- **Smart Background Navigation**: Automatically open intrusive link redirects in background tabs without disrupting active reading sessions.
+
+#### 🌸 6. Material 3 Expressive UI, Animations & Shell
+- **Interactive Address Bar Pill**: Horizontal swipe gestures to cycle tabs, inline loading indicator, and long-press quick action bottom sheet (clean URL copy, paste & go, bookmark, hard refresh).
+- **Cinematic Cold-Start Intros**: Optional 3D Prism & Optical Laser Sweep and Blooming Petal splash animations with synchronized micro-haptics.
+- **Unified Settings Hub**: Cohesive M3 Expressive container cards, rounded position-aware icon badges, and dynamic keyword search indexing across all preference pages.
+- **Tactile Tab Management**: Long-press bottom bar tab pill for instant tab creation, clean 3-dot overflow menu, and grid/vertical tab manager layouts.
+- **Zero Data Loss Guarantee**: Strict backward compatibility preserving bookmarks, history, settings, and session tabs across every single release.
+
+---
+
 ### v2.9.9 — 📄 Featherweight PDF Engine & Crystal Security ✨
 
 #### 🎨 UI/UX — Pure Material 3 Expressive PDF Viewer (Inspired by ImageToolbox)

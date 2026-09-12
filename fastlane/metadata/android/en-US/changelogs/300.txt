@@ -1,0 +1,28 @@
+v3.0 — 🌸 Petal: The Grand Milestone (v2.0 to v3.0 Evolution) 🚀🦎
+
+"Personal Window to the Web — Completely Gecko-Powered, Zero Trackers, Native Viewers & Seamless Custom Tabs."
+
+🦎 The GeckoView Quantum Leap (v2.8 – v3.0)
+• Full transition from System WebView to Mozilla GeckoView 154
+• Gecko MediaSession & fluid Picture-in-Picture controls
+• Rock-solid edge gestures & touch stream arbitration
+
+🚀 AndroidX Custom Tabs Provider (New in v3.0)
+• Full Custom Tabs Provider Support via androidx.browser protocol
+• Bound PetalCustomTabsService with session negotiation & warm handshake
+• Lightweight PetalCustomTabActivity with clean M3 toolbar & "Open in Petal"
+
+🎨 Native Media, File & Document Viewers (v2.7 – v2.9.9)
+• Native Video Player with animated squiggly wavy seekbar (mpvEx-inspired)
+• Material 3 Expressive Image Viewer (pinch/pan, gallery, wallpaper, EXIF)
+• Featherweight PDF Engine (PdfRenderer, continuous scroll, thumbnail drawer)
+• Universal File Viewer 60 FPS engine with Word Wrap & single-container scroll
+
+🕵️ Incognito Stealth Redefined (New in v3.0)
+• Chrome-inspired M3 Expressive layout with glowing detective badge
+• Segregated omnibox search suggester & 3rd-party cookie blocking switch
+
+⚡ Downloads, Network & Performance (v2.6 – v2.9)
+• Instant external download dispatch (1DM, ADM, AB, Navi) & Fetch2 engine
+• Multi-layer ad blocker, custom DNS-over-HTTPS & background redirect routing
+• Interactive address bar pill gestures, cold-start intros & zero data loss
