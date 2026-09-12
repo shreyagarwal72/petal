@@ -301,7 +301,7 @@ fun DisplaySettingsScreenContent(
                             }
                         }
 
-                        HorizontalDivider(
+                        Divider(
                             modifier = Modifier.padding(vertical = 6.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                         )
