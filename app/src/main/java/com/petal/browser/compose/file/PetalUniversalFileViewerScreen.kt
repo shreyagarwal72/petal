@@ -500,7 +500,6 @@ private fun TextCodeViewerContent(
 }
 
 @Composable
-@Composable
 private fun PptxViewerContent(fileUri: Uri) {
     val context = LocalContext.current
     var slides by remember { mutableStateOf<List<String>?>(null) }
@@ -648,7 +647,7 @@ private fun XlsxViewerContent(fileUri: Uri) {
                             val cells = mutableListOf<String>()
                             val cellTokens = rowBody.split("<c ")
                             for (c in cellTokens.drop(1)) {
-                                val isShared = c.contains("t="s"")
+                                val isShared = c.contains("t=\"s\"")
                                 val valMatch = Regex("<v>(.*?)</v>").find(c)
                                 val cellVal = valMatch?.groupValues?.get(1)?.trim() ?: ""
                                 val text = if (isShared) {
@@ -733,6 +732,7 @@ private fun XlsxViewerContent(fileUri: Uri) {
     }
 }
 
+@Composable
 private fun DocxViewerContent(fileUri: Uri) {
     val context = LocalContext.current
     var extractedText by remember { mutableStateOf<String?>(null) }
