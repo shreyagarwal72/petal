@@ -126,14 +126,6 @@ fun ProfileAvatarDisplay(
                     )
                 }
             }
-            profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == "app_icon" -> {
-                AsyncImage(
-                    model = com.petal.browser.R.mipmap.ic_launcher,
-                    contentDescription = "App Icon Avatar",
-                    modifier = Modifier.size(size * 0.7f),
-                    contentScale = ContentScale.Fit
-                )
-            }
             else -> {
                 val iconVector = getPresetMaterialIcon(profile.avatarPresetId)
                 if (iconVector != null) {
@@ -406,22 +398,22 @@ private fun RenderUserProfileContent(
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
                             text = profile.displayName,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
+                            overflow = TextOverflow.Ellipsis
                         )
+                        Spacer(Modifier.width(8.dp))
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier
-                                .size(30.dp)
+                                .size(28.dp)
                                 .bouncyClickable {
                                     nameInput = profile.displayName
                                     showEditNameDialog = true
@@ -498,30 +490,21 @@ private fun RenderUserProfileContent(
                                     .bouncyClickable { GoogleAccountManager.updateAvatarPreset(context, presetId) }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    if (presetId == "app_icon") {
-                                        AsyncImage(
-                                            model = com.petal.browser.R.mipmap.ic_launcher,
+                                    val iconVec = getPresetMaterialIcon(presetId)
+                                    if (iconVec != null) {
+                                        Icon(
+                                            imageVector = iconVec,
                                             contentDescription = label,
-                                            modifier = Modifier.size(32.dp),
-                                            contentScale = ContentScale.Fit
+                                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(24.dp)
                                         )
                                     } else {
-                                        val iconVec = getPresetMaterialIcon(presetId)
-                                        if (iconVec != null) {
-                                            Icon(
-                                                imageVector = iconVec,
-                                                contentDescription = label,
-                                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        } else {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Person,
-                                                contentDescription = label,
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
+                                        Icon(
+                                            imageVector = Icons.Rounded.Person,
+                                            contentDescription = label,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(24.dp)
+                                        )
                                     }
                                 }
                             }

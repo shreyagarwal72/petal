@@ -31,7 +31,7 @@ data class GoogleUserProfile(
     val displayName: String,
     val avatarUrl: String? = null,
     val avatarType: AvatarType = AvatarType.PRESET,
-    val avatarPresetId: String = "app_icon",
+    val avatarPresetId: String = "petal_flower",
     val customAvatarUri: String? = null,
     val isSignedIn: Boolean = false,
     val globalGoogleLogin: Boolean = true,
@@ -61,7 +61,6 @@ object GoogleAccountManager {
     private const val KEY_GLOBAL_GOOGLE_LOGIN = "sp_global_google_login"
 
     val builtinAvatarPresets = listOf(
-        "app_icon" to "App Icon (Default)",
         "petal_flower" to "Petal",
         "cosmic_star" to "Cosmic Star",
         "cyber_shield" to "Cyber Shield",
@@ -90,7 +89,8 @@ object GoogleAccountManager {
             val avatarUrl = sp.getString(KEY_AVATAR_URL, null)
             val avatarTypeStr = sp.getString(KEY_AVATAR_TYPE, AvatarType.PRESET.name) ?: AvatarType.PRESET.name
             val avatarType = try { AvatarType.valueOf(avatarTypeStr) } catch (_: Throwable) { AvatarType.PRESET }
-            val avatarPresetId = sp.getString(KEY_AVATAR_PRESET, "petal_flower") ?: "petal_flower"
+            val rawPreset = sp.getString(KEY_AVATAR_PRESET, "petal_flower") ?: "petal_flower"
+            val avatarPresetId = if (rawPreset == "app_icon") "petal_flower" else rawPreset
             var customAvatarUri = sp.getString(KEY_CUSTOM_AVATAR_URI, null)
             val globalGoogleLogin = sp.getBoolean(KEY_GLOBAL_GOOGLE_LOGIN, true)
 
