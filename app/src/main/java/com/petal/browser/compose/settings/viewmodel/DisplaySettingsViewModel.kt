@@ -95,6 +95,10 @@ class DisplaySettingsViewModel @Inject constructor(
         settingsRepository.setAddressBarSwipeTabs(enabled)
     }
 
+    fun setAddressBarQuickActions(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setAddressBarQuickActions(enabled)
+    }
+
     val doubleBackExit: StateFlow<Boolean> = settingsRepository.doubleBackExit
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
