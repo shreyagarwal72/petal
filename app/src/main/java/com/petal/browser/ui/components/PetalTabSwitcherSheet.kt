@@ -224,10 +224,7 @@ object PetalTabSwitcherBridge {
                             }
                         },
                         onOpenSettings = {
-                            // This callback is only wired to the gear icon on the
-                            // Inactive Tabs page — deep-link straight into its
-                            // settings screen instead of the generic overflow menu.
-                            (activity as? BrowserActivity)?.showInactiveTabsSettingsScreen()
+                            (activity as? BrowserActivity)?.showTabsSettingsScreen()
                         },
                         onTabVisible = { tabItem ->
                             val targetAlbum = BrowserContainer.list()

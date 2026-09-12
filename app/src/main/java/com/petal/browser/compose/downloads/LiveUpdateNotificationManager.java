@@ -114,7 +114,7 @@ public class LiveUpdateNotificationManager {
                 NotificationChannel channel = new NotificationChannel(
                         CHANNEL_ID,
                         CHANNEL_NAME,
-                        NotificationManager.IMPORTANCE_LOW
+                        NotificationManager.IMPORTANCE_DEFAULT
                 );
                 channel.setDescription("Live real-time alerts for active downloads with progress, velocity, and controls");
                 channel.setSound(null, null);
@@ -232,7 +232,7 @@ public class LiveUpdateNotificationManager {
                 .setColor(themeAccentColor)
                 .setColorized(true)
                 .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(contentPendingIntent);
 
         if (togglePendingIntent != null) {

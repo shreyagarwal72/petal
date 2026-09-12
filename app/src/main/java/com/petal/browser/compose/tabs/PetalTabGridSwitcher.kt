@@ -389,11 +389,20 @@ fun PetalTabGridSwitcher(
                                 )
                                 HorizontalDivider()
                                 DropdownMenuItem(
+                                    text = { Text("Tab Manager Settings") },
+                                    leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
+                                    onClick = {
+                                        isOverflowMenuExpanded = false
+                                        onOpenSettings()
+                                    }
+                                )
+                                HorizontalDivider()
+                                DropdownMenuItem(
                                     text = { Text("Inactive Tabs Settings") },
                                     leadingIcon = { Icon(Icons.Rounded.Tune, contentDescription = null, tint = accentColor) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
-                                        onOpenSettings()
+                                        (context as? com.petal.browser.activity.BrowserActivity)?.showInactiveTabsSettingsScreen()
                                     }
                                 )
                                 HorizontalDivider()

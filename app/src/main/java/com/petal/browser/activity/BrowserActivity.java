@@ -4170,6 +4170,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
     }
 
+    /**
+     * Opens Tab Manager settings (TabsSettingsScreen) directly from Tab Manager.
+     */
+    public void showTabsSettingsScreen() {
+        openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.TABS);
+    }
+
     public void captureBrowserMainPreview() {
         // No-op preview snapshot placeholder for screen transition previews
     }
