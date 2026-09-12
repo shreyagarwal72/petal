@@ -6,31 +6,40 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
+import androidx.preference.PreferenceManager;
 
 import com.petal.browser.R;
-import com.petal.browser.activity.BrowserActivity;
+import com.petal.browser.ui.theme.WidgetColors;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.Locale;
 
 /**
  * LiveUpdateNotificationManager
- * Handles Android 16 (API 36) Notification.ProgressStyle live updates / promoted notifications
- * with runtime capability verification via canPostPromotedNotifications(), segment tracking for downloads/media,
- * and graceful fallback to standard NotificationCompat.Builder ongoing notifications for API < 36 and all OEM devices.
+ * Handles live update notifications for active downloads:
+ * 1. Follows active browser theming: Material You dynamic color when enabled, or Petal Pink when disabled.
+ * 2. Replaces download icon above the live progress bar with an animated doll running in the direction of progress.
+ * 3. Handles granular OS-specific permissions for live alerts/actions across Android versions.
  */
 public class LiveUpdateNotificationManager {
 
     private static final String TAG = "LiveUpdateNotifMgr";
     public static final String CHANNEL_ID = "petal_live_downloads";
     public static final String CHANNEL_NAME = "Live Downloader & Alerts";
+
+    public static final int COLOR_PETAL_PINK_LIGHT = 0xFFD81B60;
+    public static final int COLOR_PETAL_PINK_DARK  = 0xFFFFB0C8;
 
     /**
      * Runtime capability check to determine if Android 16 promoted live notifications can be posted.
@@ -43,7 +52,6 @@ public class LiveUpdateNotificationManager {
             NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm == null) return false;
 
-            // Reflection check for NotificationManager.canPostPromotedNotifications() or canUsePromotedNotifications()
             Method method = null;
             try {
                 method = NotificationManager.class.getMethod("canPostPromotedNotifications");
@@ -60,15 +68,40 @@ public class LiveUpdateNotificationManager {
                 }
             }
 
-            // Fallback for Android 16 API 36 preview/final builds: check general notification authorization
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                return nm.areNotificationsEnabled();
-            }
-            return true;
+            return nm.areNotificationsEnabled();
         } catch (Exception e) {
             Log.d(TAG, "Error checking promoted notification capability: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Checks if notification permission is granted on Android 13+ (API 33+).
+     */
+    public static boolean hasNotificationPermission(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // API 33+
+            return ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        }
+        NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        return nm != null && nm.areNotificationsEnabled();
+    }
+
+    /**
+     * Resolves an intent to open live alert / notification channel settings directly.
+     */
+    public static Intent getLiveNotificationSettingsIntent(Context context) {
+        Intent intent;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            intent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
+            intent.putExtra(Settings.EXTRA_CHANNEL_ID, CHANNEL_ID);
+        } else {
+            intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(android.net.Uri.parse("package:" + context.getPackageName()));
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return intent;
     }
 
     /**
@@ -83,7 +116,7 @@ public class LiveUpdateNotificationManager {
                         CHANNEL_NAME,
                         NotificationManager.IMPORTANCE_LOW
                 );
-                channel.setDescription("Live real-time alerts for active downloads and media with progress, velocity, and controls");
+                channel.setDescription("Live real-time alerts for active downloads with progress, velocity, and controls");
                 channel.setSound(null, null);
                 channel.enableVibration(false);
                 channel.setShowBadge(false);
@@ -93,9 +126,67 @@ public class LiveUpdateNotificationManager {
     }
 
     /**
+     * Returns the active browser theme accent color:
+     * - If Material You (Dynamic Color) is enabled (Android 12+), returns system dynamic primary accent.
+     * - If disabled or on earlier Android versions, returns signature Petal Pink accent.
+     */
+    public static int getLiveThemeAccentColor(Context context) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        boolean isDynamicSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+        boolean useDynamicColor = sp.getBoolean("useDynamicColor", isDynamicSupported);
+        boolean isDark = isSystemInDarkTheme(context);
+
+        if (useDynamicColor && isDynamicSupported) {
+            try {
+                int resId = isDark ? android.R.color.system_accent1_200 : android.R.color.system_accent1_600;
+                int dynamicColor = ContextCompat.getColor(context, resId);
+                if (dynamicColor != 0) {
+                    return dynamicColor;
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // Palette fallback: follow selected palette or Petal Pink
+        String paletteId = sp.getString("sp_palette_id", "petal");
+        try {
+            return WidgetColors.primaryArgb(paletteId, isDark);
+        } catch (Throwable ignored) {}
+
+        return isDark ? COLOR_PETAL_PINK_DARK : COLOR_PETAL_PINK_LIGHT;
+    }
+
+    private static boolean isSystemInDarkTheme(Context context) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        String configStr = sp.getString("sp_theme_config", "FOLLOW_SYSTEM");
+        if ("DARK".equalsIgnoreCase(configStr)) return true;
+        if ("LIGHT".equalsIgnoreCase(configStr)) return false;
+        int nightMode = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return nightMode == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    /**
+     * Resolves the animated doll running frame based on progress percentage.
+     * Frames cycle sequentially: 1 -> 2 -> 3 -> 4 -> 1 facing forward in the direction of progress.
+     */
+    public static int getRunningDollFrameResource(int progressPercent) {
+        int frame = Math.abs(progressPercent) % 4;
+        switch (frame) {
+            case 1:
+                return R.drawable.ic_doll_run_2;
+            case 2:
+                return R.drawable.ic_doll_run_3;
+            case 3:
+                return R.drawable.ic_doll_run_4;
+            case 0:
+            default:
+                return R.drawable.ic_doll_run_1;
+        }
+    }
+
+    /**
      * Builds live update notification for download progress or media streaming,
      * utilizing Android 16 Notification.ProgressStyle when supported/enabled,
-     * or standard ongoing NotificationCompat with live chips as fallback.
+     * or standard ongoing NotificationCompat with dynamic theme and animated running doll.
      */
     public static Notification buildLiveNotification(
             Context context,
@@ -112,28 +203,34 @@ public class LiveUpdateNotificationManager {
     ) {
         ensureChannelCreated(context);
 
-        android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         boolean liveUpdatesPref = sp.getBoolean("sp_live_updates", true);
+        int themeAccentColor = getLiveThemeAccentColor(context);
+        int dollFrameRes = isPaused ? R.drawable.ic_doll_run_1 : getRunningDollFrameResource(progressPercent);
 
         // Try building Android 16 native Notification.ProgressStyle if API >= 36 and capable
         if (canPostPromotedNotifications(context)) {
             Notification nativeNotif = buildAndroid16ProgressStyleNotification(
-                    context, title, contentText, progressPercent, isIndeterminate, isPaused, chipText, contentPendingIntent, cancelPendingIntent, togglePendingIntent, liveUpdatesPref
+                    context, title, contentText, progressPercent, isIndeterminate, isPaused, chipText,
+                    contentPendingIntent, cancelPendingIntent, togglePendingIntent, liveUpdatesPref,
+                    themeAccentColor, dollFrameRes
             );
             if (nativeNotif != null) {
                 return nativeNotif;
             }
         }
 
-        // Cross-device backward-compatible NotificationCompat builder for Android 15 & below / OEM fallbacks
+        // Build NotificationCompat with dynamic theming and animated running doll
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.icon_download)
+                .setSmallIcon(dollFrameRes)
                 .setContentTitle(title)
                 .setContentText(contentText)
                 .setSubText(chipText)
                 .setOngoing(!isPaused)
                 .setOnlyAlertOnce(true)
                 .setSilent(true)
+                .setColor(themeAccentColor)
+                .setColorized(true)
                 .setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(contentPendingIntent);
@@ -153,10 +250,31 @@ public class LiveUpdateNotificationManager {
             builder.addAction(R.drawable.icon_download, "Downloads", contentPendingIntent);
         }
 
+        int clampedProgress = Math.max(0, Math.min(100, progressPercent));
         if (isIndeterminate) {
             builder.setProgress(0, 0, true);
         } else {
-            builder.setProgress(100, Math.max(0, Math.min(100, progressPercent)), false);
+            builder.setProgress(100, clampedProgress, false);
+        }
+
+        // Custom heads-up / expanded RemoteViews featuring the running doll above the progress bar
+        try {
+            RemoteViews customView = new RemoteViews(context.getPackageName(), R.layout.layout_live_download_notification);
+            customView.setTextViewText(R.id.notification_title, title);
+            customView.setTextViewText(R.id.notification_subtitle, contentText);
+            customView.setTextViewText(R.id.notification_speed_chip, chipText != null ? chipText : "");
+            customView.setTextColor(R.id.notification_speed_chip, themeAccentColor);
+            customView.setImageViewResource(R.id.notification_doll_runner, dollFrameRes);
+
+            if (isIndeterminate) {
+                customView.setProgressBar(R.id.notification_progress_bar, 0, 0, true);
+            } else {
+                customView.setProgressBar(R.id.notification_progress_bar, 100, clampedProgress, false);
+            }
+
+            builder.setCustomContentView(customView);
+        } catch (Throwable t) {
+            Log.d(TAG, "Custom RemoteViews creation ignored: " + t.getMessage());
         }
 
         // Attach live alert metadata extras safely
@@ -165,6 +283,7 @@ public class LiveUpdateNotificationManager {
         extras.putBoolean("android.isLiveAlert", true);
         extras.putBoolean("android.promotedOngoing", !isPaused && liveUpdatesPref);
         extras.putString("android.shortCriticalText", chipText);
+        extras.putInt("android.accentColor", themeAccentColor);
         builder.setExtras(extras);
 
         try {
@@ -177,7 +296,7 @@ public class LiveUpdateNotificationManager {
 
     /**
      * Builds API 36 (Android 16) Notification.ProgressStyle with segment tracking support,
-     * setting setOngoing(true), setShortCriticalText(), and FLAG_PROMOTED_ONGOING status bar chip flags.
+     * applying the active browser theme color and the running doll icon directly on the tracker.
      */
     private static Notification buildAndroid16ProgressStyleNotification(
             Context context,
@@ -190,22 +309,23 @@ public class LiveUpdateNotificationManager {
             PendingIntent contentPendingIntent,
             PendingIntent cancelPendingIntent,
             PendingIntent togglePendingIntent,
-            boolean promoteLiveUpdate
+            boolean promoteLiveUpdate,
+            int accentColor,
+            int dollFrameRes
     ) {
         try {
-            int accent = androidx.core.content.ContextCompat.getColor(context, R.color.live_update_accent);
             int clampedProgress = Math.max(0, Math.min(100, progressPercent));
 
             Notification.ProgressStyle style = new Notification.ProgressStyle()
                     .setStyledByProgress(false)
                     .setProgress(clampedProgress)
                     .setProgressSegments(java.util.Collections.singletonList(
-                            new Notification.ProgressStyle.Segment(100).setColor(accent)
+                            new Notification.ProgressStyle.Segment(100).setColor(accentColor)
                     ))
-                    .setProgressTrackerIcon(Icon.createWithResource(context, R.drawable.icon_download));
+                    .setProgressTrackerIcon(Icon.createWithResource(context, dollFrameRes));
 
             Notification.Builder builder = new Notification.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.icon_download)
+                    .setSmallIcon(dollFrameRes)
                     .setContentTitle(title)
                     .setContentText(contentText)
                     .setStyle(style)
@@ -213,7 +333,7 @@ public class LiveUpdateNotificationManager {
                     .setProgress(100, clampedProgress, isIndeterminate)
                     .setOngoing(!isPaused)
                     .setOnlyAlertOnce(true)
-                    .setColor(accent)
+                    .setColor(accentColor)
                     .setColorized(true)
                     .setContentIntent(contentPendingIntent)
                     .setCategory(Notification.CATEGORY_PROGRESS)
@@ -223,15 +343,14 @@ public class LiveUpdateNotificationManager {
                 builder.setFlag(Notification.FLAG_PROMOTED_ONGOING, true);
             }
 
-            // Add extras for live alert compatibility
             Bundle extras = new Bundle();
             extras.putString("android.liveAlertText", chipText);
             extras.putBoolean("android.isLiveAlert", true);
             extras.putBoolean("android.promotedOngoing", !isPaused && promoteLiveUpdate);
             extras.putString("android.shortCriticalText", chipText);
+            extras.putInt("android.accentColor", accentColor);
             builder.addExtras(extras);
 
-            // Add toggle action (Pause / Resume)
             if (togglePendingIntent != null) {
                 Notification.Action toggleAction = new Notification.Action.Builder(
                         Icon.createWithResource(context, isPaused ? R.drawable.icon_play : R.drawable.icon_pause),
@@ -241,7 +360,6 @@ public class LiveUpdateNotificationManager {
                 builder.addAction(toggleAction);
             }
 
-            // Add cancel action
             if (cancelPendingIntent != null) {
                 Notification.Action cancelAction = new Notification.Action.Builder(
                         Icon.createWithResource(context, R.drawable.icon_close),

@@ -1,5 +1,10 @@
 package com.petal.browser.compose.settings.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,18 +13,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.compose.downloads.LiveUpdateNotificationManager
 import com.petal.browser.compose.settings.viewmodel.MiscSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
@@ -116,13 +119,115 @@ fun MiscSettingsScreenContent(
                         onCheckedChange = onAutoPreviewDownloadedImagesChange
                     )
 
-                    if (android.os.Build.VERSION.SDK_INT >= 36) {
-                        ToggleRow(
-                            title = "Live updates",
-                            subtitle = "Show a live progress chip in the status bar and lock screen for active downloads",
-                            icon = Icons.Rounded.NotificationsActive,
-                            checked = liveUpdates,
-                            onCheckedChange = onLiveUpdatesChange
+                    var showPermissionDialog by remember { mutableStateOf(false) }
+                    var showPromotedSettingsDialog by remember { mutableStateOf(false) }
+
+                    val notifPermissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { isGranted ->
+                        if (isGranted) {
+                            onLiveUpdatesChange(true)
+                            if (Build.VERSION.SDK_INT >= 36 && !LiveUpdateNotificationManager.canPostPromotedNotifications(context)) {
+                                showPromotedSettingsDialog = true
+                            }
+                        } else {
+                            onLiveUpdatesChange(false)
+                        }
+                    }
+
+                    ToggleRow(
+                        title = "Live updates & alerts",
+                        subtitle = "Show live progress chip in status bar with animated doll runner for active downloads",
+                        icon = Icons.Rounded.NotificationsActive,
+                        checked = liveUpdates,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    val hasPermission = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                    if (hasPermission) {
+                                        onLiveUpdatesChange(true)
+                                        if (Build.VERSION.SDK_INT >= 36 && !LiveUpdateNotificationManager.canPostPromotedNotifications(context)) {
+                                            showPromotedSettingsDialog = true
+                                        }
+                                    } else {
+                                        showPermissionDialog = true
+                                    }
+                                } else {
+                                    onLiveUpdatesChange(true)
+                                }
+                            } else {
+                                onLiveUpdatesChange(false)
+                            }
+                        }
+                    )
+
+                    if (showPermissionDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showPermissionDialog = false },
+                            icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
+                            title = { Text(text = "Enable Live Notifications") },
+                            text = {
+                                Text(
+                                    text = "To display real-time download progress, velocity, and the animated running doll in your status bar, Petal requires notification permission."
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        showPermissionDialog = false
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                    }
+                                ) {
+                                    Text("Grant Permission")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showPermissionDialog = false }) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
+                    }
+
+                    if (showPromotedSettingsDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showPromotedSettingsDialog = false },
+                            icon = { Icon(Icons.Rounded.NotificationsActive, contentDescription = null) },
+                            title = { Text(text = "Promoted Live Updates") },
+                            text = {
+                                Text(
+                                    text = "Your device supports promoted status bar live chips (Android 16+). To display the running doll chip persistently in your status bar, verify live updates are permitted in notification settings."
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        showPromotedSettingsDialog = false
+                                        try {
+                                            context.startActivity(LiveUpdateNotificationManager.getLiveNotificationSettingsIntent(context))
+                                        } catch (e: Exception) {
+                                            // Fallback to app settings
+                                            val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                data = android.net.Uri.parse("package:${context.packageName}")
+                                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                    }
+                                ) {
+                                    Text("Open Settings")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showPromotedSettingsDialog = false }) {
+                                    Text("Dismiss")
+                                }
+                            }
                         )
                     }
 

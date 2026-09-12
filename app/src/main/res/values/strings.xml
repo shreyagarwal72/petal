@@ -186,9 +186,14 @@
     <string name="downloading_update_progress">Downloading update (%1$d%%)</string>
     <string name="action_install_update">Download &amp; Install Update</string>
 
-    <!-- Live Updates (Android 16+) -->
-    <string name="live_updates">Live updates</string>
-    <string name="live_updates_sub">Show a live progress chip in the status bar and lock screen for active downloads (Android 16+).</string>
+    <!-- Live Updates & Live Alerts -->
+    <string name="live_updates">Live updates &amp; alerts</string>
+    <string name="live_updates_sub">Show a live progress chip in the status bar and lock screen with animated doll runner for active downloads.</string>
+    <string name="live_alerts_permission_title">Enable Live Notifications</string>
+    <string name="live_alerts_permission_desc">To display real-time live download progress, speed, and controls in your status bar, Petal requires notification permission on this device.</string>
+    <string name="live_alerts_permission_button">Grant Permission</string>
+    <string name="live_alerts_open_settings">Open Notification Settings</string>
+    <string name="live_alerts_promoted_desc">Your device supports promoted status bar live chips (Android 16+). Ensure live alert promotion is enabled in notification channel settings.</string>
 
     <!-- Standalone Viewers & Players -->
     <string name="petal_pdf_viewer_name">Petal PDF Viewer</string>

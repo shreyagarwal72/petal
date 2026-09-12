@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Doll Head (Frame 4: mid flight jump forward) -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M14.0,3.8a2.5,2.5 0 1,0 0,-5a2.5,2.5 0 0,0 0,5z"/>
+    <!-- Bow / Ribbon -->
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M15.5,1.8c0.5,-0.6 1.5,-0.8 1.8,-0.2c0.3,0.6 -0.2,1.4 -0.8,1.4z"/>
+    <!-- Doll Body -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M12.5,6.3l3,0l1.5,5.5l-6,0z"/>
+    <!-- Arms stretched energetically forward -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M15,7.2l3.4,1.2c0.4,0.1 0.6,0.5 0.4,0.9c-0.1,0.4 -0.5,0.6 -0.9,0.4l-3.2,-1.2z"/>
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M12.5,7.2l-3.0,1.5c-0.3,0.2 -0.7,0.1 -0.9,-0.3c-0.2,-0.3 -0.1,-0.7 0.3,-0.9l3.1,-1.5z"/>
+    <!-- Legs extending forward and back in motion -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M14.5,11.8l3.0,3.5c0.2,0.3 0.6,0.4 0.9,0.2c0.3,-0.2 0.4,-0.6 0.2,-0.9l-2.8,-3.6z"/>
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M12.5,11.8l-2.6,3.6c-0.2,0.3 -0.2,0.7 0.1,0.9c0.3,0.2 0.7,0.2 0.9,-0.1l2.4,-3.6z"/>
+    <!-- Shoes / Feet -->
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M18,15.6l1.6,0.3c0.4,0.1 0.6,0.4 0.5,0.8c-0.1,0.4 -0.4,0.6 -0.8,0.5l-1.8,-0.4z"/>
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M10.2,15.6l-1.5,0.4c-0.4,0.1 -0.7,-0.1 -0.8,-0.5c-0.1,-0.4 0.1,-0.7 0.5,-0.8l1.7,-0.4z"/>
+</vector>

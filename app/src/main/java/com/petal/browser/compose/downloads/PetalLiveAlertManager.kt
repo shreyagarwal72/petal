@@ -381,6 +381,7 @@ object PetalLiveAlertManager {
         val totalText = if (totalBytes > 0) formatBytes(totalBytes) else ""
         val contentText = if (totalText.isNotEmpty()) "$fileName ($totalText)" else fileName
 
+        val accentColor = LiveUpdateNotificationManager.getLiveThemeAccentColor(context)
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.icon_check)
             .setContentTitle("Download Complete")
@@ -388,6 +389,7 @@ object PetalLiveAlertManager {
             .setSubText("Completed")
             .setOngoing(false)
             .setAutoCancel(true)
+            .setColor(accentColor)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(openFilePendingIntent)
             .addAction(R.drawable.icon_check, "Open File", openFilePendingIntent)
