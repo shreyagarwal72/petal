@@ -85,8 +85,8 @@ tasks.withType(com.android.build.gradle.internal.tasks.CheckAarMetadataTask).con
 }
 
 configurations.all {
-    exclude group: 'com.google.android.gms', module: 'play-services-fido'
     resolutionStrategy {
+        force 'com.google.android.gms:play-services-fido:21.1.0'
         force 'org.jetbrains.kotlin:kotlin-stdlib:2.0.21'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.21'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.21'

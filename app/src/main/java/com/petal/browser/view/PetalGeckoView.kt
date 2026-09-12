@@ -199,6 +199,16 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
+        // Permission Delegate (Handles ContentPermission, WebAuthn, Device Permissions)
+        session.permissionDelegate = object : GeckoSession.PermissionDelegate {
+            override fun onContentPermissionRequest(
+                session: GeckoSession,
+                perm: GeckoSession.PermissionDelegate.ContentPermission
+            ): GeckoResult<Int>? {
+                return GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+            }
+        }
+
         // Navigation Delegate
         session.navigationDelegate = object : GeckoSession.NavigationDelegate {
             override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
