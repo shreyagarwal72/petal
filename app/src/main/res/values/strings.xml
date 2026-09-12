@@ -201,4 +201,5 @@
     <string name="petal_media_player_name">Petal Media Player</string>
     <string name="petal_file_viewer_name">Petal Universal File Viewer</string>
     <string name="petal_pwa_name">Petal Web App</string>
+    <string name="petal_custom_tab_name">Petal Custom Tab</string>
 </resources>
