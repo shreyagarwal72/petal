@@ -22,8 +22,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.BrightnessHigh
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
@@ -92,6 +95,7 @@ fun PetalVideoPlayerOverlay(
     onFastForward: () -> Unit,
     onRewind: () -> Unit,
     onSpeedChange: (Float) -> Unit,
+    onAspectRatioToggle: ((String) -> Unit)? = null,
     onPipClick: () -> Unit,
     onCloseFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
@@ -108,10 +112,23 @@ fun PetalVideoPlayerOverlay(
     // Adjusting brightness only affects the video layer, not the browser activity or device window
     var videoBrightness by remember { mutableFloatStateOf(1.0f) }
 
+    // Aspect ratio modes: Mode ID to Display Label
+    val aspectModes = remember {
+        listOf(
+            "FIT" to "Fit (Original)",
+            "ZOOM" to "Zoom (Crop)",
+            "STRETCH" to "Stretch",
+            "WIDE_16_9" to "16:9",
+            "CLASSIC_4_3" to "4:3",
+        )
+    }
+    var currentAspectIndex by remember { mutableIntStateOf(0) }
+
     // HUD gesture overlays
     var volumeHudLevel by remember { mutableIntStateOf(-1) }
     var brightnessHudLevel by remember { mutableFloatStateOf(-1f) }
     var doubleTapSeekText by remember { mutableStateOf<String?>(null) }
+    var aspectRatioHudText by remember { mutableStateOf<String?>(null) }
 
     // Auto-hide controls after 4 seconds of inactivity
     LaunchedEffect(areControlsVisible, isPlaying) {
@@ -224,6 +241,42 @@ fun PetalVideoPlayerOverlay(
             }
         }
 
+        // Aspect Ratio Mode HUD Indicator
+        LaunchedEffect(aspectRatioHudText) {
+            if (aspectRatioHudText != null) {
+                delay(1200)
+                aspectRatioHudText = null
+            }
+        }
+        if (aspectRatioHudText != null) {
+            Surface(
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.8f),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(16.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FitScreen,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = aspectRatioHudText ?: "",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                    )
+                }
+            }
+        }
+
         // Gesture HUD - Brightness & Volume
         if (brightnessHudLevel >= 0f) {
             Surface(
@@ -324,6 +377,7 @@ fun PetalVideoPlayerOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)
+                        .statusBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -349,6 +403,23 @@ fun PetalVideoPlayerOverlay(
                             .weight(1f)
                             .padding(horizontal = 12.dp),
                     )
+
+                    IconButton(
+                        onClick = {
+                            currentAspectIndex = (currentAspectIndex + 1) % aspectModes.size
+                            val (modeId, modeLabel) = aspectModes[currentAspectIndex]
+                            aspectRatioHudText = modeLabel
+                            onAspectRatioToggle?.invoke(modeId)
+                            PetalHapticEngine.getInstance(context).playClick(context)
+                        },
+                        modifier = Modifier.size(40.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FitScreen,
+                            contentDescription = "Aspect Ratio",
+                            tint = Color.White,
+                        )
+                    }
 
                     IconButton(
                         onClick = {
@@ -483,6 +554,7 @@ fun PetalVideoPlayerOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     PetalSeekbarWithTimers(

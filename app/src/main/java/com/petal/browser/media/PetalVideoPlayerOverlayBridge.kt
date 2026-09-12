@@ -108,6 +108,9 @@ class PetalVideoPlayerOverlayBridge(
                         playbackSpeed = speed
                         mediaBridge?.changeSpeed(speed)
                     },
+                    onAspectRatioToggle = { mode ->
+                        mediaBridge?.setVideoAspectRatio(mode)
+                    },
                     onPipClick = {
                         BrowserMediaDelegate.triggerSystemPipMode(activity as com.petal.browser.activity.BrowserActivity)
                     },

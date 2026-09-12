@@ -1857,6 +1857,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (bnv != null) bnv.setVisibility(GONE);
                 return;
             }
+            if (customView != null) {
+                View bnc = findViewById(R.id.bottom_nav_container);
+                View bnv = findViewById(R.id.bottom_nav_compose);
+                if (bnc != null) bnc.setVisibility(GONE);
+                if (bnv != null) bnv.setVisibility(GONE);
+                return;
+            }
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
             if (bottomNavContainer != null) {
                 bottomNavContainer.setTranslationY(0f);
@@ -2421,11 +2428,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         FrameLayout.LayoutParams.MATCH_PARENT
                 ));
 
+        // Explicitly hide bottom nav bars and address bar in fullscreen
+        try {
+            View bnc = findViewById(R.id.bottom_nav_container);
+            View bnv = findViewById(R.id.bottom_nav_compose);
+            if (bnc != null) bnc.setVisibility(GONE);
+            if (bnv != null) bnv.setVisibility(GONE);
+            View addressBar = findViewById(R.id.compose_address_bar);
+            if (addressBar != null) addressBar.setVisibility(GONE);
+        } catch (Exception ignored) {}
+
         // Attach Petal native video player overlay on top of customView (auto-skipped on YouTube & YT embeds)
         try {
+            com.petal.browser.browser.AlbumController controller = currentAlbumController != null ? currentAlbumController : ninjaWebView;
             videoOverlayBridge = new com.petal.browser.media.PetalVideoPlayerOverlayBridge(
                     this,
-                    ninjaWebView,
+                    controller,
                     () -> {
                         runOnUiThread(this::onHideCustomView);
                         return kotlin.Unit.INSTANCE;
@@ -2445,7 +2463,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ));
 
         customView.setKeepScreenOn(true);
-        ((View) currentAlbumController).setVisibility(GONE);
+        if (currentAlbumController != null) {
+            ((View) currentAlbumController).setVisibility(GONE);
+        }
         setCustomFullscreen(true);
 
         if (view instanceof FrameLayout) {
@@ -2478,7 +2498,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (customView != null) {
             customView.setKeepScreenOn(false);
         }
-        ((View) currentAlbumController).setVisibility(VISIBLE);
+        if (currentAlbumController != null) {
+            ((View) currentAlbumController).setVisibility(VISIBLE);
+        }
         setCustomFullscreen(false);
         fullscreenHolder = null;
         customView = null;
@@ -2487,6 +2509,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             videoView.setOnCompletionListener(null);
             videoView = null;
         }
+
+        // Restore address bar and persistent bottom nav
+        try {
+            View addressBar = findViewById(R.id.compose_address_bar);
+            if (addressBar != null) addressBar.setVisibility(VISIBLE);
+            updatePersistentBottomNav();
+        } catch (Exception ignored) {}
+
         contentFrame.requestFocus();
     }
 

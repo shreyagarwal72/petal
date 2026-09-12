@@ -336,7 +336,20 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
-                        // Fullscreen sync with Material 3 app bars
+                        act.setCustomFullscreen(fullScreen)
+                        try {
+                            val bnc = act.findViewById<View>(R.id.bottom_nav_container)
+                            val bnv = act.findViewById<View>(R.id.bottom_nav_compose)
+                            val addressBar = act.findViewById<View>(R.id.compose_address_bar)
+                            if (fullScreen) {
+                                bnc?.visibility = View.GONE
+                                bnv?.visibility = View.GONE
+                                addressBar?.visibility = View.GONE
+                            } else {
+                                addressBar?.visibility = View.VISIBLE
+                                act.updatePersistentBottomNav()
+                            }
+                        } catch (ignored: Exception) {}
                     }
                 }
             }

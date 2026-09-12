@@ -225,6 +225,45 @@ public class PetalMediaBridge {
         }
     }
 
+    public void setVideoAspectRatio(String mode) {
+        String js = "(function() {" +
+                "   var vids = document.querySelectorAll('video');" +
+                "   var mode = '" + mode + "';" +
+                "   for (var i = 0; i < vids.length; i++) {" +
+                "       var v = vids[i];" +
+                "       try {" +
+                "           if (mode === 'FIT') {" +
+                "               v.style.objectFit = 'contain';" +
+                "               v.style.width = '100%';" +
+                "               v.style.height = '100%';" +
+                "               v.style.aspectRatio = '';" +
+                "           } else if (mode === 'ZOOM') {" +
+                "               v.style.objectFit = 'cover';" +
+                "               v.style.width = '100%';" +
+                "               v.style.height = '100%';" +
+                "               v.style.aspectRatio = '';" +
+                "           } else if (mode === 'STRETCH') {" +
+                "               v.style.objectFit = 'fill';" +
+                "               v.style.width = '100%';" +
+                "               v.style.height = '100%';" +
+                "               v.style.aspectRatio = '';" +
+                "           } else if (mode === 'WIDE_16_9') {" +
+                "               v.style.objectFit = 'contain';" +
+                "               v.style.aspectRatio = '16/9';" +
+                "           } else if (mode === 'CLASSIC_4_3') {" +
+                "               v.style.objectFit = 'contain';" +
+                "               v.style.aspectRatio = '4/3';" +
+                "           }" +
+                "       } catch(e) {}" +
+                "   }" +
+                "})();";
+        if (webView != null) {
+            webView.evaluateJavascript(js, null);
+        } else if (geckoView != null) {
+            geckoView.evaluateJavascript(js, null);
+        }
+    }
+
     public void toggleMute() {
         isMutedState = !isMutedState;
         if (activeGeckoMediaSession != null) {
