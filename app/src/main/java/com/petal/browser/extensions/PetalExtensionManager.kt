@@ -441,6 +441,41 @@ object PetalExtensionManager {
     }
 
     /**
+     * Opens the internal options/settings page of an extension in a live GeckoSession,
+     * surfaced as a pending popup so the app can display it directly in a live extension screen.
+     */
+    fun openOptionsPage(extensionId: String, context: Context) {
+        val ext = _extensions.value.find { it.id == extensionId } ?: run {
+            _lastError.value = "Extension not found."
+            return
+        }
+        val url = ext.optionsPageUrl ?: run {
+            _lastError.value = "No settings page available for this extension."
+            return
+        }
+
+        _pendingPopup.value?.session?.let { existing ->
+            try {
+                existing.setActive(false)
+                existing.close()
+            } catch (ignored: Exception) {}
+        }
+        _pendingPopup.value = null
+
+        val session = GeckoSession()
+        val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
+        session.open(runtime)
+        session.loadUri(url)
+
+        _pendingPopup.value = PendingPopup(
+            extensionId = ext.id,
+            extensionName = ext.name,
+            session = session
+        )
+    }
+
+
+    /**
      * Installs a `.xpi` file the user opened from *outside* the browser - tapped in Downloads,
      * a file manager, shared from another app, etc. The incoming [uri] is almost always a
      * `content://` Uri whose read permission is only granted for the lifetime of the original

@@ -457,9 +457,20 @@ public class BrowserUnit {
     public static void intentURL(Context context, Uri uri) {
         if (context == null || uri == null) return;
         String uriStr = uri.toString();
-        if (uriStr.startsWith("petal://settings") || uriStr.startsWith("petal://credits")) {
+        if (uriStr.startsWith("petal://settings") || uriStr.startsWith("petal://credits") || uriStr.startsWith("petal://ai")) {
             if (context instanceof Activity) {
                 Activity activity = (Activity) context;
+                if (uriStr.startsWith("petal://ai")) {
+                    if (activity instanceof com.petal.browser.activity.BrowserActivity) {
+                        ((com.petal.browser.activity.BrowserActivity) activity).handleAiDeepLink(uri);
+                    } else {
+                        Intent intent = new Intent(activity, com.petal.browser.activity.BrowserActivity.class);
+                        intent.setAction(Intent.ACTION_VIEW);
+                        intent.setData(uri);
+                        activity.startActivity(intent);
+                    }
+                    return;
+                }
                 if (uriStr.startsWith("petal://settings")) {
                     if (activity instanceof com.petal.browser.activity.BrowserActivity) {
                         if (uriStr.contains("category=api_integrations") || uriStr.contains("category=ai_research")) {

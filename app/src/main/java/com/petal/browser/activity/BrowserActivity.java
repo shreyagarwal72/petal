@@ -1579,6 +1579,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         showCreditsScreen();
                         return;
                     }
+                    if (u != null && (u.startsWith("petal://ai") || u.startsWith("petal://ai-research") || u.startsWith("petal://ai-search"))) {
+                        try {
+                            handleAiDeepLink(Uri.parse(u));
+                        } catch (Exception ignored) {
+                            showAiResearchSheet();
+                        }
+                        return;
+                    }
                     String targetUrl = u;
                     if (targetUrl != null && !targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
                         targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, u);
@@ -5159,6 +5167,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             getIntent().setAction("");
         } else if (Intent.ACTION_VIEW.equals(action) && dataUri != null) {
             String scheme = dataUri.getScheme();
+            if ("petal".equalsIgnoreCase(scheme)) {
+                sp.edit().putBoolean("show_overview", false).apply();
+                getIntent().setAction("");
+                handleAiDeepLink(dataUri);
+                return;
+            }
             if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme) || "about".equalsIgnoreCase(scheme)) {
                 sp.edit().putBoolean("show_overview", false).apply();
                 getIntent().setAction("");
@@ -5739,6 +5753,109 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void handleAiDeepLink(Uri uri) {
+        if (uri == null) {
+            showAiResearchSheet();
+            return;
+        }
+        String uriStr = uri.toString();
+        String host = uri.getHost();
+        if (host == null) host = "";
+
+        if (uriStr.startsWith("petal://settings")) {
+            if (uriStr.contains("category=api_integrations") || uriStr.contains("category=ai_research")) {
+                openApiIntegrationsHub();
+            } else {
+                openSettingsScreen();
+            }
+            return;
+        }
+
+        if (uriStr.startsWith("petal://credits")) {
+            showCreditsScreen();
+            return;
+        }
+
+        // Check if query is explicitly provided: petal://ai?q=... or petal://ai-search?q=...
+        String query = uri.getQueryParameter("q");
+        if (query == null || query.trim().isEmpty()) {
+            query = uri.getQueryParameter("query");
+        }
+        if (query == null || query.trim().isEmpty()) {
+            query = uri.getQueryParameter("prompt");
+        }
+
+        // Check if target url is passed: petal://ai?url=https://...
+        String targetUrl = uri.getQueryParameter("url");
+        if (targetUrl != null && !targetUrl.trim().isEmpty()) {
+            String sanitizedUrl = BrowserUnit.queryWrapper(this, targetUrl.trim());
+            addAlbum(null, sanitizedUrl, true);
+        }
+
+        // Mode: summary, ask, search, critique, deep
+        String modeParam = uri.getQueryParameter("mode");
+
+        if (host.equalsIgnoreCase("ai-search") || uriStr.startsWith("petal://ai-search")) {
+            final String searchQuery = query != null ? query.trim() : "";
+            runOnUiThread(() -> com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(BrowserActivity.this, searchQuery));
+            return;
+        }
+
+        runOnUiThread(() -> {
+            final String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
+            final String currentTitle = (currentAlbumController != null && currentAlbumController.getTitle() != null)
+                    ? currentAlbumController.getTitle()
+                    : (ninjaWebView != null && ninjaWebView.getTitle() != null ? ninjaWebView.getTitle() : "");
+
+            boolean hasWebPage = com.petal.browser.compose.ai.PetalAiResearchEngine.INSTANCE.isProperWebSite(currentUrl);
+
+            com.petal.browser.compose.ai.ResearchMode initialMode = com.petal.browser.compose.ai.ResearchMode.SUMMARY;
+            if ("deep".equalsIgnoreCase(modeParam)) {
+                initialMode = com.petal.browser.compose.ai.ResearchMode.DEEP_RESEARCH;
+            } else if ("qa".equalsIgnoreCase(modeParam) || "ask".equalsIgnoreCase(modeParam) || "question".equalsIgnoreCase(modeParam)) {
+                initialMode = com.petal.browser.compose.ai.ResearchMode.KEY_QA;
+            } else if ("critique".equalsIgnoreCase(modeParam)) {
+                initialMode = com.petal.browser.compose.ai.ResearchMode.CRITIQUE;
+            } else if (query != null && !query.trim().isEmpty()) {
+                initialMode = com.petal.browser.compose.ai.ResearchMode.CUSTOM;
+            }
+
+            if (hasWebPage) {
+                if ("summarize".equalsIgnoreCase(modeParam) || "summary".equalsIgnoreCase(modeParam)) {
+                    com.petal.browser.ui.components.PetalAiResearchBridge.showSummaryBoxDialog(
+                        BrowserActivity.this,
+                        currentTitle,
+                        currentUrl,
+                        currentTitle
+                    );
+                } else {
+                    com.petal.browser.ui.components.PetalAiResearchBridge.showAiResearchSheet(
+                        BrowserActivity.this,
+                        currentTitle,
+                        currentUrl,
+                        currentTitle,
+                        initialMode,
+                        false
+                    );
+                }
+            } else {
+                // If on home/blank, open research sheet with blank web context or AI search
+                if (query != null && !query.trim().isEmpty() && (host.equalsIgnoreCase("ai-search") || "search".equalsIgnoreCase(modeParam))) {
+                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(BrowserActivity.this, query.trim());
+                } else {
+                    com.petal.browser.ui.components.PetalAiResearchBridge.showAiResearchSheet(
+                        BrowserActivity.this,
+                        "Petal AI Assistant",
+                        "petal://ai",
+                        query != null ? query : "",
+                        initialMode,
+                        false
+                    );
+                }
+            }
+        });
     }
 
     @Override
