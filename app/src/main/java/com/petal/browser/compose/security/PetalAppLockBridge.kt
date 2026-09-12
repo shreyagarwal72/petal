@@ -48,11 +48,6 @@ object PetalAppLockBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val snapshotBitmap = remember { PetalContentSnapshot.current?.asImageBitmap() }
-                DisposableEffect(Unit) {
-                    onDispose {
-                        PetalContentSnapshot.clear()
-                    }
-                }
 
                 val context = LocalContext.current
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -105,9 +100,21 @@ object PetalAppLockBridge {
                     PetalAppLockScreen(
                         backgroundSnapshot = snapshotBitmap,
                         onUnlocked = {
-                            decor.removeView(composeView)
-                            browserActivity?.isDecorOverlayShowing = false
-                            onUnlocked.run()
+                            composeView?.let { cv ->
+                                cv.animate()
+                                    .alpha(0f)
+                                    .setDuration(180)
+                                    .withEndAction {
+                                        decor.removeView(cv)
+                                        browserActivity?.isDecorOverlayShowing = false
+                                        onUnlocked.run()
+                                    }
+                                    .start()
+                            } ?: run {
+                                decor.removeView(composeView)
+                                browserActivity?.isDecorOverlayShowing = false
+                                onUnlocked.run()
+                            }
                         },
                         onBackPress = {
                             decor.removeView(composeView)
@@ -117,6 +124,13 @@ object PetalAppLockBridge {
                     )
                 }
             }
+            addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: android.view.View) {}
+                override fun onViewDetachedFromWindow(v: android.view.View) {
+                    removeOnAttachStateChangeListener(this)
+                    PetalContentSnapshot.clear()
+                }
+            })
         }
         browserActivity?.isDecorOverlayShowing = true
         decor.addView(
@@ -145,11 +159,6 @@ object PetalAppLockBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val snapshotBitmap = remember { PetalContentSnapshot.current?.asImageBitmap() }
-                DisposableEffect(Unit) {
-                    onDispose {
-                        PetalContentSnapshot.clear()
-                    }
-                }
 
                 val context = LocalContext.current
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -209,6 +218,13 @@ object PetalAppLockBridge {
                     )
                 }
             }
+            addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: android.view.View) {}
+                override fun onViewDetachedFromWindow(v: android.view.View) {
+                    removeOnAttachStateChangeListener(this)
+                    PetalContentSnapshot.clear()
+                }
+            })
         }
         browserActivity?.isDecorOverlayShowing = true
         decor.addView(

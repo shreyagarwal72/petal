@@ -110,11 +110,6 @@ object PetalAboutDeveloperBridge {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
-                    DisposableEffect(Unit) {
-                        onDispose {
-                            com.petal.browser.predictive.PetalContentSnapshot.clear()
-                        }
-                    }
                     val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                     val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -145,6 +140,9 @@ object PetalAboutDeveloperBridge {
                         )
                     }
                 }
+            }
+            dialog.setOnDismissListener {
+                com.petal.browser.predictive.PetalContentSnapshot.clear()
             }
             dialog.setContentView(composeView)
             dialog.show()
@@ -957,11 +955,6 @@ object PetalCreditsBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val snapshotBitmap = remember { com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap() }
-                DisposableEffect(Unit) {
-                    onDispose {
-                        com.petal.browser.predictive.PetalContentSnapshot.clear()
-                    }
-                }
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                 var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
@@ -1015,6 +1008,13 @@ object PetalCreditsBridge {
                     )
                 }
             }
+            addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: android.view.View) {}
+                override fun onViewDetachedFromWindow(v: android.view.View) {
+                    removeOnAttachStateChangeListener(this)
+                    com.petal.browser.predictive.PetalContentSnapshot.clear()
+                }
+            })
         }
     }
 }

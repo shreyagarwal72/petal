@@ -58,11 +58,6 @@ object PetalDeleteBridge {
             setViewTreeOnBackPressedDispatcherOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                DisposableEffect(Unit) {
-                    onDispose {
-                        com.petal.browser.predictive.PetalContentSnapshot.clear()
-                    }
-                }
                 val context = LocalContext.current
                 val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
 
@@ -92,6 +87,13 @@ object PetalDeleteBridge {
                     )
                 }
             }
+            addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: android.view.View) {}
+                override fun onViewDetachedFromWindow(v: android.view.View) {
+                    removeOnAttachStateChangeListener(this)
+                    com.petal.browser.predictive.PetalContentSnapshot.clear()
+                }
+            })
         }
     }
 }

@@ -45,4 +45,10 @@ public class Settings_Delete extends AppCompatActivity {
         }
         return true;
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        com.petal.browser.predictive.PetalContentSnapshot.clear();
+    }
 }
