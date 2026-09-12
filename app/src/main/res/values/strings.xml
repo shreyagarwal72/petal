@@ -186,6 +186,10 @@
     <string name="downloading_update_progress">Downloading update (%1$d%%)</string>
     <string name="action_install_update">Download &amp; Install Update</string>
 
+    <!-- Live Updates (Android 16+) -->
+    <string name="live_updates">Live updates</string>
+    <string name="live_updates_sub">Show a live progress chip in the status bar and lock screen for active downloads (Android 16+).</string>
+
     <!-- Standalone Viewers & Players -->
     <string name="petal_pdf_viewer_name">Petal PDF Viewer</string>
     <string name="petal_image_viewer_name">Petal Image Viewer</string>

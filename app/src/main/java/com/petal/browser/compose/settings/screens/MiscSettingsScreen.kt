@@ -36,16 +36,19 @@ fun MiscSettingsScreen(
     val checkUpdateOnLaunch by viewModel.checkUpdateOnLaunch.collectAsStateWithLifecycle()
     val downloadManagerMode by viewModel.downloadManagerMode.collectAsStateWithLifecycle()
     val autoPreviewDownloadedImages by viewModel.autoPreviewDownloadedImages.collectAsStateWithLifecycle()
+    val liveUpdates by viewModel.liveUpdates.collectAsStateWithLifecycle()
 
     MiscSettingsScreenContent(
         autoOpenApps = autoOpenApps,
         checkUpdateOnLaunch = checkUpdateOnLaunch,
         downloadManagerMode = downloadManagerMode,
         autoPreviewDownloadedImages = autoPreviewDownloadedImages,
+        liveUpdates = liveUpdates,
         onAutoOpenAppsChange = viewModel::setAutoOpenApps,
         onCheckUpdateOnLaunchChange = viewModel::setCheckUpdateOnLaunch,
         onDownloadManagerModeChange = viewModel::setDownloadManagerMode,
         onAutoPreviewDownloadedImagesChange = viewModel::setAutoPreviewDownloadedImages,
+        onLiveUpdatesChange = viewModel::setLiveUpdates,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -58,10 +61,12 @@ fun MiscSettingsScreenContent(
     checkUpdateOnLaunch: Boolean,
     downloadManagerMode: String,
     autoPreviewDownloadedImages: Boolean,
+    liveUpdates: Boolean,
     onAutoOpenAppsChange: (Boolean) -> Unit,
     onCheckUpdateOnLaunchChange: (Boolean) -> Unit,
     onDownloadManagerModeChange: (String) -> Unit,
     onAutoPreviewDownloadedImagesChange: (Boolean) -> Unit,
+    onLiveUpdatesChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -110,6 +115,16 @@ fun MiscSettingsScreenContent(
                         checked = autoPreviewDownloadedImages,
                         onCheckedChange = onAutoPreviewDownloadedImagesChange
                     )
+
+                    if (android.os.Build.VERSION.SDK_INT >= 36) {
+                        ToggleRow(
+                            title = "Live updates",
+                            subtitle = "Show a live progress chip in the status bar and lock screen for active downloads",
+                            icon = Icons.Rounded.NotificationsActive,
+                            checked = liveUpdates,
+                            onCheckedChange = onLiveUpdatesChange
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(4.dp))
 

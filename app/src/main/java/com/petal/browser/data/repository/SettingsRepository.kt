@@ -79,6 +79,7 @@ interface SettingsRepository {
     val torrentEngineMode: Flow<String>
     val downloadManagerMode: Flow<String>
     val autoPreviewDownloadedImages: Flow<Boolean>
+    val liveUpdates: Flow<Boolean>
 
     // Apple Duo (BETA) Animation
     val appleDuoEnabled: Flow<Boolean>
@@ -154,6 +155,7 @@ interface SettingsRepository {
     suspend fun setTorrentEngineMode(mode: String)
     suspend fun setDownloadManagerMode(mode: String)
     suspend fun setAutoPreviewDownloadedImages(enabled: Boolean)
+    suspend fun setLiveUpdates(enabled: Boolean)
 
     suspend fun setAppleDuoEnabled(enabled: Boolean)
     suspend fun setAppleDuoWebsites(enabled: Boolean)

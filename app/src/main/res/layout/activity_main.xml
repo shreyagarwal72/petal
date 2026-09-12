@@ -7,6 +7,14 @@
     android:id="@+id/main"
     tools:ignore="ContentDescription">
 
+    <!-- Main Web Content Container: fills viewport (top and bottom aligned), and dynamically offset by address bar / bottom bar via paddings and layout rules -->
+    <com.petal.browser.ui.components.PullToRefreshFrameLayout
+        android:id="@+id/main_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"/>
+
     <!-- Top Address Bar (Material 3 Expressive Compose Address Bar) -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/compose_address_bar"
@@ -28,14 +36,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </RelativeLayout>
-
-    <!-- Main Web Content Container: fills viewport (top and bottom aligned), and dynamically offset by address bar / bottom bar via paddings and layout rules -->
-    <com.petal.browser.ui.components.PullToRefreshFrameLayout
-        android:id="@+id/main_content"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentBottom="true"/>
 
     <!-- Fancy Rippling Wavy Top Loading Progress Line: now a true overlay drawn AFTER main_content, so it never gets painted over -->
     <androidx.compose.ui.platform.ComposeView

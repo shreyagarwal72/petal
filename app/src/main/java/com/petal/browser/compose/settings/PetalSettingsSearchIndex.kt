@@ -341,6 +341,13 @@ object PetalSettingsSearchIndex {
         ),
         // ==================== MISCELLANEOUS ====================
         SettingsSearchItem(
+            id = "misc_live_updates",
+            title = "Live Updates (Android 16+)",
+            subtitle = "Show a live progress chip in the status bar and lock screen for active downloads",
+            category = SettingsCategory.MISCELLANEOUS,
+            keywords = listOf("live updates", "live notification", "status bar chip", "promoted ongoing", "download notification", "progress chip", "android 16", "live activity", "stride")
+        ),
+        SettingsSearchItem(
             id = "misc_default_download_manager",
             title = "Default Download Manager",
             subtitle = "Choose between Petal's high-speed in-app downloader or external download managers (1DM, ADM, AB DM, Navi)",

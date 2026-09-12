@@ -288,6 +288,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_auto_preview_downloaded_images", true)
     }
 
+    override val liveUpdates: Flow<Boolean> = preferenceFlow("sp_live_updates") {
+        sp.getBoolean("sp_live_updates", true)
+    }
+
     // ── Apple Duo (BETA) Animation ───────────────────────────────────────────
     override val appleDuoEnabled: Flow<Boolean> = preferenceFlow(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_ENABLED) {
         sp.getBoolean(com.petal.browser.appleduo.AppleDuoManager.PREF_KEY_ENABLED, false)
@@ -564,6 +568,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setAutoPreviewDownloadedImages(enabled: Boolean) {
         sp.edit().putBoolean("sp_auto_preview_downloaded_images", enabled).apply()
+    }
+
+    override suspend fun setLiveUpdates(enabled: Boolean) {
+        sp.edit().putBoolean("sp_live_updates", enabled).apply()
     }
 
     override suspend fun setAppleDuoEnabled(enabled: Boolean) {

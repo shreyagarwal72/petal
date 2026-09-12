@@ -16,7 +16,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
-import androidx.activity.EdgeToEdge
+import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -33,7 +33,7 @@ class ImageViewerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this)
         HelperUnit.initTheme(this)
-        EdgeToEdge.enable(this)
+        enableEdgeToEdge()
 
         val controller = WindowCompat.getInsetsController(window, window.decorView)
         controller.hide(WindowInsetsCompat.Type.systemBars())

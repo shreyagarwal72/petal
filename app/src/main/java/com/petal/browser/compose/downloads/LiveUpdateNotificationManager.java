@@ -112,10 +112,13 @@ public class LiveUpdateNotificationManager {
     ) {
         ensureChannelCreated(context);
 
-        // Try building Android 16 native Notification.ProgressStyle via reflection if API >= 36 and capable
+        android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        boolean liveUpdatesPref = sp.getBoolean("sp_live_updates", true);
+
+        // Try building Android 16 native Notification.ProgressStyle if API >= 36 and capable
         if (canPostPromotedNotifications(context)) {
             Notification nativeNotif = buildAndroid16ProgressStyleNotification(
-                    context, title, contentText, progressPercent, isIndeterminate, isPaused, chipText, contentPendingIntent, cancelPendingIntent, togglePendingIntent
+                    context, title, contentText, progressPercent, isIndeterminate, isPaused, chipText, contentPendingIntent, cancelPendingIntent, togglePendingIntent, liveUpdatesPref
             );
             if (nativeNotif != null) {
                 return nativeNotif;
@@ -160,7 +163,7 @@ public class LiveUpdateNotificationManager {
         Bundle extras = new Bundle();
         extras.putString("android.liveAlertText", chipText);
         extras.putBoolean("android.isLiveAlert", true);
-        extras.putBoolean("android.promotedOngoing", !isPaused);
+        extras.putBoolean("android.promotedOngoing", !isPaused && liveUpdatesPref);
         extras.putString("android.shortCriticalText", chipText);
         builder.setExtras(extras);
 
@@ -173,8 +176,8 @@ public class LiveUpdateNotificationManager {
     }
 
     /**
-     * Uses reflection to build API 36 (Android 16) Notification.ProgressStyle with segment tracking support,
-     * setting setOngoing(true), setShortCriticalText(), and promoted ongoing status bar chip flags.
+     * Builds API 36 (Android 16) Notification.ProgressStyle with segment tracking support,
+     * setting setOngoing(true), setShortCriticalText(), and FLAG_PROMOTED_ONGOING status bar chip flags.
      */
     private static Notification buildAndroid16ProgressStyleNotification(
             Context context,
@@ -186,72 +189,45 @@ public class LiveUpdateNotificationManager {
             String chipText,
             PendingIntent contentPendingIntent,
             PendingIntent cancelPendingIntent,
-            PendingIntent togglePendingIntent
+            PendingIntent togglePendingIntent,
+            boolean promoteLiveUpdate
     ) {
         try {
+            int accent = androidx.core.content.ContextCompat.getColor(context, R.color.live_update_accent);
+            int clampedProgress = Math.max(0, Math.min(100, progressPercent));
+
+            Notification.ProgressStyle style = new Notification.ProgressStyle()
+                    .setStyledByProgress(false)
+                    .setProgress(clampedProgress)
+                    .setProgressSegments(java.util.Collections.singletonList(
+                            new Notification.ProgressStyle.Segment(100).setColor(accent)
+                    ))
+                    .setProgressTrackerIcon(Icon.createWithResource(context, R.drawable.icon_download));
+
             Notification.Builder builder = new Notification.Builder(context, CHANNEL_ID)
                     .setSmallIcon(R.drawable.icon_download)
                     .setContentTitle(title)
                     .setContentText(contentText)
+                    .setStyle(style)
+                    .setShortCriticalText(chipText != null && !chipText.isEmpty() ? chipText : clampedProgress + "%")
+                    .setProgress(100, clampedProgress, isIndeterminate)
                     .setOngoing(!isPaused)
                     .setOnlyAlertOnce(true)
-                    .setContentIntent(contentPendingIntent);
+                    .setColor(accent)
+                    .setColorized(true)
+                    .setContentIntent(contentPendingIntent)
+                    .setCategory(Notification.CATEGORY_PROGRESS)
+                    .setVisibility(Notification.VISIBILITY_PUBLIC);
 
-            // Attempt to construct android.app.Notification.ProgressStyle
-            Class<?> progressStyleClass = Class.forName("android.app.Notification$ProgressStyle");
-            Constructor<?> styleConstructor = progressStyleClass.getConstructor();
-            Object progressStyle = styleConstructor.newInstance();
-
-            // Set progress or segment tracking if methods are present
-            if (isIndeterminate) {
-                Method setIndeterminateMethod = progressStyleClass.getMethod("setProgressIndeterminate", boolean.class);
-                setIndeterminateMethod.invoke(progressStyle, true);
-            } else {
-                Method setProgressMethod = progressStyleClass.getMethod("setProgress", int.class);
-                setProgressMethod.invoke(progressStyle, progressPercent);
+            if (promoteLiveUpdate && !isPaused) {
+                builder.setFlag(Notification.FLAG_PROMOTED_ONGOING, true);
             }
 
-            // Set short critical live text / chip text if supported on ProgressStyle
-            try {
-                Method setProgressTrackerText = progressStyleClass.getMethod("setProgressTrackerText", CharSequence.class);
-                setProgressTrackerText.invoke(progressStyle, chipText);
-            } catch (NoSuchMethodException ignored) {}
-
-            try {
-                Method setShortCriticalTextMethod = progressStyleClass.getMethod("setShortCriticalText", CharSequence.class);
-                setShortCriticalTextMethod.invoke(progressStyle, chipText);
-            } catch (NoSuchMethodException ignored) {}
-
-            // Apply style to Notification.Builder
-            Method setStyleMethod = Notification.Builder.class.getMethod("setStyle", Notification.Style.class);
-            setStyleMethod.invoke(builder, progressStyle);
-
-            // Set short critical text directly on Notification.Builder if supported
-            try {
-                Method setShortCriticalText = Notification.Builder.class.getMethod("setShortCriticalText", CharSequence.class);
-                setShortCriticalText.invoke(builder, chipText);
-            } catch (NoSuchMethodException ignored) {}
-
-            // Set Promoted flag if method exists
-            try {
-                Method setPromotedMethod = Notification.Builder.class.getMethod("setPromoted", boolean.class);
-                setPromotedMethod.invoke(builder, true);
-            } catch (NoSuchMethodException ignored) {}
-
-            try {
-                try {
-                    Method requestPromotedMethod = Notification.Builder.class.getMethod("setRequestPromotedOngoing", boolean.class);
-                    requestPromotedMethod.invoke(builder, !isPaused);
-                } catch (NoSuchMethodException ignored) {}
-                Method setPromotedOngoing = Notification.Builder.class.getMethod("setPromotedOngoing", boolean.class);
-                setPromotedOngoing.invoke(builder, !isPaused);
-            } catch (NoSuchMethodException ignored) {}
-
-            // Add extras for Promoted Ongoing & Live Alert chips
+            // Add extras for live alert compatibility
             Bundle extras = new Bundle();
             extras.putString("android.liveAlertText", chipText);
             extras.putBoolean("android.isLiveAlert", true);
-            extras.putBoolean("android.promotedOngoing", !isPaused);
+            extras.putBoolean("android.promotedOngoing", !isPaused && promoteLiveUpdate);
             extras.putString("android.shortCriticalText", chipText);
             builder.addExtras(extras);
 
@@ -276,8 +252,8 @@ public class LiveUpdateNotificationManager {
             }
 
             return builder.build();
-        } catch (Exception e) {
-            Log.d(TAG, "Android 16 ProgressStyle creation via reflection failed, using NotificationCompat fallback: " + e.getMessage());
+        } catch (Throwable t) {
+            Log.d(TAG, "Android 16 ProgressStyle creation failed, falling back to NotificationCompat: " + t.getMessage());
             return null;
         }
     }
