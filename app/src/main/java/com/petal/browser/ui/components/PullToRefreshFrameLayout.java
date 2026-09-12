@@ -159,17 +159,12 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
     @Override
     public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-        // If the web content is scrolled to the top and pull-to-refresh is enabled,
-        // do not let child views (e.g. NestedScrollWebView) disallow interception on ACTION_DOWN.
-        // This mirrors SwipeRefreshLayout's standard behavior and allows pull-to-refresh gestures.
-        if (canPull != null && canPull.canPull() && !canChildScrollUp()) {
+        // Only suppress the disallow call if this container is actively handling
+        // a vertical pull-to-refresh drag right now. In every other situation,
+        // let child views (including GeckoView for edge swipes / back gestures)
+        // properly claim touch events.
+        if (dragging || intercepting) {
             return;
-        }
-        // Let a child that wants the gesture for itself (e.g. an inner
-        // horizontal swipe or scrolled webview) cancel our intercept.
-        if (disallowIntercept) {
-            dragging = false;
-            intercepting = false;
         }
         super.requestDisallowInterceptTouchEvent(disallowIntercept);
     }
