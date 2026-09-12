@@ -194,4 +194,5 @@
     <string name="petal_pdf_viewer_name">Petal PDF Viewer</string>
     <string name="petal_image_viewer_name">Petal Image Viewer</string>
     <string name="petal_media_player_name">Petal Media Player</string>
+    <string name="petal_file_viewer_name">Petal Universal File Viewer</string>
 </resources>

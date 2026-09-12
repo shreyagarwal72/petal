@@ -578,11 +578,14 @@ fun PetalDownloadManagerScreen(
                                     val activity = context as? com.petal.browser.activity.BrowserActivity
                                     if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(item.fileName)) {
                                         val allImages = sortedDownloadList.filter { it.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }
+                                        activity.pendingOverlayBackAction = Runnable {
+                                            activity.runOnUiThread { activity.showDownloads() }
+                                        }
                                         val view = PetalImageViewerBridge.createViewerView(activity, item, allImages) {
                                             activity.runOnUiThread { activity.performBackNavigation() }
                                         }
                                         activity.runOnUiThread { activity.presentComposeScreen(view) }
-                                    } else if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && item.fileName.endsWith(".pdf", ignoreCase = true)) {
+                                    } else if (activity != null && item.status == android.app.DownloadManager.STATUS_SUCCESSFUL && isUniversalViewable(item.fileName)) {
                                         val rawUri = item.localUri?.let { Uri.parse(it) }
                                         val targetUri = if (rawUri != null && (rawUri.scheme == "file" || rawUri.scheme == null)) {
                                             val file = java.io.File(rawUri.path ?: item.localUri!!.removePrefix("file://"))
@@ -591,7 +594,10 @@ fun PetalDownloadManagerScreen(
                                             } else rawUri
                                         } else rawUri
                                         if (targetUri != null) {
-                                            val view = com.petal.browser.compose.pdf.PetalPdfViewerBridge.createPdfViewerView(
+                                            activity.pendingOverlayBackAction = Runnable {
+                                                activity.runOnUiThread { activity.showDownloads() }
+                                            }
+                                            val view = com.petal.browser.compose.file.PetalFileViewerBridge.createFileViewerView(
                                                 activity, targetUri, item.fileName
                                             ) {
                                                 activity.runOnUiThread { activity.performBackNavigation() }
@@ -642,6 +648,9 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                             onClick = {
                                 val activity = context as? com.petal.browser.activity.BrowserActivity
                                 if (activity != null) {
+                                    activity.pendingOverlayBackAction = Runnable {
+                                        activity.runOnUiThread { activity.showDownloads() }
+                                    }
                                     val view = PetalImageViewerBridge.createViewerView(activity, item, images) {
                                         activity.runOnUiThread { activity.performBackNavigation() }
                                     }
@@ -660,6 +669,9 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
                             menuItem = null
                             val activity = context as? com.petal.browser.activity.BrowserActivity
                             if (activity != null) {
+                                activity.pendingOverlayBackAction = Runnable {
+                                    activity.runOnUiThread { activity.showDownloads() }
+                                }
                                 val view = PetalImageViewerBridge.createViewerView(activity, item, images) {
                                     activity.runOnUiThread { activity.performBackNavigation() }
                                 }
@@ -678,6 +690,16 @@ private fun DownloadedImagePreviewStrip(downloads: List<DownloadItem>) {
 }
 
 private fun isPreviewImage(name: String): Boolean = name.substringAfterLast('.', "").lowercase(Locale.US) in setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "avif")
+
+private fun isUniversalViewable(name: String): Boolean {
+    val ext = name.substringAfterLast('.', "").lowercase(Locale.US)
+    return ext in setOf(
+        "pdf", "docx", "doc", "txt", "md", "markdown", "csv", "json", "xml",
+        "html", "htm", "log", "kt", "java", "py", "c", "cpp", "h", "hpp", "js",
+        "ts", "css", "sh", "yaml", "yml", "ini", "properties", "gradle", "sql", "svg",
+        "zip", "rar", "7z", "tar", "gz", "apk", "jar"
+    )
+}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable

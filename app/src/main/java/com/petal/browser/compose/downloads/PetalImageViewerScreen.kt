@@ -471,6 +471,13 @@ private fun ZoomableImagePage(
         label = "rotation",
     )
 
+    // Reset zoom and pan when entry changes
+    LaunchedEffect(entry.sourceUrl) {
+        scaleAnim.snapTo(1f)
+        offsetXAnim.snapTo(0f)
+        offsetYAnim.snapTo(0f)
+    }
+
     val gestureModifier = Modifier
         .fillMaxSize()
         .background(Color.Black)
@@ -496,16 +503,23 @@ private fun ZoomableImagePage(
                 },
             )
         }
-        // Pinch-to-zoom + pan
+        // Pinch-to-zoom + pan (only consume gestures when actually zoomed in, allowing HorizontalPager to swipe)
         .pointerInput(entry.sourceUrl) {
-            detectTransformGestures { _, pan, zoom, _ ->
+            detectTransformGestures(panZoomLock = true) { _, pan, zoom, _ ->
                 scope.launch {
-                    val newScale = (scaleAnim.value * zoom).coerceIn(0.8f, 5f)
+                    val currentScale = scaleAnim.value
+                    val newScale = (currentScale * zoom).coerceIn(0.8f, 5f)
                     scaleAnim.snapTo(newScale)
                     val maxX = (size.width  * (newScale - 1f)) / 2f
                     val maxY = (size.height * (newScale - 1f)) / 2f
-                    offsetXAnim.snapTo(if (newScale > 1f) (offsetXAnim.value + pan.x).coerceIn(-maxX, maxX) else 0f)
-                    offsetYAnim.snapTo(if (newScale > 1f) (offsetYAnim.value + pan.y).coerceIn(-maxY, maxY) else 0f)
+                    // Only apply pan if zoomed in
+                    if (newScale > 1.05f) {
+                        offsetXAnim.snapTo((offsetXAnim.value + pan.x).coerceIn(-maxX, maxX))
+                        offsetYAnim.snapTo((offsetYAnim.value + pan.y).coerceIn(-maxY, maxY))
+                    } else {
+                        offsetXAnim.snapTo(0f)
+                        offsetYAnim.snapTo(0f)
+                    }
                     if (newScale < 1f) {
                         scaleAnim.animateTo(1f, spring(Spring.DampingRatioMediumBouncy))
                         offsetXAnim.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
@@ -722,27 +736,35 @@ private fun ImageViewerBottomBar(
             .fillMaxWidth()
             .background(
                 androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.72f)),
+                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f)),
                 )
             )
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         Surface(
-            shape = RoundedCornerShape(50),
-            color = Color.White.copy(alpha = 0.12f),
-            modifier = Modifier.clip(RoundedCornerShape(50)),
+            shape = RoundedCornerShape(32.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
+            tonalElevation = 6.dp,
+            shadowElevation = 8.dp,
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            ),
+            modifier = Modifier.clip(RoundedCornerShape(32.dp)),
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Rotate
                 ViewerActionButton(
                     icon        = Icons.Rounded.RotateRight,
                     label       = "Rotate",
+                    tint        = MaterialTheme.colorScheme.onSurface,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     onClick     = onRotate,
                 )
 
@@ -751,7 +773,8 @@ private fun ImageViewerBottomBar(
                     ViewerActionButton(
                         icon    = Icons.Rounded.Delete,
                         label   = "Delete",
-                        tint    = Color(0xFFFF7878),
+                        tint    = MaterialTheme.colorScheme.error,
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
                         onClick = onDelete,
                     )
                 }
@@ -760,6 +783,8 @@ private fun ImageViewerBottomBar(
                 ViewerActionButton(
                     icon        = Icons.Rounded.Wallpaper,
                     label       = "Wallpaper",
+                    tint        = MaterialTheme.colorScheme.onSurface,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     onClick     = onWallpaper,
                 )
 
@@ -767,6 +792,8 @@ private fun ImageViewerBottomBar(
                 ViewerActionButton(
                     icon        = Icons.Rounded.Info,
                     label       = "Info",
+                    tint        = MaterialTheme.colorScheme.onSurface,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     onClick     = onInfo,
                 )
             }
@@ -774,25 +801,41 @@ private fun ImageViewerBottomBar(
     }
 }
 
-
 @Composable
 private fun ViewerActionButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
-    tint: Color = Color.White,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     onClick: () -> Unit,
 ) {
+    val hapticClick = com.petal.browser.haptics.rememberHapticOnClick(onClick)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
     ) {
-        IconButton(onClick = onClick, modifier = Modifier.size(48.dp)) {
-            Icon(imageVector = icon, contentDescription = label, tint = tint, modifier = Modifier.size(24.dp))
+        FilledTonalIconButton(
+            onClick = hapticClick,
+            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                containerColor = containerColor,
+                contentColor = tint,
+            ),
+            modifier = Modifier.size(44.dp),
+            shape = CircleShape,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = tint,
+                modifier = Modifier.size(22.dp),
+            )
         }
+        Spacer(Modifier.height(4.dp))
         Text(
             text  = label,
-            color = tint.copy(alpha = 0.85f),
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium, fontSize = 11.sp),
         )
     }
 }

@@ -72,6 +72,12 @@ fun PetalVideoPlayerScreen(
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
     var resizeMode by remember { mutableStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT) }
 
+    var videoWidth by remember { mutableIntStateOf(16) }
+    var videoHeight by remember { mutableIntStateOf(9) }
+    val isInPip = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activity != null) {
+        activity.isInPictureInPictureMode
+    } else false
+
     // Synchronize ExoPlayer events
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -83,6 +89,13 @@ fun PetalVideoPlayerScreen(
                 if (playbackState == Player.STATE_READY) {
                     val dur = exoPlayer.duration
                     durationMs = if (dur > 0) dur else 0L
+                }
+            }
+
+            override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    videoWidth = videoSize.width
+                    videoHeight = videoSize.height
                 }
             }
         }
@@ -135,59 +148,75 @@ fun PetalVideoPlayerScreen(
         )
 
         // Custom Petal Overlay (Squiggly seekbar, HUD gestures, PiP, Speed, Back)
-        PetalVideoPlayerOverlay(
-            title = displayName,
-            isPlaying = isPlaying,
-            positionMs = positionMs,
-            durationMs = durationMs,
-            playbackSpeed = playbackSpeed,
-            onPlayPauseToggle = {
-                if (exoPlayer.isPlaying) {
-                    exoPlayer.pause()
-                } else {
-                    exoPlayer.play()
-                }
-            },
-            onSeek = { targetMs ->
-                positionMs = targetMs
-                exoPlayer.seekTo(targetMs)
-            },
-            onFastForward = {
-                val nextPos = (exoPlayer.currentPosition + 10_000L).coerceAtMost(exoPlayer.duration.coerceAtLeast(0L))
-                exoPlayer.seekTo(nextPos)
-                positionMs = nextPos
-            },
-            onRewind = {
-                val prevPos = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
-                exoPlayer.seekTo(prevPos)
-                positionMs = prevPos
-            },
-            onSpeedChange = { speed ->
-                playbackSpeed = speed
-                exoPlayer.playbackParameters = PlaybackParameters(speed)
-            },
-            onAspectRatioToggle = { modeId ->
-                resizeMode = when (modeId) {
-                    "ZOOM" -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                    "STRETCH" -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-                    "WIDE_16_9" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
-                    "CLASSIC_4_3" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
-                    else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                }
-            },
-            onPipClick = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activity != null) {
-                    try {
-                        val videoAspect = Rational(16, 9)
-                        val pipParams = PictureInPictureParams.Builder()
-                            .setAspectRatio(videoAspect)
-                            .build()
-                        activity.enterPictureInPictureMode(pipParams)
-                    } catch (_: Exception) {}
-                }
-            },
-            onCloseFullscreen = onClose,
-            modifier = Modifier.fillMaxSize(),
-        )
+        // Hidden during Picture-in-Picture mode to prevent UI controls glitching/shuttering
+        if (!isInPip) {
+            PetalVideoPlayerOverlay(
+                title = displayName,
+                isPlaying = isPlaying,
+                positionMs = positionMs,
+                durationMs = durationMs,
+                playbackSpeed = playbackSpeed,
+                onPlayPauseToggle = {
+                    if (exoPlayer.isPlaying) {
+                        exoPlayer.pause()
+                    } else {
+                        exoPlayer.play()
+                    }
+                },
+                onSeek = { targetMs ->
+                    positionMs = targetMs
+                    exoPlayer.seekTo(targetMs)
+                },
+                onFastForward = {
+                    val nextPos = (exoPlayer.currentPosition + 10_000L).coerceAtMost(exoPlayer.duration.coerceAtLeast(0L))
+                    exoPlayer.seekTo(nextPos)
+                    positionMs = nextPos
+                },
+                onRewind = {
+                    val prevPos = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
+                    exoPlayer.seekTo(prevPos)
+                    positionMs = prevPos
+                },
+                onSpeedChange = { speed ->
+                    playbackSpeed = speed
+                    exoPlayer.playbackParameters = PlaybackParameters(speed)
+                },
+                onAspectRatioToggle = { modeId ->
+                    resizeMode = when (modeId) {
+                        "ZOOM" -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                        "STRETCH" -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+                        "WIDE_16_9" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
+                        "CLASSIC_4_3" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
+                        else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    }
+                },
+                onPipClick = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activity != null) {
+                        try {
+                            val targetW = videoWidth.coerceIn(1, 10000)
+                            val targetH = videoHeight.coerceIn(1, 10000)
+                            val aspectNumerator = targetW.coerceIn(1, 239)
+                            val aspectDenominator = targetH.coerceIn(1, 239)
+                            val videoAspect = try {
+                                Rational(targetW, targetH).let { r ->
+                                    val f = r.toFloat()
+                                    if (f < 0.41841f) Rational(100, 239)
+                                    else if (f > 2.39f) Rational(239, 100)
+                                    else r
+                                }
+                            } catch (_: Exception) {
+                                Rational(16, 9)
+                            }
+                            val pipParams = PictureInPictureParams.Builder()
+                                .setAspectRatio(videoAspect)
+                                .build()
+                            activity.enterPictureInPictureMode(pipParams)
+                        } catch (_: Exception) {}
+                    }
+                },
+                onCloseFullscreen = onClose,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }

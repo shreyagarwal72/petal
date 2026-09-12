@@ -220,11 +220,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public boolean isDecorOverlayShowing = false;
     /**
      * Optional action to run instead of showAlbum() when performBackNavigation exits an overlay
-     * screen. Used by showCreditsScreen() so that "back from credits" can re-open the About
-     * Developer sheet instead of going all the way to the browser home.
-     * Must be set BEFORE presentComposeScreen() and cleared by performBackNavigation().
+     * screen. Used by showCreditsScreen() and nested overlay screens (e.g. image/PDF viewer opened
+     * from Download Manager) so that going back pops back to the previous overlay instead of
+     * the browser home.
      */
     public Runnable pendingOverlayBackAction = null;
+    public final java.util.Deque<Runnable> overlayBackStack = new java.util.ArrayDeque<>();
     public LinearLayout tab_container;
     public FrameLayout fullscreenHolder;
     public com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
@@ -1019,13 +1020,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } else if (dialogOverview != null && dialogOverview.isShowing()) {
             hideOverview();
         } else if (isOverlayScreenShowing) {
-            isOverlayScreenShowing = false;
-            contentFrame.removeAllViews();
             Runnable backAction = pendingOverlayBackAction;
             pendingOverlayBackAction = null;
+            if (backAction == null && !overlayBackStack.isEmpty()) {
+                backAction = overlayBackStack.pop();
+            }
             if (backAction != null) {
+                // If there was a nested overlay back action (or explicit action), execute it.
+                // Note: the action itself will re-present or adjust the overlay.
+                contentFrame.removeAllViews();
                 backAction.run();
             } else {
+                isOverlayScreenShowing = false;
+                overlayBackStack.clear();
+                contentFrame.removeAllViews();
                 showAlbum(currentAlbumController);
             }
             updatePersistentBottomNav();

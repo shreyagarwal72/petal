@@ -12,6 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -372,116 +374,133 @@ fun PetalVideoPlayerOverlay(
                         .align(Alignment.BottomCenter),
                 )
 
-                // Top Bar
-                Row(
+                // Top Header Column (Top Bar + Dropdown Speed Selector)
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)
-                        .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .statusBarsPadding(),
                 ) {
-                    IconButton(
-                        onClick = onCloseFullscreen,
-                        modifier = Modifier.size(40.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White,
-                        )
-                    }
-
-                    Text(
-                        text = title.ifEmpty { "Web Video" },
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 12.dp),
-                    )
-
-                    IconButton(
-                        onClick = {
-                            currentAspectIndex = (currentAspectIndex + 1) % aspectModes.size
-                            val (modeId, modeLabel) = aspectModes[currentAspectIndex]
-                            aspectRatioHudText = modeLabel
-                            onAspectRatioToggle?.invoke(modeId)
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                        },
-                        modifier = Modifier.size(40.dp),
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.FitScreen,
-                            contentDescription = "Aspect Ratio",
-                            tint = Color.White,
-                        )
-                    }
-
-                    IconButton(
-                        onClick = {
-                            showSpeedSelector = !showSpeedSelector
-                            PetalHapticEngine.getInstance(context).playClick(context)
-                        },
-                        modifier = Modifier.size(40.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Speed,
-                            contentDescription = "Playback Speed",
-                            tint = Color.White,
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onPipClick,
-                        modifier = Modifier.size(40.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PictureInPictureAlt,
-                            contentDescription = "Picture-in-Picture",
-                            tint = Color.White,
-                        )
-                    }
-                }
-
-                // Speed Selector Pill Card (if active)
-                if (showSpeedSelector) {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.Black.copy(alpha = 0.85f),
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = 56.dp, end = 24.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        IconButton(
+                            onClick = onCloseFullscreen,
+                            modifier = Modifier.size(40.dp),
                         ) {
-                            val speeds = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
-                            speeds.forEach { speed ->
-                                val isSelected = (currentSpeed == speed)
-                                Box(
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White,
+                            )
+                        }
+
+                        Text(
+                            text = title.ifEmpty { "Web Video" },
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 12.dp),
+                        )
+
+                        IconButton(
+                            onClick = {
+                                currentAspectIndex = (currentAspectIndex + 1) % aspectModes.size
+                                val (modeId, modeLabel) = aspectModes[currentAspectIndex]
+                                aspectRatioHudText = modeLabel
+                                onAspectRatioToggle?.invoke(modeId)
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                            },
+                            modifier = Modifier.size(40.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FitScreen,
+                                contentDescription = "Aspect Ratio",
+                                tint = Color.White,
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                showSpeedSelector = !showSpeedSelector
+                                PetalHapticEngine.getInstance(context).playClick(context)
+                            },
+                            modifier = Modifier.size(40.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Speed,
+                                contentDescription = "Playback Speed",
+                                tint = Color.White,
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onPipClick,
+                            modifier = Modifier.size(40.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PictureInPictureAlt,
+                                contentDescription = "Picture-in-Picture",
+                                tint = Color.White,
+                            )
+                        }
+                    }
+
+                    // Speed Selector Pill Card (if active)
+                    if (showSpeedSelector) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 24.dp),
+                            contentAlignment = Alignment.TopEnd,
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.Black.copy(alpha = 0.85f),
+                                shadowElevation = 6.dp,
+                            ) {
+                                Row(
                                     modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                        )
-                                        .clickable {
-                                            currentSpeed = speed
-                                            onSpeedChange(speed)
-                                            showSpeedSelector = false
-                                        }
-                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                        .horizontalScroll(rememberScrollState())
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(
-                                        text = "${speed}x",
-                                        color = if (isSelected) Color.Black else Color.White,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
+                                    val speeds = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
+                                    speeds.forEach { speed ->
+                                        val isSelected = (currentSpeed == speed)
+                                        val speedText = if (speed == 1.0f) "1x" else if (speed == 2.0f) "2x" else "${speed}x"
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(CircleShape)
+                                                .background(
+                                                    if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                                )
+                                                .clickable {
+                                                    currentSpeed = speed
+                                                    onSpeedChange(speed)
+                                                    showSpeedSelector = false
+                                                }
+                                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Text(
+                                                text = speedText,
+                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.White,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1,
+                                                softWrap = false,
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

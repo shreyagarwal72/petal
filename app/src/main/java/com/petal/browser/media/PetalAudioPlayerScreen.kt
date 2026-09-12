@@ -25,6 +25,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -296,12 +298,16 @@ fun PetalAudioPlayerScreen(
                     modifier = Modifier.padding(bottom = 12.dp),
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         val speeds = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
                         speeds.forEach { speed ->
                             val isSelected = (playbackSpeed == speed)
+                            val speedText = if (speed == 1.0f) "1x" else if (speed == 2.0f) "2x" else "${speed}x"
                             Box(
                                 modifier = Modifier
                                     .clip(CircleShape)
@@ -315,12 +321,15 @@ fun PetalAudioPlayerScreen(
                                         PetalHapticEngine.getInstance(context).playClick(context)
                                     }
                                     .padding(horizontal = 10.dp, vertical = 6.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    text = "${speed}x",
+                                    text = speedText,
                                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    softWrap = false,
                                 )
                             }
                         }
