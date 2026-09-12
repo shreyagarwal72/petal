@@ -1400,12 +1400,7 @@ class PetalGeckoView @JvmOverloads constructor(
      */
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ev.actionMasked == MotionEvent.ACTION_DOWN) {
-            val edgeZone = (48f * resources.displayMetrics.density).toInt()
-            val screenWidth = resources.displayMetrics.widthPixels
-            val rawX = ev.rawX
-            if (rawX < edgeZone || rawX > (screenWidth - edgeZone)) {
-                resetGestureExclusionRects()
-            }
+            resetGestureExclusionRects()
         }
         return super.dispatchTouchEvent(ev)
     }
@@ -1540,6 +1535,14 @@ class SafeGeckoView : GeckoView {
         } catch (e: NullPointerException) {
             android.util.Log.w("SafeGeckoView", "Handled GeckoView gatherTransparentRegion NPE: ${e.message}")
             false
+        }
+    }
+
+    override fun setSystemGestureExclusionRects(rects: MutableList<android.graphics.Rect>) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                super.setSystemGestureExclusionRects(java.util.Collections.emptyList())
+            } catch (_: Throwable) {}
         }
     }
 }

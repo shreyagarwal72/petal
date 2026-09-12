@@ -390,30 +390,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     // ---------------------------------------------------------------------
     private View predictiveBackRoot;
     private OnBackPressedCallback browserBackCallback;
-    private boolean predictiveBackGestureActive = false;
-    private float predictiveBackProgress = 0f;
-    // Which edge the in-flight gesture started from - must be remembered so the
-    // cancel/commit settle animation keeps sliding the same direction the finger
-    // was already moving in. Previously this was hardcoded to EDGE_LEFT in the
-    // settle animator, which snapped the root view to the wrong side (a visible
-    // direction-reversal glitch) whenever the user swiped from the right edge.
-    private int predictiveBackSwipeEdge = BackEventCompat.EDGE_LEFT;
-    private ValueAnimator predictiveBackSettleAnimator;
-    // Mirrors aospSharedAxisPopExit's targetScale = 0.85f
-    private static final float PB_MAX_SCALE_DELTA = 0.15f;
-    // Mirrors RvSystem's M3EmphasizedEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
-    private final PathInterpolator predictiveBackEasing = new PathInterpolator(0.2f, 0f, 0f, 1f);
-    // Mirrors RvSystem's AOSP_TRANSITION_DURATION
     private static final int PB_TRANSITION_DURATION_MS = 350;
-    /**
-     * Set to true in handleOnBackStarted when isOverlayScreenShowing is true,
-     * so handleOnBackPressed knows the gesture was started over an overlay screen.
-     * The Compose PredictiveBackHandler inside the overlay will animate its own exit
-     * and call onBack() which runs showAlbum() (clearing isOverlayScreenShowing).
-     * handleOnBackPressed must NOT call performBackNavigation() in this case —
-     * it must only call resetPredictiveBackVisuals() to clear the root-view transform.
-     */
-    private boolean predictiveBackStartedOnOverlay = false;
+    private final PathInterpolator predictiveBackEasing = new PathInterpolator(0.2f, 0f, 0f, 1f);
 
     public AlbumController nextAlbumController(boolean next) {
         if (BrowserContainer.size() <= 1) return currentAlbumController;
@@ -569,26 +547,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         browserBackCallback = new OnBackPressedCallback(true) {
             @Override
-            public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
-                // Browser content intentionally uses ordinary back navigation. Do not inspect
-                // or transform GeckoView/WebView while Android is previewing a gesture.
-            }
-
-            @Override
-            public void handleOnBackProgressed(@NonNull androidx.activity.BackEventCompat backEvent) {
-                // Compose PredictiveBackHandler owns overlay progress; Activity root remains stable.
-            }
-
-            @Override
             public void handleOnBackPressed() {
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                predictiveBackStartedOnOverlay = false;
                 performBackNavigation();
-            }
-
-            @Override
-            public void handleOnBackCancelled() {
-                predictiveBackStartedOnOverlay = false;
             }
         };
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
@@ -874,7 +835,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void onResume() {
         if (browserBackCallback != null) browserBackCallback.setEnabled(true);
         super.onResume();
-        predictiveBackStartedOnOverlay = false;
         applyAddressBarPosition();
         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
             ((com.petal.browser.view.PetalGeckoView) currentAlbumController).onResume();
@@ -1120,98 +1080,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         dialog.show();
     }
 
-    /**
-     * Fires once at gesture start: just cancels any settle animation still running from a
-     * previous gesture, so a quick double-swipe doesn't fight itself for control of the root
-     * view. There is no preview underlay to prepare - RvSystem-Monitor's predictive transitions
-     * don't have one, so neither does this.
-     */
-    public void beginPredictiveBackGesture() {
-        if (!isOverlayScreenShowing || isDecorOverlayShowing) return;
-        if (predictiveBackSettleAnimator != null) {
-            predictiveBackSettleAnimator.cancel();
-            predictiveBackSettleAnimator = null;
-        }
-    }
-
-    /**
-     * Applies the live, per-frame transform for the in-progress gesture: a full-width slide
-     * toward the swipe edge plus a scale-down to 0.85, matching RvSystem-Monitor's
-     * aospSharedAxisPopExit exactly (ui/navigation/Transitions.kt) - the slide uses its cubic
-     * ease-in (f*f*f) and the scale uses its M3 emphasized easing. No fade, no corner-radius
-     * clip, no preview underlay - PetalScreenWrapper (PetalPredictiveJunction.kt) applies the
-     * identical curve to every Compose screen so the native browsing surface feels the same.
-     */
-    public void applyPredictiveBackTransform(float progress, int swipeEdge) {
-        if (!isOverlayScreenShowing || isDecorOverlayShowing) return;
-        if (predictiveBackRoot == null) return;
-        predictiveBackProgress = progress;
-
-        float cubicEased = progress * progress * progress;
-        float scaleEased = predictiveBackEasing.getInterpolation(progress);
-        float translateXFactor = swipeEdge == BackEventCompat.EDGE_RIGHT ? -1f : 1f;
-        float scale = 1f - (PB_MAX_SCALE_DELTA * scaleEased);
-
-        predictiveBackRoot.setScaleX(scale);
-        predictiveBackRoot.setScaleY(scale);
-        predictiveBackRoot.setTranslationX(predictiveBackRoot.getWidth() * translateXFactor * cubicEased);
-    }
-
-    /**
-     * Settles the gesture once the finger lifts, using RvSystem's transition duration (350ms)
-     * and easing throughout - cancelled gestures relax back to identity, committed gestures
-     * finish sliding off before the real {@link #performBackNavigation()} fires.
-     */
-    public void settlePredictiveBackGesture(boolean committed) {
-        if (!isOverlayScreenShowing || isDecorOverlayShowing) return;
-        if (predictiveBackRoot == null) return;
-
-        if (predictiveBackSettleAnimator != null) {
-            predictiveBackSettleAnimator.cancel();
-            predictiveBackSettleAnimator = null;
-        }
-
-        if (!committed) {
-            ValueAnimator cancelAnim = ValueAnimator.ofFloat(predictiveBackProgress, 0f);
-            cancelAnim.setDuration(PB_TRANSITION_DURATION_MS);
-            cancelAnim.setInterpolator(predictiveBackEasing);
-            cancelAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), predictiveBackSwipeEdge));
-            cancelAnim.addListener(new android.animation.AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(android.animation.Animator animation) {
-                    resetPredictiveBackVisuals();
-                }
-            });
-            predictiveBackSettleAnimator = cancelAnim;
-            cancelAnim.start();
-            return;
-        }
-
-        ValueAnimator commitAnim = ValueAnimator.ofFloat(predictiveBackProgress, 1f);
-        commitAnim.setDuration(PB_TRANSITION_DURATION_MS);
-        commitAnim.setInterpolator(predictiveBackEasing);
-        commitAnim.addUpdateListener(anim -> applyPredictiveBackTransform((float) anim.getAnimatedValue(), predictiveBackSwipeEdge));
-        commitAnim.addListener(new android.animation.AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(android.animation.Animator animation) {
-                performBackNavigation();
-                resetPredictiveBackVisuals();
-            }
-        });
-        predictiveBackSettleAnimator = commitAnim;
-        commitAnim.start();
-    }
-
-    public void resetPredictiveBackVisuals() {
-        predictiveBackProgress = 0f;
-        predictiveBackSwipeEdge = BackEventCompat.EDGE_LEFT;
-        if (predictiveBackRoot != null) {
-            predictiveBackRoot.setScaleX(1f);
-            predictiveBackRoot.setScaleY(1f);
-            predictiveBackRoot.setTranslationX(0f);
-        }
-        predictiveBackSettleAnimator = null;
-    }
 
     /**
      * Forward-navigation entrance for a Compose screen mounted into contentFrame
@@ -1279,7 +1147,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 if (!event.isCanceled()) {
                     com.petal.browser.haptics.PetalHapticEngine.getInstance(this).playClick(this);
                     performBackNavigation();
-                    resetPredictiveBackVisuals();
                 }
                 return true;
             }
