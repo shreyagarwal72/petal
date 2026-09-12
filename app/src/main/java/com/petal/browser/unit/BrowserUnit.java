@@ -491,6 +491,17 @@ public class BrowserUnit {
                     return;
                 }
             }
+        } else if (uriStr.startsWith("http://") || uriStr.startsWith("https://")) {
+            if (context instanceof com.petal.browser.activity.BrowserActivity) {
+                ((com.petal.browser.activity.BrowserActivity) context).addAlbum(null, uriStr, true);
+                return;
+            } else if (context instanceof Activity) {
+                Intent intent = new Intent(context, com.petal.browser.activity.BrowserActivity.class);
+                intent.setAction(Intent.ACTION_VIEW);
+                intent.setData(uri);
+                context.startActivity(intent);
+                return;
+            }
         }
     }
 

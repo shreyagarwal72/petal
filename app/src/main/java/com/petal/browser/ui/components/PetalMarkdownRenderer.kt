@@ -180,13 +180,16 @@ fun PetalMarkdownText(
                         else -> 15.sp
                     }
                     val fontWeight = if (block.level <= 2) FontWeight.Bold else FontWeight.SemiBold
-                    val annotatedText = buildInlineMarkdown(block.text, MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.primary)
-
-                    Text(
-                        text = annotatedText,
+                    val headingStyle = MaterialTheme.typography.titleMedium.copy(
                         fontSize = fontSize,
                         fontWeight = fontWeight,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    RenderInlineMarkdownText(
+                        text = block.text,
+                        context = context,
+                        textStyle = headingStyle,
                         modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
                     )
                 }
@@ -273,11 +276,18 @@ fun PetalMarkdownText(
                                 .background(MaterialTheme.colorScheme.primary)
                         )
                         Spacer(Modifier.width(10.dp))
-                        Text(
-                            text = buildInlineMarkdown(block.text, MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.primary),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            RenderInlineMarkdownText(
+                                text = block.text,
+                                context = context,
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                    fontStyle = FontStyle.Italic,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 22.sp
+                                ),
+                                customTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -328,19 +338,28 @@ fun PetalMarkdownText(
 }
 
 @Composable
-private fun RenderInlineMarkdownText(text: String, context: Context) {
-    val textColor = MaterialTheme.colorScheme.onSurface
+private fun RenderInlineMarkdownText(
+    text: String,
+    context: Context,
+    modifier: Modifier = Modifier,
+    textStyle: androidx.compose.ui.text.TextStyle? = null,
+    customTextColor: Color? = null
+) {
+    val textColor = customTextColor ?: MaterialTheme.colorScheme.onSurface
     val linkColor = MaterialTheme.colorScheme.primary
     val annotatedString = remember(text, textColor, linkColor) {
         buildInlineMarkdown(text, textColor, linkColor)
     }
 
+    val finalStyle = textStyle ?: MaterialTheme.typography.bodyMedium.copy(
+        color = textColor,
+        lineHeight = 22.sp
+    )
+
     ClickableText(
         text = annotatedString,
-        style = MaterialTheme.typography.bodyMedium.copy(
-            color = MaterialTheme.colorScheme.onSurface,
-            lineHeight = 22.sp
-        ),
+        modifier = modifier,
+        style = finalStyle,
         onClick = { offset ->
             annotatedString.getStringAnnotations(tag = "URL", start = offset, end = offset)
                 .firstOrNull()?.let { annotation ->
@@ -361,22 +380,26 @@ private fun RenderInlineMarkdownText(text: String, context: Context) {
  * - ~~strikethrough~~
  * - `inline code`
  * - [link label](url)
+ * - Autolink bare URLs: https://..., http://..., www....
  */
 fun buildInlineMarkdown(
     rawText: String,
     textColor: Color,
     linkColor: Color
 ): AnnotatedString {
+    val trailingPunctuationRegex = Pattern.compile("[.,;:!?]+$")
+
     return buildAnnotatedString {
-        // Regex pattern to match inline tokens
+        // Regex pattern to match inline tokens including bare URLs
         val tokenPattern = Pattern.compile(
-            "(\\[([^\\]]+)\\]\\(([^\\)]+)\\))|" + // Group 1,2,3: Link [label](url)
-            "(\\*\\*(.*?)\\*\\*)|" +               // Group 4,5: **bold**
-            "(__(.*?)__)|" +                       // Group 6,7: __bold__
-            "(\\*(.*?)\\*)|" +                     // Group 8,9: *italic*
-            "(_(.*?)_)|" +                         // Group 10,11: _italic_
-            "(~~(.*?)~~)|" +                       // Group 12,13: ~~strikethrough~~
-            "(`(.*?)`)"                            // Group 14,15: `code`
+            "(\\[([^\\]]+)\\]\\(([^\\)]+)\\))|" +               // Group 1,2,3: Link [label](url)
+            "((?:https?://|www\\.)[^\\s<>()\\]\\[\"]+)|" +       // Group 4: Bare URLs (https://, http://, www.)
+            "(\\*\\*(.*?)\\*\\*)|" +                             // Group 5,6: **bold**
+            "(__(.*?)__)|" +                                     // Group 7,8: __bold__
+            "(\\*(.*?)\\*)|" +                                   // Group 9,10: *italic*
+            "(_(.*?)_)|" +                                       // Group 11,12: _italic_
+            "(~~(.*?)~~)|" +                                     // Group 13,14: ~~strikethrough~~
+            "(`(.*?)`)"                                          // Group 15,16: `code`
         )
 
         val matcher = tokenPattern.matcher(rawText)
@@ -384,6 +407,9 @@ fun buildInlineMarkdown(
 
         while (matcher.find()) {
             val start = matcher.start()
+            if (start < lastIndex) {
+                continue
+            }
             val end = matcher.end()
 
             if (start > lastIndex) {
@@ -395,57 +421,83 @@ fun buildInlineMarkdown(
                 matcher.group(1) != null -> {
                     val label = matcher.group(2) ?: ""
                     val url = matcher.group(3) ?: ""
-                    val linkStart = length
-                    pushStringAnnotation(tag = "URL", annotation = url)
+                    val destination = if (url.startsWith("www.", ignoreCase = true)) "https://$url" else url
+                    pushStringAnnotation(tag = "URL", annotation = destination)
                     withStyle(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline, fontWeight = FontWeight.SemiBold)) {
                         append(label)
                     }
                     pop()
+                    lastIndex = end
+                }
+
+                // Bare URLs (https://, http://, www.)
+                matcher.group(4) != null -> {
+                    val rawUrl = matcher.group(4) ?: ""
+                    val punctMatcher = trailingPunctuationRegex.matcher(rawUrl)
+                    val cleanUrl = if (punctMatcher.find()) {
+                        rawUrl.substring(0, punctMatcher.start())
+                    } else {
+                        rawUrl
+                    }
+                    val trailingPunct = rawUrl.substring(cleanUrl.length)
+                    val destination = if (cleanUrl.startsWith("www.", ignoreCase = true)) "https://$cleanUrl" else cleanUrl
+
+                    pushStringAnnotation(tag = "URL", annotation = destination)
+                    withStyle(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline, fontWeight = FontWeight.SemiBold)) {
+                        append(cleanUrl)
+                    }
+                    pop()
+                    lastIndex = end - trailingPunct.length
                 }
 
                 // **bold**
-                matcher.group(4) != null -> {
-                    val content = matcher.group(5) ?: ""
+                matcher.group(5) != null -> {
+                    val content = matcher.group(6) ?: ""
                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
                         append(content)
                     }
+                    lastIndex = end
                 }
 
                 // __bold__
-                matcher.group(6) != null -> {
-                    val content = matcher.group(7) ?: ""
+                matcher.group(7) != null -> {
+                    val content = matcher.group(8) ?: ""
                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
                         append(content)
                     }
+                    lastIndex = end
                 }
 
                 // *italic*
-                matcher.group(8) != null -> {
-                    val content = matcher.group(9) ?: ""
+                matcher.group(9) != null -> {
+                    val content = matcher.group(10) ?: ""
                     withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
                         append(content)
                     }
+                    lastIndex = end
                 }
 
                 // _italic_
-                matcher.group(10) != null -> {
-                    val content = matcher.group(11) ?: ""
+                matcher.group(11) != null -> {
+                    val content = matcher.group(12) ?: ""
                     withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
                         append(content)
                     }
+                    lastIndex = end
                 }
 
                 // ~~strikethrough~~
-                matcher.group(12) != null -> {
-                    val content = matcher.group(13) ?: ""
+                matcher.group(13) != null -> {
+                    val content = matcher.group(14) ?: ""
                     withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) {
                         append(content)
                     }
+                    lastIndex = end
                 }
 
                 // `inline code`
-                matcher.group(14) != null -> {
-                    val content = matcher.group(15) ?: ""
+                matcher.group(15) != null -> {
+                    val content = matcher.group(16) ?: ""
                     withStyle(
                         SpanStyle(
                             fontFamily = FontFamily.Monospace,
@@ -455,10 +507,9 @@ fun buildInlineMarkdown(
                     ) {
                         append(" $content ")
                     }
+                    lastIndex = end
                 }
             }
-
-            lastIndex = end
         }
 
         if (lastIndex < rawText.length) {
