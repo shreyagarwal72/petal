@@ -106,7 +106,7 @@
         <!-- AppLocales Metadata Holder Service for AppCompat auto-store locales -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="false">
             <meta-data
                 android:name="autoStoreLocales"

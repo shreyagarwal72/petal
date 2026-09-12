@@ -894,22 +894,42 @@ public class HelperUnit {
             Locale.setDefault(targetLocale);
         }
 
-        // On API 33+ (Android 13+), AppCompatDelegate.setApplicationLocales() automatically recreates active activities.
-        // Calling recreate() manually causes a second concurrent recreate loop that crashes the app.
-        // For API < 33, setApplicationLocales() does not auto-recreate, so manual recreate() is required.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            Activity activity = null;
-            Context current = context;
-            while (current instanceof android.content.ContextWrapper) {
-                if (current instanceof Activity) {
-                    activity = (Activity) current;
-                    break;
-                }
-                current = ((android.content.ContextWrapper) current).getBaseContext();
+        // Update resources configuration directly so strings update immediately
+        try {
+            android.content.res.Resources res = context.getResources();
+            Configuration config = new Configuration(res.getConfiguration());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                config.setLocales(new android.os.LocaleList(targetLocale, Locale.ENGLISH));
+            } else {
+                config.setLocale(targetLocale);
             }
-            if (activity != null) {
-                activity.recreate();
+            config.setLayoutDirection(targetLocale);
+            res.updateConfiguration(config, res.getDisplayMetrics());
+
+            Context appCtx = context.getApplicationContext();
+            if (appCtx != null && appCtx != context) {
+                android.content.res.Resources appRes = appCtx.getResources();
+                appRes.updateConfiguration(config, appRes.getDisplayMetrics());
             }
+        } catch (Exception ignored) {}
+
+        // Recreate the active activity so the UI immediately switches to the selected language
+        Activity activity = null;
+        Context current = context;
+        while (current instanceof android.content.ContextWrapper) {
+            if (current instanceof Activity) {
+                activity = (Activity) current;
+                break;
+            }
+            current = ((android.content.ContextWrapper) current).getBaseContext();
+        }
+        if (activity != null) {
+            final Activity finalActivity = activity;
+            finalActivity.getWindow().getDecorView().post(() -> {
+                try {
+                    finalActivity.recreate();
+                } catch (Exception ignored) {}
+            });
         }
     }
 

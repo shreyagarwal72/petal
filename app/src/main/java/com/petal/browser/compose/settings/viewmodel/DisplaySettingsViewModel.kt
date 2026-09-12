@@ -95,7 +95,78 @@ class DisplaySettingsViewModel @Inject constructor(
         settingsRepository.setAddressBarSwipeTabs(enabled)
     }
 
-    fun setAddressBarQuickActions(enabled: Boolean) = viewModelScope.launch {
-        settingsRepository.setAddressBarQuickActions(enabled)
+    val doubleBackExit: StateFlow<Boolean> = settingsRepository.doubleBackExit
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    // Apple Duo (BETA)
+    val appleDuoEnabled: StateFlow<Boolean> = settingsRepository.appleDuoEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val appleDuoWebsites: StateFlow<Boolean> = settingsRepository.appleDuoWebsites
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val appleDuoUseSensor: StateFlow<Boolean> = settingsRepository.appleDuoUseSensor
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val appleDuoManualTilt: StateFlow<Float> = settingsRepository.appleDuoManualTilt
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0f)
+
+    val appleDuoAutoRecenter: StateFlow<Boolean> = settingsRepository.appleDuoAutoRecenter
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val appleDuoEyeDistance: StateFlow<Float> = settingsRepository.appleDuoEyeDistance
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 450f)
+
+    val appleDuoBlurSpread: StateFlow<Float> = settingsRepository.appleDuoBlurSpread
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.12f)
+
+    val appleDuoDarkening: StateFlow<Float> = settingsRepository.appleDuoDarkening
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.015f)
+
+    val appleDuoCurrentTilt: StateFlow<Float> = com.petal.browser.appleduo.AppleDuoManager.currentTilt
+    val appleDuoCurrentHinge: StateFlow<Float> = com.petal.browser.appleduo.AppleDuoManager.currentHingeSide
+    val appleDuoHasSensor: StateFlow<Boolean> = com.petal.browser.appleduo.AppleDuoManager.hasSensor
+
+    fun setDoubleBackExit(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setDoubleBackExit(enabled)
+    }
+
+    fun setAppleDuoEnabled(enabled: Boolean) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setEnabled(enabled)
+        settingsRepository.setAppleDuoEnabled(enabled)
+    }
+
+    fun setAppleDuoWebsites(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setAppleDuoWebsites(enabled)
+    }
+
+    fun setAppleDuoUseSensor(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setAppleDuoUseSensor(enabled)
+    }
+
+    fun setAppleDuoManualTilt(tilt: Float) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setManualTilt(tilt)
+        settingsRepository.setAppleDuoManualTilt(tilt)
+    }
+
+    fun setAppleDuoAutoRecenter(enabled: Boolean) = viewModelScope.launch {
+        com.petal.browser.appleduo.AppleDuoManager.setAutoRecenter(enabled)
+        settingsRepository.setAppleDuoAutoRecenter(enabled)
+    }
+
+    fun setAppleDuoEyeDistance(distance: Float) = viewModelScope.launch {
+        settingsRepository.setAppleDuoEyeDistance(distance)
+    }
+
+    fun setAppleDuoBlurSpread(spread: Float) = viewModelScope.launch {
+        settingsRepository.setAppleDuoBlurSpread(spread)
+    }
+
+    fun setAppleDuoDarkening(darkening: Float) = viewModelScope.launch {
+        settingsRepository.setAppleDuoDarkening(darkening)
+    }
+
+    fun recalibrateAppleDuo() {
+        com.petal.browser.appleduo.AppleDuoManager.recalibrate()
     }
 }

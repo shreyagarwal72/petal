@@ -1734,17 +1734,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // when the window's insets are not yet available (e.g. right after activity
             // resume from an overlay/history screen). Deferring via post() ensures the
             // view is only attached after the window is fully laid out with valid insets.
-            if (av instanceof com.petal.browser.view.PetalGeckoView
-                    && (contentFrame.getWindowToken() == null || !contentFrame.isAttachedToWindow())) {
-                final android.view.View avFinal = av;
-                contentFrame.post(() -> {
-                    try {
-                        if (contentFrame.isAttachedToWindow()) {
-                            contentFrame.addView(avFinal);
-                        }
-                    } catch (Exception ignored) {}
-                });
-            } else {
+            if (av.getParent() != contentFrame) {
+                if (av.getParent() != null) {
+                    ((android.view.ViewGroup) av.getParent()).removeView(av);
+                }
                 contentFrame.addView(av);
             }
             if (appBar != null) appBar.setVisibility(VISIBLE);
@@ -2029,15 +2022,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 boolean isAddressBarVisible = addressBar.getVisibility() != GONE;
 
                 if (isBottom) {
-                    addressBar.setPadding(0, 0, 0, 0);
+                    View decorView = getWindow().getDecorView();
+                    androidx.core.view.WindowInsetsCompat rootInsets = ViewCompat.getRootWindowInsets(decorView);
+                    int navBarBottomInset = 0;
+                    if (rootInsets != null) {
+                        Insets sysBars = rootInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+                        navBarBottomInset = sysBars.bottom;
+                    }
+
                     boolean hasBottomNav = bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE;
                     if (hasBottomNav) {
                         addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
+                        addrParams.bottomMargin = (int) HelperUnit.convertDpToPixel(2f, context);
+                        addressBar.setPadding(0, 0, 0, 0);
                     } else {
                         addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                        addrParams.bottomMargin = 0;
+                        addressBar.setPadding(0, 0, 0, navBarBottomInset);
                     }
                     addrParams.topMargin = 0;
-                    addrParams.bottomMargin = (int) HelperUnit.convertDpToPixel(2f, context);
 
                     if (progComposeParams != null) {
                         progComposeParams.addRule(RelativeLayout.ABOVE, R.id.compose_address_bar);
@@ -2134,7 +2137,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // especially important when switching to bottom position from settings.
                 View root = addressBar.getParent() instanceof View ? (View) addressBar.getParent() : null;
                 if (root != null) root.requestLayout();
-                addressBar.setElevation(HelperUnit.convertDpToPixel(24f, context));
+                addressBar.setElevation(HelperUnit.convertDpToPixel(32f, context));
                 addressBar.bringToFront();
                 addressBar.requestLayout();
                 mainContent.requestLayout();
