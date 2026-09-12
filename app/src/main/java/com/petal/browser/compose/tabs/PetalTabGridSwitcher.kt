@@ -372,37 +372,11 @@ fun PetalTabGridSwitcher(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Group by Domain") },
-                                    leadingIcon = { Icon(Icons.Rounded.Workspaces, contentDescription = null, tint = accentColor) },
-                                    onClick = {
-                                        isOverflowMenuExpanded = false
-                                        val count = PetalTabGroupManager.autoGroupByDomain(context, tabs)
-                                        refreshGroups()
-                                        selectedCategory = TabCategory.GROUPS
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                message = if (count > 0) "Organized tabs into $count domain groups" else "No matching domain pairs found to group",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                        }
-                                    }
-                                )
-                                HorizontalDivider()
-                                DropdownMenuItem(
                                     text = { Text("Tab Manager Settings") },
                                     leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
                                         onOpenSettings()
-                                    }
-                                )
-                                HorizontalDivider()
-                                DropdownMenuItem(
-                                    text = { Text("Inactive Tabs Settings") },
-                                    leadingIcon = { Icon(Icons.Rounded.Tune, contentDescription = null, tint = accentColor) },
-                                    onClick = {
-                                        isOverflowMenuExpanded = false
-                                        (context as? com.petal.browser.activity.BrowserActivity)?.showInactiveTabsSettingsScreen()
                                     }
                                 )
                                 HorizontalDivider()
