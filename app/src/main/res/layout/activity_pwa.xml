@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/pwa_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <!-- Web Content View Container -->
+    <FrameLayout
+        android:id="@+id/pwa_content_frame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true" />
+
+    <!-- Top Loading Indicator -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/pwa_progress_bar_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:elevation="12dp" />
+
+    <!-- Floating PWA Control Bubble (Minimalist expandable menu for refresh/share/open in Petal) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/pwa_fab_bubble"
+        style="@style/Widget.Material3.CardView.Filled"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="24dp"
+        android:layout_marginEnd="16dp"
+        android:alpha="0.4"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        app:strokeWidth="0.5dp"
+        app:strokeColor="?attr/colorOutlineVariant"
+        android:backgroundTint="?attr/colorSurfaceContainerHighest">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:src="@drawable/icon_more"
+            app:tint="?attr/colorPrimary"
+            tools:ignore="ContentDescription"/>
+    </com.google.android.material.card.MaterialCardView>
+
+</RelativeLayout>

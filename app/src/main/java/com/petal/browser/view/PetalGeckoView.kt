@@ -127,6 +127,7 @@ class PetalGeckoView @JvmOverloads constructor(
         )
         initGeckoSession()
         album.setBrowserController(globalBrowserController)
+        this.pwaManager = PetalPwaManager(context, this, null)
     }
 
     private fun initGeckoSession() {
@@ -187,6 +188,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
 
                 recordHistoryVisit(currentUrl, currentTitle)
+                pwaManager?.detectPwaManifest()
             }
 
             override fun onProgressChange(session: GeckoSession, progress: Int) {

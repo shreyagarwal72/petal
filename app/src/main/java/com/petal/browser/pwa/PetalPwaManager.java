@@ -31,6 +31,7 @@ import androidx.core.graphics.drawable.IconCompat;
 import com.petal.browser.R;
 import com.petal.browser.activity.BrowserActivity;
 import com.petal.browser.unit.HelperUnit;
+import com.petal.browser.view.PetalGeckoView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -45,9 +46,9 @@ import java.util.List;
 
 /**
  * PetalPwaManager
- * Dynamic Progressive Web App (PWA) manager providing manifest detection & parsing via JS injection,
- * Service Worker lifecycle control, native installation prompts with dynamic adaptive shortcut creation,
- * offline webpage web archive saving, and Web API delegation (Web Share, WebAuthn/Passkeys, Push Notifications).
+ * Dynamic Progressive Web App (PWA) manager supporting both PetalGeckoView (GeckoView engine)
+ * and NinjaWebView (WebView engine), providing manifest detection & parsing via JS injection,
+ * offline webpage web archive saving, and standalone Web App launching.
  */
 public class PetalPwaManager {
 
@@ -78,6 +79,7 @@ public class PetalPwaManager {
     private final Context context;
     private final com.petal.browser.browser.AlbumController albumController;
     private final WebView webView;
+    private final PetalGeckoView geckoView;
     private PwaInstallPromptListener promptListener;
     private PwaManifest currentManifest;
 
@@ -85,6 +87,7 @@ public class PetalPwaManager {
         this.context = context;
         this.albumController = albumController;
         this.webView = (albumController instanceof WebView) ? (WebView) albumController : null;
+        this.geckoView = (albumController instanceof PetalGeckoView) ? (PetalGeckoView) albumController : null;
         this.promptListener = listener;
 
         if (this.webView != null) {
@@ -135,7 +138,6 @@ public class PetalPwaManager {
      * Injects JavaScript to discover link[rel="manifest"], theme-color, apple-touch-icons, and parse web app manifest.
      */
     public void detectPwaManifest() {
-        if (webView == null) return;
         String js = "(function() {" +
                 "   try {" +
                 "       var manifestLink = document.querySelector('link[rel=\"manifest\"]');" +
@@ -154,7 +156,9 @@ public class PetalPwaManager {
                 "                   if (themeColor && !manifest.theme_color) {" +
                 "                       manifest.theme_color = themeColor;" +
                 "                   }" +
-                "                   window." + JS_INTERFACE_NAME + ".onManifestParsed(JSON.stringify(manifest), manifestUrl);" +
+                "                   if (window." + JS_INTERFACE_NAME + ") {" +
+                "                       window." + JS_INTERFACE_NAME + ".onManifestParsed(JSON.stringify(manifest), manifestUrl);" +
+                "                   }" +
                 "               })" +
                 "               .catch(function(err) {" +
                 "                   var fallback = {" +
@@ -165,7 +169,9 @@ public class PetalPwaManager {
                 "                       theme_color: themeColor," +
                 "                       icons: appleIconUrl ? [{ src: appleIconUrl, sizes: '192x192' }] : []" +
                 "                   };" +
-                "                   window." + JS_INTERFACE_NAME + ".onManifestParsed(JSON.stringify(fallback), window.location.href);" +
+                "                   if (window." + JS_INTERFACE_NAME + ") {" +
+                "                       window." + JS_INTERFACE_NAME + ".onManifestParsed(JSON.stringify(fallback), window.location.href);" +
+                "                   }" +
                 "               });" +
                 "       } else {" +
                 "           var isStandalone = document.querySelector('meta[name=\"mobile-web-app-capable\"]') || document.querySelector('meta[name=\"apple-mobile-web-app-capable\"]');" +
@@ -177,9 +183,11 @@ public class PetalPwaManager {
                 "               theme_color: themeColor," +
                 "               icons: appleIconUrl ? [{ src: appleIconUrl, sizes: '192x192' }] : []" +
                 "           };" +
-                "           window." + JS_INTERFACE_NAME + ".onManifestParsed(JSON.stringify(fallback), window.location.href);" +
+                "           if (window." + JS_INTERFACE_NAME + ") {" +
+                "               window." + JS_INTERFACE_NAME + ".onManifestParsed(JSON.stringify(fallback), window.location.href);" +
+                "           }" +
                 "       }" +
-                "       if (!navigator.share) {" +
+                "       if (!navigator.share && window." + JS_INTERFACE_NAME + ") {" +
                 "           navigator.share = function(data) {" +
                 "               return new Promise(function(resolve, reject) {" +
                 "                   try {" +
@@ -193,11 +201,20 @@ public class PetalPwaManager {
                 "       }" +
                 "   } catch(e) {}" +
                 "})();";
-        webView.evaluateJavascript(js, null);
+
+        if (webView != null) {
+            webView.evaluateJavascript(js, null);
+        } else if (geckoView != null) {
+            geckoView.evaluateJavascript(js, null);
+        }
     }
 
     public PwaManifest getCurrentManifest() {
         return currentManifest;
+    }
+
+    public void setCurrentManifest(PwaManifest manifest) {
+        this.currentManifest = manifest;
     }
 
     public static String resolveUrl(String baseUrl, String relativeOrAbsoluteUrl) {
@@ -268,15 +285,12 @@ public class PetalPwaManager {
     }
 
     /**
-     * Installs PWA / offline website to Android Home Screen via ShortcutManagerCompat
-     * with adaptive app icon and saves full webpage archive for offline use.
+     * Installs PWA / website to Android Home Screen via ShortcutManagerCompat
+     * targeting the dedicated standalone PetalPwaActivity shell.
      */
     public void installCurrentPwa(Activity activity) {
         if (activity == null) return;
 
-        // GeckoView/WebView state must be read on the UI thread. Reading the active
-        // controller from the worker thread can return null or fail while the tab is
-        // transitioning, making Install as App silently do nothing.
         final String pageUrl = albumController != null ? albumController.getUrl() : (webView != null ? webView.getUrl() : null);
         if (pageUrl == null || pageUrl.isEmpty() || "about:blank".equalsIgnoreCase(pageUrl)) {
             activity.runOnUiThread(() -> Toast.makeText(activity, "Cannot install empty page as app", Toast.LENGTH_SHORT).show());
@@ -347,13 +361,14 @@ public class PetalPwaManager {
                     }
                 });
 
-                Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
-                shortcutIntent.setComponent(new android.content.ComponentName(activity, BrowserActivity.class));
-                shortcutIntent.putExtra("pwa_mode", true);
-                shortcutIntent.putExtra("pwa_display", currentManifest != null ? currentManifest.display : "standalone");
-                shortcutIntent.putExtra("pwa_theme_color", themeColorHex);
-                shortcutIntent.putExtra("offline_archive_path", archiveFile.getAbsolutePath());
-                shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                Intent shortcutIntent = new Intent("com.petal.browser.action.OPEN_PWA", Uri.parse(targetUrl));
+                shortcutIntent.setComponent(new android.content.ComponentName(activity, PetalPwaActivity.class));
+                shortcutIntent.putExtra(PetalPwaActivity.EXTRA_URL, targetUrl);
+                shortcutIntent.putExtra(PetalPwaActivity.EXTRA_TITLE, title);
+                shortcutIntent.putExtra(PetalPwaActivity.EXTRA_THEME_COLOR, themeColorHex);
+                shortcutIntent.putExtra(PetalPwaActivity.EXTRA_DISPLAY, currentManifest != null ? currentManifest.display : "standalone");
+                shortcutIntent.putExtra(PetalPwaActivity.EXTRA_OFFLINE_ARCHIVE, archiveFile.getAbsolutePath());
+                shortcutIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 
                 IconCompat iconCompat = IconCompat.createWithBitmap(finalAdaptiveIcon);
                 String shortcutId = "pwa_" + Math.abs(targetUrl.hashCode());

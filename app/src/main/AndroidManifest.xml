@@ -366,6 +366,23 @@
             </intent-filter>
         </activity>
 
+        <!-- Standalone PWA / Web App Shell Activity -->
+        <activity
+            android:name="com.petal.browser.pwa.PetalPwaActivity"
+            android:label="@string/petal_pwa_name"
+            android:theme="@style/AppTheme"
+            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
+            android:documentLaunchMode="intoExisting"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.petal.browser.action.OPEN_PWA" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+            </intent-filter>
+        </activity>
+
         <!--
           Einstellungs-Activities:
           WICHTIG ab Android 12+: Müssen explizit android:exported="false" deklariert werden,
