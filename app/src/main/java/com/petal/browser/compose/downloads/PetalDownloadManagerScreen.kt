@@ -1008,11 +1008,15 @@ private fun DownloadProgressRing(
     val isFailed = item.status == DownloadManager.STATUS_FAILED
     val showRing = (isRunning || isPaused || isPending) && !isSelected
 
-    val ringColor = if (isPaused) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary
-    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
+    val ringColor = when {
+        isPaused -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+        isPending -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.primary
+    }
+    val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
 
     val animatedProgress by animateFloatAsState(
-        targetValue = item.progress ?: 0f,
+        targetValue = (item.progress ?: 0f).coerceIn(0f, 1f),
         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
         label = "RingProgress"
     )
@@ -1030,9 +1034,18 @@ private fun DownloadProgressRing(
 
     val (expressiveBgColor, expressiveIconTint) = getFileTypeContainerColors(item.fileName, isSelected)
 
+    // When actively downloading/paused/pending, use theme-aware harmonious container
+    val containerBgColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary
+        isRunning -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+        isPaused -> MaterialTheme.colorScheme.surfaceContainerHigh
+        isPending -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+        else -> expressiveBgColor
+    }
+
     Surface(
         shape = if (showRing) CircleShape else avatarShape,
-        color = expressiveBgColor,
+        color = containerBgColor,
         modifier = Modifier
             .size(46.dp)
             .then(
@@ -1047,23 +1060,25 @@ private fun DownloadProgressRing(
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             if (showRing) {
                 if (item.progress != null) {
-                    CircularWavyProgressIndicator(
+                    CircularProgressIndicator(
                         progress = { animatedProgress },
                         color = ringColor,
                         trackColor = trackColor,
-                        wavelength = 14.dp,
+                        strokeWidth = 3.2.dp,
+                        strokeCap = StrokeCap.Round,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(2.dp)
+                            .padding(2.5.dp)
                     )
                 } else {
-                    CircularWavyProgressIndicator(
+                    CircularProgressIndicator(
                         color = ringColor,
                         trackColor = trackColor,
-                        wavelength = 14.dp,
+                        strokeWidth = 3.2.dp,
+                        strokeCap = StrokeCap.Round,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(2.dp)
+                            .padding(2.5.dp)
                     )
                 }
             }
@@ -1076,6 +1091,16 @@ private fun DownloadProgressRing(
                 isFailed -> Icons.Rounded.ErrorOutline
                 else -> getFileTypeIcon(item.fileName)
             }
+
+            val glyphTint = when {
+                isSelected -> MaterialTheme.colorScheme.onPrimary
+                isRunning -> MaterialTheme.colorScheme.primary
+                isPaused -> MaterialTheme.colorScheme.onSurfaceVariant
+                isPending -> MaterialTheme.colorScheme.onTertiaryContainer
+                showRing -> ringColor
+                else -> expressiveIconTint
+            }
+
             Icon(
                 imageVector = glyph,
                 contentDescription = when {
@@ -1083,7 +1108,7 @@ private fun DownloadProgressRing(
                     isPaused -> "Resume download"
                     else -> null
                 },
-                tint = if (showRing) ringColor else expressiveIconTint,
+                tint = glyphTint,
                 modifier = Modifier.size(if (showRing) 20.dp else 22.dp)
             )
         }
