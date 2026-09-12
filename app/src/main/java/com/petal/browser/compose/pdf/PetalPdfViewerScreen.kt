@@ -38,8 +38,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -577,20 +579,31 @@ private fun PdfPageView(
         color = Color.White,
         shadowElevation = 2.dp
     ) {
-        if (pageBitmap != null) {
-            Image(
-                bitmap = pageBitmap!!.asImageBitmap(),
-                contentDescription = "PDF Page " + (pageIndex + 1),
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier.fillMaxSize()
-            )
-        } else {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    modifier = Modifier.size(32.dp),
-                    strokeWidth = 2.5.dp
+        androidx.compose.animation.AnimatedContent(
+            targetState = pageBitmap,
+            transitionSpec = {
+                androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(300)) +
+                androidx.compose.animation.scaleIn(androidx.compose.animation.core.tween(300), initialScale = 0.96f) togetherWith
+                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(150))
+            },
+            label = "pdf_page_transition",
+            modifier = Modifier.fillMaxSize()
+        ) { currentBitmap ->
+            if (currentBitmap != null) {
+                Image(
+                    bitmap = currentBitmap.asImageBitmap(),
+                    contentDescription = "PDF Page " + (pageIndex + 1),
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier.fillMaxSize()
                 )
+            } else {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        modifier = Modifier.size(32.dp),
+                        strokeWidth = 2.5.dp
+                    )
+                }
             }
         }
     }

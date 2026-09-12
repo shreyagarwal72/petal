@@ -29,6 +29,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -37,8 +38,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -581,22 +584,32 @@ private fun ZoomableImagePage(
                 }
             }
 
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap!!.asImageBitmap(),
-                    contentDescription = entry.label,
-                    contentScale = ContentScale.Fit,
-                    modifier = imageModifier,
-                )
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = Color.White.copy(alpha = 0.7f))
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text  = entry.label,
-                        color = Color.White.copy(alpha = 0.5f),
-                        style = MaterialTheme.typography.bodySmall,
+            AnimatedContent(
+                targetState = bitmap,
+                transitionSpec = {
+                    fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.94f) togetherWith fadeOut(tween(150))
+                },
+                label = "local_image_transition",
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) { currentBmp ->
+                if (currentBmp != null) {
+                    Image(
+                        bitmap = currentBmp.asImageBitmap(),
+                        contentDescription = entry.label,
+                        contentScale = ContentScale.Fit,
+                        modifier = imageModifier,
                     )
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = Color.White.copy(alpha = 0.7f))
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text  = entry.label,
+                            color = Color.White.copy(alpha = 0.5f),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                 }
             }
         }

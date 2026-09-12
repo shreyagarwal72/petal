@@ -192,43 +192,6 @@
                 <data android:scheme="file" android:host="*" android:pathPattern=".*\\.xpi" />
             </intent-filter>
 
-            <!-- Open local image files in Petal's built-in viewer (ACTION_VIEW content:// or file://) -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="content" android:mimeType="image/*" />
-                <data android:scheme="file" android:mimeType="image/*" />
-            </intent-filter>
-
-            <!-- Receive shared images from other apps (ACTION_SEND image/*) -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="image/*" />
-            </intent-filter>
-
-            <!-- Open PDF files in Petal's built-in Material 3 Expressive PDF viewer (ACTION_VIEW) -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="content" android:mimeType="application/pdf" />
-                <data android:scheme="file" android:mimeType="application/pdf" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="content" android:host="*" android:pathPattern=".*\\.pdf" />
-                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.pdf" />
-            </intent-filter>
-
-            <!-- Receive shared PDF documents from other apps (ACTION_SEND application/pdf) -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/pdf" />
-            </intent-filter>
-
             <!-- Text über das Android 'Teilen'-Menü empfangen -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -251,6 +214,100 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
 
+        </activity>
+
+        <!--
+          Standalone Dedicated Viewers & Players:
+          Each activity defines its own distinct android:label and intent filters
+          so the Android system "Open with" chooser displays separate, dedicated entries:
+            - "Petal PDF Viewer" for PDF documents
+            - "Petal Image Viewer" for pictures / graphics
+            - "Petal Media Player" for video and audio playback
+        -->
+        <activity
+            android:name="com.petal.browser.activity.PdfViewerActivity"
+            android:label="@string/petal_pdf_viewer_name"
+            android:theme="@style/Theme.Petal.StandaloneViewer"
+            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:mimeType="application/pdf" />
+                <data android:scheme="file" android:mimeType="application/pdf" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:host="*" android:pathPattern=".*\\.pdf" />
+                <data android:scheme="file" android:host="*" android:pathPattern=".*\\.pdf" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.petal.browser.activity.ImageViewerActivity"
+            android:label="@string/petal_image_viewer_name"
+            android:theme="@style/Theme.Petal.StandaloneViewer"
+            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:mimeType="image/*" />
+                <data android:scheme="file" android:mimeType="image/*" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.petal.browser.activity.MediaPlayerActivity"
+            android:label="@string/petal_media_player_name"
+            android:theme="@style/Theme.Petal.StandaloneViewer"
+            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
+            android:supportsPictureInPicture="true"
+            android:exported="true">
+
+            <!-- Video playback (ACTION_VIEW) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:mimeType="video/*" />
+                <data android:scheme="file" android:mimeType="video/*" />
+            </intent-filter>
+
+            <!-- Audio playback (ACTION_VIEW) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:mimeType="audio/*" />
+                <data android:scheme="file" android:mimeType="audio/*" />
+            </intent-filter>
+
+            <!-- Video & Audio share (ACTION_SEND) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
         </activity>
 
         <!--

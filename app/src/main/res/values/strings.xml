@@ -185,4 +185,9 @@
     <!-- App Updates -->
     <string name="downloading_update_progress">Downloading update (%1$d%%)</string>
     <string name="action_install_update">Download &amp; Install Update</string>
+
+    <!-- Standalone Viewers & Players -->
+    <string name="petal_pdf_viewer_name">Petal PDF Viewer</string>
+    <string name="petal_image_viewer_name">Petal Image Viewer</string>
+    <string name="petal_media_player_name">Petal Media Player</string>
 </resources>
