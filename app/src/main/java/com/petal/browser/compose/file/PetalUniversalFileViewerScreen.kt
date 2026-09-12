@@ -36,10 +36,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -188,6 +190,7 @@ fun PetalUniversalFileViewerScreen(
 
     val scope = rememberCoroutineScope()
     var isEditing by remember { mutableStateOf(false) }
+    var isWordWrap by remember { mutableStateOf(false) }
     var editableText by remember { mutableStateOf("") }
     var onSaveRequested by remember { mutableStateOf<(() -> Unit)?>(null) }
 
@@ -205,7 +208,9 @@ fun PetalUniversalFileViewerScreen(
                         extension = extension,
                         category = category,
                         isEditing = isEditing,
+                        isWordWrap = isWordWrap,
                         onToggleEdit = { isEditing = !isEditing },
+                        onToggleWrap = { isWordWrap = !isWordWrap },
                         onSave = { onSaveRequested?.invoke() },
                         onBack = onBackPress,
                         onShare = { shareFile(context, fileUri, displayName) },
@@ -230,6 +235,7 @@ fun PetalUniversalFileViewerScreen(
                         FileCategory.TEXT_CODE -> TextCodeViewerContent(
                             fileUri = fileUri,
                             isEditing = isEditing,
+                            isWordWrap = isWordWrap,
                             onTextLoaded = { loaded -> editableText = loaded },
                             onRegisterSaveHandler = { handler -> onSaveRequested = handler },
                             onEditFinish = { isEditing = false }
@@ -248,7 +254,9 @@ private fun UniversalFileViewerTopBar(
     extension: String,
     category: FileCategory,
     isEditing: Boolean,
+    isWordWrap: Boolean,
     onToggleEdit: () -> Unit,
+    onToggleWrap: () -> Unit,
     onSave: () -> Unit,
     onBack: () -> Unit,
     onShare: () -> Unit,
@@ -302,6 +310,14 @@ private fun UniversalFileViewerTopBar(
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
+                } else {
+                    IconButton(onClick = onToggleWrap) {
+                        Icon(
+                            imageVector = Icons.Rounded.WrapText,
+                            contentDescription = if (isWordWrap) "Disable word wrap" else "Enable word wrap",
+                            tint = if (isWordWrap) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
                 }
                 IconButton(onClick = onToggleEdit) {
                     Icon(
@@ -335,6 +351,7 @@ private fun UniversalFileViewerTopBar(
 private fun TextCodeViewerContent(
     fileUri: Uri,
     isEditing: Boolean,
+    isWordWrap: Boolean,
     onTextLoaded: (String) -> Unit,
     onRegisterSaveHandler: (() -> Unit) -> Unit,
     onEditFinish: () -> Unit
@@ -464,34 +481,60 @@ private fun TextCodeViewerContent(
         lines != null -> {
             val listState = rememberLazyListState()
             val contentLines = lines ?: emptyList()
-            LazyColumn(
-                state = listState,
+            val horizontalScrollState = rememberScrollState()
+
+            // Pre-calculate line number column width based on digit count
+            val lineNumberWidth = remember(contentLines.size) {
+                val digits = contentLines.size.toString().length.coerceAtLeast(2)
+                (digits * 9 + 18).dp
+            }
+
+            // Hoist text styles and colors to avoid allocations per row per frame
+            val lineNumberStyle = remember {
+                TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, textAlign = TextAlign.End)
+            }
+            val lineNumberColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            val lineTextStyle = remember {
+                TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+            }
+            val lineTextColor = MaterialTheme.colorScheme.onSurface
+
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceContainerLowest),
-                contentPadding = PaddingValues(vertical = 12.dp)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                    .then(if (!isWordWrap) Modifier.horizontalScroll(horizontalScrollState) else Modifier)
             ) {
-                itemsIndexed(contentLines) { index, lineText ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 1.dp)
-                            .horizontalScroll(rememberScrollState()),
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        Text(
-                            text = "${index + 1}",
-                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 12.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier
-                                .width(42.dp)
-                                .padding(end = 8.dp),
-                        )
-                        Text(
-                            text = lineText.ifEmpty { " " },
-                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 12.sp),
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                LazyColumn(
+                    state = listState,
+                    modifier = if (isWordWrap) Modifier.fillMaxSize() else Modifier.wrapContentWidth(),
+                    contentPadding = PaddingValues(vertical = 12.dp)
+                ) {
+                    itemsIndexed(
+                        items = contentLines,
+                        key = { index, _ -> index },
+                        contentType = { _, _ -> 0 }
+                    ) { index, lineText ->
+                        Row(
+                            modifier = (if (isWordWrap) Modifier.fillMaxWidth() else Modifier.wrapContentWidth())
+                                .padding(horizontal = 8.dp, vertical = 1.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            Text(
+                                text = "${index + 1}",
+                                style = lineNumberStyle,
+                                color = lineNumberColor,
+                                modifier = Modifier
+                                    .width(lineNumberWidth)
+                                    .padding(end = 10.dp),
+                            )
+                            Text(
+                                text = lineText.ifEmpty { " " },
+                                style = lineTextStyle,
+                                color = lineTextColor,
+                                modifier = if (isWordWrap) Modifier.weight(1f, fill = false) else Modifier,
+                            )
+                        }
                     }
                 }
             }
@@ -690,39 +733,49 @@ private fun XlsxViewerContent(fileUri: Uri) {
         }
         extractedRows != null -> {
             val rows = extractedRows ?: emptyList()
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+            val tableScrollState = rememberScrollState()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .horizontalScroll(tableScrollState)
             ) {
-                itemsIndexed(rows) { rowIndex, cellValues ->
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (rowIndex == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
-                                .horizontalScroll(rememberScrollState()),
-                            verticalAlignment = Alignment.CenterVertically
+                LazyColumn(
+                    modifier = Modifier.wrapContentWidth(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    itemsIndexed(
+                        items = rows,
+                        key = { index, _ -> index },
+                        contentType = { index, _ -> if (index == 0) 1 else 0 }
+                    ) { rowIndex, cellValues ->
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (rowIndex == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier = Modifier.wrapContentWidth()
                         ) {
-                            Text(
-                                text = "${rowIndex + 1}",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                modifier = Modifier.width(32.dp)
-                            )
-                            cellValues.forEach { cell ->
+                            Row(
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Text(
-                                    text = cell,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = if (rowIndex == 0) FontWeight.Bold else FontWeight.Normal
-                                    ),
-                                    color = if (rowIndex == 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.padding(horizontal = 10.dp)
+                                    text = "${rowIndex + 1}",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    modifier = Modifier.width(32.dp)
                                 )
+                                cellValues.forEach { cell ->
+                                    Text(
+                                        text = cell,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = if (rowIndex == 0) FontWeight.Bold else FontWeight.Normal
+                                        ),
+                                        color = if (rowIndex == 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(horizontal = 10.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -789,23 +842,31 @@ private fun DocxViewerContent(fileUri: Uri) {
             ErrorDisplayBox(error = errorMessage ?: "")
         }
         extractedText != null -> {
+            val paragraphs = remember(extractedText) {
+                extractedText?.split("\n")?.filter { it.isNotBlank() } ?: emptyList()
+            }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
-                contentPadding = PaddingValues(bottom = 32.dp)
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item {
+                itemsIndexed(
+                    items = paragraphs,
+                    key = { index, _ -> index },
+                    contentType = { _, _ -> 0 }
+                ) { _, para ->
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = extractedText ?: "",
+                            text = para,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(14.dp),
                             lineHeight = 24.sp,
                         )
                     }
