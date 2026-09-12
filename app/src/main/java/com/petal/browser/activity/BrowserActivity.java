@@ -5795,10 +5795,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         // Mode: summary, ask, search, critique, deep
-        String modeParam = uri.getQueryParameter("mode");
+        final String modeParam = uri.getQueryParameter("mode");
+        final String finalQuery = query != null ? query : "";
+        final String finalHost = host;
 
         if (host.equalsIgnoreCase("ai-search") || uriStr.startsWith("petal://ai-search")) {
-            final String searchQuery = query != null ? query.trim() : "";
+            final String searchQuery = finalQuery.trim();
             runOnUiThread(() -> com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(BrowserActivity.this, searchQuery));
             return;
         }
@@ -5818,7 +5820,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 initialMode = com.petal.browser.compose.ai.ResearchMode.KEY_QA;
             } else if ("critique".equalsIgnoreCase(modeParam)) {
                 initialMode = com.petal.browser.compose.ai.ResearchMode.CRITIQUE;
-            } else if (query != null && !query.trim().isEmpty()) {
+            } else if (!finalQuery.trim().isEmpty()) {
                 initialMode = com.petal.browser.compose.ai.ResearchMode.CUSTOM;
             }
 
@@ -5842,14 +5844,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             } else {
                 // If on home/blank, open research sheet with blank web context or AI search
-                if (query != null && !query.trim().isEmpty() && (host.equalsIgnoreCase("ai-search") || "search".equalsIgnoreCase(modeParam))) {
-                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(BrowserActivity.this, query.trim());
+                if (!finalQuery.trim().isEmpty() && (finalHost.equalsIgnoreCase("ai-search") || "search".equalsIgnoreCase(modeParam))) {
+                    com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(BrowserActivity.this, finalQuery.trim());
                 } else {
                     com.petal.browser.ui.components.PetalAiResearchBridge.showAiResearchSheet(
                         BrowserActivity.this,
                         "Petal AI Assistant",
                         "petal://ai",
-                        query != null ? query : "",
+                        finalQuery,
                         initialMode,
                         false
                     );
