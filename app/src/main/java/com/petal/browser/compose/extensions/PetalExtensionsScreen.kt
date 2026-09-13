@@ -51,6 +51,7 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
+import com.petal.browser.ui.theme.PetalExpressiveTheme
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.ui.window.DialogProperties
 import org.mozilla.geckoview.AllowOrDeny
@@ -813,13 +814,14 @@ fun PetalExtensionPopupScreen(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
-                    popup.session.navigationDelegate = object : GeckoSession.NavigationDelegate {
+                    popup.session.contentDelegate = object : GeckoSession.ContentDelegate {
                         override fun onCloseRequest(session: GeckoSession) {
                             (ctx as? ComponentActivity)?.runOnUiThread {
                                 onDismiss()
                             }
                         }
-
+                    }
+                    popup.session.navigationDelegate = object : GeckoSession.NavigationDelegate {
                         override fun onLoadRequest(
                             session: GeckoSession,
                             request: GeckoSession.NavigationDelegate.LoadRequest
@@ -837,7 +839,7 @@ fun PetalExtensionPopupScreen(
                                 (hostActivity as? com.petal.browser.activity.BrowserActivity)?.let { act ->
                                     act.runOnUiThread {
                                         onDismiss()
-                                        act.addAlbum(null, uri, false, null)
+                                        act.addAlbum(null, uri, true)
                                     }
                                 }
                                 return GeckoResult.fromValue(AllowOrDeny.DENY)
@@ -850,7 +852,7 @@ fun PetalExtensionPopupScreen(
                                 (hostActivity as? com.petal.browser.activity.BrowserActivity)?.let { act ->
                                     act.runOnUiThread {
                                         onDismiss()
-                                        act.addAlbum(null, uri, false, null)
+                                        act.addAlbum(null, uri, true)
                                     }
                                 }
                             }
