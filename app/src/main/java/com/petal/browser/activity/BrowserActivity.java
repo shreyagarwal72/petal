@@ -691,8 +691,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 final String urlToRestore = activeRestoredUrl;
                 final com.petal.browser.view.PetalGeckoView restoredActiveView = activeRestoredGeckoView;
                 if (urlToRestore != null && restoredActiveView != null) {
+                    // Guard against sessions saved before this fix, which may still have
+                    // the literal "Petal Home"/"Petal Start" placeholder baked in as a url.
+                    boolean isPlaceholder = "Petal Home".equalsIgnoreCase(urlToRestore) || "Petal Start".equalsIgnoreCase(urlToRestore);
                     restoredActiveView.post(() -> restoredActiveView.loadUrl(
-                            urlToRestore.isEmpty() || isHomePage(urlToRestore) ? "about:blank" : urlToRestore));
+                            urlToRestore.isEmpty() || isPlaceholder || isHomePage(urlToRestore) ? "about:blank" : urlToRestore));
                 }
             }
         } catch (Exception e) {
@@ -1337,7 +1340,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             BrowserContainer.replace(slot, materialized);
             controller = materialized;
-            if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)) {
+            if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl)
+                    && !"Petal Home".equalsIgnoreCase(targetUrl) && !"Petal Start".equalsIgnoreCase(targetUrl)) {
                 materialized.loadUrl(targetUrl);
             } else {
                 materialized.loadUrl("about:blank");
@@ -1437,7 +1441,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View composeView = PetalComposeBridge.createComposeHomeView(this, BrowserContainer.size(), new PetalHomeActionHandler() {
                 @Override
                 public void onSearch(String query) {
-                    if (query != null && !query.trim().isEmpty()) {
+                    if (query != null && !query.trim().isEmpty()
+                            && !query.trim().equalsIgnoreCase("Petal Home") && !query.trim().equalsIgnoreCase("Petal Start")) {
                         String targetUrl = BrowserUnit.queryWrapper(BrowserActivity.this, query.trim());
                         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                             showAlbum(currentAlbumController, targetUrl);
@@ -1453,6 +1458,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 @Override
                 public void onOpenUrl(String u) {
+                    if (u != null && (u.trim().equalsIgnoreCase("Petal Home") || u.trim().equalsIgnoreCase("Petal Start"))) {
+                        try {
+                            showOmniboxPage("");
+                        } catch (Exception ignored) {}
+                        return;
+                    }
                     if (u != null && u.contains("category=api_integrations")) {
                         openApiIntegrationsHub();
                         return;
