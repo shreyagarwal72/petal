@@ -53,6 +53,14 @@
         android:layout_below="@id/compose_address_bar"
         android:elevation="20dp" />
 
+    <!-- Media Sniffer Expressive overlay: appears only when a playable source is detected. -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/media_sniffer_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/compose_address_bar"
+        android:elevation="22dp" />
+
     <!-- Pull to Refresh Bar (ContainedLoadingIndicator) -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/refresh_bar_compose"
