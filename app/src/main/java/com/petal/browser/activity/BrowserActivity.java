@@ -3365,7 +3365,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 float translationZPx = HelperUnit.convertDpToPixel(8f, this);
                 refreshBarCompose.setElevation(0f);
                 refreshBarCompose.setTranslationZ(translationZPx);
-                refreshBarCompose.setOutlineProvider(android.view.ViewOutlineProvider.NONE);
+                refreshBarCompose.setOutlineProvider(null);
             }
             refreshBarCompose.bringToFront();
             refreshBarCompose.setClickable(false);
