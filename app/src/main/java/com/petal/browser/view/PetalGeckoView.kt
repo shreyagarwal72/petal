@@ -117,12 +117,28 @@ class PetalGeckoView @JvmOverloads constructor(
     private var lastCrashRecoveryTime: Long = 0L
     private var crashRecoveryCount: Int = 0
 
+    private val skeletonComposeView: androidx.compose.ui.platform.ComposeView = androidx.compose.ui.platform.ComposeView(context)
+    private var pendingSkeletonUrl: String = ""
+    private var isSkeletonShowing: Boolean = false
+
     init {
         isNestedScrollingEnabled = true
         addView(
             geckoView,
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
+        skeletonComposeView.visibility = View.GONE
+        addView(
+            skeletonComposeView,
+            LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
+        val hostAct = getHostActivity()
+        if (hostAct is androidx.lifecycle.LifecycleOwner) {
+            com.petal.browser.compose.composable.PetalWebsiteLoadingSkeletonBridge.bindWebsiteLoadingSkeleton(
+                skeletonComposeView,
+                hostAct
+            ) { pendingSkeletonUrl }
+        }
         initGeckoSession()
         album.setBrowserController(globalBrowserController)
         this.pwaManager = PetalPwaManager(context, this, null)
@@ -164,6 +180,7 @@ class PetalGeckoView @JvmOverloads constructor(
             }
 
             override fun onPageStop(session: GeckoSession, success: Boolean) {
+                hideLoadingSkeleton()
                 isStopped = true
                 updateProgress(BrowserUnit.LOADING_STOPPED)
                 updatePreviewCache()
@@ -185,6 +202,9 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onProgressChange(session: GeckoSession, progress: Int) {
                 currentProgress = progress
                 updateProgress(progress)
+                if (progress >= 30) {
+                    hideLoadingSkeleton()
+                }
             }
 
             override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {
@@ -247,6 +267,11 @@ class PetalGeckoView @JvmOverloads constructor(
                     if (uri.equals("about:blank", ignoreCase = true)) {
                         return GeckoResult.fromValue(AllowOrDeny.ALLOW)
                     }
+                    return GeckoResult.fromValue(AllowOrDeny.DENY)
+                }
+
+                // Handle Android deep links and external app URI schemes (intent://, market://, tel:, etc.)
+                if (handleDeepLinkOrCustomScheme(uri)) {
                     return GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
 
@@ -669,6 +694,60 @@ class PetalGeckoView @JvmOverloads constructor(
                 return GeckoResult.fromValue(request.dismiss())
             }
 
+            override fun onFilePrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.FilePrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                val geckoResult = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                val act = getHostActivity()
+                if (act !is com.petal.browser.activity.BrowserActivity) {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
+                act.runOnUiThread {
+                    val isMultiple = prompt.type == GeckoSession.PromptDelegate.FilePrompt.Type.MULTIPLE
+                    val mimeTypes = prompt.mimeTypes?.filter { !it.isNullOrBlank() }?.toTypedArray() ?: emptyArray()
+
+                    act.showFileChooser(
+                        object : android.webkit.ValueCallback<Array<android.net.Uri>?> {
+                            override fun onReceiveValue(value: Array<android.net.Uri>?) {
+                                if (value == null || value.isEmpty()) {
+                                    if (!prompt.isComplete) {
+                                        geckoResult.complete(prompt.dismiss())
+                                    }
+                                } else if (isMultiple) {
+                                    if (!prompt.isComplete) {
+                                        geckoResult.complete(prompt.confirm(act, value))
+                                    }
+                                } else {
+                                    if (!prompt.isComplete) {
+                                        geckoResult.complete(prompt.confirm(act, value[0]))
+                                    }
+                                }
+                            }
+                        },
+                        object : android.webkit.WebChromeClient.FileChooserParams() {
+                            override fun getMode(): Int = if (isMultiple) MODE_OPEN_MULTIPLE else MODE_OPEN
+                            override fun getAcceptTypes(): Array<String> = mimeTypes
+                            override fun isCaptureEnabled(): Boolean = prompt.capture != GeckoSession.PromptDelegate.FilePrompt.Capture.NONE
+                            override fun getTitle(): CharSequence? = null
+                            override fun getFilenameDefault(): String? = null
+                            override fun createIntent(): android.content.Intent {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
+                                    addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                                    if (isMultiple) putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                    type = if (mimeTypes.isNotEmpty() && mimeTypes[0].isNotBlank()) mimeTypes[0] else "*/*"
+                                    if (mimeTypes.size > 1) {
+                                        putExtra(android.content.Intent.EXTRA_MIME_TYPES, mimeTypes)
+                                    }
+                                }
+                                return intent
+                            }
+                        }
+                    )
+                }
+                return geckoResult
+            }
+
             override fun onCreditCardSave(
                 session: GeckoSession,
                 request: GeckoSession.PromptDelegate.AutocompleteRequest<org.mozilla.geckoview.Autocomplete.CreditCardSaveOption>
@@ -721,25 +800,32 @@ class PetalGeckoView @JvmOverloads constructor(
 
         // Scroll Delegate for Tactile Haptics and Address Bar Collapsing
         session.scrollDelegate = object : GeckoSession.ScrollDelegate {
+            private var lastAddressBarScrollY: Int = 0
+
             override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
                 currentScrollX = scrollX
                 currentScrollY = scrollY
                 val act = getHostActivity() ?: return
                 act.runOnUiThread {
-                    if (Math.abs(scrollY - lastScrollHapticY) > 36) {
-                        lastScrollHapticY = scrollY
-                        if (com.petal.browser.haptics.PetalHapticEngine.isScrollHapticsEnabled(context)) {
-                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
-                                .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.45f, 60L)
+                    // Smoothly handle address bar collapsing with a comfortable delta threshold
+                    val deltaY = scrollY - lastAddressBarScrollY
+                    if (Math.abs(deltaY) > 28) {
+                        onScrollChangeListener?.let { listener ->
+                            if (deltaY > 0) {
+                                listener.onScrollDown()
+                            } else {
+                                listener.onScrollUp()
+                            }
                         }
+                        lastAddressBarScrollY = scrollY
                     }
 
-                    onScrollChangeListener?.let { listener ->
-                        val dy = scrollY - lastScrollHapticY
-                        if (dy > 12) {
-                            listener.onScrollDown()
-                        } else if (dy < -12) {
-                            listener.onScrollUp()
+                    // Tactile haptics: only check when enabled, with spaced interval
+                    if (com.petal.browser.haptics.PetalHapticEngine.isScrollHapticsEnabled(context)) {
+                        if (Math.abs(scrollY - lastScrollHapticY) > 64) {
+                            lastScrollHapticY = scrollY
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                                .play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.40f, 50L)
                         }
                     }
                 }
@@ -977,7 +1063,8 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
-        if (BrowserUnit.isHomePage(targetUrl) || BrowserUnit.isHomePage(url)) {
+        if (BrowserUnit.isHomePage(targetUrl) || BrowserUnit.isHomePage(url) || targetUrl.equals("about:blank", ignoreCase = true)) {
+            hideLoadingSkeleton()
             session.loadUri("about:blank")
             currentUrl = "about:blank"
             currentTitle = "Petal Home"
@@ -985,6 +1072,12 @@ class PetalGeckoView @JvmOverloads constructor(
             return
         }
 
+        if (handleDeepLinkOrCustomScheme(targetUrl)) {
+            hideLoadingSkeleton()
+            return
+        }
+
+        showLoadingSkeleton(targetUrl)
         currentUrl = targetUrl
         album.setAlbumTitle(targetUrl, targetUrl)
         session.loadUri(targetUrl)
@@ -1085,6 +1178,9 @@ class PetalGeckoView @JvmOverloads constructor(
     fun reload() {
         isStopped = false
         applySettings()
+        if (currentUrl.isNotBlank() && !BrowserUnit.isHomePage(currentUrl) && !currentUrl.equals("about:blank", ignoreCase = true)) {
+            showLoadingSkeleton(currentUrl)
+        }
         session.reload()
     }
 
@@ -1479,6 +1575,101 @@ class PetalGeckoView @JvmOverloads constructor(
         } catch (e: Exception) {
             false
         }
+    }
+
+    private fun showLoadingSkeleton(url: String) {
+        if (BrowserUnit.isHomePage(url) || url.equals("about:blank", ignoreCase = true)) {
+            hideLoadingSkeleton()
+            return
+        }
+        pendingSkeletonUrl = url
+        isSkeletonShowing = true
+        post {
+            val hostAct = getHostActivity()
+            if (hostAct is androidx.lifecycle.LifecycleOwner && skeletonComposeView.childCount == 0) {
+                com.petal.browser.compose.composable.PetalWebsiteLoadingSkeletonBridge.bindWebsiteLoadingSkeleton(
+                    skeletonComposeView,
+                    hostAct
+                ) { pendingSkeletonUrl }
+            }
+            skeletonComposeView.alpha = 1f
+            skeletonComposeView.visibility = View.VISIBLE
+            skeletonComposeView.bringToFront()
+        }
+    }
+
+    private fun hideLoadingSkeleton() {
+        if (!isSkeletonShowing) return
+        isSkeletonShowing = false
+        post {
+            skeletonComposeView.animate()
+                .alpha(0f)
+                .setDuration(220L)
+                .withEndAction {
+                    skeletonComposeView.visibility = View.GONE
+                }
+                .start()
+        }
+    }
+
+    private fun handleDeepLinkOrCustomScheme(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val lower = url.lowercase()
+        if (lower.startsWith("http://") || lower.startsWith("https://") ||
+            lower.startsWith("about:") || lower.startsWith("blob:") ||
+            lower.startsWith("data:") || lower.startsWith("javascript:") ||
+            lower.startsWith("petal:")
+        ) {
+            return false
+        }
+
+        val act = getHostActivity() ?: return false
+        if (lower.startsWith("intent://")) {
+            try {
+                val intent = android.content.Intent.parseUri(url, android.content.Intent.URI_INTENT_SCHEME)
+                if (intent != null) {
+                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val pm = act.packageManager
+                    if (pm != null && intent.resolveActivity(pm) != null) {
+                        act.startActivity(intent)
+                        return true
+                    }
+                    val fallbackUrl = intent.getStringExtra("browser_fallback_url")
+                    if (!fallbackUrl.isNullOrBlank()) {
+                        act.runOnUiThread { loadUrl(fallbackUrl) }
+                        return true
+                    }
+                    val pkg = intent.`package`
+                    if (!pkg.isNullOrBlank()) {
+                        try {
+                            val marketIntent = android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse("market://details?id=$pkg")
+                            )
+                            marketIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            act.startActivity(marketIntent)
+                            return true
+                        } catch (_: Exception) {}
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w(TAG, "Error handling intent scheme: $url", e)
+            }
+            return true
+        }
+
+        try {
+            val parsedUri = android.net.Uri.parse(url)
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, parsedUri)
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            val pm = act.packageManager
+            if (pm != null && intent.resolveActivity(pm) != null) {
+                act.startActivity(intent)
+                return true
+            }
+        } catch (_: Exception) {}
+
+        return false
     }
 }
 

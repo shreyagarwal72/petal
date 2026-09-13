@@ -52,6 +52,15 @@ object PetalMediaPickerBridge {
             val allowMultiple = fileChooserParams != null && fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
             val acceptTypes = fileChooserParams?.acceptTypes
 
+            val isExplicitNonMedia = acceptTypes != null && acceptTypes.isNotEmpty() && acceptTypes.none {
+                val lower = it.lowercase()
+                lower.contains("image") || lower.contains("video") || lower.contains("audio") || lower.contains("*/*") || lower.isEmpty()
+            }
+            if (isExplicitNonMedia) {
+                onBrowseSystemFallback()
+                return@runOnUiThread
+            }
+
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
