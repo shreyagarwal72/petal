@@ -21,6 +21,10 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.WebExtension
 import org.mozilla.geckoview.WebExtensionController
+import com.petal.browser.browser.AlbumController
+import com.petal.browser.browser.BrowserContainer
+import com.petal.browser.view.PetalGeckoView
+import com.petal.browser.activity.BrowserActivity
 
 /**
  * PetalExtensionManager
@@ -62,7 +66,9 @@ object PetalExtensionManager {
     data class PendingPopup(
         val extensionId: String,
         val extensionName: String,
-        val session: GeckoSession
+        val session: GeckoSession,
+        /** The real browsing tab that opened this popup, when Gecko supplied one. */
+        val sourceSession: GeckoSession? = null
     )
 
     data class InstalledExtension(
@@ -218,6 +224,16 @@ object PetalExtensionManager {
 
     /** Latest default browser/page action for each installed extension. */
     private val actionByExtensionId = mutableMapOf<String, WebExtension.Action>()
+    /** Per-tab actions are important for extensions such as uBlock that expose different
+     * state/badges depending on the current website. */
+    private val sessionActionByExtensionId = java.util.concurrent.ConcurrentHashMap<GeckoSession, MutableMap<String, WebExtension.Action>>()
+
+    private fun rememberAction(extension: WebExtension, session: GeckoSession?, action: WebExtension.Action) {
+        synchronized(actionByExtensionId) { actionByExtensionId[extension.id] = action }
+        if (session != null) {
+            sessionActionByExtensionId.getOrPut(session) { java.util.concurrent.ConcurrentHashMap() }[extension.id] = action
+        }
+    }
 
     private val _busy = MutableStateFlow(false)
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
@@ -300,6 +316,7 @@ object PetalExtensionManager {
         controller.setAddonManagerDelegate(object : WebExtensionController.AddonManagerDelegate {
             override fun onInstalled(extension: WebExtension) {
                 attachActionDelegate(extension)
+                attachExtensionToOpenSessions(extension)
                 refresh()
             }
 
@@ -319,12 +336,14 @@ object PetalExtensionManager {
             override fun onEnabling(extension: WebExtension) { refresh() }
             override fun onEnabled(extension: WebExtension) {
                 attachActionDelegate(extension)
+                attachExtensionToOpenSessions(extension)
                 refresh()
             }
             override fun onDisabling(extension: WebExtension) { refresh() }
             override fun onDisabled(extension: WebExtension) { refresh() }
             override fun onReady(extension: WebExtension) {
                 attachActionDelegate(extension)
+                attachExtensionToOpenSessions(extension)
                 refresh()
             }
         })
@@ -366,7 +385,7 @@ object PetalExtensionManager {
                     session: GeckoSession?,
                     action: WebExtension.Action
                 ) {
-                    synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
+                    rememberAction(ext, session, action)
                 }
 
                 override fun onPageAction(
@@ -374,7 +393,7 @@ object PetalExtensionManager {
                     session: GeckoSession?,
                     action: WebExtension.Action
                 ) {
-                    synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
+                    rememberAction(ext, session, action)
                 }
 
                 override fun onOpenPopup(
@@ -396,47 +415,112 @@ object PetalExtensionManager {
      * Attaches action delegates for all active extensions to a given tab's GeckoSession,
      * connecting tab-specific extension actions and badges to the active browsing context.
      */
-    @JvmStatic
-    fun attachSession(session: GeckoSession?) {
-        if (session == null) return
-        val exts = _extensions.value
-        for (extItem in exts) {
-            val ext = extItem.raw
+    private fun attachExtensionToOpenSessions(extension: WebExtension) {
+        val ctx = appContext ?: return
+        BrowserContainer.list().forEach { controller ->
+            val gecko = controller as? PetalGeckoView ?: return@forEach
+            val session = gecko.session
+            if (!session.isOpen) return@forEach
             try {
-                session.webExtensionController.setActionDelegate(ext, object : WebExtension.ActionDelegate {
-                    override fun onBrowserAction(
-                        ext: WebExtension,
-                        geckoSession: GeckoSession?,
-                        action: WebExtension.Action
-                    ) {
-                        synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
+                session.webExtensionController.setActionDelegate(extension, object : WebExtension.ActionDelegate {
+                    override fun onBrowserAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
+                        rememberAction(ext, eventSession ?: session, action)
                     }
-
-                    override fun onPageAction(
-                        ext: WebExtension,
-                        geckoSession: GeckoSession?,
-                        action: WebExtension.Action
-                    ) {
-                        synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
+                    override fun onPageAction(ext: WebExtension, eventSession: GeckoSession?, action: WebExtension.Action) {
+                        rememberAction(ext, eventSession ?: session, action)
                     }
-
-                    override fun onOpenPopup(
-                        ext: WebExtension,
-                        action: WebExtension.Action
-                    ): GeckoResult<GeckoSession>? = createPopupSession(ext)
-
-                    override fun onTogglePopup(
-                        ext: WebExtension,
-                        action: WebExtension.Action
-                    ): GeckoResult<GeckoSession>? = createPopupSession(ext)
+                    override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
+                    override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
                 })
-            } catch (e: Exception) {
-                Log.d(TAG, "Failed to attach session action delegate for ${ext.id}", e)
+                session.webExtensionController.setTabDelegate(extension, createSessionTabDelegate(ctx))
+            } catch (t: Throwable) {
+                Log.d(TAG, "Failed to attach newly-installed extension ${extension.id} to tab", t)
             }
         }
     }
 
-    private fun createPopupSession(extension: WebExtension): GeckoResult<GeckoSession>? {
+    /**
+     * Gecko's SessionTabDelegate is the missing piece between a WebExtension popup and
+     * Petal's real tab model. Without it, APIs such as browser.tabs.update/remove can
+     * execute in Gecko but have no effect on the visible Petal tab.
+     */
+    private fun createSessionTabDelegate(context: Context): WebExtension.SessionTabDelegate {
+        return object : WebExtension.SessionTabDelegate {
+            override fun onCloseTab(extension: WebExtension?, session: GeckoSession): GeckoResult<AllowOrDeny> {
+                Handler(Looper.getMainLooper()).post {
+                    try {
+                        val activity = findBrowserActivity(context) ?: return@post
+                        val controller = BrowserContainer.list().firstOrNull {
+                            (it as? PetalGeckoView)?.session === session
+                        }
+                        if (controller != null) activity.removeAlbum(controller)
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Extension tab close request failed", t)
+                    }
+                }
+                return GeckoResult.fromValue(AllowOrDeny.ALLOW)
+            }
+
+            override fun onUpdateTab(
+                extension: WebExtension,
+                session: GeckoSession,
+                details: WebExtension.UpdateTabDetails
+            ): GeckoResult<AllowOrDeny> {
+                Handler(Looper.getMainLooper()).post {
+                    try {
+                        val activity = findBrowserActivity(context) ?: return@post
+                        val controller = BrowserContainer.list().firstOrNull {
+                            (it as? PetalGeckoView)?.session === session
+                        }
+                        val gecko = controller as? PetalGeckoView
+                        if (gecko != null) {
+                            details.url?.takeIf { it.isNotBlank() }?.let(gecko::loadUrl)
+                            if (details.active == true) activity.showAlbum(gecko)
+                        }
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Extension tab update request failed", t)
+                    }
+                }
+                return GeckoResult.fromValue(AllowOrDeny.ALLOW)
+            }
+        }
+    }
+
+    private fun attachTabDelegate(session: GeckoSession, context: Context) {
+        for (extItem in _extensions.value) {
+            try {
+                session.webExtensionController.setTabDelegate(extItem.raw, createSessionTabDelegate(context))
+            } catch (t: Throwable) {
+                Log.d(TAG, "Failed to attach tab delegate for ${extItem.id}", t)
+            }
+        }
+    }
+
+    @JvmStatic
+    fun attachSession(session: GeckoSession?) {
+        if (session == null) return
+        val ctx = appContext ?: return
+        for (extItem in _extensions.value) {
+            val ext = extItem.raw
+            try {
+                session.webExtensionController.setActionDelegate(ext, object : WebExtension.ActionDelegate {
+                    override fun onBrowserAction(ext: WebExtension, geckoSession: GeckoSession?, action: WebExtension.Action) {
+                        rememberAction(ext, geckoSession ?: session, action)
+                    }
+                    override fun onPageAction(ext: WebExtension, geckoSession: GeckoSession?, action: WebExtension.Action) {
+                        rememberAction(ext, geckoSession ?: session, action)
+                    }
+                    override fun onOpenPopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
+                    override fun onTogglePopup(ext: WebExtension, action: WebExtension.Action): GeckoResult<GeckoSession>? = createPopupSession(ext, session)
+                })
+                session.webExtensionController.setTabDelegate(ext, createSessionTabDelegate(ctx))
+            } catch (e: Exception) {
+                Log.d(TAG, "Failed to attach extension delegates for ${ext.id}", e)
+            }
+        }
+    }
+
+    private fun createPopupSession(extension: WebExtension, sourceSession: GeckoSession? = null): GeckoResult<GeckoSession>? {
         _pendingPopup.value?.session?.let { existing ->
             try {
                 existing.setActive(false)
@@ -445,7 +529,12 @@ object PetalExtensionManager {
         }
         _pendingPopup.value = null
 
-        val popupSession = GeckoSession()
+        val popupSettings = org.mozilla.geckoview.GeckoSessionSettings.Builder()
+            .usePrivateMode(false)
+            .allowJavascript(true)
+            .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
+            .build()
+        val popupSession = GeckoSession(popupSettings)
         val ctx = appContext
         if (ctx != null) {
             val runtime = PetalGeckoRuntime.getOrCreate(ctx)
@@ -456,7 +545,8 @@ object PetalExtensionManager {
         val popup = PendingPopup(
             extensionId = extension.id,
             extensionName = extension.metaData.name ?: extension.id,
-            session = popupSession
+            session = popupSession,
+            sourceSession = sourceSession
         )
         _pendingPopup.value = popup
         notifyPopupRequested(popup)
@@ -493,7 +583,9 @@ object PetalExtensionManager {
         val ctx = context ?: appContext
 
         // 1. Try action.click() if an action was captured and registered
-        val action = synchronized(actionByExtensionId) { actionByExtensionId[extensionId] }
+        val activeSession = currentBrowserSession(ctx)
+        val action = (activeSession?.let { sessionActionByExtensionId[it]?.get(extensionId) })
+            ?: synchronized(actionByExtensionId) { actionByExtensionId[extensionId] }
         if (action != null) {
             try {
                 action.click()
@@ -579,6 +671,11 @@ object PetalExtensionManager {
         } else {
             openDirectPopup(extItem.raw, optionsUrl, context)
         }
+    }
+
+    private fun currentBrowserSession(context: Context): GeckoSession? {
+        val activity = findBrowserActivity(context) ?: return null
+        return (activity.currentAlbumController as? PetalGeckoView)?.session
     }
 
     private fun findBrowserActivity(context: Context): com.petal.browser.activity.BrowserActivity? {
