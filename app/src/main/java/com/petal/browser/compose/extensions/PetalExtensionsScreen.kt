@@ -232,10 +232,13 @@ fun PetalExtensionsScreen(
                                     PetalExtensionManager.setEnabled(ext.raw, enabled)
                                 },
                                 onOpen = {
-                                    // Trigger the extension's own browser-action click, which
-                                    // will invoke the popup flow in PetalExtensionManager if
-                                    // the extension defines one.
+                                    PetalExtensionManager.triggerBrowserAction(ext.id, context)
+                                },
+                                onShowDetails = {
                                     detailExtensionId = ext.id
+                                },
+                                onOpenSettings = {
+                                    PetalExtensionManager.openOptionsPage(ext.id, context)
                                 },
                                 onUninstall = {
                                     val extName = ext.name
@@ -251,9 +254,6 @@ fun PetalExtensionsScreen(
                                             PetalExtensionManager.install(fallbackInstallUrl)
                                         }
                                     }
-                                },
-                                onOpenPopup = {
-                                    PetalExtensionManager.triggerBrowserAction(ext.id, context)
                                 }
                             )
                         }
@@ -333,13 +333,6 @@ fun PetalExtensionsScreen(
     pendingPrompt?.let { prompt ->
         InstallPermissionDialog(prompt = prompt)
     }
-
-    pendingPopup?.let { popup ->
-        ExtensionPopupDialog(
-            popup = popup,
-            onDismiss = { PetalExtensionManager.dismissPopup() }
-        )
-    }
 }
 
 @Composable
@@ -392,8 +385,9 @@ private fun ExtensionRow(
     extension: PetalExtensionManager.InstalledExtension,
     onToggleEnabled: (Boolean) -> Unit,
     onOpen: () -> Unit,
-    onUninstall: () -> Unit,
-    onOpenPopup: () -> Unit
+    onShowDetails: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onUninstall: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     Surface(
@@ -460,6 +454,24 @@ private fun ExtensionRow(
                     Icon(Icons.Rounded.MoreVert, contentDescription = "More options")
                 }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    if (extension.optionsPageUrl != null) {
+                        DropdownMenuItem(
+                            text = { Text("Settings") },
+                            leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
+                            onClick = {
+                                showMenu = false
+                                onOpenSettings()
+                            }
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text("Details") },
+                        leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
+                        onClick = {
+                            showMenu = false
+                            onShowDetails()
+                        }
+                    )
                     DropdownMenuItem(
                         text = { Text("Remove") },
                         leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
@@ -814,6 +826,11 @@ fun PetalExtensionPopupScreen(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
+                    val runtime = PetalGeckoRuntime.getOrCreate(ctx.applicationContext)
+                    if (!popup.session.isOpen) {
+                        popup.session.open(runtime)
+                    }
+                    popup.session.setActive(true)
                     popup.session.contentDelegate = object : GeckoSession.ContentDelegate {
                         override fun onCloseRequest(session: GeckoSession) {
                             (ctx as? ComponentActivity)?.runOnUiThread {
@@ -866,23 +883,5 @@ fun PetalExtensionPopupScreen(
                 view.releaseSession()
             }
         )
-    }
-}
-
-@Composable
-private fun ExtensionPopupDialog(
-    popup: PetalExtensionManager.PendingPopup,
-    onDismiss: () -> Unit
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            PetalExtensionPopupScreen(
-                popup = popup,
-                onDismiss = onDismiss
-            )
-        }
     }
 }
