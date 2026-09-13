@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.lifecycle.setViewTreeSavedStateRegistryOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import com.petal.browser.activity.MediaPlayerActivity
@@ -20,7 +19,6 @@ object PetalMediaSnifferOverlayBridge {
     fun bind(view: ComposeView, activity: ComponentActivity) {
         view.setViewTreeLifecycleOwner(activity)
         view.setViewTreeViewModelStoreOwner(activity)
-        view.setViewTreeSavedStateRegistryOwner(activity)
         view.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         view.setContent {
             val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
