@@ -96,7 +96,13 @@ fun PetalMediaSnifferOverlay(
                                         Icon(Icons.Rounded.PlayArrow, null); Text("Play", modifier = Modifier.padding(start = 6.dp))
                                     }
                                     if (item.type != MediaInterceptor.MediaType.HLS && item.type != MediaInterceptor.MediaType.DASH) {
-                                        AssistChip(onClick = { PetalMediaSniffer.download(context, item); sheetOpen = false }, label = { Icon(Icons.Rounded.Download, null); Text("Download", modifier = Modifier.padding(start = 5.dp)) })
+                                        AssistChip(onClick = {
+                                            PetalMediaSniffer.download(
+                                                context,
+                                                item,
+                                                onEnqueued = { sheetOpen = false }
+                                            )
+                                        }, label = { Icon(Icons.Rounded.Download, null); Text("Download", modifier = Modifier.padding(start = 5.dp)) })
                                     }
                                 }
                             }
