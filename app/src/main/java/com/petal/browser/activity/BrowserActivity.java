@@ -3345,51 +3345,71 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         androidx.compose.ui.platform.ComposeView refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         View addressBarForMargin = findViewById(R.id.compose_address_bar);
         if (refreshBarCompose != null) {
-            // Remove from RelativeLayout if present and re-add directly to window overlay so WebView hardware layer can never obscure it
+            // Keep the refresh indicator inside activity_main's RelativeLayout. Re-parenting
+            // it with addContentView() puts a transparent ComposeView into the decor's
+            // overlay/content hierarchy, which can win hit-testing and Z-order against
+            // GeckoView during cold starts even when the Compose content is visually empty.
+            // Keeping it as the last sibling gives it deterministic drawing order without
+            // creating a separate window-level overlay.
             android.view.ViewParent parent = refreshBarCompose.getParent();
-            if (parent instanceof android.view.ViewGroup) {
+            if (parent instanceof android.view.ViewGroup && parent != findViewById(R.id.main)) {
                 ((android.view.ViewGroup) parent).removeView(refreshBarCompose);
+                android.view.ViewGroup root = findViewById(R.id.main);
+                if (root != null) {
+                    root.addView(refreshBarCompose);
+                }
             }
-            android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+
+            android.view.ViewGroup root = findViewById(R.id.main);
+            if (root != null && refreshBarCompose.getParent() == root) {
+                android.widget.RelativeLayout.LayoutParams params =
+                    refreshBarCompose.getLayoutParams() instanceof android.widget.RelativeLayout.LayoutParams
+                        ? (android.widget.RelativeLayout.LayoutParams) refreshBarCompose.getLayoutParams()
+                        : new android.widget.RelativeLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            (int) HelperUnit.convertDpToPixel(72f, this));
+                params.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+                params.height = (int) HelperUnit.convertDpToPixel(72f, this);
+                params.addRule(android.widget.RelativeLayout.ALIGN_PARENT_TOP, android.widget.RelativeLayout.TRUE);
+                params.removeRule(android.widget.RelativeLayout.ALIGN_PARENT_BOTTOM);
+                params.topMargin = addressBarForMargin != null && addressBarForMargin.getHeight() > 0
+                    ? addressBarForMargin.getHeight() : (int) HelperUnit.convertDpToPixel(56f, this);
+                refreshBarCompose.setLayoutParams(params);
+            }
+
+            com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(
+                refreshBarCompose, this, refreshState
             );
-            // 56dp was a guess and didn't match the address bar's real height on this
-            // device, so the spinner landed on top of the wavy progress line instead of
-            // below it. Measure the actual address bar height once it's laid out, and
-            // keep it in sync if that height ever changes (font scale, theme, etc.).
-            params.topMargin = (int) HelperUnit.convertDpToPixel(56f, this);
-            addContentView(refreshBarCompose, params);
-            com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
+
+            // This view is visual-only. It must never become the transparent touch
+            // interceptor that blocks the PullToRefreshFrameLayout underneath it.
+            refreshBarCompose.setClickable(false);
+            refreshBarCompose.setFocusable(false);
+            refreshBarCompose.setFocusableInTouchMode(false);
+            refreshBarCompose.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            refreshBarCompose.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                // These were raw pixel values (200f), not dp - on most screens that's
-                // 60-90dp of elevation, far past Material's normal range. A View's
-                // elevation shadow is cast using its full rectangular bounds (this
-                // ComposeView is match_parent width), regardless of how little of
-                // that area the actual Compose content paints. So the indicator's
-                // small circle sat inside a huge, mostly-invisible drop shadow that
-                // rendered as a soft dark band/border across the top of the screen,
-                // overlapping and obscuring the spinner itself.
-                // Keep translationZ high enough to win Z-order against sibling
-                // overlays, but drop the outline so no shadow is drawn at all - we
-                // only need this view drawn on top, not lifted with a shadow.
-                float translationZPx = HelperUnit.convertDpToPixel(8f, this);
+                // High Z-order keeps the indicator above GeckoView/progress overlays, but
+                // zero elevation avoids a giant transparent ComposeView shadow.
                 refreshBarCompose.setElevation(0f);
-                refreshBarCompose.setTranslationZ(translationZPx);
+                refreshBarCompose.setTranslationZ(100f);
                 refreshBarCompose.setOutlineProvider(null);
             }
             refreshBarCompose.bringToFront();
-            refreshBarCompose.setClickable(false);
-            refreshBarCompose.setFocusable(false);
 
             if (addressBarForMargin != null) {
-                final android.widget.FrameLayout.LayoutParams finalParams = params;
                 final androidx.compose.ui.platform.ComposeView finalRefreshBar = refreshBarCompose;
                 addressBarForMargin.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
                     int realHeight = v.getHeight();
-                    if (realHeight > 0 && finalParams.topMargin != realHeight) {
-                        finalParams.topMargin = realHeight;
-                        finalRefreshBar.setLayoutParams(finalParams);
+                    if (realHeight > 0 && finalRefreshBar.getParent() != null
+                            && finalRefreshBar.getLayoutParams() instanceof android.widget.RelativeLayout.LayoutParams) {
+                        android.widget.RelativeLayout.LayoutParams lp =
+                            (android.widget.RelativeLayout.LayoutParams) finalRefreshBar.getLayoutParams();
+                        if (lp.topMargin != realHeight) {
+                            lp.topMargin = realHeight;
+                            finalRefreshBar.setLayoutParams(lp);
+                        }
                     }
                 });
             }
