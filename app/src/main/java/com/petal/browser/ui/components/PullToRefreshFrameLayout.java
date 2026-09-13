@@ -3,22 +3,21 @@ package com.petal.browser.ui.components;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 
 /**
  * FrameLayout used for the browser's content container ({@code R.id.main_content})
- * that lets a downward drag from the top of the page drive pull-to-refresh, no
- * matter what's currently inside it - a {@code NinjaWebView}, or one of the
- * Compose screens (home / settings / downloads).
+ * that provides smooth, Chrome/Firefox-like pull-to-refresh UX.
  *
- * A plain {@code View.OnTouchListener} on this container never fires while a
- * WebView (or a Compose child) is on top consuming every touch event itself.
- * This class fixes that the same way {@code SwipeRefreshLayout} does: it
- * intercepts the touch stream itself via {@link #onInterceptTouchEvent} as
- * soon as a clearly vertical, downward drag starts and {@link #canPull} says
- * the content is scrolled to the top - stealing the gesture from the child
- * before it ever gets to consume it.
+ * It filters gestures to match standard mobile browser touch areas:
+ * - Restricts pull initiation touch area to the top portion of the viewport.
+ * - Rejects multi-touch gestures (pinch-to-zoom protection like Firefox / Fennec).
+ * - Filters quick-scale / double-tap drag zoom gestures.
+ * - Enforces vertical swipe dominance over horizontal drags.
+ * - Damps pull travel distance to standard 100dp for snappy, tactile refresh.
+ * - Respects child disallow-intercept requests.
  */
 public class PullToRefreshFrameLayout extends FrameLayout {
 
@@ -37,19 +36,33 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         void onRelease(boolean triggered);
     }
 
-    private static final float DEFAULT_PULL_DISTANCE_DP = 260f;
-    private static final float TRIGGER_THRESHOLD = 0.75f;
+    private static final float DEFAULT_PULL_DISTANCE_DP = 100f;
+    private static final float TRIGGER_THRESHOLD = 0.70f;
+    // Initiate pull only from the upper 60% of the viewport (touch area like Chrome/Firefox)
+    private static final float MAX_TOUCH_AREA_RATIO = 0.60f;
+    private static final float DRAG_DAMPING = 0.60f;
 
     private CanPull canPull = () -> true;
     private OnPullListener onPullListener;
     private OnReleaseListener onReleaseListener;
 
     private final int touchSlop;
+    private final int doubleTapTimeout;
+    private final int doubleTapSlopSquare;
     private float pullDistancePx;
     private float downX;
     private float downY;
+    private float previousX;
+    private float previousY;
     private boolean dragging;
     private boolean intercepting;
+    private boolean hadMultiTouch;
+    private boolean isQuickScaleInProgress;
+    private boolean disallowIntercept;
+
+    private MotionEvent firstDownEvent;
+    private MotionEvent upEvent;
+    private MotionEvent secondDownEvent;
 
     public PullToRefreshFrameLayout(Context context) {
         this(context, null);
@@ -61,7 +74,11 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
     public PullToRefreshFrameLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+        ViewConfiguration vc = ViewConfiguration.get(context);
+        touchSlop = vc.getScaledTouchSlop();
+        doubleTapTimeout = ViewConfiguration.getDoubleTapTimeout();
+        int doubleTapSlop = vc.getScaledDoubleTapSlop();
+        doubleTapSlopSquare = doubleTapSlop * doubleTapSlop;
         pullDistancePx = DEFAULT_PULL_DISTANCE_DP * context.getResources().getDisplayMetrics().density;
     }
 
@@ -77,14 +94,14 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         this.onReleaseListener = listener;
     }
 
-    /** Drag distance (in dp) that maps to 100% pull progress. Defaults to 260dp. */
+    /** Drag distance (in dp) that maps to 100% pull progress. Defaults to 100dp. */
     public void setPullDistanceDp(float dp) {
         this.pullDistancePx = dp * getResources().getDisplayMetrics().density;
     }
 
     private boolean canChildScrollUp() {
         for (int i = 0; i < getChildCount(); i++) {
-            android.view.View child = getChildAt(i);
+            View child = getChildAt(i);
             if (child.getVisibility() == VISIBLE && child.canScrollVertically(-1)) {
                 return true;
             }
@@ -92,22 +109,126 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         return false;
     }
 
+    private void maybeAddDoubleTapEvent(MotionEvent event) {
+        int action = event.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            if (upEvent != null) {
+                if (event.getEventTime() - upEvent.getEventTime() > doubleTapTimeout) {
+                    forgetQuickScaleEvents();
+                    firstDownEvent = MotionEvent.obtain(event);
+                } else {
+                    secondDownEvent = MotionEvent.obtain(event);
+                }
+            } else {
+                forgetQuickScaleEvents();
+                firstDownEvent = MotionEvent.obtain(event);
+            }
+        } else if (action == MotionEvent.ACTION_UP && firstDownEvent != null) {
+            upEvent = MotionEvent.obtain(event);
+        }
+    }
+
+    private boolean isQuickScaleGesture() {
+        if (firstDownEvent == null || upEvent == null || secondDownEvent == null) {
+            return false;
+        }
+        if (secondDownEvent.getEventTime() - upEvent.getEventTime() > doubleTapTimeout) {
+            return false;
+        }
+        int deltaX = (int) (firstDownEvent.getX() - secondDownEvent.getX());
+        int deltaY = (int) (firstDownEvent.getY() - secondDownEvent.getY());
+        return (deltaX * deltaX + deltaY * deltaY) < doubleTapSlopSquare;
+    }
+
+    private void forgetQuickScaleEvents() {
+        if (firstDownEvent != null) {
+            firstDownEvent.recycle();
+            firstDownEvent = null;
+        }
+        if (upEvent != null) {
+            upEvent.recycle();
+            upEvent = null;
+        }
+        if (secondDownEvent != null) {
+            secondDownEvent.recycle();
+            secondDownEvent = null;
+        }
+        isQuickScaleInProgress = false;
+    }
+
+    private void cancelDrag() {
+        if (dragging) {
+            dragging = false;
+            intercepting = false;
+            if (onReleaseListener != null) {
+                onReleaseListener.onRelease(false);
+            }
+        }
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        switch (ev.getActionMasked()) {
+        if (!isEnabled() || disallowIntercept) {
+            return false;
+        }
+
+        // Multi-touch rejection (pinch-to-zoom protection like Firefox / Chrome)
+        if (ev.getPointerCount() > 1 || hadMultiTouch) {
+            hadMultiTouch = true;
+            if (dragging) {
+                cancelDrag();
+            }
+            return false;
+        }
+
+        int action = ev.getActionMasked();
+
+        if (action == MotionEvent.ACTION_CANCEL || (action == MotionEvent.ACTION_UP && isQuickScaleInProgress)) {
+            forgetQuickScaleEvents();
+            cancelDrag();
+            return false;
+        }
+
+        maybeAddDoubleTapEvent(ev);
+        if (isQuickScaleGesture()) {
+            isQuickScaleInProgress = true;
+            return false;
+        }
+
+        switch (action) {
             case MotionEvent.ACTION_DOWN:
                 downX = ev.getX();
                 downY = ev.getY();
+                previousX = ev.getX();
+                previousY = ev.getY();
                 dragging = false;
                 intercepting = false;
+                hadMultiTouch = false;
+                disallowIntercept = false;
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if (!intercepting && !canChildScrollUp() && canPull.canPull()) {
-                    float dx = ev.getX() - downX;
-                    float dy = ev.getY() - downY;
-                    // Allow pulling when dragging downward from top of web content
-                    if (dy > touchSlop * 1.5f && dy > Math.abs(dx) * 1.2f) {
+                float currentX = ev.getX();
+                float currentY = ev.getY();
+                float xDistance = Math.abs(currentX - previousX);
+                float yDistance = Math.abs(currentY - previousY);
+                previousX = currentX;
+                previousY = currentY;
+
+                // Disable pull to refresh if the movement is horizontal (like Firefox / Chrome)
+                if (xDistance > yDistance && !dragging) {
+                    return false;
+                }
+
+                // Touch area check: pull-to-refresh must be initiated in the upper portion of the content view
+                int height = getHeight();
+                boolean withinTouchArea = height <= 0 || downY <= (height * MAX_TOUCH_AREA_RATIO);
+
+                if (!intercepting && withinTouchArea && !canChildScrollUp() && canPull.canPull()) {
+                    float dx = currentX - downX;
+                    float dy = currentY - downY;
+                    // Allow pulling when dragging downward from top of web content with vertical dominance
+                    if (dy > touchSlop && dy > Math.abs(dx) * 1.35f) {
                         intercepting = true;
                         dragging = true;
                         return true;
@@ -123,17 +244,38 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             default:
                 break;
         }
-        return false;
+        return dragging;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if (!isEnabled() || disallowIntercept) {
+            return false;
+        }
+
+        if (event.getPointerCount() > 1 || hadMultiTouch) {
+            hadMultiTouch = true;
+            if (dragging) {
+                cancelDrag();
+            }
+            return false;
+        }
+
         switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                downX = event.getX();
+                downY = event.getY();
+                previousX = event.getX();
+                previousY = event.getY();
+                break;
+
             case MotionEvent.ACTION_MOVE:
                 if (dragging) {
-                    float dy = Math.max(0f, event.getY() - downY);
+                    float rawDy = Math.max(0f, event.getY() - downY);
+                    float dampedDy = rawDy * DRAG_DAMPING;
+                    float progress = Math.min(1f, dampedDy / pullDistancePx);
                     if (onPullListener != null) {
-                        onPullListener.onPull(Math.min(1f, dy / pullDistancePx));
+                        onPullListener.onPull(progress);
                     }
                 }
                 break;
@@ -141,14 +283,16 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 if (dragging) {
-                    float dy = Math.max(0f, event.getY() - downY);
-                    float progress = Math.min(1f, dy / pullDistancePx);
+                    float rawDy = Math.max(0f, event.getY() - downY);
+                    float dampedDy = rawDy * DRAG_DAMPING;
+                    float progress = Math.min(1f, dampedDy / pullDistancePx);
                     dragging = false;
                     intercepting = false;
                     if (onReleaseListener != null) {
                         onReleaseListener.onRelease(progress >= TRIGGER_THRESHOLD);
                     }
                 }
+                forgetQuickScaleEvents();
                 break;
 
             default:
@@ -159,12 +303,9 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
     @Override
     public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-        // Only suppress the disallow call if this container is actively handling
-        // a vertical pull-to-refresh drag right now. In every other situation,
-        // let child views (including GeckoView for edge swipes / back gestures)
-        // properly claim touch events.
-        if (dragging || intercepting) {
-            return;
+        this.disallowIntercept = disallowIntercept;
+        if (disallowIntercept && dragging) {
+            cancelDrag();
         }
         super.requestDisallowInterceptTouchEvent(disallowIntercept);
     }

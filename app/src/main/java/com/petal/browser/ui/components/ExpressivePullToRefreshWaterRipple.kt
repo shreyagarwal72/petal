@@ -40,7 +40,7 @@ fun ExpressivePullToRefreshWaterRipple(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .padding(top = 12.dp)
+            .padding(top = 8.dp)
             .graphicsLayer {
                 alpha = alphaAnim
                 scaleX = scaleAnim
@@ -49,13 +49,13 @@ fun ExpressivePullToRefreshWaterRipple(
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(40.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f))
         )
         Box(
             modifier = Modifier
-                .size(32.dp)
+                .size(26.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primary)
         )

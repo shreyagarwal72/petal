@@ -3337,6 +3337,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 refreshBarCompose.setTranslationZ(200f);
             }
             refreshBarCompose.bringToFront();
+            refreshBarCompose.setClickable(false);
+            refreshBarCompose.setFocusable(false);
 
             if (addressBarForMargin != null) {
                 final android.widget.FrameLayout.LayoutParams finalParams = params;
@@ -3366,7 +3368,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // page (PetalGeckoView), the home screen, or settings/downloads - all of
         // them get swapped into this same container, and PullToRefreshFrameLayout
         // intercepts the drag regardless of what's currently inside it.
-        contentFrame.setPullDistanceDp(300f);
+        contentFrame.setPullDistanceDp(100f);
         contentFrame.setCanPull(() -> {
             // If internal native Compose views (Settings, History, Downloads, Account) are swapped into contentFrame, disable pull to refresh
             if (isOverlayScreenShowing) {
@@ -3406,7 +3408,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             float prevProgress = refreshState.getPullProgress();
             refreshState.setPullProgress(progress);
-            if (progress >= 0.75f && prevProgress < 0.75f) {
+            if (progress >= 0.70f && prevProgress < 0.70f) {
                 com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this)
                     .playIfEnabled(BrowserActivity.this, com.petal.browser.haptics.PetalHapticEngine.Pattern.TICK, 0.6f);
             }
