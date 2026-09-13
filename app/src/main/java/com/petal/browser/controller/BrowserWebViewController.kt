@@ -88,7 +88,13 @@ object BrowserWebViewController {
         isIncognito: Boolean,
         adoptedSession: org.mozilla.geckoview.GeckoSession? = null
     ): PetalGeckoView {
-        val geckoView = PetalGeckoView(context = activity, adoptedSession = adoptedSession)
+        // Pass the profile mode into the constructor so GeckoSession is created with
+        // private mode before open(). Setting Incognito after construction is too late.
+        val geckoView = PetalGeckoView(
+            context = activity,
+            adoptedSession = adoptedSession,
+            initialIncognito = isIncognito
+        )
         if (isIncognito) {
             geckoView.setIncognito(true)
         }
