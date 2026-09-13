@@ -229,9 +229,44 @@ object PetalExtensionManager {
     private val sessionActionByExtensionId = java.util.concurrent.ConcurrentHashMap<GeckoSession, MutableMap<String, WebExtension.Action>>()
 
     private fun rememberAction(extension: WebExtension, session: GeckoSession?, action: WebExtension.Action) {
-        synchronized(actionByExtensionId) { actionByExtensionId[extension.id] = action }
+        // GeckoView may deliver the action with the originating tab session. Keep the
+        // per-session action authoritative so a stale action from another tab cannot be
+        // clicked when the user opens an extension from the current tab.
         if (session != null) {
-            sessionActionByExtensionId.getOrPut(session) { java.util.concurrent.ConcurrentHashMap() }[extension.id] = action
+            sessionActionByExtensionId
+                .computeIfAbsent(session) { java.util.concurrent.ConcurrentHashMap() }[extension.id] = action
+        } else {
+            synchronized(actionByExtensionId) { actionByExtensionId[extension.id] = action }
+        }
+    }
+
+    /**
+     * Keeps GeckoView's WebExtension tab dispatcher in sync with Petal's foreground tab.
+     * This is required for Action.click()/tabs APIs to target the same tab the user sees.
+     */
+    @JvmStatic
+    fun setActiveBrowserSession(oldSession: GeckoSession?, newSession: GeckoSession?) {
+        val ctx = appContext ?: return
+        val controller = try {
+            PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
+        } catch (t: Throwable) {
+            Log.w(TAG, "Unable to access WebExtensionController while changing active tab", t)
+            return
+        }
+
+        if (oldSession != null && oldSession !== newSession && oldSession.isOpen) {
+            try { controller.setTabActive(oldSession, false) }
+            catch (t: Throwable) { Log.d(TAG, "Failed to deactivate extension tab session", t) }
+        }
+        if (newSession != null && newSession.isOpen) {
+            try {
+                // Make sure delegates exist even when the tab was created before the
+                // extension list finished loading during a cold start.
+                attachSession(newSession)
+                controller.setTabActive(newSession, true)
+            } catch (t: Throwable) {
+                Log.d(TAG, "Failed to activate extension tab session", t)
+            }
         }
     }
 
@@ -584,11 +619,30 @@ object PetalExtensionManager {
 
         // 1. Try action.click() if an action was captured and registered
         val activeSession = currentBrowserSession(ctx)
-        val action = (activeSession?.let { sessionActionByExtensionId[it]?.get(extensionId) })
-            ?: synchronized(actionByExtensionId) { actionByExtensionId[extensionId] }
+        val sessionAction = activeSession?.let { sessionActionByExtensionId[it]?.get(extensionId) }
+        val fallbackAction = synchronized(actionByExtensionId) { actionByExtensionId[extensionId] }
+
+        // Prefer the action belonging to the visible tab. Only use the global action when
+        // there is no live active tab action at all (for example during very early startup).
+        val action = sessionAction ?: if (activeSession == null) fallbackAction else null
         if (action != null) {
             try {
                 action.click()
+                // Some GeckoView/extension combinations deliver the popup asynchronously.
+                // If no popup was produced, the manifest URL fallback below will recover it.
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (_pendingPopup.value == null) {
+                        try {
+                            val stillActive = currentBrowserSession(ctx)
+                            if (stillActive === activeSession) {
+                                val directUrl = resolveExtensionPopupUrl(rawExt)
+                                if (!directUrl.isNullOrBlank()) openDirectPopup(rawExt, directUrl, ctx)
+                            }
+                        } catch (t: Throwable) {
+                            Log.d(TAG, "Delayed extension popup fallback failed for $extensionId", t)
+                        }
+                    }
+                }, 700L)
                 return
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to click extension action for $extensionId, falling back to direct popup load", e)
