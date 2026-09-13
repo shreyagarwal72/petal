@@ -1,3 +1,14 @@
+### v3.1.1 — 🧭 Address Bar Polish & Navigation Harmony 🪄✨
+
+> *"Pixel-perfect address bar positioning, zero navbar overlap, and seamless scroll dynamics."*
+
+#### 🐛 Bug & UI/UX Fixes
+- **Bottom Address Bar Navigation Offset**: Fixed bottom address bar overlapping bottom navigation bars (both floating and non-floating styles). Corrected dynamic margin calculations incorporating system navigation bar insets and scheduled layout settle listeners.
+- **Address Bar Scroll Visibility**: Fixed address bar not restoring or failing to show after scrolling in web sessions. Synchronized GeckoView and WebView scroll change listeners to properly animate collapse and expansion together with bottom navigation.
+- **State Reset on Page Load**: Guaranteed address bar visibility and uncollapsed state resets on page navigation, reload, and tab switching, hiding orphaned floating bubble toggles.
+
+---
+
 ### v3.1 — 📑 Tab Sorcery & Seamless Flow 🪄✨
 
 > *"Instant previews, persistent tabs, and unbreakable navigation flow."*
