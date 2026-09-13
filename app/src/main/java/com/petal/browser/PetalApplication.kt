@@ -65,6 +65,7 @@ class PetalApplication : Application() {
         try {
             com.petal.browser.logger.PetalAppLogger.init(this)
             com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(this)
+            com.petal.browser.media.sniffer.PetalMediaGrabberInstaller.install(this)
             com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(this)
             PetalPredictiveJunction.init(
                 PreferenceManager.getDefaultSharedPreferences(this)
