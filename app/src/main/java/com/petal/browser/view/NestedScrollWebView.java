@@ -438,7 +438,6 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
         if (action == MotionEvent.ACTION_DOWN) {
             nestedOffsets[0] = 0;
             nestedOffsets[1] = 0;
-            onGestureExclusionRefreshNeeded();
         }
 
         vtev.offsetLocation(nestedOffsets[0], nestedOffsets[1]);

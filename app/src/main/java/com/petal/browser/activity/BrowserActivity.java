@@ -455,6 +455,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         sp = PreferenceManager.getDefaultSharedPreferences(context);
         com.petal.browser.unit.PetalSessionHistoryManager.initSession();
         com.petal.browser.extensions.PetalExtensionManager.attach(context);
+        com.petal.browser.extensions.PetalExtensionManager.setPopupRequestListener(popup -> {
+            runOnUiThread(() -> showExtensionPopup(popup));
+        });
 
         try {
             Intent mediaServiceIntent = new Intent(this, com.petal.browser.media.PetalMediaSessionService.class);
@@ -555,16 +558,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
-        // Never allow browser content to reserve the system back edges.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            getWindow().getDecorView().post(() -> {
-                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
-                } else if (ninjaWebView != null) {
-                    ninjaWebView.resetGestureExclusionRects();
-                }
-            });
-        }
         predictiveBackRoot = findViewById(R.id.main);
         AppleDuoManager.INSTANCE.init(getApplication());
         AppleDuoManager.INSTANCE.attachTargetView(predictiveBackRoot, false);
@@ -901,6 +894,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 sp.edit().putString("openTabs", "").apply();
             }
             com.petal.browser.media.BrowserMediaDelegate.unregisterPipReceiver(this);
+            com.petal.browser.extensions.PetalExtensionManager.setPopupRequestListener(null);
         } catch (Exception e) {
             Log.e(TAG, "Error in BrowserActivity.onDestroy", e);
         }
@@ -962,17 +956,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         View currentFocus = getCurrentFocus();
-        boolean isKeyboardVisible = false;
-        View mainView = findViewById(R.id.main);
-        if (mainView != null) {
-            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(mainView);
-            if (insets != null) {
-                isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
-            }
-        }
-        if (isKeyboardVisible) {
+        if (currentFocus != null) {
             HelperUnit.hideSoftKeyboard(this, currentFocus);
-            return;
         }
 
         if (fullscreenHolder != null || customView != null || videoView != null) {
@@ -1140,18 +1125,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
-            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
-                return true;
-            } else if (event.getAction() == KeyEvent.ACTION_UP) {
-                if (!event.isCanceled()) {
-                    com.petal.browser.haptics.PetalHapticEngine.getInstance(this).playClick(this);
-                    performBackNavigation();
-                }
-                return true;
-            }
-        }
         return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        getOnBackPressedDispatcher().onBackPressed();
     }
 
     @Override
@@ -1165,9 +1144,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             case KeyEvent.KEYCODE_F7:
                 boolean caretState = com.petal.browser.accessibility.PetalAccessibilityEngine.toggleCaretBrowsing(this, ninjaWebView);
                 com.petal.browser.view.NinjaToast.show(this, caretState ? "Caret browsing ON (F7)" : "Caret browsing OFF (F7)");
-                return true;
-            case KeyEvent.KEYCODE_BACK:
-                performBackNavigation();
                 return true;
         }
         return super.onKeyDown(keyCode, event);
@@ -1689,13 +1665,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 });
             }
         }
-        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView && contentFrame != null) {
-            contentFrame.post(() -> {
-                if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetGestureExclusionRects();
-                }
-            });
-        }
+
 
         updateOmniBox();
         applyAddressBarPosition();
@@ -3827,6 +3797,50 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             presentComposeScreen(extensionsView);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public void showExtensionPopup(com.petal.browser.extensions.PetalExtensionManager.PendingPopup popup) {
+        if (popup == null) return;
+        try {
+            captureBrowserMainPreview();
+            isOverlayScreenShowing = true;
+            contentFrame.removeAllViews();
+            if (appBar != null) appBar.setVisibility(GONE);
+            LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
+            if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            if (bottomNav != null) bottomNav.setVisibility(GONE);
+            if (composeAddressBar == null) composeAddressBar = findViewById(R.id.compose_address_bar);
+            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+            View fab_bubble_ext = findViewById(R.id.fab_bubble);
+            if (fab_bubble_ext != null) fab_bubble_ext.setVisibility(GONE);
+            hideRefreshAndProgressOverlays();
+
+            pendingOverlayBackAction = this::dismissExtensionPopup;
+
+            View popupView = com.petal.browser.compose.extensions.PetalExtensionsBridge.createPopupView(
+                BrowserActivity.this,
+                popup,
+                () -> {
+                    dismissExtensionPopup();
+                    return kotlin.Unit.INSTANCE;
+                }
+            );
+            presentComposeScreen(popupView);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void dismissExtensionPopup() {
+        if (isOverlayScreenShowing) {
+            isOverlayScreenShowing = false;
+            pendingOverlayBackAction = null;
+            contentFrame.removeAllViews();
+            showAlbum(currentAlbumController);
+            updatePersistentBottomNav();
+            updateOmniBox();
         }
     }
 

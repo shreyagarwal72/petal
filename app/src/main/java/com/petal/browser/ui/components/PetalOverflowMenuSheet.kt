@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -20,11 +21,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 interface PetalOverflowMenuActionHandler {
@@ -272,6 +277,7 @@ fun PetalOverflowMenuSheet(
     onOpenPetalAi: () -> Unit = {},
     onOpenExtensions: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(false) }
     var isDismissing by remember { mutableStateOf(false) }
@@ -456,12 +462,59 @@ fun PetalOverflowMenuSheet(
                     )
                 }
 
-                MenuRowItem(
-                    icon = Icons.Rounded.Extension,
-                    title = "Extensions",
-                    subtitle = "Install Firefox add-ons",
-                    onClick = onOpenExtensions
-                )
+                // Section 2.5: Extensions
+                val extensions by PetalExtensionManager.extensions.collectAsState()
+                val enabledExtensions = remember(extensions) { extensions.filter { it.enabled } }
+                var isExtensionsExpanded by remember { mutableStateOf(enabledExtensions.isNotEmpty()) }
+
+                if (enabledExtensions.isEmpty()) {
+                    MenuRowItem(
+                        icon = Icons.Rounded.Extension,
+                        title = "Extensions",
+                        subtitle = "Install Firefox add-ons",
+                        onClick = onOpenExtensions
+                    )
+                } else {
+                    val firstExtName = enabledExtensions.first().name
+                    val subtitleText = if (enabledExtensions.size == 1) firstExtName else "$firstExtName..."
+                    MenuRowItem(
+                        icon = Icons.Rounded.Extension,
+                        title = "Extensions",
+                        subtitle = subtitleText,
+                        badgeCount = enabledExtensions.size,
+                        trailingIcon = if (isExtensionsExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        onClick = { isExtensionsExpanded = !isExtensionsExpanded }
+                    )
+
+                    AnimatedVisibility(
+                        visible = isExtensionsExpanded,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            enabledExtensions.forEach { ext ->
+                                ExtensionMenuRowItem(
+                                    extension = ext,
+                                    onClick = {
+                                        handleDismiss()
+                                        PetalExtensionManager.triggerBrowserAction(ext.id, context)
+                                    },
+                                    onSettingsClick = {
+                                        handleDismiss()
+                                        PetalExtensionManager.openOptionsPage(ext.id, context)
+                                    }
+                                )
+                            }
+                            MenuRowItem(
+                                icon = Icons.Rounded.Tune,
+                                title = "Manage extensions",
+                                subtitle = "Install or configure add-ons",
+                                isSubItem = true,
+                                onClick = onOpenExtensions
+                            )
+                        }
+                    }
+                }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -598,6 +651,7 @@ private fun MenuRowItem(
     title: String,
     subtitle: String? = null,
     trailingIcon: ImageVector? = null,
+    badgeCount: Int? = null,
     isSubItem: Boolean = false,
     onClick: () -> Unit
 ) {
@@ -644,11 +698,36 @@ private fun MenuRowItem(
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
-            if (trailingIcon != null) {
+            if (badgeCount != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = badgeCount.toString(),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (trailingIcon != null) {
+                        Icon(
+                            imageVector = trailingIcon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            } else if (trailingIcon != null) {
                 Icon(
                     imageVector = trailingIcon,
                     contentDescription = null,
@@ -656,6 +735,73 @@ private fun MenuRowItem(
                     modifier = Modifier.size(18.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ExtensionMenuRowItem(
+    extension: PetalExtensionManager.InstalledExtension,
+    onClick: () -> Unit,
+    onSettingsClick: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                onClick()
+            })
+            .padding(start = 28.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.width(28.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            val bmp = extension.icon
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Rounded.Extension,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = extension.name,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(
+            onClick = {
+                com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                    .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                onSettingsClick()
+            },
+            modifier = Modifier.size(36.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Settings,
+                contentDescription = "Extension Settings",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }

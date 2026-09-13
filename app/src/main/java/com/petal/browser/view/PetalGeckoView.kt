@@ -1119,6 +1119,8 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     fun clearHistory() {
+        canGoBackVal = false
+        canGoForwardVal = false
         session.purgeHistory()
     }
 
@@ -1340,48 +1342,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun pauseTimers() {}
 
-    /**
-     * Keep both the wrapper and GeckoView's actual rendering child out of Android's
-     * system-gesture exclusion regions. GeckoView can recreate/update its child view
-     * during navigation, so clearing only the wrapper is not sufficient for Android 13+
-     * predictive-back gestures.
-     */
-    fun resetGestureExclusionRects() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                // Call the framework implementation directly. Assigning the
-                // property here dispatches to our override and recursively
-                // re-enters this method until the process stack overflows.
-                super.setSystemGestureExclusionRects(java.util.Collections.emptyList())
-            } catch (_: Throwable) {}
-            try {
-                geckoView.systemGestureExclusionRects = java.util.Collections.emptyList()
-            } catch (_: Throwable) {}
-        }
-    }
-
-    override fun setSystemGestureExclusionRects(rects: MutableList<android.graphics.Rect>) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                super.setSystemGestureExclusionRects(java.util.Collections.emptyList())
-            } catch (ignored: Exception) {}
-        }
-    }
-
-    /**
-     * Only ACTION_DOWN near the left/right screen edge can be the start of a predictive-back
-     * swipe, so that's the only case that needs exclusion rects cleared. Previously this was
-     * running on every touch or completely omitted. Restricting this to edge touches (e.g. 48dp
-     * edge zone) ensures Android's system back gesture isn't blocked by GeckoView's internal
-     * exclusion rects, while completely keeping login taps and page taps away from iterating
-     * compositor child views.
-     */
-    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ev.actionMasked == MotionEvent.ACTION_DOWN) {
-            resetGestureExclusionRects()
-        }
-        return super.dispatchTouchEvent(ev)
-    }
+    fun resetGestureExclusionRects() {}
 
     fun destroy() {
         stopLoading()
@@ -1516,12 +1477,5 @@ class SafeGeckoView : GeckoView {
         }
     }
 
-    override fun setSystemGestureExclusionRects(rects: MutableList<android.graphics.Rect>) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                super.setSystemGestureExclusionRects(java.util.Collections.emptyList())
-            } catch (_: Throwable) {}
-        }
-    }
 }
 

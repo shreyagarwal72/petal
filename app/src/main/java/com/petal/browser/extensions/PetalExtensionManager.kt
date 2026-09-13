@@ -10,6 +10,8 @@ import java.util.zip.ZipFile
 import org.json.JSONObject
 import androidx.preference.PreferenceManager
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
+import android.os.Handler
+import android.os.Looper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -195,6 +197,20 @@ object PetalExtensionManager {
     private val _pendingPopup = MutableStateFlow<PendingPopup?>(null)
     val pendingPopup: StateFlow<PendingPopup?> = _pendingPopup.asStateFlow()
 
+    private var onPopupRequestListener: ((PendingPopup) -> Unit)? = null
+
+    @JvmStatic
+    fun setPopupRequestListener(listener: ((PendingPopup) -> Unit)?) {
+        onPopupRequestListener = listener
+    }
+
+    private fun notifyPopupRequested(popup: PendingPopup) {
+        val listener = onPopupRequestListener ?: return
+        Handler(Looper.getMainLooper()).post {
+            listener.invoke(popup)
+        }
+    }
+
     /** Latest default browser/page action for each installed extension. */
     private val actionByExtensionId = mutableMapOf<String, WebExtension.Action>()
 
@@ -341,12 +357,10 @@ object PetalExtensionManager {
                 session: GeckoSession?,
                 action: WebExtension.Action
             ) {
-                // Keep the latest default action so the Extensions page can invoke the
+                // Keep the latest action so the UI can invoke the
                 // real WebExtension action instead of manufacturing a popup session.
-                if (session == null) {
-                    synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
-                    refresh()
-                }
+                synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
+                refresh()
             }
 
             override fun onPageAction(
@@ -354,10 +368,8 @@ object PetalExtensionManager {
                 session: GeckoSession?,
                 action: WebExtension.Action
             ) {
-                if (session == null) {
-                    synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
-                    refresh()
-                }
+                synchronized(actionByExtensionId) { actionByExtensionId[ext.id] = action }
+                refresh()
             }
 
             override fun onOpenPopup(
@@ -386,11 +398,13 @@ object PetalExtensionManager {
         _pendingPopup.value = null
 
         val popupSession = GeckoSession()
-        _pendingPopup.value = PendingPopup(
+        val popup = PendingPopup(
             extensionId = extension.id,
             extensionName = extension.metaData.name ?: extension.id,
             session = popupSession
         )
+        _pendingPopup.value = popup
+        notifyPopupRequested(popup)
         return GeckoResult.fromValue(popupSession)
     }
 
@@ -407,36 +421,34 @@ object PetalExtensionManager {
     /**
      * Manually triggers the browser-action (toolbar popup) for an installed extension from the UI.
      *
-     * GeckoView's [WebExtension] has no public API to programmatically fire a toolbar-button
-     * click - [WebExtension.ActionDelegate.onOpenPopup]/`onTogglePopup` are callbacks Gecko
-     * invokes on its own schedule, not methods we can call into. There is also no manifest
-     * field exposed on [WebExtension.MetaData] that tells us whether a browser_action or
-     * page_action exists. Since we can't detect or trigger this from app code, we open the
-     * same popup session path used by [attachActionDelegate]'s real callbacks directly; if the
-     * extension has no popup UI, Gecko simply won't have anything to show and this is a no-op
-     * from the user's perspective beyond the session being created.
+     * GeckoView's [WebExtension] triggers onOpenPopup/onTogglePopup on its ActionDelegate
+     * when Action.click() is called. If no action is available or clicking fails,
+     * falls back to opening the extension's options page if one exists.
      */
-    fun triggerBrowserAction(extensionId: String) {
+    @JvmOverloads
+    fun triggerBrowserAction(extensionId: String, context: Context? = null) {
         val ext = _extensions.value.find { it.id == extensionId } ?: run {
             _lastError.value = "Extension not found."
             return
         }
-        if (!ext.enabled || !ext.supportsPopup) return
+        if (!ext.enabled) return
 
         val action = synchronized(actionByExtensionId) { actionByExtensionId[extensionId] }
-        if (action == null) {
-            _lastError.value = "This extension action is not ready yet."
-            return
+        if (action != null) {
+            try {
+                action.click()
+                return
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to click extension action", e)
+            }
         }
 
-        // This is the supported GeckoView path. Action.click() causes Gecko to invoke
-        // onOpenPopup/onTogglePopup with the real action context, including the popup
-        // document and extension APIs.
-        try {
-            action.click()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to click extension action", e)
-            _lastError.value = "Couldn't open the extension."
+        // Fallback: If action click fails or action isn't available, open options page if present
+        val ctx = context ?: appContext
+        if (ctx != null && ext.optionsPageUrl != null) {
+            openOptionsPage(extensionId, ctx)
+        } else if (action == null) {
+            _lastError.value = "This extension action is not ready yet."
         }
     }
 
@@ -467,11 +479,13 @@ object PetalExtensionManager {
         session.open(runtime)
         session.loadUri(url)
 
-        _pendingPopup.value = PendingPopup(
+        val popup = PendingPopup(
             extensionId = ext.id,
             extensionName = ext.name,
             session = session
         )
+        _pendingPopup.value = popup
+        notifyPopupRequested(popup)
     }
 
 

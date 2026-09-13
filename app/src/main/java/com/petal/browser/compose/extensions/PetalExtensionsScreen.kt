@@ -51,10 +51,56 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
-import com.petal.browser.ui.theme.PetalExpressiveTheme
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.ui.window.DialogProperties
+import org.mozilla.geckoview.AllowOrDeny
+import org.mozilla.geckoview.GeckoResult
+import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 
 object PetalExtensionsBridge {
+    @JvmStatic
+    fun createPopupView(
+        activity: ComponentActivity,
+        popup: PetalExtensionManager.PendingPopup,
+        onDismiss: () -> Unit
+    ): android.view.View {
+        val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
+        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
+        return ComposeView(activity).apply {
+            setViewTreeLifecycleOwner(activity)
+            setViewTreeViewModelStoreOwner(activity)
+            setViewTreeSavedStateRegistryOwner(activity)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                val isAmoled = sp.getBoolean("sp_amoled", false)
+
+                val appFont = remember(fontName) { com.petal.browser.ui.theme.AppFont.fromName(fontName) }
+                val colorStyle = remember(styleName) {
+                    try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
+                }
+
+                PetalExpressiveTheme(
+                    dynamicColor = dynamicColor,
+                    useAmoled = isAmoled,
+                    appFont = appFont,
+                    colorStyle = colorStyle,
+                    paletteId = paletteId
+                ) {
+                    PetalExtensionPopupScreen(
+                        popup = popup,
+                        onDismiss = onDismiss
+                    )
+                }
+            }
+        }
+    }
+
     @JvmStatic
     fun createExtensionsView(
         activity: ComponentActivity,
@@ -206,7 +252,7 @@ fun PetalExtensionsScreen(
                                     }
                                 },
                                 onOpenPopup = {
-                                    PetalExtensionManager.triggerBrowserAction(ext.id)
+                                    PetalExtensionManager.triggerBrowserAction(ext.id, context)
                                 }
                             )
                         }
@@ -275,7 +321,7 @@ fun PetalExtensionsScreen(
                     }
                 },
                 onOpenPopup = {
-                    PetalExtensionManager.triggerBrowserAction(ext.id)
+                    PetalExtensionManager.triggerBrowserAction(ext.id, context)
                 }
             )
         } else {
@@ -711,77 +757,130 @@ private fun InstallPermissionDialog(prompt: PetalExtensionManager.PendingPrompt)
  * uBlock Origin or Bitwarden show when their toolbar icon is tapped) inside a floating M3 card,
  * using a lightweight secondary [GeckoView] bound to the popup's own [GeckoSession].
  */
+/**
+ * Renders a WebExtension live popup web app screen matching Fennec's action popup.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun PetalExtensionPopupScreen(
+    popup: PetalExtensionManager.PendingPopup,
+    onDismiss: () -> Unit
+) {
+    androidx.activity.compose.BackHandler(onBack = onDismiss)
+    val context = LocalContext.current
+    val hostActivity = context as? ComponentActivity
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = popup.extensionName,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        com.petal.browser.haptics.PetalHapticEngine.getInstance(context)
+                            .playIfEnabled(context, com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.75f)
+                        onDismiss()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    ) { innerPadding ->
+        AndroidView(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            factory = { ctx ->
+                GeckoView(ctx).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    popup.session.navigationDelegate = object : GeckoSession.NavigationDelegate {
+                        override fun onCloseRequest(session: GeckoSession) {
+                            (ctx as? ComponentActivity)?.runOnUiThread {
+                                onDismiss()
+                            }
+                        }
+
+                        override fun onLoadRequest(
+                            session: GeckoSession,
+                            request: GeckoSession.NavigationDelegate.LoadRequest
+                        ): GeckoResult<AllowOrDeny>? {
+                            val uri = request.uri
+                            if (uri.startsWith("moz-extension://", ignoreCase = true) ||
+                                uri.startsWith("resource://", ignoreCase = true) ||
+                                uri.startsWith("about:", ignoreCase = true) ||
+                                uri.startsWith("blob:", ignoreCase = true) ||
+                                uri.startsWith("data:", ignoreCase = true)
+                            ) {
+                                return GeckoResult.fromValue(AllowOrDeny.ALLOW)
+                            }
+                            if (uri.startsWith("http://", ignoreCase = true) || uri.startsWith("https://", ignoreCase = true)) {
+                                (hostActivity as? com.petal.browser.activity.BrowserActivity)?.let { act ->
+                                    act.runOnUiThread {
+                                        onDismiss()
+                                        act.addAlbum(null, uri, false, null)
+                                    }
+                                }
+                                return GeckoResult.fromValue(AllowOrDeny.DENY)
+                            }
+                            return GeckoResult.fromValue(AllowOrDeny.ALLOW)
+                        }
+
+                        override fun onNewSession(session: GeckoSession, uri: String): GeckoResult<GeckoSession>? {
+                            if (uri.isNotEmpty()) {
+                                (hostActivity as? com.petal.browser.activity.BrowserActivity)?.let { act ->
+                                    act.runOnUiThread {
+                                        onDismiss()
+                                        act.addAlbum(null, uri, false, null)
+                                    }
+                                }
+                            }
+                            return null
+                        }
+                    }
+                    setSession(popup.session)
+                }
+            },
+            onRelease = { view ->
+                view.releaseSession()
+            }
+        )
+    }
+}
+
 @Composable
 private fun ExtensionPopupDialog(
     popup: PetalExtensionManager.PendingPopup,
     onDismiss: () -> Unit
 ) {
-    // Look up the installed extension to get its icon for the title bar.
-    val extensions by PetalExtensionManager.extensions.collectAsState()
-    val extIcon = remember(popup.extensionId, extensions) {
-        extensions.find { it.id == popup.extensionId }?.icon
-    }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .heightIn(min = 220.dp, max = 520.dp)
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Title bar: optional extension icon + name + close button
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    // Extension icon (24dp) if available, else a generic Extension icon
-                    val bmp = extIcon
-                    if (bmp != null) {
-                        Image(
-                            bitmap = bmp.asImageBitmap(),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                        )
-                    } else {
-                        Icon(
-                            Icons.Rounded.Extension,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Text(
-                        popup.extensionName,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close")
-                    }
-                }
-                HorizontalDivider()
-                AndroidView(
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                    factory = { ctx ->
-                        GeckoView(ctx).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            setSession(popup.session)
-                        }
-                    },
-                    onRelease = { view -> view.releaseSession() }
-                )
-            }
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            PetalExtensionPopupScreen(
+                popup = popup,
+                onDismiss = onDismiss
+            )
         }
     }
 }

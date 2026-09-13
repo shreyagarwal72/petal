@@ -111,9 +111,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
         super.onScrollChanged(l, t, oldl, oldt);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            resetGestureExclusionRects();
-        }
 
         // Tactile Scroll Haptics (Inspired by Ever-Haptics)
         if (Math.abs(t - lastScrollHapticY) > 36) {
@@ -136,7 +133,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
 
     @Override
     protected void onGestureExclusionRefreshNeeded() {
-        resetGestureExclusionRects();
     }
 
     public NinjaWebView(Context context, AttributeSet attrs) {
@@ -399,60 +395,9 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
             return false;
         });
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> resetGestureExclusionRects());
-            post(this::resetGestureExclusionRects);
-        }
     }
 
-    private boolean isExclusionResetPending = false;
-    private final Runnable exclusionResetRunnable = () -> {
-        isExclusionResetPending = false;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                super.setSystemGestureExclusionRects(java.util.Collections.emptyList());
-            } catch (Exception ignored) {}
-        }
-    };
-
-    /**
-     * Resets system gesture exclusion rects on API 29+ (Android 10+) so Android's system
-     * predictive back edge swipes (left/right display edges) reach OnBackPressedCallback
-     * and trigger back navigation instead of being swallowed by WebView's default auto-exclusion.
-     */
     public void resetGestureExclusionRects() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                super.setSystemGestureExclusionRects(java.util.Collections.emptyList());
-            } catch (Exception ignored) {}
-            if (!isExclusionResetPending) {
-                isExclusionResetPending = true;
-                post(exclusionResetRunnable);
-            }
-        }
-    }
-
-    @Override
-    public void setSystemGestureExclusionRects(@NonNull java.util.List<android.graphics.Rect> rects) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Chromium/WebView attempts to exclude the entire view or large horizontal zones
-            // when web pages have touch listeners. We enforce empty exclusion rects so
-            // system back gestures from the left/right screen edges are always received by Android.
-            try {
-                super.setSystemGestureExclusionRects(java.util.Collections.emptyList());
-            } catch (Exception ignored) {}
-        }
-    }
-
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            int action = ev.getActionMasked();
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                resetGestureExclusionRects();
-            }
-        }
-        return super.dispatchTouchEvent(ev);
     }
 
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
@@ -813,7 +758,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         try {
             super.goBack();
         } catch (Exception ignored) {}
-        resetGestureExclusionRects();
     }
 
     @Override
@@ -836,7 +780,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         try {
             super.goBackOrForward(steps);
         } catch (Exception ignored) {}
-        resetGestureExclusionRects();
     }
 
     public synchronized void initWebSettings() {
@@ -879,7 +822,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         // Intercept home scheme URLs so WebView stays on about:blank and does not trigger net::ERR_UNKNOWN_URL_SCHEME
         if (BrowserUnit.isHomePage(targetUrl) || BrowserUnit.isHomePage(urlToLoad) || BrowserUnit.isHomePage(url)) {
             initPreferences("about:blank");
-            resetGestureExclusionRects();
             super.loadUrl("about:blank");
             if (album != null) {
                 album.setAlbumTitle("Petal Home", "petal://home");
@@ -888,7 +830,6 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         }
 
         initPreferences(targetUrl);
-        resetGestureExclusionRects();
         super.loadUrl(targetUrl);
     }
 
