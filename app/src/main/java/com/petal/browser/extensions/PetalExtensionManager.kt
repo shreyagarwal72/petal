@@ -580,7 +580,7 @@ object PetalExtensionManager {
         }
         if (!extItem.enabled) return
         val rawExt = extItem.raw
-        val ctx = context ?: appContext
+        val ctx = context ?: appContext ?: return
 
         // 1. Try action.click() if an action was captured and registered
         val activeSession = currentBrowserSession(ctx)
