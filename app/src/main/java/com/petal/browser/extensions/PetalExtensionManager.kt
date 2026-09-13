@@ -197,17 +197,21 @@ object PetalExtensionManager {
     private val _pendingPopup = MutableStateFlow<PendingPopup?>(null)
     val pendingPopup: StateFlow<PendingPopup?> = _pendingPopup.asStateFlow()
 
-    private var onPopupRequestListener: ((PendingPopup) -> Unit)? = null
+    fun interface PopupRequestListener {
+        fun onPopupRequest(popup: PendingPopup)
+    }
+
+    private var onPopupRequestListener: PopupRequestListener? = null
 
     @JvmStatic
-    fun setPopupRequestListener(listener: ((PendingPopup) -> Unit)?) {
+    fun setPopupRequestListener(listener: PopupRequestListener?) {
         onPopupRequestListener = listener
     }
 
     private fun notifyPopupRequested(popup: PendingPopup) {
         val listener = onPopupRequestListener ?: return
         Handler(Looper.getMainLooper()).post {
-            listener.invoke(popup)
+            listener.onPopupRequest(popup)
         }
     }
 

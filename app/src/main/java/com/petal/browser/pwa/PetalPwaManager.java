@@ -348,10 +348,10 @@ public class PetalPwaManager {
                 }
                 if (rawBitmap == null) {
                     com.petal.browser.database.FaviconHelper helper = new com.petal.browser.database.FaviconHelper(activity);
-                    rawBitmap = helper.getFavicon(pageUrl);
+                    rawBitmap = helper.getFavicon(finalPageUrl);
                 }
                 if (rawBitmap == null) {
-                    String domain = HelperUnit.domain(pageUrl);
+                    String domain = HelperUnit.domain(finalPageUrl);
                     if (domain != null && !domain.isEmpty()) {
                         rawBitmap = fetchBitmap(com.petal.browser.unit.FaviconGrabberManager.getFaviconGrabberUrl(domain));
                     }
