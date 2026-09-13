@@ -147,7 +147,7 @@
             android:resizeableActivity="true"
             android:launchMode="singleTask">
 
-            <intent-filter>
+            <intent-filter android:priority="999" android:order="1">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -399,7 +399,7 @@
             android:theme="@style/AppTheme"
             android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
             android:exported="true">
-            <intent-filter>
+            <intent-filter android:priority="999" android:order="1">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />

@@ -55,6 +55,54 @@ object PetalBrowserPermissionDialog {
     private const val ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L
 
     @JvmStatic
+    fun isDefaultBrowser(context: Context): Boolean {
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com"))
+            val resolveInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.resolveActivity(
+                    intent,
+                    PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong())
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            }
+            resolveInfo?.activityInfo?.packageName == context.packageName
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    @JvmStatic
+    fun requestSetDefaultBrowser(activity: Activity) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roleManager = activity.getSystemService(android.app.role.RoleManager::class.java)
+                if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_BROWSER)) {
+                    if (!roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_BROWSER)) {
+                        val roleIntent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_BROWSER)
+                        activity.startActivity(roleIntent)
+                        return
+                    }
+                }
+            }
+            // Fallback for Android 7-9 or if RoleManager is unavailable
+            val settingsIntent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            activity.startActivity(settingsIntent)
+        } catch (_: Exception) {
+            try {
+                val appDetailsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = android.net.Uri.parse("package:${activity.packageName}")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                activity.startActivity(appDetailsIntent)
+            } catch (_: Exception) {}
+        }
+    }
+
+    @JvmStatic
     fun hasUngrantedPermissions(context: Context): Boolean {
         fun granted(permission: String) =
             androidx.core.content.ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
@@ -68,8 +116,9 @@ object PetalBrowserPermissionDialog {
         } else {
             granted(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
+        val defaultBrowser = isDefaultBrowser(context)
 
-        return !camera || !mic || !location || !notifications || !media
+        return !camera || !mic || !location || !notifications || !media || !defaultBrowser
     }
 
     @JvmStatic
@@ -138,6 +187,7 @@ private data class PermissionEntry(
     val description: String,
     val icon: ImageVector,
     val isGranted: Boolean,
+    val actionText: String = "Grant",
     val onGrant: () -> Unit
 )
 
@@ -155,6 +205,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
         androidx.core.content.ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
     val permissionRefresh = refresh
+    val isDefault = permissionRefresh.let { PetalBrowserPermissionDialog.isDefaultBrowser(context) }
     val camera = permissionRefresh.let { granted(Manifest.permission.CAMERA) }
     val microphone = permissionRefresh.let { granted(Manifest.permission.RECORD_AUDIO) }
     val location = permissionRefresh.let {
@@ -167,7 +218,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
         permissionRefresh.let { granted(Manifest.permission.READ_EXTERNAL_STORAGE) }
     }
 
-    val missing = !camera || !microphone || !location || !notifications || !media
+    val missing = !isDefault || !camera || !microphone || !location || !notifications || !media
     val allGranted = !missing
 
     DisposableEffect(lifecycleOwner) {
@@ -178,14 +229,25 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val permissionItems = remember(camera, microphone, location, notifications, media) {
+    val permissionItems = remember(isDefault, camera, microphone, location, notifications, media) {
         val items = mutableListOf<PermissionEntry>()
+        items.add(
+            PermissionEntry(
+                title = "Default Browser",
+                description = "Open links and in-app browsing with Petal first",
+                icon = Icons.Outlined.Language,
+                isGranted = isDefault,
+                actionText = "Set",
+                onGrant = { activity?.let { PetalBrowserPermissionDialog.requestSetDefaultBrowser(it) } }
+            )
+        )
         items.add(
             PermissionEntry(
                 title = "Camera",
                 description = "Video calls, QR scanning, and camera websites",
                 icon = Icons.Outlined.Videocam,
                 isGranted = camera,
+                actionText = "Grant",
                 onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.CAMERA)) } }
             )
         )
@@ -195,6 +257,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                 description = "Voice search, audio notes, and media calls",
                 icon = Icons.Outlined.Mic,
                 isGranted = microphone,
+                actionText = "Grant",
                 onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.RECORD_AUDIO)) } }
             )
         )
@@ -204,6 +267,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                 description = "Maps and location-aware web experiences",
                 icon = Icons.Outlined.LocationOn,
                 isGranted = location,
+                actionText = "Grant",
                 onGrant = {
                     activity?.let {
                         request.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
@@ -218,6 +282,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                     description = "Download progress, alerts, and web updates",
                     icon = Icons.Outlined.Notifications,
                     isGranted = notifications,
+                    actionText = "Grant",
                     onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) } }
                 )
             )
@@ -227,6 +292,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                     description = "Media picker, file uploads, and attachment selection",
                     icon = Icons.Outlined.PhotoLibrary,
                     isGranted = media,
+                    actionText = "Grant",
                     onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)) } }
                 )
             )
@@ -237,6 +303,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                     description = "File uploads, image previews, and web downloads",
                     icon = Icons.Outlined.Folder,
                     isGranted = media,
+                    actionText = "Grant",
                     onGrant = { activity?.let { request.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)) } }
                 )
             )
@@ -319,6 +386,7 @@ private fun BrowserPermissionSheet(onDone: () -> Unit) {
                         description = item.description,
                         icon = item.icon,
                         isGranted = item.isGranted,
+                        actionText = item.actionText,
                         shape = shape,
                         onGrant = item.onGrant
                     )
@@ -383,6 +451,7 @@ private fun ZenithPermissionItemRow(
     description: String,
     icon: ImageVector,
     isGranted: Boolean,
+    actionText: String = "Grant",
     shape: androidx.compose.ui.graphics.Shape,
     onGrant: () -> Unit
 ) {
@@ -465,7 +534,7 @@ private fun ZenithPermissionItemRow(
                     modifier = Modifier.clickable(onClick = onGrant)
                 ) {
                     Text(
-                        text = "Grant",
+                        text = actionText,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold,
