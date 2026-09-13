@@ -65,9 +65,12 @@
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/refresh_bar_compose"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@id/main_content"
-        android:elevation="30dp" />
+        android:layout_height="72dp"
+        android:layout_alignParentTop="true"
+        android:translationZ="100dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no" />
 
     <!-- Floating Action Button for Showing Top Bar -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
