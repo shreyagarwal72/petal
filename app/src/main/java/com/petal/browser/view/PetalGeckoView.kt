@@ -930,7 +930,8 @@ class PetalGeckoView @JvmOverloads constructor(
      * fallback titles when empty and capturing single-page application (SPA) navigations.
      */
     private fun recordHistoryVisit(targetUrl: String, titleToRecord: String? = null) {
-        if (isIncognito || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) || targetUrl.startsWith("about:", ignoreCase = true)) {
+        if (isIncognito || targetUrl.isBlank() || targetUrl.equals("about:blank", ignoreCase = true) ||
+            targetUrl.startsWith("about:", ignoreCase = true) || BrowserUnit.isHomePage(targetUrl)) {
             return
         }
         val rawTitle = titleToRecord ?: currentTitle
@@ -1045,6 +1046,20 @@ class PetalGeckoView @JvmOverloads constructor(
     // ─────────────────────────────────────────────────────────────────────────
 
     fun loadUrl(url: String) {
+        // "Petal Home" / "Petal Start" are the tab-switcher's human-readable display
+        // placeholders (see AdapterTabs/setAlbumTitle), never real navigable targets.
+        // If one leaks in here (e.g. from a session saved before this was fixed, or
+        // any other display->navigation mixup), treat it as home instead of letting
+        // queryWrapper() silently turn it into a live search-engine query.
+        if (url.trim().equals("Petal Home", ignoreCase = true) || url.trim().equals("Petal Start", ignoreCase = true)) {
+            hideLoadingSkeleton()
+            session.loadUri("about:blank")
+            currentUrl = "about:blank"
+            currentTitle = "Petal Home"
+            album.setAlbumTitle("Petal Home", "petal://home")
+            return
+        }
+
         val redirected = BrowserUnit.redirectURL(sp, url)
         val targetUrl = BrowserUnit.queryWrapper(context, redirected)
 

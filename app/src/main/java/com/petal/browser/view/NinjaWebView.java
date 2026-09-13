@@ -799,6 +799,19 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         InputMethodManager imm = (InputMethodManager) this.context.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(this.getWindowToken(), 0);
 
+        // "Petal Home" / "Petal Start" are the tab-switcher's human-readable display
+        // placeholders (see AdapterTabs/setAlbumTitle), never real navigable targets.
+        // If one leaks in here, treat it as home instead of letting queryWrapper()
+        // silently turn it into a live search-engine query.
+        if (url.trim().equalsIgnoreCase("Petal Home") || url.trim().equalsIgnoreCase("Petal Start")) {
+            initPreferences("about:blank");
+            super.loadUrl("about:blank");
+            if (album != null) {
+                album.setAlbumTitle("Petal Home", "petal://home");
+            }
+            return;
+        }
+
         if (url.contains(";jsessionid=")) {
             String tracking = url.substring(url.lastIndexOf(";"));
             url = url.replace(tracking, "");
