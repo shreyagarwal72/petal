@@ -154,7 +154,18 @@ public class TabSessionManager {
                 String url = geckoView.getUrl();
                 if (url == null || url.trim().isEmpty() || "about:blank".equalsIgnoreCase(url)) {
                     String albumUrl = geckoView.getAlbumUrl();
-                    if (albumUrl != null && !albumUrl.trim().isEmpty() && !"about:blank".equalsIgnoreCase(albumUrl)) {
+                    // getAlbumUrl() mirrors the tab-switcher row's display text, which is
+                    // deliberately the human-readable placeholder "Petal Home" (see
+                    // AdapterTabs/PetalGeckoView.setAlbumTitle) when the tab has no real
+                    // page loaded - it is not a navigable URL. Saving that literal string
+                    // here meant a restored session would later call loadUrl("Petal Home"),
+                    // which isn't a valid URL and got silently turned into a live
+                    // "https://www.google.com/search?q=Petal+Home" search on restore.
+                    if (albumUrl != null && !albumUrl.trim().isEmpty()
+                            && !"about:blank".equalsIgnoreCase(albumUrl)
+                            && !"Petal Home".equalsIgnoreCase(albumUrl)
+                            && !"Petal Start".equalsIgnoreCase(albumUrl)
+                            && com.petal.browser.unit.BrowserUnit.isURL(albumUrl)) {
                         url = albumUrl;
                     } else {
                         url = "about:blank";
@@ -185,7 +196,14 @@ public class TabSessionManager {
                 String url = webView.getUrl();
                 if (url == null || url.trim().isEmpty() || "about:blank".equalsIgnoreCase(url)) {
                     String albumUrl = webView.getAlbumUrl();
-                    if (albumUrl != null && !albumUrl.trim().isEmpty() && !"about:blank".equalsIgnoreCase(albumUrl)) {
+                    // Same reasoning as the PetalGeckoView branch above: getAlbumUrl() is
+                    // display text for the tab-switcher row, not a navigable URL, and can
+                    // legitimately be the literal placeholder "Petal Home".
+                    if (albumUrl != null && !albumUrl.trim().isEmpty()
+                            && !"about:blank".equalsIgnoreCase(albumUrl)
+                            && !"Petal Home".equalsIgnoreCase(albumUrl)
+                            && !"Petal Start".equalsIgnoreCase(albumUrl)
+                            && com.petal.browser.unit.BrowserUnit.isURL(albumUrl)) {
                         url = albumUrl;
                     } else {
                         url = "about:blank";
