@@ -1227,8 +1227,13 @@ class PetalGeckoView @JvmOverloads constructor(
 
     override fun canScrollVertically(direction: Int): Boolean {
         if (direction < 0) {
-            // Check if we can scroll up: return true if scrolled down (currentScrollY > 0)
-            return currentScrollY > 0 || geckoView.canScrollVertically(direction)
+            // Rely solely on the compositor-reported scroll position here.
+            // GeckoView's own canScrollVertically(-1) always returns true
+            // (it defers real scroll-boundary checks to the compositor rather
+            // than the standard View scroll APIs), so OR-ing it in previously
+            // made this always true and permanently blocked pull-to-refresh's
+            // canChildScrollUp() check from ever seeing "at top".
+            return currentScrollY > 0
         }
         return geckoView.canScrollVertically(direction)
     }
