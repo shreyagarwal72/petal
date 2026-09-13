@@ -38,8 +38,6 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
     private static final float DEFAULT_PULL_DISTANCE_DP = 100f;
     private static final float TRIGGER_THRESHOLD = 0.70f;
-    // Initiate pull only from the upper 60% of the viewport (touch area like Chrome/Firefox)
-    private static final float MAX_TOUCH_AREA_RATIO = 0.60f;
     private static final float DRAG_DAMPING = 0.60f;
 
     private CanPull canPull = () -> true;
@@ -220,11 +218,13 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     return false;
                 }
 
-                // Touch area check: pull-to-refresh must be initiated in the upper portion of the content view
-                int height = getHeight();
-                boolean withinTouchArea = height <= 0 || downY <= (height * MAX_TOUCH_AREA_RATIO);
-
-                if (!intercepting && withinTouchArea && !canChildScrollUp() && canPull.canPull()) {
+                // Chrome/Firefox don't gate pull-to-refresh by where on screen the
+                // gesture starts - only by whether the page is scrolled to the top
+                // (canChildScrollUp/canPull below) and vertical-drag dominance. A
+                // touch-start height restriction here just made drags started lower
+                // on the page silently do nothing, which read as "pull to refresh
+                // doesn't work".
+                if (!intercepting && !canChildScrollUp() && canPull.canPull()) {
                     float dx = currentX - downX;
                     float dy = currentY - downY;
                     // Allow pulling when dragging downward from top of web content with vertical dominance
