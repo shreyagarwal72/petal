@@ -463,6 +463,7 @@ object PetalExtensionManager {
         return GeckoResult.fromValue(popupSession)
     }
 
+    @JvmStatic
     fun dismissPopup() {
         _pendingPopup.value?.session?.let { session ->
             try {
