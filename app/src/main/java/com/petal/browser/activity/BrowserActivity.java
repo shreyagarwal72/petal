@@ -3395,6 +3395,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
 
+        androidx.compose.ui.platform.ComposeView mediaSnifferCompose = findViewById(R.id.media_sniffer_compose);
+        if (mediaSnifferCompose != null) {
+            com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.bind(mediaSnifferCompose, this);
+        }
+
         androidx.compose.ui.platform.ComposeView downloadBannerCompose = findViewById(R.id.download_banner_compose);
         if (downloadBannerCompose != null) {
             com.petal.browser.compose.downloads.PetalDownloadBannerBridge.bindDownloadBanner(
