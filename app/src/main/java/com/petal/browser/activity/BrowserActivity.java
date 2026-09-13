@@ -3351,8 +3351,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             addContentView(refreshBarCompose, params);
             com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                refreshBarCompose.setElevation(200f);
-                refreshBarCompose.setTranslationZ(200f);
+                // These were raw pixel values (200f), not dp - on most screens that's
+                // 60-90dp of elevation, far past Material's normal range. A View's
+                // elevation shadow is cast using its full rectangular bounds (this
+                // ComposeView is match_parent width), regardless of how little of
+                // that area the actual Compose content paints. So the indicator's
+                // small circle sat inside a huge, mostly-invisible drop shadow that
+                // rendered as a soft dark band/border across the top of the screen,
+                // overlapping and obscuring the spinner itself.
+                // Keep translationZ high enough to win Z-order against sibling
+                // overlays, but drop the outline so no shadow is drawn at all - we
+                // only need this view drawn on top, not lifted with a shadow.
+                float translationZPx = HelperUnit.convertDpToPixel(8f, this);
+                refreshBarCompose.setElevation(0f);
+                refreshBarCompose.setTranslationZ(translationZPx);
+                refreshBarCompose.setOutlineProvider(android.view.ViewOutlineProvider.NONE);
             }
             refreshBarCompose.bringToFront();
             refreshBarCompose.setClickable(false);
