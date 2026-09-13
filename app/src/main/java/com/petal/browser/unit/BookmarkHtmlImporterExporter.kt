@@ -116,71 +116,74 @@ object BookmarkHtmlImporterExporter {
 
                 var writeSucceeded = false
 
-                // Attempt 1: ParcelFileDescriptor with "rwt" truncate mode for reliable overwrites on SAF
+                // Attempt 1: ContentResolver openOutputStream with "wt" / "w" mode
                 try {
-                    context.contentResolver.openFileDescriptor(destinationUri, "rwt")?.use { pfd ->
-                        FileOutputStream(pfd.fileDescriptor).use { fos ->
-                            fos.channel.truncate(0)
-                            fos.write(bytes)
-                            fos.flush()
-                            try {
-                                fos.fd.sync()
-                            } catch (_: Exception) {}
+                    val outputStream = try {
+                        context.contentResolver.openOutputStream(destinationUri, "wt")
+                    } catch (_: Throwable) {
+                        try {
+                            context.contentResolver.openOutputStream(destinationUri, "w")
+                        } catch (_: Throwable) {
+                            context.contentResolver.openOutputStream(destinationUri)
+                        }
+                    }
+
+                    if (outputStream != null) {
+                        outputStream.buffered().use { os ->
+                            os.write(bytes)
+                            os.flush()
                         }
                         writeSucceeded = true
                     }
-                } catch (pfdEx: Exception) {
-                    Log.w("Petal", "ParcelFileDescriptor 'rwt' write attempt failed for bookmark export, falling back to openOutputStream", pfdEx)
+                } catch (e: Exception) {
+                    Log.w("Petal", "ContentResolver openOutputStream failed for bookmark export, falling back to AutoCloseOutputStream", e)
                 }
 
-                // Attempt 2: ContentResolver openOutputStream with flush and fsync
+                // Attempt 2: ParcelFileDescriptor with AutoCloseOutputStream
                 if (!writeSucceeded) {
-                    try {
-                        val outputStream = try {
-                            context.contentResolver.openOutputStream(destinationUri, "wt")
+                    val pfd = try {
+                        context.contentResolver.openFileDescriptor(destinationUri, "wt")
+                    } catch (_: Throwable) {
+                        try {
+                            context.contentResolver.openFileDescriptor(destinationUri, "w")
                         } catch (_: Throwable) {
-                            try {
-                                context.contentResolver.openOutputStream(destinationUri, "w")
-                            } catch (_: Throwable) {
-                                context.contentResolver.openOutputStream(destinationUri)
-                            }
+                            null
                         }
+                    }
 
-                        if (outputStream != null) {
-                            outputStream.use { os ->
-                                os.write(bytes)
-                                os.flush()
-                                try {
-                                    (os as? FileOutputStream)?.fd?.sync()
-                                } catch (_: Exception) {}
+                    if (pfd != null) {
+                        try {
+                            android.os.ParcelFileDescriptor.AutoCloseOutputStream(pfd).buffered().use { fos ->
+                                fos.write(bytes)
+                                fos.flush()
                             }
                             writeSucceeded = true
+                        } catch (pfdEx: Exception) {
+                            Log.e("Petal", "ParcelFileDescriptor AutoCloseOutputStream failed for bookmark export", pfdEx)
                         }
-                    } catch (e: Exception) {
-                        Log.e("Petal", "ContentResolver openOutputStream failed for bookmark export", e)
                     }
                 }
 
-                // Verification read: check if file was written.
-                // Note: If read verification throws or reports mismatch due to cloud/virtual SAF sync delay,
-                // do not fail if writeSucceeded was already achieved without stream exceptions.
+                // Verification read: check if file was written and non-empty
                 if (writeSucceeded) {
+                    var totalRead = 0
                     try {
                         context.contentResolver.openInputStream(destinationUri)?.use { verifyIn ->
                             val buf = ByteArray(8192)
-                            var totalRead = 0
                             var r: Int
                             while (verifyIn.read(buf).also { r = it } != -1) {
                                 totalRead += r
                             }
-                            if (totalRead == bytes.size) {
-                                Log.i("Petal", "Verified bookmark export persistence: $totalRead bytes matching payload to $uriScheme Uri: $destinationUri")
-                            } else {
-                                Log.w("Petal", "Verification read size mismatch for bookmark export: expected ${bytes.size}, got $totalRead bytes (could be SAF provider sync delay)")
-                            }
                         }
                     } catch (e: Exception) {
-                        Log.w("Petal", "Verification read threw exception for bookmark export (continuing since write completed)", e)
+                        Log.w("Petal", "Verification read threw exception for bookmark export", e)
+                    }
+
+                    if (totalRead > 0) {
+                        Log.i("Petal", "Verified bookmark export persistence: $totalRead bytes to $uriScheme Uri: $destinationUri")
+                    } else {
+                        Log.e("Petal", "Verification read detected 0 bytes or unreadable file for bookmark export to $uriScheme Uri: $destinationUri")
+                        writeSucceeded = false
                     }
                 }
 

@@ -291,15 +291,29 @@ public class PetalPwaManager {
     public void installCurrentPwa(Activity activity) {
         if (activity == null) return;
 
-        final String pageUrl = albumController != null ? albumController.getUrl() : (webView != null ? webView.getUrl() : null);
-        if (pageUrl == null || pageUrl.isEmpty() || "about:blank".equalsIgnoreCase(pageUrl)) {
+        com.petal.browser.browser.AlbumController targetController = this.albumController;
+        if (targetController == null && activity instanceof com.petal.browser.activity.BrowserActivity) {
+            targetController = ((com.petal.browser.activity.BrowserActivity) activity).currentAlbumController;
+        }
+
+        String pageUrl = targetController != null ? targetController.getUrl() : (webView != null ? webView.getUrl() : null);
+        if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim())) {
+            if (targetController instanceof com.petal.browser.view.PetalGeckoView) {
+                pageUrl = ((com.petal.browser.view.PetalGeckoView) targetController).getAlbumUrl();
+            }
+        }
+
+        if (pageUrl == null || pageUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(pageUrl.trim()) || pageUrl.startsWith("petal://")) {
             activity.runOnUiThread(() -> Toast.makeText(activity, "Cannot install empty page as app", Toast.LENGTH_SHORT).show());
             return;
         }
 
+        final com.petal.browser.browser.AlbumController finalController = targetController;
+        final String finalPageUrl = pageUrl;
+
         new Thread(() -> {
             try {
-                String targetUrl = pageUrl;
+                String targetUrl = finalPageUrl;
                 String rawTitle = null;
 
                 if (currentManifest != null) {
@@ -309,12 +323,12 @@ public class PetalPwaManager {
                         rawTitle = currentManifest.name;
                     }
                     if (!currentManifest.startUrl.isEmpty()) {
-                        targetUrl = resolveUrl(pageUrl, currentManifest.startUrl);
+                        targetUrl = resolveUrl(finalPageUrl, currentManifest.startUrl);
                     }
                 }
 
                 if (rawTitle == null || rawTitle.isEmpty()) {
-                    rawTitle = albumController != null && albumController.getTitle() != null && !albumController.getTitle().isEmpty() ? albumController.getTitle() : (webView != null && webView.getTitle() != null && !webView.getTitle().isEmpty() ? webView.getTitle() : HelperUnit.domain(pageUrl));
+                    rawTitle = finalController != null && finalController.getTitle() != null && !finalController.getTitle().isEmpty() ? finalController.getTitle() : (webView != null && webView.getTitle() != null && !webView.getTitle().isEmpty() ? webView.getTitle() : HelperUnit.domain(finalPageUrl));
                 }
                 if (rawTitle == null || rawTitle.isEmpty()) {
                     rawTitle = "Web App";
@@ -323,11 +337,11 @@ public class PetalPwaManager {
 
                 Bitmap rawBitmap = null;
                 if (currentManifest != null && !currentManifest.iconUrl.isEmpty()) {
-                    String resolvedIconUrl = resolveUrl(pageUrl, currentManifest.iconUrl);
+                    String resolvedIconUrl = resolveUrl(finalPageUrl, currentManifest.iconUrl);
                     rawBitmap = fetchBitmap(resolvedIconUrl);
                 }
-                if (rawBitmap == null && albumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    rawBitmap = ((com.petal.browser.view.PetalGeckoView) albumController).getFavicon();
+                if (rawBitmap == null && finalController instanceof com.petal.browser.view.PetalGeckoView) {
+                    rawBitmap = ((com.petal.browser.view.PetalGeckoView) finalController).getFavicon();
                 }
                 if (rawBitmap == null && webView instanceof com.petal.browser.view.NinjaWebView) {
                     rawBitmap = ((com.petal.browser.view.NinjaWebView) webView).getFavicon();

@@ -5110,16 +5110,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // and the Downloads app usually tag these "application/x-xpinstall"; fall back to
             // the file extension for providers that report a generic type instead.
             boolean isXpiMime = mimeType != null && mimeType.equalsIgnoreCase("application/x-xpinstall");
-            boolean isXpiName = fileName != null && fileName.toLowerCase(Locale.ROOT).endsWith(".xpi");
+            boolean isXpiName = (fileName != null && fileName.toLowerCase(Locale.ROOT).endsWith(".xpi"))
+                    || (dataUri.getPath() != null && dataUri.getPath().toLowerCase(Locale.ROOT).endsWith(".xpi"))
+                    || (dataUri.getLastPathSegment() != null && dataUri.getLastPathSegment().toLowerCase(Locale.ROOT).endsWith(".xpi"));
             if (isXpiMime || isXpiName) {
                 sp.edit().putBoolean("show_overview", false).apply();
                 getIntent().setAction("");
+                showExtensionsScreen();
                 com.petal.browser.extensions.PetalExtensionManager.installFromContentUri(this, dataUri, (success, message) -> {
                     runOnUiThread(() -> {
                         NinjaToast.show(this, message != null ? message : (success ? "Extension installed" : "Extension installation failed"));
-                        if (success) {
-                            showExtensionsScreen();
-                        }
                     });
                     return kotlin.Unit.INSTANCE;
                 });
@@ -5566,20 +5566,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void installPwaShortcut() {
         try {
-            String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : null;
+            AlbumController controller = currentAlbumController;
+            String activeUrl = controller != null ? controller.getUrl() : null;
             if (activeUrl == null || activeUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(activeUrl)) {
+                if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                    activeUrl = ((com.petal.browser.view.PetalGeckoView) controller).getAlbumUrl();
+                }
+            }
+            if (activeUrl == null || activeUrl.trim().isEmpty() || "about:blank".equalsIgnoreCase(activeUrl) || activeUrl.startsWith("petal://")) {
                 NinjaToast.show(this, "No active web page to install");
                 return;
             }
             com.petal.browser.pwa.PetalPwaManager manager = null;
-            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+            if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) controller;
                 manager = gv.getPwaManager();
-                if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, gv, null); gv.setPwaManager(manager); }
-            } else if (currentAlbumController instanceof com.petal.browser.view.NinjaWebView) {
-                com.petal.browser.view.NinjaWebView webView = (com.petal.browser.view.NinjaWebView) currentAlbumController;
+                if (manager == null) {
+                    manager = new com.petal.browser.pwa.PetalPwaManager(this, gv, null);
+                    gv.setPwaManager(manager);
+                }
+            } else if (controller instanceof com.petal.browser.view.NinjaWebView) {
+                com.petal.browser.view.NinjaWebView webView = (com.petal.browser.view.NinjaWebView) controller;
                 manager = webView.getPwaManager();
-                if (manager == null) { manager = new com.petal.browser.pwa.PetalPwaManager(this, webView, null); webView.setPwaManager(manager); }
+                if (manager == null) {
+                    manager = new com.petal.browser.pwa.PetalPwaManager(this, webView, null);
+                    webView.setPwaManager(manager);
+                }
             }
             if (manager != null) manager.installCurrentPwa(this);
             else NinjaToast.show(this, "No active web page to install");

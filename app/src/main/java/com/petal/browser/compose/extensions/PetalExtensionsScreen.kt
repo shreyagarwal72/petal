@@ -222,14 +222,12 @@ fun PetalExtensionsScreen(
         AddExtensionSheet(
             onDismiss = { showAddSheet = false },
             onInstall = { url ->
-                PetalExtensionManager.install(url) { success, _ ->
-                    if (success) showAddSheet = false
-                }
+                showAddSheet = false
+                PetalExtensionManager.install(url) { _, _ -> }
             },
             onInstallFile = { uri ->
-                PetalExtensionManager.installFromContentUri(context, uri) { success, _ ->
-                    if (success) showAddSheet = false
-                }
+                showAddSheet = false
+                PetalExtensionManager.installFromContentUri(context, uri) { _, _ -> }
             }
         )
     }

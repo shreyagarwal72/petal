@@ -125,7 +125,7 @@ object BrowserWebViewController {
         geckoView.setMediaBridge(bridge)
 
         // Configure PWA Manager
-        val pwaManager = PetalPwaManager(activity, null) { _ ->
+        val pwaManager = PetalPwaManager(activity, geckoView) { _ ->
             activity.runOnUiThread {
                 // PWA notification handling callback
             }

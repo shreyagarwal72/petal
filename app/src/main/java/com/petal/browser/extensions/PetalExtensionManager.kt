@@ -489,7 +489,7 @@ object PetalExtensionManager {
     @JvmOverloads
     fun installFromContentUri(context: Context, uri: Uri, onResult: (success: Boolean, message: String?) -> Unit = { _, _ -> }) {
         val appCtx = context.applicationContext
-        appContext = appCtx
+        attach(appCtx)
         _busy.value = true
         _lastError.value = null
         try {
@@ -511,20 +511,10 @@ object PetalExtensionManager {
                 mimeType = mimeType ?: resolver.getType(uri)
             }
 
-            val isXpi = displayName.endsWith(".xpi", ignoreCase = true) ||
-                mimeType.equals("application/x-xpinstall", ignoreCase = true)
-            if (!isXpi) {
-                val message = "Please select a Firefox extension file (.xpi)."
-                _busy.value = false
-                _lastError.value = message
-                onResult(false, message)
-                return
-            }
-
-            if (!displayName.endsWith(".xpi", ignoreCase = true)) displayName = "$displayName.xpi"
-
             val cacheDir = File(appCtx.cacheDir, "extension-installs").apply { mkdirs() }
-            val safeName = displayName.replace(Regex("[^A-Za-z0-9._-]"), "_")
+            val safeName = displayName.replace(Regex("[^A-Za-z0-9._-]"), "_").let {
+                if (it.endsWith(".xpi", ignoreCase = true)) it else "$it.xpi"
+            }
             val destFile = File(cacheDir, "install_${System.currentTimeMillis()}_$safeName")
 
             val input = if (uri.scheme.equals("file", ignoreCase = true)) {
@@ -543,12 +533,37 @@ object PetalExtensionManager {
             input.use { stream ->
                 destFile.outputStream().use { output -> stream.copyTo(output) }
             }
+            try { destFile.setReadable(true, false) } catch (_: Exception) {}
+
+            // Validate package format: A valid WebExtension XPI is a ZIP archive containing manifest.json.
+            // Also accept if name, URI path, or mime-type explicitly declared xpi.
+            val isKnownXpiZip = try {
+                java.util.zip.ZipFile(destFile).use { zip -> zip.getEntry("manifest.json") != null }
+            } catch (_: Exception) {
+                false
+            }
+
+            val isXpi = isKnownXpiZip ||
+                displayName.endsWith(".xpi", ignoreCase = true) ||
+                uri.path?.endsWith(".xpi", ignoreCase = true) == true ||
+                uri.lastPathSegment?.endsWith(".xpi", ignoreCase = true) == true ||
+                mimeType.equals("application/x-xpinstall", ignoreCase = true)
+
+            if (!isXpi) {
+                try { destFile.delete() } catch (_: Exception) {}
+                val message = "Please select a valid Firefox extension file (.xpi)."
+                _busy.value = false
+                _lastError.value = message
+                onResult(false, message)
+                return
+            }
 
             // GeckoView explicitly distinguishes local-file installation from an add-on
             // manager/remote installation. Use the correct method so imported .xpi files
             // follow the native local-package path.
+            val fileUri = Uri.fromFile(destFile.canonicalFile).toString()
             install(
-                Uri.fromFile(destFile).toString(),
+                fileUri,
                 WebExtensionController.INSTALLATION_METHOD_FROM_FILE
             ) { success, message ->
                 try { destFile.delete() } catch (ignored: Exception) {}
@@ -581,6 +596,7 @@ object PetalExtensionManager {
             return
         }
         val ctx = appContext ?: return
+        attach(ctx)
         val controller = PetalGeckoRuntime.getOrCreate(ctx).webExtensionController
         _busy.value = true
         _lastError.value = null
@@ -593,6 +609,31 @@ object PetalExtensionManager {
                 refresh()
                 onResult(true, extension?.metaData?.name ?: "Extension installed")
             }, { throwable ->
+                // If installation with INSTALLATION_METHOD_FROM_FILE failed on GeckoView,
+                // retry once with INSTALLATION_METHOD_MANAGER as fallback for local package compatibility
+                if (installationMethod == WebExtensionController.INSTALLATION_METHOD_FROM_FILE &&
+                    (throwable !is WebExtension.InstallException ||
+                     throwable.code == WebExtension.InstallException.ErrorCodes.ERROR_FILE_ACCESS)
+                ) {
+                    Log.i(TAG, "Retrying local XPI install with INSTALLATION_METHOD_MANAGER fallback")
+                    controller.install(installUri, WebExtensionController.INSTALLATION_METHOD_MANAGER)
+                        .accept({ extension ->
+                            _busy.value = false
+                            if (extension != null) attachActionDelegate(extension)
+                            refresh()
+                            onResult(true, extension?.metaData?.name ?: "Extension installed")
+                        }, { retryThrowable ->
+                            _busy.value = false
+                            val message = if (retryThrowable is WebExtension.InstallException) {
+                                describeInstallError(retryThrowable)
+                            } else {
+                                retryThrowable?.message ?: "Installation failed."
+                            }
+                            _lastError.value = message
+                            onResult(false, message)
+                        })
+                    return@accept
+                }
                 _busy.value = false
                 val message = if (throwable is WebExtension.InstallException) {
                     describeInstallError(throwable)

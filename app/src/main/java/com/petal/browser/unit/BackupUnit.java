@@ -449,74 +449,80 @@ public class BackupUnit {
 
                 boolean writeSucceeded = false;
 
-                // Attempt 1: ParcelFileDescriptor with "rwt" mode to truncate previous file content and write cleanly
-                try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "rwt")) {
-                    if (pfd != null) {
-                        try (FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor())) {
-                            fos.getChannel().truncate(0);
-                            fos.write(dataBytes);
-                            fos.flush();
-                            try {
-                                fos.getFD().sync();
-                            } catch (Exception ignored) {}
+                // Attempt 1: ContentResolver openOutputStream with "wt" / "w" mode
+                try {
+                    OutputStream os = null;
+                    try {
+                        os = context.getContentResolver().openOutputStream(uri, "wt");
+                    } catch (Throwable t1) {
+                        try {
+                            os = context.getContentResolver().openOutputStream(uri, "w");
+                        } catch (Throwable t2) {
+                            os = context.getContentResolver().openOutputStream(uri);
+                        }
+                    }
+
+                    if (os != null) {
+                        try (OutputStream out = new java.io.BufferedOutputStream(os)) {
+                            out.write(dataBytes);
+                            out.flush();
+                            if (out instanceof FileOutputStream) {
+                                try {
+                                    ((FileOutputStream) out).getFD().sync();
+                                } catch (Exception ignored) {}
+                            }
                         }
                         writeSucceeded = true;
                     }
-                } catch (Exception pfdEx) {
-                    Log.w("Petal", "ParcelFileDescriptor 'rwt' write failed for " + uriScheme + " Uri: " + uri + ", falling back to openOutputStream", pfdEx);
+                } catch (Exception e) {
+                    Log.w("Petal", "ContentResolver openOutputStream failed for backup write, falling back to AutoCloseOutputStream", e);
                 }
 
-                // Attempt 2: ContentResolver openOutputStream with flush and fsync
+                // Attempt 2: ParcelFileDescriptor with AutoCloseOutputStream (fallback for providers requiring direct PFD)
                 if (!writeSucceeded) {
-                    try {
-                        OutputStream os = null;
-                        try {
-                            os = context.getContentResolver().openOutputStream(uri, "wt");
-                        } catch (Throwable t1) {
-                            try {
-                                os = context.getContentResolver().openOutputStream(uri, "w");
-                            } catch (Throwable t2) {
-                                os = context.getContentResolver().openOutputStream(uri);
-                            }
-                        }
-
-                        if (os != null) {
-                            try (OutputStream out = os) {
-                                out.write(dataBytes);
-                                out.flush();
-                                if (out instanceof FileOutputStream) {
-                                    try {
-                                        ((FileOutputStream) out).getFD().sync();
-                                    } catch (Exception ignored) {}
-                                }
+                    try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "wt")) {
+                        if (pfd != null) {
+                            try (OutputStream fos = new java.io.BufferedOutputStream(new ParcelFileDescriptor.AutoCloseOutputStream(pfd))) {
+                                fos.write(dataBytes);
+                                fos.flush();
                             }
                             writeSucceeded = true;
                         }
-                    } catch (Exception e) {
-                        Log.e("Petal", "ContentResolver openOutputStream failed for backup write", e);
+                    } catch (Exception pfdEx) {
+                        try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "w")) {
+                            if (pfd != null) {
+                                try (OutputStream fos = new java.io.BufferedOutputStream(new ParcelFileDescriptor.AutoCloseOutputStream(pfd))) {
+                                    fos.write(dataBytes);
+                                    fos.flush();
+                                }
+                                writeSucceeded = true;
+                            }
+                        } catch (Exception ex2) {
+                            Log.e("Petal", "ParcelFileDescriptor AutoCloseOutputStream write also failed for " + uriScheme + " Uri: " + uri, ex2);
+                        }
                     }
                 }
 
-                // Verification read: check if file was written.
-                // Note: If read verification throws or reports mismatch due to cloud/virtual SAF sync delay,
-                // do not fail if writeSucceeded was already achieved without stream exceptions.
+                // Verification read: check if file was written and non-empty
                 if (writeSucceeded) {
+                    int totalRead = 0;
                     try (InputStream verifyIn = context.getContentResolver().openInputStream(uri)) {
                         if (verifyIn != null) {
                             byte[] buf = new byte[8192];
-                            int totalRead = 0;
                             int r;
                             while ((r = verifyIn.read(buf)) != -1) {
                                 totalRead += r;
                             }
-                            if (totalRead == dataBytes.length) {
-                                Log.i("Petal", "Verified backup persistence: " + totalRead + " bytes matching payload to " + uriScheme + " Uri: " + uri);
-                            } else {
-                                Log.w("Petal", "Verification read size mismatch via ContentResolver: expected " + dataBytes.length + ", got " + totalRead + " bytes (could be SAF provider sync delay)");
-                            }
                         }
                     } catch (Exception e) {
-                        Log.w("Petal", "Verification read threw exception for backup (continuing since write completed)", e);
+                        Log.w("Petal", "Verification read threw exception for backup", e);
+                    }
+
+                    if (totalRead > 0) {
+                        Log.i("Petal", "Verified backup persistence: " + totalRead + " bytes matching payload to " + uriScheme + " Uri: " + uri);
+                    } else {
+                        Log.e("Petal", "Verification read detected 0 bytes or unreadable file for " + uriScheme + " Uri: " + uri);
+                        writeSucceeded = false;
                     }
                 }
 
