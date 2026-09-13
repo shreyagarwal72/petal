@@ -1,0 +1,8 @@
+v3.1 — 📑 Tab Sorcery & Seamless Flow 🪄✨
+
+• Fixed Tab Manager preview thumbnails disappearing on app backgrounding — thumbnails now persist until closed
+• Fixed tabs in Tab Switcher opening Petal Home instead of their actual websites
+• Prevented background subframes and payment widgets from corrupting tab metadata
+• Hardened Firefox WebExtension live popup delegates and external link dispatch
+• Improved predictive back gesture navigation and history synchronization
+• Enhanced Progressive Web App (PWA) installation and favicon extraction

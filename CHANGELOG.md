@@ -1,3 +1,20 @@
+### v3.1 — 📑 Tab Sorcery & Seamless Flow 🪄✨
+
+> *"Instant previews, persistent tabs, and unbreakable navigation flow."*
+
+#### 🐛 Bug & Stability Fixes
+- **Persistent Tab Thumbnails**: Fixed Tab Manager preview thumbnail cache eviction. Thumbnails are no longer wiped on background memory trimming (`onTrimMemory`), persisting in memory (32-entry LRU) and disk cache until tabs are explicitly closed or cleared.
+- **Tab Navigation & Site Restore**: Resolved issue where tapping tabs in the Tab Manager unexpectedly navigated to "Petal Home" instead of their intended website. Pre-evaluates target and restored URLs before home page checks.
+- **Subframe Metadata Isolation**: Prevented invisible `about:blank` subframes and third-party payment widgets (Stripe, PayPal, Ko-fi) in `PetalGeckoView` from mutating the parent tab's title or address to the homepage.
+- **Back Gesture Architecture**: Seamless predictive and system back gesture navigation with robust Gecko session history synchronization.
+
+#### ⚡ Performance & Interoperability
+- **WebExtension Popup & Delegate Plumbing**: Fixed GeckoView `ContentDelegate` and `NavigationDelegate` coordination for Firefox add-on popups, enabling native window close and external link dispatch into foreground tabs.
+- **PWA & Offline Web App Architecture**: Hardened background thread favicon resolution and domain extraction for Progressive Web Apps.
+- **Build & CI Pipeline Resilience**: Clean Java/Kotlin interoperability SAM conversions and robust artifact delivery.
+
+---
+
 ### v3.0 — 🌸 Petal: The Grand Milestone (v2.0 to v3.0 Evolution) 🚀🦎
 
 > *"Personal Window to the Web — Completely Gecko-Powered, Zero Trackers, Native Viewers & Seamless Custom Tabs."*
