@@ -51,7 +51,8 @@ class PetalGeckoView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-    adoptedSession: GeckoSession? = null
+    adoptedSession: GeckoSession? = null,
+    initialIncognito: Boolean = false
 ) : FrameLayout(context, attrs, defStyleAttr), AlbumController, NestedScrollingChild3 {
 
     companion object {
@@ -85,10 +86,17 @@ class PetalGeckoView @JvmOverloads constructor(
 
     private val childHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)
     val geckoView: GeckoView = SafeGeckoView(context)
-    var session: GeckoSession = adoptedSession ?: GeckoSession()
+    // The session mode is immutable after GeckoSession construction. Creating a normal
+    // session and switching to private mode later is too late and can leak normal-profile
+    // state into an Incognito tab, especially during cold startup.
+    var session: GeckoSession = adoptedSession ?: GeckoSession(
+        GeckoSessionSettings.Builder()
+            .usePrivateMode(initialIncognito)
+            .build()
+    )
 
     private val sp: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-    private var isIncognito: Boolean = false
+    private var isIncognito: Boolean = initialIncognito
     private var isForegroundTab: Boolean = false
     private var isStopped: Boolean = false
 
@@ -116,6 +124,7 @@ class PetalGeckoView @JvmOverloads constructor(
     private var currentScrollX: Int = 0
     private var lastCrashRecoveryTime: Long = 0L
     private var crashRecoveryCount: Int = 0
+    private var sessionInitializationStarted: Boolean = false
 
     private val skeletonComposeView: androidx.compose.ui.platform.ComposeView = androidx.compose.ui.platform.ComposeView(context)
     private var pendingSkeletonUrl: String = ""
@@ -145,11 +154,19 @@ class PetalGeckoView @JvmOverloads constructor(
         this.pwaManager = PetalPwaManager(context, this, null)
     }
 
+    @MainThread
     private fun initGeckoSession() {
+        if (sessionInitializationStarted) {
+            // A session may be re-initialized after popup adoption or process recovery.
+            // Never start a second open/attachment sequence for the same GeckoSession.
+            return
+        }
+        sessionInitializationStarted = true
+
         val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
-        // GeckoView requires open() to receive a brand-new, unopened session.
-        // Recovery and view reattachment can race with the initial setup, so do
-        // not call open again when this session is already attached/open.
+        // GeckoSession.open() must only be invoked for a newly-created, unopened session.
+        // Keep the open/attach operation serialized on the main thread and make the
+        // session's private-mode choice before open() (see constructor above).
         if (!session.isOpen) {
             session.open(runtime)
         }
@@ -992,6 +1009,9 @@ class PetalGeckoView @JvmOverloads constructor(
         }
         session = popupSession
         // Re-init all delegates on the adopted session without calling open() again.
+        // The initialization guard belongs to the old session, so reset it before
+        // transferring ownership to the already-open popup session.
+        sessionInitializationStarted = false
         initGeckoSession()
     }
 
@@ -1133,7 +1153,12 @@ class PetalGeckoView @JvmOverloads constructor(
             // Recreate the session and all delegates instead of reopening the dead instance.
             try { geckoView.releaseSession() } catch (_: Throwable) {}
             try { if (session.isOpen) session.close() } catch (_: Throwable) {}
-            session = GeckoSession()
+            session = GeckoSession(
+                GeckoSessionSettings.Builder()
+                    .usePrivateMode(isIncognito)
+                    .build()
+            )
+            sessionInitializationStarted = false
             initGeckoSession()
 
             // Rebinding a fresh session also gives GeckoView a new compositor surface.
@@ -1501,9 +1526,12 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun destroy() {
         stopLoading()
-        session.setActive(false)
-        session.close()
-        geckoView.releaseSession()
+        try { session.setActive(false) } catch (_: Throwable) {}
+        // Detach GeckoView before closing its session. Closing an attached session can
+        // race GeckoView's compositor teardown and is particularly fragile on cold start
+        // and during Activity destruction.
+        try { geckoView.releaseSession() } catch (_: Throwable) {}
+        try { if (session.isOpen) session.close() } catch (_: Throwable) {}
         removeAllViews()
     }
 
