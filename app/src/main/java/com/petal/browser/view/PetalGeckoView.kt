@@ -730,7 +730,7 @@ class PetalGeckoView @JvmOverloads constructor(
                             override fun getAcceptTypes(): Array<String> = mimeTypes
                             override fun isCaptureEnabled(): Boolean = prompt.capture != GeckoSession.PromptDelegate.FilePrompt.Capture.NONE
                             override fun getTitle(): CharSequence? = null
-                            override fun getFilenameDefault(): String? = null
+                            override fun getFilenameHint(): String? = null
                             override fun createIntent(): android.content.Intent {
                                 val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
                                     addCategory(android.content.Intent.CATEGORY_OPENABLE)
