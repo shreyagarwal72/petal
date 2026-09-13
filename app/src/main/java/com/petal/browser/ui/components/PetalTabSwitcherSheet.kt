@@ -113,8 +113,25 @@ object PetalTabSwitcherBridge {
                         mutableStateListOf<com.petal.browser.compose.tabs.PetalTabItem>().apply {
                             addAll(
                                 BrowserContainer.list().map { album: AlbumController ->
-                                    val rawTitle = try { album.getTitle() } catch (_: Exception) { null }
-                                    val rawUrl = try { album.getUrl() } catch (_: Exception) { null }
+                                    val rawTitle = try {
+                                        if (album is com.petal.browser.view.PetalGeckoView) {
+                                            val t = album.title
+                                            if (t.isNotBlank() && t != "Petal Start" && t != "Petal Home") t else album.getAlbumTitle()
+                                        } else {
+                                            album.getTitle()
+                                        }
+                                    } catch (_: Exception) { null }
+                                    val rawUrl = try {
+                                        if (album is com.petal.browser.view.PetalGeckoView) {
+                                            val u = album.url
+                                            if (u.isNotBlank() && !u.equals("about:blank", ignoreCase = true) && !u.equals("petal://home", ignoreCase = true)) u else album.getAlbumUrl()
+                                        } else if (album is com.petal.browser.view.NinjaWebView) {
+                                            val u = album.url
+                                            if (!u.isNullOrBlank() && !u.equals("about:blank", ignoreCase = true) && !u.equals("petal://home", ignoreCase = true)) u else album.getAlbumUrl()
+                                        } else {
+                                            album.getUrl()
+                                        }
+                                    } catch (_: Exception) { null }
                                     val isIncognitoTab = (album is com.petal.browser.view.PetalGeckoView && album.isIncognito()) ||
                                             ((album is com.petal.browser.view.NinjaWebView) && album.isIncognito())
                                     val faviconBitmap = when (album) {
@@ -123,18 +140,33 @@ object PetalTabSwitcherBridge {
                                         is PlaceholderAlbumController -> album.getFavicon()
                                         else -> null
                                     }
-                                    val previewBitmap = if (album is com.petal.browser.view.PetalGeckoView) {
-                                        album.getCachedPreviewBitmap()
-                                    } else if (album is com.petal.browser.view.NinjaWebView) {
-                                        album.getCachedPreviewBitmap() ?: album.capturePreviewBitmap()
-                                    } else null
+                                    val previewBitmap = when (album) {
+                                        is com.petal.browser.view.PetalGeckoView -> {
+                                            album.getCachedPreviewBitmap()
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.getTabId())
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.getAlbumUrl())
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.url)
+                                        }
+                                        is com.petal.browser.view.NinjaWebView -> {
+                                            album.getCachedPreviewBitmap()
+                                                ?: album.capturePreviewBitmap()
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.getTabId())
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.getAlbumUrl())
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.url)
+                                        }
+                                        is PlaceholderAlbumController -> {
+                                            com.petal.browser.unit.TabThumbnailCache.get(album.getTabId())
+                                                ?: com.petal.browser.unit.TabThumbnailCache.get(album.url)
+                                        }
+                                        else -> com.petal.browser.unit.TabThumbnailCache.get(album.hashCode().toString())
+                                    }
 
                                     val displayTitle = when {
-                                        !rawTitle.isNullOrBlank() && !rawTitle.equals("about:blank", ignoreCase = true) && !rawTitle.equals("Petal Start", ignoreCase = true) -> rawTitle
-                                        !rawUrl.isNullOrBlank() && !rawUrl.equals("about:blank", ignoreCase = true) && !rawUrl.startsWith("file:///android_asset/") -> rawUrl
+                                        !rawTitle.isNullOrBlank() && !rawTitle.equals("about:blank", ignoreCase = true) && !rawTitle.equals("Petal Start", ignoreCase = true) && !rawTitle.equals("Petal Home", ignoreCase = true) -> rawTitle
+                                        !rawUrl.isNullOrBlank() && !rawUrl.equals("about:blank", ignoreCase = true) && !rawUrl.startsWith("file:///android_asset/") && !rawUrl.equals("petal://home", ignoreCase = true) && !rawUrl.equals("Petal Home", ignoreCase = true) -> rawUrl
                                         else -> "Petal Home"
                                     }
-                                    val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equals("about:blank", ignoreCase = true) || rawUrl.startsWith("file:///android_asset/")) "Petal Home" else rawUrl
+                                    val displayUrl = if (rawUrl.isNullOrBlank() || rawUrl.equals("about:blank", ignoreCase = true) || rawUrl.startsWith("file:///android_asset/") || rawUrl.equals("petal://home", ignoreCase = true) || rawUrl.equals("Petal Home", ignoreCase = true)) "Petal Home" else rawUrl
                                     val group = com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(context, album.hashCode().toString())
                                     val webViewGroupId = when (album) {
                                         is com.petal.browser.view.PetalGeckoView -> album.getTabGroupId()
@@ -185,6 +217,8 @@ object PetalTabSwitcherBridge {
                                 if (targetAlbum is com.petal.browser.view.PetalGeckoView) {
                                     com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
                                 } else if (targetAlbum is com.petal.browser.view.NinjaWebView) {
+                                    com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
+                                } else if (targetAlbum is PlaceholderAlbumController) {
                                     com.petal.browser.unit.TabThumbnailCache.remove(targetAlbum.getTabId())
                                 }
                                 com.petal.browser.unit.TabThumbnailCache.remove(tabItem.id)

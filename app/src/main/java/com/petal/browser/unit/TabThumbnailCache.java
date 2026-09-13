@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 public final class TabThumbnailCache {
 
     private static final String TAG = "TabThumbnailCache";
-    private static final int MAX_ENTRIES = 12;
+    private static final int MAX_ENTRIES = 32;
     private static File diskCacheDir = null;
 
     private static final LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(MAX_ENTRIES);
@@ -28,7 +28,7 @@ public final class TabThumbnailCache {
     private TabThumbnailCache() {}
 
     public static void initDiskCache(Context context) {
-        if (diskCacheDir != null) return;
+        if (diskCacheDir != null && diskCacheDir.exists()) return;
         try {
             File baseDir = context.getApplicationContext().getFilesDir();
             diskCacheDir = new File(baseDir, "petal_tab_thumbnails");
@@ -38,6 +38,17 @@ public final class TabThumbnailCache {
         } catch (Exception e) {
             Log.e(TAG, "Failed to init disk cache dir", e);
         }
+    }
+
+    private static File getDiskCacheDir() {
+        if (diskCacheDir != null && diskCacheDir.exists()) return diskCacheDir;
+        try {
+            com.petal.browser.PetalApplication app = com.petal.browser.PetalApplication.Companion.getInstance();
+            if (app != null) {
+                initDiskCache(app);
+            }
+        } catch (Exception ignored) {}
+        return diskCacheDir;
     }
 
     public static void put(@Nullable String tabId, @Nullable Bitmap bitmap) {
@@ -104,13 +115,14 @@ public final class TabThumbnailCache {
         evictAll();
     }
 
-    /** Call on incognito session teardown so private-tab thumbnails don't linger in memory/disk. */
+    /** Call on incognito session teardown or "Close All Tabs" so thumbnails don't linger in memory/disk. */
     public static void evictAll() {
         cache.evictAll();
-        if (diskCacheDir != null && diskCacheDir.exists()) {
+        File dir = getDiskCacheDir();
+        if (dir != null && dir.exists()) {
             Executors.newSingleThreadExecutor().execute(() -> {
                 try {
-                    File[] files = diskCacheDir.listFiles();
+                    File[] files = dir.listFiles();
                     if (files != null) {
                         for (File file : files) {
                             file.delete();
@@ -134,10 +146,11 @@ public final class TabThumbnailCache {
     }
 
     private static void deleteFromDiskAsync(String key) {
-        if (diskCacheDir == null) return;
+        File dir = getDiskCacheDir();
+        if (dir == null) return;
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
-                File file = new File(diskCacheDir, key + ".png");
+                File file = new File(dir, key + ".png");
                 if (file.exists()) {
                     file.delete();
                 }
@@ -148,11 +161,12 @@ public final class TabThumbnailCache {
     }
 
     private static void saveToDiskAsync(String key, Bitmap bitmap) {
-        if (diskCacheDir == null) return;
+        File dir = getDiskCacheDir();
+        if (dir == null) return;
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
-                if (diskCacheDir == null || bitmap == null || bitmap.isRecycled()) return;
-                File file = new File(diskCacheDir, key + ".png");
+                if (dir == null || bitmap == null || bitmap.isRecycled()) return;
+                File file = new File(dir, key + ".png");
                 try (FileOutputStream out = new FileOutputStream(file)) {
                     bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
                     out.flush();
@@ -164,9 +178,10 @@ public final class TabThumbnailCache {
     }
 
     private static Bitmap loadFromDisk(String key) {
-        if (diskCacheDir == null) return null;
+        File dir = getDiskCacheDir();
+        if (dir == null) return null;
         try {
-            File file = new File(diskCacheDir, key + ".png");
+            File file = new File(dir, key + ".png");
             if (file.exists() && file.length() > 0) {
                 return BitmapFactory.decodeFile(file.getAbsolutePath());
             }

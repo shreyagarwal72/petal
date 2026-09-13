@@ -243,7 +243,6 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<AllowOrDeny>? {
                 val uri = request.uri
                 if (BrowserUnit.isHomePage(uri)) {
-                    album.setAlbumTitle("Petal Home", "petal://home")
                     if (uri.equals("about:blank", ignoreCase = true)) {
                         return GeckoResult.fromValue(AllowOrDeny.ALLOW)
                     }
@@ -1181,9 +1180,36 @@ class PetalGeckoView @JvmOverloads constructor(
         session.setActive(false)
     }
 
-    override fun getTitle(): String = currentTitle
+    override fun getTitle(): String {
+        if (currentTitle.isNotEmpty() && !currentTitle.equals("Petal Start", ignoreCase = true)) {
+            return currentTitle
+        }
+        val aTitle = getAlbumTitle()
+        if (aTitle.isNotEmpty() && !aTitle.equals("Petal Start", ignoreCase = true) && !aTitle.equals("Petal Home", ignoreCase = true)) {
+            return aTitle
+        }
+        return currentTitle
+    }
 
-    override fun getUrl(): String = currentUrl
+    fun getAlbumTitle(): String {
+        return try {
+            val t = album.title
+            if (!t.isNullOrBlank()) t else currentTitle
+        } catch (_: Exception) {
+            currentTitle
+        }
+    }
+
+    override fun getUrl(): String {
+        if (currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true)) {
+            return currentUrl
+        }
+        val albumUrl = getAlbumUrl()
+        if (albumUrl.isNotEmpty() && !albumUrl.equals("about:blank", ignoreCase = true) && !albumUrl.equals("Petal Home", ignoreCase = true)) {
+            return albumUrl
+        }
+        return currentUrl
+    }
 
     fun getAlbumUrl(): String = album.url?.toString() ?: currentUrl
 
@@ -1280,6 +1306,11 @@ class PetalGeckoView @JvmOverloads constructor(
             bitmap = TabThumbnailCache.get(currentUrl)
             if (bitmap != null && !bitmap.isRecycled) return bitmap
         }
+        val albumUrl = getAlbumUrl()
+        if (albumUrl.isNotEmpty() && !albumUrl.equals("about:blank", ignoreCase = true) && !albumUrl.equals("Petal Home", ignoreCase = true)) {
+            bitmap = TabThumbnailCache.get(albumUrl)
+            if (bitmap != null && !bitmap.isRecycled) return bitmap
+        }
         return null
     }
 
@@ -1292,6 +1323,10 @@ class PetalGeckoView @JvmOverloads constructor(
                 TabThumbnailCache.put(key, bmp)
                 if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
                     TabThumbnailCache.put(url, bmp)
+                }
+                val aUrl = getAlbumUrl()
+                if (aUrl.isNotEmpty() && !aUrl.equals("about:blank", ignoreCase = true) && !aUrl.equals(url, ignoreCase = true)) {
+                    TabThumbnailCache.put(aUrl, bmp)
                 }
             }
             callback.accept(bmp)

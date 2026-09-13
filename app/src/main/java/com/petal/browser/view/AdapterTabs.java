@@ -40,6 +40,9 @@ public class AdapterTabs {
     public Object getUrl() {
         return albumUrl.getText().toString();
     }
+    public String getTitle() {
+        return albumTitle != null ? albumTitle.getText().toString() : "";
+    }
 
     void setAlbumTitle(String title, String url) {
         String displayTitle = (title == null || title.isEmpty() || title.equalsIgnoreCase("about:blank") || title.equalsIgnoreCase("Petal Start")) ? "Petal Home" : title;

@@ -152,12 +152,22 @@ public class TabSessionManager {
                     continue;
                 }
                 String url = geckoView.getUrl();
-                if (url == null || url.trim().isEmpty()) {
-                    url = "about:blank";
+                if (url == null || url.trim().isEmpty() || "about:blank".equalsIgnoreCase(url)) {
+                    String albumUrl = geckoView.getAlbumUrl();
+                    if (albumUrl != null && !albumUrl.trim().isEmpty() && !"about:blank".equalsIgnoreCase(albumUrl)) {
+                        url = albumUrl;
+                    } else {
+                        url = "about:blank";
+                    }
                 }
                 String title = geckoView.getTitle();
-                if (title == null || title.trim().isEmpty()) {
-                    title = url;
+                if (title == null || title.trim().isEmpty() || "Petal Start".equalsIgnoreCase(title)) {
+                    String albumTitle = geckoView.getAlbumTitle();
+                    if (albumTitle != null && !albumTitle.trim().isEmpty() && !"Petal Start".equalsIgnoreCase(albumTitle)) {
+                        title = albumTitle;
+                    } else {
+                        title = url;
+                    }
                 }
                 boolean isActive = geckoView.isForeground();
                 String tabGroupId = geckoView.getTabGroupId();
@@ -173,8 +183,13 @@ public class TabSessionManager {
                 }
 
                 String url = webView.getUrl();
-                if (url == null || url.trim().isEmpty()) {
-                    url = "about:blank";
+                if (url == null || url.trim().isEmpty() || "about:blank".equalsIgnoreCase(url)) {
+                    String albumUrl = webView.getAlbumUrl();
+                    if (albumUrl != null && !albumUrl.trim().isEmpty() && !"about:blank".equalsIgnoreCase(albumUrl)) {
+                        url = albumUrl;
+                    } else {
+                        url = "about:blank";
+                    }
                 }
 
                 String title = webView.getTitle();

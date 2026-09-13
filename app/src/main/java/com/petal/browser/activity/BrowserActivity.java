@@ -684,7 +684,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                 }
                 if (activeRestoredGeckoView != null) {
-                    showAlbum(activeRestoredGeckoView);
+                    showAlbum(activeRestoredGeckoView, activeRestoredUrl);
                 } else if (BrowserContainer.size() > 0) {
                     showAlbum(BrowserContainer.get(0));
                 }
@@ -1348,6 +1348,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController != null) {
             if (currentAlbumController instanceof NinjaWebView) {
                 ((NinjaWebView) currentAlbumController).updatePreviewCache();
+            } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).updatePreviewCache();
             }
             currentAlbumController.deactivate();
         }
@@ -1371,7 +1373,36 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             bottomNavCompose.setVisibility(inPip ? GONE : VISIBLE);
         }
 
-        String url = overrideUrl != null ? overrideUrl : (currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : ""));
+        String targetUrl = overrideUrl;
+        if (targetUrl == null || targetUrl.isEmpty()) {
+            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+                String gvUrl = gv.getUrl();
+                String albumUrl = gv.getAlbumUrl();
+                if (gvUrl != null && !gvUrl.isEmpty() && !isHomePage(gvUrl) && !"about:blank".equalsIgnoreCase(gvUrl)) {
+                    targetUrl = gvUrl;
+                } else if (albumUrl != null && !albumUrl.isEmpty() && !isHomePage(albumUrl) && !"about:blank".equalsIgnoreCase(albumUrl)) {
+                    targetUrl = albumUrl;
+                } else {
+                    targetUrl = (gvUrl != null && !gvUrl.isEmpty()) ? gvUrl : (albumUrl != null ? albumUrl : "");
+                }
+            } else if (ninjaWebView != null) {
+                String nwUrl = ninjaWebView.getUrl();
+                String albumUrl = ninjaWebView.getAlbumUrl();
+                if (nwUrl != null && !nwUrl.isEmpty() && !isHomePage(nwUrl) && !"about:blank".equalsIgnoreCase(nwUrl)) {
+                    targetUrl = nwUrl;
+                } else if (albumUrl != null && !albumUrl.isEmpty() && !isHomePage(albumUrl) && !"about:blank".equalsIgnoreCase(albumUrl)) {
+                    targetUrl = albumUrl;
+                } else {
+                    targetUrl = (nwUrl != null && !nwUrl.isEmpty()) ? nwUrl : (albumUrl != null ? albumUrl : "");
+                }
+            } else if (currentAlbumController != null) {
+                targetUrl = currentAlbumController.getUrl();
+            } else {
+                targetUrl = "";
+            }
+        }
+        String url = targetUrl;
         boolean isIncognitoTab = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
                 ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
                 : (ninjaWebView != null && ninjaWebView.isIncognito());
@@ -1596,13 +1627,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     albumSavedUrl = geckoView.getAlbumUrl();
                 } catch (Exception ignored) {}
 
-                String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : (currentUrl != null && !currentUrl.isEmpty() ? currentUrl : albumSavedUrl);
+                String effectiveTargetUrl = (targetUrl != null && !targetUrl.isEmpty()) ? targetUrl : ((currentUrl != null && !currentUrl.isEmpty()) ? currentUrl : albumSavedUrl);
 
-                if ((currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl)) &&
-                    (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl))) {
-                    geckoView.loadUrl(targetUrl);
-                } else if (overrideUrl != null && !overrideUrl.isEmpty() && !overrideUrl.equalsIgnoreCase(currentUrl) && !isHomePage(overrideUrl) && !"about:blank".equalsIgnoreCase(overrideUrl)) {
-                    geckoView.loadUrl(overrideUrl);
+                if ((currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl) || !currentUrl.equalsIgnoreCase(effectiveTargetUrl)) &&
+                    (effectiveTargetUrl != null && !effectiveTargetUrl.isEmpty() && !isHomePage(effectiveTargetUrl) && !"about:blank".equalsIgnoreCase(effectiveTargetUrl))) {
+                    geckoView.loadUrl(effectiveTargetUrl);
                 } else if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl)) {
                     geckoView.onResume();
                 }
@@ -1633,13 +1662,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     albumSavedUrl = ninjaWebView.getAlbumUrl();
                 } catch (Exception ignored) {}
 
-                String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : (currentUrl != null && !currentUrl.isEmpty() ? currentUrl : albumSavedUrl);
+                String effectiveTargetUrl = (targetUrl != null && !targetUrl.isEmpty()) ? targetUrl : ((currentUrl != null && !currentUrl.isEmpty()) ? currentUrl : albumSavedUrl);
 
-                if ((currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl)) &&
-                    (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl))) {
-                    ninjaWebView.loadUrl(targetUrl);
-                } else if (overrideUrl != null && !overrideUrl.isEmpty() && !overrideUrl.equalsIgnoreCase(currentUrl) && !isHomePage(overrideUrl) && !"about:blank".equalsIgnoreCase(overrideUrl)) {
-                    ninjaWebView.loadUrl(overrideUrl);
+                if ((currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl) || !currentUrl.equalsIgnoreCase(effectiveTargetUrl)) &&
+                    (effectiveTargetUrl != null && !effectiveTargetUrl.isEmpty() && !isHomePage(effectiveTargetUrl) && !"about:blank".equalsIgnoreCase(effectiveTargetUrl))) {
+                    ninjaWebView.loadUrl(effectiveTargetUrl);
                 } else if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl)) {
                     ninjaWebView.onResume();
                     ninjaWebView.resumeTimers();
@@ -2043,6 +2070,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                     com.petal.browser.unit.TabThumbnailCache.remove(((com.petal.browser.view.PetalGeckoView) controller).getTabId());
                     ((com.petal.browser.view.PetalGeckoView) controller).destroy();
+                } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
+                    com.petal.browser.unit.TabThumbnailCache.remove(((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabId());
                 }
                 com.petal.browser.unit.TabThumbnailCache.remove(String.valueOf(controller.hashCode()));
                 if ((predecessor != null) && (BrowserContainer.indexOf(predecessor) != -1)) {
@@ -2071,6 +2100,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
                 com.petal.browser.unit.TabThumbnailCache.remove(((com.petal.browser.view.PetalGeckoView) controller).getTabId());
                 ((com.petal.browser.view.PetalGeckoView) controller).destroy();
+            } else if (controller instanceof com.petal.browser.browser.PlaceholderAlbumController) {
+                com.petal.browser.unit.TabThumbnailCache.remove(((com.petal.browser.browser.PlaceholderAlbumController) controller).getTabId());
             }
             boolean isClosingCurrent = (controller == currentAlbumController);
             BrowserContainer.remove(controller);
@@ -3455,6 +3486,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void showOverview() {
         try {
+            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).updatePreviewCache();
+            } else if (currentAlbumController instanceof NinjaWebView) {
+                ((NinjaWebView) currentAlbumController).updatePreviewCache();
+            }
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
             contentFrame.removeAllViews();
@@ -4635,6 +4671,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             AlbumController controller = BrowserContainer.get(i);
             if (controller == null) continue;
             String url = controller.getUrl();
+            if (url == null || url.trim().isEmpty() || "about:blank".equalsIgnoreCase(url)) {
+                if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                    String albumUrl = ((com.petal.browser.view.PetalGeckoView) controller).getAlbumUrl();
+                    if (albumUrl != null && !albumUrl.trim().isEmpty() && !"about:blank".equalsIgnoreCase(albumUrl)) {
+                        url = albumUrl;
+                    }
+                } else if (controller instanceof NinjaWebView) {
+                    String albumUrl = ((NinjaWebView) controller).getAlbumUrl();
+                    if (albumUrl != null && !albumUrl.trim().isEmpty() && !"about:blank".equalsIgnoreCase(albumUrl)) {
+                        url = albumUrl;
+                    }
+                }
+            }
             if (url == null) url = "";
             if (controller == currentAlbumController) {
                 openTabs.add(0, url);
