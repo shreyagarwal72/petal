@@ -986,6 +986,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     private long lastBackPressTime = 0;
+    // The native Home surface is rendered over an about:blank browser document.
+    // Keep explicit UI state so Back never follows Gecko history into a blank page.
+    private boolean isPetalHomeSurfaceShowing = false;
 
     /**
      * The actual back-navigation decision logic. Shared between the legacy KEYCODE_BACK
@@ -1024,7 +1027,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         String currentUrl = currentAlbumController != null
                 ? currentAlbumController.getUrl()
                 : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
-        if (isHomePage(currentUrl) || (currentUrl != null && currentUrl.equalsIgnoreCase("about:blank"))) {
+        if (isPetalHomeSurfaceShowing || isHomePage(currentUrl) || (currentUrl != null && currentUrl.equalsIgnoreCase("about:blank"))) {
             boolean requireDoubleBack = sp.getBoolean("sp_double_back_exit", true);
             if (!requireDoubleBack) {
                 finishAndRemoveTask();
@@ -1545,6 +1548,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         String url = overrideUrl != null ? overrideUrl : (currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : ""));
+        // Home is a native Compose surface backed by an about:blank Gecko/WebView
+        // document, so the controller URL alone cannot reliably describe what is visible.
+        isPetalHomeSurfaceShowing = isHomePage(url);
         boolean isIncognitoTab = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
                 ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
                 : (ninjaWebView != null && ninjaWebView.isIncognito());
