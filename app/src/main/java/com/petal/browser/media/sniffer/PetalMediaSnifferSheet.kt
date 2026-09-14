@@ -88,13 +88,15 @@ fun PetalMediaSnifferOverlay(
     onPlay: (MediaInterceptor.MediaPlaybackRequest) -> Unit
 ) {
     val media by PetalMediaSniffer.interceptor.playableMedia.collectAsState()
+    val platform = remember(currentPageUrl) { SupportedPlatforms.getPlatform(currentPageUrl) }
+    val socialOnly = platform != null
     var sheetOpen by remember { mutableStateOf(false) }
     var dismissed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(media) { if (media.isNotEmpty()) dismissed = false }
+    LaunchedEffect(currentPageUrl, media, socialOnly) { dismissed = false }
 
     AnimatedVisibility(
-        visible = media.isNotEmpty() && !dismissed,
+        visible = (media.isNotEmpty() || socialOnly) && !dismissed,
         enter = slideInVertically { -it } + fadeIn() + scaleIn(initialScale = .92f),
         exit  = slideOutVertically { -it } + fadeOut() + scaleOut(targetScale = .92f),
         modifier = Modifier.fillMaxWidth()
@@ -114,9 +116,12 @@ fun PetalMediaSnifferOverlay(
             ) {
                 Icon(Icons.Rounded.VideoLibrary, null, tint = MaterialTheme.colorScheme.primary)
                 Column(Modifier.weight(1f)) {
-                    Text("Media found", style = MaterialTheme.typography.labelLarge)
                     Text(
-                        "${media.size} source${if (media.size == 1) "" else "s"} on this page",
+                        if (socialOnly) "Social download" else "Media found",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    Text(
+                        if (socialOnly) platform!!.displayName else "${media.size} source${if (media.size == 1) "" else "s"} on this page",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -161,7 +166,9 @@ private fun PetalMediaSheet(
                 .padding(bottom = 32.dp)
         ) {
             // ── Section 1: Passive sniffer streams ────────────────────────
-            item {
+            // Social platforms are owned by Social Downloader; never expose the
+            // normal media-sniffer list on those pages.
+            if (platform == null) {
                 Text(
                     "Media sources",
                     style    = MaterialTheme.typography.headlineSmall,
@@ -172,9 +179,8 @@ private fun PetalMediaSheet(
                     style    = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp)
                 )
-            }
 
-            items(media, key = { it.url }) { item ->
+                items(media, key = { it.url }) { item ->
                 Surface(
                     shape         = MaterialTheme.shapes.large,
                     tonalElevation = 2.dp,
@@ -225,6 +231,7 @@ private fun PetalMediaSheet(
                         }
                     }
                 }
+            }
             }
 
             // ── Section 2: Social Downloader (yt-dlp) ────────────────────

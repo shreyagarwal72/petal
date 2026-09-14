@@ -18,6 +18,8 @@
 
 package com.petal.browser.media.sniffer
 
+import com.petal.browser.media.ytdlp.SupportedPlatforms
+
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -226,7 +228,7 @@ class MediaInterceptor {
         _activePageId.value = pageId
         activePageUrl = pageUrl.orEmpty()
         youtubeExtractionJob?.cancel()
-        if (isYouTubeEnabled && isYouTubePage(activePageUrl) && !isDomainBlocked(activePageUrl)) {
+        if (!SupportedPlatforms.isSupported(activePageUrl) && isYouTubeEnabled && isYouTubePage(activePageUrl) && !isDomainBlocked(activePageUrl)) {
             youtubeExtractionJob = scope.launch {
                 extractYouTubePage(activePageUrl, pageId)
             }
@@ -386,6 +388,9 @@ class MediaInterceptor {
 
     /** Called when the network interceptor detects a media asset request. */
     fun onMediaRequestDetected(url: String, headers: Map<String, String>? = null) {
+        // Supported social platforms are handled exclusively by Social Downloader.
+        // Do not let the passive media sniffer compete with yt-dlp on these pages.
+        if (SupportedPlatforms.isSupported(activePageUrl)) return
         if (!isMediaDetectionEnabled) return
         if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) return
         if (isDomainBlocked(url)) return
@@ -446,6 +451,8 @@ class MediaInterceptor {
 
     /** Aggressive capturing callback for MSE (Media Source Extensions) or Blob links. */
     fun onAggressiveMediaGrabbed(url: String, mimeType: String, cookies: String? = null, sizeBytes: Long? = null) {
+        // Supported social platforms are handled exclusively by Social Downloader.
+        if (SupportedPlatforms.isSupported(activePageUrl)) return
         if (!isMediaDetectionEnabled) return
         if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) return
         if (isDomainBlocked(url)) return
