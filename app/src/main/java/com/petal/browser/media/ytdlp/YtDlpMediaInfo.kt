@@ -48,7 +48,7 @@ data class YtDlpFormat(
 
             options += YtDlpFormat(
                 formatId = if (hasAudioVideo) {
-                    "bestvideo+bestaudio/best"
+                    "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
                 } else {
                     "best"
                 },
@@ -60,7 +60,7 @@ data class YtDlpFormat(
                 .filter { requested -> heights.any { it >= requested } }
                 .forEach { height ->
                     options += YtDlpFormat(
-                        formatId = "bestvideo[height<=${height}]+bestaudio/best[height<=${height}]",
+                        formatId = "bestvideo[height<=${height}][ext=mp4]+bestaudio[ext=m4a]/best[height<=${height}][ext=mp4]/best[height<=${height}]/best",
                         label = "${height}p",
                         ext = "mp4"
                     )
@@ -71,7 +71,7 @@ data class YtDlpFormat(
 
         fun audioOption(): YtDlpFormat =
             YtDlpFormat(
-                formatId = "bestaudio/best",
+                formatId = "bestaudio[ext=m4a]/bestaudio/best",
                 label = "Audio only · M4A",
                 isAudioOnly = true,
                 ext = "m4a"
