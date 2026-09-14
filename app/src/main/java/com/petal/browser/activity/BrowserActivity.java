@@ -476,6 +476,43 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         com.petal.browser.unit.PetalSessionHistoryManager.initSession();
         com.petal.browser.extensions.PetalExtensionManager.attach(context);
 
+        // Wire the extension-popup listener so browser/page-action popups (uBlock Origin,
+        // Bitwarden, etc.) are shown as a full-screen overlay when the extension's toolbar
+        // button is tapped. Without this the popup session is created but never displayed.
+        com.petal.browser.extensions.PetalExtensionManager.setPopupRequestListener(popup -> {
+            runOnUiThread(() -> {
+                try {
+                    android.view.View popupView =
+                        com.petal.browser.compose.extensions.PetalExtensionsBridge.createPopupView(
+                            this, popup,
+                            () -> {
+                                runOnUiThread(() -> {
+                                    try {
+                                        android.view.ViewGroup rootDecor = (android.view.ViewGroup) getWindow().getDecorView();
+                                        android.view.View tag = rootDecor.findViewWithTag("ext_popup_overlay");
+                                        if (tag != null) rootDecor.removeView(tag);
+                                    } catch (Exception ignored) {}
+                                    com.petal.browser.extensions.PetalExtensionManager.dismissPopup();
+                                });
+                                return kotlin.Unit.INSTANCE;
+                            }
+                        );
+                    popupView.setTag("ext_popup_overlay");
+                    android.view.ViewGroup rootDecor = (android.view.ViewGroup) getWindow().getDecorView();
+                    // Remove any stale popup overlay first
+                    android.view.View old = rootDecor.findViewWithTag("ext_popup_overlay");
+                    if (old != null) rootDecor.removeView(old);
+                    android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    );
+                    rootDecor.addView(popupView, lp);
+                } catch (Exception e) {
+                    android.util.Log.e("BrowserActivity", "Failed to show extension popup overlay", e);
+                }
+            });
+        });
+
         try {
             Intent mediaServiceIntent = new Intent(this, com.petal.browser.media.PetalMediaSessionService.class);
             bindService(mediaServiceIntent, mediaConnection, Context.BIND_AUTO_CREATE);
@@ -3443,13 +3480,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             );
         }
 
+        // Bind the media sniffer overlay — shows a "Media found" banner above the address bar
+        // whenever playable video/audio is detected on the current page. The ComposeView exists
+        // in the layout but was never given content without this call.
+        androidx.compose.ui.platform.ComposeView mediaSnifferCompose = findViewById(R.id.media_sniffer_compose);
+        if (mediaSnifferCompose != null) {
+            com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.bind(mediaSnifferCompose, this);
+        }
+
         if (contentFrame == null) return;
 
         // Works the same for every page hosted in main_content: a normal web
         // page (PetalGeckoView), the home screen, or settings/downloads - all of
         // them get swapped into this same container, and PullToRefreshFrameLayout
         // intercepts the drag regardless of what's currently inside it.
-        contentFrame.setPullDistanceDp(300f);
+        contentFrame.setPullDistanceDp(120f);
         contentFrame.setCanPull(() -> {
             // If internal native Compose views (Settings, History, Downloads, Account) are swapped into contentFrame, disable pull to refresh
             if (isOverlayScreenShowing) {

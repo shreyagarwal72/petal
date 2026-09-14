@@ -577,6 +577,16 @@ object PetalExtensionManager {
                 popupSession.open(runtime)
             }
         }
+
+        // Inject mobile-responsive CSS when the extension popup page finishes loading.
+        // Without this, many extension popups (uBlock Origin, Bitwarden, AdGuard, etc.)
+        // render at their desktop fixed width and overflow the phone screen.
+        popupSession.progressDelegate = object : GeckoSession.ProgressDelegate {
+            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                injectExtensionPopupResponsiveFix(session)
+            }
+        }
+
         val popup = PendingPopup(
             extensionId = extension.id,
             extensionName = extension.metaData.name ?: extension.id,
@@ -587,6 +597,42 @@ object PetalExtensionManager {
         notifyPopupRequested(popup)
         return GeckoResult.fromValue(popupSession)
     }
+
+    /** Injects a mobile-responsive CSS + viewport fix into extension popup sessions.
+     *  Matches omni's injectExtensionPopupResponsiveFix so all extension popups look
+     *  correct on phone-sized screens instead of overflowing at their desktop widths. */
+    private fun injectExtensionPopupResponsiveFix(session: GeckoSession) {
+        val js = """
+            (function() {
+                try {
+                    var existing = document.querySelector('meta[name="viewport"]');
+                    if (!existing) {
+                        var meta = document.createElement('meta');
+                        meta.name    = 'viewport';
+                        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes';
+                        (document.head || document.documentElement).appendChild(meta);
+                    } else if (!existing.content || existing.content.indexOf('width=device-width') === -1) {
+                        existing.content = 'width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes';
+                    }
+                    if (document.getElementById('petal-ext-popup-responsive')) return;
+                    var style = document.createElement('style');
+                    style.id = 'petal-ext-popup-responsive';
+                    style.innerHTML = [
+                        'html, body { max-width: 100vw !important; width: 100% !important; min-width: unset !important; overflow-x: hidden !important; box-sizing: border-box !important; }',
+                        '*, *::before, *::after { box-sizing: border-box !important; }',
+                        '.container, .wrapper, .content, .inner, .card, .panel, .notification, .popup, .popup-container, .popup-inner, .app, .app-container, .main, main, [role="main"], [class*="container"], [class*="wrapper"], [class*="card"], [class*="notification"], [class*="popup"], [class*="panel"], [class*="dialog"], [class*="modal"], [id*="container"], [id*="wrapper"], [id*="notification"], [id*="popup"] { max-width: calc(100vw - 8px) !important; width: auto !important; min-width: unset !important; margin-left: auto !important; margin-right: auto !important; overflow-x: hidden !important; }',
+                        'button, input, select, textarea, a { max-width: 100% !important; word-break: break-word !important; }',
+                        '[style*="position: fixed"], [style*="position:fixed"] { max-width: 100vw !important; width: 100% !important; left: 0 !important; right: 0 !important; }'
+                    ].join(' ');
+                    (document.head || document.documentElement).appendChild(style);
+                } catch(e) {}
+            })();
+        """.trimIndent().replace("\n", " ")
+        try {
+            session.loadUri("javascript:$js")
+        } catch (ignored: Exception) {}
+    }
+
 
     @JvmStatic
     fun dismissPopup() {
@@ -678,10 +724,20 @@ object PetalExtensionManager {
         }
         _pendingPopup.value = null
 
-        val popupSession = GeckoSession()
+        val popupSettings = org.mozilla.geckoview.GeckoSessionSettings.Builder()
+            .usePrivateMode(false)
+            .allowJavascript(true)
+            .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
+            .build()
+        val popupSession = GeckoSession(popupSettings)
         val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
         if (!popupSession.isOpen) {
             popupSession.open(runtime)
+        }
+        popupSession.progressDelegate = object : GeckoSession.ProgressDelegate {
+            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                injectExtensionPopupResponsiveFix(session)
+            }
         }
         popupSession.loadUri(popupUrl)
 

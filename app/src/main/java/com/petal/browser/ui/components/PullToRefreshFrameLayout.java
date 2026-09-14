@@ -202,6 +202,9 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                 dragging = false;
                 intercepting = false;
                 hadMultiTouch = false;
+                // Reset on every new gesture sequence. GeckoView calls
+                // requestDisallowInterceptTouchEvent(true) while scrolling, which would
+                // permanently block subsequent pull-to-refresh attempts without this reset.
                 disallowIntercept = false;
                 break;
 

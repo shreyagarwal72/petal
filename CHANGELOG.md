@@ -1,4 +1,20 @@
+### v3.1.2 — 🔧 Extensions, Media & Pull-to-Refresh Fixed
+
+> *"Tap an extension, see its popup. Detect media, see the overlay. Pull to refresh, actually refresh."*
+
+#### 🐛 Bug Fixes
+- **Extension Popup Not Showing**: Fixed extension browser/page-action popups (uBlock Origin, Bitwarden, AdGuard, 1Password, etc.) never appearing when tapping the extension button. The `PopupRequestListener` bridge was never registered in `BrowserActivity`, so popup sessions were created but silently discarded.
+- **Media Grabber Overlay Missing**: Fixed the media-detected banner ("Media found — X sources on this page") never appearing even when the media grabber extension correctly detected playable video/audio. The `media_sniffer_compose` ComposeView existed in the layout but `PetalMediaSnifferOverlayBridge.bind()` was never called.
+- **Pull-to-Refresh Permanently Blocked**: Fixed pull-to-refresh being permanently disabled after any GeckoView scroll. GeckoView calls `requestDisallowInterceptTouchEvent(true)` during scroll which was never reset on the next finger-down, blocking all subsequent refresh attempts. Also reduced the pull trigger distance from an unreachable 300dp to a natural 120dp.
+
+#### ⚡ Improvements
+- **Extension Popup Responsive Layout**: Extension popup sessions now inject a mobile-responsive CSS + viewport meta tag fix on page load, matching omni's behavior. Extensions that previously overflowed at their desktop fixed-widths (uBlock Origin, Bitwarden, etc.) now render correctly on phone screen widths.
+- **Direct Popup Sessions**: `openDirectPopup` (fallback for extensions without a live action delegate) now uses `VIEWPORT_MODE_MOBILE` + `allowJavascript(true)` GeckoSession settings and also injects the responsive CSS fix.
+
+---
+
 ### v3.1.1 — 🧭 Address Bar Polish & Navigation Harmony 🪄✨
+
 
 > *"Pixel-perfect address bar positioning, zero navbar overlap, and seamless scroll dynamics."*
 
