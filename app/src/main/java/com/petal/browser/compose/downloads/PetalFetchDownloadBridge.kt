@@ -27,6 +27,11 @@ import com.tonyodev.fetch2.AbstractFetchListener
 import com.tonyodev.fetch2.Download
 import com.tonyodev.fetch2.Fetch
 import com.tonyodev.fetch2.Status
+import com.tonyodev.fetch2.EnqueueAction
+import com.tonyodev.fetch2.NetworkType
+import com.tonyodev.fetch2.Priority
+import com.tonyodev.fetch2.Request
+import com.petal.browser.download.SafeDownloadValues
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -122,6 +127,76 @@ object PetalFetchDownloadBridge {
             }
 
             initialized = true
+        }
+    }
+
+    /**
+     * Kotlin-owned media download entry point. Media grabber callers must use this
+     * instead of the legacy Java download engine API so every media download is
+     * represented by the same Fetch2-backed Petal Download Manager state/UI.
+     */
+    @JvmStatic
+    fun enqueueMediaDownload(
+        context: Context,
+        url: String,
+        fileName: String,
+        mimeType: String? = null,
+        userAgent: String? = null,
+        cookie: String? = null,
+        headers: Map<String, String> = emptyMap(),
+        onEnqueued: ((Long) -> Unit)? = null,
+        onFailed: (() -> Unit)? = null
+    ) {
+        ensureInitialized(context)
+        if (!SafeDownloadValues.isHttpUrl(url)) {
+            onFailed?.invoke()
+            return
+        }
+        val safeName = SafeDownloadValues.fileName(url, fileName, mimeType)
+            .ifBlank { fileName.ifBlank { "download" } }
+        val downloadsDir = File(
+            android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
+            safeName
+        )
+        downloadsDir.parentFile?.mkdirs()
+        var target = downloadsDir
+        if (target.exists()) {
+            val base = target.name.substringBeforeLast('.', target.name)
+            val ext = target.name.substringAfterLast('.', "").let { if (it.isBlank()) "" else ".${it}" }
+            var n = 1
+            while (target.exists()) {
+                target = File(target.parentFile, "$base($n)$ext")
+                n++
+            }
+        }
+
+        try {
+            val request = Request(url, target.absolutePath).apply {
+                priority = Priority.HIGH
+                networkType = NetworkType.ALL
+                enqueueAction = EnqueueAction.INCREMENT_FILE_NAME
+                autoRetryMaxAttempts = 10
+            }
+            SafeDownloadValues.header(userAgent, 4096)?.let { request.addHeader("User-Agent", it) }
+            SafeDownloadValues.header(cookie, 16384)?.let { request.addHeader("Cookie", it) }
+            headers.forEach { (name, value) ->
+                if (name.isBlank() || value.isBlank()) return@forEach
+                if (name.equals("Host", true) || name.equals("Content-Length", true) ||
+                    name.equals("Content-Encoding", true) || name.equals("Transfer-Encoding", true) ||
+                    name.equals("Connection", true) || name.equals("Accept-Encoding", true) ||
+                    name.equals("User-Agent", true) || name.equals("Cookie", true)) return@forEach
+                if ('\r' in name || '\n' in name || '\r' in value || '\n' in value) return@forEach
+                val safeKey = SafeDownloadValues.header(name, 1024) ?: return@forEach
+                val safeValue = SafeDownloadValues.header(value, 4096) ?: return@forEach
+                request.addHeader(safeKey, safeValue)
+            }
+            fetchInstance(context).enqueue(request, { updated ->
+                onEnqueued?.invoke(updated.id.toLong())
+            }, {
+                onFailed?.invoke()
+            })
+        } catch (_: Throwable) {
+            onFailed?.invoke()
         }
     }
 

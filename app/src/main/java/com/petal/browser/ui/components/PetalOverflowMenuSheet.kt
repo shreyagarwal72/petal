@@ -478,7 +478,10 @@ fun PetalOverflowMenuSheet(
                 // Section 2.5: Extensions
                 val extensions by PetalExtensionManager.extensions.collectAsState()
                 val enabledExtensions = remember(extensions) { extensions.filter { it.enabled } }
-                var isExtensionsExpanded by remember { mutableStateOf(enabledExtensions.isNotEmpty()) }
+                // Keep the Extensions section collapsed every time the overflow menu opens.
+                // This also prevents the submenu from being left visually expanded when the
+                // overflow dialog is dismissed and opened again.
+                var isExtensionsExpanded by remember { mutableStateOf(false) }
 
                 if (enabledExtensions.isEmpty()) {
                     MenuRowItem(
@@ -508,7 +511,7 @@ fun PetalOverflowMenuSheet(
                             enabledExtensions.forEach { ext ->
                                 ExtensionMenuRowItem(
                                     extension = ext,
-                                    onClick = { onOpenExtensionAction(ext.id) },
+                                    onClick = { isExtensionsExpanded = false; onOpenExtensionAction(ext.id) },
                                     onSettingsClick = { onOpenExtensionSettings(ext.id) }
                                 )
                             }
@@ -517,7 +520,7 @@ fun PetalOverflowMenuSheet(
                                 title = "Manage extensions",
                                 subtitle = "Install or configure add-ons",
                                 isSubItem = true,
-                                onClick = onOpenExtensions
+                                onClick = { isExtensionsExpanded = false; onOpenExtensions() }
                             )
                         }
                     }

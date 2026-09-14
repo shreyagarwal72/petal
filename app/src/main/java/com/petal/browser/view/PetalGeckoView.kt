@@ -148,7 +148,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 hostAct
             ) { pendingSkeletonUrl }
         }
-        com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId)
+        com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, currentUrl)
         initGeckoSession()
         album.setBrowserController(globalBrowserController)
         this.pwaManager = PetalPwaManager(context, this, null)
@@ -181,8 +181,8 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onPageStart(session: GeckoSession, url: String) {
                 isStopped = false
                 com.petal.browser.media.sniffer.PetalMediaSniffer.clear()
-                com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId)
                 currentUrl = url
+                com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
                 album.setAlbumTitle(currentTitle, url)
                 updateProgress(10)
 
@@ -267,6 +267,7 @@ class PetalGeckoView @JvmOverloads constructor(
             ) {
                 if (url.isNullOrBlank() || url.equals(currentUrl, ignoreCase = true)) return
                 currentUrl = url
+                com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
                 album.setAlbumTitle(currentTitle, url)
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {

@@ -176,8 +176,8 @@ class MediaInterceptor {
     // Configuration (set by BrowserViewModel from persistent settings)
     // ------------------------------------------------------------------
 
-    /** When false, media detected on YouTube / Google domains is ignored (ToS-safe). */
-    var isYouTubeEnabled = false
+    /** Enables first-party YouTube page extraction in addition to normal network sniffing. */
+    var isYouTubeEnabled = true
 
     /** Minimum video/audio duration in seconds extracted from URL params (0 = off). */
     var minDurationSeconds: Int = 0
@@ -204,6 +204,10 @@ class MediaInterceptor {
     /** URLs currently being validated (to avoid duplicate in-flight jobs). */
     private val inFlightValidation = mutableSetOf<String>()
 
+    /** Top-level URL currently associated with the active tab. */
+    @Volatile private var activePageUrl: String = ""
+    private var youtubeExtractionJob: Job? = null
+
     /** Volatile query params that do not change the underlying media asset. */
     private val VOLATILE_PARAMS = setOf(
         "ctier", "ad_type", "oad", "bvt", "xtags", "rbuf", "rn", "sqp", "alr", "cpn"
@@ -218,8 +222,15 @@ class MediaInterceptor {
      * and only media matching the active page is exposed via [playableMedia]. This gives
      * deterministic per-page invalidation (no stale media from a previous page).
      */
-    fun setActivePage(pageId: String) {
+    fun setActivePage(pageId: String, pageUrl: String? = null) {
         _activePageId.value = pageId
+        activePageUrl = pageUrl.orEmpty()
+        youtubeExtractionJob?.cancel()
+        if (isYouTubeEnabled && isYouTubePage(activePageUrl) && !isDomainBlocked(activePageUrl)) {
+            youtubeExtractionJob = scope.launch {
+                extractYouTubePage(activePageUrl, pageId)
+            }
+        }
     }
 
     fun isDomainBlocked(url: String): Boolean {
@@ -236,6 +247,48 @@ class MediaInterceptor {
                 .trimEnd('/')
             if (clean.isEmpty()) return@any false
             host == clean || host.endsWith(".${clean}")
+        }
+    }
+
+    private fun isYouTubePage(url: String): Boolean {
+        return try {
+            val host = android.net.Uri.parse(url).host?.lowercase() ?: return false
+            host == "youtube.com" || host.endsWith(".youtube.com") ||
+                host == "youtu.be" || host.endsWith(".youtu.be")
+        } catch (_: Exception) { false }
+    }
+
+    private suspend fun extractYouTubePage(pageUrl: String, pageId: String) {
+        try {
+            val result = YouTubeExtractor.extractStreams(pageUrl) ?: return
+            // Only expose muxed streams. YouTube's adaptive video-only streams have no
+            // audio track; handing one directly to the downloader would produce a file
+            // that is technically valid but incomplete from a user's perspective.
+            val streams = result.streams.filter { !it.isAudio && !it.isVideoOnly && it.url.isNotBlank() }
+            streams.forEach { stream ->
+                val mime = stream.mimeType.substringBefore(';').trim().lowercase()
+                val type = when {
+                    mime == "video/webm" -> MediaType.WEBM
+                    mime.startsWith("video/") -> MediaType.MP4
+                    else -> return@forEach
+                }
+                val media = DetectedMedia(
+                    url = stream.url,
+                    type = type,
+                    quality = stream.quality,
+                    protectionStatus = MediaProtectionStatus.UNPROTECTED,
+                    sizeBytes = stream.sizeBytes,
+                    title = result.title,
+                    validationStatus = ValidationStatus.VALID,
+                    pageId = pageId
+                )
+                addMedia(media)
+            }
+            if (streams.isNotEmpty()) {
+                Log.i("MediaInterceptor", "YouTube extraction added ${streams.size} muxed streams")
+            }
+        } catch (t: Throwable) {
+            Log.w("MediaInterceptor", "YouTube extraction failed; normal network sniffing remains active", t)
         }
     }
 

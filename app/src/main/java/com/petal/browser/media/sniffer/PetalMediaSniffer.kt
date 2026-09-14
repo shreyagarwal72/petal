@@ -2,7 +2,7 @@ package com.petal.browser.media.sniffer
 
 import android.content.Context
 import android.webkit.MimeTypeMap
-import com.petal.browser.download.PetalDownloadEngine
+import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.download.SafeDownloadValues
 import java.util.Locale
 
@@ -32,6 +32,7 @@ object PetalMediaSniffer {
     val interceptor = MediaInterceptor()
 
     fun setActivePage(pageId: String) = interceptor.setActivePage(pageId)
+    fun setActivePage(pageId: String, pageUrl: String) = interceptor.setActivePage(pageId, pageUrl)
     fun clear() = interceptor.clear()
 
     fun onNetworkMedia(url: String, headers: Map<String, String> = emptyMap()) =
@@ -102,14 +103,16 @@ object PetalMediaSniffer {
         }
 
         try {
-            PetalDownloadEngine.getInstance(context.applicationContext).enqueueDownload(
-                context.applicationContext,
-                url,
-                fileName,
-                userAgent,
-                cookie,
-                extraHeaders,
-                { id, _ -> onEnqueued?.invoke(id.toLong()) }
+            PetalFetchDownloadBridge.enqueueMediaDownload(
+                context = context.applicationContext,
+                url = url,
+                fileName = fileName,
+                mimeType = mimeType,
+                userAgent = userAgent,
+                cookie = cookie,
+                headers = extraHeaders,
+                onEnqueued = onEnqueued,
+                onFailed = onFailed
             )
         } catch (_: RuntimeException) {
             // Download initiation must never crash GeckoView/browser UI.

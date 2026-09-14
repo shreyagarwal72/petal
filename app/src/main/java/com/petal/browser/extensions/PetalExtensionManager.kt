@@ -564,19 +564,16 @@ object PetalExtensionManager {
         }
         _pendingPopup.value = null
 
+        // GeckoView's ActionDelegate contract requires the session returned from
+        // onOpenPopup/onTogglePopup to be UNUSED/UNOPENED. Opening it here causes
+        // "Must use an unopened GeckoSession instance" on newer GeckoView builds.
+        // The popup Compose host opens the session after GeckoView accepts it.
         val popupSettings = org.mozilla.geckoview.GeckoSessionSettings.Builder()
             .usePrivateMode(false)
             .allowJavascript(true)
             .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
             .build()
         val popupSession = GeckoSession(popupSettings)
-        val ctx = appContext
-        if (ctx != null) {
-            val runtime = PetalGeckoRuntime.getOrCreate(ctx)
-            if (!popupSession.isOpen) {
-                popupSession.open(runtime)
-            }
-        }
 
         // Inject mobile-responsive CSS when the extension popup page finishes loading.
         // Without this, many extension popups (uBlock Origin, Bitwarden, AdGuard, etc.)
