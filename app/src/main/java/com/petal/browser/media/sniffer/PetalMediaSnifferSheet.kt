@@ -1,7 +1,6 @@
 package com.petal.browser.media.sniffer
 
 import android.webkit.CookieManager
-import android.webkit.WebSettings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -63,7 +62,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.media.ytdlp.PetalSocialDownloadService
 import com.petal.browser.media.ytdlp.PetalYtDlpEngine
 import com.petal.browser.media.ytdlp.SupportedPlatforms
@@ -169,16 +167,18 @@ private fun PetalMediaSheet(
             // Social platforms are owned by Social Downloader; never expose the
             // normal media-sniffer list on those pages.
             if (platform == null) {
-                Text(
-                    "Media sources",
-                    style    = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                )
-                Text(
-                    "Detected without interrupting playback",
-                    style    = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp)
-                )
+                item {
+                    Text(
+                        "Media sources",
+                        style    = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                    )
+                    Text(
+                        "Detected without interrupting playback",
+                        style    = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp)
+                    )
+                }
 
                 items(media, key = { it.url }) { item ->
                 Surface(
@@ -301,33 +301,11 @@ private fun PetalMediaSheet(
                                                     null
                                                 }
 
-                                                val candidates = buildList {
-                                                    add(currentPageUrl)
-                                                    media.asSequence()
-                                                        .filter { it.type == MediaInterceptor.MediaType.MP4 ||
-                                                            it.type == MediaInterceptor.MediaType.WEBM ||
-                                                            it.type == MediaInterceptor.MediaType.AUDIO }
-                                                        .map { it.url }
-                                                        .filter { it.isNotBlank() && it != currentPageUrl }
-                                                        .distinct()
-                                                        .take(4)
-                                                        .forEach(::add)
-                                                }
-
-                                                var info: YtDlpMediaInfo? = null
-                                                for (candidate in candidates) {
-                                                    val candidateCookies = try {
-                                                        CookieManager.getInstance().getCookie(candidate)
-                                                    } catch (_: Exception) {
-                                                        cookies
-                                                    }
-                                                    info = PetalYtDlpEngine.fetchInfo(
-                                                        context = context,
-                                                        url = candidate,
-                                                        cookies = candidateCookies ?: cookies
-                                                    )
-                                                    if (info != null && info.formats.isNotEmpty()) break
-                                                }
+                                                val info = PetalYtDlpEngine.fetchInfo(
+                                                    context = context,
+                                                    url = currentPageUrl,
+                                                    cookies = cookies
+                                                )
 
                                                 socialState = if (
                                                     info != null && info.formats.isNotEmpty()
@@ -335,8 +313,9 @@ private fun PetalMediaSheet(
                                                     SocialState.Ready(info, info.formats.first())
                                                 } else {
                                                     SocialState.Failed(
-                                                        "Couldn't fetch media information. The page may require a signed-in session, " +
-                                                            "rate-limit protection may be active, or the site's extractor may need an update."
+                                                        "Couldn't fetch media information. " +
+                                                            "The site may require an updated " +
+                                                            "extractor or a signed-in session."
                                                     )
                                                 }
                                             }
@@ -453,35 +432,13 @@ private fun PetalMediaSheet(
                                                 null
                                             }
 
-                                            if (info.url != currentPageUrl) {
-                                                // If yt-dlp could not extract the page itself, use the exact
-                                                // media URL already captured by Petal's sniffer. This avoids
-                                                // re-running the failing site extractor and sends the actual
-                                                // media through Petal's Kotlin/Fetch2 Download Manager.
-                                                val mimeType = when {
-                                                    selFmt.isAudioOnly -> "audio/mp4"
-                                                    info.url.contains(".webm", ignoreCase = true) -> "video/webm"
-                                                    else -> "video/mp4"
-                                                }
-                                                PetalFetchDownloadBridge.enqueueMediaDownload(
-                                                    context = context,
-                                                    url = info.url,
-                                                    fileName = info.title.ifBlank { "Petal media" },
-                                                    mimeType = mimeType,
-                                                    userAgent = WebSettings.getDefaultUserAgent(context),
-                                                    cookie = cookies,
-                                                    headers = mapOf("Referer" to currentPageUrl),
-                                                    onFailed = { socialState = SocialState.Failed("Petal Download Manager could not queue this media.") }
-                                                )
-                                            } else {
-                                                PetalSocialDownloadService.enqueue(
-                                                    context = context,
-                                                    url = info.url,
-                                                    format = selFmt,
-                                                    cookies = cookies,
-                                                    title = info.title
-                                                )
-                                            }
+                                            PetalSocialDownloadService.enqueue(
+                                                context = context,
+                                                url = currentPageUrl,
+                                                format = selFmt,
+                                                cookies = cookies,
+                                                title = info.title
+                                            )
                                             socialState = SocialState.Done
                                             onDismiss()
                                         },
