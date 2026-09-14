@@ -258,7 +258,7 @@ object PetalTabSwitcherBridge {
                             }
                         },
                         onOpenSettings = {
-                            (activity as? BrowserActivity)?.showTabsSettingsScreen()
+                            (activity as? BrowserActivity)?.openSettingsScreen(com.petal.browser.compose.settings.SettingsCategory.TABS)
                         },
                         onTabVisible = { tabItem ->
                             val targetAlbum = BrowserContainer.list()
