@@ -16,37 +16,36 @@ import android.net.Uri
 object SupportedPlatforms {
 
     data class PlatformInfo(
-        val displayName: String,
-        val emoji: String
+        val displayName: String
     )
 
     private val platformMap: Map<String, PlatformInfo> = mapOf(
-        "youtube.com"       to PlatformInfo("YouTube", "▶️"),
-        "youtu.be"          to PlatformInfo("YouTube", "▶️"),
-        "music.youtube.com" to PlatformInfo("YouTube Music", "🎵"),
-        "instagram.com"     to PlatformInfo("Instagram", "📸"),
-        "twitter.com"       to PlatformInfo("Twitter / X", "🐦"),
-        "x.com"             to PlatformInfo("Twitter / X", "🐦"),
-        "tiktok.com"        to PlatformInfo("TikTok", "🎵"),
-        "vm.tiktok.com"     to PlatformInfo("TikTok", "🎵"),
-        "facebook.com"      to PlatformInfo("Facebook", "👥"),
-        "fb.watch"          to PlatformInfo("Facebook", "👥"),
-        "m.facebook.com"    to PlatformInfo("Facebook", "👥"),
-        "reddit.com"        to PlatformInfo("Reddit", "🔴"),
-        "v.redd.it"         to PlatformInfo("Reddit", "🔴"),
-        "vimeo.com"         to PlatformInfo("Vimeo", "🎬"),
-        "twitch.tv"         to PlatformInfo("Twitch", "💜"),
-        "clips.twitch.tv"   to PlatformInfo("Twitch", "💜"),
-        "dailymotion.com"   to PlatformInfo("Dailymotion", "🎞️"),
-        "bilibili.com"      to PlatformInfo("Bilibili", "📺"),
-        "soundcloud.com"    to PlatformInfo("SoundCloud", "🎧"),
-        "pinterest.com"     to PlatformInfo("Pinterest", "📌"),
-        "streamable.com"    to PlatformInfo("Streamable", "🎥"),
-        "medal.tv"          to PlatformInfo("Medal", "🏅"),
-        "rumble.com"        to PlatformInfo("Rumble", "🎙️"),
-        "odysee.com"        to PlatformInfo("Odysee", "🎯"),
-        "bandcamp.com"      to PlatformInfo("Bandcamp", "🎶"),
-        "kick.com"          to PlatformInfo("Kick", "🟢")
+        "youtube.com"       to PlatformInfo("YouTube"),
+        "youtu.be"          to PlatformInfo("YouTube"),
+        "music.youtube.com" to PlatformInfo("YouTube Music"),
+        "instagram.com"     to PlatformInfo("Instagram"),
+        "twitter.com"       to PlatformInfo("Twitter / X"),
+        "x.com"             to PlatformInfo("Twitter / X"),
+        "tiktok.com"        to PlatformInfo("TikTok"),
+        "vm.tiktok.com"     to PlatformInfo("TikTok"),
+        "facebook.com"      to PlatformInfo("Facebook"),
+        "fb.watch"          to PlatformInfo("Facebook"),
+        "m.facebook.com"    to PlatformInfo("Facebook"),
+        "reddit.com"        to PlatformInfo("Reddit"),
+        "v.redd.it"         to PlatformInfo("Reddit"),
+        "vimeo.com"         to PlatformInfo("Vimeo"),
+        "twitch.tv"         to PlatformInfo("Twitch"),
+        "clips.twitch.tv"   to PlatformInfo("Twitch"),
+        "dailymotion.com"   to PlatformInfo("Dailymotion"),
+        "bilibili.com"      to PlatformInfo("Bilibili"),
+        "soundcloud.com"    to PlatformInfo("SoundCloud"),
+        "pinterest.com"     to PlatformInfo("Pinterest"),
+        "streamable.com"    to PlatformInfo("Streamable"),
+        "medal.tv"          to PlatformInfo("Medal"),
+        "rumble.com"        to PlatformInfo("Rumble"),
+        "odysee.com"        to PlatformInfo("Odysee"),
+        "bandcamp.com"      to PlatformInfo("Bandcamp"),
+        "kick.com"          to PlatformInfo("Kick")
     )
 
     /**

@@ -78,8 +78,11 @@ class PetalSocialDownloadService : Service() {
                 activeJob = scope.launch {
                     try {
                         PetalYtDlpEngine.download(
-                            url = url, format = format,
-                            outputDir = outputDir, taskId = taskId,
+                            context = applicationContext,
+                            url = url,
+                            format = format,
+                            outputDir = outputDir,
+                            taskId = taskId,
                             cookies = cookies
                         ) { progress, _ ->
                             nm.notify(NOTIF_ID, buildProgressNotif(title, progress, taskId))

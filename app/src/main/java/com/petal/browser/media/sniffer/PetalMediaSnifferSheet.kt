@@ -23,10 +23,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.AssistChip
@@ -39,7 +42,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -227,41 +229,55 @@ private fun PetalMediaSheet(
             if (platform != null && currentPageUrl.isNotBlank()) {
                 item {
                     Spacer(Modifier.height(8.dp))
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     Row(
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            "${platform.emoji} ${platform.displayName}",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text("·", style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Social Download",
-                            style = MaterialTheme.typography.headlineSmall)
+                        Surface(
+                            modifier = Modifier.size(40.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Public,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                "Social download",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(
+                                platform.displayName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
 
                     Surface(
-                        shape          = MaterialTheme.shapes.large,
-                        tonalElevation = 3.dp,
-                        modifier       = Modifier
+                        shape = MaterialTheme.shapes.extraLarge,
+                        tonalElevation = 1.dp,
+                        modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             when (val state = socialState) {
-                                // ── Idle ──────────────────────────────────
                                 SocialState.Idle -> {
                                     Text(
-                                        "Tap to fetch video info and pick a quality",
+                                        "Fetch the available media formats without interrupting playback.",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -270,98 +286,127 @@ private fun PetalMediaSheet(
                                             socialState = SocialState.Loading
                                             scope.launch {
                                                 val cookies = try {
-                                                    CookieManager.getInstance().getCookie(currentPageUrl)
-                                                } catch (_: Exception) { null }
-                                                val info = PetalYtDlpEngine.fetchInfo(currentPageUrl, cookies)
-                                                socialState = if (info != null) {
+                                                    CookieManager.getInstance()
+                                                        .getCookie(currentPageUrl)
+                                                } catch (_: Exception) {
+                                                    null
+                                                }
+
+                                                val info = PetalYtDlpEngine.fetchInfo(
+                                                    context = context,
+                                                    url = currentPageUrl,
+                                                    cookies = cookies
+                                                )
+
+                                                socialState = if (
+                                                    info != null && info.formats.isNotEmpty()
+                                                ) {
                                                     SocialState.Ready(info, info.formats.first())
                                                 } else {
                                                     SocialState.Failed(
-                                                        "Couldn't fetch video info. Check your connection or try again."
+                                                        "Couldn't fetch media information. " +
+                                                            "The site may require an updated " +
+                                                            "extractor or a signed-in session."
                                                     )
                                                 }
                                             }
                                         },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Icon(Icons.Rounded.Refresh, null)
+                                        Icon(Icons.Rounded.Refresh, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Fetch video info")
+                                        Text("Fetch media info")
                                     }
                                 }
 
-                                // ── Loading ───────────────────────────────
                                 SocialState.Loading -> {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         CircularProgressIndicator(
-                                            modifier    = Modifier.size(24.dp),
-                                            strokeWidth = 2.dp
+                                            modifier = Modifier.size(28.dp),
+                                            strokeWidth = 3.dp
                                         )
-                                        Text("Fetching video info…",
-                                            style = MaterialTheme.typography.bodyMedium)
+                                        Text(
+                                            "Fetching media information…",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
                                     }
                                 }
 
-                                // ── Ready ─────────────────────────────────
                                 is SocialState.Ready -> {
-                                    val info   = state.info
+                                    val info = state.info
                                     val selFmt = state.selected
 
-                                    // Thumbnail
                                     if (info.thumbnailUrl != null) {
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .height(160.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                .height(176.dp)
+                                                .clip(MaterialTheme.shapes.large)
+                                                .background(
+                                                    MaterialTheme.colorScheme.surfaceContainerHighest
+                                                )
                                         ) {
                                             AsyncImage(
-                                                model            = info.thumbnailUrl,
+                                                model = info.thumbnailUrl,
                                                 contentDescription = null,
-                                                contentScale     = ContentScale.Crop,
-                                                modifier         = Modifier.matchParentSize()
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.matchParentSize()
                                             )
                                         }
                                     }
 
-                                    // Title + meta
-                                    Text(info.title,
-                                        style    = MaterialTheme.typography.titleMedium,
+                                    Text(
+                                        info.title,
+                                        style = MaterialTheme.typography.titleMedium,
                                         maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis)
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+
                                     val meta = listOfNotNull(
                                         info.uploader,
-                                        info.durationFormatted?.let { "⏱ $it" }
-                                    ).joinToString(" · ")
+                                        info.durationFormatted?.let { "Duration $it" }
+                                    ).joinToString("  •  ")
+
                                     if (meta.isNotBlank()) {
-                                        Text(meta,
+                                        Text(
+                                            meta,
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
 
-                                    // Format picker
                                     Box {
                                         OutlinedButton(
-                                            onClick  = { formatMenuOpen = true },
+                                            onClick = { formatMenuOpen = true },
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Text(selFmt.label, modifier = Modifier.weight(1f))
-                                            Icon(Icons.Rounded.ExpandMore, null,
-                                                modifier = Modifier.size(18.dp))
+                                            Text(
+                                                selFmt.label,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Icon(
+                                                Icons.Rounded.ExpandMore,
+                                                contentDescription = "Choose format",
+                                                modifier = Modifier.size(20.dp)
+                                            )
                                         }
+
                                         DropdownMenu(
-                                            expanded          = formatMenuOpen,
-                                            onDismissRequest  = { formatMenuOpen = false }
+                                            expanded = formatMenuOpen,
+                                            onDismissRequest = { formatMenuOpen = false }
                                         ) {
                                             info.formats.forEach { fmt ->
                                                 DropdownMenuItem(
-                                                    text    = { Text(fmt.label) },
+                                                    text = { Text(fmt.label) },
                                                     onClick = {
-                                                        socialState = SocialState.Ready(info, fmt)
+                                                        socialState =
+                                                            SocialState.Ready(info, fmt)
                                                         formatMenuOpen = false
                                                     }
                                                 )
@@ -369,50 +414,81 @@ private fun PetalMediaSheet(
                                         }
                                     }
 
-                                    // Download button
                                     Button(
                                         onClick = {
                                             val cookies = try {
-                                                CookieManager.getInstance().getCookie(currentPageUrl)
-                                            } catch (_: Exception) { null }
+                                                CookieManager.getInstance()
+                                                    .getCookie(currentPageUrl)
+                                            } catch (_: Exception) {
+                                                null
+                                            }
+
                                             PetalSocialDownloadService.enqueue(
                                                 context = context,
-                                                url     = currentPageUrl,
-                                                format  = selFmt,
+                                                url = currentPageUrl,
+                                                format = selFmt,
                                                 cookies = cookies,
-                                                title   = info.title
+                                                title = info.title
                                             )
                                             socialState = SocialState.Done
                                             onDismiss()
                                         },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Icon(Icons.Rounded.Download, null)
+                                        Icon(
+                                            Icons.Rounded.Download,
+                                            contentDescription = null
+                                        )
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Download · ${selFmt.label}")
+                                        Text("Download ${selFmt.label}")
                                     }
                                 }
 
-                                // ── Failed ────────────────────────────────
                                 is SocialState.Failed -> {
-                                    Text(
-                                        "⚠️ ${state.message}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                    Button(
-                                        onClick  = { socialState = SocialState.Idle },
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.Top,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.ErrorOutline,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                        Text(
+                                            state.message,
+                                            modifier = Modifier.weight(1f),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = { socialState = SocialState.Idle },
                                         modifier = Modifier.fillMaxWidth()
-                                    ) { Text("Try again") }
+                                    ) {
+                                        Icon(Icons.Rounded.Refresh, contentDescription = null)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Try again")
+                                    }
                                 }
 
-                                // ── Done ──────────────────────────────────
                                 SocialState.Done -> {
-                                    Text(
-                                        "✅ Download started — check your notifications.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.CheckCircle,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            "Download started. Check Petal's notifications.",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
                                 }
                             }
                         }

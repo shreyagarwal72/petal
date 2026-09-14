@@ -3109,6 +3109,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (refreshState != null && refreshState.isRefreshing()) {
             refreshState.setRefreshing(false);
             refreshState.setPullProgress(0f);
+            View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+            if (refreshBarCompose != null) {
+                refreshBarCompose.setVisibility(GONE);
+            }
         }
     }
 
@@ -3455,9 +3459,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             addContentView(refreshBarCompose, params);
             com.petal.browser.compose.composable.PetalRefreshBarBridge.bindRefreshBar(refreshBarCompose, this, refreshState);
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                refreshBarCompose.setElevation(200f);
+                    refreshBarCompose.setElevation(200f);
                 refreshBarCompose.setTranslationZ(200f);
             }
+            // Keep the host view GONE while idle. Compose's AnimatedVisibility only
+            // hides its content; the ComposeView itself would otherwise remain as a
+            // transparent 72dp touch surface above the WebView and steal the next
+            // pull gesture. It is made visible only after PullToRefreshFrameLayout
+            // has already captured a real pull gesture.
+            refreshBarCompose.setVisibility(GONE);
             refreshBarCompose.bringToFront();
 
             if (addressBarForMargin != null) {
@@ -3531,8 +3541,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         final androidx.compose.ui.platform.ComposeView finalRefreshView = refreshBarCompose;
         contentFrame.setOnPullListener(progress -> {
-            if (finalRefreshView != null && progress > 0f) {
-                finalRefreshView.bringToFront();
+            // The refresh overlay must not exist as an interactive/transparent
+            // surface while idle. Once the parent has intercepted the gesture,
+            // it is safe to reveal the overlay above the page.
+            if (finalRefreshView != null) {
+                if (progress > 0f) {
+                    if (finalRefreshView.getVisibility() != VISIBLE) {
+                        finalRefreshView.setVisibility(VISIBLE);
+                    }
+                    finalRefreshView.bringToFront();
+                } else if (!refreshState.isRefreshing()) {
+                    finalRefreshView.setVisibility(GONE);
+                }
             }
             float prevProgress = refreshState.getPullProgress();
             refreshState.setPullProgress(progress);
@@ -3545,6 +3565,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         contentFrame.setOnReleaseListener(triggered -> {
             if (!triggered) {
                 refreshState.setPullProgress(0f);
+                if (finalRefreshView != null) {
+                    finalRefreshView.setVisibility(GONE);
+                }
                 return;
             }
             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this)
@@ -3574,6 +3597,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             refreshState.setRefreshing(false);
             refreshState.setPullProgress(0f);
         }
+        View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+        if (refreshBarCompose != null) {
+            refreshBarCompose.setVisibility(GONE);
+        }
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
         if (progressBarCompose != null) {
             com.petal.browser.ui.components.PetalProgressBarBridge.hide(progressBarCompose);
@@ -3589,6 +3616,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (refreshState != null) {
                 refreshState.setRefreshing(false);
                 refreshState.setPullProgress(0f);
+            }
+            View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
+            if (refreshBarCompose != null) {
+                refreshBarCompose.setVisibility(GONE);
             }
         });
     }

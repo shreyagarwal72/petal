@@ -1,10 +1,11 @@
 package com.petal.browser.media.ytdlp
 
 /**
- * Petal Social Downloader — Media metadata returned by a yt-dlp info fetch.
+ * Media metadata returned by yt-dlp.
  *
- * Simplified projection of yt-dlp's full VideoInfo JSON blob.
- * Only contains what the UI needs.
+ * Format entries are intentionally represented as yt-dlp selectors instead of
+ * hard-coded "fake" formats. This keeps the Social Downloader compatible with
+ * platforms whose available streams differ from YouTube.
  */
 data class YtDlpMediaInfo(
     val url: String,
@@ -14,7 +15,6 @@ data class YtDlpMediaInfo(
     val durationSeconds: Int?,
     val formats: List<YtDlpFormat>
 ) {
-    /** Formatted duration string — e.g. "3:42" or "1:02:15". */
     val durationFormatted: String?
         get() {
             val d = durationSeconds ?: return null
@@ -27,47 +27,54 @@ data class YtDlpMediaInfo(
 }
 
 data class YtDlpFormat(
-    /** yt-dlp format selector (e.g. "bestvideo+bestaudio/best"). */
+    /** yt-dlp format selector (for example: bestvideo+bestaudio/best). */
     val formatId: String,
-    /** User-facing label shown in the dropdown. */
+    /** User-facing label shown in the format selector. */
     val label: String,
     val isAudioOnly: Boolean = false,
     val fileSizeApprox: Long? = null,
-    /** Output file extension hint. */
+    /** Output extension hint used for the filename/notification. */
     val ext: String = "mp4"
 ) {
     companion object {
-        fun buildOptions(hasVideo: Boolean): List<YtDlpFormat> {
-            val opts = mutableListOf<YtDlpFormat>()
-            if (hasVideo) {
-                opts += YtDlpFormat(
-                    formatId = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-                    label = "Best quality · MP4",
-                    ext = "mp4"
-                )
-                opts += YtDlpFormat(
-                    formatId = "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]",
-                    label = "1080p · MP4",
-                    ext = "mp4"
-                )
-                opts += YtDlpFormat(
-                    formatId = "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]",
-                    label = "720p · MP4",
-                    ext = "mp4"
-                )
-                opts += YtDlpFormat(
-                    formatId = "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]",
-                    label = "480p · MP4",
-                    ext = "mp4"
-                )
-            }
-            opts += YtDlpFormat(
-                formatId = "bestaudio[ext=m4a]/bestaudio",
+        /**
+         * Build selectors from the heights actually advertised by yt-dlp.
+         *
+         * We deliberately use selectors instead of copying a single format ID:
+         * many social platforms expose different format IDs for every request.
+         */
+        fun buildVideoOptions(heights: Set<Int>, hasAudioVideo: Boolean): List<YtDlpFormat> {
+            val options = mutableListOf<YtDlpFormat>()
+
+            options += YtDlpFormat(
+                formatId = if (hasAudioVideo) {
+                    "bestvideo+bestaudio/best"
+                } else {
+                    "best"
+                },
+                label = "Best available",
+                ext = "mp4"
+            )
+
+            listOf(2160, 1440, 1080, 720, 480, 360)
+                .filter { requested -> heights.any { it >= requested } }
+                .forEach { height ->
+                    options += YtDlpFormat(
+                        formatId = "bestvideo[height<=${height}]+bestaudio/best[height<=${height}]",
+                        label = "${height}p",
+                        ext = "mp4"
+                    )
+                }
+
+            return options.distinctBy { it.formatId }
+        }
+
+        fun audioOption(): YtDlpFormat =
+            YtDlpFormat(
+                formatId = "bestaudio/best",
                 label = "Audio only · M4A",
                 isAudioOnly = true,
                 ext = "m4a"
             )
-            return opts
-        }
     }
 }
