@@ -1,9 +1,0 @@
-v 16 "Alexander Berkmann"
-
-- new: tracking-URL-popup
-- fix: context menu in tab overview
-- fix: onRenderProcessGone
-- fix: http-dialog
-- fix: dialogs with long file names
-- fix: tab-layout in overflow menu
-- updated: translations

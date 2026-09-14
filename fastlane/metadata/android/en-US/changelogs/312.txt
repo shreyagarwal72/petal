@@ -1,6 +1,0 @@
-v3.1.2 — Bug fix patch
-
-- Fixed: Extension popup (uBlock Origin, Bitwarden, AdGuard, etc.) was never displayed when tapping an extension's toolbar button. The popup listener bridge was missing from BrowserActivity.
-- Fixed: Media grabber overlay was never shown even when playable video/audio was detected on a page. The ComposeView existed in the layout but was never bound with content.
-- Fixed: Pull-to-refresh was permanently blocked after any GeckoView scroll — a requestDisallowInterceptTouchEvent(true) from GeckoView was never reset on the next gesture. Also reduced the pull trigger distance from 300dp to 120dp so refresh is actually reachable.
-- Improved: Extension popups now inject a mobile-responsive CSS + viewport fix on page load, so extensions like uBlock Origin, Bitwarden, and 1Password render correctly at phone width instead of overflowing.

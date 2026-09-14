@@ -1,7 +1,0 @@
-v1.9.9 Release Highlights:
-- High Refresh Rate (120Hz/144Hz+) Native Hardware Display Synchronization.
-- Material 3 Expressive Color Container System (inspired by Zenith) with high-contrast elevated container surfaces and toned-down backgrounds.
-- Universal Touch Haptics Engine fixes across the entire app with direct vibrator execution and reactive Compose haptic feedback.
-- Seamless Per-App Language switching with Android 13+ localeConfig and AppCompat AppLocalesMetadataHolderService.
-- Comprehensive Hinglish (Hindi in English) language support inspired by GRAMLY with natural, conversational translations.
-- Tab Manager thumbnail capture fixes and auto-scrolling to active tab on open.

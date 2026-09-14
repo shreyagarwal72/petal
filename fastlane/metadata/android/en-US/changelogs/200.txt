@@ -1,5 +1,0 @@
-v2.0 Release Highlights:
-- Real-Time Vector Shape Morphing Background with androidx.graphics.shapes.Morph across all 35 M3 Expressive shapes.
-- Floating Bottom Navigation Bar aligned with Zenith (68dp height, stadium pill, 26dp icons, dynamic indicator).
-- Material 3 Expressive Containment System with elevated surface cards, tactile switch items, and rounded shapes.
-- Interactive Profile Picture Avatar Cropper & Streamlined Settings categorization.
