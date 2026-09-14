@@ -642,6 +642,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
+        com.petal.browser.appleduo.AppleDuoManager.INSTANCE.attachTargetView(contentFrame, false);
         // Never allow browser content to reserve the system back edges.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             getWindow().getDecorView().post(() -> {
