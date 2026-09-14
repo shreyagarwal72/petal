@@ -66,6 +66,8 @@ interface PetalOverflowMenuActionHandler {
     fun onTriggerMediaMode() {}
     fun onOpenPetalAi() {}
     fun onOpenExtensions() {}
+    fun onOpenExtensionAction(extensionId: String) {}
+    fun onOpenExtensionSettings(extensionId: String) {}
 }
 
 object PetalOverflowBridge {
@@ -228,6 +230,14 @@ object PetalOverflowBridge {
                             onOpenExtensions = {
                                 dialog.dismiss()
                                 handler.onOpenExtensions()
+                            },
+                            onOpenExtensionAction = { extensionId ->
+                                dialog.dismiss()
+                                handler.onOpenExtensionAction(extensionId)
+                            },
+                            onOpenExtensionSettings = { extensionId ->
+                                dialog.dismiss()
+                                handler.onOpenExtensionSettings(extensionId)
                             }
                         )
                     }
@@ -276,7 +286,9 @@ fun PetalOverflowMenuSheet(
     onOpenSettings: () -> Unit,
     onTriggerMediaMode: () -> Unit = {},
     onOpenPetalAi: () -> Unit = {},
-    onOpenExtensions: () -> Unit = {}
+    onOpenExtensions: () -> Unit = {},
+    onOpenExtensionAction: (String) -> Unit = {},
+    onOpenExtensionSettings: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
@@ -496,14 +508,8 @@ fun PetalOverflowMenuSheet(
                             enabledExtensions.forEach { ext ->
                                 ExtensionMenuRowItem(
                                     extension = ext,
-                                    onClick = {
-                                        handleDismiss()
-                                        PetalExtensionManager.triggerBrowserAction(ext.id, context)
-                                    },
-                                    onSettingsClick = {
-                                        handleDismiss()
-                                        PetalExtensionManager.openOptionsPage(ext.id, context)
-                                    }
+                                    onClick = { onOpenExtensionAction(ext.id) },
+                                    onSettingsClick = { onOpenExtensionSettings(ext.id) }
                                 )
                             }
                             MenuRowItem(

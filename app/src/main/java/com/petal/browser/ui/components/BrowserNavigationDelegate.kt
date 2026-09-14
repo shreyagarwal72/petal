@@ -185,6 +185,22 @@ object BrowserNavigationDelegate {
                     activity.showExtensionsScreen()
                 }
 
+                override fun onOpenExtensionAction(extensionId: String) {
+                    // The overflow menu is a separate android.app.Dialog window. It must be
+                    // fully gone before we trigger the popup, or the extension popup view
+                    // gets added to the Activity's decor while the Dialog window still has
+                    // focus above it and never becomes visible/touchable.
+                    activity.window.decorView.post {
+                        com.petal.browser.extensions.PetalExtensionManager.triggerBrowserAction(extensionId, activity)
+                    }
+                }
+
+                override fun onOpenExtensionSettings(extensionId: String) {
+                    activity.window.decorView.post {
+                        com.petal.browser.extensions.PetalExtensionManager.openOptionsPage(extensionId, activity)
+                    }
+                }
+
                 override fun onTriggerMediaMode() {
                     val isPipSupported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
                     val isBgPlayEnabled = prefs.getBoolean("sp_background_play", false)
