@@ -38,8 +38,10 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -943,7 +945,14 @@ fun PetalExtensionPopupScreen(
                                             hostActivity?.let { act ->
                                                 act.runOnUiThread {
                                                     onDismiss()
-                                                    act.addAlbum(null, uri, true)
+                                                    val browserActivity = act as? com.petal.browser.activity.BrowserActivity
+                                                    if (browserActivity != null) {
+                                                        browserActivity.addAlbum(null, uri, true)
+                                                    } else {
+                                                        try {
+                                                            act.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri)))
+                                                        } catch (ignored: Exception) {}
+                                                    }
                                                 }
                                             }
                                             return GeckoResult.fromValue(AllowOrDeny.DENY)
@@ -959,7 +968,14 @@ fun PetalExtensionPopupScreen(
                                             hostActivity?.let { act ->
                                                 act.runOnUiThread {
                                                     onDismiss()
-                                                    act.addAlbum(null, uri, true)
+                                                    val browserActivity = act as? com.petal.browser.activity.BrowserActivity
+                                                    if (browserActivity != null) {
+                                                        browserActivity.addAlbum(null, uri, true)
+                                                    } else {
+                                                        try {
+                                                            act.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri)))
+                                                        } catch (ignored: Exception) {}
+                                                    }
                                                 }
                                             }
                                         }
