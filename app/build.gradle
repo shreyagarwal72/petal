@@ -40,7 +40,21 @@ android {
             enable true
             reset()
             include 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
+            // Keep the universal APK so all supported ABIs are available in one package.
             universalApk true
+        }
+    }
+
+    // Keep ABI splits available for variant generation while retaining the universal APK.
+    // Google Play / bundletool will deliver only the native ABI required by the
+    // target device instead of downloading GeckoView and other native libraries
+    // for unrelated architectures.
+    bundle {
+        abi {
+            enableSplit = true
+        }
+        language {
+            enableSplit = true
         }
     }
 
