@@ -17,6 +17,9 @@ import com.petal.browser.predictive.PetalPredictiveJunction
 import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.TabThumbnailCache
 import com.petal.browser.widget.PetalSearchWidgetProvider
+import com.yausername.aria2c.Aria2c
+import com.yausername.ffmpeg.FFmpeg
+import com.yausername.youtubedl_android.YoutubeDL
 import dagger.hilt.android.HiltAndroidApp
 
 /**
@@ -67,6 +70,15 @@ class PetalApplication : Application() {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(this)
             com.petal.browser.media.sniffer.PetalMediaGrabberInstaller.install(this)
             com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(this)
+            // Initialize yt-dlp engine for Petal Social Downloader (non-fatal)
+            try {
+                YoutubeDL.getInstance().init(this)
+                FFmpeg.getInstance().init(this)
+                Aria2c.getInstance().init(this)
+                Log.i(TAG, "yt-dlp engine initialized")
+            } catch (t: Throwable) {
+                Log.w(TAG, "yt-dlp init failed (social downloader unavailable)", t)
+            }
             PetalPredictiveJunction.init(
                 PreferenceManager.getDefaultSharedPreferences(this)
             )

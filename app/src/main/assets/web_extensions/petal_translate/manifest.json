@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "Petal Translate",
+  "version": "1.0",
+  "description": "On-device page translation for Petal Browser. Translates page text locally and applies the result.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "petal-translate@petalbrowser.app"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

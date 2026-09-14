@@ -31,9 +31,19 @@ object PetalMediaSniffer {
 
     val interceptor = MediaInterceptor()
 
-    fun setActivePage(pageId: String) = interceptor.setActivePage(pageId)
-    fun setActivePage(pageId: String, pageUrl: String) = interceptor.setActivePage(pageId, pageUrl)
-    fun clear() = interceptor.clear()
+    fun setActivePage(pageId: String) {
+        interceptor.setActivePage(pageId)
+    }
+
+    fun setActivePage(pageId: String, pageUrl: String) {
+        interceptor.setActivePage(pageId, pageUrl)
+        PetalMediaSnifferOverlayBridge.setCurrentPageUrl(pageUrl)
+    }
+
+    fun clear() {
+        interceptor.clear()
+        PetalMediaSnifferOverlayBridge.setCurrentPageUrl("")
+    }
 
     fun onNetworkMedia(url: String, headers: Map<String, String> = emptyMap()) =
         interceptor.onMediaRequestDetected(url, headers)

@@ -109,72 +109,86 @@ object PetalExtensionManager {
         CatalogEntry(
             id = "ublock-origin",
             name = "uBlock Origin",
-            description = "Efficient, wide-spectrum ad & tracker content blocker.",
+            description = "Efficient, wide-spectrum ad & tracker content blocker. Blocks ads, popups, trackers, and malware sites.",
             amoSlug = "ublock-origin",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/ublock-origin/"
         ),
         CatalogEntry(
             id = "darkreader",
             name = "Dark Reader",
-            description = "Dark mode for every website, with brightness & contrast controls.",
+            description = "Inverts bright web page colors to custom dark mode for comfortable night browsing.",
             amoSlug = "darkreader",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/darkreader/"
         ),
         CatalogEntry(
             id = "privacy-badger17",
             name = "Privacy Badger",
-            description = "Automatically learns to block invisible trackers.",
+            description = "Automatically learns to block invisible tracking scripts as you browse.",
             amoSlug = "privacy-badger17",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/privacy-badger17/"
         ),
         CatalogEntry(
+            id = "sponsorblock",
+            name = "SponsorBlock for YouTube",
+            description = "Skip YouTube video sponsors, intros, outros, and subscribe reminders automatically.",
+            amoSlug = "sponsorblock",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/sponsorblock/"
+        ),
+        CatalogEntry(
+            id = "traduzir-paginas-web",
+            name = "Translate Web Pages",
+            description = "Translates entire web pages in real-time using Google Translate or DeepL.",
+            amoSlug = "traduzir-paginas-web",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/traduzir-paginas-web/"
+        ),
+        CatalogEntry(
+            id = "clearurls",
+            name = "ClearURLs",
+            description = "Removes tracking elements and parameters from URLs to protect your privacy.",
+            amoSlug = "clearurls",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/clearurls/"
+        ),
+        CatalogEntry(
+            id = "violentmonkey",
+            name = "Violentmonkey",
+            description = "Provides userscript support to customize and automate website behavior.",
+            amoSlug = "violentmonkey",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/violentmonkey/"
+        ),
+        CatalogEntry(
+            id = "decentraleyes",
+            name = "Decentraleyes",
+            description = "Emulates CDNs locally to prevent tracking by large content delivery providers.",
+            amoSlug = "decentraleyes",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/decentraleyes/"
+        ),
+        CatalogEntry(
             id = "bitwarden-password-manager",
             name = "Bitwarden Password Manager",
-            description = "Secure password, passkey, and vault manager.",
+            description = "Secure, open source password manager. Store, generate, and auto-fill logins.",
             amoSlug = "bitwarden-password-manager",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/bitwarden-password-manager/"
         ),
         CatalogEntry(
+            id = "proton-pass",
+            name = "Proton Pass",
+            description = "End-to-end encrypted password manager and email alias generator from Proton.",
+            amoSlug = "proton-pass",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/proton-pass/"
+        ),
+        CatalogEntry(
+            id = "keepassxc-browser",
+            name = "KeePassXC-Browser",
+            description = "Official browser integration for KeePassXC password manager.",
+            amoSlug = "keepassxc-browser",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/keepassxc-browser/"
+        ),
+        CatalogEntry(
             id = "istilldontcareaboutcookies",
             name = "I still don't care about cookies",
-            description = "Automatically dismisses cookie consent popups.",
+            description = "Automatically dismisses cookie consent banners and popups.",
             amoSlug = "istilldontcareaboutcookies",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/istilldontcareaboutcookies/"
-        ),
-        CatalogEntry(
-            id = "youtube-high-definition",
-            name = "YouTube High Definition",
-            description = "Automatically plays YouTube videos in HD, resizes the player, and adds auto-stop and mute.",
-            amoSlug = "youtube-high-definition",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/youtube-high-definition/"
-        ),
-        CatalogEntry(
-            id = "view-page-archive",
-            name = "Web Archives",
-            description = "View archived and cached versions of web pages, such as the Wayback Machine and Archive.is.",
-            amoSlug = "view-page-archive",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/view-page-archive/"
-        ),
-        CatalogEntry(
-            id = "tomato-clock",
-            name = "Tomato Clock",
-            description = "A simple Pomodoro-style timer for managing your productivity.",
-            amoSlug = "tomato-clock",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/tomato-clock/"
-        ),
-        CatalogEntry(
-            id = "video-background-play-fix",
-            name = "Video Background Play Fix",
-            description = "Keeps videos playing in the background by blocking the Page Visibility and Fullscreen APIs.",
-            amoSlug = "video-background-play-fix",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/video-background-play-fix/"
-        ),
-        CatalogEntry(
-            id = "google-search-fixer",
-            name = "Google Search Fixer",
-            description = "Overrides the user-agent on Google Search so it serves the Chrome-style search experience.",
-            amoSlug = "google-search-fixer",
-            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/google-search-fixer/"
         ),
         CatalogEntry(
             id = "cookie-editor",
@@ -189,6 +203,41 @@ object PetalExtensionManager {
             description = "Blocks ads and pop-ups on Facebook, YouTube, and every other website.",
             amoSlug = "adguard-adblocker",
             amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/adguard-adblocker/"
+        ),
+        CatalogEntry(
+            id = "video-background-play-fix",
+            name = "Video Background Play Fix",
+            description = "Keeps videos playing in the background by blocking the Page Visibility API.",
+            amoSlug = "video-background-play-fix",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/video-background-play-fix/"
+        ),
+        CatalogEntry(
+            id = "youtube-high-definition",
+            name = "YouTube High Definition",
+            description = "Automatically plays YouTube videos in HD and adds auto-stop and mute features.",
+            amoSlug = "youtube-high-definition",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/youtube-high-definition/"
+        ),
+        CatalogEntry(
+            id = "view-page-archive",
+            name = "Web Archives",
+            description = "View archived and cached versions of web pages via Wayback Machine and Archive.is.",
+            amoSlug = "view-page-archive",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/view-page-archive/"
+        ),
+        CatalogEntry(
+            id = "google-search-fixer",
+            name = "Google Search Fixer",
+            description = "Overrides the user-agent on Google Search to serve the standard desktop experience.",
+            amoSlug = "google-search-fixer",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/google-search-fixer/"
+        ),
+        CatalogEntry(
+            id = "tomato-clock",
+            name = "Tomato Clock",
+            description = "A simple Pomodoro-style timer for managing focus and productivity sessions.",
+            amoSlug = "tomato-clock",
+            amoListingUrl = "https://addons.mozilla.org/en-US/android/addon/tomato-clock/"
         )
     )
 

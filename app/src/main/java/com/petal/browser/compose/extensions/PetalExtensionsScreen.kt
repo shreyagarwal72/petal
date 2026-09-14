@@ -545,11 +545,23 @@ private fun AddExtensionSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            Icons.Rounded.Extension,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        val visual = PetalCuratedExtensionsData.getVisual(entry.amoSlug)
+                        val iconVector = visual?.icon ?: Icons.Rounded.Extension
+                        val accentColor = visual?.accentColor ?: MaterialTheme.colorScheme.primary
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(accentColor.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = iconVector,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(entry.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
                             Text(

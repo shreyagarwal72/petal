@@ -127,6 +127,11 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
+        <service
+            android:name="com.petal.browser.media.ytdlp.PetalSocialDownloadService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
         <!-- AndroidX Custom Tabs Provider Service -->
         <service
             android:name="com.petal.browser.customtabs.PetalCustomTabsService"

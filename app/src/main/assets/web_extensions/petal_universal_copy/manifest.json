@@ -1,0 +1,20 @@
+{
+    "manifest_version": 2,
+    "name": "Petal Universal Copy",
+    "version": "1.0.0",
+    "description": "Forces text selection and copy on websites that try to block it.",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "petal-universal-copy@petalbrowser.app"
+        }
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "css": ["override.css"],
+            "js": ["override.js"],
+            "run_at": "document_end",
+            "all_frames": true
+        }
+    ]
+}

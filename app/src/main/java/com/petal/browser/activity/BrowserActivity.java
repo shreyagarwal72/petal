@@ -475,6 +475,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         sp = PreferenceManager.getDefaultSharedPreferences(context);
         com.petal.browser.unit.PetalSessionHistoryManager.initSession();
         com.petal.browser.extensions.PetalExtensionManager.attach(context);
+        com.petal.browser.extensions.PetalBuiltInExtensionManager.installAll(context);
 
         // Wire the extension-popup listener so browser/page-action popups (uBlock Origin,
         // Bitwarden, etc.) are shown as a full-screen overlay when the extension's toolbar
