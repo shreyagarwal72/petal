@@ -83,6 +83,7 @@ class PetalApplication : Application() {
                 PreferenceManager.getDefaultSharedPreferences(this)
             )
             TabThumbnailCache.initDiskCache(this)
+            com.petal.browser.appleduo.AppleDuoManager.init(this)
             Log.i(TAG, "Early engine initialization complete")
         } catch (e: Exception) {
             Log.e(TAG, "Failed early engine init", e)
