@@ -1,7 +1,6 @@
 package com.petal.browser.media.ytdlp
 
 import android.util.Log
-import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +55,7 @@ object PetalYtDlpEngine {
                 YtDlpMediaInfo(
                     url = url,
                     title = info.title ?: url,
-                    uploader = info.uploader ?: info.channel,
+                    uploader = info.uploader,
                     thumbnailUrl = info.thumbnail,
                     durationSeconds = info.duration?.toInt(),
                     formats = YtDlpFormat.buildOptions(hasVideo = !isAudioOnly)
@@ -85,18 +84,12 @@ object PetalYtDlpEngine {
     ): Result<String?> = withContext(Dispatchers.IO) {
         try {
             outputDir.mkdirs()
-            val ffmpegPath = try {
-                FFmpeg.getInstance().ffmpegPath?.absolutePath
-            } catch (_: Exception) { null }
 
             val request = YoutubeDLRequest(url).apply {
                 addOption("-f", format.formatId)
                 addOption("-o", "%(title).100B [%(id)s].%(ext)s")
                 addOption("--merge-output-format", format.ext)
                 addOption("--no-playlist")
-                if (!ffmpegPath.isNullOrBlank()) {
-                    addOption("--ffmpeg-location", ffmpegPath)
-                }
                 // Aria2c for faster parallel-segment downloads
                 addOption("--downloader", "aria2c")
                 addOption("--downloader-args", "aria2c:-x 16 -k 1M")
@@ -141,7 +134,7 @@ object PetalYtDlpEngine {
     /** Cancel a running yt-dlp task by [taskId]. Safe to call from any thread. */
     fun cancel(taskId: String) {
         try {
-            YoutubeDL.getInstance().destroyProcessGroup(taskId)
+            YoutubeDL.getInstance().destroyProcessById(taskId)
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to cancel task $taskId", t)
         }
