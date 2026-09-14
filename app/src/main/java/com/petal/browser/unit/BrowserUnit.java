@@ -462,7 +462,16 @@ public class BrowserUnit {
                 Activity activity = (Activity) context;
                 if (uriStr.startsWith("petal://ai")) {
                     if (activity instanceof com.petal.browser.activity.BrowserActivity) {
-                        ((com.petal.browser.activity.BrowserActivity) activity).handleAiDeepLink(uri);
+                        // AI deep links are handled directly by the existing AI search
+                        // bridge. Do not depend on a BrowserActivity helper that may not
+                        // exist in older/newer activity revisions.
+                        String query = uri.getQueryParameter("q");
+                        if (query == null) query = uri.getQueryParameter("query");
+                        if (query == null) query = "";
+                        com.petal.browser.ui.components.PetalAiSearchBridge.showAiSearchResult(
+                                (com.petal.browser.activity.BrowserActivity) activity,
+                                query
+                        );
                     } else {
                         Intent intent = new Intent(activity, com.petal.browser.activity.BrowserActivity.class);
                         intent.setAction(Intent.ACTION_VIEW);
