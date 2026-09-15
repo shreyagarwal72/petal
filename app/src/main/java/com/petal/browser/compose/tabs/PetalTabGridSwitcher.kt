@@ -17,10 +17,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.abs
@@ -108,6 +110,7 @@ data class PetalTabItem(
     val previewBitmap: Bitmap? = null,
     val isIncognito: Boolean = false,
     val isSelected: Boolean = false,
+    val isPinned: Boolean = false,
     val groupId: String? = null,
     val groupTitle: String? = null,
     val groupColorHex: String? = null
@@ -128,6 +131,10 @@ fun PetalTabGridSwitcher(
     onTabVisible: (PetalTabItem) -> Unit = {},
     onBack: (() -> Unit)? = null,
     onRestoreTab: ((PetalTabItem) -> Unit)? = null,
+    onBookmarkTab: (PetalTabItem) -> Unit = {},
+    onShareTab: (PetalTabItem) -> Unit = {},
+    onMuteTab: (PetalTabItem, Boolean) -> Unit = { _, _ -> },
+    onCreateGroup: (PetalTabItem) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -138,6 +145,30 @@ fun PetalTabGridSwitcher(
         mutableStateOf(try { TabDisplayMode.valueOf(savedMode) } catch (e: Exception) { TabDisplayMode.GRID })
     }
     var isOverflowMenuExpanded by remember { mutableStateOf(false) }
+    var contextMenuTabId by remember { mutableStateOf<String?>(null) }
+    var selectionMode by remember { mutableStateOf(false) }
+    val selectedTabIds = remember { mutableStateListOf<String>() }
+    val pinnedTabIds = remember {
+        mutableStateListOf<String>().apply {
+            addAll(sp.getStringSet("sp_pinned_tab_ids", emptySet()) ?: emptySet())
+        }
+    }
+
+    fun persistPinnedTabs() {
+        sp.edit().putStringSet("sp_pinned_tab_ids", pinnedTabIds.toSet()).apply()
+    }
+    fun togglePinned(tab: PetalTabItem) {
+        if (pinnedTabIds.contains(tab.id)) pinnedTabIds.remove(tab.id) else pinnedTabIds.add(tab.id)
+        persistPinnedTabs()
+    }
+    fun enterSelection(tab: PetalTabItem) {
+        selectionMode = true
+        if (!selectedTabIds.contains(tab.id)) selectedTabIds.add(tab.id)
+    }
+    fun leaveSelectionMode() {
+        selectedTabIds.clear()
+        selectionMode = false
+    }
     val initialCategory = remember {
         if (tabs.any { it.isSelected && it.isIncognito }) TabCategory.INCOGNITO else TabCategory.REGULAR
     }
@@ -158,6 +189,10 @@ fun PetalTabGridSwitcher(
 
     LaunchedEffect(tabs) {
         val openTabIds = tabs.map { it.id }.toSet()
+        pinnedTabIds.removeAll { it !in openTabIds }
+        persistPinnedTabs()
+        selectedTabIds.removeAll { it !in openTabIds }
+        if (selectedTabIds.isEmpty()) selectionMode = false
         PetalTabGroupManager.syncWithOpenTabs(context, openTabIds)
         refreshGroups()
         // Record active tab access
@@ -252,7 +287,7 @@ fun PetalTabGridSwitcher(
             tab.title.contains(searchQuery, ignoreCase = true) ||
             tab.url.contains(searchQuery, ignoreCase = true) ||
             tab.groupTitle?.contains(searchQuery, ignoreCase = true) == true
-    }
+    }.sortedWith(compareByDescending<PetalTabItem> { pinnedTabIds.contains(it.id) })
 
     val filteredGroups = tabGroups.filter { group ->
         if (searchQuery.isBlank()) true
@@ -307,19 +342,34 @@ fun PetalTabGridSwitcher(
 
             Column(modifier = Modifier.fillMaxSize()) {
                 ExpressiveHeader(
-                    title = when (selectedCategory) {
+                    title = if (selectionMode) "${selectedTabIds.size} selected" else when (selectedCategory) {
                         TabCategory.INCOGNITO -> "Incognito Tabs"
                         TabCategory.GROUPS -> "Tab Groups"
                         TabCategory.REGULAR -> "Tab Manager"
                     },
-                    subtitle = when (selectedCategory) {
+                    subtitle = if (selectionMode) "Choose an action for selected tabs" else when (selectedCategory) {
                         TabCategory.INCOGNITO -> "$incognitoTabCount private tabs open"
                         TabCategory.GROUPS -> if (groupsCount == 1) "1 active group" else "$groupsCount active groups"
                         TabCategory.REGULAR -> "$regularTabCount active tabs open"
                     },
                     enableLiquidGlass = true,
                     actions = {
-                        HeaderActionIcon(
+                        if (selectionMode) {
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.Close,
+                                contentDescription = "Close selected tabs",
+                                onClick = {
+                                    val selected = filteredTabs.filter { selectedTabIds.contains(it.id) }
+                                    selected.forEach { requestOptimisticClose(it) }
+                                    leaveSelectionMode()
+                                }
+                            )
+                            HeaderActionIcon(
+                                icon = Icons.Rounded.Done,
+                                contentDescription = "Finish selection",
+                                onClick = { leaveSelectionMode() }
+                            )
+                        } else HeaderActionIcon(
                             icon = Icons.Rounded.Add,
                             contentDescription = "New Tab",
                             onClick = {
@@ -518,6 +568,12 @@ fun PetalTabGridSwitcher(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = 4.dp)
+                        .animateContentSize(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                stiffness = Spring.StiffnessMediumLow
+                            )
+                        )
                 ) {
                     when {
                         // ── Tab Groups Screen Category ──────────────────────────────
@@ -621,11 +677,14 @@ fun PetalTabGridSwitcher(
                                         .pointerInput(tab.id) {
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = {
-                                                    draggingTabId = tab.id
+                                                    contextMenuTabId = tab.id
+                                                    draggingTabId = null
                                                     dragOffset = Offset.Zero
                                                 },
                                                 onDrag = { change, dragAmount ->
                                                     change.consume()
+                                                    if (contextMenuTabId == tab.id) contextMenuTabId = null
+                                                    draggingTabId = tab.id
                                                     dragOffset += dragAmount
                                                     val myBounds = tabCardBounds[tab.id]
                                                     if (myBounds != null) {
@@ -676,10 +735,27 @@ fun PetalTabGridSwitcher(
                                             dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
                                             isHoveredForMerge = isTargetHovered,
                                             onTabSelect = {
-                                                commitPendingRemovals()
-                                                onTabSelect(tab)
+                                                if (selectionMode) {
+                                                    if (selectedTabIds.contains(tab.id)) selectedTabIds.remove(tab.id) else selectedTabIds.add(tab.id)
+                                                    if (selectedTabIds.isEmpty()) selectionMode = false
+                                                } else {
+                                                    commitPendingRemovals()
+                                                    onTabSelect(tab)
+                                                }
                                             },
-                                            onTabClose = { requestOptimisticClose(tab) }
+                                            onTabClose = { requestOptimisticClose(tab) },
+                                            onLongPress = { contextMenuTabId = tab.id },
+                                            contextMenuExpanded = contextMenuTabId == tab.id,
+                                            onDismissContextMenu = { if (contextMenuTabId == tab.id) contextMenuTabId = null },
+                                            onBookmark = { onBookmarkTab(tab) },
+                                            onShare = { onShareTab(tab) },
+                                            onMute = { muted -> onMuteTab(tab, muted) },
+                                            onCreateGroup = { onCreateGroup(tab); refreshGroups() },
+                                            isPinned = pinnedTabIds.contains(tab.id),
+                                            isSelectionMode = selectionMode,
+                                            isSelectedForSelection = selectedTabIds.contains(tab.id),
+                                            onSelectForSelection = { enterSelection(tab) },
+                                            onTogglePin = { togglePinned(tab) }
                                         )
                                     }
                                 }
@@ -715,11 +791,14 @@ fun PetalTabGridSwitcher(
                                         .pointerInput(tab.id) {
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = {
-                                                    draggingTabId = tab.id
+                                                    contextMenuTabId = tab.id
+                                                    draggingTabId = null
                                                     dragOffset = Offset.Zero
                                                 },
                                                 onDrag = { change, dragAmount ->
                                                     change.consume()
+                                                    if (contextMenuTabId == tab.id) contextMenuTabId = null
+                                                    draggingTabId = tab.id
                                                     dragOffset += dragAmount
                                                     val myBounds = tabCardBounds[tab.id]
                                                     if (myBounds != null) {
@@ -770,10 +849,27 @@ fun PetalTabGridSwitcher(
                                             dragOffset = if (isCurrentDragging) dragOffset else Offset.Zero,
                                             isHoveredForMerge = isTargetHovered,
                                             onTabSelect = {
-                                                commitPendingRemovals()
-                                                onTabSelect(tab)
+                                                if (selectionMode) {
+                                                    if (selectedTabIds.contains(tab.id)) selectedTabIds.remove(tab.id) else selectedTabIds.add(tab.id)
+                                                    if (selectedTabIds.isEmpty()) selectionMode = false
+                                                } else {
+                                                    commitPendingRemovals()
+                                                    onTabSelect(tab)
+                                                }
                                             },
-                                            onTabClose = { requestOptimisticClose(tab) }
+                                            onTabClose = { requestOptimisticClose(tab) },
+                                            onLongPress = { contextMenuTabId = tab.id },
+                                            contextMenuExpanded = contextMenuTabId == tab.id,
+                                            onDismissContextMenu = { if (contextMenuTabId == tab.id) contextMenuTabId = null },
+                                            onBookmark = { onBookmarkTab(tab) },
+                                            onShare = { onShareTab(tab) },
+                                            onMute = { muted -> onMuteTab(tab, muted) },
+                                            onCreateGroup = { onCreateGroup(tab); refreshGroups() },
+                                            isPinned = pinnedTabIds.contains(tab.id),
+                                            isSelectionMode = selectionMode,
+                                            isSelectedForSelection = selectedTabIds.contains(tab.id),
+                                            onSelectForSelection = { enterSelection(tab) },
+                                            onTogglePin = { togglePinned(tab) }
                                         )
                                     }
                                 }
@@ -1151,13 +1247,26 @@ private fun PetalTabCard(
     dragOffset: Offset = Offset.Zero,
     isHoveredForMerge: Boolean = false,
     onTabSelect: () -> Unit,
-    onTabClose: () -> Unit
+    onTabClose: () -> Unit,
+    onLongPress: () -> Unit = {},
+    contextMenuExpanded: Boolean = false,
+    onDismissContextMenu: () -> Unit = {},
+    onBookmark: () -> Unit = {},
+    onShare: () -> Unit = {},
+    onMute: (Boolean) -> Unit = {},
+    onCreateGroup: () -> Unit = {},
+    isPinned: Boolean = false,
+    isSelectionMode: Boolean = false,
+    isSelectedForSelection: Boolean = false,
+    onSelectForSelection: () -> Unit = {},
+    onTogglePin: () -> Unit = {}
 ) {
     val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
     val headerBg = MaterialTheme.colorScheme.surfaceContainerHigh
     val textColor = MaterialTheme.colorScheme.onSurface
 
     var isSelecting by remember { mutableStateOf(false) }
+    var isMuted by remember { mutableStateOf(false) }
     val scaleAnim by animateFloatAsState(
         targetValue = when {
             isDragging -> 1.08f
@@ -1210,9 +1319,18 @@ private fun PetalTabCard(
             }
             .bouncyClickable(onClick = {
                 if (!isDragging) {
-                    isSelecting = true
+                    if (isSelectionMode) onTabSelect() else isSelecting = true
                 }
             })
+            .pointerInput(tab.id) {
+                detectTapGestures(
+                    onLongPress = {
+                        if (!isDragging) {
+                            onLongPress()
+                        }
+                    }
+                )
+            }
             .entrance()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -1239,9 +1357,30 @@ private fun PetalTabCard(
                     )
                 }
 
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    AnimatedVisibility(visible = isPinned) {
+                        Icon(
+                            Icons.Rounded.PushPin,
+                            contentDescription = "Pinned",
+                            tint = accentColor,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                    AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection) {
+                        Surface(
+                            shape = CircleShape,
+                            color = accentColor,
+                            modifier = Modifier.size(18.dp)
+                        ) {
+                            Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
+                        }
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
                     modifier = Modifier
                         .size(24.dp)
                         .clickable(onClick = onTabClose)
@@ -1255,6 +1394,7 @@ private fun PetalTabCard(
                         )
                     }
                 }
+            }
             }
 
             // Group tag pill indicator if tab is grouped
@@ -1291,6 +1431,54 @@ private fun PetalTabCard(
                     PetalHomePreviewCard(tab = tab, accentColor = accentColor)
                 }
             }
+        }
+
+        DropdownMenu(
+            expanded = contextMenuExpanded,
+            onDismissRequest = onDismissContextMenu,
+            shape = RoundedCornerShape(20.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ) {
+            DropdownMenuItem(
+                text = { Text("Add tab to new group") },
+                leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) },
+                onClick = { onDismissContextMenu(); onCreateGroup() }
+            )
+            DropdownMenuItem(
+                text = { Text("Add to bookmarks") },
+                leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) },
+                onClick = { onDismissContextMenu(); onBookmark() }
+            )
+            DropdownMenuItem(
+                text = { Text("Share") },
+                leadingIcon = { Icon(Icons.Rounded.Share, null) },
+                onClick = { onDismissContextMenu(); onShare() }
+            )
+            DropdownMenuItem(
+                text = { Text(if (isPinned) "Unpin tab" else "Pin tab") },
+                leadingIcon = { Icon(Icons.Rounded.PushPin, null) },
+                onClick = { onDismissContextMenu(); onTogglePin() }
+            )
+            DropdownMenuItem(
+                text = { Text(if (isMuted) "Unmute Site" else "Mute Site") },
+                leadingIcon = { Icon(if (isMuted) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeOff, null) },
+                onClick = {
+                    isMuted = !isMuted
+                    onDismissContextMenu()
+                    onMute(isMuted)
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Select tab") },
+                leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) },
+                onClick = { onDismissContextMenu(); onSelectForSelection() }
+            )
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text("Close tab") },
+                leadingIcon = { Icon(Icons.Rounded.Close, null) },
+                onClick = { onDismissContextMenu(); onTabClose() }
+            )
         }
     }
 }
@@ -1389,19 +1577,31 @@ private fun PetalTabListItem(
     dragOffset: Offset = Offset.Zero,
     isHoveredForMerge: Boolean = false,
     onTabSelect: () -> Unit,
-    onTabClose: () -> Unit
+    onTabClose: () -> Unit,
+    onLongPress: () -> Unit = {},
+    contextMenuExpanded: Boolean = false,
+    onDismissContextMenu: () -> Unit = {},
+    onBookmark: () -> Unit = {},
+    onShare: () -> Unit = {},
+    onMute: (Boolean) -> Unit = {},
+    onCreateGroup: () -> Unit = {},
+    isPinned: Boolean = false,
+    isSelectionMode: Boolean = false,
+    isSelectedForSelection: Boolean = false,
+    onSelectForSelection: () -> Unit = {},
+    onTogglePin: () -> Unit = {}
 ) {
     val cardBg = MaterialTheme.colorScheme.surfaceContainerHigh
     val textColor = MaterialTheme.colorScheme.onSurface
+    var isMuted by remember(tab.id) { mutableStateOf(false) }
 
     val groupColor = tab.groupColorHex?.let {
         try { Color(android.graphics.Color.parseColor(it)) } catch (_: Exception) { null }
     }
-
     val borderStroke = when {
         isHoveredForMerge -> BorderStroke(2.5.dp, MaterialTheme.colorScheme.tertiary)
         isDragging -> BorderStroke(2.dp, accentColor)
-        tab.isSelected -> BorderStroke(2.dp, groupColor ?: accentColor)
+        isSelectedForSelection || tab.isSelected -> BorderStroke(2.dp, groupColor ?: accentColor)
         groupColor != null -> BorderStroke(1.5.dp, groupColor.copy(alpha = 0.8f))
         else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     }
@@ -1419,12 +1619,13 @@ private fun PetalTabListItem(
                 alpha = if (isDragging) 0.85f else 1.0f
             }
             .bouncyClickable(onClick = onTabSelect)
+            .pointerInput(tab.id) {
+                detectTapGestures(onLongPress = { onLongPress() })
+            }
             .entrance()
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -1446,10 +1647,7 @@ private fun PetalTabListItem(
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             TabFavicon(tab = tab, accentColor = accentColor, size = 22.dp)
                         }
                     }
@@ -1458,7 +1656,7 @@ private fun PetalTabListItem(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            text = if (tab.title.isBlank() || tab.title.equals("about:blank", ignoreCase = true) || tab.title.equals("Petal Start", ignoreCase = true)) "Petal Home" else tab.title,
+                            text = if (tab.title.isBlank() || tab.title.equals("about:blank", true) || tab.title.equals("Petal Start", true)) "Petal Home" else tab.title,
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                             color = textColor,
                             maxLines = 1,
@@ -1466,15 +1664,11 @@ private fun PetalTabListItem(
                             modifier = Modifier.weight(1f, fill = false)
                         )
                         if (tab.groupTitle != null && groupColor != null) {
-                            ExpressiveTabGroupPill(
-                                groupName = tab.groupTitle,
-                                containerColor = groupColor,
-                                contentColor = Color.White
-                            )
+                            ExpressiveTabGroupPill(groupName = tab.groupTitle, containerColor = groupColor, contentColor = Color.White)
                         }
                     }
                     Text(
-                        text = if (tab.url.isBlank() || tab.url.equals("about:blank", ignoreCase = true)) "Petal Home" else tab.url,
+                        text = if (tab.url.isBlank() || tab.url.equals("about:blank", true)) "Petal Home" else tab.url,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -1483,17 +1677,39 @@ private fun PetalTabListItem(
                 }
             }
 
-            IconButton(
-                onClick = onTabClose,
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = "Close tab",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                AnimatedVisibility(visible = isPinned) {
+                    Icon(Icons.Rounded.PushPin, contentDescription = "Pinned", tint = accentColor, modifier = Modifier.size(16.dp))
+                }
+                AnimatedVisibility(visible = isSelectionMode && isSelectedForSelection) {
+                    Surface(shape = CircleShape, color = accentColor, modifier = Modifier.size(20.dp)) {
+                        Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
+                    }
+                }
+                IconButton(onClick = onTabClose, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Close tab", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                }
             }
+        }
+
+        DropdownMenu(
+            expanded = contextMenuExpanded,
+            onDismissRequest = onDismissContextMenu,
+            shape = RoundedCornerShape(20.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ) {
+            DropdownMenuItem(text = { Text("Add tab to new group") }, leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) }, onClick = { onDismissContextMenu(); onCreateGroup() })
+            DropdownMenuItem(text = { Text("Add to bookmarks") }, leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) }, onClick = { onDismissContextMenu(); onBookmark() })
+            DropdownMenuItem(text = { Text("Share") }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { onDismissContextMenu(); onShare() })
+            DropdownMenuItem(text = { Text(if (isPinned) "Unpin tab" else "Pin tab") }, leadingIcon = { Icon(Icons.Rounded.PushPin, null) }, onClick = { onDismissContextMenu(); onTogglePin() })
+            DropdownMenuItem(
+                text = { Text(if (isMuted) "Unmute Site" else "Mute Site") },
+                leadingIcon = { Icon(if (isMuted) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeOff, null) },
+                onClick = { isMuted = !isMuted; onDismissContextMenu(); onMute(isMuted) }
+            )
+            DropdownMenuItem(text = { Text("Select tab") }, leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) }, onClick = { onDismissContextMenu(); onSelectForSelection() })
+            HorizontalDivider()
+            DropdownMenuItem(text = { Text("Close tab") }, leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
         }
     }
 }
@@ -1810,7 +2026,11 @@ object PetalTabGridBridge {
         onTabCloseListener: (PetalTabItem) -> Unit,
         onNewTabListener: (Boolean) -> Unit,
         onCloseAllTabsListener: () -> Unit,
-        onOpenSettingsListener: () -> Unit
+        onOpenSettingsListener: () -> Unit,
+        onBookmarkTabListener: (PetalTabItem) -> Unit = {},
+        onShareTabListener: (PetalTabItem) -> Unit = {},
+        onMuteTabListener: (PetalTabItem, Boolean) -> Unit = { _, _ -> },
+        onCreateGroupListener: (PetalTabItem) -> Unit = {}
     ): ComposeView {
         val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
         com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
@@ -1854,7 +2074,11 @@ object PetalTabGridBridge {
                         onTabClose = onTabCloseListener,
                         onNewTab = onNewTabListener,
                         onCloseAllTabs = onCloseAllTabsListener,
-                        onOpenSettings = onOpenSettingsListener
+                        onOpenSettings = onOpenSettingsListener,
+                        onBookmarkTab = onBookmarkTabListener,
+                        onShareTab = onShareTabListener,
+                        onMuteTab = onMuteTabListener,
+                        onCreateGroup = onCreateGroupListener
                     )
                 }
             }

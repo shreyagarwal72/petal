@@ -148,6 +148,30 @@ object PetalTabGroupManager {
     }
 
     @Synchronized
+    fun createGroupWithTab(
+        context: Context,
+        tab: PetalTabItem,
+        title: String? = null
+    ): PetalTabGroup {
+        init(context)
+        val existing = findGroupByTabId(context, tab.id)
+        if (existing != null) return existing
+        val newGroupId = "group_${System.currentTimeMillis()}_${groupsMap.size}"
+        val colorHex = TabGroupColorPresets[groupsMap.size % TabGroupColorPresets.size]
+        val groupTitle = title?.takeIf { it.isNotBlank() } ?: "Group ${groupsMap.size + 1}"
+        val group = PetalTabGroup(
+            id = newGroupId,
+            title = groupTitle,
+            colorHex = colorHex,
+            isIncognito = tab.isIncognito,
+            tabIds = listOf(tab.id)
+        )
+        groupsMap[newGroupId] = group
+        persist(context)
+        return group
+    }
+
+    @Synchronized
     @JvmStatic
     fun addTabToGroup(context: Context, groupId: String, tabId: String): PetalTabGroup? {
         init(context)
@@ -164,8 +188,7 @@ object PetalTabGroupManager {
         init(context)
         val group = groupsMap[groupId] ?: return null
         val updatedTabs = group.tabIds.filter { it != tabId }
-        if (updatedTabs.size <= 1) {
-            // Chrome auto-dissolves a group when fewer than 2 tabs remain or when cleared
+        if (updatedTabs.isEmpty()) {
             groupsMap.remove(groupId)
             persist(context)
             return null
