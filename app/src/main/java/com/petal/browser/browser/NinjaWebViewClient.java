@@ -161,11 +161,6 @@ public class NinjaWebViewClient extends WebViewClient {
             if (bannerBlockScript != null) view.evaluateJavascript(bannerBlockScript,null);
         }
 
-        // Persist open tabs and WebView state bundle on page finished
-        if (!ninjaWebView.isIncognito()) {
-            com.petal.browser.unit.TabSessionManager.saveSession(context);
-        }
-
         // Apply Accessibility hooks (per-site zoom, force viewport zoom, reader mode detector, caret browsing)
         com.petal.browser.accessibility.PetalAccessibilityEngine.applyZoomToWebView(view, url);
         com.petal.browser.accessibility.PetalAccessibilityEngine.applyForceZoom(view);
