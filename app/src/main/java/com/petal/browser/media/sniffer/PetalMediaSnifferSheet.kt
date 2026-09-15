@@ -62,7 +62,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.media.ytdlp.PetalSocialDownloadService
 import com.petal.browser.media.ytdlp.PetalYtDlpEngine
 import com.petal.browser.media.ytdlp.SupportedPlatforms
@@ -433,6 +432,7 @@ private fun PetalMediaSheet(
                                                 null
                                             }
 
+
                                             when {
                                                 // Direct URL formats come from the InnerTube fallback.
                                                 // formatId IS the stream URL — download directly.
@@ -465,6 +465,7 @@ private fun PetalMediaSheet(
                                                     )
                                                 }
                                             }
+
                                             socialState = SocialState.Done
                                             onDismiss()
                                         },
