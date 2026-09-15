@@ -90,13 +90,6 @@
             android:title="@string/setting_title_search_engine" />
 
         <com.petal.browser.preferences.EditTextSwitchPreference
-            android:key="sp_search_engine_custom"
-            android:selectable="true"
-            android:title="@string/setting_title_searchEngine"
-            app:editTextSwitchKey="searchEngineSwitch"
-            app:useSimpleSummaryProvider="true" />
-
-        <com.petal.browser.preferences.EditTextSwitchPreference
             android:key="sp_userAgent"
             android:selectable="true"
             android:title="@string/setting_title_userAgent"
