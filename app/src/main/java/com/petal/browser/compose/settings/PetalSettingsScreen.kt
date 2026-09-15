@@ -37,6 +37,7 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     PRIVACY("Privacy & Security", "AdBlock, HTTPS-only, Private DNS & cookies", com.petal.browser.R.drawable.layers_filled),
     SEARCH_HOMEPAGE("Search Engine & Home", "Default search engine and custom homepage", com.petal.browser.R.drawable.home_filled),
     DISPLAY_ZOOM("Accessibility", "Touch haptics, text font scaling and page zoom preview", com.petal.browser.R.drawable.mobile_vibrate_filled),
+    ADDRESS_BAR("Address Bar", "Position, size, gestures and toolbar actions", com.petal.browser.R.drawable.ic_search),
     EXPERIMENTAL("Experimental", "App language, experimental features and advanced settings", com.petal.browser.R.drawable.build_filled),
     TABS("Tabs", "Inactive tabs, tab groups and tab cleanup", com.petal.browser.R.drawable.icon_tab),
     MISCELLANEOUS("Miscellaneous", "Download engine, external apps handling and extra browser tools", com.petal.browser.R.drawable.download_2_filled),
@@ -225,6 +226,9 @@ private fun RenderCategoryContent(
         }
         SettingsCategory.DISPLAY_ZOOM -> {
             DisplaySettingsScreen(onNavigateBack = onNavigateBack)
+        }
+        SettingsCategory.ADDRESS_BAR -> {
+            AddressBarSettingsScreen(onNavigateBack = onNavigateBack)
         }
         SettingsCategory.EXPERIMENTAL -> {
             ExperimentalSettingsScreen(onNavigateBack = onNavigateBack)

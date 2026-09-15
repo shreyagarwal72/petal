@@ -204,9 +204,9 @@ object PetalSettingsSearchIndex {
         SettingsSearchItem(
             id = "search_engine",
             title = "Default Search Engine",
-            subtitle = "Select default engine: Google, DuckDuckGo, Bing, Brave, Yahoo, Ecosia, StartPage, Baidu, Yandex, or Qwant",
+            subtitle = "Select default engine: Google, DuckDuckGo, Startpage, Brave Search, Bing, SearXNG, Qwant, or Ecosia",
             category = SettingsCategory.SEARCH_HOMEPAGE,
-            keywords = listOf("search engine", "google", "duckduckgo", "bing", "brave", "startpage", "ecosia", "yahoo", "baidu", "yandex", "qwant")
+            keywords = listOf("search engine", "google", "duckduckgo", "bing", "brave", "startpage", "ecosia", "searx", "searxng", "qwant")
         ),
         SettingsSearchItem(
             id = "search_homepage_type",
@@ -294,12 +294,20 @@ object PetalSettingsSearchIndex {
             category = SettingsCategory.DISPLAY_ZOOM,
             keywords = listOf("caret", "caret browsing", "keyboard cursor", "text cursor", "select text")
         ),
+        // ==================== ADDRESS BAR ====================
         SettingsSearchItem(
-            id = "display_address_bar_gestures",
-            title = "Address Bar Swipe Gestures",
-            subtitle = "Swipe horizontally on the address bar to switch between open browser tabs rapidly",
-            category = SettingsCategory.DISPLAY_ZOOM,
-            keywords = listOf("swipe tabs", "address bar swipe", "switch tabs", "gestures", "swipe navigation")
+            id = "address_bar",
+            title = "Address Bar",
+            subtitle = "Position, compact height, gestures and right-side action",
+            category = SettingsCategory.ADDRESS_BAR,
+            keywords = listOf("address bar", "omnibox", "url bar", "toolbar", "compact", "bottom", "top", "ai", "bookmark", "swipe", "quick actions")
+        ),
+        SettingsSearchItem(
+            id = "address_bar_search_engine",
+            title = "Custom Search Engines",
+            subtitle = "Add unlimited search engines with a {searchTerms} or %s URL template",
+            category = SettingsCategory.SEARCH_HOMEPAGE,
+            keywords = listOf("search engine", "custom search", "searx", "searxng", "startpage", "kagi", "search url", "search template")
         ),
 
         // ==================== EXPERIMENTAL & ADVANCED ====================
@@ -309,13 +317,6 @@ object PetalSettingsSearchIndex {
             subtitle = "Choose language override for Petal Browser independent of Android system language",
             category = SettingsCategory.EXPERIMENTAL,
             keywords = listOf("language", "locale", "translation", "english", "spanish", "french", "german", "chinese", "hindi", "arabic")
-        ),
-        SettingsSearchItem(
-            id = "exp_address_bar_position",
-            title = "Address Bar Position (Top vs Bottom)",
-            subtitle = "Place the URL address bar and controls at the bottom for easy one-handed reach or top",
-            category = SettingsCategory.EXPERIMENTAL,
-            keywords = listOf("address bar position", "bottom bar", "top bar", "url bar position", "one-handed")
         ),
         SettingsSearchItem(
             id = "exp_app_lock",
