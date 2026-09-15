@@ -33,12 +33,14 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
+import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
@@ -552,14 +554,16 @@ fun PetalDownloadManagerScreen(
                             }
                         }
 
-                        items(items, key = { it.id }) { item ->
+                        itemsIndexed(items, key = { _, it -> it.id }) { index, item ->
                             val isSelected = selectedIds.contains(item.id)
                             DownloadRowItem(
                                 item = item,
                                 isSelected = isSelected,
                                 isSelectionMode = isSelectionMode,
                                 showFullDate = (sortOption != DownloadSortOption.DATE_DESC && sortOption != DownloadSortOption.DATE_ASC),
-                                modifier = Modifier.animateItem(
+                                modifier = Modifier
+                                    .entrance(index = index)
+                                    .animateItem(
                                     fadeInSpec = tween(220),
                                     fadeOutSpec = tween(180),
                                     placementSpec = spring(
