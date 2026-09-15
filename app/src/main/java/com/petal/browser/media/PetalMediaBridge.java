@@ -264,6 +264,15 @@ public class PetalMediaBridge {
         }
     }
 
+    public boolean isMuted() {
+        return isMutedState;
+    }
+
+    public void setMuted(boolean muted) {
+        if (isMutedState == muted) return;
+        toggleMute();
+    }
+
     public void toggleMute() {
         isMutedState = !isMutedState;
         if (activeGeckoMediaSession != null) {
