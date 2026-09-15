@@ -1987,215 +1987,166 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public void applyAddressBarPosition() {
         try {
             boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
-            if (inPip) {
-                View addressBar = findViewById(R.id.compose_address_bar);
-                View mainContent = findViewById(R.id.main_content);
-                View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-                View bottomNav = findViewById(R.id.bottom_nav_compose);
-                View fabBubble = findViewById(R.id.fab_bubble);
+            View addressBar = findViewById(R.id.compose_address_bar);
+            View mainContent = findViewById(R.id.main_content);
+            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
+            View bottomNav = findViewById(R.id.bottom_nav_compose);
+            View fabBubble = findViewById(R.id.fab_bubble);
+            View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
+            View downloadBanner = findViewById(R.id.download_banner_compose);
+
+            if (mainContent == null) return;
+
+            if (inPip || (getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false))) {
                 if (addressBar != null) addressBar.setVisibility(GONE);
                 if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
                 if (bottomNav != null) bottomNav.setVisibility(GONE);
                 if (fabBubble != null) fabBubble.setVisibility(GONE);
-                if (mainContent != null && mainContent.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                    RelativeLayout.LayoutParams contentParams = (RelativeLayout.LayoutParams) mainContent.getLayoutParams();
-                    contentParams.removeRule(RelativeLayout.BELOW);
-                    contentParams.removeRule(RelativeLayout.ABOVE);
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    contentParams.topMargin = 0;
-                    contentParams.bottomMargin = 0;
-                    mainContent.setLayoutParams(contentParams);
+
+                // IMPORTANT: Keep the content container full-screen. Do not use
+                // RelativeLayout ABOVE/BELOW rules here; they can produce a zero-sized
+                // content area when Compose is measured asynchronously.
+                if (mainContent.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                    RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mainContent.getLayoutParams();
+                    lp.removeRule(RelativeLayout.BELOW);
+                    lp.removeRule(RelativeLayout.ABOVE);
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    lp.topMargin = 0;
+                    lp.bottomMargin = 0;
+                    mainContent.setLayoutParams(lp);
                 }
-                return;
-            }
-            if (getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false)) {
-                View addressBar = findViewById(R.id.compose_address_bar);
-                View mainContent = findViewById(R.id.main_content);
-                View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-                View bottomNav = findViewById(R.id.bottom_nav_compose);
-                View fabBubble = findViewById(R.id.fab_bubble);
-                if (addressBar != null) addressBar.setVisibility(GONE);
-                if (bottomNavContainer != null) bottomNavContainer.setVisibility(GONE);
-                if (bottomNav != null) bottomNav.setVisibility(GONE);
-                if (fabBubble != null) fabBubble.setVisibility(GONE);
-                if (mainContent != null && mainContent.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                    RelativeLayout.LayoutParams contentParams = (RelativeLayout.LayoutParams) mainContent.getLayoutParams();
-                    contentParams.removeRule(RelativeLayout.BELOW);
-                    contentParams.removeRule(RelativeLayout.ABOVE);
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    contentParams.topMargin = 0;
-                    contentParams.bottomMargin = 0;
-                    mainContent.setLayoutParams(contentParams);
-                }
+                mainContent.setPadding(0, 0, 0, 0);
                 return;
             }
 
             String pos = sp.getString("sp_address_bar_position", "TOP");
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
 
-            View addressBar = findViewById(R.id.compose_address_bar);
-            View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
-            View mainContent = findViewById(R.id.main_content);
-            View bottomNavContainer = findViewById(R.id.bottom_nav_container);
-            View bottomNav = findViewById(R.id.bottom_nav_compose);
-            View fabBubble = findViewById(R.id.fab_bubble);
-            View downloadBanner = findViewById(R.id.download_banner_compose);
+            if (addressBar == null) return;
 
-            if (addressBar == null || mainContent == null) return;
-
-            // Use explicit measured margins instead of mutually-dependent ABOVE/BELOW
-            // rules. The old bottom layout could create a zero-sized/blank content area
-            // while RelativeLayout was resolving the circular dependency.
             final int addressHeight = addressBar.getVisibility() == GONE ? 0 : addressBar.getHeight();
             final int bottomNavHeight = (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE)
                     ? bottomNavContainer.getHeight() : 0;
             final int gap = (int) HelperUnit.convertDpToPixel(2f, context);
 
-            RelativeLayout.LayoutParams addrParams =
-                    addressBar.getLayoutParams() instanceof RelativeLayout.LayoutParams
-                            ? (RelativeLayout.LayoutParams) addressBar.getLayoutParams()
-                            : null;
-            RelativeLayout.LayoutParams contentParams =
-                    mainContent.getLayoutParams() instanceof RelativeLayout.LayoutParams
-                            ? (RelativeLayout.LayoutParams) mainContent.getLayoutParams()
-                            : null;
-            RelativeLayout.LayoutParams progParams =
-                    progressBarCompose != null && progressBarCompose.getLayoutParams() instanceof RelativeLayout.LayoutParams
-                            ? (RelativeLayout.LayoutParams) progressBarCompose.getLayoutParams()
-                            : null;
+            // Keep main_content as a stable full-screen container and reserve space
+            // with padding. This avoids the old circular/async RelativeLayout layout
+            // dependency that caused the WebView/GeckoView to measure at zero height.
+            if (mainContent.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mainContent.getLayoutParams();
+                lp.removeRule(RelativeLayout.BELOW);
+                lp.removeRule(RelativeLayout.ABOVE);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                lp.topMargin = 0;
+                lp.bottomMargin = 0;
+                mainContent.setLayoutParams(lp);
+            }
 
-            if (addrParams != null && contentParams != null) {
+            addressBar.setTranslationY(0f);
+            if (addressBar.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams addrParams = (RelativeLayout.LayoutParams) addressBar.getLayoutParams();
                 addrParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                 addrParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
                 addrParams.removeRule(RelativeLayout.ABOVE);
                 addrParams.removeRule(RelativeLayout.BELOW);
                 addrParams.topMargin = 0;
                 addrParams.bottomMargin = 0;
-
-                contentParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                contentParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                contentParams.removeRule(RelativeLayout.ABOVE);
-                contentParams.removeRule(RelativeLayout.BELOW);
-                contentParams.topMargin = 0;
-                contentParams.bottomMargin = 0;
-
                 if (isBottom) {
                     if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
                         addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
                     } else {
                         addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
                     }
-
-                    // Content occupies everything above both the address bar and bottom nav.
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    contentParams.bottomMargin = addressHeight + bottomNavHeight + gap;
                 } else {
                     addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-
-                    // Content occupies everything between the address bar and bottom nav.
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                    contentParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    contentParams.topMargin = addressHeight + gap;
-                    contentParams.bottomMargin = bottomNavHeight;
                 }
-
-                if (progParams != null) {
-                    progParams.removeRule(RelativeLayout.ABOVE);
-                    progParams.removeRule(RelativeLayout.BELOW);
-                    progParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    progParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                    if (isBottom) {
-                        progParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                        progParams.bottomMargin = addressHeight + bottomNavHeight;
-                    } else {
-                        progParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                        progParams.topMargin = addressHeight;
-                    }
-                }
-
                 addressBar.setLayoutParams(addrParams);
-                mainContent.setLayoutParams(contentParams);
-                if (progressBarCompose != null && progParams != null) progressBarCompose.setLayoutParams(progParams);
-
-                if (downloadBanner != null && downloadBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                    RelativeLayout.LayoutParams bannerParams = (RelativeLayout.LayoutParams) downloadBanner.getLayoutParams();
-                    bannerParams.removeRule(RelativeLayout.BELOW);
-                    bannerParams.removeRule(RelativeLayout.ABOVE);
-                    bannerParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    bannerParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                    if (isBottom) {
-                        bannerParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                        bannerParams.topMargin = (int) HelperUnit.convertDpToPixel(8f, context);
-                    } else {
-                        bannerParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                        bannerParams.topMargin = addressHeight + (int) HelperUnit.convertDpToPixel(8f, context);
-                    }
-                    downloadBanner.setLayoutParams(bannerParams);
-                }
-
-                if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                    RelativeLayout.LayoutParams bubbleParams = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
-                    bubbleParams.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    bubbleParams.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                    if (isBottom) {
-                        bubbleParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                        bubbleParams.bottomMargin = bottomNavHeight + addressHeight + (int) HelperUnit.convertDpToPixel(12f, context);
-                    } else {
-                        bubbleParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-                        bubbleParams.topMargin = addressHeight + (int) HelperUnit.convertDpToPixel(16f, context);
-                    }
-                    bubbleParams.bottomMargin = isBottom
-                            ? bottomNavHeight + addressHeight + (int) HelperUnit.convertDpToPixel(12f, context)
-                            : 0;
-                    fabBubble.setLayoutParams(bubbleParams);
-                }
-
-                if (bottomNavContainer != null && bottomNavContainer.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                    RelativeLayout.LayoutParams containerParams = (RelativeLayout.LayoutParams) bottomNavContainer.getLayoutParams();
-                    containerParams.removeRule(RelativeLayout.ABOVE);
-                    containerParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    bottomNavContainer.setLayoutParams(containerParams);
-                    bottomNavContainer.bringToFront();
-                }
-
-                boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
-                if (bottomNav != null && bottomNav.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
-                    RelativeLayout.LayoutParams navParams = (RelativeLayout.LayoutParams) bottomNav.getLayoutParams();
-                    navParams.removeRule(RelativeLayout.ABOVE);
-                    navParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    navParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
-                    navParams.bottomMargin = isFloating ? (int) HelperUnit.convertDpToPixel(6f, context) : 0;
-                    bottomNav.setLayoutParams(navParams);
-                    bottomNav.bringToFront();
-                }
-
-                mainContent.setPadding(0, 0, 0, 0);
-
-                View root = addressBar.getParent() instanceof View ? (View) addressBar.getParent() : null;
-                if (root != null) root.requestLayout();
-                addressBar.bringToFront();
-                addressBar.requestLayout();
-                mainContent.requestLayout();
-
-                // Compose measures after the first pass. Re-apply once so the content
-                // margins use the actual compact/standard address bar height.
-                if (addressBar.getHeight() == 0) {
-                    addressBar.post(this::applyAddressBarPosition);
-                }
             }
 
-            if (progressBarCompose != null) {
+            int topInset = !isBottom ? addressHeight + gap : 0;
+            int bottomInset = isBottom
+                    ? addressHeight + bottomNavHeight + gap
+                    : bottomNavHeight;
+            mainContent.setPadding(0, topInset, 0, bottomInset);
+
+            if (progressBarCompose != null && progressBarCompose.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) progressBarCompose.getLayoutParams();
+                lp.removeRule(RelativeLayout.ABOVE);
+                lp.removeRule(RelativeLayout.BELOW);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                if (isBottom) {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    lp.bottomMargin = addressHeight + bottomNavHeight;
+                    lp.topMargin = 0;
+                } else {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    lp.topMargin = addressHeight;
+                    lp.bottomMargin = 0;
+                }
+                progressBarCompose.setLayoutParams(lp);
                 progressBarCompose.bringToFront();
-                progressBarCompose.requestLayout();
             }
 
-            View refreshBarComposeView = findViewById(R.id.refresh_bar_compose);
-            if (refreshBarComposeView != null) {
-                refreshBarComposeView.bringToFront();
-                refreshBarComposeView.requestLayout();
+            if (downloadBanner != null && downloadBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) downloadBanner.getLayoutParams();
+                lp.removeRule(RelativeLayout.BELOW);
+                lp.removeRule(RelativeLayout.ABOVE);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                lp.topMargin = isBottom ? gap : addressHeight + gap;
+                downloadBanner.setLayoutParams(lp);
+            }
+
+            if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                if (isBottom) {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    lp.bottomMargin = bottomNavHeight + addressHeight + (int) HelperUnit.convertDpToPixel(12f, context);
+                    lp.topMargin = 0;
+                } else {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    lp.topMargin = addressHeight + (int) HelperUnit.convertDpToPixel(16f, context);
+                    lp.bottomMargin = 0;
+                }
+                fabBubble.setLayoutParams(lp);
+            }
+
+            if (bottomNavContainer != null && bottomNavContainer.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) bottomNavContainer.getLayoutParams();
+                lp.removeRule(RelativeLayout.ABOVE);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                bottomNavContainer.setLayoutParams(lp);
+                bottomNavContainer.bringToFront();
+            }
+
+            boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
+            if (bottomNav != null && bottomNav.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) bottomNav.getLayoutParams();
+                lp.removeRule(RelativeLayout.ABOVE);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                lp.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+                lp.bottomMargin = isFloating ? (int) HelperUnit.convertDpToPixel(6f, context) : 0;
+                bottomNav.setLayoutParams(lp);
+                bottomNav.bringToFront();
+            }
+
+            mainContent.bringToFront();
+            if (bottomNavContainer != null) bottomNavContainer.bringToFront();
+            addressBar.bringToFront();
+            if (progressBarCompose != null) progressBarCompose.bringToFront();
+            addressBar.requestLayout();
+            mainContent.requestLayout();
+
+            // Compose may initially report 0 before its first measure. Re-run after
+            // measurement so padding and overlays use the real address-bar height.
+            if (addressHeight == 0 && addressBar.getVisibility() != GONE) {
+                addressBar.post(this::applyAddressBarPosition);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error applying address bar position", e);
