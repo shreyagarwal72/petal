@@ -58,16 +58,6 @@
             android:key="sp_close_tab_confirm"
             android:summary="@string/setting_title_confirm_tab_close" />
 
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="sp_reloadTabs"
-            android:summary="@string/setting_summary_tabsReload" />
-
-        <CheckBoxPreference
-            android:defaultValue="true"
-            android:key="sp_restoreTabs"
-            android:summary="@string/setting_summary_tabsRestore" />
-
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/setting_title_browser">
