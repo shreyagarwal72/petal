@@ -91,6 +91,18 @@ android {
     }
     namespace 'com.petal.browser'
 
+    // youtubedl-android (Chaquopy/Python) unzips libpython.zip.so from disk at runtime via
+    // ZipFile/RandomAccessFile. When AGP packages native libs compressed and uncompressed for
+    // mmap loading (the default since AGP 4.2 targeting API 23+), .so files are stored
+    // compressed inside the APK and never extracted to the app's native lib directory, so
+    // YoutubeDL.init() throws FileNotFoundException on libpython.zip.so. Force legacy
+    // (uncompressed, extracted-to-disk) packaging so youtubedl-android can open it as a file.
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging true
+        }
+    }
+
     return void
 }
 
