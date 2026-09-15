@@ -55,7 +55,6 @@ import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.speech.RecognizerIntent;
 import android.text.Editable;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 
 import com.petal.browser.compose.downloads.PetalDownloadBridge;
@@ -730,82 +729,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.unit.UpdateUnit.checkForUpdates(this, true);
         }
 
-        // Chrome-style Tab Session Restoration & Rehydration
-        try {
-            java.util.List<com.petal.browser.unit.TabSessionManager.TabStateRecord> savedSession =
-                    com.petal.browser.unit.TabSessionManager.loadSession(this);
-            if (savedSession != null && !savedSession.isEmpty()) {
-                com.petal.browser.view.PetalGeckoView activeRestoredGeckoView = null;
-                int activeIndex = -1;
-                for (int i = 0; i < savedSession.size(); i++) {
-                    if (savedSession.get(i).isActive) {
-                        activeIndex = i;
-                        break;
-                    }
-                }
-                if (activeIndex < 0) activeIndex = 0;
-
-                for (int i = 0; i < savedSession.size(); i++) {
-                    com.petal.browser.unit.TabSessionManager.TabStateRecord record = savedSession.get(i);
-                    boolean isForegroundTab = i == activeIndex;
-                    if (isForegroundTab) {
-                        com.petal.browser.view.PetalGeckoView restoredGeckoView =
-                                com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
-                                        this, record.title, record.url, true, record.isIncognito
-                                );
-                        if (record.persistentTabId != null && !record.persistentTabId.isEmpty()) {
-                            restoredGeckoView.setTabId(record.persistentTabId);
-                        }
-                        restoredGeckoView.setBrowserController(this);
-                        if (record.url != null && !record.url.isEmpty() && !isHomePage(record.url)) {
-                            restoredGeckoView.loadUrl(record.url);
-                        } else {
-                            restoredGeckoView.loadUrl("about:blank");
-                        }
-                        if (record.title != null && !record.title.isEmpty()) {
-                            restoredGeckoView.setAlbumTitle(record.title, record.url);
-                        }
-                        if (record.tabGroupId != null && !record.tabGroupId.isEmpty()) {
-                            restoredGeckoView.setTabGroupId(record.tabGroupId);
-                            restoredGeckoView.setTabGroupTitle(record.tabGroupTitle);
-                        }
-                        BrowserContainer.add(restoredGeckoView);
-                        activeRestoredGeckoView = restoredGeckoView;
-                    } else {
-                        com.petal.browser.browser.PlaceholderAlbumController placeholder =
-                                new com.petal.browser.browser.PlaceholderAlbumController(
-                                        this, record.title, record.url, null, record.persistentTabId,
-                                        record.tabGroupId, record.tabGroupTitle, record.isIncognito
-                                );
-                        BrowserContainer.add(placeholder);
-                    }
-                }
-                if (activeRestoredGeckoView != null) {
-                    showAlbum(activeRestoredGeckoView);
-                } else if (BrowserContainer.size() > 0) {
-                    showAlbum(BrowserContainer.get(0));
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error restoring tab session", e);
-        }
-
-        // Fallback: restore legacy URLs if TabSessionManager had no saved records
-        if (BrowserContainer.size() < 1 && (sp.getBoolean("sp_restoreTabs", false)
-                || sp.getBoolean("sp_reloadTabs", false)
-                || sp.getBoolean("restoreOnRestart", false))) {
-            String saveDefaultProfile = sp.getString("profile", "profileStandard");
-            ArrayList<String> openTabs;
-            openTabs = new ArrayList<>(Arrays.asList(TextUtils.split(sp.getString("openTabs", ""), "‚‗‚")));
-            if (!openTabs.isEmpty()) {
-                for (int counter = 0; counter < openTabs.size(); counter++) {
-                    addAlbum(getString(R.string.app_name), openTabs.get(counter), BrowserContainer.size() < 1);
-                }
-            }
-            sp.edit().putString("profile", saveDefaultProfile).apply();
-            sp.edit().putBoolean("restoreOnRestart", false).apply();
-        }
-
         // If still no open tab, open default page
         if (BrowserContainer.size() < 1) {
             addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
@@ -978,9 +901,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (sp != null && sp.getBoolean("sp_backup_quit", false)) {
                 Fragment_settings_Backup.backup(activity);
             }
-            if (sp != null && (!sp.getBoolean("sp_reloadTabs", false) || sp.getInt("restart_changed", 1) == 1)) {
-                sp.edit().putString("openTabs", "").apply();
-            }
             com.petal.browser.media.BrowserMediaDelegate.unregisterPipReceiver(this);
         } catch (Exception e) {
             Log.e(TAG, "Error in BrowserActivity.onDestroy", e);
@@ -1059,34 +979,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        // Overlay/tab-manager screens own the Back action. Handle them BEFORE
-        // checking the active tab URL. A home tab normally uses about:blank as
-        // Gecko's backing document, so checking the URL first can mistake an
-        // open tab-manager overlay for a request to leave the app and expose the
-        // backing blank document.
-        if (fullscreenHolder != null || customView != null || videoView != null) {
-            onHideCustomView();
-            return;
-        }
-        if (dialogOverview != null && dialogOverview.isShowing()) {
-            hideOverview();
-            return;
-        }
-        if (isOverlayScreenShowing) {
-            isOverlayScreenShowing = false;
-            contentFrame.removeAllViews();
-            Runnable backAction = pendingOverlayBackAction;
-            pendingOverlayBackAction = null;
-            if (backAction != null) {
-                backAction.run();
-            } else {
-                showAlbum(currentAlbumController);
-            }
-            updatePersistentBottomNav();
-            updateOmniBox();
-            return;
-        }
-
         // The Petal home page is an app-owned start surface, not a normal web
         // history entry. Gecko can report back history here because the home
         // document was reached from an initial about:blank/session bootstrap.
@@ -1112,7 +1004,23 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
+        if (fullscreenHolder != null || customView != null || videoView != null) {
+            onHideCustomView();
+        } else if (dialogOverview != null && dialogOverview.isShowing()) {
+            hideOverview();
+        } else if (isOverlayScreenShowing) {
+            isOverlayScreenShowing = false;
+            contentFrame.removeAllViews();
+            Runnable backAction = pendingOverlayBackAction;
+            pendingOverlayBackAction = null;
+            if (backAction != null) {
+                backAction.run();
+            } else {
+                showAlbum(currentAlbumController);
+            }
+            updatePersistentBottomNav();
+            updateOmniBox();
+        } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
             searchOnSiteInput.setText("");
             searchOnSiteLayout.setVisibility(GONE);
             appBar.setVisibility(VISIBLE);
@@ -1584,13 +1492,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController instanceof NinjaWebView) {
             ninjaWebView = (NinjaWebView) currentAlbumController;
         }
-
-        // IMPORTANT: attach the selected browser view before activating its session.
-        // Activating GeckoSession while its GeckoView is detached can leave the
-        // compositor/surface in a stale state when returning from the tab manager,
-        // producing a blank page. The old order was deactivate -> activate ->
-        // removeAllViews -> attach, which is especially fragile after Compose
-        // overlays/tab-switcher transitions.
+        currentAlbumController.activate();
         contentFrame.removeAllViews();
         isOverlayScreenShowing = false;
 
@@ -1807,39 +1709,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // when the window's insets are not yet available (e.g. right after activity
             // resume from an overlay/history screen). Deferring via post() ensures the
             // view is only attached after the window is fully laid out with valid insets.
-            if (av instanceof com.petal.browser.view.PetalGeckoView) {
-                final com.petal.browser.view.PetalGeckoView geckoView =
-                        (com.petal.browser.view.PetalGeckoView) currentAlbumController;
+            if (av instanceof com.petal.browser.view.PetalGeckoView
+                    && (contentFrame.getWindowToken() == null || !contentFrame.isAttachedToWindow())) {
                 final android.view.View avFinal = av;
-
-                // GeckoView must be attached before session.setActive(true).  When
-                // coming back from the tab manager, posting the attach + activation
-                // as one operation also prevents an old Compose overlay transaction
-                // from racing the Gecko compositor.
-                Runnable attachAndActivate = () -> {
+                contentFrame.post(() -> {
                     try {
-                        if (avFinal.getParent() != null) {
-                            ((android.view.ViewGroup) avFinal.getParent()).removeView(avFinal);
+                        if (contentFrame.isAttachedToWindow()) {
+                            contentFrame.addView(avFinal);
                         }
-                        if (contentFrame.getChildCount() > 0) {
-                            contentFrame.removeAllViews();
-                        }
-                        contentFrame.addView(avFinal);
-                        geckoView.setVisibility(VISIBLE);
-                        geckoView.activate();
-                    } catch (Throwable e) {
-                        Log.w(TAG, "Failed to attach/activate GeckoView after tab switch", e);
-                    }
-                };
-
-                if (contentFrame.isAttachedToWindow()) {
-                    contentFrame.post(attachAndActivate);
-                } else {
-                    contentFrame.post(attachAndActivate);
-                }
+                    } catch (Exception ignored) {}
+                });
             } else {
                 contentFrame.addView(av);
-                currentAlbumController.activate();
             }
             if (appBar != null) appBar.setVisibility(VISIBLE);
             View downloadBanner = findViewById(R.id.download_banner_compose);
@@ -2205,7 +2086,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             updateOmniBox();
             updatePersistentBottomNav();
-            saveOpenedTabs();
             // Ensure user stays on the tab switcher menu view when 0/1 tabs remain
             showOverview();
         } else {
@@ -2247,8 +2127,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
                 updateOmniBox();
                 updatePersistentBottomNav();
-                saveOpenedTabs();
-                com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(BrowserActivity.this);
+                    com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(BrowserActivity.this);
             });
         }
     }
@@ -2289,7 +2168,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ninjaWebView = null;
             }
             updatePersistentBottomNav();
-            saveOpenedTabs();
         } catch (Exception e) {
             Log.e(TAG, "Error removing album silently", e);
         }
@@ -2341,8 +2219,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             if (progress >= 100) {
                 updateOmniBox();
-                saveOpenedTabs();
-                FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken);
+                    FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken);
                 final Handler handler = new Handler();
                 handler.postDelayed(() -> FaviconHelper.setFavicon(context, contentView, ninjaWebView.getUrl(), R.id.menu_icon, R.drawable.icon_image_broken), 500);
             }
@@ -3680,11 +3557,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                     BrowserContainer.clear();
                     com.petal.browser.unit.TabThumbnailCache.clear();
-                    com.petal.browser.unit.TabSessionManager.clearSession(BrowserActivity.this);
-                    sp.edit().remove("openTabs").apply();
                     addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true);
-                    saveOpenedTabs();
-                    return kotlin.Unit.INSTANCE;
+                            return kotlin.Unit.INSTANCE;
                 },
                 isIncognito -> {
                     addAlbum(getString(R.string.app_name), sp.getString("favoriteURL", "about:blank"), true, isIncognito);
@@ -4723,27 +4597,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.ui.components.PetalConfirmSheetBridge.showQuitBrowserConfirmation(this, this::finishAndRemoveTask);
         }
     }
-    public void saveOpenedTabs() {
-        if (BrowserContainer.size() == 0) {
-            sp.edit().remove("openTabs").apply();
-            com.petal.browser.unit.TabSessionManager.clearSession(this);
-            return;
-        }
-        ArrayList<String> openTabs = new ArrayList<>();
-        for (int i = 0; i < BrowserContainer.size(); i++) {
-            AlbumController controller = BrowserContainer.get(i);
-            if (controller == null) continue;
-            String url = controller.getUrl();
-            if (url == null) url = "";
-            if (controller == currentAlbumController) {
-                openTabs.add(0, url);
-            } else {
-                openTabs.add(url);
-            }
-        }
-        sp.edit().putString("openTabs", TextUtils.join("‚‗‚", openTabs)).apply();
-        com.petal.browser.unit.TabSessionManager.saveSession(this);
-    }
     public void setCustomFullscreen(boolean fullscreen) {
         if (fullscreen) {
             if (SDK_INT >= Build.VERSION_CODES.R) {
@@ -5529,7 +5382,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void triggerRebirth(Context context) {
         sp.edit().putInt("restart_changed", 0).apply();
-        sp.edit().putBoolean("restoreOnRestart", true).apply();
         View anchor = currentAlbumController != null ? currentAlbumController.getAlbumView() : (ninjaWebView != null ? ninjaWebView : findViewById(android.R.id.content));
         Snackbar snackbar = Snackbar.make(anchor, R.string.toast_restart, Snackbar.LENGTH_SHORT);
         HelperUnit.makeSnackbarRound(snackbar);
@@ -5637,11 +5489,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ninjaWebView.onPause();
                 ninjaWebView.pauseTimers();
             } catch (Exception ignored) {}
-        }
-        try {
-            com.petal.browser.unit.TabSessionManager.saveSession(this);
-        } catch (Exception e) {
-            Log.e(TAG, "Error saving tab session in onPause", e);
         }
     }
 }
