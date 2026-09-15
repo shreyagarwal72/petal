@@ -72,6 +72,18 @@ class PetalApplication : Application() {
             // Application startup and the media sheet.
             try {
                 com.petal.browser.media.ytdlp.PetalYtDlpEngine.initialize(this)
+                // Silently auto-update the yt-dlp extractor in the background once per day.
+                // YouTube frequently pushes extractor changes that break downloads — keeping
+                // yt-dlp current eliminates the "couldn't fetch media" failure for most users.
+                kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        com.petal.browser.media.ytdlp.PetalYtDlpEngine.checkAutoUpdate(
+                            this@PetalApplication
+                        )
+                    } catch (t: Throwable) {
+                        android.util.Log.w(TAG, "Background yt-dlp update check failed", t)
+                    }
+                }
             } catch (t: Throwable) {
                 Log.w(TAG, "yt-dlp init failed; it will retry on first use", t)
             }

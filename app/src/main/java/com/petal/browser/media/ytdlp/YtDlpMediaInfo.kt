@@ -27,14 +27,20 @@ data class YtDlpMediaInfo(
 }
 
 data class YtDlpFormat(
-    /** yt-dlp format selector (for example: bestvideo+bestaudio/best). */
+    /** yt-dlp format selector (e.g. "bestvideo+bestaudio/best") OR a direct stream URL when [isDirectUrl]=true. */
     val formatId: String,
     /** User-facing label shown in the format selector. */
     val label: String,
     val isAudioOnly: Boolean = false,
     val fileSizeApprox: Long? = null,
     /** Output extension hint used for the filename/notification. */
-    val ext: String = "mp4"
+    val ext: String = "mp4",
+    /**
+     * True when [formatId] is a direct stream URL (e.g. from the native YouTubeExtractor
+     * InnerTube fallback) rather than a yt-dlp format selector. The download handler
+     * routes direct-URL formats through PetalFetchDownloadBridge instead of yt-dlp.
+     */
+    val isDirectUrl: Boolean = false
 ) {
     companion object {
         /**
