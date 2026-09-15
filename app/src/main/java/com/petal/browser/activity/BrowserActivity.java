@@ -5142,6 +5142,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 );
                 if (!allowedExtensions.contains(extension)) {
                     Toast.makeText(this, getString(R.string.dialog_supported), Toast.LENGTH_SHORT).show();
+                    getIntent().setAction("");
+                    getIntent().setData(null);
                     return;
                 }
             }
