@@ -9,6 +9,11 @@ package com.petal.browser.compose.settings
 
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -181,10 +186,12 @@ fun PetalSettingsScreen(
                     )
                 }
                 PetalScreenWrapper(isBehind = false) {
-                    RenderCategoryContent(
-                        category = activeCategory,
-                        onNavigateBack = { currentCategory = SettingsCategory.OVERVIEW }
-                    )
+                    PetalSettingsAnimatedContent(targetKey = activeCategory) {
+                        RenderCategoryContent(
+                            category = activeCategory,
+                            onNavigateBack = { currentCategory = SettingsCategory.OVERVIEW }
+                        )
+                    }
                 }
             }
         }
@@ -251,5 +258,23 @@ private fun RenderCategoryContent(
         SettingsCategory.ABOUT -> {
             AboutSettingsScreen(onNavigateBack = onNavigateBack)
         }
+    }
+}
+
+
+@Composable
+private fun PetalSettingsAnimatedContent(
+    targetKey: Any,
+    content: @Composable () -> Unit
+) {
+    AnimatedContent(
+        targetState = targetKey,
+        transitionSpec = {
+            (fadeIn(animationSpec = tween(220)) togetherWith
+                fadeOut(animationSpec = tween(160)))
+        },
+        label = "petalSettingsContentTransition"
+    ) {
+        content()
     }
 }
