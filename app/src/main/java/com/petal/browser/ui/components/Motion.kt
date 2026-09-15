@@ -216,3 +216,32 @@ fun Modifier.springReveal(index: Int = 0): Modifier {
         translationY = (1f - animProgress.value) * 12.dp.toPx()
     }
 }
+
+
+/** Material-style fade-through for replacing content without moving the browser surface. */
+@Composable
+fun Modifier.fadeThrough(visible: Boolean, durationMs: Int = 180): Modifier {
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMs, easing = LinearOutSlowInEasing),
+        label = "fadeThrough"
+    )
+    return graphicsLayer { this.alpha = alpha }
+}
+
+/** Compact shared-element-like scale used for menus, sheets and transient surfaces. */
+@Composable
+fun Modifier.surfacePopIn(visible: Boolean = true): Modifier {
+    val scale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0.96f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "surfacePopIn"
+    )
+    return graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
+}
