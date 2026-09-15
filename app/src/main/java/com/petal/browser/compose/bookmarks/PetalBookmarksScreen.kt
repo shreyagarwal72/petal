@@ -52,6 +52,8 @@ import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.compose.home.getFaviconUrl
@@ -376,8 +378,9 @@ fun PetalBookmarksScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        itemsIndexed(filteredBookmarks) { _, record ->
+                        itemsIndexed(filteredBookmarks, key = { _, record -> "${record.url}_${record.time}" }) { index, record ->
                             BookmarkCardItem(
+                                animationIndex = index,
                                 record = record,
                                 onClick = { onOpenUrl(record.url) },
                                 onDelete = {
@@ -508,6 +511,7 @@ fun PetalBookmarksScreen(
 
 @Composable
 private fun BookmarkCardItem(
+    animationIndex: Int = 0,
     record: Record,
     onClick: () -> Unit,
     onDelete: () -> Unit
@@ -524,7 +528,9 @@ private fun BookmarkCardItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .bouncyClickable(scaleDown = 0.97f, onClick = onClick)
+            .animateItem()
+            .entrance(index = animationIndex)
     ) {
         Row(
             modifier = Modifier
