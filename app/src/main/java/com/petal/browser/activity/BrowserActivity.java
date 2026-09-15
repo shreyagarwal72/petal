@@ -1059,6 +1059,34 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
+        // Overlay/tab-manager screens own the Back action. Handle them BEFORE
+        // checking the active tab URL. A home tab normally uses about:blank as
+        // Gecko's backing document, so checking the URL first can mistake an
+        // open tab-manager overlay for a request to leave the app and expose the
+        // backing blank document.
+        if (fullscreenHolder != null || customView != null || videoView != null) {
+            onHideCustomView();
+            return;
+        }
+        if (dialogOverview != null && dialogOverview.isShowing()) {
+            hideOverview();
+            return;
+        }
+        if (isOverlayScreenShowing) {
+            isOverlayScreenShowing = false;
+            contentFrame.removeAllViews();
+            Runnable backAction = pendingOverlayBackAction;
+            pendingOverlayBackAction = null;
+            if (backAction != null) {
+                backAction.run();
+            } else {
+                showAlbum(currentAlbumController);
+            }
+            updatePersistentBottomNav();
+            updateOmniBox();
+            return;
+        }
+
         // The Petal home page is an app-owned start surface, not a normal web
         // history entry. Gecko can report back history here because the home
         // document was reached from an initial about:blank/session bootstrap.
@@ -1084,23 +1112,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        if (fullscreenHolder != null || customView != null || videoView != null) {
-            onHideCustomView();
-        } else if (dialogOverview != null && dialogOverview.isShowing()) {
-            hideOverview();
-        } else if (isOverlayScreenShowing) {
-            isOverlayScreenShowing = false;
-            contentFrame.removeAllViews();
-            Runnable backAction = pendingOverlayBackAction;
-            pendingOverlayBackAction = null;
-            if (backAction != null) {
-                backAction.run();
-            } else {
-                showAlbum(currentAlbumController);
-            }
-            updatePersistentBottomNav();
-            updateOmniBox();
-        } else if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
+        if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE){
             searchOnSiteInput.setText("");
             searchOnSiteLayout.setVisibility(GONE);
             appBar.setVisibility(VISIBLE);
@@ -1572,7 +1584,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController instanceof NinjaWebView) {
             ninjaWebView = (NinjaWebView) currentAlbumController;
         }
-        currentAlbumController.activate();
+
+        // IMPORTANT: attach the selected browser view before activating its session.
+        // Activating GeckoSession while its GeckoView is detached can leave the
+        // compositor/surface in a stale state when returning from the tab manager,
+        // producing a blank page. The old order was deactivate -> activate ->
+        // removeAllViews -> attach, which is especially fragile after Compose
+        // overlays/tab-switcher transitions.
         contentFrame.removeAllViews();
         isOverlayScreenShowing = false;
 
@@ -1789,18 +1807,39 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // when the window's insets are not yet available (e.g. right after activity
             // resume from an overlay/history screen). Deferring via post() ensures the
             // view is only attached after the window is fully laid out with valid insets.
-            if (av instanceof com.petal.browser.view.PetalGeckoView
-                    && (contentFrame.getWindowToken() == null || !contentFrame.isAttachedToWindow())) {
+            if (av instanceof com.petal.browser.view.PetalGeckoView) {
+                final com.petal.browser.view.PetalGeckoView geckoView =
+                        (com.petal.browser.view.PetalGeckoView) currentAlbumController;
                 final android.view.View avFinal = av;
-                contentFrame.post(() -> {
+
+                // GeckoView must be attached before session.setActive(true).  When
+                // coming back from the tab manager, posting the attach + activation
+                // as one operation also prevents an old Compose overlay transaction
+                // from racing the Gecko compositor.
+                Runnable attachAndActivate = () -> {
                     try {
-                        if (contentFrame.isAttachedToWindow()) {
-                            contentFrame.addView(avFinal);
+                        if (avFinal.getParent() != null) {
+                            ((android.view.ViewGroup) avFinal.getParent()).removeView(avFinal);
                         }
-                    } catch (Exception ignored) {}
-                });
+                        if (contentFrame.getChildCount() > 0) {
+                            contentFrame.removeAllViews();
+                        }
+                        contentFrame.addView(avFinal);
+                        geckoView.setVisibility(VISIBLE);
+                        geckoView.activate();
+                    } catch (Throwable e) {
+                        Log.w(TAG, "Failed to attach/activate GeckoView after tab switch", e);
+                    }
+                };
+
+                if (contentFrame.isAttachedToWindow()) {
+                    contentFrame.post(attachAndActivate);
+                } else {
+                    contentFrame.post(attachAndActivate);
+                }
             } else {
                 contentFrame.addView(av);
+                currentAlbumController.activate();
             }
             if (appBar != null) appBar.setVisibility(VISIBLE);
             View downloadBanner = findViewById(R.id.download_banner_compose);
