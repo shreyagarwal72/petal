@@ -273,10 +273,6 @@ public class BrowserUnit {
 
         // 3. Keep tab thumbnails across app exits. They are removed only when the
         // corresponding tab is explicitly closed or all tabs are explicitly closed.
-        try {
-            sp.edit().putString("openTabs", "").apply();
-        } catch (Exception ignored) {}
-
         // Note: NEVER remove account logins, Google credentials, saved passwords, or auth tokens on exit.
     }
 
