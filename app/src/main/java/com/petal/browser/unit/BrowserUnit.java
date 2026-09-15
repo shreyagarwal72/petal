@@ -128,24 +128,37 @@ public class BrowserUnit {
             } else if (sp.getBoolean("searchEngineSwitch", false) && !customSearchEngine.isEmpty()) {
                 return customSearchEngine + encodedQuery;
             } else {
+                String selectedEngine = sp.getString("sp_search_engine", "0");
                 int i = 0;
-                try {
-                    i = Integer.parseInt(Objects.requireNonNull(sp.getString("sp_search_engine", "0")));
-                } catch (Exception ignored) {}
+                try { i = Integer.parseInt(selectedEngine); } catch (Exception ignored) {}
+
+                // Custom engines use ids >= 1000 and are stored as a small JSON array.
+                if (i >= 1000) {
+                    String customJson = sp.getString("sp_custom_search_engines", "[]");
+                    try {
+                        org.json.JSONArray engines = new org.json.JSONArray(customJson);
+                        for (int n = 0; n < engines.length(); n++) {
+                            org.json.JSONObject engine = engines.optJSONObject(n);
+                            if (engine != null && engine.optInt("id", -1) == i) {
+                                String template = engine.optString("url", "");
+                                if (!template.isEmpty()) {
+                                    return template.replace("{searchTerms}", encodedQuery).replace("%s", encodedQuery);
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
 
                 switch (i) {
-                    case 0:
-                        return "https://www.google.com/search?q=" + encodedQuery;
-                    case 1:
-                        return "https://duckduckgo.com/?q=" + encodedQuery;
-                    case 2:
-                        return "https://search.brave.com/search?q=" + encodedQuery;
-                    case 3:
-                        return "https://www.bing.com/search?q=" + encodedQuery;
-                    case 4:
-                        return "https://www.ecosia.org/search?q=" + encodedQuery;
-                    default:
-                        return "https://www.google.com/search?q=" + encodedQuery;
+                    case 0: return "https://www.google.com/search?q=" + encodedQuery;
+                    case 1: return "https://duckduckgo.com/?q=" + encodedQuery;
+                    case 2: return "https://www.startpage.com/sp/search?query=" + encodedQuery;
+                    case 3: return "https://search.brave.com/search?q=" + encodedQuery;
+                    case 4: return "https://www.bing.com/search?q=" + encodedQuery;
+                    case 5: return "https://searx.space/search?q=" + encodedQuery;
+                    case 6: return "https://www.qwant.com/?q=" + encodedQuery;
+                    case 7: return "https://www.ecosia.org/search?q=" + encodedQuery;
+                    default: return "https://www.google.com/search?q=" + encodedQuery;
                 }
             }
         }
