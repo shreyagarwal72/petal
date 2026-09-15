@@ -30,7 +30,6 @@ object PetalAddressBarBridge {
     private val _onBackClickState = mutableStateOf<Runnable?>(null)
     private val _onShareClickState = mutableStateOf<Runnable?>(null)
     private val _onAddressClickState = mutableStateOf<Runnable?>(null)
-    private val _onSiteControlsClickState = mutableStateOf<Runnable?>(null)
     private val _onAiResearchClickState = mutableStateOf<Runnable?>(null)
     private val _onSwipeNextTabState = mutableStateOf<Runnable?>(null)
     private val _onSwipePrevTabState = mutableStateOf<Runnable?>(null)
@@ -57,7 +56,6 @@ object PetalAddressBarBridge {
         onBackClick: Runnable,
         onShareClick: Runnable,
         onAddressClick: Runnable,
-        onSiteControlsClick: Runnable? = null,
         onAiResearchClick: Runnable? = null,
         favicon: android.graphics.Bitmap? = null,
         progress: Float = 0f,
@@ -76,7 +74,6 @@ object PetalAddressBarBridge {
         _onBackClickState.value = onBackClick
         _onShareClickState.value = onShareClick
         _onAddressClickState.value = onAddressClick
-        _onSiteControlsClickState.value = onSiteControlsClick
         _onAiResearchClickState.value = onAiResearchClick
         _onSwipeNextTabState.value = onSwipeNextTab
         _onSwipePrevTabState.value = onSwipePrevTab
@@ -102,7 +99,6 @@ object PetalAddressBarBridge {
                 val backClick = _onBackClickState.value
                 val shareClick = _onShareClickState.value
                 val addressClick = _onAddressClickState.value
-                val siteControlsClick = _onSiteControlsClickState.value
                 val aiResearchClick = _onAiResearchClickState.value
 
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
@@ -182,7 +178,6 @@ object PetalAddressBarBridge {
                         onBackClick = { backClick?.run() },
                         onShareClick = { shareClick?.run() },
                         onAddressClick = { addressClick?.run() },
-                        onSiteControlsClick = { siteControlsClick?.run() },
                         onAiResearchClick = { aiResearchClick?.run() },
                         onSwipeNextTab = { swipeNextTab?.run() },
                         onSwipePrevTab = { swipePrevTab?.run() },
