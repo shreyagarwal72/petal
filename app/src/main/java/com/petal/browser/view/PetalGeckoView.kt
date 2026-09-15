@@ -979,9 +979,6 @@ class PetalGeckoView @JvmOverloads constructor(
             lastRecordedHistoryUrl = targetUrl
         } catch (_: Exception) {}
 
-        try {
-            com.petal.browser.unit.TabSessionManager.saveSession(context)
-        } catch (_: Exception) {}
     }
 
     /**
