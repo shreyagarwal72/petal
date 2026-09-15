@@ -67,6 +67,8 @@ interface SettingsRepository {
     val touchpadSwipeNav: Flow<Boolean>
     val addressBarSwipeTabs: Flow<Boolean>
     val addressBarQuickActions: Flow<Boolean>
+    val addressBarHeight: Flow<String>
+    val addressBarAction: Flow<String>
 
     // Experimental & Miscellaneous
     val appLanguage: Flow<String>
@@ -144,6 +146,8 @@ interface SettingsRepository {
     suspend fun setTouchpadSwipeNav(enabled: Boolean)
     suspend fun setAddressBarSwipeTabs(enabled: Boolean)
     suspend fun setAddressBarQuickActions(enabled: Boolean)
+    suspend fun setAddressBarHeight(height: String)
+    suspend fun setAddressBarAction(action: String)
 
     suspend fun setAppLanguage(language: String)
     suspend fun setAddressBarPosition(position: String)

@@ -247,6 +247,14 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_address_bar_quick_actions", true)
     }
 
+    override val addressBarHeight: Flow<String> = preferenceFlow("sp_address_bar_height") {
+        sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT"
+    }
+
+    override val addressBarAction: Flow<String> = preferenceFlow("sp_address_bar_action") {
+        sp.getString("sp_address_bar_action", if (sp.getBoolean("sp_ai_search_address_bar", true)) "AI" else "NONE") ?: "AI"
+    }
+
     // ── Experimental & Miscellaneous ──────────────────────────────────────────
     override val appLanguage: Flow<String> = preferenceFlow("sp_app_language") {
         sp.getString("sp_app_language", "system") ?: "system"
@@ -395,7 +403,9 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setSearchEngineIndex(index: String) {
-        sp.edit().putString("sp_search_engine", index).apply()
+        // The Compose search-engine selector is authoritative. Disable the legacy
+        // single custom-engine switch when the user explicitly selects a provider.
+        sp.edit().putString("sp_search_engine", index).putBoolean("searchEngineSwitch", false).apply()
     }
 
     override suspend fun setHomepageType(type: String) {
@@ -528,6 +538,14 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setAddressBarQuickActions(enabled: Boolean) {
         sp.edit().putBoolean("sp_address_bar_quick_actions", enabled).apply()
+    }
+
+    override suspend fun setAddressBarHeight(height: String) {
+        sp.edit().putString("sp_address_bar_height", height).apply()
+    }
+
+    override suspend fun setAddressBarAction(action: String) {
+        sp.edit().putString("sp_address_bar_action", action).apply()
     }
 
     override suspend fun setAppLanguage(language: String) {
