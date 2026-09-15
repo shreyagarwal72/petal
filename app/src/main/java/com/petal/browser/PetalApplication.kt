@@ -18,6 +18,9 @@ import com.petal.browser.unit.BrowserUnit
 import com.petal.browser.unit.TabThumbnailCache
 import com.petal.browser.widget.PetalSearchWidgetProvider
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Custom Application class for Petal Browser written in Kotlin.
@@ -75,7 +78,7 @@ class PetalApplication : Application() {
                 // Silently auto-update the yt-dlp extractor in the background once per day.
                 // YouTube frequently pushes extractor changes that break downloads — keeping
                 // yt-dlp current eliminates the "couldn't fetch media" failure for most users.
-                kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                CoroutineScope(Dispatchers.IO).launch {
                     try {
                         com.petal.browser.media.ytdlp.PetalYtDlpEngine.checkAutoUpdate(
                             this@PetalApplication
