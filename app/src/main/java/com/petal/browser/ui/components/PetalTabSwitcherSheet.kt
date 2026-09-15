@@ -226,6 +226,27 @@ object PetalTabSwitcherBridge {
                                 com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
                             }
                         },
+                        onBookmarkTab = { tabItem ->
+                            val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
+                            if (targetAlbum != null && activity is BrowserActivity) {
+                                activity.saveBookmark(tabItem.title, tabItem.url)
+                            }
+                        },
+                        onShareTab = { tabItem ->
+                            if (activity is BrowserActivity && tabItem.url.isNotBlank() && tabItem.url != "Petal Home") {
+                                activity.shareLink(tabItem.title, tabItem.url)
+                            }
+                        },
+                        onMuteTab = { tabItem, muted ->
+                            val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
+                            when (targetAlbum) {
+                                is com.petal.browser.view.PetalGeckoView -> targetAlbum.getMediaBridge()?.setMuted(muted)
+                                is com.petal.browser.view.NinjaWebView -> targetAlbum.getMediaBridge()?.setMuted(muted)
+                            }
+                        },
+                        onCreateGroup = { tabItem ->
+                            com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTab(context, tabItem)
+                        },
                         onRestoreTab = { restoredTab ->
                             if (activity is BrowserActivity) {
                                 val restoreUrl = if (restoredTab.url == "Petal Home" || restoredTab.url.isBlank() || restoredTab.url.equals("about:blank", ignoreCase = true)) {
