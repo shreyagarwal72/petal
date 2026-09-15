@@ -18,10 +18,6 @@ class ExperimentalSettingsViewModel @Inject constructor(
     val appLanguage: StateFlow<String> = settingsRepository.appLanguage
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "system")
 
-    val addressBarPosition: StateFlow<String> = settingsRepository.addressBarPosition
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "TOP")
-
-
 
     val doubleBackExit: StateFlow<Boolean> = settingsRepository.doubleBackExit
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -57,10 +53,6 @@ class ExperimentalSettingsViewModel @Inject constructor(
 
     fun setAppLanguage(language: String) = viewModelScope.launch {
         settingsRepository.setAppLanguage(language)
-    }
-
-    fun setAddressBarPosition(position: String) = viewModelScope.launch {
-        settingsRepository.setAddressBarPosition(position)
     }
 
 
