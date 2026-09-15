@@ -1130,10 +1130,12 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
     val engines = listOf(
         Pair("0", "Google"),
         Pair("1", "DuckDuckGo"),
-        Pair("2", "Brave Search"),
-        Pair("3", "Bing"),
-        Pair("4", "Startpage"),
-        Pair("5", "Ecosia")
+        Pair("2", "Startpage"),
+        Pair("3", "Brave Search"),
+        Pair("4", "Bing"),
+        Pair("5", "SearXNG"),
+        Pair("6", "Qwant"),
+        Pair("7", "Ecosia")
     )
 
     Spacer(Modifier.height(12.dp))
@@ -1186,7 +1188,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     onClick = {
                         searchEngineIndex = indexStr
-                        sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).apply()
+                        sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).putBoolean("searchEngineSwitch", false).apply()
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -1204,7 +1206,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
                             selected = isSelected,
                             onClick = {
                                 searchEngineIndex = indexStr
-                                sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).apply()
+                                sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).putBoolean("searchEngineSwitch", false).apply()
                             }
                         )
                     }

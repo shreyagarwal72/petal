@@ -64,7 +64,6 @@ fun PetalAddressBar(
     onBackClick: () -> Unit,
     onShareClick: () -> Unit,
     onAddressClick: () -> Unit,
-    onSiteControlsClick: () -> Unit = {},
     onAiResearchClick: () -> Unit = {},
     onSwipeNextTab: () -> Unit = {},
     onSwipePrevTab: () -> Unit = {},
@@ -104,17 +103,12 @@ fun PetalAddressBar(
         }
     }
 
-    val securityIcon: ImageVector = when {
-        isIncognito -> Icons.Rounded.VisibilityOff
-        isBlankOrSearch -> Icons.Rounded.Search
-        isHttps || isHttp -> Icons.Rounded.Tune
-        else -> Icons.Rounded.Search
-    }
-
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var isSwipeTabsEnabled by remember { mutableStateOf(sp.getBoolean("sp_address_bar_swipe_tabs", true)) }
     var isQuickActionsEnabled by remember { mutableStateOf(sp.getBoolean("sp_address_bar_quick_actions", true)) }
+    var addressBarHeight by remember { mutableStateOf(sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT") }
+    var addressBarAction by remember { mutableStateOf(sp.getString("sp_address_bar_action", if (sp.getBoolean("sp_ai_search_address_bar", true)) "AI" else "NONE") ?: "AI") }
 
     DisposableEffect(sp) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -122,6 +116,10 @@ fun PetalAddressBar(
                 isSwipeTabsEnabled = sp.getBoolean("sp_address_bar_swipe_tabs", true)
             } else if (key == "sp_address_bar_quick_actions") {
                 isQuickActionsEnabled = sp.getBoolean("sp_address_bar_quick_actions", true)
+            } else if (key == "sp_address_bar_height") {
+                addressBarHeight = sp.getString("sp_address_bar_height", "COMPACT") ?: "COMPACT"
+            } else if (key == "sp_address_bar_action") {
+                addressBarAction = sp.getString("sp_address_bar_action", if (sp.getBoolean("sp_ai_search_address_bar", true)) "AI" else "NONE") ?: "AI"
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
@@ -129,13 +127,6 @@ fun PetalAddressBar(
     }
 
     var showQuickActionsMenu by remember { mutableStateOf(false) }
-
-    val securityIconTint = when {
-        isIncognito -> com.petal.browser.ui.theme.IncognitoPrimary
-        isBlankOrSearch -> MaterialTheme.colorScheme.onSurfaceVariant
-        isHttps || isHttp -> MaterialTheme.colorScheme.onSurfaceVariant
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
 
     val containerColor = if (isIncognito) {
         com.petal.browser.ui.theme.IncognitoSurfaceContainer
@@ -146,13 +137,13 @@ fun PetalAddressBar(
     var dragAccumulator by remember { mutableFloatStateOf(0f) }
 
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(if (addressBarHeight.equals("COMPACT", true)) 24.dp else 28.dp),
         color = containerColor,
-        tonalElevation = 6.dp,
-        shadowElevation = 6.dp,
+        tonalElevation = 4.dp,
+        shadowElevation = 4.dp,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 5.dp)
+            .padding(horizontal = 12.dp, vertical = if (addressBarHeight.equals("COMPACT", true)) 3.dp else 5.dp)
             .pointerInput(isSwipeTabsEnabled) {
                 if (!isSwipeTabsEnabled) return@pointerInput
                 detectHorizontalDragGestures(
@@ -180,7 +171,7 @@ fun PetalAddressBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp)
+                    .height(if (addressBarHeight.equals("COMPACT", true)) 48.dp else 54.dp)
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -227,44 +218,24 @@ fun PetalAddressBar(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Favicon / Security capsule chip
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                            ),
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .clickable {
-                                    if (isHttps || isHttp) {
-                                        onSiteControlsClick()
-                                    } else {
-                                        onAddressClick()
-                                    }
-                                }
+                        // Favicon only. The old security/site-controls tool button is intentionally gone.
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(30.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                if (favicon != null && !isBlankOrSearch && !isIncognito) {
-                                    Image(
-                                        bitmap = favicon.asImageBitmap(),
-                                        contentDescription = "Favicon",
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .clip(CircleShape)
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = securityIcon,
-                                        contentDescription = "Site Controls and Security",
-                                        tint = securityIconTint,
-                                        modifier = Modifier
-                                            .size(18.dp)
-                                            .popIn()
-                                    )
-                                }
+                            if (favicon != null && !isBlankOrSearch && !isIncognito) {
+                                Image(
+                                    bitmap = favicon.asImageBitmap(),
+                                    contentDescription = "Favicon",
+                                    modifier = Modifier.size(22.dp).clip(CircleShape)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = if (isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Language,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(19.dp)
+                                )
                             }
                         }
 
@@ -280,16 +251,53 @@ fun PetalAddressBar(
                 }
 
                 val isProperSite = remember(url) { PetalAiResearchEngine.isProperWebSite(url) }
+                val showRightAction = !isBlankOrSearch && when (addressBarAction.uppercase()) {
+                    "AI" -> isProperSite
+                    "BOOKMARK" -> true
+                    else -> false
+                }
 
-                if (isProperSite) {
+                if (showRightAction) {
+                    var isBookmarked by remember(url) {
+                        mutableStateOf(
+                            try {
+                                val action = RecordAction(context)
+                                action.open(false)
+                                val result = action.checkBookmark(url)
+                                action.close()
+                                result
+                            } catch (_: Exception) { false }
+                        )
+                    }
                     IconButton(
-                        onClick = onAiResearchClick,
+                        onClick = {
+                            if (addressBarAction.equals("AI", true)) {
+                                onAiResearchClick()
+                            } else {
+                                try {
+                                    val action = RecordAction(context)
+                                    action.open(true)
+                                    if (isBookmarked) {
+                                        action.deleteURL(url, com.petal.browser.unit.RecordUnit.TABLE_BOOKMARK)
+                                        isBookmarked = false
+                                        NinjaToast.show(context, "Bookmark removed")
+                                    } else {
+                                        action.addBookmark(Record(if (title.isNotBlank()) title else url, url, 0L, 0))
+                                        isBookmarked = true
+                                        NinjaToast.show(context, "Saved to Bookmarks")
+                                    }
+                                    action.close()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                        },
                         modifier = Modifier.size(44.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.AutoAwesome,
-                            contentDescription = "Petal AI",
-                            tint = MaterialTheme.colorScheme.primary,
+                            imageVector = if (addressBarAction.equals("AI", true)) Icons.Rounded.AutoAwesome else if (isBookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+                            contentDescription = if (addressBarAction.equals("AI", true)) "Petal AI" else if (isBookmarked) "Remove bookmark" else "Bookmark",
+                            tint = if (addressBarAction.equals("AI", true)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(22.dp)
                         )
                     }
