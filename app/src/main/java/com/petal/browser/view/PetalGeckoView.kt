@@ -1721,7 +1721,19 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         } catch (_: Exception) {}
 
-        return false
+        // No app can handle this URI (e.g. content:// with no matching viewer) and it's
+        // not http(s)/about/blob/data/javascript/petal — don't let Gecko fall through and
+        // try to render it as a webpage (it will just fail and can leave a broken tab).
+        // Block the load and tell the user instead.
+        try {
+            android.widget.Toast.makeText(
+                act,
+                "No app found to open this link",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        } catch (_: Exception) {}
+
+        return true
     }
 }
 
