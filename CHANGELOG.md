@@ -1,3 +1,7 @@
+### v3.3 — Address Bar & Search Customization
+
+> *Compact address bar, dedicated customization settings, improved bottom positioning, and unlimited custom search engines.*
+
 ### v3.1.2 — 🔧 Extensions, Media & Pull-to-Refresh Fixed
 
 > *"Tap an extension, see its popup. Detect media, see the overlay. Pull to refresh, actually refresh."*
