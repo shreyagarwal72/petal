@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.compose.settings.viewmodel.ExperimentalSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
@@ -34,13 +33,9 @@ fun ExperimentalSettingsScreen(
     viewModel: ExperimentalSettingsViewModel = hiltViewModel()
 ) {
     val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
-    val addressBarPosition by viewModel.addressBarPosition.collectAsStateWithLifecycle()
-
     ExperimentalSettingsScreenContent(
         appLanguage = appLanguage,
-        addressBarPosition = addressBarPosition,
         onAppLanguageChange = viewModel::setAppLanguage,
-        onAddressBarPositionChange = viewModel::setAddressBarPosition,
         onNavigateBack = onNavigateBack,
         modifier = modifier
     )
@@ -49,9 +44,7 @@ fun ExperimentalSettingsScreen(
 @Composable
 fun ExperimentalSettingsScreenContent(
     appLanguage: String,
-    addressBarPosition: String,
     onAppLanguageChange: (String) -> Unit,
-    onAddressBarPositionChange: (String) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -125,53 +118,6 @@ fun ExperimentalSettingsScreenContent(
                                     } else null
                                 )
                             }
-                        }
-                    }
-                }
-
-                // Address Bar Position Card
-                SettingsCategoryCard(title = "Address Bar Position (Experimental)", iconRes = com.petal.browser.R.drawable.build_filled) {
-                    Text(
-                        "Choose whether the URL search address bar appears at the top or bottom of the screen:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    val addressBarScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = addressBarScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(addressBarScrollState),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilterChip(
-                                selected = addressBarPosition == "TOP",
-                                onClick = {
-                                    onAddressBarPositionChange("TOP")
-                                    (context as? BrowserActivity)?.applyAddressBarPosition()
-                                    (context as? BrowserActivity)?.window?.decorView?.post { (context as? BrowserActivity)?.applyAddressBarPosition() }
-                                },
-                                label = { Text("Top (Default)") },
-                                leadingIcon = if (addressBarPosition == "TOP") {
-                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null
-                            )
-                            FilterChip(
-                                selected = addressBarPosition == "BOTTOM",
-                                onClick = {
-                                    onAddressBarPositionChange("BOTTOM")
-                                    (context as? BrowserActivity)?.applyAddressBarPosition()
-                                    (context as? BrowserActivity)?.window?.decorView?.post { (context as? BrowserActivity)?.applyAddressBarPosition() }
-                                },
-                                label = { Text("Bottom") },
-                                leadingIcon = if (addressBarPosition == "BOTTOM") {
-                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null
-                            )
                         }
                     }
                 }

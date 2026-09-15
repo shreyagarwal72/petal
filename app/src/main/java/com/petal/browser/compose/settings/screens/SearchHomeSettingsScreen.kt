@@ -24,7 +24,7 @@ import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalSearchEngineSheetContent
 import com.petal.browser.ui.components.ScrollFadeRow
-import com.petal.browser.ui.components.availableSearchEngines
+import com.petal.browser.ui.components.allSearchEngines
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,7 +137,7 @@ fun SearchHomeSettingsScreenContent(
                 ) {
                     val currentEngineName = remember(searchEngineIndex) {
                         val idx = searchEngineIndex.toIntOrNull() ?: 0
-                        availableSearchEngines.find { it.index == idx }?.name ?: "Google"
+                        allSearchEngines(context).find { it.index == idx }?.name ?: "Google"
                     }
 
                     Surface(

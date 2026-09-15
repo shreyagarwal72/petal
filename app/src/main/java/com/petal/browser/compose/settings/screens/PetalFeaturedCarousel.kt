@@ -170,7 +170,7 @@ fun PetalFeaturedCarousel(
                 title = "Bottom Address Bar",
                 description = "Ergonomic one-handed URL search navigation",
                 icon = Icons.Outlined.ViewDay,
-                onClick = { onCategoryClick(SettingsCategory.EXPERIMENTAL, "exp_address_bar") }
+                onClick = { onCategoryClick(SettingsCategory.ADDRESS_BAR, "address_bar") }
             ),
             PetalFeaturedItem(
                 title = "M3 Expressive Shapes",
