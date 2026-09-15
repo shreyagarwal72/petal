@@ -2,7 +2,7 @@
 
 <div align="center">
 
-  <img src="graphics/icon.png" width="128" height="128" alt="Petal Browser App Icon" style="border-radius: 28px;" />
+  <img src="https://github.com/shreyagarwal72/petal_browser/blob/main/graphics/icon.png" width="128" height="128" alt="Petal Browser App Icon" style="border-radius: 28px;" />
 
   <h2>Petal Browser</h2>
 
