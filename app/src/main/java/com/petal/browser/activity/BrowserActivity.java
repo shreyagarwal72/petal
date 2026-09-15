@@ -1036,18 +1036,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             ninjaWebView.goBack();
             updateOmniBox();
         } else {
+            // No web history remains. Never navigate to about:blank here; that is the
+            // source of the blank-page state. Return directly to Petal's home surface.
             if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl) && !currentUrl.equalsIgnoreCase("about:blank")) {
+                String homeUrl = sp != null ? sp.getString("favoriteURL", "about:blank") : "about:blank";
+                if (homeUrl == null || homeUrl.trim().isEmpty()) homeUrl = "about:blank";
                 if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                    com.petal.browser.view.PetalGeckoView gv = (com.petal.browser.view.PetalGeckoView) currentAlbumController;
-                    gv.stopLoading();
-                    gv.loadUrl("about:blank");
-                    gv.clearHistory();
+                    ((com.petal.browser.view.PetalGeckoView) currentAlbumController).stopLoading();
                 } else if (ninjaWebView != null) {
                     ninjaWebView.stopLoading();
-                    ninjaWebView.loadUrl("about:blank");
-                    ninjaWebView.clearHistory();
                 }
-                showAlbum(currentAlbumController, "about:blank");
+                showAlbum(currentAlbumController, homeUrl);
             } else {
                 boolean requireDoubleBack = sp.getBoolean("sp_double_back_exit", true);
                 if (!requireDoubleBack) {
@@ -1232,17 +1231,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (animate) {
             screen.setAlpha(0f);
             contentFrame.addView(screen);
-            screen.post(() -> {
-                int width = screen.getWidth() > 0 ? screen.getWidth() : getResources().getDisplayMetrics().widthPixels;
-                screen.setTranslationX(width / 3f);
-                screen.animate()
-                        .alpha(1f)
-                        .translationX(0f)
-                        .setDuration(PB_TRANSITION_DURATION_MS)
-                        .setInterpolator(predictiveBackEasing)
-                        .withLayer()
-                        .start();
-            });
+            screen.post(() -> com.petal.browser.motion.PetalMotion.enter(
+                    screen, PB_TRANSITION_DURATION_MS));
         } else {
             screen.setAlpha(1f);
             screen.setTranslationX(0f);
@@ -1721,6 +1711,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 });
             } else {
                 contentFrame.addView(av);
+            }
+            // Keep the live browser surface stable. GeckoView/WebView owns its compositor;
+            // alpha/scale animations during attach/resume can produce a persistent blank
+            // surface. App-level animations are applied to native overlays instead.
+            if (av != null) {
+                av.setAlpha(1f);
+                av.setTranslationX(0f);
+                av.setTranslationY(0f);
+                av.setScaleX(1f);
+                av.setScaleY(1f);
             }
             if (appBar != null) appBar.setVisibility(VISIBLE);
             View downloadBanner = findViewById(R.id.download_banner_compose);
@@ -5297,6 +5297,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     ((ViewGroup) albumView.getParent()).removeView(albumView);
                 }
                 tab_container.addView(albumView, WRAP_CONTENT, WRAP_CONTENT);
+                albumView.post(() -> com.petal.browser.motion.PetalMotion.tabEnter(albumView));
             }
         } catch (Exception ignored) {}
 
