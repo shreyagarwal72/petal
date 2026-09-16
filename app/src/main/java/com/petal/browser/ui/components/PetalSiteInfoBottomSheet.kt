@@ -303,24 +303,84 @@ fun PetalSiteInfoBottomSheet(
                         )
                     }
 
-                    OutlinedButton(
-                        onClick = {
-                            try {
-                                CookieManager.getInstance().removeAllCookies(null)
-                                CookieManager.getInstance().flush()
-                                WebStorage.getInstance().deleteAllData()
-                                cookieCount = 0
-                                onResetSiteData()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Icon(Icons.Rounded.DeleteSweep, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Reset", style = MaterialTheme.typography.labelSmall)
+                    var siteResetExpanded by remember { mutableStateOf(false) }
+                    Box {
+                        ExpressiveSplitButton(
+                            label = "Reset",
+                            onPrimaryClick = {
+                                try {
+                                    CookieManager.getInstance().removeAllCookies(null)
+                                    CookieManager.getInstance().flush()
+                                    WebStorage.getInstance().deleteAllData()
+                                    cookieCount = 0
+                                    onResetSiteData()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            },
+                            onMenuClick = { siteResetExpanded = !siteResetExpanded },
+                            icon = Icons.Rounded.DeleteSweep,
+                            isMenuExpanded = siteResetExpanded,
+                            variant = SplitButtonVariant.TONAL,
+                            height = 38.dp
+                        )
+
+                        DropdownMenu(
+                            expanded = siteResetExpanded,
+                            onDismissRequest = { siteResetExpanded = false },
+                            shape = RoundedCornerShape(18.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Clear Cookies Only") },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.Cookie, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                },
+                                onClick = {
+                                    siteResetExpanded = false
+                                    try {
+                                        CookieManager.getInstance().removeAllCookies(null)
+                                        CookieManager.getInstance().flush()
+                                        cookieCount = 0
+                                    } catch (_: Exception) {}
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Reset Site Permissions") },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                },
+                                onClick = {
+                                    siteResetExpanded = false
+                                    try {
+                                        GeolocationPermissions.getInstance().clear(domain)
+                                        sp.edit()
+                                            .remove(profile + "_camera")
+                                            .remove(profile + "_microphone")
+                                            .remove(profile + "_location")
+                                            .remove("sp_notifications_$domain")
+                                            .apply()
+                                        isCameraAllowed = false
+                                        isMicAllowed = false
+                                        isLocationAllowed = false
+                                        isNotificationsAllowed = true
+                                    } catch (_: Exception) {}
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Clear Storage & Cache") },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                },
+                                onClick = {
+                                    siteResetExpanded = false
+                                    try {
+                                        WebStorage.getInstance().deleteAllData()
+                                        onResetSiteData()
+                                    } catch (_: Exception) {}
+                                }
+                            )
+                        }
                     }
                 }
             }

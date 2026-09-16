@@ -1,16 +1,9 @@
-# Petal repository roles
+# Agent Guidelines & Rules
 
-- `petal` is the main FOSS Petal repository.
-- `petal_browser` is the Play Store-specific Petal variant. It intentionally omits
-  the built-in app updater and retains ad compatibility needed for Play Store
-  distribution.
+## 1. File Reading & Exploration Efficiency
+- **NEVER** re-read or inspect the same file multiple times in a conversation turn or workflow.
+- Execute direct, targeted edits without redundant views or searches.
 
-## Release and synchronization rules
-
-- Treat `petal` as the primary FOSS source repository.
-- Keep fixes in `petal_browser` aligned with `petal` when they are compatible
-  with the Play Store variant.
-- Do not add the in-app updater to `petal_browser`.
-- Preserve the GitHub Actions workflow in `petal_browser` that builds a
-  Play Store-compatible Android App Bundle (`.aab`).
-- Before mirroring a feature, verify it does not harm `petal_browser` ad
+## 2. Dual Repository Synchronization
+- Always keep `/data/data/com.termux/files/home/petal` and `/data/data/com.termux/files/home/petal_browser` in sync.
+- Both repositories must have identical code changes and be pushed to `origin/main`.

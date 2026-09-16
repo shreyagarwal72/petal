@@ -539,25 +539,57 @@ fun PetalUpdateSheetContent(
                         }
                     }
                 } else {
-                    Button(
-                        onClick = {
-                            PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
-                            isDownloading = true
-                            coroutineScope.launch {
-                                val success = com.petal.browser.unit.PetalUpdateInstallerReceiver.downloadAndInstallApk(
-                                    context = context,
-                                    apkUrl = updateInfo.downloadUrl,
-                                    version = updateInfo.versionName,
-                                    onProgressUpdate = { progress ->
-                                        downloadProgress = progress
-                                        if (progress >= 100) {
-                                            isDownloading = false
+                    var updateSplitExpanded by remember { mutableStateOf(false) }
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        ExpressiveSplitButton(
+                            label = "Download & Install Update",
+                            onPrimaryClick = {
+                                PetalHapticEngine.getInstance(context).play(PetalHapticEngine.Pattern.HEAVY_CLICK, 0.9f)
+                                isDownloading = true
+                                coroutineScope.launch {
+                                    val success = com.petal.browser.unit.PetalUpdateInstallerReceiver.downloadAndInstallApk(
+                                        context = context,
+                                        apkUrl = updateInfo.downloadUrl,
+                                        version = updateInfo.versionName,
+                                        onProgressUpdate = { progress ->
+                                            downloadProgress = progress
+                                            if (progress >= 100) {
+                                                isDownloading = false
+                                            }
                                         }
+                                    )
+                                    if (!success) {
+                                        isDownloading = false
+                                        isDownloadEnqueued = true
+                                        com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueueSystemUpdateDownload(
+                                            context = context,
+                                            downloadUrl = updateInfo.downloadUrl,
+                                            version = updateInfo.versionName
+                                        )
                                     }
-                                )
-                                if (!success) {
-                                    isDownloading = false
-                                    // Fall back to background system DownloadManager if stream download fails
+                                }
+                            },
+                            onMenuClick = { updateSplitExpanded = !updateSplitExpanded },
+                            icon = Icons.Rounded.FileDownload,
+                            isMenuExpanded = updateSplitExpanded,
+                            variant = SplitButtonVariant.FILLED,
+                            height = 50.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        DropdownMenu(
+                            expanded = updateSplitExpanded,
+                            onDismissRequest = { updateSplitExpanded = false },
+                            shape = RoundedCornerShape(20.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Download in Background") },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.DownloadDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                },
+                                onClick = {
+                                    updateSplitExpanded = false
                                     isDownloadEnqueued = true
                                     com.petal.browser.unit.PetalUpdateInstallerReceiver.enqueueSystemUpdateDownload(
                                         context = context,
@@ -565,14 +597,23 @@ fun PetalUpdateSheetContent(
                                         version = updateInfo.versionName
                                     )
                                 }
+                            )
+                            if (updateInfo.releaseUrl.isNotBlank()) {
+                                DropdownMenuItem(
+                                    text = { Text("Open GitHub Releases") },
+                                    leadingIcon = {
+                                        Icon(Icons.Rounded.OpenInBrowser, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    },
+                                    onClick = {
+                                        updateSplitExpanded = false
+                                        try {
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
+                                            context.startActivity(intent)
+                                        } catch (_: Exception) {}
+                                    }
+                                )
                             }
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth().height(48.dp)
-                    ) {
-                        Icon(Icons.Rounded.FileDownload, contentDescription = null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Download & Install Update")
+                        }
                     }
                 }
             }
