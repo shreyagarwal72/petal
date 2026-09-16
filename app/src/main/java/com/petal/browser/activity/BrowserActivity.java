@@ -1739,46 +1739,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
             updatePersistentBottomNav();
-        } else {
             if (av.getParent() != null) {
                 ((android.view.ViewGroup) av.getParent()).removeView(av);
             }
+            contentFrame.removeAllViews();
             av.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
             ));
-            // FIX: GeckoView.onAttachedToWindow() → GeckoView$Display.acquire() →
-            // onGlobalLayout() calls windowInsets.getInsets() which crashes with a NPE
-            // when the window's insets are not yet available (e.g. right after activity
-            // resume from an overlay/history screen). Deferring via post() ensures the
-            // view is only attached after the window is fully laid out with valid insets.
-            if (av instanceof com.petal.browser.view.PetalGeckoView
-                    && (contentFrame.getWindowToken() == null || !contentFrame.isAttachedToWindow())) {
-                final android.view.View avFinal = av;
-                contentFrame.post(() -> {
-                    try {
-                        if (surfaceGeneration == albumSurfaceGeneration
-                                && currentAlbumController == resolvedController
-                                && contentFrame.isAttachedToWindow()
-                                && avFinal.getParent() == null
-                                && contentFrame.getChildCount() == 0) {
-                            contentFrame.addView(avFinal);
-                        }
-                    } catch (Exception ignored) {}
-                });
-            } else {
-                contentFrame.addView(av);
-            }
+            contentFrame.addView(av);
             // Keep the live browser surface stable. GeckoView/WebView owns its compositor;
             // alpha/scale animations during attach/resume can produce a persistent blank
             // surface. App-level animations are applied to native overlays instead.
-            if (av != null) {
-                av.setAlpha(1f);
-                av.setTranslationX(0f);
-                av.setTranslationY(0f);
-                av.setScaleX(1f);
-                av.setScaleY(1f);
-            }
+            av.setAlpha(1f);
+            av.setVisibility(VISIBLE);
+            av.setTranslationX(0f);
+            av.setTranslationY(0f);
+            av.setScaleX(1f);
+            av.setScaleY(1f);
+            contentFrame.setVisibility(VISIBLE);
+            contentFrame.setAlpha(1f);
             if (appBar != null) appBar.setVisibility(VISIBLE);
             View downloadBanner = findViewById(R.id.download_banner_compose);
             if (downloadBanner != null) downloadBanner.setVisibility(VISIBLE);

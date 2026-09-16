@@ -1637,6 +1637,10 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
+    private val skeletonTimeoutRunnable = Runnable {
+        hideLoadingSkeleton()
+    }
+
     private fun showLoadingSkeleton(url: String) {
         if (BrowserUnit.isHomePage(url) || url.equals("about:blank", ignoreCase = true)) {
             hideLoadingSkeleton()
@@ -1644,6 +1648,9 @@ class PetalGeckoView @JvmOverloads constructor(
         }
         pendingSkeletonUrl = url
         isSkeletonShowing = true
+        removeCallbacks(skeletonTimeoutRunnable)
+        // Auto-hide skeleton after 2.5 seconds failsafe so screen is never permanently blank/covered
+        postDelayed(skeletonTimeoutRunnable, 2500L)
         post {
             val hostAct = getHostActivity()
             if (hostAct is androidx.lifecycle.LifecycleOwner && skeletonComposeView.childCount == 0) {
@@ -1659,7 +1666,8 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     private fun hideLoadingSkeleton() {
-        if (!isSkeletonShowing) return
+        removeCallbacks(skeletonTimeoutRunnable)
+        if (!isSkeletonShowing && skeletonComposeView.visibility == View.GONE) return
         isSkeletonShowing = false
         post {
             skeletonComposeView.animate()
