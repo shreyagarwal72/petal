@@ -1701,10 +1701,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // view is only attached after the window is fully laid out with valid insets.
             if (av instanceof com.petal.browser.view.PetalGeckoView
                     && (contentFrame.getWindowToken() == null || !contentFrame.isAttachedToWindow())) {
+                // The old deferred attach could re-add a GeckoView after another
+                // showAlbum() call had already switched tabs/screens. That stale
+                // callback could replace the currently visible surface and leave
+                // the activity looking blank. Only attach the view if this exact
+                // controller is still the active one and the frame is empty.
                 final android.view.View avFinal = av;
+                final AlbumController expectedController = currentAlbumController;
                 contentFrame.post(() -> {
                     try {
-                        if (contentFrame.isAttachedToWindow()) {
+                        if (expectedController == currentAlbumController
+                                && contentFrame.isAttachedToWindow()
+                                && contentFrame.getChildCount() == 0
+                                && avFinal.getParent() == null) {
                             contentFrame.addView(avFinal);
                         }
                     } catch (Exception ignored) {}
