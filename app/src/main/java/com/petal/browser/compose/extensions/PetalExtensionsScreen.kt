@@ -233,6 +233,7 @@ fun PetalExtensionsScreen(
                     ) {
                         itemsIndexed(extensions, key = { _, it -> it.id }) { index, ext ->
                             ExtensionRow(
+                                itemScope = this,
                                 animationIndex = index,
                                 extension = ext,
                                 onToggleEnabled = { enabled ->
@@ -390,6 +391,7 @@ private fun EmptyExtensionsState(modifier: Modifier = Modifier, onAddClick: () -
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ExtensionRow(
+    itemScope: androidx.compose.foundation.lazy.LazyItemScope,
     animationIndex: Int = 0,
     extension: PetalExtensionManager.InstalledExtension,
     onToggleEnabled: (Boolean) -> Unit,
@@ -406,7 +408,7 @@ private fun ExtensionRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .bouncyClickable(scaleDown = 0.98f, onClick = onOpen)
-            .animateItem()
+            .let { with(itemScope) { it.animateItem() } }
             .entrance(index = animationIndex)
     ) {
         Row(
