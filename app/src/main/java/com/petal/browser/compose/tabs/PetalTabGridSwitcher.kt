@@ -78,6 +78,7 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
+import com.petal.browser.unit.PetalRecentlyClosedManager
 import kotlinx.coroutines.launch
 
 /**
@@ -249,9 +250,25 @@ fun PetalTabGridSwitcher(
     }
 
     fun undoClosedTabs() {
-        if (recentlyClosedBatch.isNotEmpty()) {
-            val toRestore = recentlyClosedBatch.toList()
+        val toRestore = if (recentlyClosedBatch.isNotEmpty()) {
+            val list = recentlyClosedBatch.toList()
             recentlyClosedBatch.clear()
+            list
+        } else {
+            PetalRecentlyClosedManager.popLastClosedTab()?.let { rec ->
+                listOf(PetalTabItem(
+                    id = rec.id,
+                    title = rec.title,
+                    url = rec.url,
+                    isIncognito = rec.isIncognito,
+                    groupId = rec.groupId,
+                    groupTitle = rec.groupTitle,
+                    groupColorHex = rec.groupColorHex
+                ))
+            } ?: emptyList()
+        }
+
+        if (toRestore.isNotEmpty()) {
             isUndoBannerVisible = false
             toRestore.forEach { restoredTab ->
                 pendingRemovalIds.remove(restoredTab.id)

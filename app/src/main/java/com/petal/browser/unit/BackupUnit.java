@@ -221,6 +221,10 @@ public class BackupUnit {
                         action.open(false);
                         String sessionJson = action.getSessionStateJson();
                         action.close();
+                        if (sessionJson == null || sessionJson.trim().isEmpty()) {
+                            sessionJson = PreferenceManager.getDefaultSharedPreferences(context)
+                                    .getString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, null);
+                        }
                         if (sessionJson != null && !sessionJson.trim().isEmpty()) {
                             backupJson.put("tab_sessions", sessionJson);
                         }
@@ -386,6 +390,10 @@ public class BackupUnit {
                         action.open(false);
                         String sessionJson = action.getSessionStateJson();
                         action.close();
+                        if (sessionJson == null || sessionJson.trim().isEmpty()) {
+                            sessionJson = PreferenceManager.getDefaultSharedPreferences(context)
+                                    .getString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, null);
+                        }
                         if (sessionJson != null && !sessionJson.trim().isEmpty()) {
                             backupJson.put("tab_sessions", sessionJson);
                         }
@@ -674,6 +682,11 @@ public class BackupUnit {
                             action.open(true);
                             action.saveSessionStateJson(sessionJson);
                             action.close();
+
+                            PreferenceManager.getDefaultSharedPreferences(context).edit()
+                                    .putString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, sessionJson)
+                                    .putBoolean(com.petal.browser.unit.PetalTabSessionManager.PREF_RESTORE_ON_RESTART, true)
+                                    .apply();
                         }
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring tab session", e);
@@ -932,6 +945,11 @@ public class BackupUnit {
                             action.open(true);
                             action.saveSessionStateJson(sessionJson);
                             action.close();
+
+                            PreferenceManager.getDefaultSharedPreferences(context).edit()
+                                    .putString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, sessionJson)
+                                    .putBoolean(com.petal.browser.unit.PetalTabSessionManager.PREF_RESTORE_ON_RESTART, true)
+                                    .apply();
                         }
                     } catch (Exception e) {
                         Log.e("Petal", "Error restoring tab session", e);

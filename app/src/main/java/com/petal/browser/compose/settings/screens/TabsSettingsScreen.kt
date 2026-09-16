@@ -18,6 +18,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.compose.tabs.PetalInactiveTabManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.unit.PetalTabSessionManager
 
 /**
  * Tabs Settings Overview Screen matching Chrome/Brave layout from images.png:
@@ -36,6 +37,12 @@ fun TabsSettingsScreen(
 
     var thresholdPref by remember {
         mutableStateOf(sp.getString(PetalInactiveTabManager.PREF_INACTIVE_DAYS_THRESHOLD, "21") ?: "21")
+    }
+    var restoreTabsOnStart by remember {
+        mutableStateOf(sp.getBoolean(PetalTabSessionManager.PREF_RESTORE_TABS, true))
+    }
+    var confirmTabClose by remember {
+        mutableStateOf(sp.getBoolean("sp_close_tab_confirm", false))
     }
     var autoOpenFromOtherDevices by remember {
         mutableStateOf(sp.getBoolean("sp_auto_open_tab_groups_other_devices", true))
@@ -132,6 +139,18 @@ fun TabsSettingsScreen(
                         }
                     }
 
+                    // Restore Tabs on Startup Switch
+                    ToggleRow(
+                        title = "Restore tabs on startup",
+                        subtitle = "Reopen your open tabs when launching Petal or after app restart",
+                        icon = Icons.Rounded.Restore,
+                        checked = restoreTabsOnStart,
+                        onCheckedChange = {
+                            restoreTabsOnStart = it
+                            sp.edit().putBoolean(PetalTabSessionManager.PREF_RESTORE_TABS, it).apply()
+                        }
+                    )
+
                     // Cross-device Tab Groups Switch
                     ToggleRow(
                         title = "Automatically open tab groups from other devices",
@@ -141,6 +160,18 @@ fun TabsSettingsScreen(
                         onCheckedChange = {
                             autoOpenFromOtherDevices = it
                             sp.edit().putBoolean("sp_auto_open_tab_groups_other_devices", it).apply()
+                        }
+                    )
+
+                    // Confirm Tab Close Switch
+                    ToggleRow(
+                        title = "Confirm before closing tab",
+                        subtitle = "Prompt for confirmation before closing tabs to prevent accidental dismissal",
+                        icon = Icons.Rounded.Close,
+                        checked = confirmTabClose,
+                        onCheckedChange = {
+                            confirmTabClose = it
+                            sp.edit().putBoolean("sp_close_tab_confirm", it).apply()
                         }
                     )
                 }

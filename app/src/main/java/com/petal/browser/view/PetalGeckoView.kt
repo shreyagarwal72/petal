@@ -1520,7 +1520,17 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun pauseTimers() {}
 
-    fun resetGestureExclusionRects() {}
+    fun resetGestureExclusionRects() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                systemGestureExclusionRects = emptyList()
+                geckoView.systemGestureExclusionRects = emptyList()
+                for (i in 0 until childCount) {
+                    getChildAt(i)?.systemGestureExclusionRects = emptyList()
+                }
+            } catch (_: Throwable) {}
+        }
+    }
 
     fun destroy() {
         stopLoading()

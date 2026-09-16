@@ -259,11 +259,24 @@ object PetalTabSwitcherBridge {
                                 } else {
                                     restoredTab.title
                                 }
-                                activity.addAlbum(restoreTitle, restoreUrl, true, restoredTab.isIncognito)
+                                val newAlbum = activity.restoreTab(
+                                    restoreTitle,
+                                    restoreUrl,
+                                    tabItems.size,
+                                    restoredTab.isIncognito,
+                                    restoredTab.groupId,
+                                    restoredTab.groupTitle,
+                                    restoredTab.groupColorHex,
+                                    true
+                                )
+                                val newItem = restoredTab.copy(
+                                    id = newAlbum.hashCode().toString(),
+                                    isSelected = false
+                                )
+                                if (tabItems.none { it.id == newItem.id }) {
+                                    tabItems.add(newItem)
+                                }
                             }
-                            // addAlbum() creates the live tab and the parent owns the
-                            // authoritative tab list. Do not insert the archived ID
-                            // here: it is no longer the ID of the newly-created tab.
                             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
                         },
                         onNewTab = { isIncognito ->
