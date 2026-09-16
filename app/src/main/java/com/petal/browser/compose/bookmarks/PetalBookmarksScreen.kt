@@ -380,6 +380,7 @@ fun PetalBookmarksScreen(
                     ) {
                         itemsIndexed(filteredBookmarks, key = { _, record -> "${record.url}_${record.time}" }) { index, record ->
                             BookmarkCardItem(
+                                itemScope = this,
                                 animationIndex = index,
                                 record = record,
                                 onClick = { onOpenUrl(record.url) },
@@ -512,6 +513,7 @@ fun PetalBookmarksScreen(
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun BookmarkCardItem(
+    itemScope: androidx.compose.foundation.lazy.LazyItemScope,
     animationIndex: Int = 0,
     record: Record,
     onClick: () -> Unit,
@@ -530,7 +532,7 @@ private fun BookmarkCardItem(
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(scaleDown = 0.97f, onClick = onClick)
-            .animateItem()
+            .let { with(itemScope) { it.animateItem() } }
             .entrance(index = animationIndex)
     ) {
         Row(
