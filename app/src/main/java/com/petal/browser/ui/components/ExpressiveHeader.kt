@@ -48,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -185,7 +186,7 @@ fun ExpressiveHeader(
                         label = "ExpressiveHeaderTransition",
                         modifier = Modifier.weight(1f)
                     ) { (currentTitle, currentSubtitle) ->
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.fillMaxWidth().clipToBounds()) {
                             val titleFontSize = remember(currentTitle, onBack) {
                                 when {
                                     onBack != null && currentTitle.length > 22 -> 14.sp
@@ -208,7 +209,8 @@ fun ExpressiveHeader(
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 softWrap = false,
-                                overflow = TextOverflow.Clip
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth()
                             )
 
                             if (currentSubtitle.isNotBlank()) {
@@ -227,8 +229,9 @@ fun ExpressiveHeader(
                                     ),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = maxSubtitleLines,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Clip
+                                    softWrap = maxSubtitleLines > 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }

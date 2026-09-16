@@ -56,7 +56,9 @@ fun ExpressiveSplitButton(
     isMenuExpanded: Boolean = false,
     variant: SplitButtonVariant = SplitButtonVariant.FILLED,
     height: Dp = 48.dp,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    containerColorOverride: Color? = null,
+    contentColorOverride: Color? = null
 ) {
     val pillRadius = height / 2
     val innerRadius = 4.dp
@@ -91,15 +93,16 @@ fun ExpressiveSplitButton(
         label = "SplitButtonArrowRotation"
     )
 
-    // Color resolution
-    val containerColor = when (variant) {
+    // Color resolution — explicit overrides win (used where the button must match
+    // sibling controls, e.g. HeaderActionIcon's neutral surfaceContainerHighest in headers)
+    val containerColor = containerColorOverride ?: when (variant) {
         SplitButtonVariant.FILLED -> MaterialTheme.colorScheme.primary
         SplitButtonVariant.TONAL -> MaterialTheme.colorScheme.secondaryContainer
         SplitButtonVariant.ELEVATED -> MaterialTheme.colorScheme.surfaceContainerHigh
         SplitButtonVariant.OUTLINED -> MaterialTheme.colorScheme.surface
     }
 
-    val contentColor = when (variant) {
+    val contentColor = contentColorOverride ?: when (variant) {
         SplitButtonVariant.FILLED -> MaterialTheme.colorScheme.onPrimary
         SplitButtonVariant.TONAL -> MaterialTheme.colorScheme.onSecondaryContainer
         SplitButtonVariant.ELEVATED -> MaterialTheme.colorScheme.primary
