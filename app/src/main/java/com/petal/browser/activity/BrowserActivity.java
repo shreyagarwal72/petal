@@ -1739,6 +1739,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (appBar != null) appBar.setVisibility(GONE);
             hideRefreshAndProgressOverlays();
             updatePersistentBottomNav();
+        } else {
             if (av.getParent() != null) {
                 ((android.view.ViewGroup) av.getParent()).removeView(av);
             }
