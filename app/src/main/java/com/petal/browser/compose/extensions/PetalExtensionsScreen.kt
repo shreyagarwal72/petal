@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,6 +52,8 @@ import kotlinx.coroutines.launch
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import com.petal.browser.extensions.PetalExtensionManager
 import com.petal.browser.ui.components.ExpressiveHeader
+import com.petal.browser.ui.components.bouncyClickable
+import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.components.IconSwitch
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
@@ -228,8 +231,9 @@ fun PetalExtensionsScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(extensions, key = { it.id }) { ext ->
+                        itemsIndexed(extensions, key = { _, it -> it.id }) { index, ext ->
                             ExtensionRow(
+                                animationIndex = index,
                                 extension = ext,
                                 onToggleEnabled = { enabled ->
                                     PetalExtensionManager.setEnabled(ext.raw, enabled)
@@ -383,8 +387,10 @@ private fun EmptyExtensionsState(modifier: Modifier = Modifier, onAddClick: () -
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ExtensionRow(
+    animationIndex: Int = 0,
     extension: PetalExtensionManager.InstalledExtension,
     onToggleEnabled: (Boolean) -> Unit,
     onOpen: () -> Unit,
@@ -399,7 +405,9 @@ private fun ExtensionRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .clickable { onOpen() }
+            .bouncyClickable(scaleDown = 0.98f, onClick = onOpen)
+            .animateItem()
+            .entrance(index = animationIndex)
     ) {
         Row(
             modifier = Modifier
