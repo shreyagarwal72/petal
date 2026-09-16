@@ -1436,6 +1436,52 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         });
     }
 
+    /**
+     * Attaches an album's view (GeckoView/NinjaWebView container) to {@code targetFrame},
+     * defending against the GeckoView "attach before WindowInsets are dispatched" NPE
+     * (see the caller for the full explanation) that otherwise leaves the frame with zero
+     * children — i.e. a blank web page or blank home surface.
+     *
+     * Retries for up to {@code MAX_ATTACH_ATTEMPTS} frames while insets are still null, and
+     * wraps every actual addView() call in a try/catch so that if GeckoView throws anyway
+     * (insets race, transient native state) we retry on the next frame instead of aborting
+     * and leaving the user staring at an empty container.
+     */
+    private static final int MAX_ATTACH_ATTEMPTS = 5;
+
+    private void attachAlbumViewSafely(
+            final android.view.ViewGroup targetFrame,
+            final android.view.View av,
+            final AlbumController targetController,
+            final int attempt) {
+        if (targetFrame == null || av == null) return;
+        // Surface already changed (tab switch/navigation) since this attach was scheduled;
+        // stop retrying so we don't stomp on whatever is showing now.
+        if (currentAlbumController != targetController || targetFrame != contentFrame) return;
+        if (av.getParent() != null) return;
+
+        android.view.View decorView = getWindow() != null ? getWindow().getDecorView() : null;
+        boolean insetsReady = decorView == null || decorView.getRootWindowInsets() != null;
+
+        if (insetsReady || attempt >= MAX_ATTACH_ATTEMPTS) {
+            try {
+                if (targetFrame.getChildCount() == 0 || av.getParent() == null) {
+                    targetFrame.addView(av);
+                }
+            } catch (Exception e) {
+                // GeckoView's attach-time NPE (or any other transient attach failure).
+                // Don't leave the frame blank - back off one frame and retry, up to the cap.
+                android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: addView failed, retrying", e);
+                if (attempt < MAX_ATTACH_ATTEMPTS) {
+                    targetFrame.postDelayed(() ->
+                            attachAlbumViewSafely(targetFrame, av, targetController, attempt + 1), 32L);
+                }
+            }
+        } else {
+            targetFrame.post(() -> attachAlbumViewSafely(targetFrame, av, targetController, attempt + 1));
+        }
+    }
+
     @Override
     public synchronized void showAlbum(AlbumController controller) {
         showAlbum(controller, null);
@@ -1755,27 +1801,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // OEM skins like ColorOS/Realme after a fast home->tab transition),
             // getRootWindowInsets() returns null and GeckoView crashes with a fatal NPE
             // before the page ever renders — the app falls back to a blank/home screen.
-            // Only attach once the decor view actually has root insets; otherwise wait a
-            // single frame and retry, since insets are normally available within one
-            // layout pass after the window is created.
-            android.view.View decorView = getWindow() != null ? getWindow().getDecorView() : null;
-            if (decorView != null && decorView.getRootWindowInsets() == null) {
-                final android.view.ViewGroup targetFrame = contentFrame;
-                final android.view.View pendingAv = av;
-                final AlbumController targetController = controller;
-                decorView.post(() -> {
-                    if (targetFrame.getChildCount() == 0 && pendingAv.getParent() == null) {
-                        targetFrame.addView(pendingAv);
-                    } else if (pendingAv.getParent() == null && contentFrame == targetFrame
-                            && currentAlbumController == targetController) {
-                        // Frame already has content queued elsewhere; attach anyway to avoid
-                        // a permanently blank surface, now that a layout pass has occurred.
-                        targetFrame.addView(pendingAv);
-                    }
-                });
-            } else {
-                contentFrame.addView(av);
-            }
+            // Wait for the decor view to have root insets before attaching, retrying across
+            // a few frames (some OEM skins dispatch insets late), and always attach inside a
+            // try/catch: if GeckoView still throws, retry rather than leaving contentFrame
+            // permanently empty (which is exactly what produced the blank page/home screen).
+            attachAlbumViewSafely(contentFrame, av, controller, 0);
             // Keep the live browser surface stable. GeckoView/WebView owns its compositor;
             // alpha/scale animations during attach/resume can produce a persistent blank
             // surface. App-level animations are applied to native overlays instead.
