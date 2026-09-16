@@ -509,6 +509,7 @@ fun PetalBookmarksScreen(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun BookmarkCardItem(
     animationIndex: Int = 0,
