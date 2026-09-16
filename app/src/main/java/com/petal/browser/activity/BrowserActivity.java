@@ -397,7 +397,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private int predictiveBackSwipeEdge = BackEventCompat.EDGE_LEFT;
     private ValueAnimator predictiveBackSettleAnimator;
     // Mirrors aospSharedAxisPopExit's targetScale = 0.85f
-    private static final float PB_MAX_SCALE_DELTA = 0.15f;
+    private static final float PB_MAX_SCALE_DELTA = 0.08f;
     // Mirrors RvSystem's M3EmphasizedEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
     private final PathInterpolator predictiveBackEasing = new PathInterpolator(0.2f, 0f, 0f, 1f);
     // Mirrors RvSystem's AOSP_TRANSITION_DURATION
@@ -596,15 +596,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     ninjaWebView.resetGestureExclusionRects();
                 }
                 predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing && contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView) && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView);
-                if (predictiveBackStartedOnOverlay) {
-                    predictiveBackSwipeEdge = backEvent.getSwipeEdge();
-                    // Compose owns the overlay animation; do not also transform the Activity root.
+                predictiveBackSwipeEdge = backEvent.getSwipeEdge();
+                predictiveBackGestureActive = true;
+                predictiveBackProgress = backEvent.getProgress();
+                if (!predictiveBackStartedOnOverlay) {
+                    beginPredictiveBackGesture();
+                    applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
                 }
             }
 
             @Override
             public void handleOnBackProgressed(@NonNull androidx.activity.BackEventCompat backEvent) {
-                // Compose PredictiveBackHandler owns overlay progress; Activity root remains stable.
+                if (predictiveBackStartedOnOverlay) return;
+                predictiveBackSwipeEdge = backEvent.getSwipeEdge();
+                predictiveBackGestureActive = true;
+                applyPredictiveBackTransform(backEvent.getProgress(), backEvent.getSwipeEdge());
             }
 
             @Override
@@ -619,8 +625,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 boolean hasOverlayView = isOverlayScreenShowing || (topContent != null && !isBrowserView);
 
                 if (overlayDismissedByGesture && !hasOverlayView) {
-                    // Compose's PredictiveBackHandler handled the dismiss animation and showed the album
+                    // Compose's PredictiveBackHandler handled the dismiss animation and showed the album.
                     resetPredictiveBackVisuals();
+                } else if (!overlayDismissedByGesture && predictiveBackGestureActive) {
+                    // Let the same finger-driven animation finish before changing the content surface.
+                    settlePredictiveBackGesture(true);
                 } else {
                     performBackNavigation();
                     resetPredictiveBackVisuals();
@@ -632,6 +641,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 boolean wasOverlay = predictiveBackStartedOnOverlay;
                 predictiveBackStartedOnOverlay = false;
                 if (wasOverlay) {
+                    resetPredictiveBackVisuals();
+                } else if (predictiveBackGestureActive) {
                     settlePredictiveBackGesture(false);
                 } else {
                     resetPredictiveBackVisuals();
@@ -1107,7 +1118,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * don't have one, so neither does this.
      */
     public void beginPredictiveBackGesture() {
-        if (!isOverlayScreenShowing || isDecorOverlayShowing) return;
+        if (isDecorOverlayShowing) return;
         if (predictiveBackSettleAnimator != null) {
             predictiveBackSettleAnimator.cancel();
             predictiveBackSettleAnimator = null;
@@ -1116,15 +1127,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     /**
      * Applies the live, per-frame transform for the in-progress gesture: a full-width slide
-     * toward the swipe edge plus a scale-down to 0.85, matching RvSystem-Monitor's
+     * toward the swipe edge plus a scale-down to the standard 0.92 target, matching RvSystem-Monitor's
      * aospSharedAxisPopExit exactly (ui/navigation/Transitions.kt) - the slide uses its cubic
      * ease-in (f*f*f) and the scale uses its M3 emphasized easing. No fade, no corner-radius
      * clip, no preview underlay - PetalScreenWrapper (PetalPredictiveJunction.kt) applies the
      * identical curve to every Compose screen so the native browsing surface feels the same.
      */
     public void applyPredictiveBackTransform(float progress, int swipeEdge) {
-        if (!isOverlayScreenShowing || isDecorOverlayShowing) return;
-        if (predictiveBackRoot == null) return;
+        if (isDecorOverlayShowing) return;
+        if (predictiveBackRoot == null || predictiveBackRoot.getWidth() <= 0) return;
         predictiveBackProgress = progress;
 
         float cubicEased = progress * progress * progress;
@@ -1143,7 +1154,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * finish sliding off before the real {@link #performBackNavigation()} fires.
      */
     public void settlePredictiveBackGesture(boolean committed) {
-        if (!isOverlayScreenShowing || isDecorOverlayShowing) return;
+        if (isDecorOverlayShowing) return;
         if (predictiveBackRoot == null) return;
 
         if (predictiveBackSettleAnimator != null) {
@@ -1183,6 +1194,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void resetPredictiveBackVisuals() {
+        predictiveBackGestureActive = false;
         predictiveBackProgress = 0f;
         predictiveBackSwipeEdge = BackEventCompat.EDGE_LEFT;
         if (predictiveBackRoot != null) {
@@ -1701,19 +1713,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // view is only attached after the window is fully laid out with valid insets.
             if (av instanceof com.petal.browser.view.PetalGeckoView
                     && (contentFrame.getWindowToken() == null || !contentFrame.isAttachedToWindow())) {
-                // The old deferred attach could re-add a GeckoView after another
-                // showAlbum() call had already switched tabs/screens. That stale
-                // callback could replace the currently visible surface and leave
-                // the activity looking blank. Only attach the view if this exact
-                // controller is still the active one and the frame is empty.
                 final android.view.View avFinal = av;
-                final AlbumController expectedController = currentAlbumController;
                 contentFrame.post(() -> {
                     try {
-                        if (expectedController == currentAlbumController
-                                && contentFrame.isAttachedToWindow()
-                                && contentFrame.getChildCount() == 0
-                                && avFinal.getParent() == null) {
+                        if (contentFrame.isAttachedToWindow()) {
                             contentFrame.addView(avFinal);
                         }
                     } catch (Exception ignored) {}
