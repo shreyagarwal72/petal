@@ -733,6 +733,7 @@ fun ContainedSelectionCard(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)
+            .petalTouchFeedback()
             .then(
                 if (isSelected) {
                     Modifier.border(

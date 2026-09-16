@@ -86,6 +86,7 @@ fun ExpressiveSplitButton(
                     .clip(primaryShape)
                     .background(containerColor)
                     .clickable(onClick = onPrimaryClick)
+                    .petalTouchFeedback()
                     .padding(horizontal = 16.dp)
             ) {
                 if (icon != null) {
@@ -115,6 +116,7 @@ fun ExpressiveSplitButton(
                     .clip(menuShape)
                     .background(containerColor)
                     .clickable(onClick = onMenuClick)
+                    .petalTouchFeedback()
             ) {
                 Icon(
                     imageVector = Icons.Rounded.ArrowDropDown,

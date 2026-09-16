@@ -12,6 +12,12 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
@@ -92,11 +98,48 @@ fun Modifier.entrance(index: Int = 0): Modifier {
 }
 
 /**
+ * Material 3 Expressive-style tactile touch feedback that can be layered on
+ * existing click handlers without replacing their semantics or behavior.
+ * The touched surface compresses to 92% and springs back naturally.
+ */
+@Composable
+fun Modifier.petalTouchFeedback(
+    scaleDown: Float = 0.92f,
+    enabled: Boolean = true,
+): Modifier {
+    val pressedState = remember { mutableStateOf(false) }
+    val pressed = pressedState.value
+    val scale by animateFloatAsState(
+        targetValue = if (enabled && pressed) scaleDown.coerceIn(0.80f, 1f) else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.8f,
+            stiffness = 300f,
+        ),
+        label = "petalTouchScale",
+    )
+
+    return this
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+        .pointerInput(enabled) {
+            if (!enabled) return@pointerInput
+            awaitEachGesture {
+                awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                pressedState.value = true
+                waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                pressedState.value = false
+            }
+        }
+}
+
+/**
  * Expressive tap feedback: squashes on press and springs back on release.
  */
 @Composable
 fun Modifier.bouncyClickable(
-    scaleDown: Float = 0.94f,
+    scaleDown: Float = 0.92f,
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
 ): Modifier {
@@ -114,8 +157,8 @@ fun Modifier.bouncyClickable(
     val scale by animateFloatAsState(
         targetValue = if (pressed) scaleDown else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium,
+            dampingRatio = 0.8f,
+            stiffness = 300f,
         ),
         label = "bouncyPress",
     )
