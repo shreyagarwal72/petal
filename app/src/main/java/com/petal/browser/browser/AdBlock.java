@@ -27,7 +27,7 @@ public class AdBlock {
     }
 
     public static String getAdHidingScript() {
-        return PetalAdBlockEngine.getAdBlockPayload();
+        return PetalAdBlockEngine.getuBlockCosmeticAndScriptletPayload("");
     }
 
     public boolean isAd(@Nullable String url) {
