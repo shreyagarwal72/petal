@@ -1762,11 +1762,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (decorView != null && decorView.getRootWindowInsets() == null) {
                 final android.view.ViewGroup targetFrame = contentFrame;
                 final android.view.View pendingAv = av;
+                final AlbumController targetController = controller;
                 decorView.post(() -> {
                     if (targetFrame.getChildCount() == 0 && pendingAv.getParent() == null) {
                         targetFrame.addView(pendingAv);
                     } else if (pendingAv.getParent() == null && contentFrame == targetFrame
-                            && currentAlbumController == controller) {
+                            && currentAlbumController == targetController) {
                         // Frame already has content queued elsewhere; attach anyway to avoid
                         // a permanently blank surface, now that a layout pass has occurred.
                         targetFrame.addView(pendingAv);
