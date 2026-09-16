@@ -673,7 +673,7 @@ fun PetalAiResearchSheet(
                 ) {
                     ResearchMode.values().forEach { mode ->
                         DropdownMenuItem(
-                            text = { Text(mode.displayName) },
+                            text = { Text(mode.title.ifBlank { "Custom Query" }) },
                             onClick = {
                                 modeSplitMenuExpanded = false
                                 selectedMode = mode
@@ -683,9 +683,9 @@ fun PetalAiResearchSheet(
                                 Icon(
                                     when (mode) {
                                         ResearchMode.SUMMARY -> Icons.Rounded.Summarize
-                                        ResearchMode.KEY_POINTS -> Icons.Rounded.FormatListBulleted
-                                        ResearchMode.FACT_CHECK -> Icons.Rounded.Verified
-                                        ResearchMode.EXPLAIN -> Icons.Rounded.Psychology
+                                        ResearchMode.DEEP_RESEARCH -> Icons.Rounded.Psychology
+                                        ResearchMode.KEY_QA -> Icons.Rounded.FormatListBulleted
+                                        ResearchMode.CRITIQUE -> Icons.Rounded.Verified
                                         ResearchMode.CUSTOM -> Icons.Rounded.Edit
                                     },
                                     contentDescription = null
