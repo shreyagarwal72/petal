@@ -733,13 +733,11 @@ fun PetalTabGridSwitcher(
                                         .pointerInput(tab.id) {
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = {
-                                                    contextMenuTabId = tab.id
-                                                    draggingTabId = null
+                                                    draggingTabId = tab.id
                                                     dragOffset = Offset.Zero
                                                 },
                                                 onDrag = { change, dragAmount ->
                                                     change.consume()
-                                                    if (contextMenuTabId == tab.id) contextMenuTabId = null
                                                     draggingTabId = tab.id
                                                     dragOffset += dragAmount
                                                     val myBounds = tabCardBounds[tab.id]
@@ -847,13 +845,11 @@ fun PetalTabGridSwitcher(
                                         .pointerInput(tab.id) {
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = {
-                                                    contextMenuTabId = tab.id
-                                                    draggingTabId = null
+                                                    draggingTabId = tab.id
                                                     dragOffset = Offset.Zero
                                                 },
                                                 onDrag = { change, dragAmount ->
                                                     change.consume()
-                                                    if (contextMenuTabId == tab.id) contextMenuTabId = null
                                                     draggingTabId = tab.id
                                                     dragOffset += dragAmount
                                                     val myBounds = tabCardBounds[tab.id]
@@ -1437,20 +1433,36 @@ private fun PetalTabCard(
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable(onClick = onTabClose)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = "Close tab",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(14.dp)
-                        )
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable(onClick = onLongPress)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = "Tab options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable(onClick = onTabClose)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Close tab",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
-            }
             }
 
             // Group tag pill indicator if tab is grouped
@@ -1741,6 +1753,9 @@ private fun PetalTabListItem(
                     Surface(shape = CircleShape, color = accentColor, modifier = Modifier.size(20.dp)) {
                         Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(3.dp))
                     }
+                }
+                IconButton(onClick = onLongPress, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Rounded.MoreVert, contentDescription = "Tab options", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                 }
                 IconButton(onClick = onTabClose, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Rounded.Close, contentDescription = "Close tab", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
