@@ -1748,7 +1748,33 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
             ));
-            contentFrame.addView(av);
+            // GeckoView.onAttachedToWindow() synchronously calls Display.acquire() ->
+            // onGlobalLayout(), which unconditionally calls
+            // getRootWindowInsets().getInsets(...). If the window hasn't dispatched its
+            // WindowInsets yet (happens right after activity/window creation, and on some
+            // OEM skins like ColorOS/Realme after a fast home->tab transition),
+            // getRootWindowInsets() returns null and GeckoView crashes with a fatal NPE
+            // before the page ever renders — the app falls back to a blank/home screen.
+            // Only attach once the decor view actually has root insets; otherwise wait a
+            // single frame and retry, since insets are normally available within one
+            // layout pass after the window is created.
+            android.view.View decorView = getWindow() != null ? getWindow().getDecorView() : null;
+            if (decorView != null && decorView.getRootWindowInsets() == null) {
+                final android.view.ViewGroup targetFrame = contentFrame;
+                final android.view.View pendingAv = av;
+                decorView.post(() -> {
+                    if (targetFrame.getChildCount() == 0 && pendingAv.getParent() == null) {
+                        targetFrame.addView(pendingAv);
+                    } else if (pendingAv.getParent() == null && contentFrame == targetFrame
+                            && currentAlbumController == controller) {
+                        // Frame already has content queued elsewhere; attach anyway to avoid
+                        // a permanently blank surface, now that a layout pass has occurred.
+                        targetFrame.addView(pendingAv);
+                    }
+                });
+            } else {
+                contentFrame.addView(av);
+            }
             // Keep the live browser surface stable. GeckoView/WebView owns its compositor;
             // alpha/scale animations during attach/resume can produce a persistent blank
             // surface. App-level animations are applied to native overlays instead.
