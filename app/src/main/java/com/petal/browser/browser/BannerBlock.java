@@ -53,8 +53,7 @@ public class BannerBlock {
 
             try {
                 URL url = new URL(hostURL);
-                Log.d("browser","Download Mozilla cookie banner rules");
-                ((Activity) context).runOnUiThread(() -> NinjaToast.show(context, "Downloading cookie-banner-rules."));
+                Log.d("browser", "Download Mozilla cookie banner rules");
                 URLConnection ucon = url.openConnection();
                 ucon.setReadTimeout(5000);
                 ucon.setConnectTimeout(10000);
