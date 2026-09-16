@@ -58,7 +58,6 @@ public class NinjaWebViewClient extends WebViewClient {
     private final NinjaWebView ninjaWebView;
     private final Context context;
     private final SharedPreferences sp;
-    private final AdBlock adBlock;
     private volatile String currentUrl = "";
 
     // Extensions WebView would otherwise render inline as text instead of downloading, since
@@ -76,7 +75,6 @@ public class NinjaWebViewClient extends WebViewClient {
         this.ninjaWebView = ninjaWebView;
         this.context = ninjaWebView.getContext();
         this.sp = PreferenceManager.getDefaultSharedPreferences(context);
-        this.adBlock = new AdBlock(this.context);
     }
 
     @Override
@@ -926,7 +924,7 @@ public class NinjaWebViewClient extends WebViewClient {
             PetalAdBlockEngine.ensureInitialized(context);
             String reqUrl = request.getUrl().toString();
             String pageUrl = currentUrl;
-            if (PetalAdBlockEngine.shouldBlockUrl(context, reqUrl, pageUrl) || adBlock.isAd(reqUrl)) {
+            if (PetalAdBlockEngine.shouldBlockUrl(context, reqUrl, pageUrl)) {
                 return PetalAdBlockEngine.createEmpty204Response();
             }
         }
