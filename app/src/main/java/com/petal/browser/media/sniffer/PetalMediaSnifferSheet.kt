@@ -58,6 +58,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.petal.browser.ui.components.ExpressiveSplitButton
+import com.petal.browser.ui.components.SplitButtonVariant
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -389,23 +391,56 @@ private fun PetalMediaSheet(
                                         )
                                     }
 
-                                    Box {
-                                        OutlinedButton(
-                                            onClick = { formatMenuOpen = true },
+                                    Box(modifier = Modifier.fillMaxWidth()) {
+                                        ExpressiveSplitButton(
+                                            label = "Download ${selFmt.label}",
+                                            onPrimaryClick = {
+                                                val cookies = try {
+                                                    CookieManager.getInstance()
+                                                        .getCookie(currentPageUrl)
+                                                } catch (_: Exception) {
+                                                    null
+                                                }
+
+                                                when {
+                                                    selFmt.isDirectUrl -> {
+                                                        val mimeType = when {
+                                                            selFmt.isAudioOnly -> "audio/mp4"
+                                                            selFmt.formatId.contains(".webm", ignoreCase = true) -> "video/webm"
+                                                            else -> "video/mp4"
+                                                        }
+                                                        PetalFetchDownloadBridge.enqueueMediaDownload(
+                                                            context = context,
+                                                            url = selFmt.formatId,
+                                                            fileName = info.title.ifBlank { "Petal media" },
+                                                            mimeType = mimeType,
+                                                            userAgent = android.webkit.WebSettings.getDefaultUserAgent(context),
+                                                            cookie = cookies,
+                                                            headers = mapOf("Referer" to currentPageUrl),
+                                                            onFailed = { socialState = SocialState.Failed("Petal Download Manager could not queue this media.") }
+                                                        )
+                                                    }
+                                                    else -> {
+                                                        PetalSocialDownloadService.enqueue(
+                                                            context = context,
+                                                            url = currentPageUrl,
+                                                            format = selFmt,
+                                                            cookies = cookies,
+                                                            title = info.title
+                                                        )
+                                                    }
+                                                }
+
+                                                socialState = SocialState.Done
+                                                onDismiss()
+                                            },
+                                            onMenuClick = { formatMenuOpen = !formatMenuOpen },
+                                            icon = Icons.Rounded.Download,
+                                            isMenuExpanded = formatMenuOpen,
+                                            variant = SplitButtonVariant.FILLED,
+                                            height = 50.dp,
                                             modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Text(
-                                                selFmt.label,
-                                                modifier = Modifier.weight(1f),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Icon(
-                                                Icons.Rounded.ExpandMore,
-                                                contentDescription = "Choose format",
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
+                                        )
 
                                         DropdownMenu(
                                             expanded = formatMenuOpen,
@@ -415,69 +450,18 @@ private fun PetalMediaSheet(
                                                 DropdownMenuItem(
                                                     text = { Text(fmt.label) },
                                                     onClick = {
-                                                        socialState =
-                                                            SocialState.Ready(info, fmt)
+                                                        socialState = SocialState.Ready(info, fmt)
                                                         formatMenuOpen = false
+                                                    },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            if (fmt.isAudioOnly) Icons.Rounded.Public else Icons.Rounded.VideoLibrary,
+                                                            contentDescription = null
+                                                        )
                                                     }
                                                 )
                                             }
                                         }
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            val cookies = try {
-                                                CookieManager.getInstance()
-                                                    .getCookie(currentPageUrl)
-                                            } catch (_: Exception) {
-                                                null
-                                            }
-
-
-                                            when {
-                                                // Direct URL formats come from the InnerTube fallback.
-                                                // formatId IS the stream URL — download directly.
-                                                selFmt.isDirectUrl -> {
-                                                    val mimeType = when {
-                                                        selFmt.isAudioOnly -> "audio/mp4"
-                                                        selFmt.formatId.contains(".webm", ignoreCase = true) -> "video/webm"
-                                                        else -> "video/mp4"
-                                                    }
-                                                    PetalFetchDownloadBridge.enqueueMediaDownload(
-                                                        context = context,
-                                                        url = selFmt.formatId,
-                                                        fileName = info.title.ifBlank { "Petal media" },
-                                                        mimeType = mimeType,
-                                                        userAgent = android.webkit.WebSettings.getDefaultUserAgent(context),
-                                                        cookie = cookies,
-                                                        headers = mapOf("Referer" to currentPageUrl),
-                                                        onFailed = { socialState = SocialState.Failed("Petal Download Manager could not queue this media.") }
-                                                    )
-                                                }
-
-                                                // Normal yt-dlp flow: pass the format selector.
-                                                else -> {
-                                                    PetalSocialDownloadService.enqueue(
-                                                        context = context,
-                                                        url = currentPageUrl,
-                                                        format = selFmt,
-                                                        cookies = cookies,
-                                                        title = info.title
-                                                    )
-                                                }
-                                            }
-
-                                            socialState = SocialState.Done
-                                            onDismiss()
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Download,
-                                            contentDescription = null
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Download ${selFmt.label}")
                                     }
                                 }
 

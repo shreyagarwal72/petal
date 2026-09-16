@@ -127,18 +127,44 @@ fun PetalDownloadConfirmationDialog(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Button(
-                    onClick = onConfirm,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                var splitMenuExpanded by remember { mutableStateOf(false) }
+
+                Box {
+                    ExpressiveSplitButton(
+                        label = if (isDuplicate) "Download Again" else "Download",
+                        onPrimaryClick = onConfirm,
+                        onMenuClick = { splitMenuExpanded = !splitMenuExpanded },
+                        icon = Icons.Rounded.Download,
+                        isMenuExpanded = splitMenuExpanded,
+                        variant = SplitButtonVariant.FILLED,
+                        height = 42.dp
                     )
-                ) {
-                    Text(
-                        text = if (isDuplicate) "Download Again" else "Download",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                    )
+
+                    DropdownMenu(
+                        expanded = splitMenuExpanded,
+                        onDismissRequest = { splitMenuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Standard Download") },
+                            onClick = {
+                                splitMenuExpanded = false
+                                onConfirm()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.Download, contentDescription = null)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Download in Background") },
+                            onClick = {
+                                splitMenuExpanded = false
+                                onConfirm()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.CloudDownload, contentDescription = null)
+                            }
+                        )
+                    }
                 }
             }
         }

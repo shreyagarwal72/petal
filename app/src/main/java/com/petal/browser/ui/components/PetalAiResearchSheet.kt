@@ -644,40 +644,55 @@ fun PetalAiResearchSheet(
                 )
             )
 
-            // Primary Action Button with Material 3 Expressive Progress Feedback
-            Button(
-                onClick = {
-                    runResearch(if (customPromptText.isNotBlank()) ResearchMode.CUSTOM else selectedMode, customPromptText)
-                },
-                enabled = !isLoading,
-                shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 6.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp)
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.5.dp
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        "Analyzing with ${selectedProvider.displayName}...",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                } else {
-                    Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        if (customPromptText.isNotBlank()) "Ask ${selectedProvider.displayName}" else "Analyze with ${selectedProvider.displayName}",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                    )
+            // Primary Action Split Button with Material 3 Expressive Mode Menu
+            var modeSplitMenuExpanded by remember { mutableStateOf(false) }
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                ExpressiveSplitButton(
+                    label = if (isLoading) "Analyzing..." else (if (customPromptText.isNotBlank()) "Ask ${selectedProvider.displayName}" else "Analyze Page"),
+                    onPrimaryClick = {
+                        if (!isLoading) {
+                            runResearch(if (customPromptText.isNotBlank()) ResearchMode.CUSTOM else selectedMode, customPromptText)
+                        }
+                    },
+                    onMenuClick = {
+                        if (!isLoading) {
+                            modeSplitMenuExpanded = !modeSplitMenuExpanded
+                        }
+                    },
+                    icon = Icons.Rounded.AutoAwesome,
+                    isMenuExpanded = modeSplitMenuExpanded,
+                    variant = SplitButtonVariant.FILLED,
+                    height = 54.dp,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                DropdownMenu(
+                    expanded = modeSplitMenuExpanded,
+                    onDismissRequest = { modeSplitMenuExpanded = false }
+                ) {
+                    ResearchMode.values().forEach { mode ->
+                        DropdownMenuItem(
+                            text = { Text(mode.displayName) },
+                            onClick = {
+                                modeSplitMenuExpanded = false
+                                selectedMode = mode
+                                runResearch(mode, customPromptText)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    when (mode) {
+                                        ResearchMode.SUMMARY -> Icons.Rounded.Summarize
+                                        ResearchMode.KEY_POINTS -> Icons.Rounded.FormatListBulleted
+                                        ResearchMode.FACT_CHECK -> Icons.Rounded.Verified
+                                        ResearchMode.EXPLAIN -> Icons.Rounded.Psychology
+                                        ResearchMode.CUSTOM -> Icons.Rounded.Edit
+                                    },
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                    }
                 }
             }
 

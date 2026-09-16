@@ -69,6 +69,8 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.AnimatedCounterBadge
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveTabGroupPill
+import com.petal.browser.ui.components.ExpressiveSplitButton
+import com.petal.browser.ui.components.SplitButtonVariant
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
@@ -386,14 +388,51 @@ fun PetalTabGridSwitcher(
                                 contentDescription = "Finish selection",
                                 onClick = { leaveSelectionMode() }
                             )
-                        } else HeaderActionIcon(
-                            icon = Icons.Rounded.Add,
-                            contentDescription = "New Tab",
-                            onClick = {
-                                commitPendingRemovals()
-                                onNewTab(selectedCategory == TabCategory.INCOGNITO)
+                        } else {
+                            var tabSplitExpanded by remember { mutableStateOf(false) }
+                            Box {
+                                ExpressiveSplitButton(
+                                    label = "New",
+                                    onPrimaryClick = {
+                                        commitPendingRemovals()
+                                        onNewTab(selectedCategory == TabCategory.INCOGNITO)
+                                    },
+                                    onMenuClick = { tabSplitExpanded = !tabSplitExpanded },
+                                    icon = Icons.Rounded.Add,
+                                    isMenuExpanded = tabSplitExpanded,
+                                    variant = SplitButtonVariant.TONAL,
+                                    height = 40.dp
+                                )
+
+                                DropdownMenu(
+                                    expanded = tabSplitExpanded,
+                                    onDismissRequest = { tabSplitExpanded = false },
+                                    shape = RoundedCornerShape(16.dp),
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Regular Tab") },
+                                        leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
+                                        onClick = {
+                                            tabSplitExpanded = false
+                                            selectedCategory = TabCategory.REGULAR
+                                            commitPendingRemovals()
+                                            onNewTab(false)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Incognito Tab") },
+                                        leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
+                                        onClick = {
+                                            tabSplitExpanded = false
+                                            selectedCategory = TabCategory.INCOGNITO
+                                            commitPendingRemovals()
+                                            onNewTab(true)
+                                        }
+                                    )
+                                }
                             }
-                        )
+                        }
 
                         HeaderActionIcon(
                             icon = if (displayMode == TabDisplayMode.GRID) Icons.Rounded.ViewList else Icons.Rounded.GridView,
