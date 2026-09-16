@@ -401,7 +401,9 @@ fun PetalTabGridSwitcher(
                                     icon = Icons.Rounded.Add,
                                     isMenuExpanded = tabSplitExpanded,
                                     variant = SplitButtonVariant.TONAL,
-                                    height = 40.dp
+                                    height = 40.dp,
+                                    containerColorOverride = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColorOverride = MaterialTheme.colorScheme.onSurface
                                 )
 
                                 DropdownMenu(
