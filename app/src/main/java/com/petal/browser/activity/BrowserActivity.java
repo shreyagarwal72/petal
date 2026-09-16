@@ -1487,6 +1487,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
 
+        // Captured as final so it can be safely referenced from the lambdas below
+        // (controller itself is reassigned earlier in this method and is not
+        // effectively final).
+        final AlbumController resolvedController = controller;
+
         View av = controller.getAlbumView();
         if (currentAlbumController != null) {
             if (currentAlbumController instanceof NinjaWebView) {
@@ -1720,7 +1725,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // A later queued surface switch may have happened while Compose was being
                 // attached. Only repair the Home view if it is still the active surface.
                 if (surfaceGeneration == albumSurfaceGeneration
-                        && currentAlbumController == controller
+                        && currentAlbumController == resolvedController
                         && contentFrame.getChildCount() == 1
                         && contentFrame.getChildAt(0) == composeView) {
                     composeView.setVisibility(VISIBLE);
@@ -1753,7 +1758,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 contentFrame.post(() -> {
                     try {
                         if (surfaceGeneration == albumSurfaceGeneration
-                                && currentAlbumController == controller
+                                && currentAlbumController == resolvedController
                                 && contentFrame.isAttachedToWindow()
                                 && avFinal.getParent() == null
                                 && contentFrame.getChildCount() == 0) {
