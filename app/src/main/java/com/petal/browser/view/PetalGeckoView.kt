@@ -1523,10 +1523,11 @@ class PetalGeckoView @JvmOverloads constructor(
     fun resetGestureExclusionRects() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
-                systemGestureExclusionRects = emptyList()
-                geckoView.systemGestureExclusionRects = emptyList()
+                val emptyRects: List<android.graphics.Rect> = java.util.Collections.emptyList()
+                systemGestureExclusionRects = emptyRects
+                geckoView.systemGestureExclusionRects = emptyRects
                 for (i in 0 until childCount) {
-                    getChildAt(i)?.systemGestureExclusionRects = emptyList()
+                    getChildAt(i)?.systemGestureExclusionRects = emptyRects
                 }
             } catch (_: Throwable) {}
         }
