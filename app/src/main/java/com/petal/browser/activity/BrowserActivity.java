@@ -1254,6 +1254,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // Apple Duo: overlay screens are not websites — suspend the fold effect.
         try {
             com.petal.browser.appleduo.AppleDuoManager.INSTANCE.onContentSwitched(false);
+            com.petal.browser.ui.components.PetalNetworkStatusBridge.INSTANCE.setWebsiteActive(false);
         } catch (Exception ignored) {}
     }
 
@@ -1949,14 +1950,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             refreshBarCompose.requestLayout();
         }
 
-        // Apple Duo fix: attach the fold-glass effect to the root layout and tell the
-        // manager whether we're showing a website or the native home/incognito surface.
-        // attachTargetView() was never called from showAlbum() — currentActiveView stayed
-        // null so the RenderEffect was never applied to any real view.
+        // Apple Duo & Network Status: attach active view and update website active state
         try {
             View rootLayout = findViewById(R.id.main);
             boolean isWebsiteContent = !isPetalHomeSurfaceShowing && !isOverlayScreenShowing;
             com.petal.browser.appleduo.AppleDuoManager.INSTANCE.attachTargetView(rootLayout, isWebsiteContent);
+            com.petal.browser.ui.components.PetalNetworkStatusBridge.INSTANCE.setWebsiteActive(isWebsiteContent);
         } catch (Exception ignored) {}
     }
 
@@ -2166,6 +2165,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
                 lp.topMargin = isBottom ? gap : addressHeight + gap;
                 downloadBanner.setLayoutParams(lp);
+            }
+
+            View networkStatusBanner = findViewById(R.id.network_status_compose);
+            if (networkStatusBanner != null && networkStatusBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) networkStatusBanner.getLayoutParams();
+                lp.removeRule(RelativeLayout.BELOW);
+                lp.removeRule(RelativeLayout.ABOVE);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                if (isBottom) {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) HelperUnit.convertDpToPixel(8f, context);
+                    lp.topMargin = 0;
+                } else {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    lp.topMargin = addressHeight + (int) HelperUnit.convertDpToPixel(6f, context);
+                    lp.bottomMargin = 0;
+                }
+                networkStatusBanner.setLayoutParams(lp);
+                networkStatusBanner.bringToFront();
             }
 
             if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
@@ -3576,6 +3595,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         androidx.compose.ui.platform.ComposeView mediaSnifferCompose = findViewById(R.id.media_sniffer_compose);
         if (mediaSnifferCompose != null) {
             com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.bind(mediaSnifferCompose, this);
+        }
+
+        androidx.compose.ui.platform.ComposeView networkStatusCompose = findViewById(R.id.network_status_compose);
+        if (networkStatusCompose != null) {
+            com.petal.browser.ui.components.PetalNetworkStatusBridge.INSTANCE.attachComposeView(this, networkStatusCompose);
         }
 
         if (contentFrame == null) return;

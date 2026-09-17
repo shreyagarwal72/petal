@@ -53,6 +53,14 @@
         android:layout_below="@id/compose_address_bar"
         android:elevation="20dp" />
 
+    <!-- Floating Network Status Pill (Offline / Back Online Left-to-Right dialogue) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/network_status_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/compose_address_bar"
+        android:elevation="21dp" />
+
     <!-- Media Sniffer Expressive overlay: appears only when a playable source is detected. -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/media_sniffer_compose"
