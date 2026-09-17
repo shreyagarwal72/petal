@@ -209,7 +209,7 @@ object BrowserNavigationDelegate {
                     val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
                         setViewTreeLifecycleOwner(activity)
                         setViewTreeViewModelStoreOwner(activity)
-                        androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+                        setViewTreeSavedStateRegistryOwner(activity)
                         setContent {
                             com.petal.browser.ui.theme.PetalExpressiveTheme {
                                 com.petal.browser.tools.PetalDevConsoleSheet(
@@ -232,7 +232,7 @@ object BrowserNavigationDelegate {
                     val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
                         setViewTreeLifecycleOwner(activity)
                         setViewTreeViewModelStoreOwner(activity)
-                        androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+                        setViewTreeSavedStateRegistryOwner(activity)
                         setContent {
                             com.petal.browser.ui.theme.PetalExpressiveTheme {
                                 com.petal.browser.privacy.SafeLockerSheet(
