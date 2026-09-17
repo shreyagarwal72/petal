@@ -68,6 +68,8 @@ interface PetalOverflowMenuActionHandler {
     fun onOpenExtensions() {}
     fun onOpenExtensionAction(extensionId: String) {}
     fun onOpenExtensionSettings(extensionId: String) {}
+    fun onOpenDevConsole() {}
+    fun onOpenSafeLocker() {}
 }
 
 object PetalOverflowBridge {
@@ -238,6 +240,14 @@ object PetalOverflowBridge {
                             onOpenExtensionSettings = { extensionId ->
                                 dialog.dismiss()
                                 handler.onOpenExtensionSettings(extensionId)
+                            },
+                            onOpenDevConsole = {
+                                dialog.dismiss()
+                                handler.onOpenDevConsole()
+                            },
+                            onOpenSafeLocker = {
+                                dialog.dismiss()
+                                handler.onOpenSafeLocker()
                             }
                         )
                     }
@@ -288,7 +298,9 @@ fun PetalOverflowMenuSheet(
     onOpenPetalAi: () -> Unit = {},
     onOpenExtensions: () -> Unit = {},
     onOpenExtensionAction: (String) -> Unit = {},
-    onOpenExtensionSettings: (String) -> Unit = {}
+    onOpenExtensionSettings: (String) -> Unit = {},
+    onOpenDevConsole: () -> Unit = {},
+    onOpenSafeLocker: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var isMoreToolsExpanded by remember { mutableStateOf(false) }
@@ -603,6 +615,18 @@ fun PetalOverflowMenuSheet(
                             title = "Share link",
                             isSubItem = true,
                             onClick = onShareLink
+                        )
+                        MenuRowItem(
+                            icon = Icons.Rounded.Terminal,
+                            title = "Developer Console",
+                            isSubItem = true,
+                            onClick = onOpenDevConsole
+                        )
+                        MenuRowItem(
+                            icon = Icons.Rounded.Lock,
+                            title = "Safe Locker",
+                            isSubItem = true,
+                            onClick = onOpenSafeLocker
                         )
                     }
                 }

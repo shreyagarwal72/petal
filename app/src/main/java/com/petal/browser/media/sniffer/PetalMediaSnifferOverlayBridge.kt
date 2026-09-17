@@ -60,12 +60,27 @@ object PetalMediaSnifferOverlayBridge {
                     context        = activity,
                     currentPageUrl = pageUrl
                 ) { request ->
-                    activity.startActivity(
-                        Intent(activity, MediaPlayerActivity::class.java).apply {
+                    val act = activity as? com.petal.browser.activity.BrowserActivity
+                    val geckoView = act?.currentAlbumController as? com.petal.browser.view.PetalGeckoView
+                    geckoView?.captureVideoHandoffState { handoff ->
+                        val intent = Intent(activity, MediaPlayerActivity::class.java).apply {
                             data = android.net.Uri.parse(request.url)
                             type = request.mimeType
+                            if (handoff != null) {
+                                putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_POSITION_MS, handoff.positionMs)
+                                putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_SPEED, handoff.playbackSpeed)
+                                putExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_IS_PAUSED, handoff.isPaused)
+                            }
                         }
-                    )
+                        activity.startActivity(intent)
+                    } ?: run {
+                        activity.startActivity(
+                            Intent(activity, MediaPlayerActivity::class.java).apply {
+                                data = android.net.Uri.parse(request.url)
+                                type = request.mimeType
+                            }
+                        )
+                    }
                 }
             }
         }

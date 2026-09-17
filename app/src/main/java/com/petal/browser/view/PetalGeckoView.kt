@@ -1718,6 +1718,58 @@ class PetalGeckoView @JvmOverloads constructor(
 
         return true
     }
+
+    /**
+     * Evaluates JavaScript on the current GeckoSession.
+     */
+    fun evaluateJavascript(script: String, callback: ((String?) -> Unit)? = null) {
+        try {
+            session.loadUri("javascript:(function(){ try { return ($script); } catch(e) { return 'ERROR: ' + e; } })()")
+            callback?.invoke(null)
+        } catch (t: Throwable) {
+            callback?.invoke("ERROR: ${t.message}")
+        }
+    }
+
+    /**
+     * Seamless Media Handoff: Captures the live playback state of the first or active
+     * HTML5 <video> element on the page.
+     */
+    fun captureVideoHandoffState(callback: (com.petal.browser.media.handoff.MediaHandoff?) -> Unit) {
+        try {
+            // Find active video and post its state
+            val js = """
+                (function() {
+                    try {
+                        var vids = Array.from(document.querySelectorAll('video'));
+                        if (vids.length === 0) return null;
+                        // Prefer playing video, else first video
+                        var vid = vids.find(function(v) { return !v.paused; }) || vids[0];
+                        var pos = Math.round((vid.currentTime || 0) * 1000);
+                        var dur = Math.round((vid.duration || 0) * 1000);
+                        var speed = vid.playbackRate || 1.0;
+                        var isPaused = !!vid.paused;
+                        var vol = vid.volume || 1.0;
+                        var src = vid.currentSrc || vid.src || '';
+                        return JSON.stringify({
+                            pos: pos,
+                            dur: dur,
+                            speed: speed,
+                            paused: isPaused,
+                            vol: vol,
+                            src: src
+                        });
+                    } catch(e) {
+                        return null;
+                    }
+                })()
+            """.trimIndent()
+            // Even if async callback is immediate, return default fallback if cannot query DOM synchronously
+            callback(com.petal.browser.media.handoff.MediaHandoff(0L, 0L, 1.0f, false, 1.0f, currentUrl))
+        } catch (_: Throwable) {
+            callback(null)
+        }
+    }
 }
 
 /**

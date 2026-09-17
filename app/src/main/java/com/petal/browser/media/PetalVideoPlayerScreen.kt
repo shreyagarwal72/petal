@@ -51,6 +51,8 @@ import kotlinx.coroutines.isActive
 fun PetalVideoPlayerScreen(
     videoUri: Uri,
     displayName: String,
+    initialPositionMs: Long = 0L,
+    initialSpeed: Float = 1.0f,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -62,15 +64,21 @@ fun PetalVideoPlayerScreen(
         ExoPlayer.Builder(context).build().apply {
             val mediaItem = MediaItem.fromUri(videoUri)
             setMediaItem(mediaItem)
+            if (initialPositionMs > 0L) {
+                seekTo(initialPositionMs)
+            }
+            if (initialSpeed != 1.0f) {
+                playbackParameters = PlaybackParameters(initialSpeed)
+            }
             prepare()
             playWhenReady = true
         }
     }
 
     var isPlaying by remember { mutableStateOf(true) }
-    var positionMs by remember { mutableLongStateOf(0L) }
+    var positionMs by remember { mutableLongStateOf(initialPositionMs) }
     var durationMs by remember { mutableLongStateOf(0L) }
-    var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
+    var playbackSpeed by remember { mutableFloatStateOf(initialSpeed) }
     var resizeMode by remember { mutableStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT) }
 
     var videoWidth by remember { mutableIntStateOf(16) }

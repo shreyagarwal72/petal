@@ -201,6 +201,49 @@ object BrowserNavigationDelegate {
                     }
                 }
 
+                override fun onOpenDevConsole() {
+                    val geckoView = currentController as? com.petal.browser.view.PetalGeckoView
+                    val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+                        setViewTreeLifecycleOwner(activity)
+                        setViewTreeViewModelStoreOwner(activity)
+                        androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+                        setContent {
+                            com.petal.browser.ui.theme.PetalExpressiveTheme {
+                                com.petal.browser.tools.PetalDevConsoleSheet(
+                                    onExecuteScript = { script, callback ->
+                                        geckoView?.evaluateJavascript(script, callback)
+                                            ?: callback("Error: Web session not active")
+                                    },
+                                    onDismissRequest = {
+                                        (parent as? android.view.ViewGroup)?.removeView(this)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    val decor = activity.window.decorView as? android.view.ViewGroup
+                    decor?.addView(composeView)
+                }
+
+                override fun onOpenSafeLocker() {
+                    val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
+                        setViewTreeLifecycleOwner(activity)
+                        setViewTreeViewModelStoreOwner(activity)
+                        androidx.savedstate.setViewTreeSavedStateRegistryOwner(activity)
+                        setContent {
+                            com.petal.browser.ui.theme.PetalExpressiveTheme {
+                                com.petal.browser.privacy.SafeLockerSheet(
+                                    onDismissRequest = {
+                                        (parent as? android.view.ViewGroup)?.removeView(this)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    val decor = activity.window.decorView as? android.view.ViewGroup
+                    decor?.addView(composeView)
+                }
+
                 override fun onTriggerMediaMode() {
                     val isPipSupported = activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
                     val isBgPlayEnabled = prefs.getBoolean("sp_background_play", false)

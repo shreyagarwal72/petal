@@ -60,6 +60,8 @@ class MediaPlayerActivity : ComponentActivity() {
 
         val displayName = extractDisplayName(targetUri)
         val isAudio = isAudioMedia(targetUri, intent.type)
+        val initialPositionMs = intent.getLongExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_POSITION_MS, 0L)
+        val initialSpeed = intent.getFloatExtra(com.petal.browser.media.handoff.MediaHandoff.EXTRA_HANDOFF_SPEED, 1.0f)
 
         setContent {
             PetalExpressiveTheme {
@@ -78,6 +80,8 @@ class MediaPlayerActivity : ComponentActivity() {
                         PetalVideoPlayerScreen(
                             videoUri = targetUri,
                             displayName = displayName,
+                            initialPositionMs = initialPositionMs,
+                            initialSpeed = initialSpeed,
                             onClose = { finish() }
                         )
                     }
