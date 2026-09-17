@@ -2,6 +2,9 @@ package com.petal.browser.ui.components
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.activity.BrowserActivity

@@ -563,8 +563,10 @@ fun FirefoxAccountSyncScreen(
                                                     val loginUrl = fxaManager.beginLogin()
                                                     onOpenOAuth(
                                                         PetalShortcut(
-                                                            title = "Firefox Sign In",
-                                                            url = loginUrl
+                                                            label = "Firefox Sign In",
+                                                            url = loginUrl,
+                                                            siteId = "firefox_sync",
+                                                            containerColor = Color(0xFFFF9400)
                                                         )
                                                     )
                                                 },

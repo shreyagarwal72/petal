@@ -1275,18 +1275,6 @@ class PetalGeckoView @JvmOverloads constructor(
         applySettings()
     }
 
-    fun evaluateJavascript(script: String, callback: ((String?) -> Unit)? = null) {
-        try {
-            if (script.startsWith("javascript:")) {
-                session.loadUri(script)
-            } else {
-                session.loadUri("javascript:(function(){try{" + script + "}catch(e){}})();")
-            }
-        } catch (e: Exception) {
-            android.util.Log.w(TAG, "evaluateJavascript error: " + e.message)
-        }
-    }
-
     // ─────────────────────────────────────────────────────────────────────────
     // AlbumController Implementation
     // ─────────────────────────────────────────────────────────────────────────
