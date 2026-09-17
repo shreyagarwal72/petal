@@ -36,9 +36,10 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         void onRelease(boolean triggered);
     }
 
-    private static final float DEFAULT_PULL_DISTANCE_DP = 100f;
-    private static final float TRIGGER_THRESHOLD = 0.70f;
-    private static final float DRAG_DAMPING = 0.60f;
+    private static final float DEFAULT_PULL_DISTANCE_DP = 80f;
+    private static final float EDGE_THRESHOLD_DP = 120f;
+    private static final float TRIGGER_THRESHOLD = 1.0f;
+    private static final float DRAG_DAMPING = 0.40f;
 
     private CanPull canPull = () -> true;
     private OnPullListener onPullListener;
@@ -48,6 +49,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     private final int doubleTapTimeout;
     private final int doubleTapSlopSquare;
     private float pullDistancePx;
+    private float edgeThresholdPx;
     private float downX;
     private float downY;
     private float previousX;
@@ -78,6 +80,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         int doubleTapSlop = vc.getScaledDoubleTapSlop();
         doubleTapSlopSquare = doubleTapSlop * doubleTapSlop;
         pullDistancePx = DEFAULT_PULL_DISTANCE_DP * context.getResources().getDisplayMetrics().density;
+        edgeThresholdPx = EDGE_THRESHOLD_DP * context.getResources().getDisplayMetrics().density;
     }
 
     public void setCanPull(CanPull canPull) {
@@ -92,9 +95,14 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         this.onReleaseListener = listener;
     }
 
-    /** Drag distance (in dp) that maps to 100% pull progress. Defaults to 100dp. */
+    /** Drag distance (in dp) that maps to 100% pull progress. Defaults to 80dp like omni-browser. */
     public void setPullDistanceDp(float dp) {
         this.pullDistancePx = dp * getResources().getDisplayMetrics().density;
+    }
+
+    /** Top edge initiation touch area threshold (in dp). Defaults to 120dp like omni-browser. */
+    public void setEdgeThresholdDp(float dp) {
+        this.edgeThresholdPx = dp * getResources().getDisplayMetrics().density;
     }
 
     private boolean canChildScrollUp() {
@@ -221,17 +229,12 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     return false;
                 }
 
-                // Chrome/Firefox don't gate pull-to-refresh by where on screen the
-                // gesture starts - only by whether the page is scrolled to the top
-                // (canChildScrollUp/canPull below) and vertical-drag dominance. A
-                // touch-start height restriction here just made drags started lower
-                // on the page silently do nothing, which read as "pull to refresh
-                // doesn't work".
-                if (!intercepting && !canChildScrollUp() && canPull.canPull()) {
+                // Match omni-browser: pull-to-refresh initiates when touch starts within the top edge threshold (120dp),
+                // the child cannot scroll up (scrollY <= 0), deltaY > touchSlop, and gesture is vertically dominant.
+                if (!intercepting && downY < edgeThresholdPx && !canChildScrollUp() && canPull.canPull()) {
                     float dx = currentX - downX;
                     float dy = currentY - downY;
-                    // Allow pulling when dragging downward from top of web content with vertical dominance
-                    if (dy > touchSlop && dy > Math.abs(dx) * 1.35f) {
+                    if (dy > touchSlop && dy > Math.abs(dx)) {
                         intercepting = true;
                         dragging = true;
                         return true;
@@ -274,8 +277,8 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
             case MotionEvent.ACTION_MOVE:
                 if (dragging) {
-                    float rawDy = Math.max(0f, event.getY() - downY);
-                    float dampedDy = rawDy * DRAG_DAMPING;
+                    float pullDistance = Math.max(0f, (event.getY() - downY) - touchSlop);
+                    float dampedDy = pullDistance * DRAG_DAMPING;
                     float progress = Math.min(1f, dampedDy / pullDistancePx);
                     if (onPullListener != null) {
                         onPullListener.onPull(progress);
@@ -286,9 +289,9 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 if (dragging) {
-                    float rawDy = Math.max(0f, event.getY() - downY);
-                    float dampedDy = rawDy * DRAG_DAMPING;
-                    float progress = Math.min(1f, dampedDy / pullDistancePx);
+                    float pullDistance = Math.max(0f, (event.getY() - downY) - touchSlop);
+                    float dampedDy = pullDistance * DRAG_DAMPING;
+                    float progress = dampedDy / pullDistancePx;
                     dragging = false;
                     intercepting = false;
                     if (onReleaseListener != null) {

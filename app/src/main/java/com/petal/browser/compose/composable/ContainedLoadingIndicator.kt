@@ -131,9 +131,9 @@ fun RefreshBarLoadingIndicator(
                 .padding(top = 8.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            val offsetY = if (isRefreshing) 16.dp else if (!isVisible) 0.dp else (pullProgress.coerceIn(0f, 1f) * 36.dp.value).dp
-            val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.8f).coerceIn(0f, 1f)
-            val targetScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.35f + (pullProgress * 0.65f)).coerceIn(0.35f, 1.0f)
+            val offsetY = if (isRefreshing) 40.dp else if (!isVisible) 0.dp else ((pullProgress * 80.dp.value).coerceAtMost(120f)).dp
+            val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.5f).coerceIn(0f, 1f)
+            val targetScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.4f + (pullProgress * 0.6f)).coerceIn(0.4f, 1.0f)
             // Bouncy settle once the indicator commits to refreshing (target snaps to 1.0),
             // rather than animating every intermediate value while the user is still dragging -
             // that keeps the live pull feeling 1:1 with the finger, and only the final pop-in

@@ -3629,11 +3629,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         if (contentFrame == null) return;
 
-        // Works the same for every page hosted in main_content: a normal web
-        // page (PetalGeckoView), the home screen, or settings/downloads - all of
-        // them get swapped into this same container, and PullToRefreshFrameLayout
-        // intercepts the drag regardless of what's currently inside it.
-        contentFrame.setPullDistanceDp(120f);
+        // Pull distance 80dp with 120dp top touch area threshold matching omni-browser
+        contentFrame.setPullDistanceDp(80f);
+        contentFrame.setEdgeThresholdDp(120f);
         contentFrame.setCanPull(() -> {
             // If internal native Compose views (Settings, History, Downloads, Account) are swapped into contentFrame, disable pull to refresh
             if (isOverlayScreenShowing) {
