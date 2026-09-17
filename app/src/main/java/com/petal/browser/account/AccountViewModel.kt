@@ -18,5 +18,6 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         GoogleAccountManager.init(getApplication())
+        com.petal.browser.account.mozilla.FxAccountManager.getInstance().initialize(getApplication())
     }
 }

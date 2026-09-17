@@ -565,6 +565,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         } catch (Exception ignored) {}
         HelperUnit.initTheme(activity);
         com.petal.browser.account.GoogleAccountManager.INSTANCE.init(this);
+        com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance().initialize(this);
         com.petal.browser.unit.BackupUnit.performAutoVersionBackup(this);
 
         if (sp.getBoolean("sp_screenOn", false)) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -751,6 +752,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.onStart();
         try {
             com.petal.browser.account.GoogleAccountManager.INSTANCE.init(this);
+            com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance().initialize(this);
         } catch (Exception e) {
             e.printStackTrace();
         }
