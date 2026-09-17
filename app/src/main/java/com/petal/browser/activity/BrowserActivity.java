@@ -2489,7 +2489,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             filePathCallback,
             fileChooserParams,
             () -> {
-                launchSystemFileChooserFallback(filePathCallback, fileChooserParams);
+                com.petal.browser.compose.file.PetalFilePickerBridge.handleFileChooser(
+                    this,
+                    filePathCallback,
+                    fileChooserParams,
+                    () -> {
+                        launchSystemFileChooserFallback(filePathCallback, fileChooserParams);
+                        return kotlin.Unit.INSTANCE;
+                    }
+                );
                 return kotlin.Unit.INSTANCE;
             }
         );

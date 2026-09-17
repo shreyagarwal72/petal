@@ -202,4 +202,26 @@
     <string name="petal_file_viewer_name">Petal Universal File Viewer</string>
     <string name="petal_pwa_name">Petal Web App</string>
     <string name="petal_custom_tab_name">Petal Custom Tab</string>
+    <!-- Built-in File Picker & Selector -->
+    <string name="file_picker_title">Select File</string>
+    <string name="file_picker_select_folder_title">Select Folder</string>
+    <string name="file_picker_previous_directory">Previous directory</string>
+    <string name="file_picker_no_files">No files found</string>
+    <string name="file_picker_read_error">Cannot read this directory</string>
+    <string name="file_picker_internal_storage">Internal Storage</string>
+    <string name="file_picker_downloads">Downloads</string>
+    <string name="file_picker_sd_card">SD Card</string>
+    <string name="file_picker_root">Root (/)</string>
+    <string name="file_picker_sort_name_asc">Name (A–Z)</string>
+    <string name="file_picker_sort_name_desc">Name (Z–A)</string>
+    <string name="file_picker_sort_size_desc">Size (largest first)</string>
+    <string name="file_picker_sort_size_asc">Size (smallest first)</string>
+    <string name="file_picker_sort_date_desc">Date (newest first)</string>
+    <string name="file_picker_sort_date_asc">Date (oldest first)</string>
+    <string name="file_picker_show_hidden_files">Show hidden files</string>
+    <string name="file_picker_select_folder">Select this folder</string>
+    <string name="file_picker_preview">Preview</string>
+    <string name="file_picker_search_hint">Search in current folder…</string>
+    <string name="file_picker_grant_permission">Petal needs storage permission to browse files.</string>
+    <string name="file_picker_grant_button">Grant Storage Access</string>
 </resources>
