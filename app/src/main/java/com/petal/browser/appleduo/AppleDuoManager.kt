@@ -46,6 +46,11 @@ object AppleDuoManager {
 
     private var motionModel: FoldMotionModel? = null
     private var shaderSource: String? = null
+    private var cachedRuntimeShader: RuntimeShader? = null
+    private var lastAppliedTilt: Float = Float.NaN
+    private var lastAppliedHingeSide: Float = Float.NaN
+    private var lastAppliedWidth: Float = -1f
+    private var lastAppliedHeight: Float = -1f
 
     private val _isEnabled = MutableStateFlow(false)
     val isEnabled: StateFlow<Boolean> = _isEnabled.asStateFlow()
@@ -348,18 +353,36 @@ object AppleDuoManager {
             val xdpi = dm.xdpi
             val pxPerMm = if (xdpi.isFinite() && xdpi > 0f) xdpi / 25.4f else 6f
 
-            val shader = RuntimeShader(src).apply {
-                setFloatUniform("resolution", width, height)
-                setFloatUniform("tiltDegrees", tilt)
-                setFloatUniform("eyeDistancePx", _eyeDistance.value * pxPerMm)
-                setFloatUniform("hingeSide", _currentHingeSide.value)
-                setFloatUniform("blurSpread", _blurSpread.value)
-                setFloatUniform("darkening", _darkening.value * 6f / pxPerMm)
+            // Avoid re-compiling RuntimeShader on every sensor tick (60/120Hz).
+            // Re-use cachedRuntimeShader and update uniforms in-place.
+            var shader = cachedRuntimeShader
+            if (shader == null) {
+                shader = RuntimeShader(src)
+                cachedRuntimeShader = shader
             }
 
-            val renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "content")
-            view.setRenderEffect(renderEffect)
-            view.invalidate()
+            val hingeSideVal = _currentHingeSide.value
+            // Only recreate RenderEffect if uniforms or dimensions changed significantly
+            if (Math.abs(tilt - lastAppliedTilt) > 0.05f ||
+                hingeSideVal != lastAppliedHingeSide ||
+                width != lastAppliedWidth ||
+                height != lastAppliedHeight) {
+
+                shader.setFloatUniform("resolution", width, height)
+                shader.setFloatUniform("tiltDegrees", tilt)
+                shader.setFloatUniform("eyeDistancePx", _eyeDistance.value * pxPerMm)
+                shader.setFloatUniform("hingeSide", hingeSideVal)
+                shader.setFloatUniform("blurSpread", _blurSpread.value)
+                shader.setFloatUniform("darkening", _darkening.value * 6f / pxPerMm)
+
+                lastAppliedTilt = tilt
+                lastAppliedHingeSide = hingeSideVal
+                lastAppliedWidth = width
+                lastAppliedHeight = height
+
+                val renderEffect = RenderEffect.createRuntimeShaderEffect(shader, "content")
+                view.setRenderEffect(renderEffect)
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed applying RenderEffect to view", e)
         }
@@ -375,6 +398,8 @@ object AppleDuoManager {
             view.post { clearShaderEffect(view) }
             return
         }
+        lastAppliedTilt = Float.NaN
+        lastAppliedHingeSide = Float.NaN
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 view.setRenderEffect(null)

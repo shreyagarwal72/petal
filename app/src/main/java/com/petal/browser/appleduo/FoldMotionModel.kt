@@ -164,10 +164,24 @@ class FoldMotionModel(context: Context) : SensorEventListener {
                     if (autoRecenter) wrapAngle(predicted - baselineRad) else predicted
 
                 tiltRad += wrapAngle(target - tiltRad) * SMOOTHING
-                val tiltDeg = Math.toDegrees(tiltRad.toDouble()).toFloat()
+                var rawTiltDeg = Math.toDegrees(tiltRad.toDouble()).toFloat()
                     .coerceIn(-MAX_TILT, MAX_TILT)
-                _tiltDegrees.value = tiltDeg
-                _hingeSide.value = if (tiltDeg >= 0f) 1f else -1f
+
+                // Apply deadzone around center to eliminate trembling
+                val filteredTilt = if (kotlin.math.abs(rawTiltDeg) < DEADZONE_DEG) {
+                    0f
+                } else {
+                    val sign = if (rawTiltDeg > 0f) 1f else -1f
+                    sign * (kotlin.math.abs(rawTiltDeg) - DEADZONE_DEG) * (MAX_TILT / (MAX_TILT - DEADZONE_DEG))
+                }
+
+                _tiltDegrees.value = filteredTilt
+                // Hinge hysteresis avoids flickering at the midpoint
+                if (filteredTilt > HINGE_HYSTERESIS_DEG) {
+                    _hingeSide.value = 1f
+                } else if (filteredTilt < -HINGE_HYSTERESIS_DEG) {
+                    _hingeSide.value = -1f
+                }
             }
             Sensor.TYPE_GYROSCOPE -> {
                 gyroRate[0] = event.values[0]
@@ -232,9 +246,14 @@ class FoldMotionModel(context: Context) : SensorEventListener {
 
     companion object {
         const val MAX_TILT = 45f
-        const val SMOOTHING = 0.7f
-        const val PREDICTION_INTERVAL = 0.04f
-        const val RECENTER_TAU_S = 15f
-        const val STILL_THRESHOLD_RAD_S = 0.15f
+        // Adaptive exponential filter: 0.35f yields buttery smooth transitions without lag
+        const val SMOOTHING = 0.35f
+        const val PREDICTION_INTERVAL = 0.02f
+        const val RECENTER_TAU_S = 12f
+        const val STILL_THRESHOLD_RAD_S = 0.12f
+        // Deadzone in degrees to suppress tiny micro-tremors from hand shakiness
+        const val DEADZONE_DEG = 0.6f
+        // Hysteresis threshold to prevent rapid hinge flipping near center
+        const val HINGE_HYSTERESIS_DEG = 1.0f
     }
 }
