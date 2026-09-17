@@ -83,10 +83,13 @@ public class AdapterTabs {
         context.getTheme().resolveAttribute(R.attr.colorSurface, typedValue, true);
         albumCardView.setCardBackgroundColor(color);
         albumTitle.setTypeface(null, Typeface.BOLD);
-        albumView.setOnClickListener(view -> {
+        View.OnClickListener clickListener = view -> {
             albumCardView.setCardBackgroundColor(color);
+            browserController.showAlbum(albumController);
             browserController.hideOverview();
-        });
+        };
+        albumView.setOnClickListener(clickListener);
+        albumCardView.setOnClickListener(clickListener);
     }
 
     void deactivate() {
@@ -95,9 +98,11 @@ public class AdapterTabs {
         int color = typedValue.data;
         albumCardView.setCardBackgroundColor(color);
         albumTitle.setTypeface(null, Typeface.NORMAL);
-        albumView.setOnClickListener(view -> {
+        View.OnClickListener deactClickListener = view -> {
             browserController.showAlbum(albumController);
             browserController.hideOverview();
-        });
+        };
+        albumView.setOnClickListener(deactClickListener);
+        albumCardView.setOnClickListener(deactClickListener);
     }
 }

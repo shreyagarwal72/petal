@@ -1325,11 +1325,16 @@ private fun PetalTabCard(
             }
             .bouncyClickable(onClick = {
                 if (!isDragging) {
-                    if (isSelectionMode) onTabSelect() else isSelecting = true
+                    onTabSelect()
                 }
             })
             .pointerInput(tab.id) {
                 detectTapGestures(
+                    onTap = {
+                        if (!isDragging) {
+                            onTabSelect()
+                        }
+                    },
                     onLongPress = {
                         if (!isDragging) {
                             onLongPress()

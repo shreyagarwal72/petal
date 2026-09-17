@@ -205,7 +205,16 @@ object PetalTabSwitcherBridge {
                         tabs = tabItems,
                         onBack = onBackPress,
                         onTabSelect = { tabItem ->
-                            val targetAlbum = BrowserContainer.list().find { it.hashCode().toString() == tabItem.id }
+                            val list = BrowserContainer.list()
+                            val targetAlbum = list.find { it.hashCode().toString() == tabItem.id }
+                                ?: list.find { album ->
+                                    val id = when (album) {
+                                        is com.petal.browser.view.PetalGeckoView -> album.getTabId()
+                                        is com.petal.browser.browser.PlaceholderAlbumController -> album.getTabId()
+                                        else -> null
+                                    }
+                                    id != null && id == tabItem.id
+                                }
                             if (targetAlbum != null) {
                                 onSelectTab(targetAlbum)
                             }
