@@ -23,6 +23,7 @@ import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 fun AddressBarSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null,
     viewModel: AddressBarSettingsViewModel = hiltViewModel()
 ) {
     val position by viewModel.position.collectAsStateWithLifecycle()
@@ -44,7 +45,7 @@ fun AddressBarSettingsScreen(
                 Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                SettingsCategoryCard("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position") {
+                SettingsCategoryCard("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
                     Text("Choose where the compact address bar is placed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     ChoiceRow(
                         options = listOf("TOP" to "Top", "BOTTOM" to "Bottom"),
@@ -57,7 +58,7 @@ fun AddressBarSettingsScreen(
                     )
                 }
 
-                SettingsCategoryCard("Size", icon = Icons.Rounded.ViewCompact) {
+                SettingsCategoryCard("Size", icon = Icons.Rounded.ViewCompact, cardId = "address_bar_size", targetHighlightId = targetHighlightItemId) {
                     Text("Compact is the recommended short-height layout.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     ChoiceRow(
                         options = listOf("COMPACT" to "Compact", "STANDARD" to "Standard"),
@@ -66,7 +67,7 @@ fun AddressBarSettingsScreen(
                     )
                 }
 
-                SettingsCategoryCard("Right-side action", icon = Icons.Rounded.AutoAwesome) {
+                SettingsCategoryCard("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
                     Text("Choose the optional action shown beside the address field.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     ChoiceRow(
                         options = listOf("AI" to "AI", "BOOKMARK" to "Bookmark", "NONE" to "None"),
@@ -75,7 +76,7 @@ fun AddressBarSettingsScreen(
                     )
                 }
 
-                SettingsCategoryCard("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp) {
+                SettingsCategoryCard("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
                     ToggleRow("Swipe to switch tabs", "Swipe the address bar left or right to move between tabs.", Icons.Rounded.SwapHoriz, swipeTabs, viewModel::setSwipeTabs)
                     ToggleRow("Long-press quick actions", "Show copy, paste, bookmark and refresh actions on long press.", Icons.Rounded.MoreVert, quickActions, viewModel::setQuickActions)
                 }

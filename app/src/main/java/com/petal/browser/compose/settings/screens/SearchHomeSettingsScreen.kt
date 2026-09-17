@@ -30,6 +30,7 @@ import com.petal.browser.ui.components.allSearchEngines
 @Composable
 fun SearchHomeSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToAddressBarSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     targetHighlightItemId: String? = null,
     viewModel: SearchHomeSettingsViewModel = hiltViewModel()
@@ -58,6 +59,7 @@ fun SearchHomeSettingsScreen(
         onForceDarkModeChange = viewModel::setForceDarkMode,
         onEnableLiveSuggestionsChange = viewModel::setEnableLiveSuggestions,
         onNavigateBack = onNavigateBack,
+        onNavigateToAddressBarSettings = onNavigateToAddressBarSettings,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
     )
@@ -81,6 +83,7 @@ fun SearchHomeSettingsScreenContent(
     onForceDarkModeChange: (Boolean) -> Unit,
     onEnableLiveSuggestionsChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToAddressBarSettings: () -> Unit = {},
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
 ) {
@@ -251,6 +254,47 @@ fun SearchHomeSettingsScreenContent(
                         checked = forceDarkMode,
                         onCheckedChange = onForceDarkModeChange
                     )
+                }
+
+                // Address Bar Settings Option
+                SettingsCategoryCard(
+                    title = "Address Bar & Toolbar",
+                    icon = Icons.Rounded.SwapVert,
+                    cardId = "address_bar_settings_link",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Surface(
+                        onClick = onNavigateToAddressBarSettings,
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Address Bar Settings",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Configure top/bottom position, compact size, right-side action, and swipe gestures",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Rounded.ChevronRight,
+                                contentDescription = "Open Address Bar Settings",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(32.dp))

@@ -166,6 +166,7 @@ fun PetalSettingsScreen(
     onBackPress: () -> Unit = {}
 ) {
     var currentCategory by remember(initialCategory) { mutableStateOf(initialCategory) }
+    var currentHighlightId by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
 
     val isCategoryDrilled = currentCategory != SettingsCategory.OVERVIEW && searchQuery.isBlank()
@@ -174,14 +175,20 @@ fun PetalSettingsScreen(
     if (isCategoryDrilled) {
         PetalPredictiveBackSurface(
             enabled = true,
-            onBack = { currentCategory = SettingsCategory.OVERVIEW }
+            onBack = {
+                currentCategory = SettingsCategory.OVERVIEW
+                currentHighlightId = null
+            }
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 PetalScreenWrapper(isBehind = true) {
                     SettingsHubScreen(
                         searchQuery = searchQuery,
                         onSearchQueryChange = { searchQuery = it },
-                        onCategoryClick = { category, _ -> currentCategory = category },
+                        onCategoryClick = { category, highlightId ->
+                            currentCategory = category
+                            currentHighlightId = highlightId
+                        },
                         onNavigateBack = onBackPress
                     )
                 }
@@ -189,7 +196,15 @@ fun PetalSettingsScreen(
                     PetalSettingsAnimatedContent(targetKey = activeCategory) {
                         RenderCategoryContent(
                             category = activeCategory,
-                            onNavigateBack = { currentCategory = SettingsCategory.OVERVIEW }
+                            targetHighlightItemId = currentHighlightId,
+                            onNavigateToAddressBar = {
+                                currentCategory = SettingsCategory.ADDRESS_BAR
+                                currentHighlightId = null
+                            },
+                            onNavigateBack = {
+                                currentCategory = SettingsCategory.OVERVIEW
+                                currentHighlightId = null
+                            }
                         )
                     }
                 }
@@ -204,7 +219,10 @@ fun PetalSettingsScreen(
                 SettingsHubScreen(
                     searchQuery = searchQuery,
                     onSearchQueryChange = { searchQuery = it },
-                    onCategoryClick = { category, _ -> currentCategory = category },
+                    onCategoryClick = { category, highlightId ->
+                        currentCategory = category
+                        currentHighlightId = highlightId
+                    },
                     onNavigateBack = onBackPress
                 )
             }
@@ -215,6 +233,8 @@ fun PetalSettingsScreen(
 @Composable
 private fun RenderCategoryContent(
     category: SettingsCategory,
+    targetHighlightItemId: String? = null,
+    onNavigateToAddressBar: () -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
     when (category) {
@@ -229,13 +249,17 @@ private fun RenderCategoryContent(
             PrivacySettingsScreen(onNavigateBack = onNavigateBack)
         }
         SettingsCategory.SEARCH_HOMEPAGE -> {
-            SearchHomeSettingsScreen(onNavigateBack = onNavigateBack)
+            SearchHomeSettingsScreen(
+                onNavigateBack = onNavigateBack,
+                onNavigateToAddressBarSettings = onNavigateToAddressBar,
+                targetHighlightItemId = targetHighlightItemId
+            )
         }
         SettingsCategory.DISPLAY_ZOOM -> {
             DisplaySettingsScreen(onNavigateBack = onNavigateBack)
         }
         SettingsCategory.ADDRESS_BAR -> {
-            AddressBarSettingsScreen(onNavigateBack = onNavigateBack)
+            AddressBarSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
         }
         SettingsCategory.EXPERIMENTAL -> {
             ExperimentalSettingsScreen(onNavigateBack = onNavigateBack)
@@ -243,7 +267,8 @@ private fun RenderCategoryContent(
         SettingsCategory.TABS -> {
             TabsSettingsScreen(
                 onNavigateToInactiveSettings = { /* dedicated page is shown from Tabs */ },
-                onNavigateBack = onNavigateBack
+                onNavigateBack = onNavigateBack,
+                targetHighlightItemId = targetHighlightItemId
             )
         }
         SettingsCategory.MISCELLANEOUS -> {

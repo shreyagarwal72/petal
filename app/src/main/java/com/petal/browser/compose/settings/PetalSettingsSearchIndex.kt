@@ -446,6 +446,8 @@ object PetalSettingsSearchIndex {
         SettingsCategory.PRIVACY,
         SettingsCategory.SEARCH_HOMEPAGE,
         SettingsCategory.DISPLAY_ZOOM,
+        SettingsCategory.ADDRESS_BAR,
+        SettingsCategory.TABS,
         SettingsCategory.EXPERIMENTAL,
         SettingsCategory.MISCELLANEOUS,
         SettingsCategory.DATA_STORAGE,
