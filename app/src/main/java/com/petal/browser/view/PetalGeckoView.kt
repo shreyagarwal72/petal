@@ -1701,6 +1701,16 @@ class PetalGeckoView @JvmOverloads constructor(
             if (pm != null && intent.resolveActivity(pm) != null) {
                 act.startActivity(intent)
                 return true
+            } else if (lower.startsWith("magnet:")) {
+                // Friendly torrent/magnet handler when no dedicated torrent client is installed
+                val clipboard = act.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Magnet Link", url))
+                android.widget.Toast.makeText(
+                    act,
+                    "Magnet link copied to clipboard (install a torrent client to open directly)",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                return true
             }
         } catch (_: Exception) {}
 

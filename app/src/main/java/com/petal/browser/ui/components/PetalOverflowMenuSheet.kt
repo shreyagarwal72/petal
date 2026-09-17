@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
@@ -628,6 +629,78 @@ fun PetalOverflowMenuSheet(
                             isSubItem = true,
                             onClick = onOpenSafeLocker
                         )
+
+                        val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+                        var universalCopyEnabled by remember {
+                            mutableStateOf(sp.getBoolean("petal_builtin_universal_copy", true))
+                        }
+                        var aiBlockerEnabled by remember {
+                            mutableStateOf(sp.getBoolean("petal_builtin_ai_blocker", true))
+                        }
+
+                        MenuRowItem(
+                            icon = Icons.Rounded.ContentCopy,
+                            title = "Universal Copy",
+                            subtitle = "Force text copy on blocked pages",
+                            isSubItem = true,
+                            trailingContent = {
+                                Switch(
+                                    checked = universalCopyEnabled,
+                                    onCheckedChange = { isChecked ->
+                                        universalCopyEnabled = isChecked
+                                        sp.edit().putBoolean("petal_builtin_universal_copy", isChecked).apply()
+                                        com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(
+                                            context,
+                                            "petal_builtin_universal_copy",
+                                            isChecked
+                                        )
+                                    },
+                                    modifier = Modifier.scale(0.8f)
+                                )
+                            },
+                            onClick = {
+                                val newState = !universalCopyEnabled
+                                universalCopyEnabled = newState
+                                sp.edit().putBoolean("petal_builtin_universal_copy", newState).apply()
+                                com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(
+                                    context,
+                                    "petal_builtin_universal_copy",
+                                    newState
+                                )
+                            }
+                        )
+
+                        MenuRowItem(
+                            icon = Icons.Rounded.SmartToy,
+                            title = "AI Overview Blocker",
+                            subtitle = "Collapse AI summary search cards",
+                            isSubItem = true,
+                            trailingContent = {
+                                Switch(
+                                    checked = aiBlockerEnabled,
+                                    onCheckedChange = { isChecked ->
+                                        aiBlockerEnabled = isChecked
+                                        sp.edit().putBoolean("petal_builtin_ai_blocker", isChecked).apply()
+                                        com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(
+                                            context,
+                                            "petal_builtin_ai_blocker",
+                                            isChecked
+                                        )
+                                    },
+                                    modifier = Modifier.scale(0.8f)
+                                )
+                            },
+                            onClick = {
+                                val newState = !aiBlockerEnabled
+                                aiBlockerEnabled = newState
+                                sp.edit().putBoolean("petal_builtin_ai_blocker", newState).apply()
+                                com.petal.browser.extensions.PetalBuiltInExtensionManager.setEnabled(
+                                    context,
+                                    "petal_builtin_ai_blocker",
+                                    newState
+                                )
+                            }
+                        )
                     }
                 }
 
@@ -687,6 +760,7 @@ private fun MenuRowItem(
     trailingIcon: ImageVector? = null,
     badgeCount: Int? = null,
     isSubItem: Boolean = false,
+    trailingContent: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -738,7 +812,9 @@ private fun MenuRowItem(
                     )
                 }
             }
-            if (badgeCount != null) {
+            if (trailingContent != null) {
+                trailingContent()
+            } else if (badgeCount != null) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
