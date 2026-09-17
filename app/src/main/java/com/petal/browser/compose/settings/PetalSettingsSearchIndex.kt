@@ -303,6 +303,13 @@ object PetalSettingsSearchIndex {
             keywords = listOf("address bar", "omnibox", "url bar", "toolbar", "compact", "bottom", "top", "ai", "bookmark", "swipe", "quick actions")
         ),
         SettingsSearchItem(
+            id = "address_bar_gestures",
+            title = "Address Bar Swipe & Quick Actions",
+            subtitle = "Horizontal swipe across the address bar to switch tabs and long-press quick actions",
+            category = SettingsCategory.ADDRESS_BAR,
+            keywords = listOf("swipe tabs", "address bar swipe", "switch tabs", "quick actions", "clean copy", "paste and go")
+        ),
+        SettingsSearchItem(
             id = "address_bar_search_engine",
             title = "Custom Search Engines",
             subtitle = "Add unlimited search engines with a {searchTerms} or %s URL template",

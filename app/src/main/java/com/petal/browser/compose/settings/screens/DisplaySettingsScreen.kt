@@ -46,8 +46,6 @@ fun DisplaySettingsScreen(
     val readerModeDetection by viewModel.readerModeDetection.collectAsStateWithLifecycle()
     val caretBrowsing by viewModel.caretBrowsing.collectAsStateWithLifecycle()
     val touchpadSwipeNav by viewModel.touchpadSwipeNav.collectAsStateWithLifecycle()
-    val addressBarSwipeTabs by viewModel.addressBarSwipeTabs.collectAsStateWithLifecycle()
-    val addressBarQuickActions by viewModel.addressBarQuickActions.collectAsStateWithLifecycle()
 
     val doubleBackExit by viewModel.doubleBackExit.collectAsStateWithLifecycle()
     val appleDuoEnabled by viewModel.appleDuoEnabled.collectAsStateWithLifecycle()
@@ -73,8 +71,6 @@ fun DisplaySettingsScreen(
         readerModeDetection = readerModeDetection,
         caretBrowsing = caretBrowsing,
         touchpadSwipeNav = touchpadSwipeNav,
-        addressBarSwipeTabs = addressBarSwipeTabs,
-        addressBarQuickActions = addressBarQuickActions,
         doubleBackExit = doubleBackExit,
         appleDuoEnabled = appleDuoEnabled,
         appleDuoWebsites = appleDuoWebsites,
@@ -97,8 +93,6 @@ fun DisplaySettingsScreen(
         onReaderModeDetectionChange = viewModel::setReaderModeDetection,
         onCaretBrowsingChange = viewModel::setCaretBrowsing,
         onTouchpadSwipeNavChange = viewModel::setTouchpadSwipeNav,
-        onAddressBarSwipeTabsChange = viewModel::setAddressBarSwipeTabs,
-        onAddressBarQuickActionsChange = viewModel::setAddressBarQuickActions,
         onDoubleBackExitChange = viewModel::setDoubleBackExit,
         onAppleDuoEnabledChange = viewModel::setAppleDuoEnabled,
         onAppleDuoWebsitesChange = viewModel::setAppleDuoWebsites,
@@ -127,8 +121,6 @@ fun DisplaySettingsScreenContent(
     readerModeDetection: Boolean,
     caretBrowsing: Boolean,
     touchpadSwipeNav: Boolean,
-    addressBarSwipeTabs: Boolean,
-    addressBarQuickActions: Boolean,
     doubleBackExit: Boolean,
     appleDuoEnabled: Boolean,
     appleDuoWebsites: Boolean,
@@ -151,8 +143,6 @@ fun DisplaySettingsScreenContent(
     onReaderModeDetectionChange: (Boolean) -> Unit,
     onCaretBrowsingChange: (Boolean) -> Unit,
     onTouchpadSwipeNavChange: (Boolean) -> Unit,
-    onAddressBarSwipeTabsChange: (Boolean) -> Unit,
-    onAddressBarQuickActionsChange: (Boolean) -> Unit,
     onDoubleBackExitChange: (Boolean) -> Unit,
     onAppleDuoEnabledChange: (Boolean) -> Unit,
     onAppleDuoWebsitesChange: (Boolean) -> Unit,
@@ -621,22 +611,6 @@ fun DisplaySettingsScreenContent(
                         icon = Icons.Rounded.Swipe,
                         checked = touchpadSwipeNav,
                         onCheckedChange = onTouchpadSwipeNavChange
-                    )
-
-                    ToggleRow(
-                        title = "Address Bar Horizontal Swipe to Switch Tabs",
-                        subtitle = "Swipe left or right across the address bar pill to fluidly switch between open tabs",
-                        icon = Icons.Rounded.Swipe,
-                        checked = addressBarSwipeTabs,
-                        onCheckedChange = onAddressBarSwipeTabsChange
-                    )
-
-                    ToggleRow(
-                        title = "Address Bar Long-Press Quick Actions",
-                        subtitle = "Long press the address bar for quick actions: Clean Copy, Paste & Go, Bookmark, and Hard Refresh",
-                        icon = Icons.Rounded.TouchApp,
-                        checked = addressBarQuickActions,
-                        onCheckedChange = onAddressBarQuickActionsChange
                     )
 
                     Surface(

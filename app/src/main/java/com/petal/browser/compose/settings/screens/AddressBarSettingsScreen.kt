@@ -77,8 +77,20 @@ fun AddressBarSettingsScreen(
                 }
 
                 SettingsCategoryCard("Gestures & Quick Actions", icon = Icons.Rounded.TouchApp, cardId = "address_bar_gestures", targetHighlightId = targetHighlightItemId) {
-                    ToggleRow("Swipe to switch tabs", "Swipe the address bar left or right to move between tabs.", Icons.Rounded.SwapHoriz, swipeTabs, viewModel::setSwipeTabs)
-                    ToggleRow("Long-press quick actions", "Show copy, paste, bookmark and refresh actions on long press.", Icons.Rounded.MoreVert, quickActions, viewModel::setQuickActions)
+                    ToggleRow(
+                        title = "Address Bar Horizontal Swipe to Switch Tabs",
+                        subtitle = "Swipe left or right across the address bar pill to fluidly switch between open tabs",
+                        icon = Icons.Rounded.Swipe,
+                        checked = swipeTabs,
+                        onCheckedChange = viewModel::setSwipeTabs
+                    )
+                    ToggleRow(
+                        title = "Address Bar Long-Press Quick Actions",
+                        subtitle = "Long press the address bar for quick actions: Clean Copy, Paste & Go, Bookmark, and Hard Refresh",
+                        icon = Icons.Rounded.TouchApp,
+                        checked = quickActions,
+                        onCheckedChange = viewModel::setQuickActions
+                    )
                 }
                 Spacer(Modifier.height(24.dp))
             }
