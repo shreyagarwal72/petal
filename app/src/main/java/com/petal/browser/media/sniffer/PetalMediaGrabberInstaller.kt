@@ -28,10 +28,15 @@ object PetalMediaGrabberInstaller {
                         override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any>? {
                             if (nativeApp != NATIVE_APP) return null
                             val json = runCatching { if (message is JSONObject) message else JSONObject(message.toString()) }.getOrNull() ?: return null
-                            if (json.optString("type") == "MEDIA_GRABBED") {
+                            val msgType = json.optString("type")
+                            val pageUrl = json.optString("pageUrl").takeIf { it.startsWith("http") }
+                            val cookies = json.optString("cookies").takeIf { it.isNotBlank() }
+                            if (pageUrl != null && cookies != null) {
+                                PetalMediaSniffer.recordCookiesForUrl(pageUrl, cookies)
+                            }
+                            if (msgType == "MEDIA_GRABBED") {
                                 val url = json.optString("url").takeIf { it.startsWith("http") } ?: return null
                                 val mime = json.optString("mimeType", "video/mp4")
-                                val cookies = json.optString("cookies").takeIf { it.isNotBlank() }
                                 val size = json.optLong("sizeBytes", -1L).takeIf { it > 0 }
                                 PetalMediaSniffer.onAggressiveMedia(url, mime, cookies, size)
                             }

@@ -48,12 +48,36 @@ object PetalMediaSniffer {
     fun onNetworkMedia(url: String, headers: Map<String, String> = emptyMap()) =
         interceptor.onMediaRequestDetected(url, headers)
 
+    private val pageCookiesMap = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    fun recordCookiesForUrl(url: String, cookies: String) {
+        if (cookies.isBlank()) return
+        try {
+            val host = android.net.Uri.parse(url).host?.lowercase()?.removePrefix("www.") ?: return
+            pageCookiesMap[host] = cookies
+        } catch (_: Exception) {}
+    }
+
+    fun getCookiesForUrl(url: String): String? {
+        try {
+            val host = android.net.Uri.parse(url).host?.lowercase()?.removePrefix("www.") ?: return null
+            return pageCookiesMap[host] ?: pageCookiesMap.entries.firstOrNull { (k, _) -> host.endsWith(k) || k.endsWith(host) }?.value
+        } catch (_: Exception) {
+            return null
+        }
+    }
+
     fun onAggressiveMedia(
         url: String,
         mimeType: String,
         cookies: String? = null,
         sizeBytes: Long? = null
-    ) = interceptor.onAggressiveMediaGrabbed(url, mimeType, cookies, sizeBytes)
+    ) {
+        if (!cookies.isNullOrBlank()) {
+            recordCookiesForUrl(url, cookies)
+        }
+        interceptor.onAggressiveMediaGrabbed(url, mimeType, cookies, sizeBytes)
+    }
 
     /**
      * Sends a detected direct media URL through Petal's native download manager.

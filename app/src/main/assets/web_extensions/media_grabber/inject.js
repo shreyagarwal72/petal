@@ -363,7 +363,13 @@
                (lower.includes('/dash/') && !lower.includes('/thumbnails/')) ||
                lower.includes('mpegurl') ||
                lower.includes('googlevideo.com') ||
-               lower.includes('videoplayback');
+               lower.includes('videoplayback') ||
+               lower.includes('cdninstagram.com') ||
+               lower.includes('fbcdn.net') ||
+               lower.includes('tiktokcdn.com') ||
+               lower.includes('byteoversea.com') ||
+               lower.includes('twimg.com') ||
+               lower.includes('v.redd.it');
     }
 
     function reportMedia(url, mimeType) {
@@ -598,13 +604,10 @@
         if (!video || video.tagName !== 'VIDEO') return false;
         // Fast-path: videoWidth/videoHeight do not force DOM layout reflow
         if (video.videoWidth > 0 && video.videoHeight > 0) {
-            if (video.videoWidth < 200 || video.videoHeight < 120) return false;
+            if (video.videoWidth < 140 || video.videoHeight < 80) return false;
         } else {
             const rect = video.getBoundingClientRect();
-            if (rect.width < 200 || rect.height < 120) return false;
-        }
-        if (video.muted && video.controls === false && video.getAttribute('autoplay') !== null) {
-            return false;
+            if (rect.width < 140 || rect.height < 80) return false;
         }
         return true;
     }

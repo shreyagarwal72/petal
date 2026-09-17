@@ -388,9 +388,6 @@ class MediaInterceptor {
 
     /** Called when the network interceptor detects a media asset request. */
     fun onMediaRequestDetected(url: String, headers: Map<String, String>? = null) {
-        // Supported social platforms are handled exclusively by Social Downloader.
-        // Do not let the passive media sniffer compete with yt-dlp on these pages.
-        if (SupportedPlatforms.isSupported(activePageUrl)) return
         if (!isMediaDetectionEnabled) return
         if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) return
         if (isDomainBlocked(url)) return
@@ -451,8 +448,6 @@ class MediaInterceptor {
 
     /** Aggressive capturing callback for MSE (Media Source Extensions) or Blob links. */
     fun onAggressiveMediaGrabbed(url: String, mimeType: String, cookies: String? = null, sizeBytes: Long? = null) {
-        // Supported social platforms are handled exclusively by Social Downloader.
-        if (SupportedPlatforms.isSupported(activePageUrl)) return
         if (!isMediaDetectionEnabled) return
         if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) return
         if (isDomainBlocked(url)) return

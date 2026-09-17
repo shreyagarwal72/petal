@@ -118,11 +118,16 @@ fun PetalMediaSnifferOverlay(
                 Icon(Icons.Rounded.VideoLibrary, null, tint = MaterialTheme.colorScheme.primary)
                 Column(Modifier.weight(1f)) {
                     Text(
-                        if (socialOnly) "Social download" else "Media found",
+                        if (media.isNotEmpty()) "Media found" else "Social download",
                         style = MaterialTheme.typography.labelLarge
                     )
                     Text(
-                        if (socialOnly) platform!!.displayName else "${media.size} source${if (media.size == 1) "" else "s"} on this page",
+                        when {
+                            media.isNotEmpty() && platform != null -> "${media.size} source${if (media.size == 1) "" else "s"} • ${platform.displayName}"
+                            media.isNotEmpty() -> "${media.size} source${if (media.size == 1) "" else "s"} on this page"
+                            platform != null -> platform.displayName
+                            else -> "Media available"
+                        },
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -167,9 +172,9 @@ private fun PetalMediaSheet(
                 .padding(bottom = 32.dp)
         ) {
             // ── Section 1: Passive sniffer streams ────────────────────────
-            // Social platforms are owned by Social Downloader; never expose the
-            // normal media-sniffer list on those pages.
-            if (platform == null) {
+            // Direct streams are displayed whenever detected (including on social platforms),
+            // giving the user immediate direct stream downloads without waiting for external extractors.
+            if (media.isNotEmpty()) {
                 item {
                     Text(
                         "Media sources",
@@ -297,12 +302,12 @@ private fun PetalMediaSheet(
                                         onClick = {
                                             socialState = SocialState.Loading
                                             scope.launch {
-                                                val cookies = try {
-                                                    CookieManager.getInstance()
-                                                        .getCookie(currentPageUrl)
-                                                } catch (_: Exception) {
-                                                    null
-                                                }
+                                                val cookies = PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
+                                                    ?: try {
+                                                        CookieManager.getInstance().getCookie(currentPageUrl)
+                                                    } catch (_: Exception) {
+                                                        null
+                                                    }
 
                                                 val info = PetalYtDlpEngine.fetchInfo(
                                                     context = context,
@@ -395,12 +400,12 @@ private fun PetalMediaSheet(
                                         ExpressiveSplitButton(
                                             label = "Download ${selFmt.label}",
                                             onPrimaryClick = {
-                                                val cookies = try {
-                                                    CookieManager.getInstance()
-                                                        .getCookie(currentPageUrl)
-                                                } catch (_: Exception) {
-                                                    null
-                                                }
+                                                val cookies = PetalMediaSniffer.getCookiesForUrl(currentPageUrl)
+                                                    ?: try {
+                                                        CookieManager.getInstance().getCookie(currentPageUrl)
+                                                    } catch (_: Exception) {
+                                                        null
+                                                    }
 
                                                 when {
                                                     selFmt.isDirectUrl -> {

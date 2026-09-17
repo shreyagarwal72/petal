@@ -28,7 +28,15 @@ const MEDIA_URL_PATTERNS = [
     /googlevideo\.com/i,
     /\.googlevideo\.com.*itag=/i,
     /mime=video/i,
-    /mime=audio/i
+    /mime=audio/i,
+    // Social media video CDN streams (Instagram, TikTok, Twitter/X, Reddit, Facebook)
+    /cdninstagram\.com\/.*\.mp4/i,
+    /fbcdn\.net\/.*\.mp4/i,
+    /tiktokcdn\.com\/.*video/i,
+    /byteoversea\.com\/.*video/i,
+    /twimg\.com\/.*\.mp4/i,
+    /v\.redd\.it\/.*\.mp4/i,
+    /v\.redd\.it\/.*HLSPlaylist/i
 ];
 
 const MEDIA_CONTENT_TYPES = [
@@ -43,16 +51,40 @@ const MEDIA_CONTENT_TYPES = [
 // Track reported URLs to avoid duplicates
 const reportedUrls = new Set();
 const tabMediaMap = new Map(); // tabId -> Set of JSON-serialized media objects
+const tabUrlMap = new Map();   // tabId -> current page URL string
 
 // Clean up tab cache when tabs are closed or navigated
 chrome.tabs.onRemoved.addListener((tabId) => {
     tabMediaMap.delete(tabId);
+    tabUrlMap.delete(tabId);
 });
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.url) {
+        tabUrlMap.set(tabId, changeInfo.url);
+        syncPageCookies(changeInfo.url);
+    } else if (tab && tab.url) {
+        tabUrlMap.set(tabId, tab.url);
+    }
     if (changeInfo.status === 'loading') {
         tabMediaMap.delete(tabId);
     }
 });
+
+function syncPageCookies(pageUrl) {
+    if (!pageUrl || (!pageUrl.startsWith('http://') && !pageUrl.startsWith('https://'))) return;
+    try {
+        chrome.cookies.getAll({ url: pageUrl }, (cookiesList) => {
+            if (cookiesList && cookiesList.length > 0) {
+                const cookiesStr = cookiesList.map(c => `${c.name}=${c.value}`).join('; ');
+                chrome.runtime.sendNativeMessage('petalApp', {
+                    type: 'PAGE_COOKIES_REPORT',
+                    pageUrl: pageUrl,
+                    cookies: cookiesStr
+                }).catch(() => {});
+            }
+        });
+    } catch (e) {}
+}
 
 function isSegmentUrl(url) {
     if (!url) return false;
@@ -120,10 +152,12 @@ function reportToNative(url, mimeType, tabId, sizeBytes) {
             }
         }
 
+        const pageUrl = (tabId !== undefined && tabId !== null && tabUrlMap.has(tabId)) ? tabUrlMap.get(tabId) : '';
         try {
             chrome.runtime.sendNativeMessage('petalApp', {
                 type: 'MEDIA_GRABBED',
                 url: url,
+                pageUrl: pageUrl,
                 mimeType: mimeType || 'video/mp4',
                 cookies: cookieString || '',
                 tabId: (tabId !== undefined && tabId !== null) ? String(tabId) : '',
@@ -146,8 +180,12 @@ function reportToNative(url, mimeType, tabId, sizeBytes) {
         }
     };
 
+    const cookieQueryUrl = (tabId !== undefined && tabId !== null && tabUrlMap.has(tabId))
+        ? tabUrlMap.get(tabId)
+        : url;
+
     try {
-        chrome.cookies.getAll({ url: url }, (cookiesList) => {
+        chrome.cookies.getAll({ url: cookieQueryUrl }, (cookiesList) => {
             let cookiesStr = "";
             if (cookiesList && cookiesList.length > 0) {
                 cookiesStr = cookiesList.map(c => `${c.name}=${c.value}`).join('; ');
