@@ -1251,6 +1251,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             screen.setTranslationX(0f);
             contentFrame.addView(screen);
         }
+        // Apple Duo: overlay screens are not websites — suspend the fold effect.
+        try {
+            com.petal.browser.appleduo.AppleDuoManager.INSTANCE.onContentSwitched(false);
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -1429,6 +1433,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (alreadyAttached && !isHome) {
                 updateAddressBar();
                 updatePersistentBottomNav();
+            } else if (isPetalHomeSurfaceShowing && isHome) {
+                // Fix (Bug 2): the Compose home surface is already live. A GeckoView
+                // about:blank callback fired while it was displaying. Do NOT replace the
+                // live Compose home with a new one — that causes a blank flash during
+                // the rebuild cycle. Just refresh the nav chrome.
+                updateAddressBar();
+                updatePersistentBottomNav();
             } else {
                 showAlbum(currentAlbumController, url);
             }
@@ -1446,7 +1457,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * (insets race, transient native state) we retry on the next frame instead of aborting
      * and leaving the user staring at an empty container.
      */
-    private static final int MAX_ATTACH_ATTEMPTS = 5;
+    private static final int MAX_ATTACH_ATTEMPTS = 10; // 10 × 32ms = 320ms max (was 5)
 
     private void attachAlbumViewSafely(
             final android.view.ViewGroup targetFrame,
@@ -1470,10 +1481,37 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             av.setAlpha(1f);
             targetFrame.requestLayout();
         } catch (Exception e) {
-            android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: addView failed, retrying", e);
+            android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: addView failed, retrying (attempt " + attempt + ")", e);
             if (attempt < MAX_ATTACH_ATTEMPTS) {
                 targetFrame.postDelayed(() ->
                         attachAlbumViewSafely(targetFrame, av, targetController, attempt + 1), 32L);
+            } else {
+                // Fix (Bug 4): all timed retries exhausted. Register a ViewTreeObserver
+                // listener so we attach the moment the window layout stabilises — this
+                // covers OEM skins (ColorOS, MIUI, EMUI) that dispatch WindowInsets after
+                // the 320ms retry window.
+                android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: max retries exhausted, using ViewTreeObserver fallback");
+                targetFrame.getViewTreeObserver().addOnGlobalLayoutListener(
+                    new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
+                        @Override
+                        public void onGlobalLayout() {
+                            targetFrame.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                            if (currentAlbumController != targetController
+                                    || targetFrame != contentFrame) return;
+                            try {
+                                if (av.getParent() != null && av.getParent() != targetFrame)
+                                    ((android.view.ViewGroup) av.getParent()).removeView(av);
+                                if (av.getParent() != targetFrame) {
+                                    targetFrame.removeAllViews();
+                                    targetFrame.addView(av);
+                                }
+                                targetFrame.setVisibility(android.view.View.VISIBLE);
+                                targetFrame.setAlpha(1f);
+                                av.setVisibility(android.view.View.VISIBLE);
+                                av.setAlpha(1f);
+                            } catch (Exception ignored) {}
+                        }
+                    });
             }
         }
     }
@@ -1493,6 +1531,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         }
         if (controller == null) return;
+
+        // Fix (Bug 6): reset the flag immediately so concurrent GeckoView callbacks
+        // or onTabUrlStarted() callers never read a stale 'true' while a new surface
+        // (website or a different home) is being set up.
+        isPetalHomeSurfaceShowing = false;
 
         final long surfaceGeneration = ++albumSurfaceGeneration;
 
@@ -1905,6 +1948,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             refreshBarCompose.bringToFront();
             refreshBarCompose.requestLayout();
         }
+
+        // Apple Duo fix: attach the fold-glass effect to the root layout and tell the
+        // manager whether we're showing a website or the native home/incognito surface.
+        // attachTargetView() was never called from showAlbum() — currentActiveView stayed
+        // null so the RenderEffect was never applied to any real view.
+        try {
+            View rootLayout = findViewById(R.id.main);
+            boolean isWebsiteContent = !isPetalHomeSurfaceShowing && !isOverlayScreenShowing;
+            com.petal.browser.appleduo.AppleDuoManager.INSTANCE.attachTargetView(rootLayout, isWebsiteContent);
+        } catch (Exception ignored) {}
     }
 
     public void updatePersistentBottomNav() {
@@ -1958,11 +2011,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void onHomeClick() {
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).playClick(BrowserActivity.this);
-                            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl("about:blank");
-                                showAlbum(currentAlbumController, "about:blank");
-                            } else if (ninjaWebView != null) {
-                                ninjaWebView.loadUrl("about:blank");
+                            // Fix (Bug 1): do NOT call geckoView.loadUrl("about:blank") before showAlbum().
+                            // That redundant load triggers GeckoView's page-started callback which
+                            // re-invokes showAlbum() mid-Compose-render, causing a blank flash.
+                            // showAlbum("about:blank") correctly shows the native Compose home surface
+                            // without requiring any web engine load.
+                            if (currentAlbumController != null) {
                                 showAlbum(currentAlbumController, "about:blank");
                             } else {
                                 addAlbum(getString(R.string.app_name), "about:blank", true);

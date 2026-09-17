@@ -487,8 +487,17 @@ fun PetalHomeScreen(
 
     val profile = accountViewModel.profileState
 
-    // Merge saved shortcuts + auto-visited, deduplicated by URL and filtered by removed blocklist
-    val autoVisitedSites = remember(removedUrls) { fetchTopVisitedShortcuts(context).take(8) }
+    // Fix (Bug 3): fetchTopVisitedShortcuts() opens SQLite on the composition (main) thread,
+    // blocking the first Compose frame by 100–500ms and leaving contentFrame visually black.
+    // Use LaunchedEffect + Dispatchers.IO so the screen renders immediately with an empty list
+    // that is then populated once the DB query completes off-thread.
+    var autoVisitedSites by remember { mutableStateOf<List<PetalShortcut>>(emptyList()) }
+    LaunchedEffect(removedUrls) {
+        val sites = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try { fetchTopVisitedShortcuts(context).take(8) } catch (_: Throwable) { emptyList() }
+        }
+        autoVisitedSites = sites
+    }
     val mergedItems: List<Pair<PetalShortcut, Boolean>> = remember(shortcuts, autoVisitedSites) {
         val savedUrls = shortcuts.map { it.url }.toSet()
         val extraVisited = autoVisitedSites.filter { it.url !in savedUrls }

@@ -272,11 +272,15 @@ object PetalTabSessionManager {
                         geckoView.setTabGroupTitle(record.tabGroupTitle)
                     }
 
+                    // Fix (Bug 5): for home-URL tabs, do NOT call geckoView.loadUrl("about:blank").
+                    // That redundant load triggers GeckoView's page lifecycle callbacks which race
+                    // with showAlbum() — causing the Compose home surface to be torn down and rebuilt
+                    // mid-render, resulting in a blank screen. showAlbum("about:blank") will display
+                    // the native Compose home without any web engine load required.
                     if (record.url.isNotBlank() && !isHomeUrl(record.url)) {
                         geckoView.loadUrl(record.url)
-                    } else {
-                        geckoView.loadUrl("about:blank")
                     }
+                    // else: leave GeckoView unloaded; showAlbum() will display the Compose home
 
                     BrowserContainer.add(geckoView)
                     activeGeckoView = geckoView
@@ -356,11 +360,11 @@ object PetalTabSessionManager {
             geckoView.setTabGroupTitle(groupTitle)
         }
 
+        // Fix (Bug 5): same as restoreSession — don't load about:blank for home tabs.
         if (safeUrl.isNotBlank() && !isHomeUrl(safeUrl)) {
             geckoView.loadUrl(safeUrl)
-        } else {
-            geckoView.loadUrl("about:blank")
         }
+        // else: leave GeckoView unloaded; showAlbum() will display the Compose home
 
         if (targetIndex >= 0 && targetIndex <= BrowserContainer.size()) {
             BrowserContainer.add(geckoView, targetIndex)
