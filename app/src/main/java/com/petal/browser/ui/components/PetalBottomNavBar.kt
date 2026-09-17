@@ -279,8 +279,9 @@ fun PetalBottomNavBar(
         // Material 3 Expressive Non-Floating Bottom Navigation Bar
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = 2.dp,
-            shadowElevation = 4.dp,
+            tonalElevation = 3.dp,
+            shadowElevation = 6.dp,
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
             modifier = modifier.fillMaxWidth()
         ) {
             Column(
@@ -291,7 +292,7 @@ fun PetalBottomNavBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(72.dp)
+                        .height(80.dp)
                         .padding(horizontal = 8.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
@@ -300,10 +301,11 @@ fun PetalBottomNavBar(
                         selected = selectedTab == PetalNavTab.HOME,
                         label = "Home",
                         index = 0,
+                        modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
                             val iconScale by animateFloatAsState(
-                                targetValue = if (isSelected) 1.15f else 1.0f,
-                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                targetValue = if (isSelected) 1.18f else 1.0f,
+                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
                                 label = "home_expressive_scale"
                             )
                             Icon(
@@ -327,15 +329,16 @@ fun PetalBottomNavBar(
                         selected = selectedTab == PetalNavTab.NEW_TAB,
                         label = newTabLabel,
                         index = 1,
+                        modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
                             val rotationAngle by animateFloatAsState(
                                 targetValue = if (isSelected) 90f else 0f,
-                                animationSpec = spring(dampingRatio = 0.68f, stiffness = 450f),
+                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 420f),
                                 label = "add_expressive_rotation"
                             )
                             val iconScale by animateFloatAsState(
-                                targetValue = if (isSelected) 1.15f else 1.0f,
-                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                targetValue = if (isSelected) 1.18f else 1.0f,
+                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
                                 label = "add_expressive_scale"
                             )
                             Icon(
@@ -359,10 +362,11 @@ fun PetalBottomNavBar(
                         label = "Tabs",
                         badgeText = if (animatedCount > 99) "99+" else animatedCount.toString(),
                         index = 2,
+                        modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
                             val iconScale by animateFloatAsState(
-                                targetValue = if (isSelected) 1.12f else 1.0f,
-                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                targetValue = if (isSelected) 1.15f else 1.0f,
+                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
                                 label = "tabs_expressive_scale"
                             )
                             TabCountBadge(
@@ -379,15 +383,16 @@ fun PetalBottomNavBar(
                         selected = selectedTab == PetalNavTab.MENU,
                         label = "Menu",
                         index = 3,
+                        modifier = Modifier.weight(1f),
                         icon = { isSelected, tint ->
                             val rotationAngle by animateFloatAsState(
                                 targetValue = if (isSelected) 180f else 0f,
-                                animationSpec = spring(dampingRatio = 0.70f, stiffness = 420f),
+                                animationSpec = spring(dampingRatio = 0.68f, stiffness = 400f),
                                 label = "menu_expressive_rotation"
                             )
                             val iconScale by animateFloatAsState(
-                                targetValue = if (isSelected) 1.15f else 1.0f,
-                                animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
+                                targetValue = if (isSelected) 1.18f else 1.0f,
+                                animationSpec = spring(dampingRatio = 0.62f, stiffness = 380f),
                                 label = "menu_expressive_scale"
                             )
                             Icon(
@@ -562,32 +567,45 @@ private fun ExpressiveNavTabItem(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val pressScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.88f else 1.0f,
+    // Tactile squash-and-stretch micro-interaction when pressed
+    val pressScaleX by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1.0f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
+            dampingRatio = 0.60f,
             stiffness = Spring.StiffnessMedium
         ),
-        label = "expressive_press_scale_$index"
+        label = "expressive_press_scale_x_$index"
+    )
+    val pressScaleY by animateFloatAsState(
+        targetValue = if (isPressed) 0.90f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = 0.60f,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "expressive_press_scale_y_$index"
     )
 
-    val activeIndicatorWidth by animateDpAsState(
-        targetValue = if (selected) 64.dp else 40.dp,
+    // Subtle fluid vertical lift for selected item (-2.5dp)
+    val activeLiftY by animateDpAsState(
+        targetValue = if (selected) (-2.5).dp else 0.dp,
         animationSpec = spring(
-            dampingRatio = 0.75f,
+            dampingRatio = 0.72f,
+            stiffness = 380f
+        ),
+        label = "expressive_active_lift_$index"
+    )
+
+    // Fluid indicator pill geometry: expands from 44dp to 64dp on selection
+    val activeIndicatorWidth by animateDpAsState(
+        targetValue = if (selected) 64.dp else 44.dp,
+        animationSpec = spring(
+            dampingRatio = 0.72f,
             stiffness = 380f
         ),
         label = "expressive_indicator_width_$index"
     )
 
-    val activeIndicatorHeight by animateDpAsState(
-        targetValue = if (selected) 32.dp else 32.dp,
-        animationSpec = spring(
-            dampingRatio = 0.75f,
-            stiffness = 380f
-        ),
-        label = "expressive_indicator_height_$index"
-    )
+    val activeIndicatorHeight = 32.dp
 
     val indicatorBgColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
@@ -613,9 +631,11 @@ private fun ExpressiveNavTabItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = modifier
+            .fillMaxHeight()
             .graphicsLayer {
-                scaleX = pressScale
-                scaleY = pressScale
+                scaleX = pressScaleX
+                scaleY = pressScaleY
+                translationY = activeLiftY.toPx()
             }
             .clip(RoundedCornerShape(16.dp))
             .combinedClickable(
@@ -624,7 +644,7 @@ private fun ExpressiveNavTabItem(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .padding(horizontal = 2.dp, vertical = 4.dp)
             .semantics { contentDescription = label }
     ) {
         Surface(
@@ -642,7 +662,7 @@ private fun ExpressiveNavTabItem(
             }
         }
 
-        Spacer(Modifier.height(3.dp))
+        Spacer(Modifier.height(4.dp))
 
         Text(
             text = label,
