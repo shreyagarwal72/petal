@@ -230,6 +230,10 @@ class PetalGeckoView @JvmOverloads constructor(
         session.navigationDelegate = object : GeckoSession.NavigationDelegate {
             override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
                 canGoBackVal = canGoBack
+                val act = getHostActivity()
+                if (act is com.petal.browser.activity.BrowserActivity) {
+                    act.runOnUiThread { act.updateBackCallbackState() }
+                }
             }
 
             override fun onCanGoForward(session: GeckoSession, canGoForward: Boolean) {

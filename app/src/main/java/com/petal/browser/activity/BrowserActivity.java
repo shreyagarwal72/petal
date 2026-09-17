@@ -584,7 +584,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         EdgeToEdge.enable(this);
 
-        browserBackCallback = new OnBackPressedCallback(true) {
+        browserBackCallback = new OnBackPressedCallback(false) {
             @Override
             public void handleOnBackStarted(@NonNull androidx.activity.BackEventCompat backEvent) {
                 // Web content (especially GeckoView) may update gesture-exclusion rects
@@ -743,6 +743,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         dispatchIntent(getIntent());
 
         // Welcome and Search Engine dialogs are displayed in onStart() to ensure the Activity window and decor view are fully attached.
+        updateBackCallbackState();
     }
 
     @Override
@@ -1015,6 +1016,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             updatePersistentBottomNav();
             updateOmniBox();
+            updateBackCallbackState();
             return;
         }
         if (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE) {
@@ -1140,14 +1142,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (predictiveBackRoot == null) return;
         predictiveBackProgress = progress;
 
-        float cubicEased = progress * progress * progress;
+        // Android 14 pure predictive back: smooth cubic-bezier progress and gentle edge translation
         float scaleEased = predictiveBackEasing.getInterpolation(progress);
         float translateXFactor = swipeEdge == BackEventCompat.EDGE_RIGHT ? -1f : 1f;
-        float scale = 1f - (PB_MAX_SCALE_DELTA * scaleEased);
+        float scale = 1f - (0.10f * scaleEased);
 
         predictiveBackRoot.setScaleX(scale);
         predictiveBackRoot.setScaleY(scale);
-        predictiveBackRoot.setTranslationX(predictiveBackRoot.getWidth() * translateXFactor * cubicEased);
+        predictiveBackRoot.setTranslationX(predictiveBackRoot.getWidth() * translateXFactor * (progress * 0.35f));
     }
 
     /**
@@ -1193,6 +1195,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         });
         predictiveBackSettleAnimator = commitAnim;
         commitAnim.start();
+    }
+
+    public void updateBackCallbackState() {
+        if (browserBackCallback == null) return;
+        boolean hasOverlay = isOverlayScreenShowing || (contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView) && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView));
+        boolean hasDialog = (dialogOverview != null && dialogOverview.isShowing()) || (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE) || (customView != null) || (fullscreenHolder != null) || (videoView != null);
+        boolean hasWebBack = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView && ((com.petal.browser.view.PetalGeckoView) currentAlbumController).hasBackHistory()) || (ninjaWebView != null && ninjaWebView.canGoBack());
+        String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
+        boolean isWebPageNotHome = !isPetalHomeSurfaceShowing && !isHomePage(curUrl) && curUrl != null && !curUrl.isEmpty() && !curUrl.equalsIgnoreCase("about:blank");
+        boolean hasMultipleTabs = BrowserContainer.size() > 1;
+
+        boolean requireConfirmExit = sp != null && sp.getBoolean("sp_double_back_exit", false);
+
+        // Under pure Android 14 guidelines, when the user is on the root Home screen with a single tab,
+        // the back callback is disabled so the OS WindowManager handles the pure Predictive Back-to-Home
+        // animation (wallpaper reveal and app icon scale-down).
+        boolean shouldInterceptBack = hasOverlay || hasDialog || hasWebBack || isWebPageNotHome || hasMultipleTabs || requireConfirmExit;
+        browserBackCallback.setEnabled(shouldInterceptBack);
     }
 
     public void resetPredictiveBackVisuals() {
@@ -1251,6 +1271,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             screen.setTranslationX(0f);
             contentFrame.addView(screen);
         }
+        updateBackCallbackState();
         // Apple Duo: overlay screens are not websites — suspend the fold effect.
         try {
             com.petal.browser.appleduo.AppleDuoManager.INSTANCE.onContentSwitched(false);
@@ -1945,6 +1966,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         updateOmniBox();
         applyAddressBarPosition();
         updatePersistentBottomNav();
+        updateBackCallbackState();
         View refreshBarCompose = findViewById(R.id.refresh_bar_compose);
         if (refreshBarCompose != null) {
             refreshBarCompose.bringToFront();
