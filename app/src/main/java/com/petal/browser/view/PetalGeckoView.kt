@@ -1401,13 +1401,6 @@ class PetalGeckoView @JvmOverloads constructor(
             super.onAttachedToWindow()
         } catch (e: NullPointerException) {
             android.util.Log.w(TAG, "Handled PetalGeckoView onAttachedToWindow NPE: ${e.message}")
-            post {
-                try {
-                    super.onAttachedToWindow()
-                } catch (t: Throwable) {
-                    android.util.Log.w(TAG, "Handled PetalGeckoView onAttachedToWindow retry error: ${t.message}")
-                }
-            }
         } catch (t: Throwable) {
             android.util.Log.w(TAG, "Handled PetalGeckoView onAttachedToWindow error: ${t.message}")
         }
@@ -1797,13 +1790,6 @@ class SafeGeckoView : GeckoView {
             super.onAttachedToWindow()
         } catch (e: NullPointerException) {
             android.util.Log.w("SafeGeckoView", "Handled GeckoView onAttachedToWindow NPE: ${e.message}")
-            post {
-                try {
-                    super.onAttachedToWindow()
-                } catch (t: Throwable) {
-                    android.util.Log.w("SafeGeckoView", "Handled GeckoView onAttachedToWindow retry: ${t.message}")
-                }
-            }
         } catch (t: Throwable) {
             android.util.Log.w("SafeGeckoView", "Handled GeckoView onAttachedToWindow error: ${t.message}")
         }

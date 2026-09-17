@@ -641,7 +641,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
-        com.petal.browser.appleduo.AppleDuoManager.INSTANCE.attachTargetView(contentFrame, false);
         // Never allow browser content to reserve the system back edges.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             getWindow().getDecorView().post(() -> {
@@ -1455,30 +1454,22 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             final AlbumController targetController,
             final int attempt) {
         if (targetFrame == null || av == null) return;
-        // Surface already changed (tab switch/navigation) since this attach was scheduled;
-        // stop retrying so we don't stomp on whatever is showing now.
         if (currentAlbumController != targetController || targetFrame != contentFrame) return;
-        if (av.getParent() != null) return;
+        if (av.getParent() == targetFrame) return;
+        if (av.getParent() != null) {
+            ((android.view.ViewGroup) av.getParent()).removeView(av);
+        }
 
-        android.view.View decorView = getWindow() != null ? getWindow().getDecorView() : null;
-        boolean insetsReady = decorView == null || decorView.getRootWindowInsets() != null;
-
-        if (insetsReady || attempt >= MAX_ATTACH_ATTEMPTS) {
-            try {
-                if (targetFrame.getChildCount() == 0 || av.getParent() == null) {
-                    targetFrame.addView(av);
-                }
-            } catch (Exception e) {
-                // GeckoView's attach-time NPE (or any other transient attach failure).
-                // Don't leave the frame blank - back off one frame and retry, up to the cap.
-                android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: addView failed, retrying", e);
-                if (attempt < MAX_ATTACH_ATTEMPTS) {
-                    targetFrame.postDelayed(() ->
-                            attachAlbumViewSafely(targetFrame, av, targetController, attempt + 1), 32L);
-                }
+        try {
+            if (targetFrame.getChildCount() == 0 || av.getParent() == null) {
+                targetFrame.addView(av);
             }
-        } else {
-            targetFrame.post(() -> attachAlbumViewSafely(targetFrame, av, targetController, attempt + 1));
+        } catch (Exception e) {
+            android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: addView failed, retrying", e);
+            if (attempt < MAX_ATTACH_ATTEMPTS) {
+                targetFrame.postDelayed(() ->
+                        attachAlbumViewSafely(targetFrame, av, targetController, attempt + 1), 32L);
+            }
         }
     }
 
@@ -1754,6 +1745,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             });
             contentFrame.removeAllViews();
             isOverlayScreenShowing = false;
+            contentFrame.setVisibility(VISIBLE);
+            contentFrame.setAlpha(1f);
             composeView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
