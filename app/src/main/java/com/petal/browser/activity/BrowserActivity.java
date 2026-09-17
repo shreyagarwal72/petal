@@ -1455,15 +1455,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             final int attempt) {
         if (targetFrame == null || av == null) return;
         if (currentAlbumController != targetController || targetFrame != contentFrame) return;
-        if (av.getParent() == targetFrame) return;
-        if (av.getParent() != null) {
-            ((android.view.ViewGroup) av.getParent()).removeView(av);
-        }
 
         try {
-            if (targetFrame.getChildCount() == 0 || av.getParent() == null) {
+            if (av.getParent() != null && av.getParent() != targetFrame) {
+                ((android.view.ViewGroup) av.getParent()).removeView(av);
+            }
+            if (av.getParent() != targetFrame) {
+                targetFrame.removeAllViews();
                 targetFrame.addView(av);
             }
+            targetFrame.setVisibility(android.view.View.VISIBLE);
+            targetFrame.setAlpha(1f);
+            av.setVisibility(android.view.View.VISIBLE);
+            av.setAlpha(1f);
+            targetFrame.requestLayout();
         } catch (Exception e) {
             android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: addView failed, retrying", e);
             if (attempt < MAX_ATTACH_ATTEMPTS) {
