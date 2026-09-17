@@ -126,28 +126,12 @@ class PetalGeckoView @JvmOverloads constructor(
     private var crashRecoveryCount: Int = 0
     private var sessionInitializationStarted: Boolean = false
 
-    private val skeletonComposeView: androidx.compose.ui.platform.ComposeView = androidx.compose.ui.platform.ComposeView(context)
-    private var pendingSkeletonUrl: String = ""
-    private var isSkeletonShowing: Boolean = false
-
     init {
         isNestedScrollingEnabled = true
         addView(
             geckoView,
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
-        skeletonComposeView.visibility = View.GONE
-        addView(
-            skeletonComposeView,
-            LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        )
-        val hostAct = getHostActivity()
-        if (hostAct is androidx.lifecycle.LifecycleOwner) {
-            com.petal.browser.compose.composable.PetalWebsiteLoadingSkeletonBridge.bindWebsiteLoadingSkeleton(
-                skeletonComposeView,
-                hostAct
-            ) { pendingSkeletonUrl }
-        }
         com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, currentUrl)
         initGeckoSession()
         album.setBrowserController(globalBrowserController)
@@ -1347,9 +1331,9 @@ class PetalGeckoView @JvmOverloads constructor(
         if (currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true)) {
             return currentUrl
         }
-        val albumUrl = getAlbumUrl()
-        if (albumUrl.isNotEmpty() && !albumUrl.equals("about:blank", ignoreCase = true) && !albumUrl.equals("Petal Home", ignoreCase = true)) {
-            return albumUrl
+        val aUrl = album.url?.toString()
+        if (!aUrl.isNullOrBlank() && !aUrl.equals("about:blank", ignoreCase = true) && !aUrl.equals("Petal Home", ignoreCase = true) && !aUrl.equals("Petal Start", ignoreCase = true) && !BrowserUnit.isHomePage(aUrl)) {
+            return aUrl
         }
         return currentUrl
     }
@@ -1486,6 +1470,10 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         try {
+            if (!isAttachedToWindow || geckoView.parent == null || !geckoView.isAttachedToWindow) {
+                cachingConsumer(null)
+                return
+            }
             geckoView.capturePixels().then({ bitmap ->
                 if (bitmap != null) {
                     val w = bitmap.width
@@ -1647,47 +1635,12 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
-    private val skeletonTimeoutRunnable = Runnable {
-        hideLoadingSkeleton()
-    }
-
     private fun showLoadingSkeleton(url: String) {
-        if (BrowserUnit.isHomePage(url) || url.equals("about:blank", ignoreCase = true)) {
-            hideLoadingSkeleton()
-            return
-        }
-        pendingSkeletonUrl = url
-        isSkeletonShowing = true
-        removeCallbacks(skeletonTimeoutRunnable)
-        // Auto-hide skeleton after 2.5 seconds failsafe so screen is never permanently blank/covered
-        postDelayed(skeletonTimeoutRunnable, 2500L)
-        post {
-            val hostAct = getHostActivity()
-            if (hostAct is androidx.lifecycle.LifecycleOwner && skeletonComposeView.childCount == 0) {
-                com.petal.browser.compose.composable.PetalWebsiteLoadingSkeletonBridge.bindWebsiteLoadingSkeleton(
-                    skeletonComposeView,
-                    hostAct
-                ) { pendingSkeletonUrl }
-            }
-            skeletonComposeView.alpha = 1f
-            skeletonComposeView.visibility = View.VISIBLE
-            skeletonComposeView.bringToFront()
-        }
+        // No-op: Full-screen skeleton overlay disabled to ensure GeckoView compositor paints directly without occlusion
     }
 
     private fun hideLoadingSkeleton() {
-        removeCallbacks(skeletonTimeoutRunnable)
-        if (!isSkeletonShowing && skeletonComposeView.visibility == View.GONE) return
-        isSkeletonShowing = false
-        post {
-            skeletonComposeView.animate()
-                .alpha(0f)
-                .setDuration(220L)
-                .withEndAction {
-                    skeletonComposeView.visibility = View.GONE
-                }
-                .start()
-        }
+        // No-op: Full-screen skeleton overlay disabled
     }
 
     private fun handleDeepLinkOrCustomScheme(url: String?): Boolean {

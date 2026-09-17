@@ -1614,7 +1614,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             bottomNavCompose.setVisibility(inPip ? GONE : VISIBLE);
         }
 
-        String url = overrideUrl != null ? overrideUrl : (currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : ""));
+        String url = overrideUrl != null ? overrideUrl : (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getAlbumUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "")));
         // Home is a native Compose surface backed by an about:blank Gecko/WebView
         // document, so the controller URL alone cannot reliably describe what is visible.
         isPetalHomeSurfaceShowing = isHomePage(url);
@@ -1874,11 +1874,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
                 String targetUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : (currentUrl != null && !currentUrl.isEmpty() ? currentUrl : albumSavedUrl);
 
-                if ((currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl)) &&
-                    (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl))) {
-                    geckoView.loadUrl(targetUrl);
-                } else if (overrideUrl != null && !overrideUrl.isEmpty() && !overrideUrl.equalsIgnoreCase(currentUrl) && !isHomePage(overrideUrl) && !"about:blank".equalsIgnoreCase(overrideUrl)) {
-                    geckoView.loadUrl(overrideUrl);
+                if (targetUrl != null && !targetUrl.isEmpty() && !isHomePage(targetUrl) && !"about:blank".equalsIgnoreCase(targetUrl)) {
+                    if (currentUrl == null || currentUrl.isEmpty() || "about:blank".equalsIgnoreCase(currentUrl) || !currentUrl.equalsIgnoreCase(targetUrl)) {
+                        geckoView.loadUrl(targetUrl);
+                    } else {
+                        geckoView.onResume();
+                    }
                 } else if (currentUrl != null && !currentUrl.isEmpty() && !isHomePage(currentUrl)) {
                     geckoView.onResume();
                 }
