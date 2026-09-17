@@ -373,92 +373,45 @@ fun ComposeView.setupExpressiveHomeScreen(
     setViewTreeViewModelStoreOwner(activity)
     setViewTreeSavedStateRegistryOwner(activity)
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-
     setContent {
-        var composeError by remember { mutableStateOf<Throwable?>(null) }
+        val accountViewModel = viewModel<AccountViewModel>(activity)
+        val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
+        var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
+        var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+        var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+        var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
 
-        if (composeError != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF1C1B1F))
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Petal Home",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "A render error occurred: ${composeError?.localizedMessage ?: "Unknown error"}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFFFB4AB)
-                    )
-                    Button(
-                        onClick = { composeError = null },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD0BCFF))
-                    ) {
-                        Text("Retry", color = Color(0xFF381E72))
-                    }
-                    Button(
-                        onClick = { onSearch("") },
-                        colors = ButtonDefaults.outlinedButtonColors()
-                    ) {
-                        Text("Open Search", color = Color.White)
-                    }
+        DisposableEffect(sp) {
+            val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                when (key) {
+                    "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                    "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                    "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                    "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
                 }
             }
-        } else {
-            try {
-                val accountViewModel = viewModel<AccountViewModel>(activity)
-                val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
-                var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-                var useDynamic by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
-                var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
+            sp.registerOnSharedPreferenceChangeListener(listener)
+            onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+        }
 
-                DisposableEffect(sp) {
-                    val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                        when (key) {
-                            "sp_palette_id" -> currentPaletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                            "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
-                            "useDynamicColor" -> useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                            "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
-                        }
-                    }
-                    sp.registerOnSharedPreferenceChangeListener(listener)
-                    onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-                }
-
-                PetalExpressiveTheme(
-                    paletteId = currentPaletteId,
-                    useAmoled = isAmoled,
-                    dynamicColor = useDynamic,
-                    expressiveColors = isExpressiveColors
-                ) {
-                    PetalHomeScreen(
-                        backgroundSnapshot = null,
-                        accountViewModel = accountViewModel,
-                        onSearch = onSearch,
-                        onOpenShortcutUrl = onOpenShortcutUrl,
-                        onOpenAccountSync = onOpenAccountSync,
-                        onOpenBookmarksAction = onOpenBookmarks,
-                        onOpenHistoryAction = onOpenHistory,
-                        onOpenDownloadsAction = onOpenDownloads,
-                        onNewTabAction = onNewTab,
-                        onOpenTabSwitcher = onOpenTabSwitcher
-                    )
-                }
-            } catch (t: Throwable) {
-                android.util.Log.e("PetalHomeScreen", "Composition setup failed", t)
-                composeError = t
-            }
+        PetalExpressiveTheme(
+            paletteId = currentPaletteId,
+            useAmoled = isAmoled,
+            dynamicColor = useDynamic,
+            expressiveColors = isExpressiveColors
+        ) {
+            PetalHomeScreen(
+                backgroundSnapshot = null,
+                accountViewModel = accountViewModel,
+                onSearch = onSearch,
+                onOpenShortcutUrl = onOpenShortcutUrl,
+                onOpenAccountSync = onOpenAccountSync,
+                onOpenBookmarksAction = onOpenBookmarks,
+                onOpenHistoryAction = onOpenHistory,
+                onOpenDownloadsAction = onOpenDownloads,
+                onNewTabAction = onNewTab,
+                onOpenTabSwitcher = onOpenTabSwitcher
+            )
         }
     }
 }
