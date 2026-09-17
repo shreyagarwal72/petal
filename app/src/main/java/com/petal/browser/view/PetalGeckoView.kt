@@ -1396,6 +1396,23 @@ class PetalGeckoView @JvmOverloads constructor(
         this.isStopped = stopped
     }
 
+    override fun onAttachedToWindow() {
+        try {
+            super.onAttachedToWindow()
+        } catch (e: NullPointerException) {
+            android.util.Log.w(TAG, "Handled PetalGeckoView onAttachedToWindow NPE: ${e.message}")
+            post {
+                try {
+                    super.onAttachedToWindow()
+                } catch (t: Throwable) {
+                    android.util.Log.w(TAG, "Handled PetalGeckoView onAttachedToWindow retry error: ${t.message}")
+                }
+            }
+        } catch (t: Throwable) {
+            android.util.Log.w(TAG, "Handled PetalGeckoView onAttachedToWindow error: ${t.message}")
+        }
+    }
+
     fun setBrowserController(controller: BrowserController?) {
         globalBrowserController = controller
         album.setBrowserController(controller)
@@ -1774,6 +1791,23 @@ class PetalGeckoView @JvmOverloads constructor(
 class SafeGeckoView : GeckoView {
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+
+    override fun onAttachedToWindow() {
+        try {
+            super.onAttachedToWindow()
+        } catch (e: NullPointerException) {
+            android.util.Log.w("SafeGeckoView", "Handled GeckoView onAttachedToWindow NPE: ${e.message}")
+            post {
+                try {
+                    super.onAttachedToWindow()
+                } catch (t: Throwable) {
+                    android.util.Log.w("SafeGeckoView", "Handled GeckoView onAttachedToWindow retry: ${t.message}")
+                }
+            }
+        } catch (t: Throwable) {
+            android.util.Log.w("SafeGeckoView", "Handled GeckoView onAttachedToWindow error: ${t.message}")
+        }
+    }
 
     override fun gatherTransparentRegion(region: Region?): Boolean {
         return try {
