@@ -144,16 +144,6 @@ fun PetalBottomNavBar(
     val tabsLabel = "Tabs ($animatedCount)"
     val newTabLabel = "New"
 
-    val handleTabsLongClick: () -> Unit = {
-        try {
-            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
-                0.85f
-            )
-        } catch (_: Throwable) {}
-        onNewTabClick()
-    }
-
     if (isFloatingStyle) {
         Box(
             modifier = modifier
@@ -169,141 +159,6 @@ fun PetalBottomNavBar(
             )
 
             var dragAccumulator by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
-            var showRadialDial by remember { androidx.compose.runtime.mutableStateOf(false) }
-
-            // Thumb-Zone Radial Speed Dial Arc Overlay (Triggered by long-pressing Home/Menu)
-            AnimatedVisibility(
-                visible = showRadialDial,
-                enter = fadeIn(spring(stiffness = Spring.StiffnessMedium)) + scaleIn(initialScale = 0.8f),
-                exit = fadeOut(spring(stiffness = Spring.StiffnessMedium)) + scaleOut(targetScale = 0.8f),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 76.dp)
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f),
-                    tonalElevation = 6.dp,
-                    shadowElevation = 12.dp,
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                    modifier = Modifier.wrapContentSize()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Action 1: New Incognito / Tab
-                        IconButton(
-                            onClick = {
-                                showRadialDial = false
-                                try {
-                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
-                                        0.7f
-                                    )
-                                } catch (_: Throwable) {}
-                                onNewTabClick()
-                            },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Add,
-                                contentDescription = "New Tab",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-
-                        // Action 2: Fast Jump to Home
-                        IconButton(
-                            onClick = {
-                                showRadialDial = false
-                                try {
-                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
-                                        0.5f
-                                    )
-                                } catch (_: Throwable) {}
-                                onHomeClick()
-                            },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.home),
-                                contentDescription = "Home",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        // Action 3: Tabs Overview
-                        IconButton(
-                            onClick = {
-                                showRadialDial = false
-                                try {
-                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
-                                        0.5f
-                                    )
-                                } catch (_: Throwable) {}
-                                onTabsClick()
-                            },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            TabCountBadge(
-                                color = MaterialTheme.colorScheme.primary,
-                                count = animatedCount,
-                                scale = 1f
-                            )
-                        }
-
-                        // Action 4: Quick Share / Action
-                        IconButton(
-                            onClick = {
-                                showRadialDial = false
-                                try {
-                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
-                                        0.5f
-                                    )
-                                } catch (_: Throwable) {}
-                                onMenuClick()
-                            },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Share,
-                                contentDescription = "Share",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        // Action 5: Overflow Menu
-                        IconButton(
-                            onClick = {
-                                showRadialDial = false
-                                try {
-                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
-                                        0.5f
-                                    )
-                                } catch (_: Throwable) {}
-                                onMenuClick()
-                            },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.MoreVert,
-                                contentDescription = "Menu",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                    }
-                }
-            }
 
             HorizontalFloatingToolbar(
                 expanded = true,
@@ -362,16 +217,7 @@ fun PetalBottomNavBar(
                                 }
                         )
                     },
-                    onClick = onHomeClick,
-                    onLongClick = {
-                        try {
-                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
-                                0.85f
-                            )
-                        } catch (_: Throwable) {}
-                        showRadialDial = !showRadialDial
-                    }
+                    onClick = onHomeClick
                 )
 
                 FloatingNavTabItem(
@@ -421,8 +267,7 @@ fun PetalBottomNavBar(
                             scale = badgeScale.value * iconScale
                         )
                     },
-                    onClick = onTabsClick,
-                    onLongClick = handleTabsLongClick
+                    onClick = onTabsClick
                 )
 
                 FloatingNavTabItem(
@@ -453,56 +298,31 @@ fun PetalBottomNavBar(
                                 }
                         )
                     },
-                    onClick = onMenuClick,
-                    onLongClick = {
-                        try {
-                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
-                                0.85f
-                            )
-                        } catch (_: Throwable) {}
-                        showRadialDial = !showRadialDial
-                    }
+                    onClick = onMenuClick
                 )
             }
         }
     } else {
         // Material 3 Expressive Non-Floating Bottom Navigation Bar
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp,
-            border = null,
-            modifier = modifier.fillMaxWidth()
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .navigationBarsPadding(),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Column(
+            Surface(
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = 3.dp,
+                shadowElevation = 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .height(64.dp)
             ) {
-                var standardDragAccumulator by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
-
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
-                        .pointerInput(Unit) {
-                            detectHorizontalDragGestures(
-                                onDragEnd = {
-                                    if (standardDragAccumulator > 70f) {
-                                        onSwipeTabLeft()
-                                    } else if (standardDragAccumulator < -70f) {
-                                        onSwipeTabRight()
-                                    }
-                                    standardDragAccumulator = 0f
-                                },
-                                onDragCancel = { standardDragAccumulator = 0f },
-                                onHorizontalDrag = { _, dragAmount: Float ->
-                                    standardDragAccumulator += dragAmount
-                                }
-                            )
-                        },
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -584,8 +404,7 @@ fun PetalBottomNavBar(
                                 scale = badgeScale.value * iconScale
                             )
                         },
-                        onClick = onTabsClick,
-                        onLongClick = handleTabsLongClick
+                        onClick = onTabsClick
                     )
 
                     ExpressiveNavTabItem(
@@ -625,7 +444,6 @@ fun PetalBottomNavBar(
     }
 }
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun FloatingNavTabItem(
     selected: Boolean,
@@ -633,7 +451,6 @@ private fun FloatingNavTabItem(
     index: Int,
     icon: @Composable (isSelected: Boolean, tint: Color) -> Unit,
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -685,11 +502,10 @@ private fun FloatingNavTabItem(
                 scaleY = pressScale
             }
             .clip(CircleShape)
-            .combinedClickable(
+            .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(),
-                onClick = onClick,
-                onLongClick = onLongClick
+                onClick = onClick
             )
             .semantics { contentDescription = label }
     ) {
@@ -770,7 +586,6 @@ private fun ExpressiveNavTabItem(
     icon: @Composable (isSelected: Boolean, tint: Color) -> Unit,
     onClick: () -> Unit,
     badgeText: String? = null,
-    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -794,14 +609,11 @@ private fun ExpressiveNavTabItem(
         label = "expressive_press_scale_y_$index"
     )
 
-    // Subtle fluid vertical lift for selected item (-1.5dp)
+    // Active pill background color & indicator lift
     val activeLiftY by animateDpAsState(
-        targetValue = if (selected) (-1.5).dp else 0.dp,
-        animationSpec = spring(
-            dampingRatio = 0.72f,
-            stiffness = 380f
-        ),
-        label = "expressive_active_lift_$index"
+        targetValue = if (selected) (-1).dp else 0.dp,
+        animationSpec = spring(dampingRatio = 0.70f, stiffness = 400f),
+        label = "expressive_lift_$index"
     )
 
     // Fluid indicator pill geometry: expands from 40dp to 58dp on selection
@@ -816,9 +628,10 @@ private fun ExpressiveNavTabItem(
 
     val activeIndicatorHeight = 28.dp
 
+    val activeIndicatorColor = MaterialTheme.colorScheme.primaryContainer
     val indicatorBgColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-        animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
+        targetValue = if (selected) activeIndicatorColor else Color.Transparent,
+        animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
         label = "expressive_indicator_bg_$index"
     )
 
@@ -847,11 +660,10 @@ private fun ExpressiveNavTabItem(
                 translationY = activeLiftY.toPx()
             }
             .clip(RoundedCornerShape(16.dp))
-            .combinedClickable(
+            .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true, radius = 32.dp),
-                onClick = onClick,
-                onLongClick = onLongClick
+                onClick = onClick
             )
             .padding(horizontal = 2.dp, vertical = 1.dp)
             .semantics { contentDescription = label }
