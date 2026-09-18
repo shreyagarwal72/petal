@@ -382,6 +382,18 @@ fun PetalOverflowMenuSheet(
                     transformOrigin = TransformOrigin(1f, 1f)
                 }
         ) {
+            val isHomePage = remember(pageUrl, pageTitle) {
+                pageUrl.isBlank() ||
+                pageUrl.equals("about:blank", ignoreCase = true) ||
+                pageUrl.startsWith("petal://") ||
+                pageUrl.contains("petal_home.html") ||
+                pageUrl.startsWith("file:///android_asset/") ||
+                pageTitle.equals("Petal", ignoreCase = true) ||
+                pageTitle.equals("Petal Home", ignoreCase = true) ||
+                pageTitle.equals("Petal Start", ignoreCase = true) ||
+                com.petal.browser.unit.BrowserUnit.isHomePage(pageUrl)
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -402,18 +414,17 @@ fun PetalOverflowMenuSheet(
                         enabled = canGoBack,
                         onClick = onGoBack
                     )
-                    val isHomePageUrl = pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("file:///android_asset/")
                     CircularIconButton(
-                        icon = if (isBookmarked && !isHomePageUrl) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        icon = if (isBookmarked && !isHomePage) Icons.Rounded.Star else Icons.Rounded.StarBorder,
                         contentDescription = "Toggle Bookmark",
-                        enabled = !isHomePageUrl,
-                        tint = if (isBookmarked && !isHomePageUrl) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        enabled = !isHomePage,
+                        tint = if (isBookmarked && !isHomePage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                         onClick = onToggleBookmark
                     )
                     CircularIconButton(
                         icon = Icons.Rounded.OfflinePin,
                         contentDescription = "Install site offline",
-                        enabled = !isHomePageUrl,
+                        enabled = !isHomePage,
                         onClick = onSavePage
                     )
                     CircularIconButton(
@@ -456,10 +467,6 @@ fun PetalOverflowMenuSheet(
                     checked = isAdBlockEnabled,
                     onCheckedChange = onToggleAdBlock
                 )
-
-                val isHomePage = remember(pageUrl, pageTitle) {
-                    pageUrl.isBlank() || pageUrl == "about:blank" || pageUrl.startsWith("petal://") || pageUrl == "file:///android_asset/petal_home.html" || pageTitle == "Petal"
-                }
 
                 if (!isHomePage) {
                     MenuRowSwitchItem(

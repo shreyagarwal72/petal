@@ -256,9 +256,9 @@ class FxAccountManager private constructor() {
     }
 
     companion object {
-        const val CLIENT_ID = "5882386c6d80c792"
+        const val CLIENT_ID = "a2270f727f45f648"
         const val AUTH_ENDPOINT = "https://accounts.firefox.com/authorization"
-        const val REDIRECT_URI = "https://accounts.firefox.com/oauth/success/5882386c6d80c792"
+        const val REDIRECT_URI = "https://accounts.firefox.com/oauth/success/a2270f727f45f648"
         const val CUSTOM_SCHEME_REDIRECT = "petal://fxa-auth"
         const val DEFAULT_SCOPES = "profile"
 

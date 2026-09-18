@@ -955,6 +955,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     // The native Home surface is rendered over an about:blank browser document.
     // Keep explicit UI state so Back never follows Gecko history into a blank page.
     private boolean isPetalHomeSurfaceShowing = false;
+    public boolean isPetalHomeSurfaceShowing() {
+        return isPetalHomeSurfaceShowing || isCurrentTabHomeOrBlank();
+    }
     // Monotonic token used to invalidate queued surface-attachment callbacks. A queued
     // GeckoView add must never re-attach an old tab after showAlbum() has switched tabs.
     private long albumSurfaceGeneration = 0L;
@@ -3491,6 +3494,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         View bottomNav = findViewById(R.id.bottom_nav_compose);
+        View bottomNavContainer = findViewById(R.id.bottom_nav_container);
 
         if (composeAddressBar == null) return;
 
@@ -3502,24 +3506,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             float targetY = isBottom ? (barHeight + HelperUnit.convertDpToPixel(40f, context)) : -(barHeight + HelperUnit.convertDpToPixel(40f, context));
             float contentTargetY = isBottom ? 0f : -barHeight;
 
-            springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
+            springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
 
-            if (bottomNav != null) {
-                float bottomNavTargetY = HelperUnit.convertDpToPixel(120f, context);
-                springTranslateY(bottomNav, bottomNavTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
+            View targetNavView = (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) ? bottomNavContainer : bottomNav;
+            if (targetNavView != null) {
+                float bottomNavTargetY = targetNavView.getHeight() > 0 ? targetNavView.getHeight() : HelperUnit.convertDpToPixel(96f, context);
+                springTranslateY(targetNavView, bottomNavTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
             }
 
             if (contentFrame != null) {
-                springTranslateY(contentFrame, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springTranslateY(contentFrame, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
             }
             if (progressBarCompose != null) {
-                springTranslateY(progressBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springTranslateY(progressBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
             }
             if (progressBar != null) {
-                springTranslateY(progressBar, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springTranslateY(progressBar, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
             }
             if (refreshBarCompose != null) {
-                springTranslateY(refreshBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                springTranslateY(refreshBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
             }
 
             if (fab_bubble != null) {
@@ -3535,10 +3540,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             isAddressBarCollapsed = false;
             composeAddressBar.setVisibility(VISIBLE);
 
-            springTranslateY(composeAddressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
+            springTranslateY(composeAddressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
 
-            if (bottomNav != null) {
-                springTranslateY(bottomNav, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_LOW_BOUNCY);
+            View targetNavView = (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) ? bottomNavContainer : bottomNav;
+            if (targetNavView != null) {
+                springTranslateY(targetNavView, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
             }
 
             if (contentFrame != null) {

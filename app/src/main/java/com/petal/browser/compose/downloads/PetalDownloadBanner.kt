@@ -1,11 +1,12 @@
 /*
  * PetalDownloadBanner.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Chrome-style top in-app download status banner in Jetpack Compose featuring:
- * 1. Positioned directly below the top address bar with slide-in/slide-out animations.
- * 2. Active downloading state: Download icon, "Downloading file...", "See notification for download status", and "Details" action button to open downloads screen.
- * 3. Completion state: Checkmark icon, "File downloaded", formatted file size with source host subtitle, and "Open" action button launching the file via FileProvider Intent.
- * 4. 5-second auto-dismiss timer on completion/error with manual close button.
+ * Persistent animated floating download status card in Jetpack Compose featuring:
+ * 1. Docked near the bottom of the screen above bottom navigation with spring entrance/exit.
+ * 2. Active downloading state: Download icon, file name, progress/speed/host subtitle,
+ *    and slim animated progress bar flush on its bottom edge.
+ * 3. Completion state: Checkmark icon, "File downloaded", formatted size with host, and "Open".
+ * 4. Auto-dismiss timer on completion/error with manual close button and swipe-to-dismiss.
  * 5. Full Material 3 Expressive design system integration with dynamic palette support.
  */
 
@@ -17,37 +18,34 @@ import android.content.Intent
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Error
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.ui.theme.*
+import com.petal.browser.ui.components.PetalFloatingStatusCard
+import com.petal.browser.ui.components.PetalFloatingStatusCardData
+import com.petal.browser.ui.theme.AppFont
+import com.petal.browser.ui.theme.ColorStyle
+import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.defaultPaletteId
+import com.petal.browser.ui.theme.isDynamicColorSupported
 import kotlinx.coroutines.delay
 import java.io.File
 import java.net.URI
@@ -66,7 +64,9 @@ data class ActiveBannerData(
     val fileSize: Long = 0L,
     val sourceHost: String = "",
     val localUri: String = "",
-    val downloadId: Long = 0L
+    val downloadId: Long = 0L,
+    val progress: Float? = null,
+    val speedBytesPerSec: Long = 0L
 )
 
 object PetalDownloadBannerBridge {
@@ -138,7 +138,9 @@ object PetalDownloadBannerBridge {
                                         fileSize = activeItem.totalSize,
                                         sourceHost = host,
                                         localUri = safeLocalUri,
-                                        downloadId = activeItem.id
+                                        downloadId = activeItem.id,
+                                        progress = activeItem.progress,
+                                        speedBytesPerSec = activeItem.speedBytesPerSec
                                     )
                                 }
                                 DownloadManager.STATUS_SUCCESSFUL -> {
@@ -148,7 +150,9 @@ object PetalDownloadBannerBridge {
                                         fileSize = activeItem.totalSize,
                                         sourceHost = host,
                                         localUri = safeLocalUri,
-                                        downloadId = activeItem.id
+                                        downloadId = activeItem.id,
+                                        progress = 1f,
+                                        speedBytesPerSec = 0L
                                     )
                                 }
                                 DownloadManager.STATUS_FAILED -> {
@@ -158,7 +162,9 @@ object PetalDownloadBannerBridge {
                                         fileSize = activeItem.totalSize,
                                         sourceHost = host,
                                         localUri = safeLocalUri,
-                                        downloadId = activeItem.id
+                                        downloadId = activeItem.id,
+                                        progress = null,
+                                        speedBytesPerSec = 0L
                                     )
                                 }
                                 else -> {
@@ -191,230 +197,111 @@ object PetalDownloadBannerBridge {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalDownloadBanner(
     bannerData: ActiveBannerData,
     onOpenDownloads: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val visible = bannerData.state != BannerState.IDLE
 
-    // Auto-dismiss timeout for 3 seconds on COMPLETED or FAILED state
+    // Auto-dismiss timeout for 3.5 seconds on COMPLETED or FAILED state
     LaunchedEffect(bannerData.state, bannerData.downloadId) {
         if (bannerData.state == BannerState.COMPLETED || bannerData.state == BannerState.FAILED) {
-            delay(3000L)
+            delay(3500L)
             onDismiss()
         }
     }
 
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value != SwipeToDismissBoxValue.Settled) {
-                onDismiss()
-                true
-            } else {
-                false
+    val iconVector = when (bannerData.state) {
+        BannerState.DOWNLOADING -> Icons.Rounded.Download
+        BannerState.COMPLETED -> Icons.Rounded.CheckCircle
+        BannerState.FAILED -> Icons.Rounded.Error
+        else -> Icons.Rounded.Download
+    }
+
+    val iconBg = when (bannerData.state) {
+        BannerState.DOWNLOADING -> MaterialTheme.colorScheme.primaryContainer
+        BannerState.COMPLETED -> MaterialTheme.colorScheme.tertiaryContainer
+        BannerState.FAILED -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val iconTint = when (bannerData.state) {
+        BannerState.DOWNLOADING -> MaterialTheme.colorScheme.onPrimaryContainer
+        BannerState.COMPLETED -> MaterialTheme.colorScheme.onTertiaryContainer
+        BannerState.FAILED -> MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    val titleText = when (bannerData.state) {
+        BannerState.DOWNLOADING -> if (bannerData.fileName.isNotBlank()) bannerData.fileName else "Downloading file..."
+        BannerState.COMPLETED -> "Download complete"
+        BannerState.FAILED -> "Download failed"
+        else -> ""
+    }
+
+    val subtitleText = when (bannerData.state) {
+        BannerState.DOWNLOADING -> {
+            val sizeStr = if (bannerData.fileSize > 0L) formatFileSize(bannerData.fileSize) else ""
+            val speedStr = if (bannerData.speedBytesPerSec > 0L) "${formatFileSize(bannerData.speedBytesPerSec)}/s" else ""
+            val parts = listOfNotNull(
+                if (speedStr.isNotBlank()) speedStr else null,
+                if (sizeStr.isNotBlank()) sizeStr else null,
+                if (bannerData.sourceHost.isNotBlank()) bannerData.sourceHost else null
+            )
+            if (parts.isNotEmpty()) parts.joinToString(" • ") else "Downloading in background"
+        }
+        BannerState.COMPLETED -> {
+            val sizeStr = formatFileSize(bannerData.fileSize)
+            val nameOrHost = bannerData.fileName.ifBlank { bannerData.sourceHost }
+            if (nameOrHost.isNotBlank()) "$nameOrHost • $sizeStr" else sizeStr
+        }
+        BannerState.FAILED -> bannerData.fileName.ifBlank { "Could not complete download" }
+        else -> ""
+    }
+
+    val cardData = PetalFloatingStatusCardData(
+        title = titleText,
+        subtitle = subtitleText,
+        icon = iconVector,
+        iconContainerColor = iconBg,
+        iconContentColor = iconTint,
+        primaryActionLabel = when (bannerData.state) {
+            BannerState.DOWNLOADING -> "Details"
+            BannerState.COMPLETED -> "Open"
+            BannerState.FAILED -> "Details"
+            else -> null
+        },
+        onPrimaryAction = when (bannerData.state) {
+            BannerState.DOWNLOADING, BannerState.FAILED -> onOpenDownloads
+            BannerState.COMPLETED -> {
+                {
+                    openDownloadedFile(context, bannerData)
+                    onDismiss()
+                }
             }
+            else -> null
+        },
+        progress = if (bannerData.state == BannerState.DOWNLOADING) bannerData.progress else null,
+        isIndeterminateProgress = bannerData.state == BannerState.DOWNLOADING && bannerData.progress == null,
+        progressColor = if (bannerData.state == BannerState.COMPLETED) {
+            MaterialTheme.colorScheme.tertiary
+        } else {
+            MaterialTheme.colorScheme.primary
         }
     )
 
-    LaunchedEffect(bannerData.downloadId, bannerData.state) {
-        if (visible) {
-            dismissState.reset()
-        }
-    }
-
-    AnimatedVisibility(
+    PetalFloatingStatusCard(
         visible = visible,
-        enter = slideInVertically(
-            initialOffsetY = { -it },
-            animationSpec = tween(durationMillis = 350)
-        ) + fadeIn(animationSpec = tween(350)),
-        exit = slideOutVertically(
-            targetOffsetY = { -it },
-            animationSpec = tween(durationMillis = 300)
-        ) + fadeOut(animationSpec = tween(300))
-    ) {
-        SwipeToDismissBox(
-            state = dismissState,
-            backgroundContent = {},
-            modifier = Modifier
-                .fillMaxWidth()
-                .pointerInput(bannerData.downloadId, bannerData.state) {
-                    detectVerticalDragGestures { _, dragAmount ->
-                        if (dragAmount < -12f) {
-                            onDismiss()
-                        }
-                    }
-                }
-        ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .shadow(8.dp, shape = RoundedCornerShape(20.dp)),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Leading Icon Container
-                Surface(
-                    shape = CircleShape,
-                    color = when (bannerData.state) {
-                        BannerState.DOWNLOADING -> MaterialTheme.colorScheme.primaryContainer
-                        BannerState.COMPLETED -> MaterialTheme.colorScheme.tertiaryContainer
-                        BannerState.FAILED -> MaterialTheme.colorScheme.errorContainer
-                        else -> MaterialTheme.colorScheme.surfaceVariant
-                    },
-                    modifier = Modifier.size(42.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = when (bannerData.state) {
-                                BannerState.DOWNLOADING -> Icons.Rounded.Download
-                                BannerState.COMPLETED -> Icons.Rounded.CheckCircle
-                                BannerState.FAILED -> Icons.Rounded.Error
-                                else -> Icons.Rounded.Download
-                            },
-                            contentDescription = null,
-                            tint = when (bannerData.state) {
-                                BannerState.DOWNLOADING -> MaterialTheme.colorScheme.onPrimaryContainer
-                                BannerState.COMPLETED -> MaterialTheme.colorScheme.onTertiaryContainer
-                                BannerState.FAILED -> MaterialTheme.colorScheme.onErrorContainer
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-
-                Spacer(Modifier.width(14.dp))
-
-                // Title & Subtitle Info Column
-                Column(modifier = Modifier.weight(1f)) {
-                    val titleText = when (bannerData.state) {
-                        BannerState.DOWNLOADING -> "Downloading file..."
-                        BannerState.COMPLETED -> "File downloaded"
-                        BannerState.FAILED -> "Download failed"
-                        else -> ""
-                    }
-
-                    val subtitleText = when (bannerData.state) {
-                        BannerState.DOWNLOADING -> "See notification for download status"
-                        BannerState.COMPLETED -> {
-                            val sizeStr = formatFileSize(bannerData.fileSize)
-                            if (bannerData.sourceHost.isNotBlank()) "$sizeStr • ${bannerData.sourceHost}" else sizeStr
-                        }
-                        BannerState.FAILED -> bannerData.fileName.ifBlank { "Could not complete download" }
-                        else -> ""
-                    }
-
-                    Text(
-                        text = titleText,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(Modifier.height(2.dp))
-
-                    Text(
-                        text = subtitleText,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(Modifier.width(8.dp))
-
-                // Action Button (Details vs Open)
-                when (bannerData.state) {
-                    BannerState.DOWNLOADING -> {
-                        Button(
-                            onClick = onOpenDownloads,
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                            shape = RoundedCornerShape(50),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
-                        ) {
-                            Text(
-                                text = "Details",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-                    }
-                    BannerState.COMPLETED -> {
-                        Button(
-                            onClick = {
-                                openDownloadedFile(context, bannerData)
-                                onDismiss()
-                            },
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                            shape = RoundedCornerShape(50),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiary,
-                                contentColor = MaterialTheme.colorScheme.onTertiary
-                            )
-                        ) {
-                            Text(
-                                text = "Open",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-                    }
-                    BannerState.FAILED -> {
-                        Button(
-                            onClick = onOpenDownloads,
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                            shape = RoundedCornerShape(50),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
-                            )
-                        ) {
-                            Text(
-                                text = "Details",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-                    }
-                    else -> {}
-                }
-
-                Spacer(Modifier.width(4.dp))
-
-                // Close Button
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = "Dismiss banner",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-        }
-        }
-    }
+        data = cardData,
+        onDismiss = onDismiss,
+        modifier = modifier,
+        bottomPadding = 8.dp,
+        onClick = onOpenDownloads
+    )
 }
 
 private fun formatFileSize(bytes: Long): String {

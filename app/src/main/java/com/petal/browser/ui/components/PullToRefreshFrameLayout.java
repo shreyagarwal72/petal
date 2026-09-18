@@ -229,9 +229,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     return false;
                 }
 
-                // Match omni-browser: pull-to-refresh initiates when touch starts within the top edge threshold (120dp),
-                // the child cannot scroll up (scrollY <= 0), deltaY > touchSlop, and gesture is vertically dominant.
-                if (!intercepting && downY < edgeThresholdPx && !canChildScrollUp() && canPull.canPull()) {
+                if (!intercepting && !canChildScrollUp() && canPull.canPull()) {
                     float dx = currentX - downX;
                     float dy = currentY - downY;
                     if (dy > touchSlop && dy > Math.abs(dx)) {
@@ -309,10 +307,10 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
     @Override
     public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-        this.disallowIntercept = disallowIntercept;
-        if (disallowIntercept && dragging) {
-            cancelDrag();
+        if (dragging || intercepting) {
+            return;
         }
+        this.disallowIntercept = disallowIntercept;
         super.requestDisallowInterceptTouchEvent(disallowIntercept);
     }
 

@@ -164,6 +164,8 @@ class PetalGeckoView @JvmOverloads constructor(
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
             override fun onPageStart(session: GeckoSession, url: String) {
                 isStopped = false
+                currentScrollY = 0
+                currentScrollX = 0
                 com.petal.browser.media.sniffer.PetalMediaSniffer.clear()
                 currentUrl = url
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
@@ -1839,4 +1841,12 @@ class SafeGeckoView : GeckoView {
         }
     }
 
+    override fun setSystemGestureExclusionRects(rects: MutableList<android.graphics.Rect>) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                // Keep system gesture edges free for Android back gesture
+                super.setSystemGestureExclusionRects(java.util.Collections.emptyList())
+            } catch (_: Throwable) {}
+        }
+    }
 }

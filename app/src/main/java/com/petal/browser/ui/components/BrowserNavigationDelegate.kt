@@ -26,11 +26,12 @@ object BrowserNavigationDelegate {
         val currentController = activity.currentAlbumController
         val geckoView = currentController as? com.petal.browser.view.PetalGeckoView
 
-        val title = geckoView?.title ?: currentController?.title ?: ""
-        val url = geckoView?.url ?: currentController?.url ?: ""
+        val isHome = activity.isPetalHomeSurfaceShowing || activity.isCurrentTabHomeOrBlank || com.petal.browser.unit.BrowserUnit.isHomePage(geckoView?.url ?: currentController?.url)
+        val title = if (isHome) "Petal Home" else (geckoView?.title ?: currentController?.title ?: "")
+        val url = if (isHome) "petal://home" else (geckoView?.url ?: currentController?.url ?: "")
 
         var isBookmarked = false
-        if (url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
+        if (!isHome && url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)) {
             val action = RecordAction(activity)
             action.open(false)
             isBookmarked = action.checkBookmark(url)

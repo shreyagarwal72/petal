@@ -29,7 +29,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:elevation="16dp">
+        android:background="@android:color/transparent">
 
         <androidx.compose.ui.platform.ComposeView
             android:id="@+id/bottom_nav_compose"
@@ -45,12 +45,12 @@
         android:layout_below="@id/compose_address_bar"
         android:elevation="14dp"/>
 
-    <!-- Top Download Status Banner (Jetpack Compose Material 3 Expressive Banner) -->
+    <!-- Bottom Floating Download Status Card (Jetpack Compose Material 3 Expressive Persistent Card) -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/download_banner_compose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/compose_address_bar"
+        android:layout_above="@id/bottom_nav_container"
         android:elevation="20dp" />
 
     <!-- Floating Network Status Pill (Offline / Back Online Left-to-Right dialogue) -->

@@ -279,9 +279,9 @@ fun PetalBottomNavBar(
         // Material 3 Expressive Non-Floating Bottom Navigation Bar
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = 3.dp,
-            shadowElevation = 6.dp,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
+            border = null,
             modifier = modifier.fillMaxWidth()
         ) {
             Column(
@@ -292,8 +292,8 @@ fun PetalBottomNavBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp)
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .height(56.dp)
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -585,9 +585,9 @@ private fun ExpressiveNavTabItem(
         label = "expressive_press_scale_y_$index"
     )
 
-    // Subtle fluid vertical lift for selected item (-2.5dp)
+    // Subtle fluid vertical lift for selected item (-1.5dp)
     val activeLiftY by animateDpAsState(
-        targetValue = if (selected) (-2.5).dp else 0.dp,
+        targetValue = if (selected) (-1.5).dp else 0.dp,
         animationSpec = spring(
             dampingRatio = 0.72f,
             stiffness = 380f
@@ -595,9 +595,9 @@ private fun ExpressiveNavTabItem(
         label = "expressive_active_lift_$index"
     )
 
-    // Fluid indicator pill geometry: expands from 44dp to 64dp on selection
+    // Fluid indicator pill geometry: expands from 40dp to 58dp on selection
     val activeIndicatorWidth by animateDpAsState(
-        targetValue = if (selected) 64.dp else 44.dp,
+        targetValue = if (selected) 58.dp else 40.dp,
         animationSpec = spring(
             dampingRatio = 0.72f,
             stiffness = 380f
@@ -605,7 +605,7 @@ private fun ExpressiveNavTabItem(
         label = "expressive_indicator_width_$index"
     )
 
-    val activeIndicatorHeight = 32.dp
+    val activeIndicatorHeight = 28.dp
 
     val indicatorBgColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
@@ -644,11 +644,11 @@ private fun ExpressiveNavTabItem(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .padding(horizontal = 2.dp, vertical = 4.dp)
+            .padding(horizontal = 2.dp, vertical = 1.dp)
             .semantics { contentDescription = label }
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             color = indicatorBgColor,
             modifier = Modifier
                 .width(activeIndicatorWidth)
@@ -662,14 +662,14 @@ private fun ExpressiveNavTabItem(
             }
         }
 
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(2.dp))
 
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = labelWeight,
-                letterSpacing = 0.2.sp,
-                fontSize = 11.sp
+                letterSpacing = 0.1.sp,
+                fontSize = 10.5.sp
             ),
             color = labelColor,
             maxLines = 1,
