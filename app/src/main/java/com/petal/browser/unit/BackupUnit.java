@@ -310,10 +310,38 @@ public class BackupUnit {
     }
 
     public static void backupToUri(Context context, android.net.Uri uri, boolean backupBookmarks, boolean backupHistory, boolean backupStartSites, boolean backupTabSessions, boolean backupSavedSites, boolean backupSettings) {
+        // ── Open the OutputStream BEFORE handing off to the background thread ──────────
+        // SAF/CreateDocument URIs remain valid for the app process (not just main thread),
+        // but opening with "wt" truncates immediately. We open here so the truncation and
+        // the write happen atomically in one stream lifecycle.
+        final OutputStream[] streamHolder = new OutputStream[1];
+        try {
+            try {
+                streamHolder[0] = context.getContentResolver().openOutputStream(uri, "wt");
+            } catch (Throwable t1) {
+                try {
+                    streamHolder[0] = context.getContentResolver().openOutputStream(uri, "w");
+                } catch (Throwable t2) {
+                    streamHolder[0] = context.getContentResolver().openOutputStream(uri);
+                }
+            }
+        } catch (Throwable outerEx) {
+            // Try ParcelFileDescriptor as last resort before giving up
+            try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "wt")) {
+                if (pfd != null) streamHolder[0] = new ParcelFileDescriptor.AutoCloseOutputStream(pfd);
+            } catch (Throwable ignored) {}
+        }
+
+        if (streamHolder[0] == null) {
+            new Handler(Looper.getMainLooper()).post(() ->
+                    NinjaToast.show(context, "Backup failed: cannot open file for writing"));
+            return;
+        }
+
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
-            try {
+            try (OutputStream destinationStream = streamHolder[0]) {
                 org.json.JSONObject backupJson = new org.json.JSONObject();
                 backupJson.put("version", 2);
                 backupJson.put("timestamp", System.currentTimeMillis());
@@ -433,8 +461,17 @@ public class BackupUnit {
                         org.json.JSONObject settingsObj = new org.json.JSONObject();
                         for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
                             Object val = entry.getValue();
-                            if (val instanceof String || val instanceof Integer || val instanceof Boolean || val instanceof Long || val instanceof Float) {
+                            if (val instanceof String || val instanceof Integer
+                                    || val instanceof Boolean || val instanceof Long
+                                    || val instanceof Float) {
                                 settingsObj.put(entry.getKey(), val);
+                            } else if (val instanceof java.util.Set) {
+                                // Persist StringSet as JSON array so it round-trips on restore
+                                org.json.JSONArray setArr = new org.json.JSONArray();
+                                for (Object item : (java.util.Set<?>) val) {
+                                    setArr.put(String.valueOf(item));
+                                }
+                                settingsObj.put(entry.getKey(), setArr);
                             }
                         }
                         backupJson.put("settings", settingsObj);
@@ -444,114 +481,26 @@ public class BackupUnit {
                 }
 
                 byte[] dataBytes = backupJson.toString(2).getBytes(StandardCharsets.UTF_8);
-                if (dataBytes.length <= 16) {
-                    Log.e("Petal", "Backup aborted: payload is empty for URI: " + uri);
-                    handler.post(() -> {
-                        NinjaToast.show(context, "Backup failed: no data available to backup");
-                    });
-                    return;
+                Log.i("Petal", "Writing backup payload: " + dataBytes.length + " bytes to URI: " + uri);
+
+                // Write all data through the pre-opened stream
+                try (java.io.BufferedOutputStream bos = new java.io.BufferedOutputStream(destinationStream, 65536)) {
+                    bos.write(dataBytes);
+                    bos.flush();
                 }
 
-                String uriScheme = uri != null ? uri.getScheme() : "unknown";
-                Log.i("Petal", "Starting backup write to " + uriScheme + " Uri (" + uri + ") with payload size: " + dataBytes.length + " bytes");
+                Log.i("Petal", "Backup written successfully (" + dataBytes.length + " bytes)");
+                handler.post(() -> NinjaToast.show(context,
+                        context.getString(R.string.app_done) + ": Backup saved (" + dataBytes.length + " bytes)"));
 
-                boolean writeSucceeded = false;
-
-                // Attempt 1: ContentResolver openOutputStream with "wt" / "w" mode
-                try {
-                    OutputStream os = null;
-                    try {
-                        os = context.getContentResolver().openOutputStream(uri, "wt");
-                    } catch (Throwable t1) {
-                        try {
-                            os = context.getContentResolver().openOutputStream(uri, "w");
-                        } catch (Throwable t2) {
-                            os = context.getContentResolver().openOutputStream(uri);
-                        }
-                    }
-
-                    if (os != null) {
-                        try (OutputStream out = new java.io.BufferedOutputStream(os)) {
-                            out.write(dataBytes);
-                            out.flush();
-                            if (out instanceof FileOutputStream) {
-                                try {
-                                    ((FileOutputStream) out).getFD().sync();
-                                } catch (Exception ignored) {}
-                            }
-                        }
-                        writeSucceeded = true;
-                    }
-                } catch (Exception e) {
-                    Log.w("Petal", "ContentResolver openOutputStream failed for backup write, falling back to AutoCloseOutputStream", e);
-                }
-
-                // Attempt 2: ParcelFileDescriptor with AutoCloseOutputStream (fallback for providers requiring direct PFD)
-                if (!writeSucceeded) {
-                    try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "wt")) {
-                        if (pfd != null) {
-                            try (OutputStream fos = new java.io.BufferedOutputStream(new ParcelFileDescriptor.AutoCloseOutputStream(pfd))) {
-                                fos.write(dataBytes);
-                                fos.flush();
-                            }
-                            writeSucceeded = true;
-                        }
-                    } catch (Exception pfdEx) {
-                        try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "w")) {
-                            if (pfd != null) {
-                                try (OutputStream fos = new java.io.BufferedOutputStream(new ParcelFileDescriptor.AutoCloseOutputStream(pfd))) {
-                                    fos.write(dataBytes);
-                                    fos.flush();
-                                }
-                                writeSucceeded = true;
-                            }
-                        } catch (Exception ex2) {
-                            Log.e("Petal", "ParcelFileDescriptor AutoCloseOutputStream write also failed for " + uriScheme + " Uri: " + uri, ex2);
-                        }
-                    }
-                }
-
-                // Verification read: check if file was written and non-empty
-                if (writeSucceeded) {
-                    int totalRead = 0;
-                    try (InputStream verifyIn = context.getContentResolver().openInputStream(uri)) {
-                        if (verifyIn != null) {
-                            byte[] buf = new byte[8192];
-                            int r;
-                            while ((r = verifyIn.read(buf)) != -1) {
-                                totalRead += r;
-                            }
-                        }
-                    } catch (Exception e) {
-                        Log.w("Petal", "Verification read threw exception for backup", e);
-                    }
-
-                    if (totalRead > 0) {
-                        Log.i("Petal", "Verified backup persistence: " + totalRead + " bytes matching payload to " + uriScheme + " Uri: " + uri);
-                    } else {
-                        Log.e("Petal", "Verification read detected 0 bytes or unreadable file for " + uriScheme + " Uri: " + uri);
-                        writeSucceeded = false;
-                    }
-                }
-
-                if (writeSucceeded) {
-                    handler.post(() -> {
-                        NinjaToast.show(context, context.getString(R.string.app_done) + ": Backup saved successfully (" + dataBytes.length + " bytes)");
-                    });
-                } else {
-                    Log.e("Petal", "Backup failed: could not write to " + uriScheme + " Uri: " + uri);
-                    handler.post(() -> {
-                        NinjaToast.show(context, "Backup failed: could not write to file");
-                    });
-                }
             } catch (Exception e) {
                 Log.e("Petal", "backupToUri error", e);
-                handler.post(() -> {
-                    NinjaToast.show(context, "Backup failed: " + e.getMessage());
-                });
+                handler.post(() -> NinjaToast.show(context, "Backup failed: " + e.getMessage()));
             }
         });
     }
+
+
 
     public static void restoreFromUri(Context context, android.net.Uri uri, boolean restoreBookmarks, boolean restoreHistory, boolean restoreSavedSites, boolean restoreSettings) {
         restoreFromUri(context, uri, restoreBookmarks, restoreHistory, true, true, restoreSavedSites, restoreSettings);

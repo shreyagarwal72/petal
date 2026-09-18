@@ -85,9 +85,39 @@ object BookmarkHtmlImporterExporter {
 
     /**
      * Exports all bookmarks to a target Storage Access Framework (SAF) Uri as JSON.
+     *
+     * The OutputStream is opened on the CALLING thread before handing off to the executor.
+     * SAF/CreateDocument URIs stay valid process-wide, but "wt" truncates the file the moment
+     * the stream is opened — we must open + write atomically to avoid blank-file races.
      */
     @JvmOverloads
     fun exportToUri(context: Context, destinationUri: Uri, format: String = "json", onComplete: ((Boolean, Int) -> Unit)? = null) {
+        // ── Open stream on calling thread ─────────────────────────────────────────────
+        val outputStream: java.io.OutputStream? = run {
+            try {
+                try { context.contentResolver.openOutputStream(destinationUri, "wt") }
+                catch (_: Throwable) {
+                    try { context.contentResolver.openOutputStream(destinationUri, "w") }
+                    catch (_: Throwable) { context.contentResolver.openOutputStream(destinationUri) }
+                }
+            } catch (e: Throwable) {
+                // Last resort: ParcelFileDescriptor
+                try {
+                    val pfd = context.contentResolver.openFileDescriptor(destinationUri, "wt")
+                        ?: context.contentResolver.openFileDescriptor(destinationUri, "w")
+                    pfd?.let { android.os.ParcelFileDescriptor.AutoCloseOutputStream(it) }
+                } catch (_: Throwable) { null }
+            }
+        }
+
+        if (outputStream == null) {
+            mainHandler.post {
+                NinjaToast.show(context, "Export failed: cannot open file for writing")
+                onComplete?.invoke(false, 0)
+            }
+            return
+        }
+
         executor.execute {
             try {
                 val action = RecordAction(context)
@@ -101,6 +131,7 @@ object BookmarkHtmlImporterExporter {
                 }
 
                 if (validBookmarks.isEmpty()) {
+                    outputStream.close()
                     mainHandler.post {
                         NinjaToast.show(context, "No bookmarks found to export")
                         onComplete?.invoke(false, 0)
@@ -110,98 +141,22 @@ object BookmarkHtmlImporterExporter {
 
                 val content = exportToJsonString(validBookmarks)
                 val bytes = content.toByteArray(Charsets.UTF_8)
-                val uriScheme = destinationUri.scheme ?: "unknown"
 
-                Log.i("Petal", "Starting bookmark export to $uriScheme Uri ($destinationUri) with payload size: ${bytes.size} bytes (${validBookmarks.size} bookmarks)")
+                Log.i("Petal", "Writing ${validBookmarks.size} bookmarks (${bytes.size} bytes) to URI: $destinationUri")
 
-                var writeSucceeded = false
-
-                // Attempt 1: ContentResolver openOutputStream with "wt" / "w" mode
-                try {
-                    val outputStream = try {
-                        context.contentResolver.openOutputStream(destinationUri, "wt")
-                    } catch (_: Throwable) {
-                        try {
-                            context.contentResolver.openOutputStream(destinationUri, "w")
-                        } catch (_: Throwable) {
-                            context.contentResolver.openOutputStream(destinationUri)
-                        }
-                    }
-
-                    if (outputStream != null) {
-                        outputStream.buffered().use { os ->
-                            os.write(bytes)
-                            os.flush()
-                        }
-                        writeSucceeded = true
-                    }
-                } catch (e: Exception) {
-                    Log.w("Petal", "ContentResolver openOutputStream failed for bookmark export, falling back to AutoCloseOutputStream", e)
+                outputStream.buffered(65536).use { bos ->
+                    bos.write(bytes)
+                    bos.flush()
                 }
 
-                // Attempt 2: ParcelFileDescriptor with AutoCloseOutputStream
-                if (!writeSucceeded) {
-                    val pfd = try {
-                        context.contentResolver.openFileDescriptor(destinationUri, "wt")
-                    } catch (_: Throwable) {
-                        try {
-                            context.contentResolver.openFileDescriptor(destinationUri, "w")
-                        } catch (_: Throwable) {
-                            null
-                        }
-                    }
-
-                    if (pfd != null) {
-                        try {
-                            android.os.ParcelFileDescriptor.AutoCloseOutputStream(pfd).buffered().use { fos ->
-                                fos.write(bytes)
-                                fos.flush()
-                            }
-                            writeSucceeded = true
-                        } catch (pfdEx: Exception) {
-                            Log.e("Petal", "ParcelFileDescriptor AutoCloseOutputStream failed for bookmark export", pfdEx)
-                        }
-                    }
-                }
-
-                // Verification read: check if file was written and non-empty
-                if (writeSucceeded) {
-                    var totalRead = 0
-                    try {
-                        context.contentResolver.openInputStream(destinationUri)?.use { verifyIn ->
-                            val buf = ByteArray(8192)
-                            var r: Int
-                            while (verifyIn.read(buf).also { r = it } != -1) {
-                                totalRead += r
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.w("Petal", "Verification read threw exception for bookmark export", e)
-                    }
-
-                    if (totalRead > 0) {
-                        Log.i("Petal", "Verified bookmark export persistence: $totalRead bytes to $uriScheme Uri: $destinationUri")
-                    } else {
-                        Log.e("Petal", "Verification read detected 0 bytes or unreadable file for bookmark export to $uriScheme Uri: $destinationUri")
-                        writeSucceeded = false
-                    }
-                }
-
-                if (writeSucceeded) {
-                    Log.i("Petal", "Exported ${validBookmarks.size} bookmarks to JSON: $destinationUri (${bytes.size} bytes)")
-                    mainHandler.post {
-                        NinjaToast.show(context, "Exported ${validBookmarks.size} bookmarks successfully (${bytes.size} bytes)")
-                        onComplete?.invoke(true, validBookmarks.size)
-                    }
-                } else {
-                    Log.e("Petal", "Export failed: could not write to $uriScheme Uri: $destinationUri")
-                    mainHandler.post {
-                        NinjaToast.show(context, "Export failed: could not write to file")
-                        onComplete?.invoke(false, 0)
-                    }
+                Log.i("Petal", "Bookmark export complete: ${validBookmarks.size} items, ${bytes.size} bytes")
+                mainHandler.post {
+                    NinjaToast.show(context, "Exported ${validBookmarks.size} bookmarks (${bytes.size} bytes)")
+                    onComplete?.invoke(true, validBookmarks.size)
                 }
             } catch (e: Exception) {
-                Log.e("Petal", "Failed to export bookmarks", e)
+                Log.e(TAG, "Failed to export bookmarks", e)
+                try { outputStream.close() } catch (_: Throwable) {}
                 mainHandler.post {
                     NinjaToast.show(context, "Export failed: ${e.message}")
                     onComplete?.invoke(false, 0)
@@ -209,6 +164,7 @@ object BookmarkHtmlImporterExporter {
             }
         }
     }
+
 
     /**
      * Parses JSON bookmark file and imports records into the bookmarks database.
