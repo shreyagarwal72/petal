@@ -267,6 +267,7 @@ private fun RenderUserProfileContent(
     var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
     var showCropDialog by remember { mutableStateOf(false) }
     var showMediaPickerSheet by remember { mutableStateOf(false) }
+    var showAvatarPetalPicker by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -301,10 +302,11 @@ private fun RenderUserProfileContent(
         if (granted) {
             showMediaPickerSheet = true
         } else {
-            // If permissions denied, fall back seamlessly to system file picker
-            galleryLauncher.launch("image/*")
+            // If permissions denied, fall back seamlessly to Petal file picker
+            showAvatarPetalPicker = true
         }
     }
+
 
     fun openAvatarMediaPicker() {
         if (com.petal.browser.media.PetalMediaPickerManager.hasMediaPermissions(context)) {
@@ -870,7 +872,7 @@ private fun RenderUserProfileContent(
                         onDismissRequest = { showMediaPickerSheet = false },
                         onBrowseSystemFiles = {
                             showMediaPickerSheet = false
-                            galleryLauncher.launch("image/*")
+                            showAvatarPetalPicker = true
                         }
                     )
                 }
@@ -879,7 +881,33 @@ private fun RenderUserProfileContent(
     }
     }
     }
+
+    if (showAvatarPetalPicker) {
+        com.petal.browser.compose.file.PetalFilePickerScreen(
+            mimeTypes = arrayOf("image/*", "image/png", "image/jpeg", "image/webp"),
+            onDismissRequest = { showAvatarPetalPicker = false },
+            onFileSelected = { file ->
+                showAvatarPetalPicker = false
+                try {
+                    val tempFile = java.io.File(context.cacheDir, "temp_avatar_crop.png")
+                    java.io.FileInputStream(file).use { input ->
+                        java.io.FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+                    }
+                    pendingCropUri = if (tempFile.exists() && tempFile.length() > 0) Uri.fromFile(tempFile) else Uri.fromFile(file)
+                    showCropDialog = true
+                } catch (e: Exception) {
+                    pendingCropUri = Uri.fromFile(file)
+                    showCropDialog = true
+                }
+            },
+            onBrowseSystemFallback = {
+                showAvatarPetalPicker = false
+                galleryLauncher.launch("image/*")
+            }
+        )
+    }
 }
+
 
 // ── Java Interop Bridge ────────────────────────────────────────────────────
 object PetalAccountSyncBridge {

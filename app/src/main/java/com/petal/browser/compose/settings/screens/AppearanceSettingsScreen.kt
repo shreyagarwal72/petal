@@ -148,7 +148,9 @@ fun AppearanceSettingsScreenContent(
         ThemeConfig.DARK -> true
     }
 
-    val fontPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+    var showFontPicker by remember { mutableStateOf(false) }
+    // System picker kept as fallback for the Petal picker's "Browse system" button
+    val systemFontPicker = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
     ) { uri: android.net.Uri? ->
         uri?.let {
@@ -452,7 +454,7 @@ fun AppearanceSettingsScreenContent(
                                     onClick = {
                                         onAppFontChange(font)
                                         if (font == AppFont.CUSTOM) {
-                                            fontPickerLauncher.launch("*/*")
+                                            showFontPicker = true
                                         }
                                     },
                                     label = { Text(font.label) },
@@ -529,7 +531,7 @@ fun AppearanceSettingsScreenContent(
                                     )
                                 }
                                 Button(
-                                    onClick = { fontPickerLauncher.launch("*/*") },
+                                    onClick = { showFontPicker = true },
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -655,6 +657,22 @@ fun AppearanceSettingsScreenContent(
 
                 Spacer(Modifier.height(32.dp))
             }
+        }
+
+        if (showFontPicker) {
+            com.petal.browser.compose.file.PetalFilePickerScreen(
+                mimeTypes = arrayOf("font/ttf", "font/otf", "application/x-font-ttf", "application/x-font-otf", "*/*"),
+                onDismissRequest = { showFontPicker = false },
+                onFileSelected = { file ->
+                    showFontPicker = false
+                    PetalFontHelper.saveCustomFontUri(context, android.net.Uri.fromFile(file))
+                    onAppFontChange(AppFont.CUSTOM)
+                },
+                onBrowseSystemFallback = {
+                    showFontPicker = false
+                    systemFontPicker.launch("*/*")
+                }
+            )
         }
     }
 }

@@ -505,9 +505,11 @@ private fun AddExtensionSheet(
 ) {
     var manualUrl by remember { mutableStateOf("") }
     var showMozillaCatalogPrompt by remember { mutableStateOf(false) }
+    var showXpiPicker by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val busy by PetalExtensionManager.busy.collectAsState()
-    val xpiPicker = rememberLauncherForActivityResult(
+    // System picker kept as fallback for the Petal picker's "Browse system" button
+    val systemXpiPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let(onInstallFile)
@@ -589,7 +591,7 @@ private fun AddExtensionSheet(
 
             Spacer(Modifier.height(12.dp))
             OutlinedButton(
-                onClick = { xpiPicker.launch(arrayOf("*/*")) },
+                onClick = { showXpiPicker = true },
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp)
@@ -655,6 +657,21 @@ private fun AddExtensionSheet(
                 (context as? com.petal.browser.activity.BrowserActivity)?.addAlbum("Firefox Add-ons", PetalExtensionManager.amoAndroidBrowseUrl, true)
             }) { Text("Open Mozilla Add-ons") } },
             dismissButton = { TextButton(onClick = { showMozillaCatalogPrompt = false }) { Text("Cancel") } }
+        )
+    }
+
+    if (showXpiPicker) {
+        com.petal.browser.compose.file.PetalFilePickerScreen(
+            mimeTypes = arrayOf("*/*"),
+            onDismissRequest = { showXpiPicker = false },
+            onFileSelected = { file ->
+                showXpiPicker = false
+                onInstallFile(android.net.Uri.fromFile(file))
+            },
+            onBrowseSystemFallback = {
+                showXpiPicker = false
+                systemXpiPicker.launch(arrayOf("*/*"))
+            }
         )
     }
 

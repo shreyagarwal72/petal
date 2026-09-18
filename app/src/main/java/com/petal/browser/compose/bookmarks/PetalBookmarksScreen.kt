@@ -165,7 +165,8 @@ fun PetalBookmarksScreen(
         }
     }
 
-    val importLauncher = rememberLauncherForActivityResult(
+    var showImportPicker by remember { mutableStateOf(false) }
+    val systemImportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { sourceUri ->
         if (sourceUri != null) {
@@ -176,6 +177,7 @@ fun PetalBookmarksScreen(
             }
         }
     }
+
 
     val filteredBookmarks = remember(searchQuery, rawBookmarks, showReadingListOnly) {
         val list = rawBookmarks ?: emptyList()
@@ -250,7 +252,7 @@ fun PetalBookmarksScreen(
                                     },
                                     onClick = {
                                         overflowMenuExpanded = false
-                                        importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                                        showImportPicker = true
                                     }
                                 )
                                 DropdownMenuItem(
@@ -508,7 +510,28 @@ fun PetalBookmarksScreen(
     }
     }
     }
+
+    if (showImportPicker) {
+        com.petal.browser.compose.file.PetalFilePickerScreen(
+            mimeTypes = arrayOf("text/html", "text/plain", "application/json", "*/*"),
+            onDismissRequest = { showImportPicker = false },
+            onFileSelected = { file ->
+                showImportPicker = false
+                val uri = android.net.Uri.fromFile(file)
+                BookmarkHtmlImporterExporter.importFromUri(context, uri) { success, _ ->
+                    if (success) {
+                        reloadBookmarks()
+                    }
+                }
+            },
+            onBrowseSystemFallback = {
+                showImportPicker = false
+                systemImportLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+            }
+        )
+    }
 }
+
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable

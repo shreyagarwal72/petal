@@ -55,7 +55,8 @@ fun SafeLockerSheet(
     var isUnlocked by remember { mutableStateOf(false) }
     var authError by remember { mutableStateOf<String?>(null) }
 
-    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    var showSafeLockerPicker by remember { mutableStateOf(false) }
+    val systemSafeLockerPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
             var name = "file_${System.currentTimeMillis()}"
             context.contentResolver.query(it, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
@@ -69,6 +70,7 @@ fun SafeLockerSheet(
             }
         }
     }
+
 
     LaunchedEffect(Unit) {
         if (activity != null) {
@@ -138,7 +140,7 @@ fun SafeLockerSheet(
 
                 if (isUnlocked) {
                     FilledTonalButton(
-                        onClick = { filePicker.launch("*/*") },
+                        onClick = { showSafeLockerPicker = true },
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                     ) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -307,7 +309,25 @@ fun SafeLockerSheet(
             }
         }
     }
+
+    if (showSafeLockerPicker) {
+        com.petal.browser.compose.file.PetalFilePickerScreen(
+            mimeTypes = arrayOf("*/*"),
+            onDismissRequest = { showSafeLockerPicker = false },
+            onFileSelected = { file ->
+                showSafeLockerPicker = false
+                scope.launch {
+                    lockerManager.importFile(android.net.Uri.fromFile(file), file.name)
+                }
+            },
+            onBrowseSystemFallback = {
+                showSafeLockerPicker = false
+                systemSafeLockerPicker.launch("*/*")
+            }
+        )
+    }
 }
+
 
 private fun formatFileSize(bytes: Long): String {
     if (bytes <= 0) return "0 B"

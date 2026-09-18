@@ -742,7 +742,8 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
 private fun BackupFeatureStepPage(context: Context) {
     var restoreSuccessMessage by remember { mutableStateOf<String?>(null) }
 
-    val openRestoreLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+    var showRestorePicker by remember { mutableStateOf(false) }
+    val systemRestoreLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
     ) { uri: android.net.Uri? ->
         if (uri != null) {
@@ -798,7 +799,7 @@ private fun BackupFeatureStepPage(context: Context) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
         Card(
             onClick = {
-                openRestoreLauncher.launch(arrayOf("*/*"))
+                showRestorePicker = true
             },
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             shape = RoundedCornerShape(20.dp),
@@ -840,7 +841,36 @@ private fun BackupFeatureStepPage(context: Context) {
             }
         }
     }
+
+    if (showRestorePicker) {
+        com.petal.browser.compose.file.PetalFilePickerScreen(
+            mimeTypes = arrayOf("application/json", "*/*"),
+            onDismissRequest = { showRestorePicker = false },
+            onFileSelected = { file ->
+                showRestorePicker = false
+                try {
+                    com.petal.browser.unit.BackupUnit.restoreFromUri(
+                        context,
+                        android.net.Uri.fromFile(file),
+                        true,
+                        true,
+                        true,
+                        true
+                    )
+                    restoreSuccessMessage = "Data & preferences successfully restored!"
+                    Toast.makeText(context, "Data restored successfully!", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Restore failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            },
+            onBrowseSystemFallback = {
+                showRestorePicker = false
+                systemRestoreLauncher.launch(arrayOf("*/*"))
+            }
+        )
+    }
 }
+
 
 // ==========================================
 // 5. THEME & APP LANGUAGE PAGE

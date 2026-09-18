@@ -61,7 +61,8 @@ fun DataBackupSettingsScreen(
         }
     }
 
-    val openRestoreLauncher = rememberLauncherForActivityResult(
+    var showRestorePicker by remember { mutableStateOf(false) }
+    val systemRestoreLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
@@ -176,7 +177,7 @@ fun DataBackupSettingsScreen(
             confirmButton = {
                 Button(onClick = {
                     showRestoreDialog = false
-                    openRestoreLauncher.launch(arrayOf("application/json", "*/*"))
+                    showRestorePicker = true
                 }) {
                     Text("Choose Backup File")
                 }
@@ -257,5 +258,31 @@ fun DataBackupSettingsScreen(
                 Spacer(Modifier.height(32.dp))
             }
         }
+
+        if (showRestorePicker) {
+            com.petal.browser.compose.file.PetalFilePickerScreen(
+                mimeTypes = arrayOf("application/json", "*/*"),
+                onDismissRequest = { showRestorePicker = false },
+                onFileSelected = { file ->
+                    showRestorePicker = false
+                    val uri = android.net.Uri.fromFile(file)
+                    BackupUnit.restoreFromUri(
+                        context,
+                        uri,
+                        restoreBookmarks,
+                        restoreHistory,
+                        restoreStartSites,
+                        restoreTabSessions,
+                        restoreSavedSites,
+                        restoreSettings
+                    )
+                },
+                onBrowseSystemFallback = {
+                    showRestorePicker = false
+                    systemRestoreLauncher.launch(arrayOf("application/json", "*/*"))
+                }
+            )
+        }
     }
 }
+
