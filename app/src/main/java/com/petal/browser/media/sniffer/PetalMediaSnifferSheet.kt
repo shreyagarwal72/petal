@@ -92,6 +92,7 @@ fun PetalMediaSnifferOverlay(
     val platform = remember(currentPageUrl) { SupportedPlatforms.getPlatform(currentPageUrl) }
     val socialOnly = platform != null
     var sheetOpen by remember { mutableStateOf(false) }
+    var dismissed by remember { mutableStateOf(false) }
     val isSearchOrInternal = remember(currentPageUrl) {
         PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(currentPageUrl)
     }
