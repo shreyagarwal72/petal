@@ -261,6 +261,30 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * or, worse, a no-op because setAction("") already cleared the intent action.
      */
     public boolean suppressResumeDispatch = false;
+    public boolean isAppLockLocked = false;
+    private boolean launchRippleTriggered = false;
+
+    public static boolean isExternalOrWidgetLaunch(Intent intent) {
+        if (intent == null) return false;
+        if (intent.getBooleanExtra("open_downloads", false)) return true;
+        String action = intent.getAction();
+        if (action == null || action.isEmpty()) return false;
+        if (com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_SEARCH.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_VOICE.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_LENS.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_BOOKMARKS.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_DOWNLOADS.equals(action)
+                || com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB.equals(action)) {
+            return true;
+        }
+        if (Intent.ACTION_VIEW.equals(action) || Intent.ACTION_SEND.equals(action)
+                || Intent.ACTION_WEB_SEARCH.equals(action) || Intent.ACTION_PROCESS_TEXT.equals(action)) {
+            return true;
+        }
+        return false;
+    }
     /**
      * A widget action (ACTION_OPEN_SEARCH / _AI_SEARCH / _VOICE) waiting to run once the
      * window has genuine input focus. See {@link #runOrDeferPendingWidgetAction()}.
@@ -522,6 +546,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         if (sp.getBoolean("sp_app_lock_enabled", false)) {
+            isAppLockLocked = true;
             String lockType = sp.getString("sp_app_lock_type", "FINGERPRINT");
             if ("FINGERPRINT".equals(lockType) || sp.getBoolean("sp_biometric_lock", false)) {
                 com.petal.browser.security.BiometricLockManager.authenticate(
@@ -532,6 +557,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void run() {
                             // Success: user authenticated
+                            isAppLockLocked = false;
+                            launchRippleTriggered = true;
+                            com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
+                            runOrDeferPendingWidgetAction();
                         }
                     },
                     new java.util.function.Consumer<String>() {
@@ -549,6 +578,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         @Override
                         public void run() {
                             // Success: password unlocked
+                            isAppLockLocked = false;
+                            launchRippleTriggered = true;
+                            com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
+                            runOrDeferPendingWidgetAction();
                         }
                     },
                     new Runnable() {
@@ -746,6 +779,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // We flag suppressResumeDispatch so onResume() won't double-dispatch it.
         suppressResumeDispatch = true;
         dispatchIntent(getIntent());
+
+        // Launch ripple effect: if app lock is NOT enabled and this is a normal app launch
+        // (not launched via notification, widget, or external URL view), trigger the fluid ripple animation.
+        if (!sp.getBoolean("sp_app_lock_enabled", false) && !isExternalOrWidgetLaunch(getIntent()) && !launchRippleTriggered) {
+            launchRippleTriggered = true;
+            getWindow().getDecorView().post(() -> {
+                com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
+            });
+        }
 
         // Welcome and Search Engine dialogs are displayed in onStart() to ensure the Activity window and decor view are fully attached.
         updateBackCallbackState();
@@ -5713,6 +5755,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      */
     public void runOrDeferPendingWidgetAction() {
         if (contentFrame == null) return;
+        if (isAppLockLocked) {
+            // Defer until app lock authentication finishes
+            return;
+        }
         if (hasWindowFocus()) {
             // Already focused and interactive (e.g. the widget was tapped while Petal was
             // already in the foreground) — nothing is going to steal focus afterward, so
@@ -5724,6 +5770,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     }
 
     public void consumePendingWidgetAction() {
+        if (isAppLockLocked) {
+            return;
+        }
         Runnable action = pendingWidgetAction;
         pendingWidgetAction = null;
         if (action != null) {
@@ -5734,7 +5783,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus && pendingWidgetAction != null && contentFrame != null) {
+        if (hasFocus && !isAppLockLocked && pendingWidgetAction != null && contentFrame != null) {
             contentFrame.post(this::consumePendingWidgetAction);
         }
     }

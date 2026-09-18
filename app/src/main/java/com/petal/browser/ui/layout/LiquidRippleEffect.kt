@@ -105,18 +105,83 @@ class LiquidRippleEffect(view: View) {
         @JvmOverloads
         fun trigger(view: View?, cx: Float? = null, cy: Float? = null, durationSec: Float = 3.2f) {
             if (view == null) return
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                val targetView = view.rootView ?: view
-                val originX = cx ?: (targetView.width.toFloat().takeIf { it > 0 } ?: targetView.resources.displayMetrics.widthPixels.toFloat()) / 2f
-                val originY = cy ?: (targetView.height.toFloat().takeIf { it > 0 } ?: targetView.resources.displayMetrics.heightPixels.toFloat()) / 2f
+            val targetView = view.rootView ?: view
+            val originX = cx ?: (targetView.width.toFloat().takeIf { it > 0 } ?: targetView.resources.displayMetrics.widthPixels.toFloat()) / 2f
+            val originY = cy ?: (targetView.height.toFloat().takeIf { it > 0 } ?: targetView.resources.displayMetrics.heightPixels.toFloat()) / 2f
 
-                var effect = targetView.getTag(R.id.ripple_effect_tag) as? LiquidRippleEffect
-                if (effect == null) {
-                    effect = LiquidRippleEffect(targetView)
-                    targetView.setTag(R.id.ripple_effect_tag, effect)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                try {
+                    var effect = targetView.getTag(R.id.ripple_effect_tag) as? LiquidRippleEffect
+                    if (effect == null) {
+                        effect = LiquidRippleEffect(targetView)
+                        targetView.setTag(R.id.ripple_effect_tag, effect)
+                    }
+                    effect.animate(originX, originY, durationSec)
+                    return
+                } catch (ignored: Throwable) {
+                    // Fallback to overlay animation if AGSL runtime shader fails
                 }
-                effect.animate(originX, originY, durationSec)
             }
+
+            // Fallback for pre-Tiramisu or devices where AGSL fails
+            triggerFallbackRipple(targetView, originX, originY, (durationSec * 1000f).toLong().coerceIn(600L, 1600L))
+        }
+
+        private fun triggerFallbackRipple(targetView: View, originX: Float, originY: Float, animDurationMs: Long) {
+            val context = targetView.context ?: return
+            val parentGroup = targetView as? android.view.ViewGroup
+                ?: (targetView.parent as? android.view.ViewGroup) ?: return
+
+            // Create a temporary canvas overlay view for an expanding liquid-style ring ripple
+            val rippleOverlay = object : View(context) {
+                var currentRadius = 0f
+                var currentAlpha = 1f
+                private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                    style = android.graphics.Paint.Style.STROKE
+                    strokeWidth = 14f * context.resources.displayMetrics.density
+                    color = androidx.core.content.ContextCompat.getColor(context, R.color.md_theme_primary)
+                }
+
+                override fun onDraw(canvas: android.graphics.Canvas) {
+                    super.onDraw(canvas)
+                    if (currentRadius > 0f && currentAlpha > 0f) {
+                        paint.alpha = (currentAlpha * 255).toInt().coerceIn(0, 255)
+                        canvas.drawCircle(originX, originY, currentRadius, paint)
+                    }
+                }
+            }
+
+            val maxRadius = kotlin.math.hypot(
+                kotlin.math.max(originX, targetView.width - originX).toDouble(),
+                kotlin.math.max(originY, targetView.height - originY).toDouble()
+            ).toFloat().coerceAtLeast(300f)
+
+            rippleOverlay.layoutParams = android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+
+            try {
+                parentGroup.addView(rippleOverlay)
+                val animator = ValueAnimator.ofFloat(0f, 1f).apply {
+                    duration = animDurationMs
+                    interpolator = android.view.animation.DecelerateInterpolator()
+                    addUpdateListener { va ->
+                        val fraction = va.animatedValue as Float
+                        rippleOverlay.currentRadius = fraction * maxRadius
+                        rippleOverlay.currentAlpha = 1f - fraction
+                        rippleOverlay.invalidate()
+                    }
+                    addListener(object : AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator) {
+                            try {
+                                parentGroup.removeView(rippleOverlay)
+                            } catch (ignored: Throwable) {}
+                        }
+                    })
+                }
+                animator.start()
+            } catch (ignored: Throwable) {}
         }
     }
 }
