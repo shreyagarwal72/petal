@@ -2476,6 +2476,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (networkStatusBanner != null) networkStatusBanner.bringToFront();
             if (mediaSnifferBanner != null) mediaSnifferBanner.bringToFront();
             if (fabBubble != null) fabBubble.bringToFront();
+            View refreshBar = findViewById(R.id.refresh_bar_compose);
+            if (refreshBar != null) refreshBar.bringToFront();
             addressBar.requestLayout();
             mainContent.requestLayout();
 
@@ -3867,13 +3869,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (addressBarForMargin != null) {
                 final android.widget.FrameLayout.LayoutParams finalParams = params;
                 final androidx.compose.ui.platform.ComposeView finalRefreshBar = refreshBarCompose;
-                addressBarForMargin.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-                    int realHeight = v.getHeight();
-                    if (realHeight > 0 && finalParams.topMargin != realHeight) {
-                        finalParams.topMargin = realHeight;
+                android.view.View.OnLayoutChangeListener layoutListener = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                    boolean isBottom = "BOTTOM".equalsIgnoreCase(sp.getString("sp_address_bar_position", "TOP"));
+                    int targetTopMargin;
+                    if (isBottom) {
+                        targetTopMargin = 0;
+                    } else {
+                        targetTopMargin = v.getBottom();
+                        if (targetTopMargin <= 0) {
+                            targetTopMargin = v.getHeight();
+                        }
+                    }
+                    if (targetTopMargin > 0 && finalParams.topMargin != targetTopMargin) {
+                        finalParams.topMargin = targetTopMargin;
                         finalRefreshBar.setLayoutParams(finalParams);
                     }
-                });
+                };
+                addressBarForMargin.addOnLayoutChangeListener(layoutListener);
+                addressBarForMargin.post(() -> layoutListener.onLayoutChange(addressBarForMargin, 0, 0, 0, 0, 0, 0, 0, 0));
             }
         }
 

@@ -4,6 +4,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.animateColorAsState
@@ -113,25 +115,19 @@ fun RefreshBarLoadingIndicator(
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInVertically(
-            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-            initialOffsetY = { -it }
-        ) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
-        exit = slideOutVertically(
-            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
-            targetOffsetY = { -it }
-        ) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)),
+        enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + expandVertically(expandFrom = Alignment.Top),
+        exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + shrinkVertically(shrinkTowards = Alignment.Top),
         modifier = modifier
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp)
+                .height(110.dp)
                 .zIndex(500f)
                 .padding(top = 8.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            val offsetY = if (isRefreshing) 40.dp else if (!isVisible) 0.dp else ((pullProgress * 80.dp.value).coerceAtMost(120f)).dp
+            val offsetY = if (isRefreshing) 20.dp else if (!isVisible) 0.dp else ((pullProgress * 56.dp.value).coerceAtMost(70f)).dp
             val currentOpacity = if (isRefreshing) 1.0f else if (!isVisible) 0f else (pullProgress * 1.5f).coerceIn(0f, 1f)
             val targetScale = if (isRefreshing) 1.0f else if (!isVisible) 0f else (0.4f + (pullProgress * 0.6f)).coerceIn(0.4f, 1.0f)
             // Bouncy settle once the indicator commits to refreshing (target snaps to 1.0),
