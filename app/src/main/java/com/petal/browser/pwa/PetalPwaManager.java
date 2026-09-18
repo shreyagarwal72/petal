@@ -142,7 +142,7 @@ public class PetalPwaManager {
                 "   try {" +
                 "       var manifestLink = document.querySelector('link[rel=\"manifest\"]');" +
                 "       var manifestUrl = manifestLink ? manifestLink.href : '';" +
-                "       var appleIcon = document.querySelector('link[rel=\"apple-touch-icon\"]') || document.querySelector('link[rel=\"apple-touch-icon-precomposed\"]');" +
+                "       var appleIcon = document.querySelector('link[rel=\"apple-touch-icon\"]') || document.querySelector('link[rel=\"apple-touch-icon-precomposed\"]') || document.querySelector('link[rel=\"icon\"][sizes=\"192x192\"]') || document.querySelector('link[rel=\"icon\"][sizes=\"512x512\"]') || document.querySelector('link[rel=\"icon\"]');" +
                 "       var appleIconUrl = appleIcon ? appleIcon.href : '';" +
                 "       var themeColorMeta = document.querySelector('meta[name=\"theme-color\"]');" +
                 "       var themeColor = themeColorMeta ? themeColorMeta.content : '';" +
@@ -246,41 +246,62 @@ public class PetalPwaManager {
         Bitmap output = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(output);
 
-        int bgColor = Color.WHITE;
-        if (themeColorHex != null && !themeColorHex.isEmpty()) {
+        // If rawIcon is completely missing or recycled, use browser launcher icon
+        if (rawIcon == null || rawIcon.isRecycled()) {
+            Bitmap appIcon = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher);
+            if (appIcon != null) {
+                return appIcon;
+            }
+            return output;
+        }
+
+        // Check if rawIcon already has content across full bounds and high resolution
+        boolean isHighRes = rawIcon.getWidth() >= 96 && rawIcon.getHeight() >= 96;
+
+        // Determine if rawIcon has transparent areas
+        boolean hasTransparency = rawIcon.hasAlpha();
+
+        int bgColor = Color.TRANSPARENT;
+        if (themeColorHex != null && !themeColorHex.trim().isEmpty() && !themeColorHex.equalsIgnoreCase("#FFFFFF")) {
             try {
-                bgColor = Color.parseColor(themeColorHex);
+                bgColor = Color.parseColor(themeColorHex.trim());
             } catch (Exception ignored) {}
         }
 
-        Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        bgPaint.setColor(bgColor);
-
-        float cornerRadius = targetSize * 0.22f;
-        RectF rect = new RectF(0, 0, targetSize, targetSize);
-        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint);
-
-        if (rawIcon != null && !rawIcon.isRecycled()) {
-            int iconPadding = (int) (targetSize * 0.15f);
-            Rect destRect;
-            if (rawIcon.getWidth() >= targetSize * 0.75f && rawIcon.getHeight() >= targetSize * 0.75f) {
+        // If no distinct theme color is specified or it's white, extract a dominant color from rawIcon or use a subtle dark/tinted rounded background
+        if (bgColor == Color.TRANSPARENT || bgColor == Color.WHITE) {
+            // Sample corner and center pixels to detect if the icon already provides its own solid background
+            int cornerPixel = rawIcon.getPixel(0, 0);
+            int cornerAlpha = Color.alpha(cornerPixel);
+            if (cornerAlpha > 200 && isHighRes) {
+                // Icon is a full solid canvas image (e.g. Nextup / 192x192 PWA icon), draw it directly with smooth rounded corners
+                float cornerRadius = targetSize * 0.22f;
+                RectF rect = new RectF(0, 0, targetSize, targetSize);
                 Path path = new Path();
                 path.addRoundRect(rect, cornerRadius, cornerRadius, Path.Direction.CW);
                 canvas.clipPath(path);
-                destRect = new Rect(0, 0, targetSize, targetSize);
+                Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+                canvas.drawBitmap(rawIcon, null, new Rect(0, 0, targetSize, targetSize), paint);
+                return output;
             } else {
-                destRect = new Rect(iconPadding, iconPadding, targetSize - iconPadding, targetSize - iconPadding);
-            }
-            Paint iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-            canvas.drawBitmap(rawIcon, null, destRect, iconPaint);
-        } else {
-            Bitmap appIcon = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher);
-            if (appIcon != null) {
-                int iconPadding = (int) (targetSize * 0.18f);
-                Rect destRect = new Rect(iconPadding, iconPadding, targetSize - iconPadding, targetSize - iconPadding);
-                canvas.drawBitmap(appIcon, null, destRect, bgPaint);
+                // Transparent favicon: use a neutral background container so white/light glyphs don't disappear on white
+                bgColor = Color.parseColor("#1C1B1F");
             }
         }
+
+        // Draw rounded container
+        float cornerRadius = targetSize * 0.22f;
+        RectF rect = new RectF(0, 0, targetSize, targetSize);
+        Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bgPaint.setColor(bgColor);
+        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint);
+
+        // Center and scale favicon with appropriate padding
+        int iconPadding = (int) (targetSize * 0.16f);
+        Rect destRect = new Rect(iconPadding, iconPadding, targetSize - iconPadding, targetSize - iconPadding);
+        Paint iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        canvas.drawBitmap(rawIcon, null, destRect, iconPaint);
+
         return output;
     }
 
@@ -421,6 +442,8 @@ public class PetalPwaManager {
         try {
             URL url = new URL(urlStr);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36");
+            conn.setRequestProperty("Accept", "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
             conn.setDoInput(true);
@@ -449,8 +472,28 @@ public class PetalPwaManager {
                 if (json.has("icons")) {
                     JSONArray icons = json.getJSONArray("icons");
                     if (icons.length() > 0) {
-                        String rawIcon = icons.getJSONObject(icons.length() - 1).optString("src", "");
-                        manifest.iconUrl = resolveUrl(manifestUrl, rawIcon);
+                        // Pick the best icon (prefer 192x192, 512x512, or the largest declared size)
+                        String bestIcon = "";
+                        int bestSize = 0;
+                        for (int i = 0; i < icons.length(); i++) {
+                            JSONObject ic = icons.getJSONObject(i);
+                            String src = ic.optString("src", "");
+                            String sizes = ic.optString("sizes", "0x0");
+                            int sizeVal = 0;
+                            try {
+                                if (sizes.contains("x")) {
+                                    sizeVal = Integer.parseInt(sizes.split("x")[0].trim());
+                                }
+                            } catch (Exception ignored) {}
+                            if (bestIcon.isEmpty() || sizeVal >= bestSize) {
+                                bestSize = sizeVal;
+                                bestIcon = src;
+                            }
+                        }
+                        if (bestIcon.isEmpty()) {
+                            bestIcon = icons.getJSONObject(icons.length() - 1).optString("src", "");
+                        }
+                        manifest.iconUrl = resolveUrl(manifestUrl, bestIcon);
                     }
                 }
 

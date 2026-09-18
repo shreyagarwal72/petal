@@ -40,3 +40,7 @@
 
 ## 5. Stability & Data Protection Guarantee
 - **Strict Zero Data Loss**: Upgrades, schema migrations, and preference updates must never wipe or corrupt user bookmarks, history, passwords, or active tabs.
+
+## 6. Execution & Performance Protocol
+- **No Redundant File Re-Reads**: Never repeatedly read or re-read the same file or surrounding sections. Inspect targets precisely once, synthesize necessary context, and immediately apply the concrete practical fix.
+- **Decisive Edits Over Analysis Loops**: Avoid prolonged discovery steps or repetitive exploratory passes when the problem and file locations are identified; implement changes directly and verify.
