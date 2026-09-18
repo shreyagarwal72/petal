@@ -2180,15 +2180,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                             ((com.petal.browser.view.PetalGeckoView) currentAlbumController).scrollToTop();
                         } else if (ninjaWebView != null) {
-                            ninjaWebView.scrollTo(0, 0);
+                            ninjaWebView.pageUp(true);
                         }
+                        return kotlin.Unit.INSTANCE;
                     },
                     () -> {
                         if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
                             ((com.petal.browser.view.PetalGeckoView) currentAlbumController).scrollToBottom();
                         } else if (ninjaWebView != null) {
-                            ninjaWebView.scrollTo(0, ninjaWebView.computeVerticalScrollRange());
+                            ninjaWebView.pageDown(true);
                         }
+                        return kotlin.Unit.INSTANCE;
                     }
                 );
                 fastScrubberBridge.bind(scrubberCompose);
