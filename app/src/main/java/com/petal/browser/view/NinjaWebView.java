@@ -89,6 +89,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
     public interface OnScrollChangeListener {
         void onScrollDown();
         void onScrollUp();
+        default void onScrollPositionChanged(int scrollY, int contentHeight) {}
     }
 
     private OnScrollChangeListener onScrollChangeListener;
@@ -122,6 +123,7 @@ public class NinjaWebView extends NestedScrollWebView implements AlbumController
         }
 
         if (onScrollChangeListener != null) {
+            onScrollChangeListener.onScrollPositionChanged(t, computeVerticalScrollRange());
             int dy = t - oldt;
             if (dy > 12) {
                 onScrollChangeListener.onScrollDown();

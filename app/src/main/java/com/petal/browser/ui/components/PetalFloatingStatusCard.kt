@@ -103,6 +103,7 @@ data class PetalFloatingStatusCardData(
      */
     val progress: Float? = null,
     val isIndeterminateProgress: Boolean = false,
+    val useWavyProgress: Boolean = true,
     val progressColor: Color? = null,
     val containerColor: Color? = null,
     val contentColor: Color? = null
@@ -352,37 +353,71 @@ fun PetalFloatingStatusCard(
                         }
                     }
 
-                    // Slim animated progress indicator docked flush along bottom edge
+                    // Animated progress indicator docked flush along bottom edge
                     val barColor = data.progressColor ?: MaterialTheme.colorScheme.primary
                     val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
 
-                    if (data.isIndeterminateProgress) {
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(3.5.dp),
-                            color = barColor,
-                            trackColor = trackColor,
-                            strokeCap = StrokeCap.Round
-                        )
-                    } else if (data.progress != null) {
-                        val animatedProgress by animateFloatAsState(
-                            targetValue = data.progress.coerceIn(0f, 1f),
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioNoBouncy,
-                                stiffness = Spring.StiffnessMediumLow
-                            ),
-                            label = "floatingCardProgress"
-                        )
-                        LinearProgressIndicator(
-                            progress = { animatedProgress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(3.5.dp),
-                            color = barColor,
-                            trackColor = trackColor,
-                            strokeCap = StrokeCap.Round
-                        )
+                    if (data.useWavyProgress) {
+                        if (data.isIndeterminateProgress) {
+                            LinearRipplingWavyProgressIndicator(
+                                progress = null,
+                                modifier = Modifier.fillMaxWidth(),
+                                height = 4.5.dp,
+                                strokeWidth = 3.5.dp,
+                                waveAmplitude = 2.5.dp,
+                                waveWavelength = 22.dp,
+                                activeColor = barColor,
+                                trackColor = trackColor
+                            )
+                        } else if (data.progress != null) {
+                            val animatedProgress by animateFloatAsState(
+                                targetValue = data.progress.coerceIn(0f, 1f),
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioNoBouncy,
+                                    stiffness = Spring.StiffnessMediumLow
+                                ),
+                                label = "floatingCardProgress"
+                            )
+                            LinearRipplingWavyProgressIndicator(
+                                progress = animatedProgress,
+                                modifier = Modifier.fillMaxWidth(),
+                                height = 4.5.dp,
+                                strokeWidth = 3.5.dp,
+                                waveAmplitude = 2.5.dp,
+                                waveWavelength = 22.dp,
+                                activeColor = barColor,
+                                trackColor = trackColor
+                            )
+                        }
+                    } else {
+                        if (data.isIndeterminateProgress) {
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(3.5.dp),
+                                color = barColor,
+                                trackColor = trackColor,
+                                strokeCap = StrokeCap.Round
+                            )
+                        } else if (data.progress != null) {
+                            val animatedProgress by animateFloatAsState(
+                                targetValue = data.progress.coerceIn(0f, 1f),
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioNoBouncy,
+                                    stiffness = Spring.StiffnessMediumLow
+                                ),
+                                label = "floatingCardProgress"
+                            )
+                            LinearProgressIndicator(
+                                progress = { animatedProgress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(3.5.dp),
+                                color = barColor,
+                                trackColor = trackColor,
+                                strokeCap = StrokeCap.Round
+                            )
+                        }
                     }
                 }
             }

@@ -61,6 +61,15 @@
         android:layout_above="@id/download_banner_compose"
         android:elevation="21dp" />
 
+    <!-- Fast Scrubber & Jump to Top/Bottom Floating Capsule -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/fast_scrubber_compose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:elevation="21dp" />
+
     <!-- Floating Network Status Pill (Offline / Back Online Left-to-Right dialogue) -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/network_status_compose"

@@ -25,6 +25,10 @@ package com.petal.browser.ui.components
 
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -47,6 +51,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
@@ -161,13 +166,158 @@ fun PetalBottomNavBar(
             )
 
             var dragAccumulator by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+            var showRadialDial by remember { androidx.compose.runtime.mutableStateOf(false) }
+
+            // Thumb-Zone Radial Speed Dial Arc Overlay (Triggered by long-pressing Home/Menu)
+            AnimatedVisibility(
+                visible = showRadialDial,
+                enter = fadeIn(spring(stiffness = Spring.StiffnessMedium)) + scaleIn(initialScale = 0.8f),
+                exit = fadeOut(spring(stiffness = Spring.StiffnessMedium)) + scaleOut(targetScale = 0.8f),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 76.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f),
+                    tonalElevation = 6.dp,
+                    shadowElevation = 12.dp,
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                    modifier = Modifier.wrapContentSize()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Action 1: New Incognito / Tab
+                        IconButton(
+                            onClick = {
+                                showRadialDial = false
+                                try {
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.MEDIUM_CLICK,
+                                        0.7f
+                                    )
+                                } catch (_: Throwable) {}
+                                onNewTabClick()
+                            },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = "New Tab",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        // Action 2: Fast Jump to Home
+                        IconButton(
+                            onClick = {
+                                showRadialDial = false
+                                try {
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
+                                        0.5f
+                                    )
+                                } catch (_: Throwable) {}
+                                onHomeClick()
+                            },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(com.petal.browser.R.drawable.home),
+                                contentDescription = "Home",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        // Action 3: Tabs Overview
+                        IconButton(
+                            onClick = {
+                                showRadialDial = false
+                                try {
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
+                                        0.5f
+                                    )
+                                } catch (_: Throwable) {}
+                                onTabsClick()
+                            },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            TabCountBadge(
+                                color = MaterialTheme.colorScheme.primary,
+                                count = animatedCount,
+                                scale = 1f
+                            )
+                        }
+
+                        // Action 4: Quick Share / Action
+                        IconButton(
+                            onClick = {
+                                showRadialDial = false
+                                try {
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
+                                        0.5f
+                                    )
+                                } catch (_: Throwable) {}
+                                onMenuClick()
+                            },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Share,
+                                contentDescription = "Share",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        // Action 5: Overflow Menu
+                        IconButton(
+                            onClick = {
+                                showRadialDial = false
+                                try {
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
+                                        0.5f
+                                    )
+                                } catch (_: Throwable) {}
+                                onMenuClick()
+                            },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = "Menu",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+            }
 
             HorizontalFloatingToolbar(
                 expanded = true,
                 modifier = Modifier
                     .wrapContentWidth()
                     .height(64.dp)
-                    .shadow(12.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                    .shadow(16.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
+                    .border(
+                        0.75.dp,
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                            )
+                        ),
+                        CircleShape
+                    )
                     .clip(CircleShape)
                     .androidx.compose.ui.input.pointer.pointerInput(Unit) {
                         androidx.compose.foundation.gestures.detectHorizontalDragGestures(
@@ -209,7 +359,16 @@ fun PetalBottomNavBar(
                                 }
                         )
                     },
-                    onClick = onHomeClick
+                    onClick = onHomeClick,
+                    onLongClick = {
+                        try {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
+                                0.85f
+                            )
+                        } catch (_: Throwable) {}
+                        showRadialDial = !showRadialDial
+                    }
                 )
 
                 FloatingNavTabItem(
@@ -291,7 +450,16 @@ fun PetalBottomNavBar(
                                 }
                         )
                     },
-                    onClick = onMenuClick
+                    onClick = onMenuClick,
+                    onLongClick = {
+                        try {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
+                                0.85f
+                            )
+                        } catch (_: Throwable) {}
+                        showRadialDial = !showRadialDial
+                    }
                 )
             }
         }

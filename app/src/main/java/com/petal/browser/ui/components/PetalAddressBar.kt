@@ -218,10 +218,28 @@ fun PetalAddressBar(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Favicon only. The old security/site-controls tool button is intentionally gone.
+                        // Security / Privacy Shield Favicon Button (Tapping opens Privacy & Tracker Shield HUD)
                         Box(
                             contentAlignment = Alignment.Center,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .clickable(
+                                    indication = ripple(bounded = true),
+                                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                                ) {
+                                    if (!isBlankOrSearch && context is androidx.activity.ComponentActivity) {
+                                        try {
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                                com.petal.browser.haptics.PetalHapticEngine.Pattern.MEDIUM_CLICK,
+                                                0.65f
+                                            )
+                                        } catch (_: Throwable) {}
+                                        com.petal.browser.ui.components.PetalPrivacyShieldSheet.show(context, url) {}
+                                    } else {
+                                        onAddressClick()
+                                    }
+                                }
                         ) {
                             if (favicon != null && !isBlankOrSearch && !isIncognito) {
                                 Image(
@@ -231,9 +249,15 @@ fun PetalAddressBar(
                                 )
                             } else {
                                 Icon(
-                                    imageVector = if (isIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Language,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    imageVector = if (isIncognito) {
+                                        Icons.Rounded.VisibilityOff
+                                    } else if (isHttps) {
+                                        Icons.Rounded.Lock
+                                    } else {
+                                        Icons.Rounded.Language
+                                    },
+                                    contentDescription = "Privacy Shield",
+                                    tint = if (isHttps && !isIncognito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(19.dp)
                                 )
                             }

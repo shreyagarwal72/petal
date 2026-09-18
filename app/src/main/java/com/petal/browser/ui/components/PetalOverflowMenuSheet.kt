@@ -452,6 +452,44 @@ fun PetalOverflowMenuSheet(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 )
 
+                // 4-Column Quick Action Matrix
+                ActionMatrixGrid(
+                    actions = listOf(
+                        ActionMatrixItem(
+                            icon = Icons.Rounded.DesktopWindows,
+                            label = "Desktop",
+                            isActive = isDesktopSite,
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
+                            onClick = { onToggleDesktopSite(!isDesktopSite) }
+                        ),
+                        ActionMatrixItem(
+                            icon = Icons.Rounded.Shield,
+                            label = "AdBlock",
+                            isActive = isAdBlockEnabled,
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Burst.toShape(),
+                            onClick = { onToggleAdBlock(!isAdBlockEnabled) }
+                        ),
+                        ActionMatrixItem(
+                            icon = Icons.Rounded.Share,
+                            label = "Share",
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                            onClick = onShareLink
+                        ),
+                        ActionMatrixItem(
+                            icon = Icons.Rounded.FindInPage,
+                            label = "Find",
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                            onClick = onSearchOnSite
+                        )
+                    )
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                )
+
                 // Section 1: Tab actions
                 MenuRowItem(
                     icon = Icons.Rounded.Add,

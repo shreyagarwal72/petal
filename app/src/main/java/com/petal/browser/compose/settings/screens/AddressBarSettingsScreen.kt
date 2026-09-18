@@ -47,10 +47,83 @@ fun AddressBarSettingsScreen(
             ) {
                 SettingsCategoryCard("Position", icon = Icons.Rounded.SwapVert, cardId = "address_bar_position", targetHighlightId = targetHighlightItemId) {
                     Text("Choose where the compact address bar is placed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    ChoiceRow(
-                        options = listOf("TOP" to "Top", "BOTTOM" to "Bottom"),
-                        selected = position,
-                        onSelected = {
+                    Spacer(Modifier.height(4.dp))
+                    com.petal.browser.ui.components.WireframeOptionPicker(
+                        options = listOf(
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = "TOP",
+                                label = "Top Bar",
+                                previewContent = {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(6.dp),
+                                        verticalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        // Top pill
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(10.dp)
+                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.primary)
+                                        )
+                                        // Content dummy lines
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.7f)
+                                                .height(6.dp)
+                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
+                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.9f)
+                                                .height(6.dp)
+                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
+                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                        )
+                                    }
+                                }
+                            ),
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = "BOTTOM",
+                                label = "Bottom Bar",
+                                previewContent = {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(6.dp),
+                                        verticalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.9f)
+                                                .height(6.dp)
+                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
+                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.7f)
+                                                .height(6.dp)
+                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
+                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                        )
+                                        // Bottom pill
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(10.dp)
+                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.primary)
+                                        )
+                                    }
+                                }
+                            )
+                        ),
+                        selected = position.uppercase(),
+                        onOptionSelected = {
                             viewModel.setPosition(it)
                             (context as? BrowserActivity)?.applyAddressBarPosition()
                             (context as? BrowserActivity)?.window?.decorView?.post { (context as? BrowserActivity)?.applyAddressBarPosition() }
@@ -60,6 +133,7 @@ fun AddressBarSettingsScreen(
 
                 SettingsCategoryCard("Size", icon = Icons.Rounded.ViewCompact, cardId = "address_bar_size", targetHighlightId = targetHighlightItemId) {
                     Text("Compact is the recommended short-height layout.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(4.dp))
                     ChoiceRow(
                         options = listOf("COMPACT" to "Compact", "STANDARD" to "Standard"),
                         selected = height,
@@ -69,6 +143,7 @@ fun AddressBarSettingsScreen(
 
                 SettingsCategoryCard("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
                     Text("Choose the optional action shown beside the address field.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(4.dp))
                     ChoiceRow(
                         options = listOf("AI" to "AI", "BOOKMARK" to "Bookmark", "NONE" to "None"),
                         selected = action,

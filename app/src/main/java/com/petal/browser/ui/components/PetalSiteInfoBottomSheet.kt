@@ -91,12 +91,22 @@ fun PetalSiteInfoBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .width(42.dp)
+                    .height(4.5.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+            )
+        }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(horizontal = 20.dp, vertical = 4.dp)
         ) {
             // --- Domain & Security Header ---
             Card(
@@ -115,26 +125,26 @@ fun PetalSiteInfoBottomSheet(
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
+                    PetalShapeIconBadge(
+                        shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        size = 50.dp,
+                        iconSize = 26.dp
                     ) {
                         if (favicon != null) {
                             Image(
                                 bitmap = favicon.asImageBitmap(),
                                 contentDescription = "Site Favicon",
                                 modifier = Modifier
-                                    .size(28.dp)
+                                    .size(26.dp)
                                     .clip(CircleShape)
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Rounded.Public,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -186,16 +196,20 @@ fun PetalSiteInfoBottomSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (isHttps || isInternalPage) MaterialTheme.colorScheme.primary
-                                else if (isHttp) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.secondary
-                            ),
-                        contentAlignment = Alignment.Center
+                    PetalShapeIconBadge(
+                        shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                        containerColor = when {
+                            isHttps || isInternalPage -> MaterialTheme.colorScheme.primaryContainer
+                            isHttp -> MaterialTheme.colorScheme.errorContainer
+                            else -> MaterialTheme.colorScheme.secondaryContainer
+                        },
+                        contentColor = when {
+                            isHttps || isInternalPage -> MaterialTheme.colorScheme.onPrimaryContainer
+                            isHttp -> MaterialTheme.colorScheme.onErrorContainer
+                            else -> MaterialTheme.colorScheme.onSecondaryContainer
+                        },
+                        size = 50.dp,
+                        iconSize = 24.dp
                     ) {
                         Icon(
                             imageVector = when {
@@ -204,8 +218,6 @@ fun PetalSiteInfoBottomSheet(
                                 else -> Icons.Rounded.HelpOutline
                             },
                             contentDescription = null,
-                            tint = if (isHttp) MaterialTheme.colorScheme.onError
-                            else MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -395,12 +407,11 @@ fun PetalSiteInfoBottomSheet(
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
             )
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            SettingsTileGroup(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             ) {
                 // Camera
-                SwitchSettingItem(
+                SettingsTileSwitchRow(
                     title = "Camera Access",
                     subtitle = if (isCameraAllowed) "Allowed" else "Blocked",
                     checked = isCameraAllowed,
@@ -412,18 +423,23 @@ fun PetalSiteInfoBottomSheet(
                         }
                         geckoView?.reloadWithoutInit() ?: webView?.reloadWithoutInit()
                     },
-                    shape = getGroupItemShape(0, 4),
                     leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Rounded.Videocam,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
+                        PetalShapeIconBadge(
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie6Sided.toShape(),
+                            containerColor = if (isCameraAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (isCameraAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            size = 38.dp,
+                            iconSize = 18.dp
+                        ) {
+                            Icon(imageVector = Icons.Rounded.Videocam, contentDescription = null)
+                        }
                     }
                 )
 
+                SettingsTileDivider(startPadding = 64.dp)
+
                 // Microphone
-                SwitchSettingItem(
+                SettingsTileSwitchRow(
                     title = "Microphone Access",
                     subtitle = if (isMicAllowed) "Allowed" else "Blocked",
                     checked = isMicAllowed,
@@ -435,18 +451,23 @@ fun PetalSiteInfoBottomSheet(
                         }
                         geckoView?.reloadWithoutInit() ?: webView?.reloadWithoutInit()
                     },
-                    shape = getGroupItemShape(1, 4),
                     leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Rounded.Mic,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
+                        PetalShapeIconBadge(
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Clover4Leaf.toShape(),
+                            containerColor = if (isMicAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (isMicAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            size = 38.dp,
+                            iconSize = 18.dp
+                        ) {
+                            Icon(imageVector = Icons.Rounded.Mic, contentDescription = null)
+                        }
                     }
                 )
 
+                SettingsTileDivider(startPadding = 64.dp)
+
                 // Location
-                SwitchSettingItem(
+                SettingsTileSwitchRow(
                     title = "Location Access",
                     subtitle = if (isLocationAllowed) "Allowed" else "Blocked",
                     checked = isLocationAllowed,
@@ -463,18 +484,23 @@ fun PetalSiteInfoBottomSheet(
                         }
                         geckoView?.reloadWithoutInit() ?: webView?.reloadWithoutInit()
                     },
-                    shape = getGroupItemShape(2, 4),
                     leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Rounded.MyLocation,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
+                        PetalShapeIconBadge(
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Sunny.toShape(),
+                            containerColor = if (isLocationAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (isLocationAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            size = 38.dp,
+                            iconSize = 18.dp
+                        ) {
+                            Icon(imageVector = Icons.Rounded.MyLocation, contentDescription = null)
+                        }
                     }
                 )
 
+                SettingsTileDivider(startPadding = 64.dp)
+
                 // Notifications
-                SwitchSettingItem(
+                SettingsTileSwitchRow(
                     title = "Notifications",
                     subtitle = if (isNotificationsAllowed) "Allowed" else "Blocked",
                     checked = isNotificationsAllowed,
@@ -487,13 +513,16 @@ fun PetalSiteInfoBottomSheet(
                             }
                         }
                     },
-                    shape = getGroupItemShape(3, 4),
                     leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Rounded.Notifications,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
+                        PetalShapeIconBadge(
+                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBurst.toShape(),
+                            containerColor = if (isNotificationsAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (isNotificationsAllowed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            size = 38.dp,
+                            iconSize = 18.dp
+                        ) {
+                            Icon(imageVector = Icons.Rounded.Notifications, contentDescription = null)
+                        }
                     }
                 )
             }

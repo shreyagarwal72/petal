@@ -237,10 +237,19 @@ fun PetalFloatingMediaIslandContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 6.dp),
-            shape = RoundedCornerShape(22.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
             tonalElevation = 6.dp,
-            shadowElevation = 8.dp
+            shadowElevation = 10.dp,
+            border = androidx.compose.foundation.BorderStroke(
+                0.75.dp,
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                    )
+                )
+            )
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
@@ -250,19 +259,53 @@ fun PetalFloatingMediaIslandContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Leading media icon
+                    // Leading media icon with active music waveform
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(38.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Rounded.MusicNote,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            if (state.isPlaying) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(4.dp)
+                                ) {
+                                    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "wave")
+                                    val h1 by infiniteTransition.animateFloat(
+                                        initialValue = 6f, targetValue = 18f,
+                                        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                                            animation = androidx.compose.animation.core.tween(400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                                            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                                        ), label = "h1"
+                                    )
+                                    val h2 by infiniteTransition.animateFloat(
+                                        initialValue = 16f, targetValue = 7f,
+                                        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                                            animation = androidx.compose.animation.core.tween(550, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                                            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                                        ), label = "h2"
+                                    )
+                                    val h3 by infiniteTransition.animateFloat(
+                                        initialValue = 8f, targetValue = 20f,
+                                        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                                            animation = androidx.compose.animation.core.tween(480, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                                            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                                        ), label = "h3"
+                                    )
+                                    Box(Modifier.width(2.5.dp).height(h1.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                    Box(Modifier.width(2.5.dp).height(h2.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                    Box(Modifier.width(2.5.dp).height(h3.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                }
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Rounded.MusicNote,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
 

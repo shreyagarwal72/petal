@@ -82,6 +82,7 @@ class PetalGeckoView @JvmOverloads constructor(
     interface OnScrollChangeListener {
         fun onScrollDown()
         fun onScrollUp()
+        fun onScrollPositionChanged(scrollY: Int, contentHeight: Int) {}
     }
 
     private val childHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)
@@ -837,6 +838,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 act.runOnUiThread {
                     // Smoothly handle address bar collapsing with a comfortable delta threshold
                     val deltaY = scrollY - lastAddressBarScrollY
+                    onScrollChangeListener?.onScrollPositionChanged(scrollY, height)
                     if (Math.abs(deltaY) > 28) {
                         onScrollChangeListener?.let { listener ->
                             if (deltaY > 0) {
@@ -1745,6 +1747,24 @@ class PetalGeckoView @JvmOverloads constructor(
         } catch (_: Exception) {}
 
         return true
+    }
+
+    /**
+     * Smoothly scrolls page to top
+     */
+    fun scrollToTop() {
+        try {
+            evaluateJavascript("window.scrollTo({ top: 0, behavior: 'smooth' })")
+        } catch (_: Throwable) {}
+    }
+
+    /**
+     * Smoothly scrolls page to bottom
+     */
+    fun scrollToBottom() {
+        try {
+            evaluateJavascript("window.scrollTo({ top: document.body.scrollHeight || document.documentElement.scrollHeight, behavior: 'smooth' })")
+        } catch (_: Throwable) {}
     }
 
     /**

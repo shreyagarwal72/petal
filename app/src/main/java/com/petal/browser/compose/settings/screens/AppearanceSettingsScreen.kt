@@ -199,46 +199,78 @@ fun AppearanceSettingsScreenContent(
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    val themeScrollState = rememberScrollState()
-                    ScrollFadeRow(
-                        scrollState = themeScrollState,
-                        edgeColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(themeScrollState),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            ThemeConfig.values().forEach { config ->
-                                val label = when (config) {
-                                    ThemeConfig.FOLLOW_SYSTEM -> "System Default"
-                                    ThemeConfig.LIGHT -> "Light Mode"
-                                    ThemeConfig.DARK -> "Dark Mode"
-                                }
-                                val icon = when (config) {
-                                    ThemeConfig.FOLLOW_SYSTEM -> Icons.Rounded.BrightnessAuto
-                                    ThemeConfig.LIGHT -> Icons.Rounded.LightMode
-                                    ThemeConfig.DARK -> Icons.Rounded.DarkMode
-                                }
-                                FilterChip(
-                                    selected = themeConfig == config,
-                                    onClick = {
-                                        onThemeConfigChange(config)
-                                        when (config) {
-                                            ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                                            ThemeConfig.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                                            ThemeConfig.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                                        }
-                                    },
-                                    label = { Text(label) },
-                                    leadingIcon = {
-                                        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.height(4.dp))
+                    com.petal.browser.ui.components.WireframeOptionPicker(
+                        options = listOf(
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = ThemeConfig.FOLLOW_SYSTEM,
+                                label = "System",
+                                previewContent = {
+                                    Row(Modifier.fillMaxSize()) {
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxHeight()
+                                                .background(Color(0xFFE8DEF8))
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxHeight()
+                                                .background(Color(0xFF1D1B20))
+                                        )
                                     }
-                                )
+                                }
+                            ),
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = ThemeConfig.LIGHT,
+                                label = "Light",
+                                previewContent = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color(0xFFFEF7FF)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.LightMode,
+                                            contentDescription = null,
+                                            tint = Color(0xFF6750A4),
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            ),
+                            com.petal.browser.ui.components.WireframeOption(
+                                value = ThemeConfig.DARK,
+                                label = "Dark",
+                                previewContent = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color(0xFF141218)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.DarkMode,
+                                            contentDescription = null,
+                                            tint = Color(0xFFD0BCFF),
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            )
+                        ),
+                        selected = themeConfig,
+                        onOptionSelected = { config ->
+                            onThemeConfigChange(config)
+                            when (config) {
+                                ThemeConfig.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                                ThemeConfig.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                                ThemeConfig.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
                             }
                         }
-                    }
+                    )
                     // Preset Color Palettes
                     Text(
                         "Preset Color Palettes:",

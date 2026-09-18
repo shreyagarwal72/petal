@@ -121,6 +121,23 @@ object PetalUpdateSheetBridge {
 
         return listOf(
             PetalUpdateInfo(
+                versionName = "v3.5",
+                releaseNotes = """
+* **🚀 Smart Omnibox Engine Quick-Switcher**: Instant horizontal chips for Google, DuckDuckGo, Brave, Wikipedia, GitHub, YouTube, and Reddit right inside the search overlay.
+* **📋 Smart Clipboard Paste & Search Action Pill**: Automatic clipboard detection with one-tap "Search clipboard" or "Open link" actions and direct input insertion.
+* **📍 Haptic Fast-Scrubber & Jump-to-Top/Bottom Pill**: Edge-docked floating capsule indicating live scroll progress with smooth animated jump-to-top and jump-to-bottom actions.
+* **⚡ Thumb-Zone Radial Speed Dial Arc**: Long-pressing Home or Menu on the floating bottom bar fans out an ergonomic 5-action one-handed quick launcher with tactile haptics.
+* **🛡️ Privacy & Tracker Shield HUD**: Direct tap on the address bar security lock or favicon launches a live privacy diagnostic sheet with tracker counters and whitelist controls.
+* **🎵 Persistent Floating Media Island**: Floating bottom pill with play/pause, seek, mute, and speed controls for background and foreground web media.
+* **↔️ Edge-to-Edge Tab Switching**: Smooth horizontal swipe gestures directly across the floating bottom navigation bar to switch between adjacent tabs.
+* **🔗 Clean Link Parameter Stripper**: One-tap removal of invasive tracking queries (utm_, fbclid, gclid, etc.) from address bar and context menu.
+* **🖤 AMOLED High-Contrast Engine**: Deep pitch-black surfaces with refined subtle surface borders and low-power rendering.
+* **🔄 Smooth Pull-to-Refresh & Back Gestures**: Fixed session tracking, gesture-exclusion zone management, and seamless Predictive Back support across all pages.
+                """.trimIndent(),
+                downloadUrl = "https://github.com/shreyagarwal72/petal/releases",
+                releaseUrl = "https://github.com/shreyagarwal72/petal/releases"
+            ),
+            PetalUpdateInfo(
                 versionName = "v$currentVer",
                 releaseNotes = """
 * **Compose Ripple Modernization & Compile Hotfix**: Migrated deprecated `rememberRipple` indication to official Material 3 `ripple()` API in `PetalBottomNavBar.kt`.

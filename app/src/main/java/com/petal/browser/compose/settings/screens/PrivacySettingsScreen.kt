@@ -210,6 +210,24 @@ fun PrivacySettingsScreenContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // ── Hero Privacy Shield Status Banner ──
+                com.petal.browser.ui.components.ExpressiveHeroBanner(
+                    title = if (adBlockEnabled) "Shield Active & Protecting" else "Shield Paused",
+                    subtitle = if (adBlockEnabled) "Real-time Trie tracker blocking, HTTPS-only & anti-fingerprinting active" else "Trackers and ads are not currently being filtered",
+                    statusText = if (adBlockEnabled) "Protection Enabled" else "Protection Disabled",
+                    icon = Icons.Rounded.Security,
+                    statusActive = adBlockEnabled,
+                    actionLabel = if (adBlockEnabled) "Whitelist" else "Enable Shield",
+                    onActionClick = {
+                        if (adBlockEnabled) {
+                            showWhitelistDialog = true
+                        } else {
+                            onAdBlockEnabledChange(true)
+                            PetalAdBlockEngine.setAdBlockEnabled(context, true)
+                        }
+                    }
+                )
+
                 // ── Section 1: Shield & Anti-Tracking Protection ──
                 SettingsCategoryCard(
                     title = "Shield & Anti-Tracking",

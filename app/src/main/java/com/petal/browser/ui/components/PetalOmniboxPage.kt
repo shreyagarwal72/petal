@@ -386,7 +386,8 @@ fun PetalOmniboxPage(
         }
     }
 
-    var copiedUrl by remember { mutableStateOf<String?>(null) }
+    var clipboardText by remember { mutableStateOf<String?>(null) }
+    var isClipboardUrl by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         try {
@@ -395,8 +396,9 @@ fun PetalOmniboxPage(
                 val clipData = clipboard.primaryClip
                 if (clipData != null && clipData.itemCount > 0) {
                     val text = clipData.getItemAt(0).text?.toString()?.trim()
-                    if (!text.isNullOrBlank() && com.petal.browser.unit.BrowserUnit.isURL(text)) {
-                        copiedUrl = text
+                    if (!text.isNullOrBlank()) {
+                        clipboardText = text
+                        isClipboardUrl = com.petal.browser.unit.BrowserUnit.isURL(text)
                     }
                 }
             }
@@ -674,16 +676,22 @@ fun PetalOmniboxPage(
                             }
                         }
 
-                        // Chrome-style "Link that you copied" suggestion chip
+                        // Smart Paste & Search Action Pill (Detects URLs and text queries from clipboard)
                         androidx.compose.animation.AnimatedVisibility(
-                            visible = copiedUrl != null,
+                            visible = clipboardText != null,
                             enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
                             exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
                         ) {
-                            copiedUrl?.let { url ->
+                            clipboardText?.let { clip ->
                                 Surface(
                                     onClick = {
-                                        submitSearch(url)
+                                        try {
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                                com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
+                                                0.55f
+                                            )
+                                        } catch (_: Throwable) {}
+                                        submitSearch(clip, saveToHistory = !isClipboardUrl)
                                     },
                                     shape = RoundedCornerShape(24.dp),
                                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -697,7 +705,7 @@ fun PetalOmniboxPage(
                                             .padding(horizontal = 14.dp, vertical = 12.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        // Left: Globe Icon
+                                        // Left: Globe or Search Icon
                                         Box(
                                             modifier = Modifier
                                                 .size(36.dp)
@@ -706,8 +714,8 @@ fun PetalOmniboxPage(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Rounded.Language,
-                                                contentDescription = "Copied Link",
+                                                imageVector = if (isClipboardUrl) Icons.Rounded.Language else Icons.Rounded.Search,
+                                                contentDescription = if (isClipboardUrl) "Open Link" else "Search Clipboard",
                                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                                 modifier = Modifier.size(20.dp)
                                             )
@@ -715,17 +723,17 @@ fun PetalOmniboxPage(
 
                                         Spacer(Modifier.width(12.dp))
 
-                                        // Center: "Link that you copied" & URL subtitle
+                                        // Center: Action Title & Content snippet
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "Link that you copied",
+                                                text = if (isClipboardUrl) "Link from clipboard" else "Search from clipboard",
                                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                                                 color = MaterialTheme.colorScheme.onSurface,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                             Text(
-                                                text = url,
+                                                text = clip,
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
@@ -735,25 +743,103 @@ fun PetalOmniboxPage(
 
                                         Spacer(Modifier.width(8.dp))
 
-                                        // Right: Eye/Preview icon
+                                        // Right: Insert/Edit into input field
                                         IconButton(
                                             onClick = {
                                                 queryState = TextFieldValue(
-                                                    text = url,
-                                                    selection = TextRange(url.length)
+                                                    text = clip,
+                                                    selection = TextRange(clip.length)
                                                 )
+                                                try {
+                                                    focusRequester.requestFocus()
+                                                    keyboardController?.show()
+                                                } catch (_: Exception) {}
                                             },
                                             modifier = Modifier.size(36.dp)
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Rounded.Visibility,
-                                                contentDescription = "Preview link",
+                                                imageVector = Icons.Rounded.NorthWest,
+                                                contentDescription = "Insert into search",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         }
                                     }
                                 }
+                            }
+                        }
+
+                        // Search Engine Quick-Switcher Chips with Brand Tint Accents (Google, DuckDuckGo, Brave, Wikipedia, GitHub, YouTube, Reddit)
+                        data class EngineChipData(
+                            val name: String,
+                            val icon: androidx.compose.ui.graphics.vector.ImageVector,
+                            val baseUrl: String,
+                            val accentColor: Color
+                        )
+
+                        val engineChips = remember {
+                            listOf(
+                                EngineChipData("Google", Icons.Rounded.Search, "https://www.google.com/search?q=", Color(0xFF4285F4)),
+                                EngineChipData("DuckDuckGo", Icons.Rounded.Shield, "https://duckduckgo.com/?q=", Color(0xFFDE5833)),
+                                EngineChipData("Brave", Icons.Rounded.Security, "https://search.brave.com/search?q=", Color(0xFFFF5722)),
+                                EngineChipData("Wikipedia", Icons.Rounded.MenuBook, "https://en.wikipedia.org/wiki/Special:Search?search=", Color(0xFF607D8B)),
+                                EngineChipData("GitHub", Icons.Rounded.Code, "https://github.com/search?q=", Color(0xFF8E24AA)),
+                                EngineChipData("YouTube", Icons.Rounded.PlayCircle, "https://www.youtube.com/results?search_query=", Color(0xFFFF0000)),
+                                EngineChipData("Reddit", Icons.Rounded.Forum, "https://www.reddit.com/search/?q=", Color(0xFFFF4500))
+                            )
+                        }
+
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(engineChips) { chip ->
+                                AssistChip(
+                                    onClick = {
+                                        try {
+                                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
+                                                com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK,
+                                                0.50f
+                                            )
+                                        } catch (_: Throwable) {}
+
+                                        val currentQuery = queryState.text.trim()
+                                        if (currentQuery.isNotBlank()) {
+                                            val encoded = try {
+                                                java.net.URLEncoder.encode(currentQuery, "UTF-8")
+                                            } catch (_: Exception) {
+                                                currentQuery.replace(" ", "+")
+                                            }
+                                            submitSearch(chip.baseUrl + encoded, saveToHistory = true)
+                                        } else {
+                                            submitSearch(chip.baseUrl, saveToHistory = false)
+                                        }
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = chip.icon,
+                                            contentDescription = chip.name,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = chip.accentColor
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            text = chip.name,
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                                        )
+                                    },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = AssistChipDefaults.assistChipColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                        labelColor = MaterialTheme.colorScheme.onSurface
+                                    ),
+                                    border = BorderStroke(
+                                        0.5.dp,
+                                        chip.accentColor.copy(alpha = 0.25f)
+                                    )
+                                )
                             }
                         }
 

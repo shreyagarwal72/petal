@@ -776,15 +776,22 @@ fun TabCard(
             ) {
                 Row(
                     modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Rounded.Public,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = if (tab.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    PetalShapeIconBadge(
+                        shape = com.petal.browser.ui.theme.PetalMaterialShapes.Arch.toShape(),
+                        containerColor = if (tab.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = if (tab.isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        size = 28.dp,
+                        iconSize = 15.dp
+                    ) {
+                        Icon(
+                            Icons.Rounded.Public,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
                     Text(
                         text = tab.title,
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),

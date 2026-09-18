@@ -39,6 +39,11 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import com.petal.browser.ui.components.PetalCircularWavyProgressIndicator
 import com.petal.browser.ui.components.PetalFloatingStatusCard
 import com.petal.browser.ui.components.PetalFloatingStatusCardData
 import com.petal.browser.ui.theme.AppFont
@@ -266,7 +271,30 @@ fun PetalDownloadBanner(
     val cardData = PetalFloatingStatusCardData(
         title = titleText,
         subtitle = subtitleText,
-        icon = iconVector,
+        icon = if (bannerData.state == BannerState.DOWNLOADING) null else iconVector,
+        iconContent = if (bannerData.state == BannerState.DOWNLOADING) {
+            {
+                Box(
+                    modifier = Modifier.size(44.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    PetalCircularWavyProgressIndicator(
+                        progress = if (bannerData.progress != null) { { bannerData.progress } } else null,
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                        size = 44.dp,
+                        strokeWidth = 3.5.dp,
+                        wavelength = 18.dp
+                    )
+                    Icon(
+                        imageVector = Icons.Rounded.Download,
+                        contentDescription = "Downloading",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        } else null,
         iconContainerColor = iconBg,
         iconContentColor = iconTint,
         primaryActionLabel = when (bannerData.state) {
