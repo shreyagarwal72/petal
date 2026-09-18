@@ -339,14 +339,6 @@ object PetalSettingsSearchIndex {
             category = SettingsCategory.EXPERIMENTAL,
             keywords = listOf("double back", "exit", "close app", "accidental exit", "back button")
         ),
-
-        SettingsSearchItem(
-            id = "tabs_inactive",
-            title = "Tabs & Inactive Tabs",
-            subtitle = "Configure inactive tab timing, duplicate archiving and automatic cleanup",
-            category = SettingsCategory.TABS,
-            keywords = listOf("tabs", "inactive", "archive", "tab cleanup", "duplicate tabs")
-        ),
         // ==================== MISCELLANEOUS ====================
         SettingsSearchItem(
             id = "misc_live_updates",
@@ -454,7 +446,6 @@ object PetalSettingsSearchIndex {
         SettingsCategory.SEARCH_HOMEPAGE,
         SettingsCategory.DISPLAY_ZOOM,
         SettingsCategory.ADDRESS_BAR,
-        SettingsCategory.TABS,
         SettingsCategory.EXPERIMENTAL,
         SettingsCategory.MISCELLANEOUS,
         SettingsCategory.DATA_STORAGE,

@@ -179,12 +179,6 @@ fun PetalFeaturedCarousel(
                 onClick = { onCategoryClick(SettingsCategory.APPEARANCE, "appearance_layout") }
             ),
             PetalFeaturedItem(
-                title = "Inactive Tabs Cleanup",
-                description = "Declutter old tabs after 7, 14 or 21 days",
-                icon = Icons.Outlined.Tab,
-                onClick = { onCategoryClick(SettingsCategory.TABS, "tabs_inactive") }
-            ),
-            PetalFeaturedItem(
                 title = "Predictive Back Gestures",
                 description = "Fluid Android 14+ predictive back transitions",
                 icon = Icons.Outlined.Animation,
