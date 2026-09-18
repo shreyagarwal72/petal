@@ -1382,6 +1382,13 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
+    override fun gatherTransparentRegion(region: Region?): Boolean {
+        return try {
+            super.gatherTransparentRegion(region)
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     fun setBrowserController(controller: BrowserController?) {
         globalBrowserController = controller
@@ -1794,6 +1801,9 @@ class SafeGeckoView : GeckoView {
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
     override fun onAttachedToWindow() {
+        // Do not delay or suppress GeckoView's normal attach lifecycle. The parent
+        // BrowserActivity now waits for WindowInsets before adding this view, while
+        // this guard protects against OEM/Android 16 transient attach failures.
         try {
             super.onAttachedToWindow()
         } catch (e: NullPointerException) {
@@ -1804,13 +1814,19 @@ class SafeGeckoView : GeckoView {
     }
 
     override fun gatherTransparentRegion(region: Region?): Boolean {
+        // Android 16/OEM WindowInsets can briefly be unavailable while ViewRootImpl
+        // performs a traversal. GeckoView's compositor path may dereference that
+        // missing insets object. Never let a decorative transparent-region pass
+        // crash the UI thread or prevent the rest of the browser from rendering.
         return try {
             super.gatherTransparentRegion(region)
         } catch (e: NullPointerException) {
             android.util.Log.w("SafeGeckoView", "Handled GeckoView gatherTransparentRegion NPE: ${e.message}")
             false
+        } catch (t: Throwable) {
+            android.util.Log.w("SafeGeckoView", "Handled GeckoView gatherTransparentRegion error: ${t.message}")
+            false
         }
     }
 
 }
-
