@@ -260,6 +260,23 @@ class PetalGeckoView @JvmOverloads constructor(
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
+                        // Handle Firefox / Mozilla OAuth redirect callback completion
+                        val fxManager = com.petal.browser.account.mozilla.FxAccountManager.getInstance()
+                        if (fxManager.isRedirectUrl(url)) {
+                            val authCode = fxManager.extractQueryParam(url, "code")
+                            if (!authCode.isNullOrBlank()) {
+                                val emailParam = fxManager.extractQueryParam(url, "email") ?: "user@mozilla.org"
+                                fxManager.completeLogin(
+                                    code = authCode,
+                                    email = emailParam,
+                                    displayName = "Firefox Sync User"
+                                )
+                                com.petal.browser.view.NinjaToast.show(act, "Signed in with Firefox Account")
+                                act.removeAlbum(album)
+                                return@runOnUiThread
+                            }
+                        }
+
                         // Location changes include login/OAuth redirects. Keep this callback
                         // UI-only; Gecko owns its compositor child lifecycle.
                         act.updateOmniBox()

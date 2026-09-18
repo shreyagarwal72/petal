@@ -1016,6 +1016,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else {
                 showAlbum(currentAlbumController);
             }
+            if (contentFrame != null && contentFrame.getChildCount() == 0) {
+                showAlbum(currentAlbumController);
+            }
             updatePersistentBottomNav();
             updateOmniBox();
             updateBackCallbackState();
@@ -2170,6 +2173,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
 
             if (addressBar == null) return;
+            if (isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()))) {
+                addressBar.setVisibility(GONE);
+            }
 
             final int addressHeight = addressBar.getVisibility() == GONE ? 0 : addressBar.getHeight();
             // Use the actual Compose bottom-nav height, NOT the container height.
@@ -3273,7 +3279,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             currentProgressFraction = ninjaWebView.getProgress() / 100f;
         }
 
-        if (isHomePage(currentUrl) || isOverlayScreenShowing) {
+        if (isPetalHomeSurfaceShowing || isHomePage(currentUrl) || isOverlayScreenShowing) {
             composeAddressBar.setVisibility(GONE);
             return;
         } else {

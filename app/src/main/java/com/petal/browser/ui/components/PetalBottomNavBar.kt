@@ -152,10 +152,10 @@ fun PetalBottomNavBar(
                 .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
-            // Material 3 Expressive Floating Toolbar with vibrant primary colors for both normal and incognito
+            // Material 3 Expressive Floating Toolbar with styled surfaceContainer for proper theme presentation
             val toolbarColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
-                toolbarContainerColor = MaterialTheme.colorScheme.primary,
-                toolbarContentColor = MaterialTheme.colorScheme.onPrimary
+                toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                toolbarContentColor = MaterialTheme.colorScheme.onSurface
             )
 
             HorizontalFloatingToolbar(
@@ -163,7 +163,7 @@ fun PetalBottomNavBar(
                 modifier = Modifier
                     .wrapContentWidth()
                     .height(64.dp)
-                    .shadow(12.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+                    .shadow(12.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                     .clip(CircleShape),
                 colors = toolbarColors
             ) {
@@ -449,9 +449,9 @@ private fun FloatingNavTabItem(
         label = "nav_label_$index"
     )
 
-    val activeContainerColor = MaterialTheme.colorScheme.background
-    val activeContentColor = MaterialTheme.colorScheme.primary
-    val inactiveContentColor = MaterialTheme.colorScheme.onPrimary
+    val activeContainerColor = MaterialTheme.colorScheme.primaryContainer
+    val activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     val currentContentColor by animateColorAsState(
         targetValue = if (selected) activeContentColor else inactiveContentColor,
