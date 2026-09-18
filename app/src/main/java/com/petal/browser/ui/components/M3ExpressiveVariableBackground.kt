@@ -244,7 +244,12 @@ fun M3ExpressiveVariableBackground(
     }
 
     val blobs = remember(pageSeed, shapeChangeMode, seedEpoch, periodicSeedEpoch) {
-        M3ExpressiveBackgroundProvider.generateRandomBlobs(effectiveSeed)
+        try {
+            M3ExpressiveBackgroundProvider.generateRandomBlobs(effectiveSeed)
+        } catch (t: Throwable) {
+            android.util.Log.w("M3ExpressiveBackground", "Background generation skipped: ${t.message}")
+            emptyList()
+        }
     }
 
     val primaryColor = MaterialTheme.colorScheme.primary
