@@ -228,9 +228,45 @@ class MediaInterceptor {
         _activePageId.value = pageId
         activePageUrl = pageUrl.orEmpty()
         youtubeExtractionJob?.cancel()
+        if (isSearchEngineOrInternalUrl(activePageUrl)) {
+            clear()
+            return
+        }
         if (!SupportedPlatforms.isSupported(activePageUrl) && isYouTubeEnabled && isYouTubePage(activePageUrl) && !isDomainBlocked(activePageUrl)) {
             youtubeExtractionJob = scope.launch {
                 extractYouTubePage(activePageUrl, pageId)
+            }
+        }
+    }
+
+    fun isSearchEngineOrInternalUrl(url: String?): Boolean {
+        if (url.isNullOrBlank()) return true
+        val clean = url.trim()
+        if (clean.startsWith("about:", ignoreCase = true) ||
+            clean.startsWith("petal:", ignoreCase = true) ||
+            clean.startsWith("chrome:", ignoreCase = true) ||
+            clean.startsWith("file:", ignoreCase = true) ||
+            clean.startsWith("javascript:", ignoreCase = true) ||
+            clean.startsWith("data:", ignoreCase = true)
+        ) {
+            return true
+        }
+        val host = try {
+            android.net.Uri.parse(clean).host?.lowercase()
+        } catch (_: Exception) { null } ?: return false
+
+        val searchEngineDomains = listOf(
+            "google.", "google.com", "google.co.",
+            "bing.com", "duckduckgo.com", "search.yahoo.com",
+            "yahoo.com", "ecosia.org", "baidu.com", "yandex.",
+            "startpage.com", "qwant.com", "brave.com", "search.brave.com",
+            "sogou.com", "ask.com", "naver.com"
+        )
+        return searchEngineDomains.any { domain ->
+            if (domain.endsWith(".")) {
+                host.contains(domain)
+            } else {
+                host == domain || host.endsWith(".$domain")
             }
         }
     }
@@ -389,6 +425,8 @@ class MediaInterceptor {
     /** Called when the network interceptor detects a media asset request. */
     fun onMediaRequestDetected(url: String, headers: Map<String, String>? = null) {
         if (!isMediaDetectionEnabled) return
+        if (isSearchEngineOrInternalUrl(activePageUrl)) return
+        if (isSearchEngineOrInternalUrl(url)) return
         if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) return
         if (isDomainBlocked(url)) return
         if (isTrackingOrStaticResource(url)) return
@@ -449,6 +487,8 @@ class MediaInterceptor {
     /** Aggressive capturing callback for MSE (Media Source Extensions) or Blob links. */
     fun onAggressiveMediaGrabbed(url: String, mimeType: String, cookies: String? = null, sizeBytes: Long? = null) {
         if (!isMediaDetectionEnabled) return
+        if (isSearchEngineOrInternalUrl(activePageUrl)) return
+        if (isSearchEngineOrInternalUrl(url)) return
         if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) return
         if (isDomainBlocked(url)) return
         if (isTrackingOrStaticResource(url)) return

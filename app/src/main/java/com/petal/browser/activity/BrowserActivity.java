@@ -3742,14 +3742,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         String url = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
         View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
-        View progressBarView = findViewById(R.id.main_progress_bar);
-        if (isHomePage(url)) {
-            if (composeAddressBar != null) composeAddressBar.setVisibility(GONE);
+        View mediaSnifferBanner = findViewById(R.id.media_sniffer_compose);
+        boolean isSearchOrInternal = com.petal.browser.media.sniffer.PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url);
+        if (isHomePage(url) || isSearchOrInternal) {
+            if (composeAddressBar != null && isHomePage(url)) composeAddressBar.setVisibility(GONE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
             if (progressBarView != null) progressBarView.setTranslationY(0f);
+            if (mediaSnifferBanner != null) mediaSnifferBanner.setVisibility(GONE);
             isAddressBarCollapsed = false;
         } else {
             if (composeAddressBar != null) {
@@ -3759,6 +3761,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
             if (progressBarView != null) progressBarView.setTranslationY(0f);
+            if (mediaSnifferBanner != null) mediaSnifferBanner.setVisibility(VISIBLE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             isAddressBarCollapsed = false;
@@ -4008,6 +4011,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         View downloadBanner = findViewById(R.id.download_banner_compose);
         if (downloadBanner != null) {
             downloadBanner.setVisibility(GONE);
+        }
+        View mediaSnifferBanner = findViewById(R.id.media_sniffer_compose);
+        if (mediaSnifferBanner != null) {
+            mediaSnifferBanner.setVisibility(GONE);
         }
     }
 

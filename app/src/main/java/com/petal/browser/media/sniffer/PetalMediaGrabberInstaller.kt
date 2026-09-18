@@ -31,11 +31,15 @@ object PetalMediaGrabberInstaller {
                             val msgType = json.optString("type")
                             val pageUrl = json.optString("pageUrl").takeIf { it.startsWith("http") }
                             val cookies = json.optString("cookies").takeIf { it.isNotBlank() }
+                            if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(pageUrl)) {
+                                return null
+                            }
                             if (pageUrl != null && cookies != null) {
                                 PetalMediaSniffer.recordCookiesForUrl(pageUrl, cookies)
                             }
                             if (msgType == "MEDIA_GRABBED") {
                                 val url = json.optString("url").takeIf { it.startsWith("http") } ?: return null
+                                if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url)) return null
                                 val mime = json.optString("mimeType", "video/mp4")
                                 val size = json.optLong("sizeBytes", -1L).takeIf { it > 0 }
                                 PetalMediaSniffer.onAggressiveMedia(url, mime, cookies, size)

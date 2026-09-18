@@ -92,12 +92,14 @@ fun PetalMediaSnifferOverlay(
     val platform = remember(currentPageUrl) { SupportedPlatforms.getPlatform(currentPageUrl) }
     val socialOnly = platform != null
     var sheetOpen by remember { mutableStateOf(false) }
-    var dismissed by remember { mutableStateOf(false) }
+    val isSearchOrInternal = remember(currentPageUrl) {
+        PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(currentPageUrl)
+    }
 
     LaunchedEffect(currentPageUrl, media, socialOnly) { dismissed = false }
 
     AnimatedVisibility(
-        visible = (media.isNotEmpty() || socialOnly) && !dismissed,
+        visible = !isSearchOrInternal && (media.isNotEmpty() || socialOnly) && !dismissed,
         enter = slideInVertically { -it } + fadeIn() + scaleIn(initialScale = .92f),
         exit  = slideOutVertically { -it } + fadeOut() + scaleOut(targetScale = .92f),
         modifier = Modifier.fillMaxWidth()
@@ -337,18 +339,16 @@ private fun PetalMediaSheet(
                                 }
 
                                 SocialState.Loading -> {
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 12.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(28.dp),
-                                            strokeWidth = 3.dp
-                                        )
                                         Text(
                                             "Fetching media information…",
-                                            style = MaterialTheme.typography.bodyMedium
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
