@@ -1520,6 +1520,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             if (av.getParent() != targetFrame) {
                 targetFrame.removeAllViews();
+                // Guard: if LayoutParams were somehow lost (e.g. after removeView on some
+                // OEM implementations), ensure MATCH_PARENT before addView so the content
+                // surface fills the available frame instead of measuring to 0.
+                android.view.ViewGroup.LayoutParams avLp = av.getLayoutParams();
+                if (avLp == null) {
+                    av.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                }
                 targetFrame.addView(av);
             }
             targetFrame.setVisibility(android.view.View.VISIBLE);
@@ -1527,6 +1536,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             av.setVisibility(android.view.View.VISIBLE);
             av.setAlpha(1f);
             targetFrame.requestLayout();
+            // Safety net: if GeckoView/ComposeView still measures at height=0 after one
+            // frame (can happen when mainContent.setPadding() was called with an incorrect
+            // bottomNavHeight before layout settled), re-apply address bar position which
+            // will re-compute heights from the now-measured views and call requestLayout()
+            // again — correcting the content area to fill the available space.
+            targetFrame.post(() -> {
+                if (currentAlbumController == targetController && targetFrame == contentFrame) {
+                    if (av.getHeight() == 0 && av.getVisibility() == android.view.View.VISIBLE) {
+                        android.util.Log.w("BrowserActivity",
+                                "attachAlbumViewSafely: child height=0 after layout — re-applying position");
+                        applyAddressBarPosition();
+                    }
+                }
+            });
         } catch (Exception e) {
             android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: addView failed, retrying (attempt " + attempt + ")", e);
             if (attempt < MAX_ATTACH_ATTEMPTS) {
@@ -1868,6 +1891,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     composeView.requestLayout();
                     composeView.invalidate();
                     contentFrame.invalidate();
+                    // Safety net for blank home screen: if the ComposeView measured at
+                    // height=0 (caused by mainContent.setPadding() using an inflated
+                    // bottomNavContainer height), re-apply the position to recompute
+                    // correct padding values from the now-measured views.
+                    if (composeView.getHeight() == 0) {
+                        android.util.Log.w("BrowserActivity",
+                                "showAlbum: home ComposeView height=0 — re-applying address bar position");
+                        applyAddressBarPosition();
+                    }
                 }
             });
             if (appBar != null) appBar.setVisibility(GONE);
@@ -2140,8 +2172,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (addressBar == null) return;
 
             final int addressHeight = addressBar.getVisibility() == GONE ? 0 : addressBar.getHeight();
-            final int bottomNavHeight = (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE)
-                    ? bottomNavContainer.getHeight() : 0;
+            // Use the actual Compose bottom-nav height, NOT the container height.
+            // The bottom_nav_container (a RelativeLayout with wrap_content height) can
+            // incorrectly measure at the full screen height when RelativeLayout resolves
+            // ALIGN_PARENT_TOP + ALIGN_PARENT_BOTTOM simultaneously (e.g. after rule
+            // accumulation across multiple applyAddressBarPosition calls). When the
+            // container reports full screen height (e.g. 2392px) instead of the real
+            // nav-bar height (e.g. 276px), mainContent.setPadding(0, topInset, 0, 2392)
+            // leaves zero (or negative) available height for GeckoView/ComposeView
+            // children, producing the blank/black-screen bug.
+            View bottomNavComposeView = findViewById(R.id.bottom_nav_compose);
+            final int bottomNavHeight;
+            if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
+                // Prefer the measured height of the actual Compose nav view — it always
+                // represents the true rendered height of the navigation bar.
+                int composeH = (bottomNavComposeView != null) ? bottomNavComposeView.getHeight() : 0;
+                int containerH = bottomNavContainer.getHeight();
+                // Guard: if the container is suspiciously tall (> half screen height),
+                // fall back to the compose view height which is the ground-truth.
+                int screenH = getResources().getDisplayMetrics().heightPixels;
+                bottomNavHeight = (containerH > screenH / 2) ? composeH : containerH;
+            } else {
+                bottomNavHeight = 0;
+            }
             final int gap = (int) HelperUnit.convertDpToPixel(2f, context);
 
             // Keep main_content as a stable full-screen container and reserve space
@@ -2184,6 +2237,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     ? addressHeight + bottomNavHeight + gap
                     : bottomNavHeight;
             mainContent.setPadding(0, topInset, 0, bottomInset);
+
 
             if (progressBarCompose != null && progressBarCompose.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) progressBarCompose.getLayoutParams();
@@ -2274,7 +2328,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (bottomNavContainer != null && bottomNavContainer.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) bottomNavContainer.getLayoutParams();
                 lp.removeRule(RelativeLayout.ABOVE);
+                // Explicitly remove ALIGN_PARENT_TOP: if it was inadvertently set (by
+                // rule accumulation or an OEM RelativeLayout quirk), having BOTH
+                // ALIGN_PARENT_TOP and ALIGN_PARENT_BOTTOM forces wrap_content views to
+                // fill the full parent height. This causes bottomNavContainer.getHeight()
+                // to equal the screen height, which in turn makes mainContent.setPadding()
+                // produce zero available space for GeckoView/ComposeView (blank screen).
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
                 lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                lp.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
                 bottomNavContainer.setLayoutParams(lp);
                 bottomNavContainer.bringToFront();
             }
