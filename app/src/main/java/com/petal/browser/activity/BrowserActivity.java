@@ -2295,12 +2295,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (bottomNav != null) bottomNav.bringToFront();
             addressBar.bringToFront();
             if (progressBarCompose != null) progressBarCompose.bringToFront();
-            View downloadBanner = findViewById(R.id.download_banner_compose);
             if (downloadBanner != null) downloadBanner.bringToFront();
-            View networkStatusBanner = findViewById(R.id.network_status_compose);
             if (networkStatusBanner != null) networkStatusBanner.bringToFront();
-            View mediaSniffer = findViewById(R.id.media_sniffer_compose);
-            if (mediaSniffer != null) mediaSniffer.bringToFront();
+            if (mediaSnifferBanner != null) mediaSnifferBanner.bringToFront();
             if (fabBubble != null) fabBubble.bringToFront();
             addressBar.requestLayout();
             mainContent.requestLayout();
