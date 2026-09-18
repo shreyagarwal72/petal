@@ -1492,6 +1492,29 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (currentAlbumController != targetController || targetFrame != contentFrame) return;
 
         try {
+            // GeckoView's compositor reads root WindowInsets while it is attached.
+            // On Android 16/ColorOS-style window managers, adding the view before the
+            // first insets dispatch can leave GeckoView attached without a usable
+            // compositor surface, producing a permanent black/blank page. Wait for
+            // the actual window insets instead of attaching too early.
+            if (av instanceof com.petal.browser.view.PetalGeckoView) {
+                android.view.WindowInsets rootInsets = targetFrame.getRootWindowInsets();
+                if (rootInsets == null) {
+                    if (attempt < MAX_ATTACH_ATTEMPTS) {
+                        targetFrame.postDelayed(() ->
+                                attachAlbumViewSafely(targetFrame, av, targetController, attempt + 1), 32L);
+                    } else {
+                        android.util.Log.w("BrowserActivity", "GeckoView attach deferred: root WindowInsets still unavailable");
+                        targetFrame.post(() -> {
+                            if (currentAlbumController == targetController && targetFrame == contentFrame) {
+                                attachAlbumViewSafely(targetFrame, av, targetController, 0);
+                            }
+                        });
+                    }
+                    return;
+                }
+            }
+
             if (av.getParent() != null && av.getParent() != targetFrame) {
                 ((android.view.ViewGroup) av.getParent()).removeView(av);
             }
