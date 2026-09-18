@@ -2344,7 +2344,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addressBar.setLayoutParams(addrParams);
             }
 
-            boolean isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
+            isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
             int topInset = isHome ? 0 : (!isBottom ? addressHeight + gap : 0);
             int bottomInset = isHome ? 0 : (isBottom
                     ? addressHeight + bottomNavHeight + gap
