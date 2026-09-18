@@ -53,9 +53,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.petal.browser.account.AccountViewModel
+import com.petal.browser.account.GoogleAccountManager
+import com.petal.browser.account.GoogleUserProfile
 import com.petal.browser.account.ProfileAvatarDisplay
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
@@ -374,7 +374,6 @@ fun ComposeView.setupExpressiveHomeScreen(
     setViewTreeSavedStateRegistryOwner(activity)
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
     setContent {
-        val accountViewModel = viewModel<AccountViewModel>(activity)
         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
         var currentPaletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
         var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
@@ -402,7 +401,6 @@ fun ComposeView.setupExpressiveHomeScreen(
         ) {
             PetalHomeScreen(
                 backgroundSnapshot = null,
-                accountViewModel = accountViewModel,
                 onSearch = onSearch,
                 onOpenShortcutUrl = onOpenShortcutUrl,
                 onOpenAccountSync = onOpenAccountSync,
@@ -422,7 +420,7 @@ fun ComposeView.setupExpressiveHomeScreen(
 @Composable
 fun PetalHomeScreen(
     backgroundSnapshot: ImageBitmap? = null,
-    accountViewModel: AccountViewModel = viewModel(),
+    profile: GoogleUserProfile = GoogleAccountManager.currentProfile,
     onSearch: (String) -> Unit = {},
     onOpenShortcutUrl: (String) -> Unit = {},
     onOpenAccountSync: () -> Unit = {},
@@ -437,8 +435,6 @@ fun PetalHomeScreen(
     var removedUrls by remember { mutableStateOf(loadRemovedShortcutUrls(context)) }
     var editingItem by remember { mutableStateOf<Pair<PetalShortcut, Boolean>?>(null) }
     var isAddingNewShortcut by remember { mutableStateOf(false) }
-
-    val profile = accountViewModel.profileState
 
     // Fix (Bug 3): fetchTopVisitedShortcuts() opens SQLite on the composition (main) thread,
     // blocking the first Compose frame by 100–500ms and leaving contentFrame visually black.
