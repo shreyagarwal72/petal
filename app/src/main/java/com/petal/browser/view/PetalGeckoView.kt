@@ -1382,13 +1382,6 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
-    override fun gatherTransparentRegion(region: Region?): Boolean {
-        return try {
-            super.gatherTransparentRegion(region)
-        } catch (e: Exception) {
-            false
-        }
-    }
 
     fun setBrowserController(controller: BrowserController?) {
         globalBrowserController = controller
