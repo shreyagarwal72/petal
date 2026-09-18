@@ -2368,6 +2368,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     lp.bottomMargin = 0;
                 }
                 progressBarCompose.setLayoutParams(lp);
+                progressBarCompose.setElevation(HelperUnit.convertDpToPixel(30f, context));
+                progressBarCompose.setTranslationY(0f);
                 progressBarCompose.bringToFront();
             }
 
@@ -2680,7 +2682,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     @Override
     public synchronized void updateProgress(int progress) {
         androidx.compose.ui.platform.ComposeView progressBarCompose = findViewById(R.id.main_progress_bar_compose);
-        String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
+        String currentUrl = currentAlbumController != null && currentAlbumController.getUrl() != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
         boolean isInternalPage = currentUrl != null && (
             currentUrl.startsWith("petal://settings") ||
             currentUrl.startsWith("petal://history") ||

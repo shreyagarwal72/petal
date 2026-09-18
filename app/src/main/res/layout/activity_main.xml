@@ -37,13 +37,13 @@
             android:layout_height="wrap_content" />
     </RelativeLayout>
 
-    <!-- Fancy Rippling Wavy Top Loading Progress Line: now a true overlay drawn AFTER main_content, so it never gets painted over -->
+    <!-- Fancy Rippling Wavy Loading Progress Line: overlay above content and address bar (top/bottom) -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/main_progress_bar_compose"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/compose_address_bar"
-        android:elevation="14dp"/>
+        android:elevation="30dp"/>
 
     <!-- Bottom Floating Download Status Card (Jetpack Compose Material 3 Expressive Persistent Card) -->
     <androidx.compose.ui.platform.ComposeView

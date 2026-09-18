@@ -99,11 +99,12 @@ fun PetalFancyWebLoadingBar(
 ) {
     if (visible) {
         // Use the exact Material 3 Expressive component used by Essentials
-        // in its App Updates downloader. No custom canvas, sizing, colors,
-        // animation, or wrapper styling is applied here.
+        // in its App Updates downloader.
         LinearWavyProgressIndicator(
-            progress = { progress.coerceIn(0f, 1f) },
+            progress = { progress.coerceIn(0.05f, 1f) },
             modifier = Modifier.fillMaxWidth(),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+            trackColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
         )
     }
 }
