@@ -473,12 +473,10 @@ fun PetalHomeScreen(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
                     // ── Layer 0: living Material 3 Expressive background ───────────
-                    if (isWelcomeShown) {
-                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                            modifier = Modifier.fillMaxSize(),
-                            pageSeed = "home_page"
-                        )
-                    }
+                    com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                        modifier = Modifier.fillMaxSize(),
+                        pageSeed = "home_page"
+                    )
 
                     Column(
                         modifier = Modifier.fillMaxSize()

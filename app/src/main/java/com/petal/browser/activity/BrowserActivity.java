@@ -585,6 +585,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
 
         EdgeToEdge.enable(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+        }
 
         browserBackCallback = new OnBackPressedCallback(false) {
             @Override
@@ -618,10 +621,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // Check if an actual overlay screen is still showing in contentFrame
                 View topContent = (contentFrame != null && contentFrame.getChildCount() > 0) ? contentFrame.getChildAt(0) : null;
                 boolean isBrowserView = (topContent instanceof NinjaWebView) || (topContent instanceof com.petal.browser.view.PetalGeckoView);
-                boolean hasOverlayView = isOverlayScreenShowing || (topContent != null && !isBrowserView);
+                boolean isHomeComposeView = (topContent instanceof androidx.compose.ui.platform.ComposeView) && isPetalHomeSurfaceShowing;
+                boolean hasOverlayView = isOverlayScreenShowing || (topContent != null && !isBrowserView && !isHomeComposeView);
 
                 if (overlayDismissedByGesture && !hasOverlayView) {
-                    // Compose's PredictiveBackHandler handled the dismiss animation and showed the album
                     resetPredictiveBackVisuals();
                 } else {
                     performBackNavigation();
@@ -2305,10 +2308,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addressBar.setLayoutParams(addrParams);
             }
 
-            int topInset = !isBottom ? addressHeight + gap : 0;
-            int bottomInset = isBottom
+            boolean isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
+            int topInset = isHome ? 0 : (!isBottom ? addressHeight + gap : 0);
+            int bottomInset = isHome ? 0 : (isBottom
                     ? addressHeight + bottomNavHeight + gap
-                    : bottomNavHeight;
+                    : bottomNavHeight);
             mainContent.setPadding(0, topInset, 0, bottomInset);
 
 
