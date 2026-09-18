@@ -5493,11 +5493,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     // HTML über die sichere Cache-Methode laden (damit CSS/Bilder funktionieren)
                     File localHtmlFile = com.petal.browser.util.BrowserIntentHandler.copyHtmlToCache(this, dataUri);
                     if (localHtmlFile != null && localHtmlFile.exists()) {
-                        addAlbum(fileName, "file://" + localHtmlFile.getAbsolutePath(), true);
-                        ninjaWebView.loadUrl("file://" + localHtmlFile.getAbsolutePath());
+                        String localUrl = "file://" + localHtmlFile.getAbsolutePath();
+                        addAlbum(fileName, localUrl, true);
+                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(localUrl);
+                        } else if (ninjaWebView != null) {
+                            ninjaWebView.loadUrl(localUrl);
+                        }
                     } else {
                         addAlbum(fileName, "about:blank" , true);
-                        ninjaWebView.loadDataWithBaseURL(null, fileContent, "text/html", "UTF-8", null);
+                        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                            ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadDataWithBaseURL(null, fileContent, "text/html", "UTF-8", null);
+                        } else if (ninjaWebView != null) {
+                            ninjaWebView.loadDataWithBaseURL(null, fileContent, "text/html", "UTF-8", null);
+                        }
                     }
                 } else {
                     // UNIVERSAL-METHODE für XML, JSON, TXT, JAVA, MD, etc.
@@ -5553,9 +5562,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             + "<script src='https://cloudflare.com'></script>"
                             + "</body></html>";
                     addAlbum(fileName, virtualFileUrl, true);
-                    ninjaWebView.getSettings().setDefaultTextEncodingName("utf-8");
-                    // WICHTIG: virtualFileUrl als BaseURL übergeben zwingt webView.getUrl() diesen Pfad anzuzeigen
-                    ninjaWebView.loadDataWithBaseURL(virtualFileUrl, htmlWrapper, "text/html", "UTF-8", null);
+                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadDataWithBaseURL(virtualFileUrl, htmlWrapper, "text/html", "UTF-8", null);
+                    } else if (ninjaWebView != null) {
+                        ninjaWebView.getSettings().setDefaultTextEncodingName("utf-8");
+                        // WICHTIG: virtualFileUrl als BaseURL übergeben zwingt webView.getUrl() diesen Pfad anzuzeigen
+                        ninjaWebView.loadDataWithBaseURL(virtualFileUrl, htmlWrapper, "text/html", "UTF-8", null);
+                    }
                 }
             } else {
                 sp.edit().putBoolean("show_overview", false).apply();

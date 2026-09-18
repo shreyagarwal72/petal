@@ -1138,6 +1138,22 @@ class PetalGeckoView @JvmOverloads constructor(
         session.loadUri(targetUrl)
     }
 
+    fun loadDataWithBaseURL(baseUrl: String?, data: String, mimeType: String?, encoding: String?, historyUrl: String?) {
+        try {
+            val encodedData = android.util.Base64.encodeToString(data.toByteArray(java.nio.charset.StandardCharsets.UTF_8), android.util.Base64.NO_WRAP)
+            val dataUri = "data:${mimeType ?: "text/html"};charset=${encoding ?: "utf-8"};base64,$encodedData"
+            currentUrl = baseUrl ?: dataUri
+            album.setAlbumTitle(currentTitle.ifEmpty { "File" }, currentUrl)
+            session.loadUri(dataUri)
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error in loadDataWithBaseURL", e)
+        }
+    }
+
+    fun loadData(data: String, mimeType: String?, encoding: String?) {
+        loadDataWithBaseURL(null, data, mimeType, encoding, null)
+    }
+
     /**
      * Recovers a GeckoSession after its content process has crashed or been killed.
      * Per GeckoView's documented contract, the session is permanently closed and
