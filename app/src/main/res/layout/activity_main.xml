@@ -53,6 +53,14 @@
         android:layout_above="@id/bottom_nav_container"
         android:elevation="20dp" />
 
+    <!-- Bottom Floating Media Island Card (Jetpack Compose Material 3 Expressive Persistent Island) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/floating_media_compose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/download_banner_compose"
+        android:elevation="21dp" />
+
     <!-- Floating Network Status Pill (Offline / Back Online Left-to-Right dialogue) -->
     <androidx.compose.ui.platform.ComposeView
         android:id="@+id/network_status_compose"

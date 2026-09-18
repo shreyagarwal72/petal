@@ -61,6 +61,8 @@ object PetalAdBlockEngine {
 
     private val trieEngine = FastRuleTrie()
     private val whitelistedDomains = ConcurrentHashMap.newKeySet<String>()
+    private val domainBlockedCount = ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>()
+    private val totalBlockedCount = java.util.concurrent.atomic.AtomicLong(0)
     @Volatile private var isInitialized = false
     @Volatile private var contentBlocker: ContentBlocker? = null
 
@@ -168,15 +170,43 @@ object PetalAdBlockEngine {
         if (blocker != null) {
             try {
                 val blocked = blocker.shouldBlock(requestUrl, pageUrl)
-                if (blocked) return true
+                if (blocked) {
+                    recordBlock(pageUrl)
+                    return true
+                }
             } catch (_: Throwable) {
                 // Fall through to Trie matching if engine is still loading
             }
         }
 
         // 2. Fast Trie fallback
-        return trieEngine.containsSubstring(requestUrl)
+        val trieBlocked = trieEngine.containsSubstring(requestUrl)
+        if (trieBlocked) {
+            recordBlock(pageUrl)
+        }
+        return trieBlocked
     }
+
+    private fun recordBlock(pageUrl: String?) {
+        totalBlockedCount.incrementAndGet()
+        if (!pageUrl.isNullOrBlank()) {
+            val pageHost = try { Uri.parse(pageUrl).host ?: "" } catch (e: Exception) { "" }
+            val cleanHost = pageHost.lowercase(Locale.US).removePrefix("www.")
+            if (cleanHost.isNotEmpty()) {
+                domainBlockedCount.computeIfAbsent(cleanHost) { java.util.concurrent.atomic.AtomicInteger(0) }.incrementAndGet()
+            }
+        }
+    }
+
+    @JvmStatic
+    fun getBlockedCountForDomain(domain: String?): Int {
+        if (domain.isNullOrBlank()) return 0
+        val cleanHost = domain.lowercase(Locale.US).removePrefix("www.")
+        return domainBlockedCount[cleanHost]?.get() ?: 0
+    }
+
+    @JvmStatic
+    fun getTotalBlockedCount(): Long = totalBlockedCount.get()
 
     /**
      * High-performance empty 204 No Content WebResourceResponse to cancel ad network requests cleanly.

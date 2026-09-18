@@ -31,6 +31,8 @@ interface PetalBottomNavHandler {
     fun onNewTabClick()
     fun onTabsClick()
     fun onMenuClick()
+    fun onSwipeTabLeft() {}
+    fun onSwipeTabRight() {}
 }
 
 object PetalBottomNavBridge {
@@ -145,7 +147,9 @@ object PetalBottomNavBridge {
                             onHomeClick = { currentHandler?.onHomeClick() },
                             onNewTabClick = { currentHandler?.onNewTabClick() },
                             onTabsClick = { currentHandler?.onTabsClick() },
-                            onMenuClick = { currentHandler?.onMenuClick() }
+                            onMenuClick = { currentHandler?.onMenuClick() },
+                            onSwipeTabLeft = { currentHandler?.onSwipeTabLeft() },
+                            onSwipeTabRight = { currentHandler?.onSwipeTabRight() }
                         )
                     }
                 }

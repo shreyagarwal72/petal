@@ -2128,9 +2128,33 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             String url = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
                             showOverflow(null, navView, 0, title, url, null, null, 0);
                         }
+
+                        @Override
+                        public void onSwipeTabLeft() {
+                            // Swiped rightward (drag > 0): navigate to previous tab
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.6f);
+                            switchAdjacentTab(-1);
+                        }
+
+                        @Override
+                        public void onSwipeTabRight() {
+                            // Swiped leftward (drag < 0): navigate to next tab
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(BrowserActivity.this).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.6f);
+                            switchAdjacentTab(1);
+                        }
                     }
                 );
                 bottomNavCompose.bringToFront();
+            }
+
+            androidx.compose.ui.platform.ComposeView mediaCompose = findViewById(R.id.floating_media_compose);
+            if (mediaCompose != null) {
+                com.petal.browser.ui.components.PetalFloatingMediaBridge.bindMediaIsland(
+                    mediaCompose,
+                    this,
+                    () -> getActiveMediaBridge()
+                );
+                mediaCompose.bringToFront();
             }
         } catch (Exception ignored) {}
         applyAddressBarPosition();
@@ -2538,6 +2562,38 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             saveOpenedTabs();
         } catch (Exception e) {
             Log.e(TAG, "Error removing album silently", e);
+        }
+    }
+
+    /**
+     * Switches to the adjacent tab in the same mode (normal or incognito).
+     * @param direction -1 for previous tab, +1 for next tab
+     */
+    public synchronized void switchAdjacentTab(int direction) {
+        if (BrowserContainer.size() <= 1) return;
+        boolean isCurrentIncog = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
+                ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
+                : (ninjaWebView != null && ninjaWebView.isIncognito());
+
+        List<AlbumController> matchingTabs = new ArrayList<>();
+        for (AlbumController ac : BrowserContainer.list()) {
+            boolean tabIncog = (ac instanceof com.petal.browser.view.PetalGeckoView)
+                    ? ((com.petal.browser.view.PetalGeckoView) ac).isIncognito()
+                    : (ac instanceof NinjaWebView && ((NinjaWebView) ac).isIncognito());
+            if (tabIncog == isCurrentIncog) {
+                matchingTabs.add(ac);
+            }
+        }
+        if (matchingTabs.size() <= 1) return;
+
+        int currentIdx = matchingTabs.indexOf(currentAlbumController);
+        if (currentIdx == -1) currentIdx = 0;
+        int nextIdx = (currentIdx + direction) % matchingTabs.size();
+        if (nextIdx < 0) nextIdx += matchingTabs.size();
+
+        AlbumController targetTab = matchingTabs.get(nextIdx);
+        if (targetTab != null && targetTab != currentAlbumController) {
+            showAlbum(targetTab);
         }
     }
 

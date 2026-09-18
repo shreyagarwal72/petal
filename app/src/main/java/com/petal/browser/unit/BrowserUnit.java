@@ -545,4 +545,50 @@ public class BrowserUnit {
                 clean.contains("petal_home.html") || clean.startsWith("file:///android_asset/");
     }
 
+    /**
+     * Cleans tracking, referral, analytics, and telemetry parameters from a web URL
+     * (e.g., utm_*, fbclid, gclid, yclid, igshid, msclkid, ref, etc.).
+     */
+    public static String cleanTrackingParams(String url) {
+        if (url == null || url.trim().isEmpty()) return url;
+        try {
+            Uri uri = Uri.parse(url);
+            if (uri == null || uri.getQuery() == null || uri.getQuery().isEmpty()) {
+                return url;
+            }
+            Uri.Builder builder = uri.buildUpon().clearQuery();
+            for (String paramName : uri.getQueryParameterNames()) {
+                if (paramName == null) continue;
+                String lower = paramName.toLowerCase(Locale.ROOT);
+                if (lower.startsWith("utm_") ||
+                    lower.equals("fbclid") ||
+                    lower.equals("gclid") ||
+                    lower.equals("dclid") ||
+                    lower.equals("gclsrc") ||
+                    lower.equals("wbraid") ||
+                    lower.equals("gbraid") ||
+                    lower.equals("yclid") ||
+                    lower.equals("msclkid") ||
+                    lower.equals("igshid") ||
+                    lower.equals("mc_cid") ||
+                    lower.equals("mc_eid") ||
+                    lower.equals("mkt_tok") ||
+                    lower.startsWith("pk_") ||
+                    lower.startsWith("piwik_") ||
+                    lower.equals("_hsenc") ||
+                    lower.equals("_hsmi") ||
+                    lower.equals("ref_src") ||
+                    lower.equals("ref_url")) {
+                    continue; // Strip tracking query parameter
+                }
+                for (String value : uri.getQueryParameters(paramName)) {
+                    builder.appendQueryParameter(paramName, value);
+                }
+            }
+            return builder.build().toString();
+        } catch (Exception e) {
+            return url;
+        }
+    }
+
 }

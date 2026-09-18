@@ -170,6 +170,23 @@ object BrowserNavigationDelegate {
                     }
                 }
 
+                override fun onCopyCleanLink() {
+                    if (url.isNotEmpty()) {
+                        val cleanUrl = com.petal.browser.unit.BrowserUnit.cleanTrackingParams(url)
+                        val clipboard = activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("Clean URL", cleanUrl)
+                        clipboard?.setPrimaryClip(clip)
+                        com.petal.browser.haptics.PetalHapticEngine.getInstance(activity).play(com.petal.browser.haptics.PetalHapticEngine.Pattern.CLICK, 0.7f)
+                        NinjaToast.show(activity, "Clean link copied to clipboard")
+                    }
+                }
+
+                override fun onOpenShieldHud() {
+                    PetalPrivacyShieldSheet.show(activity, url) { enabled ->
+                        onToggleAdBlock(enabled)
+                    }
+                }
+
                 override fun onViewSource() {
                     if (url.isNotEmpty()) {
                         val sourceUrl = if (url.startsWith("view-source:")) url else "view-source:$url"

@@ -897,6 +897,13 @@ class PetalGeckoView @JvmOverloads constructor(
                     val l = mediaBridge?.listener
                     l?.onMediaPlayingStateChanged(true)
                     l?.onMediaPlay(currentTitle, 0L, 0L)
+                    com.petal.browser.ui.components.PetalFloatingMediaBridge.updateState(
+                        isPlaying = true,
+                        title = currentTitle,
+                        positionMs = 0L,
+                        durationMs = 0L,
+                        isMuted = mediaBridge?.isMuted ?: false
+                    )
                 }
             }
 
@@ -906,6 +913,7 @@ class PetalGeckoView @JvmOverloads constructor(
                     val l = mediaBridge?.listener
                     l?.onMediaPlayingStateChanged(false)
                     l?.onMediaPause(0L, 0L)
+                    com.petal.browser.ui.components.PetalFloatingMediaBridge.setPlaying(false)
                 }
             }
 
@@ -915,6 +923,7 @@ class PetalGeckoView @JvmOverloads constructor(
                     val l = mediaBridge?.listener
                     l?.onMediaPlayingStateChanged(false)
                     l?.onMediaPause(0L, 0L)
+                    com.petal.browser.ui.components.PetalFloatingMediaBridge.hide()
                 }
             }
 
@@ -926,6 +935,7 @@ class PetalGeckoView @JvmOverloads constructor(
                     val pos = (state.position * 1000).toLong()
                     val dur = (state.duration * 1000).toLong()
                     l?.onMediaProgress(pos, dur)
+                    com.petal.browser.ui.components.PetalFloatingMediaBridge.updateProgress(pos, dur)
                 }
             }
 

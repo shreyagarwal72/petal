@@ -526,6 +526,32 @@ fun PetalAddressBar(
                     }
                 }
 
+                // Action 5: Privacy & Tracker Shield HUD
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showQuickActionsMenu = false
+                            if (context is ComponentActivity) {
+                                PetalPrivacyShieldSheet.show(context, url) {}
+                            }
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Icon(Icons.Rounded.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Shield HUD & Whitelist", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text("Inspect blocked trackers, ads, and connection certificate", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }

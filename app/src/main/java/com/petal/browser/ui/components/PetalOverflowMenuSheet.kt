@@ -62,6 +62,8 @@ interface PetalOverflowMenuActionHandler {
     fun onPrintPdf()
     fun onSavePage()
     fun onShareLink()
+    fun onCopyCleanLink() {}
+    fun onOpenShieldHud() {}
     fun onViewSource()
     fun onOpenSettings()
     fun onTriggerMediaMode() {}
@@ -214,6 +216,14 @@ object PetalOverflowBridge {
                                 dialog.dismiss()
                                 handler.onShareLink()
                             },
+                            onCopyCleanLink = {
+                                dialog.dismiss()
+                                handler.onCopyCleanLink()
+                            },
+                            onOpenShieldHud = {
+                                dialog.dismiss()
+                                handler.onOpenShieldHud()
+                            },
                             onViewSource = {
                                 dialog.dismiss()
                                 handler.onViewSource()
@@ -293,6 +303,8 @@ fun PetalOverflowMenuSheet(
     onPrintPdf: () -> Unit,
     onSavePage: () -> Unit,
     onShareLink: () -> Unit,
+    onCopyCleanLink: () -> Unit = {},
+    onOpenShieldHud: () -> Unit = {},
     onViewSource: () -> Unit,
     onOpenSettings: () -> Unit,
     onTriggerMediaMode: () -> Unit = {},
@@ -460,13 +472,45 @@ fun PetalOverflowMenuSheet(
                 )
 
                 // Section 2: Quick Toggles (AdBlocker & Desktop site)
-                MenuRowSwitchItem(
-                    icon = Icons.Rounded.Shield,
-                    title = "AdBlocker",
-                    subtitle = if (isAdBlockEnabled) "Ad & tracker shield active" else "AdBlocker disabled",
-                    checked = isAdBlockEnabled,
-                    onCheckedChange = onToggleAdBlock
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onOpenShieldHud() }
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.width(28.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Shield,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "AdBlock & Shield HUD",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (isAdBlockEnabled) "Tap for live shield stats & whitelist" else "AdBlocker disabled",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconSwitch(
+                            checked = isAdBlockEnabled,
+                            icon = Icons.Rounded.Shield,
+                            onCheckedChange = onToggleAdBlock
+                        )
+                    }
+                }
 
                 if (!isHomePage) {
                     MenuRowSwitchItem(
@@ -623,6 +667,13 @@ fun PetalOverflowMenuSheet(
                             title = "Share link",
                             isSubItem = true,
                             onClick = onShareLink
+                        )
+                        MenuRowItem(
+                            icon = Icons.Rounded.LinkOff,
+                            title = "Copy Clean Link",
+                            subtitle = "Strip tracking & referral tags",
+                            isSubItem = true,
+                            onClick = onCopyCleanLink
                         )
                         MenuRowItem(
                             icon = Icons.Rounded.Terminal,

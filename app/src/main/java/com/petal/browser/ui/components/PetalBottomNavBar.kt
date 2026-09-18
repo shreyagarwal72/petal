@@ -107,6 +107,8 @@ fun PetalBottomNavBar(
     onNewTabClick: () -> Unit,
     onTabsClick: () -> Unit,
     onMenuClick: () -> Unit,
+    onSwipeTabLeft: () -> Unit = {},
+    onSwipeTabRight: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -158,13 +160,31 @@ fun PetalBottomNavBar(
                 toolbarContentColor = MaterialTheme.colorScheme.onSurface
             )
 
+            var dragAccumulator by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+
             HorizontalFloatingToolbar(
                 expanded = true,
                 modifier = Modifier
                     .wrapContentWidth()
                     .height(64.dp)
                     .shadow(12.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .androidx.compose.ui.input.pointer.pointerInput(Unit) {
+                        androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+                            onDragEnd = {
+                                if (dragAccumulator > 70f) {
+                                    onSwipeTabLeft()
+                                } else if (dragAccumulator < -70f) {
+                                    onSwipeTabRight()
+                                }
+                                dragAccumulator = 0f
+                            },
+                            onDragCancel = { dragAccumulator = 0f },
+                            onHorizontalDrag = { _, dragAmount ->
+                                dragAccumulator += dragAmount
+                            }
+                        )
+                    },
                 colors = toolbarColors
             ) {
                 FloatingNavTabItem(
@@ -289,11 +309,29 @@ fun PetalBottomNavBar(
                     .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
+                var standardDragAccumulator by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                        .androidx.compose.ui.input.pointer.pointerInput(Unit) {
+                            androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+                                onDragEnd = {
+                                    if (standardDragAccumulator > 70f) {
+                                        onSwipeTabLeft()
+                                    } else if (standardDragAccumulator < -70f) {
+                                        onSwipeTabRight()
+                                    }
+                                    standardDragAccumulator = 0f
+                                },
+                                onDragCancel = { standardDragAccumulator = 0f },
+                                onHorizontalDrag = { _, dragAmount ->
+                                    standardDragAccumulator += dragAmount
+                                }
+                            )
+                        },
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
