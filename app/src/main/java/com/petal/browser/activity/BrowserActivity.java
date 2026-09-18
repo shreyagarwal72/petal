@@ -2212,6 +2212,26 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 networkStatusBanner.bringToFront();
             }
 
+            View mediaSnifferBanner = findViewById(R.id.media_sniffer_compose);
+            if (mediaSnifferBanner != null && mediaSnifferBanner.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mediaSnifferBanner.getLayoutParams();
+                lp.removeRule(RelativeLayout.BELOW);
+                lp.removeRule(RelativeLayout.ABOVE);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                if (isBottom) {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    lp.bottomMargin = addressHeight + bottomNavHeight + (int) HelperUnit.convertDpToPixel(8f, context);
+                    lp.topMargin = 0;
+                } else {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    lp.topMargin = addressHeight + (int) HelperUnit.convertDpToPixel(6f, context);
+                    lp.bottomMargin = 0;
+                }
+                mediaSnifferBanner.setLayoutParams(lp);
+                mediaSnifferBanner.bringToFront();
+            }
+
             if (fabBubble != null && fabBubble.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) fabBubble.getLayoutParams();
                 lp.removeRule(RelativeLayout.ALIGN_PARENT_TOP);
@@ -2247,10 +2267,18 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 bottomNav.bringToFront();
             }
 
-            mainContent.bringToFront();
+            // Ensure mainContent stays behind UI bars and overlays
             if (bottomNavContainer != null) bottomNavContainer.bringToFront();
+            if (bottomNav != null) bottomNav.bringToFront();
             addressBar.bringToFront();
             if (progressBarCompose != null) progressBarCompose.bringToFront();
+            View downloadBanner = findViewById(R.id.download_banner_compose);
+            if (downloadBanner != null) downloadBanner.bringToFront();
+            View networkStatusBanner = findViewById(R.id.network_status_compose);
+            if (networkStatusBanner != null) networkStatusBanner.bringToFront();
+            View mediaSniffer = findViewById(R.id.media_sniffer_compose);
+            if (mediaSniffer != null) mediaSniffer.bringToFront();
+            if (fabBubble != null) fabBubble.bringToFront();
             addressBar.requestLayout();
             mainContent.requestLayout();
 
