@@ -123,6 +123,8 @@ fun FirefoxAccountSyncScreen(
         )
     }
 
+    var showAvatarPetalPicker by remember { mutableStateOf(false) }
+
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -149,7 +151,7 @@ fun FirefoxAccountSyncScreen(
         if (results.values.any { it }) {
             showMediaPickerSheet = true
         } else {
-            galleryLauncher.launch("image/*")
+            showAvatarPetalPicker = true
         }
     }
 
@@ -160,6 +162,7 @@ fun FirefoxAccountSyncScreen(
             requestMediaPermissionLauncher.launch(com.petal.browser.media.PetalMediaPickerManager.getRequiredMediaPermissions())
         }
     }
+
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
         enabled = true,
@@ -950,8 +953,9 @@ fun FirefoxAccountSyncScreen(
                                 pairingUrl = input,
                                 onSuccess = { email ->
                                     coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Paired successfully with Desktop Firefox ($email)!")
+                                        snackbarHostState.showSnackbar("Paired successfully with Desktop Firefox ($email)! Syncing data...")
                                     }
+                                    PetalMozillaSyncManager.getInstance().syncNow(context)
                                 },
                                 onError = { err ->
                                     coroutineScope.launch {
@@ -1095,9 +1099,35 @@ fun FirefoxAccountSyncScreen(
                 onDismissRequest = { showMediaPickerSheet = false },
                 onBrowseSystemFiles = {
                     showMediaPickerSheet = false
-                    galleryLauncher.launch("image/*")
+                    showAvatarPetalPicker = true
                 }
             )
         }
     }
+
+    if (showAvatarPetalPicker) {
+        com.petal.browser.compose.file.PetalFilePickerScreen(
+            mimeTypes = arrayOf("image/*", "image/png", "image/jpeg", "image/webp"),
+            onDismissRequest = { showAvatarPetalPicker = false },
+            onFileSelected = { file ->
+                showAvatarPetalPicker = false
+                try {
+                    val tempFile = java.io.File(context.cacheDir, "temp_avatar_crop.png")
+                    java.io.FileInputStream(file).use { input ->
+                        java.io.FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+                    }
+                    pendingCropUri = if (tempFile.exists() && tempFile.length() > 0) Uri.fromFile(tempFile) else Uri.fromFile(file)
+                    showCropDialog = true
+                } catch (e: Exception) {
+                    pendingCropUri = Uri.fromFile(file)
+                    showCropDialog = true
+                }
+            },
+            onBrowseSystemFallback = {
+                showAvatarPetalPicker = false
+                galleryLauncher.launch("image/*")
+            }
+        )
+    }
 }
+

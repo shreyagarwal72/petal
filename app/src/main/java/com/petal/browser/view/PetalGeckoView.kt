@@ -274,7 +274,8 @@ class PetalGeckoView @JvmOverloads constructor(
                                     email = emailParam,
                                     displayName = "Firefox Sync User"
                                 )
-                                com.petal.browser.view.NinjaToast.show(act, "Signed in with Firefox Account")
+                                com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(act)
+                                com.petal.browser.view.NinjaToast.show(act, "Signed in with Firefox Account. Syncing data...")
                                 act.removeAlbum(this@PetalGeckoView)
                                 return@runOnUiThread
                             }

@@ -50,11 +50,8 @@ class MozillaSyncClient(
     fun fetchStorageCredentials(accessToken: String, syncKey: String? = null): SyncClientResult<TokenServerResponse> {
         return try {
             val url = URL(tokenServerUrl)
-            val authHeader = if (!syncKey.isNullOrBlank()) {
-                generateHawkHeader(accessToken, syncKey, "GET", url)
-            } else {
-                "Bearer $accessToken"
-            }
+            // TokenServer for Firefox Accounts 1.5 accepts OAuth Bearer tokens directly
+            val authHeader = "Bearer $accessToken"
 
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
