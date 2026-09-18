@@ -1076,18 +1076,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        // Single tab on Home: prompt exit or double-back exit
-        boolean requireDoubleBack = sp.getBoolean("sp_double_back_exit", true);
-        if (!requireDoubleBack) {
+        // Single tab on Home: prompt exit confirmation dialog directly
+        boolean requireConfirm = sp.getBoolean("sp_close_browser_confirm", true);
+        if (!requireConfirm) {
             finishAndRemoveTask();
         } else {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastBackPressTime < 2000) {
-                finishAndRemoveTask();
-            } else {
-                lastBackPressTime = currentTime;
-                showExitConfirmationDialog();
-            }
+            showExitConfirmationDialog();
         }
     }
 
@@ -2243,11 +2237,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
 
             if (addressBar == null) return;
-            if (isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()))) {
+            boolean isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
+            if (isHome || isOverlayScreenShowing) {
                 addressBar.setVisibility(GONE);
+            } else {
+                addressBar.setVisibility(VISIBLE);
             }
 
-            final int addressHeight = addressBar.getVisibility() == GONE ? 0 : addressBar.getHeight();
+            final int addressHeight = addressBar.getVisibility() == GONE ? 0 : (addressBar.getHeight() > 0 ? addressBar.getHeight() : (int) HelperUnit.convertDpToPixel(60f, context));
             // Use the actual Compose bottom-nav height, NOT the container height.
             // The bottom_nav_container (a RelativeLayout with wrap_content height) can
             // incorrectly measure at the full screen height when RelativeLayout resolves
@@ -2267,7 +2264,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // Guard: if the container is suspiciously tall (> half screen height),
                 // fall back to the compose view height which is the ground-truth.
                 int screenH = getResources().getDisplayMetrics().heightPixels;
-                bottomNavHeight = (containerH > screenH / 2) ? composeH : containerH;
+                bottomNavHeight = (containerH > screenH / 2) ? composeH : (containerH > 0 ? containerH : (int) HelperUnit.convertDpToPixel(64f, context));
             } else {
                 bottomNavHeight = 0;
             }
@@ -2295,15 +2292,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 addrParams.removeRule(RelativeLayout.ABOVE);
                 addrParams.removeRule(RelativeLayout.BELOW);
                 addrParams.topMargin = 0;
-                addrParams.bottomMargin = 0;
                 if (isBottom) {
-                    if (bottomNavContainer != null && bottomNavContainer.getVisibility() != GONE) {
-                        addrParams.addRule(RelativeLayout.ABOVE, R.id.bottom_nav_container);
-                    } else {
-                        addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-                    }
+                    addrParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+                    addrParams.bottomMargin = bottomNavHeight;
                 } else {
                     addrParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+                    addrParams.bottomMargin = 0;
                 }
                 addressBar.setLayoutParams(addrParams);
             }
@@ -3387,6 +3381,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         } else {
             composeAddressBar.setVisibility(VISIBLE);
+            applyAddressBarPosition();
             composeAddressBar.bringToFront();
             composeAddressBar.setTranslationY(0f);
         }
@@ -5084,7 +5079,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (!sp.getBoolean("sp_close_browser_confirm", true)) {
             finishAndRemoveTask();
         } else {
-            com.petal.browser.ui.components.PetalConfirmSheetBridge.showQuitBrowserConfirmation(this, this::finishAndRemoveTask);
+            showExitConfirmationDialog();
         }
     }
     public void setCustomFullscreen(boolean fullscreen) {

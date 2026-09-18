@@ -683,6 +683,7 @@ private fun AddExtensionSheet(
             }) { Text("Open Mozilla Add-ons") } },
             dismissButton = { TextButton(onClick = { showMozillaCatalogPrompt = false }) { Text("Cancel") } }
         )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
