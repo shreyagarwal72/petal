@@ -89,7 +89,7 @@ fun PetalFastScrubber(
                         ) {
                             try {
                                 com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                    com.petal.browser.haptics.PetalHapticEngine.Pattern.MEDIUM_CLICK,
+                                    com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
                                     0.75f
                                 )
                             } catch (_: Throwable) {}
@@ -143,7 +143,7 @@ fun PetalFastScrubber(
                         ) {
                             try {
                                 com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                    com.petal.browser.haptics.PetalHapticEngine.Pattern.MEDIUM_CLICK,
+                                    com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
                                     0.75f
                                 )
                             } catch (_: Throwable) {}

@@ -105,11 +105,7 @@ object PetalPrivacyShieldSheet {
                 val isAmoled = remember { sp.getBoolean("amoled_theme", false) }
                 val isExpressive = remember { sp.getBoolean("sp_m3_expressive_colors", true) }
                 val appFont = remember {
-                    try {
-                        AppFont.valueOf(sp.getString("sp_app_font", AppFont.GOOGLE_SANS_FLEX.name)!!)
-                    } catch (_: Exception) {
-                        AppFont.GOOGLE_SANS_FLEX
-                    }
+                    AppFont.fromName(sp.getString("sp_app_font", AppFont.PETAL.name))
                 }
                 val colorStyle = remember {
                     try {

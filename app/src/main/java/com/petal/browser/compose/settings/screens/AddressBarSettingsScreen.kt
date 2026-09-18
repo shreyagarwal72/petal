@@ -1,8 +1,10 @@
 package com.petal.browser.compose.settings.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -10,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,23 +68,23 @@ fun AddressBarSettingsScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(10.dp)
-                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.primary)
+                                                .clip(RoundedCornerShape(50))
+                                                .background(MaterialTheme.colorScheme.primary)
                                         )
                                         // Content dummy lines
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth(0.7f)
                                                 .height(6.dp)
-                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
-                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                                         )
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth(0.9f)
                                                 .height(6.dp)
-                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
-                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                         )
                                     }
                                 }
@@ -100,23 +103,23 @@ fun AddressBarSettingsScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth(0.9f)
                                                 .height(6.dp)
-                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
-                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                         )
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth(0.7f)
                                                 .height(6.dp)
-                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
-                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                                         )
                                         // Bottom pill
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(10.dp)
-                                                .androidx.compose.ui.draw.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                                                .androidx.compose.foundation.background(MaterialTheme.colorScheme.primary)
+                                                .clip(RoundedCornerShape(50))
+                                                .background(MaterialTheme.colorScheme.primary)
                                         )
                                     }
                                 }

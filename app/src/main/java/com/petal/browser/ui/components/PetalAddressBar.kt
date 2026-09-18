@@ -228,14 +228,15 @@ fun PetalAddressBar(
                                     indication = ripple(bounded = true),
                                     interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                                 ) {
-                                    if (!isBlankOrSearch && context is androidx.activity.ComponentActivity) {
+                                    val act = context as? androidx.activity.ComponentActivity
+                                    if (!isBlankOrSearch && act != null) {
                                         try {
                                             com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                                com.petal.browser.haptics.PetalHapticEngine.Pattern.MEDIUM_CLICK,
+                                                com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
                                                 0.65f
                                             )
                                         } catch (_: Throwable) {}
-                                        com.petal.browser.ui.components.PetalPrivacyShieldSheet.show(context, url) {}
+                                        com.petal.browser.ui.components.PetalPrivacyShieldSheet.show(act, url) {}
                                     } else {
                                         onAddressClick()
                                     }
@@ -558,8 +559,9 @@ fun PetalAddressBar(
                         .fillMaxWidth()
                         .clickable {
                             showQuickActionsMenu = false
-                            if (context is ComponentActivity) {
-                                PetalPrivacyShieldSheet.show(context, url) {}
+                            val act = context as? androidx.activity.ComponentActivity
+                            if (act != null) {
+                                PetalPrivacyShieldSheet.show(act, url) {}
                             }
                         }
                 ) {

@@ -42,7 +42,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -67,12 +67,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -196,7 +198,7 @@ fun PetalBottomNavBar(
                                 showRadialDial = false
                                 try {
                                     com.petal.browser.haptics.PetalHapticEngine.getInstance(context).play(
-                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.MEDIUM_CLICK,
+                                        com.petal.browser.haptics.PetalHapticEngine.Pattern.HEAVY_CLICK,
                                         0.7f
                                     )
                                 } catch (_: Throwable) {}
@@ -319,8 +321,8 @@ fun PetalBottomNavBar(
                         CircleShape
                     )
                     .clip(CircleShape)
-                    .androidx.compose.ui.input.pointer.pointerInput(Unit) {
-                        androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
                             onDragEnd = {
                                 if (dragAccumulator > 70f) {
                                     onSwipeTabLeft()
@@ -330,7 +332,7 @@ fun PetalBottomNavBar(
                                 dragAccumulator = 0f
                             },
                             onDragCancel = { dragAccumulator = 0f },
-                            onHorizontalDrag = { _, dragAmount ->
+                            onHorizontalDrag = { _, dragAmount: Float ->
                                 dragAccumulator += dragAmount
                             }
                         )
@@ -484,8 +486,8 @@ fun PetalBottomNavBar(
                         .fillMaxWidth()
                         .height(56.dp)
                         .padding(horizontal = 4.dp, vertical = 2.dp)
-                        .androidx.compose.ui.input.pointer.pointerInput(Unit) {
-                            androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+                        .pointerInput(Unit) {
+                            detectHorizontalDragGestures(
                                 onDragEnd = {
                                     if (standardDragAccumulator > 70f) {
                                         onSwipeTabLeft()
@@ -495,7 +497,7 @@ fun PetalBottomNavBar(
                                     standardDragAccumulator = 0f
                                 },
                                 onDragCancel = { standardDragAccumulator = 0f },
-                                onHorizontalDrag = { _, dragAmount ->
+                                onHorizontalDrag = { _, dragAmount: Float ->
                                     standardDragAccumulator += dragAmount
                                 }
                             )

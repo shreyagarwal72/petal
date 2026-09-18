@@ -11,8 +11,14 @@ package com.petal.browser.ui.components
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -146,11 +152,7 @@ object PetalFloatingMediaBridge {
                 val isAmoled = remember { sp.getBoolean("amoled_theme", false) }
                 val isExpressive = remember { sp.getBoolean("sp_m3_expressive_colors", true) }
                 val appFont = remember {
-                    try {
-                        AppFont.valueOf(sp.getString("sp_app_font", AppFont.GOOGLE_SANS_FLEX.name)!!)
-                    } catch (_: Exception) {
-                        AppFont.GOOGLE_SANS_FLEX
-                    }
+                    AppFont.fromName(sp.getString("sp_app_font", AppFont.PETAL.name))
                 }
                 val colorStyle = remember {
                     try {
@@ -272,31 +274,31 @@ fun PetalFloatingMediaIslandContent(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(4.dp)
                                 ) {
-                                    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "wave")
-                                    val h1 by infiniteTransition.animateFloat(
+                                    val infiniteTransition = rememberInfiniteTransition(label = "wave")
+                                    val h1: Float by infiniteTransition.animateFloat(
                                         initialValue = 6f, targetValue = 18f,
-                                        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-                                            animation = androidx.compose.animation.core.tween(400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                                            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                                        animationSpec = infiniteRepeatable(
+                                            animation = tween(400, easing = FastOutSlowInEasing),
+                                            repeatMode = RepeatMode.Reverse
                                         ), label = "h1"
                                     )
-                                    val h2 by infiniteTransition.animateFloat(
+                                    val h2: Float by infiniteTransition.animateFloat(
                                         initialValue = 16f, targetValue = 7f,
-                                        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-                                            animation = androidx.compose.animation.core.tween(550, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                                            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                                        animationSpec = infiniteRepeatable(
+                                            animation = tween(550, easing = FastOutSlowInEasing),
+                                            repeatMode = RepeatMode.Reverse
                                         ), label = "h2"
                                     )
-                                    val h3 by infiniteTransition.animateFloat(
+                                    val h3: Float by infiniteTransition.animateFloat(
                                         initialValue = 8f, targetValue = 20f,
-                                        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-                                            animation = androidx.compose.animation.core.tween(480, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                                            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                                        animationSpec = infiniteRepeatable(
+                                            animation = tween(480, easing = FastOutSlowInEasing),
+                                            repeatMode = RepeatMode.Reverse
                                         ), label = "h3"
                                     )
-                                    Box(Modifier.width(2.5.dp).height(h1.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
-                                    Box(Modifier.width(2.5.dp).height(h2.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
-                                    Box(Modifier.width(2.5.dp).height(h3.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                    Box(modifier = Modifier.width(2.5.dp).height(h1.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                    Box(modifier = Modifier.width(2.5.dp).height(h2.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                    Box(modifier = Modifier.width(2.5.dp).height(h3.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
                                 }
                             } else {
                                 Icon(
