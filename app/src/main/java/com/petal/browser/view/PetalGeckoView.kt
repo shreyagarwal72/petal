@@ -272,7 +272,7 @@ class PetalGeckoView @JvmOverloads constructor(
                                     displayName = "Firefox Sync User"
                                 )
                                 com.petal.browser.view.NinjaToast.show(act, "Signed in with Firefox Account")
-                                act.removeAlbum(album)
+                                act.removeAlbum(this@PetalGeckoView)
                                 return@runOnUiThread
                             }
                         }
