@@ -172,7 +172,9 @@ class PetalDownloadService : Service() {
         fun stopIfNoActiveDownloads(context: Context) {
             try {
                 val activeItems = PetalFetchDownloadBridge.downloadItems.value.filter {
-                    it.status == android.app.DownloadManager.STATUS_RUNNING || it.status == android.app.DownloadManager.STATUS_PENDING
+                    it.status == android.app.DownloadManager.STATUS_RUNNING ||
+                    it.status == android.app.DownloadManager.STATUS_PENDING ||
+                    it.status == android.app.DownloadManager.STATUS_PAUSED  // keep alive while paused so resume can revive
                 }
                 if (activeItems.isEmpty()) {
                     val intent = Intent(context, PetalDownloadService::class.java).apply {

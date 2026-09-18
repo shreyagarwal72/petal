@@ -3,37 +3,64 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Doll Head -->
+    <!-- Head: same level as frame 1 (descent from bounce) -->
     <path
         android:fillColor="#FFD81B60"
-        android:pathData="M13.5,4.5a2.5,2.5 0 1,0 0,-5a2.5,2.5 0 0,0 0,5z"/>
-    <!-- Bow / Ribbon -->
+        android:pathData="M10,3.5 A2,2 0 1,0 14,3.5 A2,2 0 1,0 10,3.5Z"/>
+    <!-- Bow -->
     <path
         android:fillColor="#FFFF4081"
-        android:pathData="M15,2.5c0.5,-0.6 1.5,-0.8 1.8,-0.2c0.3,0.6 -0.2,1.4 -0.8,1.4z"/>
-    <!-- Doll Body -->
-    <path
-        android:fillColor="#FFD81B60"
-        android:pathData="M12,7l3,0l1.5,5.5l-6,0z"/>
-    <!-- Arms Running forward (frame 3: opposite swing) -->
-    <path
-        android:fillColor="#FFD81B60"
-        android:pathData="M12.5,7.8l-2.8,2.0c-0.3,0.2 -0.7,0.2 -0.9,-0.1c-0.2,-0.3 -0.2,-0.7 0.1,-0.9l2.8,-2.0z"/>
-    <path
-        android:fillColor="#FFD81B60"
-        android:pathData="M14.5,7.8l2.8,2.0c0.3,0.2 0.7,0.2 0.9,-0.1c0.2,-0.3 0.2,-0.7 -0.1,-0.9l-2.8,-2.0z"/>
-    <!-- Legs Running (Stride 3: left leg forward, right leg back) -->
-    <path
-        android:fillColor="#FFD81B60"
-        android:pathData="M12,12.5l-2.8,4.2c-0.2,0.3 -0.6,0.4 -0.9,0.2c-0.3,-0.2 -0.4,-0.6 -0.2,-0.9l2.7,-4.3z"/>
-    <path
-        android:fillColor="#FFD81B60"
-        android:pathData="M14,12.5l3.2,3.8c0.2,0.3 0.2,0.7 -0.1,0.9c-0.3,0.2 -0.7,0.2 -0.9,-0.1l-3,-3.8z"/>
-    <!-- Shoes / Feet -->
+        android:pathData="M13.2,2.0 L14.5,1.0 L14.8,2.0 L14.5,3.0 Z"/>
+    <!-- Hair/bun -->
     <path
         android:fillColor="#FFFF4081"
-        android:pathData="M8,17l-1.5,0.3c-0.4,0.1 -0.6,0.5 -0.5,0.8c0.1,0.3 0.4,0.5 0.8,0.4l1.8,-0.4z"/>
+        android:pathData="M11.5,1.5 A0.8,0.8 0 1,0 13.5,1.5 A0.8,0.8 0 1,0 11.5,1.5Z"/>
+    <!-- Neck -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M11.5,5.5 L12.5,5.5 L12.5,6.5 L11.5,6.5Z"/>
+    <!-- Body / Dress -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:pathData="M10,6.5 L14,6.5 L15.5,12 L8.5,12Z"/>
+    <!-- Dress overlay -->
     <path
         android:fillColor="#FFFF4081"
-        android:pathData="M16.5,16.5l1.5,0.6c0.3,0.1 0.5,0.5 0.4,0.8c-0.1,0.3 -0.5,0.5 -0.8,0.4l-1.8,-0.7z"/>
+        android:pathData="M10.5,6.5 L13.5,6.5 L14.0,8.5 L10.0,8.5Z"/>
+    <!-- Right arm: back and down (opposite to frame 1) -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:strokeColor="#FFD81B60"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M13.5,7.5 L11.0,10.0 L10.5,11.0"/>
+    <!-- Left arm: forward and up -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:strokeColor="#FFD81B60"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M10.5,7.5 L7.5,9.5 L7.0,10.5"/>
+    <!-- Right leg: back, extended -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:strokeColor="#FFD81B60"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M13.0,12.0 L11.5,15.0 L13.0,17.5"/>
+    <!-- Left leg: forward, knee bent -->
+    <path
+        android:fillColor="#FFD81B60"
+        android:strokeColor="#FFD81B60"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M11.0,12.0 L9.0,15.5 L7.5,19.0"/>
+    <!-- Right shoe (trailing) -->
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M11.5,17.0 L14.0,17.5 L13.8,18.5 L11.2,18.0Z"/>
+    <!-- Left shoe (leading) -->
+    <path
+        android:fillColor="#FFFF4081"
+        android:pathData="M6.0,18.5 L8.5,19.0 L8.0,20.0 L5.5,19.5Z"/>
 </vector>

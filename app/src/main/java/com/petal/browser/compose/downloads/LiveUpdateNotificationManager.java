@@ -165,18 +165,19 @@ public class LiveUpdateNotificationManager {
     }
 
     /**
-     * Resolves the animated doll running frame based on progress percentage.
-     * Frames cycle sequentially: 1 -> 2 -> 3 -> 4 -> 1 facing forward in the direction of progress.
+     * Resolves the animated doll running frame based on real time, cycling 8 frames at ~120ms each.
+     * Time-based cycling ensures the doll animates smoothly regardless of progress value or update rate.
      */
     public static int getRunningDollFrameResource(int progressPercent) {
-        int frame = Math.abs(progressPercent) % 4;
+        int frame = (int) ((System.currentTimeMillis() / 120L) % 8);
         switch (frame) {
-            case 1:
-                return R.drawable.ic_doll_run_2;
-            case 2:
-                return R.drawable.ic_doll_run_3;
-            case 3:
-                return R.drawable.ic_doll_run_4;
+            case 1: return R.drawable.ic_doll_run_2;
+            case 2: return R.drawable.ic_doll_run_3;
+            case 3: return R.drawable.ic_doll_run_4;
+            case 4: return R.drawable.ic_doll_run_5;
+            case 5: return R.drawable.ic_doll_run_6;
+            case 6: return R.drawable.ic_doll_run_7;
+            case 7: return R.drawable.ic_doll_run_8;
             case 0:
             default:
                 return R.drawable.ic_doll_run_1;

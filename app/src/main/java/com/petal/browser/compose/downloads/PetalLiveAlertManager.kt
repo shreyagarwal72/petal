@@ -82,7 +82,7 @@ object PetalLiveAlertManager {
                             DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PENDING -> {
                                 handledTerminalStatusMap.remove(item.id)
                                 val lastTime = lastNotifTimeMap[item.id] ?: 0L
-                                if (now - lastTime >= 1000L || lastTime == 0L) {
+                                if (now - lastTime >= 500L || lastTime == 0L) {
                                     lastNotifTimeMap[item.id] = now
                                     showLiveNotification(
                                         context,
@@ -164,7 +164,13 @@ object PetalLiveAlertManager {
 
     @JvmStatic
     fun resumeDownload(context: Context, downloadId: Long) {
+        // Clear pause dedup and rate-limit so the observer fires a live notification immediately
+        handledTerminalStatusMap.remove(downloadId)
+        lastNotifTimeMap.remove(downloadId)
         PetalFetchDownloadBridge.resume(context, downloadId)
+        // Ensure the global observer is running — reset the guard so it relaunches if needed
+        isGlobalCollectorStarted = false
+        startGlobalDownloadObserver(context)
     }
 
     @JvmStatic
