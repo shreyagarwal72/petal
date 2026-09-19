@@ -271,14 +271,12 @@ class PetalGeckoView @JvmOverloads constructor(
                             val authCode = fxManager.extractQueryParam(url, "code")
                             if (!authCode.isNullOrBlank()) {
                                 val emailParam = fxManager.extractQueryParam(url, "email") ?: "user@mozilla.org"
-                                fxManager.completeLogin(
-                                    code = authCode,
-                                    email = emailParam,
-                                    displayName = "Firefox Sync User"
-                                )
-                                com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(act)
-                                com.petal.browser.view.NinjaToast.show(act, "Signed in with Firefox Account. Syncing data...")
-                                act.removeAlbum(this@PetalGeckoView)
+                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                                    fxManager.exchangeCodeForTokens(authCode, emailParam)
+                                    com.petal.browser.account.mozilla.PetalMozillaSyncManager.getInstance().syncNow(act)
+                                    com.petal.browser.view.NinjaToast.show(act, "Signed in with Firefox Account. Syncing data...")
+                                    act.removeAlbum(this@PetalGeckoView)
+                                }
                                 return@runOnUiThread
                             }
                         }

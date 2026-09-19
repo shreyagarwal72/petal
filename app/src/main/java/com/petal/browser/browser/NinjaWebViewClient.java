@@ -553,6 +553,24 @@ public class NinjaWebViewClient extends WebViewClient {
         if (request == null || request.getUrl() == null) return false;
         final Uri uri = request.getUrl();
         String url = uri.toString();
+
+        // Intercept Firefox OAuth callback
+        com.petal.browser.account.mozilla.FxAccountManager fxManager = com.petal.browser.account.mozilla.FxAccountManager.Companion.getInstance();
+        if (fxManager.isRedirectUrl(url)) {
+            String authCode = fxManager.extractQueryParam(url, "code");
+            if (authCode != null && !authCode.trim().isEmpty()) {
+                String emailParam = fxManager.extractQueryParam(url, "email");
+                String finalEmail = (emailParam != null && !emailParam.trim().isEmpty()) ? emailParam : "user@mozilla.org";
+                fxManager.completeLogin(authCode, finalEmail, "Firefox Sync User");
+                com.petal.browser.account.mozilla.PetalMozillaSyncManager.Companion.getInstance().syncNow(context, java.util.Collections.emptyList(), null, null);
+                com.petal.browser.view.NinjaToast.show(context, "Signed in with Firefox Account. Syncing data...");
+                if (context instanceof com.petal.browser.activity.BrowserActivity) {
+                    ((com.petal.browser.activity.BrowserActivity) context).removeAlbum(ninjaWebView);
+                }
+                return true;
+            }
+        }
+
         if (url.startsWith("petal://") || com.petal.browser.unit.BrowserUnit.isHomePage(url)) {
             com.petal.browser.unit.BrowserUnit.intentURL(context, uri);
             return true;

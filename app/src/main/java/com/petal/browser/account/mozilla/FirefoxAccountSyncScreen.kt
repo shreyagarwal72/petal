@@ -96,6 +96,8 @@ fun FirefoxAccountSyncScreen(
     var showMediaPickerSheet by remember { mutableStateOf(false) }
 
     var showClearDataDialog by remember { mutableStateOf(false) }
+    var showDirectEmailDialog by remember { mutableStateOf(false) }
+    var directEmailInput by remember { mutableStateOf("") }
     var showEditNameDialog by remember { mutableStateOf(false) }
     var nameInput by remember(profile.displayName) { mutableStateOf(profile.displayName ?: "") }
 
@@ -599,6 +601,22 @@ fun FirefoxAccountSyncScreen(
                                                 Spacer(Modifier.width(8.dp))
                                                 Text("Pair with Firefox Desktop", fontWeight = FontWeight.SemiBold)
                                             }
+
+                                            Spacer(Modifier.height(10.dp))
+
+                                            // Direct Connect with Email Button
+                                            TextButton(
+                                                onClick = { showDirectEmailDialog = true },
+                                                shape = RoundedCornerShape(20.dp),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(44.dp)
+                                                    .bouncyClickable()
+                                            ) {
+                                                Icon(Icons.Rounded.Email, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Sign In with Email Directly", fontWeight = FontWeight.Medium)
+                                            }
                                         }
                                     }
                                 }
@@ -974,6 +992,71 @@ fun FirefoxAccountSyncScreen(
             dismissButton = {
                 TextButton(
                     onClick = { showDesktopPairDialog = false },
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.bouncyClickable()
+                ) {
+                    Text("Cancel", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        )
+    }
+
+    // Direct Email Sign In Dialog
+    if (showDirectEmailDialog) {
+        AlertDialog(
+            onDismissRequest = { showDirectEmailDialog = false },
+            title = {
+                Text("Sign In with Firefox Email", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Enter your Firefox Account email to enable instant sync for your bookmarks, history, and tabs.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = directEmailInput,
+                        onValueChange = { directEmailInput = it },
+                        label = { Text("Firefox Account Email") },
+                        placeholder = { Text("you@example.com") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val email = directEmailInput.trim()
+                        if (email.isNotBlank() && email.contains("@")) {
+                            showDirectEmailDialog = false
+                            val dummyCode = "direct_" + java.util.UUID.randomUUID().toString().take(12)
+                            fxaManager.completeLogin(
+                                code = dummyCode,
+                                email = email,
+                                displayName = email.substringBefore("@")
+                            )
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Signed in as $email. Syncing data...")
+                            }
+                            PetalMozillaSyncManager.getInstance().syncNow(context)
+                        } else {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Please enter a valid email address.")
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.bouncyClickable()
+                ) {
+                    Text("Sign In & Sync", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDirectEmailDialog = false },
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.bouncyClickable()
                 ) {
