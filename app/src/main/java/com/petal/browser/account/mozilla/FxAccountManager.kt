@@ -55,12 +55,15 @@ class FxAccountManager private constructor() {
 
     /**
      * Constructs the official Mozilla Accounts OAuth2 authorization URL.
+     * Uses web OAuth parameters (action=email, entrypoint=petal, prompt=login)
+     * which loads the standard mobile web login flow instead of requiring the
+     * internal Fenix WebChannel extension.
      */
     fun beginLogin(state: String = UUID.randomUUID().toString()): String {
         val encodedRedirect = URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8.name())
         val encodedScope = URLEncoder.encode(DEFAULT_SCOPES, StandardCharsets.UTF_8.name())
         val encodedState = URLEncoder.encode(state, StandardCharsets.UTF_8.name())
-        return "$AUTH_ENDPOINT?client_id=$CLIENT_ID&response_type=code&redirect_uri=$encodedRedirect&scope=$encodedScope&state=$encodedState&access_type=offline"
+        return "$AUTH_ENDPOINT?client_id=$CLIENT_ID&response_type=code&redirect_uri=$encodedRedirect&scope=$encodedScope&state=$encodedState&access_type=offline&action=email&entrypoint=petal&prompt=login"
     }
 
     /**

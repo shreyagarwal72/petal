@@ -35,20 +35,10 @@ jobs:
       - name: Build Release APKs
         run: |
           mkdir -p raw_apks
-          echo "Building standard GeckoView APKs..."
           ./gradlew assembleRelease --stacktrace
           for apk in app/build/outputs/apk/release/*.apk; do
             if [ -f "$apk" ]; then
               cp "$apk" raw_apks/
-            fi
-          done
-
-          echo "Building Petal Lite Universal WebView APK..."
-          ./gradlew assembleRelease -PexcludeGecko=true --stacktrace
-          for apk in app/build/outputs/apk/release/*universal*.apk; do
-            if [ -f "$apk" ]; then
-              cp "$apk" raw_apks/petal-lite-universal-webview.apk
-              break
             fi
           done
 
@@ -140,9 +130,7 @@ jobs:
 
           for f in signed_apks/*.apk; do
             if [ -f "$f" ]; then
-              if [[ "$f" == *"petal-lite-universal-webview"* ]]; then
-                cp "$f" dist/petal-lite-universal-webview.apk
-              elif [[ "$f" == *"arm64-v8a"* ]]; then
+              if [[ "$f" == *"arm64-v8a"* ]]; then
                 cp "$f" dist/petal-browser-arm64-v8a-release.apk
               elif [[ "$f" == *"armeabi-v7a"* ]]; then
                 cp "$f" dist/petal-browser-armeabi-v7a-release.apk

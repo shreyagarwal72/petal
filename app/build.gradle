@@ -100,19 +100,6 @@ android {
     packagingOptions {
         jniLibs {
             useLegacyPackaging true
-            if (project.hasProperty("excludeGecko") && project.property("excludeGecko") == "true") {
-                excludes += [
-                    'lib/*/libxul.so',
-                    'lib/*/libmozglue.so',
-                    'lib/*/libnss3.so',
-                    'lib/*/liblgpllibs.so'
-                ]
-            }
-        }
-        if (project.hasProperty("excludeGecko") && project.property("excludeGecko") == "true") {
-            resources {
-                excludes += ['assets/omni.ja']
-            }
         }
     }
 
