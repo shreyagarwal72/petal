@@ -2,6 +2,8 @@
 
 <div align="center">
 
+  <img src="https://github.com/shreyagarwal72/petal_browser/blob/main/graphics/icon.png" width="128" height="128" alt="Petal Browser App Icon" style="border-radius: 28px;" />
+
   <h2>Petal Browser</h2>
 
   <p><strong>Fast, Ultra-Lightweight & Privacy-Focused Android Web Browser built with Jetpack Compose & Material 3 Expressive Design</strong></p>
