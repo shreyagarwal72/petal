@@ -315,6 +315,7 @@ fun PetalDownloadBanner(
         },
         progress = if (bannerData.state == BannerState.DOWNLOADING) bannerData.progress else null,
         isIndeterminateProgress = bannerData.state == BannerState.DOWNLOADING && bannerData.progress == null,
+        useWavyProgress = false,
         progressColor = if (bannerData.state == BannerState.COMPLETED) {
             MaterialTheme.colorScheme.tertiary
         } else {
