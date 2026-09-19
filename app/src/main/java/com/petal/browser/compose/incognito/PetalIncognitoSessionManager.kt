@@ -108,7 +108,10 @@ object PetalIncognitoSessionManager {
     fun flushSessionData(context: Context) {
         try {
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            sp.edit().remove("sp_incognito_search_history_queries").apply()
+            sp.edit()
+                .remove("sp_incognito_search_history_queries")
+                .remove("sp_incognito_search_history_list")
+                .apply()
 
             if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE)) {
                 val incognitoProfile = androidx.webkit.ProfileStore.getInstance().getProfile("PetalIncognitoProfile")
@@ -148,15 +151,27 @@ object PetalIncognitoSessionManager {
 
             val pendingIntent = PendingIntent.getActivity(context, 0, closeIntent, pendingIntentFlags)
 
+            val incognitoCount = com.petal.browser.browser.BrowserContainer.getIncognitoCount()
+            val contentText = if (incognitoCount > 1) {
+                "$incognitoCount Incognito tabs open. Tap to close all."
+            } else {
+                "1 Incognito tab open. Tap to close."
+            }
+
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.icon_incognito)
-                .setContentTitle("Close all Incognito tabs")
-                .setContentText("Tap to close all active Incognito tabs")
+                .setContentTitle("Incognito Mode Active")
+                .setContentText(contentText)
                 .setOngoing(true)
                 .setAutoCancel(false)
+                .setOnlyAlertOnce(true)
+                .setShowWhen(false)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setVisibility(NotificationCompat.VISIBILITY_SECRET)
                 .build()
+
+            notification.flags = notification.flags or android.app.Notification.FLAG_ONGOING_EVENT or android.app.Notification.FLAG_NO_CLEAR
 
             nm.notify(NOTIFICATION_ID, notification)
         } catch (e: Exception) {

@@ -225,10 +225,10 @@ fun PetalOmniboxPage(
     fun submitSearch(query: String, saveToHistory: Boolean = false) {
         val normalized = query.trim()
         if (normalized.isBlank()) return
-        if (saveToHistory) {
-            val listKey = if (isIncognito) "sp_incognito_search_history_list" else "sp_search_history_list"
-            val legacyKey = if (isIncognito) "sp_incognito_search_history_queries" else "sp_search_history_queries"
-            val limit = if (isIncognito) 20 else 40
+        if (saveToHistory && !isIncognito) {
+            val listKey = "sp_search_history_list"
+            val legacyKey = "sp_search_history_queries"
+            val limit = 40
             val currentList = getSavedSearchHistory().toMutableList()
             // Remove any existing entry with the same query (case-insensitive) so it moves to top
             currentList.removeAll { it.equals(normalized, ignoreCase = true) }
