@@ -37,6 +37,7 @@ import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.MediaSession
+import kotlinx.coroutines.launch
 import java.util.function.Consumer
 
 /**
