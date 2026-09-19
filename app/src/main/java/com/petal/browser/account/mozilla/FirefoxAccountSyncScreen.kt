@@ -471,33 +471,58 @@ fun FirefoxAccountSyncScreen(
                                                 )
                                             )
 
-                                            Button(
-                                                onClick = {
-                                                    syncManager.syncNow(context) { success ->
-                                                        coroutineScope.launch {
-                                                            snackbarHostState.showSnackbar(
-                                                                if (success) "Firefox Sync complete!" else "Firefox Sync encountered an issue."
-                                                            )
+                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        syncManager.syncNow(context, forceRestore = true) { success ->
+                                                            coroutineScope.launch {
+                                                                snackbarHostState.showSnackbar(
+                                                                    if (success) "Restored history & data from Firefox!" else "Restore encountered an issue."
+                                                                )
+                                                            }
                                                         }
-                                                    }
-                                                },
-                                                enabled = !isSyncing,
-                                                shape = RoundedCornerShape(20.dp),
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = MaterialTheme.colorScheme.primary,
-                                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                                ),
-                                                modifier = Modifier.bouncyClickable()
-                                            ) {
-                                                Icon(
-                                                    Icons.Rounded.Sync,
-                                                    contentDescription = null,
-                                                    modifier = Modifier
-                                                        .size(18.dp)
-                                                        .then(if (isSyncing) Modifier.rotate(rotation) else Modifier)
-                                                )
-                                                Spacer(Modifier.width(8.dp))
-                                                Text(if (isSyncing) "Syncing..." else "Sync Now", fontWeight = FontWeight.Bold)
+                                                    },
+                                                    enabled = !isSyncing,
+                                                    shape = RoundedCornerShape(20.dp),
+                                                    modifier = Modifier.bouncyClickable()
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.Download,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text("Restore", fontWeight = FontWeight.SemiBold)
+                                                }
+
+                                                Button(
+                                                    onClick = {
+                                                        syncManager.syncNow(context) { success ->
+                                                            coroutineScope.launch {
+                                                                snackbarHostState.showSnackbar(
+                                                                    if (success) "Firefox Sync complete!" else "Firefox Sync encountered an issue."
+                                                                )
+                                                            }
+                                                        }
+                                                    },
+                                                    enabled = !isSyncing,
+                                                    shape = RoundedCornerShape(20.dp),
+                                                    colors = ButtonDefaults.buttonColors(
+                                                        containerColor = MaterialTheme.colorScheme.primary,
+                                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                                    ),
+                                                    modifier = Modifier.bouncyClickable()
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.Sync,
+                                                        contentDescription = null,
+                                                        modifier = Modifier
+                                                            .size(18.dp)
+                                                            .then(if (isSyncing) Modifier.rotate(rotation) else Modifier)
+                                                    )
+                                                    Spacer(Modifier.width(6.dp))
+                                                    Text(if (isSyncing) "Syncing..." else "Sync Now", fontWeight = FontWeight.Bold)
+                                                }
                                             }
                                         }
 

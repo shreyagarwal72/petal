@@ -65,22 +65,44 @@ class PetalHistorySyncBridge {
                 val json = JSONObject(bso.payload)
                 if (json.optBoolean("deleted", false)) continue
 
-                val url = json.optString("histUri", json.optString("url", ""))
-                if (url.isBlank() || url.startsWith("about:") || url.startsWith("petal://")) continue
+                val url = json.optString("histUri", json.optString("url", "")).trim()
+                if (url.isBlank() || url.startsWith("about:", ignoreCase = true) || url.startsWith("petal://", ignoreCase = true)) continue
 
-                val title = json.optString("title", url)
+                val title = json.optString("title", "").ifBlank { url }
                 val id = json.optString("id", bso.id)
                 val sortindex = json.optInt("sortindex", 0)
 
                 val visits = mutableListOf<MozHistoryVisit>()
                 val visitsArr = json.optJSONArray("visits")
-                if (visitsArr != null) {
+                if (visitsArr != null && visitsArr.length() > 0) {
                     for (i in 0 until visitsArr.length()) {
-                        val vObj = visitsArr.getJSONObject(i)
-                        val dateMicro = vObj.optLong("date", System.currentTimeMillis() * 1000L)
-                        val type = vObj.optInt("type", 1)
-                        visits.add(MozHistoryVisit(date = dateMicro / 1000L, type = type))
+                        val vObj = visitsArr.optJSONObject(i)
+                        if (vObj != null) {
+                            var rawDate = vObj.optLong("date", 0L)
+                            if (rawDate <= 0L) {
+                                rawDate = (vObj.optDouble("date", 0.0) * 1000.0).toLong()
+                            }
+                            if (rawDate <= 0L) {
+                                rawDate = (bso.modified * 1000.0).toLong()
+                            }
+                            // If timestamp is in microseconds (> 10^14), convert to milliseconds
+                            val dateMillis = if (rawDate > 100_000_000_000_000L) {
+                                rawDate / 1000L
+                            } else if (rawDate > 0L) {
+                                rawDate
+                            } else {
+                                System.currentTimeMillis()
+                            }
+                            val type = vObj.optInt("type", 1)
+                            visits.add(MozHistoryVisit(date = dateMillis, type = type))
+                        }
                     }
+                }
+
+                // If visits array was empty or missing, derive visit from record's modified timestamp or current time
+                if (visits.isEmpty()) {
+                    val modMillis = if (bso.modified > 0) (bso.modified * 1000.0).toLong() else System.currentTimeMillis()
+                    visits.add(MozHistoryVisit(date = modMillis, type = 1))
                 }
 
                 items.add(
@@ -103,18 +125,39 @@ class PetalHistorySyncBridge {
         try {
             action.open(true)
             val existingHistory = action.listHistory(context)
-            val existingUrls = existingHistory.mapNotNull { it.url?.trim()?.lowercase() }.toSet()
+            val existingUrlMap = mutableMapOf<String, Record>()
+            for (rec in existingHistory) {
+                val u = rec.url?.trim()?.lowercase()
+                if (!u.isNullOrEmpty()) {
+                    existingUrlMap[u] = rec
+                }
+            }
 
             for (item in items) {
                 val normUrl = item.url.trim().lowercase()
-                if (!existingUrls.contains(normUrl)) {
-                    val visitTime = item.visits.maxOfOrNull { it.date } ?: System.currentTimeMillis()
+                if (normUrl.isBlank() || normUrl.startsWith("about:") || normUrl.startsWith("petal://")) continue
+
+                val visitTime = item.visits.maxOfOrNull { it.date } ?: System.currentTimeMillis()
+                val existingRecord = existingUrlMap[normUrl]
+
+                if (existingRecord == null) {
                     val record = Record().apply {
                         title = item.title.ifBlank { item.url }
                         url = item.url
                         time = visitTime
                     }
                     action.addHistory(record)
+                    existingUrlMap[normUrl] = record
+                } else if (visitTime > existingRecord.time) {
+                    // Update to more recent visit time
+                    action.deleteHistory(existingRecord)
+                    val updatedRecord = Record().apply {
+                        title = item.title.ifBlank { existingRecord.title ?: item.url }
+                        url = item.url
+                        time = visitTime
+                    }
+                    action.addHistory(updatedRecord)
+                    existingUrlMap[normUrl] = updatedRecord
                 }
             }
         } catch (e: Exception) {

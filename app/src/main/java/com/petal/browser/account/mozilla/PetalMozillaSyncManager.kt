@@ -48,6 +48,7 @@ class PetalMozillaSyncManager private constructor(
         context: Context,
         openTabs: List<MozTabInfo> = emptyList(),
         engines: Set<SyncEngine>? = null,
+        forceRestore: Boolean = false,
         onComplete: ((Boolean) -> Unit)? = null
     ) {
         val targetEngines = engines ?: SyncEngine.values().filter { accountManager.isEngineEnabled(it) }.toSet()
@@ -65,7 +66,7 @@ class PetalMozillaSyncManager private constructor(
             if (System.currentTimeMillis() < backoffUntilMillis) {
                 val waitSec = (backoffUntilMillis - System.currentTimeMillis()) / 1000L
                 onMain {
-                    _syncState.value = MozSyncState.Error("Server requested backoff. Retrying in ${waitSec}s")
+                    _syncState.value = MozSyncState.Error("Server requested backoff. Try again in ${waitSec}s")
                     try { onComplete?.invoke(false) } catch (_: Exception) {}
                 }
                 return@launch
@@ -94,7 +95,7 @@ class PetalMozillaSyncManager private constructor(
                 }
 
                 val lastSyncTime = accountManager.getLastSyncTime()
-                val lastSyncSec = lastSyncTime / 1000.0
+                val lastSyncSec = if (forceRestore) null else (if (lastSyncTime > 0L) lastSyncTime / 1000.0 else null)
 
                 // 2. Sync Bookmarks (Bidirectional)
                 if (targetEngines.contains(SyncEngine.BOOKMARKS)) {
@@ -102,26 +103,32 @@ class PetalMozillaSyncManager private constructor(
                         _syncState.value = MozSyncState.Syncing(SyncEngine.BOOKMARKS, "Syncing bookmarks...")
                     }
 
-                    // If remote server returns records, import them; otherwise restore from local account snapshot if present
-                    var importedRemote = false
-                    val fetchResult = syncClient.fetchCollectionRecords(
+                    // Always restore local snapshot first so any existing cached bookmarks are guaranteed in DB
+                    restoreBookmarkSnapshotIfNeeded(context)
+
+                    var fetchResult = syncClient.fetchCollectionRecords(
                         apiEndpoint = apiEndpoint,
                         collection = "bookmarks",
                         authToken = authToken,
                         newerThan = lastSyncSec
                     )
 
+                    // If incremental fetch returned empty, try full fetch without timestamp filter
+                    if (fetchResult is SyncClientResult.Success && fetchResult.data.isEmpty() && lastSyncSec != null) {
+                        fetchResult = syncClient.fetchCollectionRecords(
+                            apiEndpoint = apiEndpoint,
+                            collection = "bookmarks",
+                            authToken = authToken,
+                            newerThan = null
+                        )
+                    }
+
                     if (fetchResult is SyncClientResult.Success) {
                         handleBackoff(fetchResult.backoffSeconds)
                         val remoteItems = bookmarkBridge.parseBsoRecords(fetchResult.data)
                         if (remoteItems.isNotEmpty()) {
                             bookmarkBridge.importToDatabase(context, remoteItems)
-                            importedRemote = true
                         }
-                    }
-
-                    if (!importedRemote) {
-                        restoreBookmarkSnapshotIfNeeded(context)
                     }
 
                     val localBsoList = bookmarkBridge.exportToBsoRecords(context)
@@ -141,29 +148,37 @@ class PetalMozillaSyncManager private constructor(
                         _syncState.value = MozSyncState.Syncing(SyncEngine.HISTORY, "Syncing history...")
                     }
 
-                    var importedRemote = false
-                    val fetchResult = syncClient.fetchCollectionRecords(
+                    // Always restore local snapshot first so offline/cached history is guaranteed restored
+                    restoreHistorySnapshotIfNeeded(context)
+
+                    var fetchResult = syncClient.fetchCollectionRecords(
                         apiEndpoint = apiEndpoint,
                         collection = "history",
                         authToken = authToken,
                         newerThan = lastSyncSec,
-                        limit = 200
+                        limit = 300
                     )
+
+                    // Fallback to full fetch if incremental fetch returned no records
+                    if (fetchResult is SyncClientResult.Success && fetchResult.data.isEmpty() && lastSyncSec != null) {
+                        fetchResult = syncClient.fetchCollectionRecords(
+                            apiEndpoint = apiEndpoint,
+                            collection = "history",
+                            authToken = authToken,
+                            newerThan = null,
+                            limit = 300
+                        )
+                    }
 
                     if (fetchResult is SyncClientResult.Success) {
                         handleBackoff(fetchResult.backoffSeconds)
                         val remoteItems = historyBridge.parseBsoRecords(fetchResult.data)
                         if (remoteItems.isNotEmpty()) {
                             historyBridge.importToDatabase(context, remoteItems)
-                            importedRemote = true
                         }
                     }
 
-                    if (!importedRemote) {
-                        restoreHistorySnapshotIfNeeded(context)
-                    }
-
-                    val localHistoryBso = historyBridge.exportToBsoRecords(context, maxRecords = 100)
+                    val localHistoryBso = historyBridge.exportToBsoRecords(context, maxRecords = 150)
                     if (localHistoryBso.isNotEmpty()) {
                         syncClient.postCollectionRecords(
                             apiEndpoint = apiEndpoint,
