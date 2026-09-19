@@ -32,8 +32,25 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace
+      - name: Build Release APKs
+        run: |
+          mkdir -p raw_apks
+          echo "Building standard GeckoView APKs..."
+          ./gradlew assembleRelease --stacktrace
+          for apk in app/build/outputs/apk/release/*.apk; do
+            if [ -f "$apk" ]; then
+              cp "$apk" raw_apks/
+            fi
+          done
+
+          echo "Building Petal Lite Universal WebView APK..."
+          ./gradlew assembleRelease -PexcludeGecko=true --stacktrace
+          for apk in app/build/outputs/apk/release/*universal*.apk; do
+            if [ -f "$apk" ]; then
+              cp "$apk" raw_apks/petal-lite-universal-webview.apk
+              break
+            fi
+          done
 
       - name: Sign & ZipAlign Release APKs
         env:
@@ -85,7 +102,7 @@ jobs:
           echo "Using Android Build-Tools: $ANDROID_SDK_BUILD_TOOLS"
 
           mkdir -p signed_apks
-          for apk in app/build/outputs/apk/release/*.apk; do
+          for apk in raw_apks/*.apk; do
             if [ -f "$apk" ]; then
               filename=$(basename "$apk")
               aligned_apk="/tmp/aligned_$filename"
@@ -123,7 +140,9 @@ jobs:
 
           for f in signed_apks/*.apk; do
             if [ -f "$f" ]; then
-              if [[ "$f" == *"arm64-v8a"* ]]; then
+              if [[ "$f" == *"petal-lite-universal-webview"* ]]; then
+                cp "$f" dist/petal-lite-universal-webview.apk
+              elif [[ "$f" == *"arm64-v8a"* ]]; then
                 cp "$f" dist/petal-browser-arm64-v8a-release.apk
               elif [[ "$f" == *"armeabi-v7a"* ]]; then
                 cp "$f" dist/petal-browser-armeabi-v7a-release.apk

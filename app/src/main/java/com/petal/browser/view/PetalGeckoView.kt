@@ -134,7 +134,9 @@ class PetalGeckoView @JvmOverloads constructor(
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
         com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, currentUrl)
-        initGeckoSession()
+        if (PetalGeckoRuntime.isGeckoAvailable(context)) {
+            initGeckoSession()
+        }
         album.setBrowserController(globalBrowserController)
         this.pwaManager = PetalPwaManager(context, this, null)
     }
