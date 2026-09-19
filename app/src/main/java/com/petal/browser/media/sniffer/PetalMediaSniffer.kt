@@ -31,6 +31,9 @@ object PetalMediaSniffer {
 
     val interceptor = MediaInterceptor()
 
+    @JvmStatic
+    fun isSearchEngineOrInternalUrl(url: String?): Boolean = interceptor.isSearchEngineOrInternalUrl(url)
+
     fun setActivePage(pageId: String) {
         interceptor.setActivePage(pageId)
     }

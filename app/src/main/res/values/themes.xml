@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <style name="AppTheme_wallpaper" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
@@ -64,6 +64,7 @@
         <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
     </style>
 
     <style name="Theme.Petal.StandaloneViewer" parent="Theme.Material3.DayNight.NoActionBar">

@@ -621,6 +621,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
 
         browserBackCallback = new OnBackPressedCallback(false) {
             @Override
@@ -695,7 +698,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
             int keyboardHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setBackgroundColor(ContextCompat.getColor(context, R.color.md_theme_background));
+            // Retain transparent background on activity root so webpage content and spacing
+            // remain visible behind floating navigation bars without any black overlay strip.
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
             controller.setAppearanceLightStatusBars(false);
 
@@ -3745,14 +3749,13 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         String url = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
         View progressBarCompose = findViewById(R.id.main_progress_bar_compose);
         View mediaSnifferBanner = findViewById(R.id.media_sniffer_compose);
-        boolean isSearchOrInternal = com.petal.browser.media.sniffer.PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url);
+        boolean isSearchOrInternal = com.petal.browser.media.sniffer.PetalMediaSniffer.isSearchEngineOrInternalUrl(url);
         if (isHomePage(url) || isSearchOrInternal) {
             if (composeAddressBar != null && isHomePage(url)) composeAddressBar.setVisibility(GONE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
-            if (progressBarView != null) progressBarView.setTranslationY(0f);
             if (mediaSnifferBanner != null) mediaSnifferBanner.setVisibility(GONE);
             isAddressBarCollapsed = false;
         } else {
@@ -3762,7 +3765,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             if (contentFrame != null) contentFrame.setTranslationY(0f);
             if (progressBarCompose != null) progressBarCompose.setTranslationY(0f);
-            if (progressBarView != null) progressBarView.setTranslationY(0f);
             if (mediaSnifferBanner != null) mediaSnifferBanner.setVisibility(VISIBLE);
             View fab_bubble = findViewById(R.id.fab_bubble);
             if (fab_bubble != null) fab_bubble.setVisibility(GONE);
