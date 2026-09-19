@@ -2390,14 +2390,20 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
             int resolvedStatusBarGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this);
+            // The floating nav bar is a HorizontalFloatingToolbar that overlays page content
+            // (it does not sit in its own docked lane), so page content should extend all the
+            // way to the bottom edge underneath it instead of reserving bottomNavHeight of
+            // padding that would otherwise leave a blank strip below the toolbar.
+            boolean isFloatingNavStyle = sp.getBoolean("sp_floating_tab_bar", true);
+            int reservedNavHeight = isFloatingNavStyle ? 0 : bottomNavHeight;
             // Overlay pages (Settings, History, ...) get no reserved space because the bar is fully removed there.
             // On home, address bar is hidden but bottom nav bar is visible and occupies bottomNavHeight.
             // On websites, both address bar (top or bottom) and bottom nav bar reserve space.
             boolean reserveBarSpace = !isOverlayScreenShowing;
             int topInset = reserveBarSpace ? (!isHome ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0) : 0;
-            int bottomInset = reserveBarSpace ? (isHome ? bottomNavHeight : (isBottom
-                    ? addressHeight + bottomNavHeight + gap
-                    : bottomNavHeight)) : 0;
+            int bottomInset = reserveBarSpace ? (isHome ? reservedNavHeight : (isBottom
+                    ? addressHeight + reservedNavHeight + gap
+                    : reservedNavHeight)) : 0;
             mainContent.setPadding(0, topInset, 0, bottomInset);
 
 
@@ -3757,13 +3763,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             if (isBottom) {
-                // Restore bottom reserved padding seamlessly
+                // Restore bottom reserved padding seamlessly. The floating nav bar overlays
+                // page content rather than occupying its own docked lane, so it never
+                // reserves bottom padding — only its docked counterpart does.
                 float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
                 float navHeight = (targetNavView != null && targetNavView.getHeight() > 0)
                         ? targetNavView.getHeight()
                         : HelperUnit.convertDpToPixel(64f, context);
+                boolean isFloatingNavStyle = sp.getBoolean("sp_floating_tab_bar", true);
+                float reservedNavHeight = isFloatingNavStyle ? 0f : navHeight;
                 int gap = (int) HelperUnit.convertDpToPixel(2f, context);
-                int restoredBottomInset = (int) (barHeight + navHeight + gap);
+                int restoredBottomInset = (int) (barHeight + reservedNavHeight + gap);
                 animateContentBottomPadding(restoredBottomInset);
             } else {
                 if (contentFrame != null) {
