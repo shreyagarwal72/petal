@@ -38,6 +38,22 @@ class PetalApplication : Application() {
         }
     }
 
+    private val widgetThemePrefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        when (key) {
+            "sp_theme_config",
+            "sp_palette_id",
+            "useDynamicColor",
+            "sp_amoled",
+            "sp_color_style",
+            "sp_expressive_colors",
+            "sp_app_font",
+            "sp_custom_font_path",
+            "sp_search_engine" -> {
+                PetalSearchWidgetProvider.updateAllWidgets(this@PetalApplication)
+            }
+        }
+    }
+
     override fun attachBaseContext(base: Context) {
         try {
             com.petal.browser.logger.PetalAppLogger.init(base)
@@ -132,6 +148,13 @@ class PetalApplication : Application() {
         })
 
         lastNightModeBits = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+
+        try {
+            PreferenceManager.getDefaultSharedPreferences(this)
+                .registerOnSharedPreferenceChangeListener(widgetThemePrefListener)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register widget theme pref listener", e)
+        }
 
         try {
             registerReceiver(wallpaperChangeReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED))

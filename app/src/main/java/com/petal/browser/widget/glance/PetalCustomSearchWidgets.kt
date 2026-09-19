@@ -66,6 +66,10 @@ import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.ui.theme.paletteById
 import com.petal.browser.widget.PetalSearchWidgetProvider
 
+import androidx.compose.ui.graphics.Color
+import androidx.core.content.res.ResourcesCompat
+import com.petal.browser.ui.theme.AppFont
+
 private fun getWidgetColorScheme(context: Context): androidx.compose.material3.ColorScheme {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
     val themeConfig = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
@@ -82,6 +86,7 @@ private fun getWidgetColorScheme(context: Context): androidx.compose.material3.C
     val isAmoled = sp.getBoolean("sp_amoled", false)
     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
     val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
+    val expressiveColors = sp.getBoolean("sp_expressive_colors", false)
 
     var scheme = if (useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -91,10 +96,66 @@ private fun getWidgetColorScheme(context: Context): androidx.compose.material3.C
 
     scheme = scheme.applyStyle(colorStyle)
 
-    if (isDark && isAmoled) {
+    if (expressiveColors) {
+        scheme = if (isDark) {
+            if (isAmoled) {
+                scheme.copy(
+                    background = Color.Black,
+                    surface = Color.Black,
+                    surfaceContainerLowest = Color.Black,
+                    surfaceContainerLow = Color(0xFF0B0B0B),
+                    surfaceContainer = Color(0xFF181818),
+                    surfaceContainerHigh = Color(0xFF1E1E1E),
+                    surfaceContainerHighest = Color(0xFF262626),
+                    surfaceVariant = Color(0xFF1C1C1C)
+                )
+            } else {
+                scheme.copy(
+                    background = scheme.surfaceContainerLow,
+                    surface = scheme.surfaceContainerLow,
+                    surfaceContainer = scheme.surfaceContainerHigh,
+                    surfaceContainerLow = scheme.surfaceContainerHigh,
+                    surfaceContainerHigh = scheme.surfaceContainerHigh,
+                    surfaceContainerHighest = scheme.surfaceContainerHigh,
+                    surfaceContainerLowest = scheme.surfaceContainerHigh
+                )
+            }
+        } else {
+            scheme.copy(
+                background = scheme.surfaceContainerLow,
+                surface = scheme.surfaceContainerLow,
+                surfaceContainer = Color.White,
+                surfaceContainerLow = Color.White,
+                surfaceContainerHigh = Color.White,
+                surfaceContainerHighest = Color.White,
+                surfaceContainerLowest = Color.White
+            )
+        }
+    } else if (isDark && isAmoled) {
         scheme = scheme.applyAmoled()
     }
     return scheme
+}
+
+private fun getWidgetTypeface(context: Context): Typeface {
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val appFont = AppFont.fromName(sp.getString("sp_app_font", "PETAL"))
+    if (appFont == AppFont.CUSTOM) {
+        val path = sp.getString("sp_custom_font_path", null)
+        if (!path.isNullOrBlank()) {
+            val file = java.io.File(path)
+            if (file.exists() && file.canRead()) {
+                try {
+                    return Typeface.createFromFile(file)
+                } catch (_: Exception) {}
+            }
+        }
+    }
+    return try {
+        ResourcesCompat.getFont(context, R.font.google_sans_flex_variable) ?: Typeface.DEFAULT_BOLD
+    } catch (_: Exception) {
+        Typeface.DEFAULT_BOLD
+    }
 }
 
 private fun widgetActionIntent(context: Context, action: String): Intent =
@@ -136,10 +197,11 @@ private fun createGoogleStylePBadgeBitmap(
     }
     canvas.drawCircle(centerX, centerY, radius * 0.94f, paintBg)
 
+    val customTypeface = getWidgetTypeface(context)
     val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = textColor
         textSize = px * 0.56f
-        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        typeface = customTypeface
         textAlign = Paint.Align.CENTER
     }
     val fontMetrics = paintText.fontMetrics
@@ -190,10 +252,11 @@ private fun createMonogramBadgeBitmap(
         canvas.drawCircle(centerX, centerY, radius * 0.95f, paintBg)
     }
 
+    val customTypeface = getWidgetTypeface(context)
     val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = textColor
         textSize = px * 0.54f
-        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        typeface = customTypeface
         textAlign = Paint.Align.CENTER
     }
     val fontMetrics = paintText.fontMetrics
