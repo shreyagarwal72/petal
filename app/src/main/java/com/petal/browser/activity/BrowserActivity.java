@@ -2016,6 +2016,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 geckoView.setOnScrollChangeListener(new com.petal.browser.view.PetalGeckoView.OnScrollChangeListener() {
                     @Override
                     public void onScrollDown() {
+                        boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
+                        if (!isFloating) return;
                         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
                         if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
                             springTranslateY(bottomNavContainer, bottomNavContainer.getHeight(), androidx.dynamicanimation.animation.SpringForce.STIFFNESS_MEDIUM, androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY);
@@ -2061,6 +2063,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ninjaWebView.setOnScrollChangeListener(new NinjaWebView.OnScrollChangeListener() {
                     @Override
                     public void onScrollDown() {
+                        boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
+                        if (!isFloating) return;
                         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
                         if (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) {
                             springTranslateY(bottomNavContainer, bottomNavContainer.getHeight(), androidx.dynamicanimation.animation.SpringForce.STIFFNESS_MEDIUM, androidx.dynamicanimation.animation.SpringForce.DAMPING_RATIO_LOW_BOUNCY);
@@ -3653,8 +3657,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
 
+            boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
             View targetNavView = (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) ? bottomNavContainer : bottomNav;
-            if (targetNavView != null) {
+            if (targetNavView != null && isFloating) {
                 float bottomNavTargetY = targetNavView.getHeight() > 0 ? targetNavView.getHeight() : HelperUnit.convertDpToPixel(96f, context);
                 springTranslateY(targetNavView, bottomNavTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
             }
