@@ -44,6 +44,7 @@ class PetalMozillaSyncManager private constructor(
         }
     }
 
+    @JvmOverloads
     fun syncNow(
         context: Context,
         openTabs: List<MozTabInfo> = emptyList(),
@@ -368,6 +369,7 @@ class PetalMozillaSyncManager private constructor(
         @Volatile
         private var instance: PetalMozillaSyncManager? = null
 
+        @JvmStatic
         fun getInstance(): PetalMozillaSyncManager {
             return instance ?: synchronized(this) {
                 instance ?: PetalMozillaSyncManager().also { instance = it }
