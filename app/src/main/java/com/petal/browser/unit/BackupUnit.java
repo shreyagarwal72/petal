@@ -40,6 +40,10 @@ import androidx.preference.PreferenceManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import android.app.DownloadManager;
+import android.content.Intent;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -51,9 +55,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -136,168 +143,257 @@ public class BackupUnit {
         getSafeBackupDir(context);
     }
 
+    public static org.json.JSONObject buildBackupJson(Context context, boolean backupBookmarks, boolean backupHistory, boolean backupStartSites, boolean backupTabSessions, boolean backupSavedSites, boolean backupSettings) {
+        org.json.JSONObject backupJson = new org.json.JSONObject();
+        try {
+            backupJson.put("version", 2);
+            backupJson.put("timestamp", System.currentTimeMillis());
+
+            if (backupBookmarks) {
+                try {
+                    RecordAction action = new RecordAction(context);
+                    action.open(false);
+                    List<Record> bookmarks = action.listBookmark(context, false, 0);
+                    action.close();
+
+                    org.json.JSONArray bookmarksArray = new org.json.JSONArray();
+                    for (Record r : bookmarks) {
+                        org.json.JSONObject obj = new org.json.JSONObject();
+                        obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                        obj.put("url", r.getURL() != null ? r.getURL() : "");
+                        long bTime = r.getIconColor() > 0 ? r.getIconColor() : (r.getTime() > 0 ? r.getTime() : System.currentTimeMillis());
+                        obj.put("time", bTime);
+                        obj.put("iconColor", r.getIconColor() > 0 ? r.getIconColor() : bTime);
+                        bookmarksArray.put(obj);
+                    }
+                    backupJson.put("bookmarks", bookmarksArray);
+                } catch (Exception e) {
+                    Log.e("Petal", "Error extracting bookmarks for JSON backup", e);
+                }
+            }
+
+            if (backupHistory) {
+                try {
+                    RecordAction action = new RecordAction(context);
+                    action.open(false);
+                    List<Record> history = action.listHistory(context);
+                    action.close();
+
+                    org.json.JSONArray historyArray = new org.json.JSONArray();
+                    for (Record r : history) {
+                        org.json.JSONObject obj = new org.json.JSONObject();
+                        obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                        obj.put("url", r.getURL() != null ? r.getURL() : "");
+                        obj.put("time", r.getTime());
+                        historyArray.put(obj);
+                    }
+                    backupJson.put("history", historyArray);
+                } catch (Exception e) {
+                    Log.e("Petal", "Error extracting history for JSON backup", e);
+                }
+            }
+
+            if (backupStartSites) {
+                try {
+                    RecordAction action = new RecordAction(context);
+                    action.open(false);
+                    List<Record> startSites = action.listStartSites();
+                    action.close();
+
+                    org.json.JSONArray startArray = new org.json.JSONArray();
+                    for (Record r : startSites) {
+                        org.json.JSONObject obj = new org.json.JSONObject();
+                        obj.put("title", r.getTitle() != null ? r.getTitle() : "");
+                        obj.put("url", r.getURL() != null ? r.getURL() : "");
+                        obj.put("filename", r.getFilename() != null ? r.getFilename() : "");
+                        obj.put("ordinal", r.getOrdinal());
+                        startArray.put(obj);
+                    }
+                    backupJson.put("start_sites", startArray);
+                } catch (Exception e) {
+                    Log.e("Petal", "Error extracting start sites for JSON backup", e);
+                }
+            }
+
+            if (backupTabSessions) {
+                try {
+                    RecordAction action = new RecordAction(context);
+                    action.open(false);
+                    String sessionJson = action.getSessionStateJson();
+                    action.close();
+                    if (sessionJson == null || sessionJson.trim().isEmpty()) {
+                        sessionJson = PreferenceManager.getDefaultSharedPreferences(context)
+                                .getString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, null);
+                    }
+                    if (sessionJson != null && !sessionJson.trim().isEmpty()) {
+                        backupJson.put("tab_sessions", sessionJson);
+                    }
+                } catch (Exception e) {
+                    Log.e("Petal", "Error extracting tab sessions for JSON backup", e);
+                }
+            }
+
+            if (backupSavedSites) {
+                try {
+                    RecordAction action = new RecordAction(context);
+                    action.open(false);
+                    List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
+                    List<String> trusted = action.listDomains(RecordUnit.TABLE_TRUSTED);
+                    List<String> protect = action.listDomains(RecordUnit.TABLE_PROTECTED);
+                    action.close();
+
+                    org.json.JSONArray sitesArray = new org.json.JSONArray();
+                    for (String domain : domains) {
+                        sitesArray.put(domain);
+                    }
+                    backupJson.put("saved_sites", sitesArray);
+
+                    org.json.JSONArray trustedArray = new org.json.JSONArray();
+                    for (String domain : trusted) {
+                        trustedArray.put(domain);
+                    }
+                    backupJson.put("trusted_sites", trustedArray);
+
+                    org.json.JSONArray protectArray = new org.json.JSONArray();
+                    for (String domain : protect) {
+                        protectArray.put(domain);
+                    }
+                    backupJson.put("protected_sites", protectArray);
+                } catch (Exception e) {
+                    Log.e("Petal", "Error extracting saved sites for JSON backup", e);
+                }
+            }
+
+            if (backupSettings) {
+                try {
+                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+                    org.json.JSONObject settingsObj = new org.json.JSONObject();
+                    for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
+                        Object val = entry.getValue();
+                        if (val instanceof String || val instanceof Integer
+                                || val instanceof Boolean || val instanceof Long
+                                || val instanceof Float) {
+                            settingsObj.put(entry.getKey(), val);
+                        } else if (val instanceof java.util.Set) {
+                            org.json.JSONArray setArr = new org.json.JSONArray();
+                            for (Object item : (java.util.Set<?>) val) {
+                                setArr.put(String.valueOf(item));
+                            }
+                            settingsObj.put(entry.getKey(), setArr);
+                        }
+                    }
+                    backupJson.put("settings", settingsObj);
+                } catch (Exception e) {
+                    Log.e("Petal", "Error extracting settings for JSON backup", e);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("Petal", "buildBackupJson failed", e);
+        }
+        return backupJson;
+    }
+
     public static void backupToJson(Activity context, boolean backupBookmarks, boolean backupHistory, boolean backupSavedSites, boolean backupSettings) {
-        backupToJson(context, backupBookmarks, backupHistory, true, true, backupSavedSites, backupSettings);
+        backupToDownloadManager(context, backupBookmarks, backupHistory, true, true, backupSavedSites, backupSettings);
     }
 
     public static void backupToJson(Activity context, boolean backupBookmarks, boolean backupHistory, boolean backupStartSites, boolean backupTabSessions, boolean backupSavedSites, boolean backupSettings) {
+        backupToDownloadManager(context, backupBookmarks, backupHistory, backupStartSites, backupTabSessions, backupSavedSites, backupSettings);
+    }
+
+    public static void backupToDownloadManager(Context context, boolean backupBookmarks, boolean backupHistory, boolean backupStartSites, boolean backupTabSessions, boolean backupSavedSites, boolean backupSettings) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try {
-                org.json.JSONObject backupJson = new org.json.JSONObject();
-                backupJson.put("version", 2);
-                backupJson.put("timestamp", System.currentTimeMillis());
-
-                if (backupBookmarks) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        List<Record> bookmarks = action.listBookmark(context, false, 0);
-                        action.close();
-
-                        org.json.JSONArray bookmarksArray = new org.json.JSONArray();
-                        for (Record r : bookmarks) {
-                            org.json.JSONObject obj = new org.json.JSONObject();
-                            obj.put("title", r.getTitle() != null ? r.getTitle() : "");
-                            obj.put("url", r.getURL() != null ? r.getURL() : "");
-                            long bTime = r.getIconColor() > 0 ? r.getIconColor() : (r.getTime() > 0 ? r.getTime() : System.currentTimeMillis());
-                            obj.put("time", bTime);
-                            obj.put("iconColor", r.getIconColor() > 0 ? r.getIconColor() : bTime);
-                            bookmarksArray.put(obj);
-                        }
-                        backupJson.put("bookmarks", bookmarksArray);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting bookmarks for JSON backup", e);
-                    }
-                }
-
-                if (backupHistory) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        List<Record> history = action.listHistory(context);
-                        action.close();
-
-                        org.json.JSONArray historyArray = new org.json.JSONArray();
-                        for (Record r : history) {
-                            org.json.JSONObject obj = new org.json.JSONObject();
-                            obj.put("title", r.getTitle() != null ? r.getTitle() : "");
-                            obj.put("url", r.getURL() != null ? r.getURL() : "");
-                            obj.put("time", r.getTime());
-                            historyArray.put(obj);
-                        }
-                        backupJson.put("history", historyArray);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting history for JSON backup", e);
-                    }
-                }
-
-                if (backupStartSites) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        List<Record> startSites = action.listStartSites();
-                        action.close();
-
-                        org.json.JSONArray startArray = new org.json.JSONArray();
-                        for (Record r : startSites) {
-                            org.json.JSONObject obj = new org.json.JSONObject();
-                            obj.put("title", r.getTitle() != null ? r.getTitle() : "");
-                            obj.put("url", r.getURL() != null ? r.getURL() : "");
-                            obj.put("filename", r.getFilename() != null ? r.getFilename() : "");
-                            obj.put("ordinal", r.getOrdinal());
-                            startArray.put(obj);
-                        }
-                        backupJson.put("start_sites", startArray);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting start sites for JSON backup", e);
-                    }
-                }
-
-                if (backupTabSessions) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        String sessionJson = action.getSessionStateJson();
-                        action.close();
-                        if (sessionJson == null || sessionJson.trim().isEmpty()) {
-                            sessionJson = PreferenceManager.getDefaultSharedPreferences(context)
-                                    .getString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, null);
-                        }
-                        if (sessionJson != null && !sessionJson.trim().isEmpty()) {
-                            backupJson.put("tab_sessions", sessionJson);
-                        }
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting tab sessions for JSON backup", e);
-                    }
-                }
-
-                if (backupSavedSites) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
-                        List<String> trusted = action.listDomains(RecordUnit.TABLE_TRUSTED);
-                        List<String> protect = action.listDomains(RecordUnit.TABLE_PROTECTED);
-                        action.close();
-
-                        org.json.JSONArray sitesArray = new org.json.JSONArray();
-                        for (String domain : domains) {
-                            sitesArray.put(domain);
-                        }
-                        backupJson.put("saved_sites", sitesArray);
-
-                        org.json.JSONArray trustedArray = new org.json.JSONArray();
-                        for (String domain : trusted) {
-                            trustedArray.put(domain);
-                        }
-                        backupJson.put("trusted_sites", trustedArray);
-
-                        org.json.JSONArray protectArray = new org.json.JSONArray();
-                        for (String domain : protect) {
-                            protectArray.put(domain);
-                        }
-                        backupJson.put("protected_sites", protectArray);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting saved sites for JSON backup", e);
-                    }
-                }
-
-                if (backupSettings) {
-                    try {
-                        android.content.SharedPreferences sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-                        org.json.JSONObject settingsObj = new org.json.JSONObject();
-                        for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
-                            Object val = entry.getValue();
-                            if (val != null) {
-                                settingsObj.put(entry.getKey(), val);
-                            }
-                        }
-                        backupJson.put("settings", settingsObj);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting settings for JSON backup", e);
-                    }
-                }
-
+                org.json.JSONObject backupJson = buildBackupJson(context, backupBookmarks, backupHistory, backupStartSites, backupTabSessions, backupSavedSites, backupSettings);
                 byte[] dataBytes = backupJson.toString(2).getBytes(StandardCharsets.UTF_8);
 
-                File backupDir = getSafeBackupDir(context);
-                File jsonFile = new File(backupDir, "petal_browser_backup.json");
+                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+                String fileName = "petal_backup_" + timeStamp + ".json";
 
-                try (FileOutputStream fos = new FileOutputStream(jsonFile, false)) {
-                    fos.write(dataBytes);
-                    fos.flush();
-                    try {
-                        fos.getFD().sync();
-                    } catch (Exception ignored) {}
+                File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                if (downloadDir != null && !downloadDir.exists()) {
+                    downloadDir.mkdirs();
                 }
 
+                File targetFile = null;
+                boolean directWriteSuccess = false;
+
+                if (downloadDir != null && downloadDir.exists()) {
+                    targetFile = new File(downloadDir, fileName);
+                    try (FileOutputStream fos = new FileOutputStream(targetFile, false)) {
+                        fos.write(dataBytes);
+                        fos.flush();
+                        try {
+                            fos.getFD().sync();
+                        } catch (Exception ignored) {}
+                        directWriteSuccess = true;
+                    } catch (Throwable writeEx) {
+                        Log.w("Petal", "Direct Downloads folder write failed, falling back to MediaStore or app directory: " + writeEx.getMessage());
+                        directWriteSuccess = false;
+                    }
+                }
+
+                // Android 10+ scoped storage MediaStore fallback if direct file access fails
+                if (!directWriteSuccess && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    try {
+                        android.content.ContentValues values = new android.content.ContentValues();
+                        values.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+                        values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/json");
+                        values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                        Uri uri = context.getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                        if (uri != null) {
+                            try (OutputStream os = context.getContentResolver().openOutputStream(uri, "wt")) {
+                                if (os != null) {
+                                    os.write(dataBytes);
+                                    os.flush();
+                                    directWriteSuccess = true;
+                                }
+                            }
+                        }
+                    } catch (Throwable msEx) {
+                        Log.w("Petal", "MediaStore Downloads write failed: " + msEx.getMessage());
+                    }
+                }
+
+                // Fallback to internal/safe backup dir if external storage write completely unavailable
+                if (!directWriteSuccess) {
+                    File safeDir = getSafeBackupDir(context);
+                    targetFile = new File(safeDir, fileName);
+                    try (FileOutputStream fos = new FileOutputStream(targetFile, false)) {
+                        fos.write(dataBytes);
+                        fos.flush();
+                    }
+                }
+
+                // Register with system Downloads and MediaScanner
+                if (targetFile != null && targetFile.exists()) {
+                    final File finalFile = targetFile;
+                    MediaScannerConnection.scanFile(context, new String[]{finalFile.getAbsolutePath()}, new String[]{"application/json"}, null);
+                    try {
+                        DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                        if (dm != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                            dm.addCompletedDownload(
+                                    finalFile.getName(),
+                                    "Petal Browser Backup",
+                                    true,
+                                    "application/json",
+                                    finalFile.getAbsolutePath(),
+                                    finalFile.length(),
+                                    true
+                            );
+                        }
+                    } catch (Throwable ignored) {}
+                }
+
+                final String savedName = fileName;
                 handler.post(() -> {
-                    NinjaToast.show(context, context.getString(R.string.app_done) + ": Backup saved to " + jsonFile.getName());
+                    NinjaToast.show(context, "Backup downloaded to Downloads: " + savedName);
                 });
+
             } catch (Exception e) {
-                Log.e("Petal", "backupToJson error", e);
+                Log.e("Petal", "backupToDownloadManager error", e);
                 handler.post(() -> {
                     NinjaToast.show(context, "Backup failed: " + e.getMessage());
                 });
@@ -342,148 +438,10 @@ public class BackupUnit {
         Handler handler = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
             try (OutputStream destinationStream = streamHolder[0]) {
-                org.json.JSONObject backupJson = new org.json.JSONObject();
-                backupJson.put("version", 2);
-                backupJson.put("timestamp", System.currentTimeMillis());
-
-                if (backupBookmarks) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        List<Record> bookmarks = action.listBookmark(context, false, 0);
-                        action.close();
-
-                        org.json.JSONArray bookmarksArray = new org.json.JSONArray();
-                        for (Record r : bookmarks) {
-                            org.json.JSONObject obj = new org.json.JSONObject();
-                            obj.put("title", r.getTitle() != null ? r.getTitle() : "");
-                            obj.put("url", r.getURL() != null ? r.getURL() : "");
-                            long bTime = r.getIconColor() > 0 ? r.getIconColor() : (r.getTime() > 0 ? r.getTime() : System.currentTimeMillis());
-                            obj.put("time", bTime);
-                            obj.put("iconColor", r.getIconColor() > 0 ? r.getIconColor() : bTime);
-                            bookmarksArray.put(obj);
-                        }
-                        backupJson.put("bookmarks", bookmarksArray);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting bookmarks for Uri backup", e);
-                    }
-                }
-
-                if (backupHistory) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        List<Record> history = action.listHistory(context);
-                        action.close();
-
-                        org.json.JSONArray historyArray = new org.json.JSONArray();
-                        for (Record r : history) {
-                            org.json.JSONObject obj = new org.json.JSONObject();
-                            obj.put("title", r.getTitle() != null ? r.getTitle() : "");
-                            obj.put("url", r.getURL() != null ? r.getURL() : "");
-                            obj.put("time", r.getTime());
-                            historyArray.put(obj);
-                        }
-                        backupJson.put("history", historyArray);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting history for Uri backup", e);
-                    }
-                }
-
-                if (backupStartSites) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        List<Record> startSites = action.listStartSites();
-                        action.close();
-
-                        org.json.JSONArray startArray = new org.json.JSONArray();
-                        for (Record r : startSites) {
-                            org.json.JSONObject obj = new org.json.JSONObject();
-                            obj.put("title", r.getTitle() != null ? r.getTitle() : "");
-                            obj.put("url", r.getURL() != null ? r.getURL() : "");
-                            obj.put("filename", r.getFilename() != null ? r.getFilename() : "");
-                            obj.put("ordinal", r.getOrdinal());
-                            startArray.put(obj);
-                        }
-                        backupJson.put("start_sites", startArray);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting start sites for Uri backup", e);
-                    }
-                }
-
-                if (backupTabSessions) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        String sessionJson = action.getSessionStateJson();
-                        action.close();
-                        if (sessionJson == null || sessionJson.trim().isEmpty()) {
-                            sessionJson = PreferenceManager.getDefaultSharedPreferences(context)
-                                    .getString(com.petal.browser.unit.PetalTabSessionManager.PREF_SESSION_JSON, null);
-                        }
-                        if (sessionJson != null && !sessionJson.trim().isEmpty()) {
-                            backupJson.put("tab_sessions", sessionJson);
-                        }
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting tab sessions for Uri backup", e);
-                    }
-                }
-
-                if (backupSavedSites) {
-                    try {
-                        RecordAction action = new RecordAction(context);
-                        action.open(false);
-                        List<String> domains = action.listDomains(RecordUnit.TABLE_STANDARD);
-                        List<String> trusted = action.listDomains(RecordUnit.TABLE_TRUSTED);
-                        List<String> protect = action.listDomains(RecordUnit.TABLE_PROTECTED);
-                        action.close();
-
-                        org.json.JSONArray savedArray = new org.json.JSONArray();
-                        for (String s : domains) savedArray.put(s);
-                        backupJson.put("saved_sites", savedArray);
-
-                        org.json.JSONArray trustedArray = new org.json.JSONArray();
-                        for (String s : trusted) trustedArray.put(s);
-                        backupJson.put("trusted_sites", trustedArray);
-
-                        org.json.JSONArray protectArray = new org.json.JSONArray();
-                        for (String s : protect) protectArray.put(s);
-                        backupJson.put("protected_sites", protectArray);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting saved sites for Uri backup", e);
-                    }
-                }
-
-                if (backupSettings) {
-                    try {
-                        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-                        org.json.JSONObject settingsObj = new org.json.JSONObject();
-                        for (java.util.Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
-                            Object val = entry.getValue();
-                            if (val instanceof String || val instanceof Integer
-                                    || val instanceof Boolean || val instanceof Long
-                                    || val instanceof Float) {
-                                settingsObj.put(entry.getKey(), val);
-                            } else if (val instanceof java.util.Set) {
-                                // Persist StringSet as JSON array so it round-trips on restore
-                                org.json.JSONArray setArr = new org.json.JSONArray();
-                                for (Object item : (java.util.Set<?>) val) {
-                                    setArr.put(String.valueOf(item));
-                                }
-                                settingsObj.put(entry.getKey(), setArr);
-                            }
-                        }
-                        backupJson.put("settings", settingsObj);
-                    } catch (Exception e) {
-                        Log.e("Petal", "Error extracting settings for Uri backup", e);
-                    }
-                }
-
+                org.json.JSONObject backupJson = buildBackupJson(context, backupBookmarks, backupHistory, backupStartSites, backupTabSessions, backupSavedSites, backupSettings);
                 byte[] dataBytes = backupJson.toString(2).getBytes(StandardCharsets.UTF_8);
                 Log.i("Petal", "Writing backup payload: " + dataBytes.length + " bytes to URI: " + uri);
 
-                // Write all data through the pre-opened stream
                 try (java.io.BufferedOutputStream bos = new java.io.BufferedOutputStream(destinationStream, 65536)) {
                     bos.write(dataBytes);
                     bos.flush();
@@ -499,6 +457,7 @@ public class BackupUnit {
             }
         });
     }
+
 
 
 
@@ -625,7 +584,13 @@ public class BackupUnit {
 
                 if (restoreTabSessions && backupJson.has("tab_sessions")) {
                     try {
-                        String sessionJson = backupJson.getString("tab_sessions");
+                        String sessionJson = null;
+                        Object sessionObj = backupJson.opt("tab_sessions");
+                        if (sessionObj instanceof org.json.JSONObject || sessionObj instanceof org.json.JSONArray) {
+                            sessionJson = sessionObj.toString();
+                        } else if (sessionObj instanceof String) {
+                            sessionJson = (String) sessionObj;
+                        }
                         if (sessionJson != null && !sessionJson.trim().isEmpty()) {
                             RecordAction action = new RecordAction(context);
                             action.open(true);
@@ -888,7 +853,13 @@ public class BackupUnit {
 
                 if (restoreTabSessions && backupJson.has("tab_sessions")) {
                     try {
-                        String sessionJson = backupJson.getString("tab_sessions");
+                        String sessionJson = null;
+                        Object sessionObj = backupJson.opt("tab_sessions");
+                        if (sessionObj instanceof org.json.JSONObject || sessionObj instanceof org.json.JSONArray) {
+                            sessionJson = sessionObj.toString();
+                        } else if (sessionObj instanceof String) {
+                            sessionJson = (String) sessionObj;
+                        }
                         if (sessionJson != null && !sessionJson.trim().isEmpty()) {
                             RecordAction action = new RecordAction(context);
                             action.open(true);

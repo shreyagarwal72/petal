@@ -120,11 +120,27 @@ fun DataBackupSettingsScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    showBackupDialog = false
-                    createBackupLauncher.launch("petal_browser_backup.json")
-                }) {
-                    Text("Choose Save Folder")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = {
+                        showBackupDialog = false
+                        createBackupLauncher.launch("petal_browser_backup.json")
+                    }) {
+                        Text("Custom Folder")
+                    }
+                    Button(onClick = {
+                        showBackupDialog = false
+                        BackupUnit.backupToDownloadManager(
+                            context,
+                            backupBookmarks,
+                            backupHistory,
+                            backupStartSites,
+                            backupTabSessions,
+                            backupSavedSites,
+                            backupSettings
+                        )
+                    }) {
+                        Text("Download")
+                    }
                 }
             },
             dismissButton = {
@@ -212,7 +228,7 @@ fun DataBackupSettingsScreen(
                 // Backup & Restore (JSON) Card
                 SettingsCategoryCard(title = "Backup & Restore (JSON)", iconRes = com.petal.browser.R.drawable.backup_filled) {
                     Text(
-                        "Export or restore specific items to/from a single JSON file (Documents/browser_backup/petal_browser_backup.json):",
+                        "Export backups directly to Downloads with Download Manager notifications, or save/restore specific items from any JSON file:",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
