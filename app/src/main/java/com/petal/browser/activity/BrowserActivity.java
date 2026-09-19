@@ -2565,8 +2565,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 String currentUrl = ninjaWebView != null ? ninjaWebView.getUrl() : "";
                 String homeUrl = sp.getString("favoriteURL", "about:blank");
                 if (currentUrl != null && !isHomePage(currentUrl) && !currentUrl.equals(homeUrl)) {
-                    if (currentAlbumController != null) {
-                        currentAlbumController.loadUrl(homeUrl);
+                    if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                        ((com.petal.browser.view.PetalGeckoView) currentAlbumController).loadUrl(homeUrl);
+                    } else if (ninjaWebView != null) {
+                        ninjaWebView.loadUrl(homeUrl);
                     }
                     showAlbum(currentAlbumController, homeUrl);
                 } else {
