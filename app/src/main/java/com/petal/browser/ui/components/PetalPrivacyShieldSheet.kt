@@ -100,16 +100,51 @@ object PetalPrivacyShieldSheet {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                val darkTheme = remember { sp.getString("theme", "0") != "1" }
-                val dynamicColor = remember { sp.getBoolean("sp_dynamic_color", true) }
-                val isAmoled = remember { sp.getBoolean("amoled_theme", false) }
-                val isExpressive = remember { sp.getBoolean("sp_m3_expressive_colors", true) }
-                val appFont = remember {
-                    AppFont.fromName(sp.getString("sp_app_font", AppFont.PETAL.name))
+                val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+                var themeConfigStr by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
+                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+                var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
+                var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId) }
+                var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)) }
+                var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
+                var fontWidthVal by remember { androidx.compose.runtime.mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
+                var fontWeightVal by remember { androidx.compose.runtime.mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
+                var fontRoundnessVal by remember { androidx.compose.runtime.mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
+
+                androidx.compose.runtime.DisposableEffect(sp) {
+                    val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                        when (key) {
+                            "sp_theme_config" -> themeConfigStr = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
+                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                            "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                            "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
+                            "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
+                            "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
+                            "sp_expressive_colors" -> isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
+                            "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
+                            "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
+                            "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
+                        }
+                    }
+                    sp.registerOnSharedPreferenceChangeListener(listener)
+                    onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
                 }
-                val colorStyle = remember {
+
+                val darkTheme = remember(themeConfigStr, isSystemDark) {
+                    val config = try { com.petal.browser.ui.theme.ThemeConfig.valueOf(themeConfigStr) } catch (_: Exception) { com.petal.browser.ui.theme.ThemeConfig.FOLLOW_SYSTEM }
+                    when (config) {
+                        com.petal.browser.ui.theme.ThemeConfig.FOLLOW_SYSTEM -> isSystemDark
+                        com.petal.browser.ui.theme.ThemeConfig.LIGHT -> false
+                        com.petal.browser.ui.theme.ThemeConfig.DARK -> true
+                    }
+                }
+                val appFont = remember(fontName) {
+                    AppFont.fromName(fontName)
+                }
+                val colorStyle = remember(styleName) {
                     try {
-                        ColorStyle.valueOf(sp.getString("sp_color_style", ColorStyle.TONAL_SPOT.name)!!)
+                        ColorStyle.valueOf(styleName)
                     } catch (_: Exception) {
                         ColorStyle.TONAL_SPOT
                     }
@@ -119,9 +154,13 @@ object PetalPrivacyShieldSheet {
                     darkTheme = darkTheme,
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    expressiveColors = isExpressive,
+                    expressiveColors = isExpressiveColors,
                     appFont = appFont,
-                    colorStyle = colorStyle
+                    fontWidth = fontWidthVal,
+                    fontWeight = fontWeightVal,
+                    fontRoundness = fontRoundnessVal,
+                    colorStyle = colorStyle,
+                    paletteId = paletteId
                 ) {
                     PrivacyShieldContent(
                         domain = cleanHost.ifEmpty { "Current Website" },
@@ -139,10 +178,30 @@ object PetalPrivacyShieldSheet {
                             } else {
                                 PetalAdBlockEngine.removeDomainFromWhitelist(activity, cleanHost)
                             }
+                            if (activity is com.petal.browser.activity.BrowserActivity) {
+                                val current = activity.currentAlbumController
+                                if (current is com.petal.browser.view.PetalGeckoView) {
+                                    current.initPreferences(pageUrl)
+                                    current.reload()
+                                } else if (activity.ninjaWebView != null) {
+                                    activity.ninjaWebView.initPreferences(pageUrl)
+                                    activity.ninjaWebView.reload()
+                                }
+                            }
                         },
                         onGlobalToggleChanged = { enabled ->
                             PetalHapticEngine.getInstance(activity).play(PetalHapticEngine.Pattern.CLICK, 0.75f)
                             PetalAdBlockEngine.setAdBlockEnabled(activity, enabled)
+                            if (activity is com.petal.browser.activity.BrowserActivity) {
+                                val current = activity.currentAlbumController
+                                if (current is com.petal.browser.view.PetalGeckoView) {
+                                    current.initPreferences(pageUrl)
+                                    current.reload()
+                                } else if (activity.ninjaWebView != null) {
+                                    activity.ninjaWebView.initPreferences(pageUrl)
+                                    activity.ninjaWebView.reload()
+                                }
+                            }
                             onToggleAdBlock(enabled)
                         }
                     )
