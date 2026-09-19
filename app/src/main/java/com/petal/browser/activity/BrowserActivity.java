@@ -240,6 +240,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public long filterBy;
     public boolean filter;
     public ValueCallback<Uri[]> filePathCallback = null;
+    public int statusBarTopInset = 0;
     public AlbumController currentAlbumController = null;
 
     public AlbumController getCurrentAlbumController() {
@@ -703,6 +704,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
             controller.setAppearanceLightStatusBars(false);
 
+            statusBarTopInset = systemBars.top;
             v.setPadding(systemBars.left, 0, systemBars.right, isKeyboardVisible ? keyboardHeight : 0);
 
             View addressBar = findViewById(R.id.compose_address_bar);
@@ -1768,6 +1770,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             hideRefreshAndProgressOverlays();
             updatePersistentBottomNav();
         } else if (isHomePage(url)) {
+            if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+                ((com.petal.browser.view.PetalGeckoView) currentAlbumController).resetToHome();
+            } else if (ninjaWebView != null) {
+                ninjaWebView.stopLoading();
+                ninjaWebView.loadUrl("about:blank");
+            }
             View composeView = PetalComposeBridge.createComposeHomeView(this, BrowserContainer.size(), new PetalHomeActionHandler() {
                 @Override
                 public void onSearch(String query) {
@@ -2141,7 +2149,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 bottomNavCompose.setTranslationY(0f);
                 bottomNavCompose.setVisibility(VISIBLE);
                 String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
-                boolean isHome = isHomePage(currentUrl);
+                boolean isHome = isPetalHomeSurfaceShowing || isHomePage(currentUrl);
                 boolean isIncognito = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
                         ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
                         : (ninjaWebView != null && ninjaWebView.isIncognito());
@@ -2353,7 +2361,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
 
             isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
-            int topInset = isHome ? 0 : (!isBottom ? addressHeight + gap : 0);
+            int resolvedStatusBarGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this);
+            int topInset = isHome ? 0 : (!isBottom ? addressHeight + gap : resolvedStatusBarGap);
             int bottomInset = isHome ? 0 : (isBottom
                     ? addressHeight + bottomNavHeight + gap
                     : bottomNavHeight);

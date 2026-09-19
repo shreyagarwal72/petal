@@ -1368,17 +1368,21 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     override fun getUrl(): String {
-        if (currentUrl.isNotEmpty() && !currentUrl.equals("about:blank", ignoreCase = true)) {
-            return currentUrl
-        }
-        val aUrl = album.url?.toString()
-        if (!aUrl.isNullOrBlank() && !aUrl.equals("about:blank", ignoreCase = true) && !aUrl.equals("Petal Home", ignoreCase = true) && !aUrl.equals("Petal Start", ignoreCase = true) && !BrowserUnit.isHomePage(aUrl)) {
-            return aUrl
-        }
         return currentUrl
     }
 
-    fun getAlbumUrl(): String = album.url?.toString() ?: currentUrl
+    fun getAlbumUrl(): String = currentUrl
+
+    fun resetToHome() {
+        hideLoadingSkeleton()
+        currentUrl = "about:blank"
+        currentTitle = "Petal Home"
+        album.setAlbumTitle("Petal Home", "about:blank")
+        try {
+            session.stop()
+            session.loadUri("about:blank")
+        } catch (_: Exception) {}
+    }
 
     fun setAlbumTitle(title: String?, url: String?) {
         album.setAlbumTitle(title, url)
