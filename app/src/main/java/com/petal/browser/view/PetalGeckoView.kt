@@ -405,8 +405,7 @@ class PetalGeckoView @JvmOverloads constructor(
                                 bnv?.visibility = View.GONE
                                 addressBar?.visibility = View.GONE
                             } else {
-                                // Restore via the activity so overlay/home rules are respected
-                                // (bottom bar stays hidden on home, address bar per surface).
+                                // Restore via the activity so overlay/surface rules are respected.
                                 act.updatePersistentBottomNav()
                                 act.applyAddressBarPosition()
                             }

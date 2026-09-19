@@ -2259,12 +2259,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     /**
      * Single source of truth for the persistent bottom bar's visibility, based on
      * which surface is currently on screen:
-     *  - Overlay pages (Settings, History, Bookmarks, ...): GONE. The bar is removed
-     *    completely and reserves no space.
-     *  - Petal home page: hidden VISUALLY only (INVISIBLE, not GONE). It is not drawn
-     *    and cannot be touched, but it still keeps its measured size, so nothing that
-     *    depends on its layout (scaling, translation, scroll-hide logic) shifts.
-     *  - Websites: fully visible, exactly as before.
+     *  - Overlay pages (Settings, History, Bookmarks, ...), PiP, PWA: GONE. The bar is
+     *    removed completely and reserves no space.
+     *  - Home page & Websites: VISIBLE.
      */
     private void applyBottomBarVisibilityForSurface() {
         View container = findViewById(R.id.bottom_nav_container);
@@ -2279,15 +2276,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             return;
         }
 
-        boolean isHome = isPetalHomeSurfaceShowing
-                || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
-        if (isHome) {
-            container.setVisibility(INVISIBLE);
-            if (compose != null) compose.setVisibility(INVISIBLE);
-        } else {
-            container.setVisibility(VISIBLE);
-            if (compose != null) compose.setVisibility(VISIBLE);
-        }
+        container.setVisibility(VISIBLE);
+        if (compose != null) compose.setVisibility(VISIBLE);
     }
 
     public void applyAddressBarPosition() {
@@ -2397,15 +2387,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
             int resolvedStatusBarGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this);
-            // Bottom bar / bottom address bar padding is reserved ONLY for websites.
-            // Overlay pages (Settings, History, ...) and the home page get no reserved
-            // space: overlays because the bar is fully removed there, and home because
-            // the bar is only hidden visually and must not shrink the home surface.
-            boolean reserveBarSpace = !isHome && !isOverlayScreenShowing;
-            int topInset = reserveBarSpace ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0;
-            int bottomInset = reserveBarSpace ? (isBottom
+            // Overlay pages (Settings, History, ...) get no reserved space because the bar is fully removed there.
+            // On home, address bar is hidden but bottom nav bar is visible and occupies bottomNavHeight.
+            // On websites, both address bar (top or bottom) and bottom nav bar reserve space.
+            boolean reserveBarSpace = !isOverlayScreenShowing;
+            int topInset = reserveBarSpace ? (!isHome ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0) : 0;
+            int bottomInset = reserveBarSpace ? (isHome ? bottomNavHeight : (isBottom
                     ? addressHeight + bottomNavHeight + gap
-                    : bottomNavHeight) : 0;
+                    : bottomNavHeight)) : 0;
             mainContent.setPadding(0, topInset, 0, bottomInset);
 
 
