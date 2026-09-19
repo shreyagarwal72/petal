@@ -63,6 +63,7 @@ fun AppearanceSettingsScreen(
     val bgShapeRotationMin by viewModel.bgShapeRotationMin.collectAsStateWithLifecycle()
     val highRefreshRate by viewModel.highRefreshRate.collectAsStateWithLifecycle()
     val customFontName by viewModel.customFontName.collectAsStateWithLifecycle()
+    val launchRippleEnabled by viewModel.launchRippleEnabled.collectAsStateWithLifecycle()
 
     AppearanceSettingsScreenContent(
         appFont = appFont,
@@ -81,6 +82,7 @@ fun AppearanceSettingsScreen(
         bgShapeRotationMin = bgShapeRotationMin,
         highRefreshRate = highRefreshRate,
         customFontName = customFontName,
+        launchRippleEnabled = launchRippleEnabled,
         onAppFontChange = viewModel::setAppFont,
         onFontWidthChange = viewModel::setFontWidth,
         onFontWeightChange = viewModel::setFontWeight,
@@ -97,6 +99,7 @@ fun AppearanceSettingsScreen(
         onBgShapeRotationMinChange = viewModel::setBgShapeRotationMin,
         onHighRefreshRateChange = viewModel::setHighRefreshRate,
         onCustomFontNameChange = viewModel::setCustomFontName,
+        onLaunchRippleEnabledChange = viewModel::setLaunchRippleEnabled,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -121,6 +124,7 @@ fun AppearanceSettingsScreenContent(
     bgShapeRotationMin: Int,
     highRefreshRate: Boolean,
     customFontName: String,
+    launchRippleEnabled: Boolean = true,
     onAppFontChange: (AppFont) -> Unit,
     onFontWidthChange: (Float) -> Unit,
     onFontWeightChange: (Float) -> Unit,
@@ -137,6 +141,7 @@ fun AppearanceSettingsScreenContent(
     onBgShapeRotationMinChange: (Int) -> Unit,
     onHighRefreshRateChange: (Boolean) -> Unit,
     onCustomFontNameChange: (String) -> Unit,
+    onLaunchRippleEnabledChange: (Boolean) -> Unit = {},
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -652,6 +657,14 @@ fun AppearanceSettingsScreenContent(
                                 }
                             }
                         }
+                    )
+
+                    ToggleRow(
+                        title = "App Launch Ripple Effect",
+                        subtitle = "Display fluid liquid displacement ripple animation across the screen when opening the app",
+                        icon = Icons.Rounded.WaterDrop,
+                        checked = launchRippleEnabled,
+                        onCheckedChange = onLaunchRippleEnabledChange
                     )
                 }
 

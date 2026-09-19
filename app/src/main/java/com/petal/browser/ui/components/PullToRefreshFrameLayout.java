@@ -38,8 +38,8 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
     private static final float DEFAULT_PULL_DISTANCE_DP = 80f;
     private static final float EDGE_THRESHOLD_DP = 120f;
-    private static final float TRIGGER_THRESHOLD = 1.0f;
-    private static final float DRAG_DAMPING = 0.40f;
+    private static final float TRIGGER_THRESHOLD = 0.70f;
+    private static final float DRAG_DAMPING = 0.55f;
 
     private CanPull canPull = () -> true;
     private OnPullListener onPullListener;

@@ -1903,4 +1903,18 @@ class SafeGeckoView : GeckoView {
             } catch (_: Throwable) {}
         }
     }
+
+    override fun canScrollVertically(direction: Int): Boolean {
+        if (direction < 0) {
+            // GeckoView's internal View.canScrollVertically(-1) always returns true
+            // by default because it delegates scrolling to its internal compositor surface.
+            // Check parent PetalGeckoView's compositor scroll position if attached.
+            val parent = parent
+            if (parent is PetalGeckoView) {
+                return parent.getPageScrollY() > 0
+            }
+            return false
+        }
+        return super.canScrollVertically(direction)
+    }
 }

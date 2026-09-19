@@ -116,6 +116,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString("sp_custom_font_name", "No font file selected") ?: "No font file selected"
     }
 
+    override val launchRippleEnabled: Flow<Boolean> = preferenceFlow("sp_launch_ripple_enabled") {
+        sp.getBoolean("sp_launch_ripple_enabled", true)
+    }
+
     // ── Search & Homepage ─────────────────────────────────────────────────────
     override val searchEngineIndex: Flow<String> = preferenceFlow("sp_search_engine") {
         sp.getString("sp_search_engine", "0") ?: "0"
@@ -400,6 +404,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setCustomFontName(name: String) {
         sp.edit().putString("sp_custom_font_name", name).apply()
+    }
+
+    override suspend fun setLaunchRippleEnabled(enabled: Boolean) {
+        sp.edit().putBoolean("sp_launch_ripple_enabled", enabled).apply()
     }
 
     override suspend fun setSearchEngineIndex(index: String) {

@@ -228,6 +228,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public FrameLayout fullscreenHolder;
     public com.petal.browser.compose.composable.PetalRefreshBarState refreshState = new com.petal.browser.compose.composable.PetalRefreshBarState();
     public ListView list_search;
+    private android.animation.ValueAnimator contentPaddingAnimator = null;
 
     // Others
     public BottomNavigationView bottom_navigation;
@@ -791,9 +792,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         suppressResumeDispatch = true;
         dispatchIntent(getIntent());
 
-        // Launch ripple effect: if app lock is NOT enabled and this is a normal app launch
+        // Launch ripple effect: if enabled in settings, app lock is NOT enabled, and this is a normal app launch
         // (not launched via notification, widget, or external URL view), trigger the fluid ripple animation.
-        if (!sp.getBoolean("sp_app_lock_enabled", false) && !isExternalOrWidgetLaunch(getIntent()) && !launchRippleTriggered) {
+        boolean launchRipplePref = sp.getBoolean("sp_launch_ripple_enabled", true);
+        if (launchRipplePref && !sp.getBoolean("sp_app_lock_enabled", false) && !isExternalOrWidgetLaunch(getIntent()) && !launchRippleTriggered) {
             launchRippleTriggered = true;
             getWindow().getDecorView().post(() -> {
                 com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
@@ -3690,29 +3692,44 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             String pos = sp.getString("sp_address_bar_position", "TOP");
             boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
             float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
-            float targetY = isBottom ? (barHeight + HelperUnit.convertDpToPixel(40f, context)) : -(barHeight + HelperUnit.convertDpToPixel(40f, context));
-            float contentTargetY = isBottom ? 0f : -barHeight;
 
-            springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-
-            boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
             View targetNavView = (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) ? bottomNavContainer : bottomNav;
-            if (targetNavView != null && isFloating) {
-                float bottomNavTargetY = targetNavView.getHeight() > 0 ? targetNavView.getHeight() : HelperUnit.convertDpToPixel(96f, context);
-                springTranslateY(targetNavView, bottomNavTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-            }
+            float navHeight = (targetNavView != null && targetNavView.getHeight() > 0)
+                    ? targetNavView.getHeight()
+                    : HelperUnit.convertDpToPixel(64f, context);
 
-            if (contentFrame != null) {
-                springTranslateY(contentFrame, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-            }
-            if (progressBarCompose != null) {
-                springTranslateY(progressBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-            }
-            if (progressBar != null) {
-                springTranslateY(progressBar, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
-            }
-            if (refreshBarCompose != null) {
-                springTranslateY(refreshBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+            if (isBottom) {
+                // Lower bottom address bar and bottom navigation bar completely off screen
+                float bottomTotalOffset = barHeight + navHeight + HelperUnit.convertDpToPixel(16f, context);
+                springTranslateY(composeAddressBar, bottomTotalOffset, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                if (targetNavView != null) {
+                    springTranslateY(targetNavView, bottomTotalOffset, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                }
+                // Seamlessly animate padding down to 0 so website content fills the full bottom viewport
+                animateContentBottomPadding(0);
+            } else {
+                float targetY = -(barHeight + HelperUnit.convertDpToPixel(40f, context));
+                float contentTargetY = -barHeight;
+                springTranslateY(composeAddressBar, targetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+
+                boolean isFloating = sp.getBoolean("sp_floating_tab_bar", true);
+                if (targetNavView != null && isFloating) {
+                    float bottomNavTargetY = navHeight > 0 ? navHeight : HelperUnit.convertDpToPixel(96f, context);
+                    springTranslateY(targetNavView, bottomNavTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                }
+
+                if (contentFrame != null) {
+                    springTranslateY(contentFrame, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                }
+                if (progressBarCompose != null) {
+                    springTranslateY(progressBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                }
+                if (progressBar != null) {
+                    springTranslateY(progressBar, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                }
+                if (refreshBarCompose != null) {
+                    springTranslateY(refreshBarCompose, contentTargetY, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
+                }
             }
 
             if (fab_bubble != null) {
@@ -3728,6 +3745,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             isAddressBarCollapsed = false;
             composeAddressBar.setVisibility(VISIBLE);
 
+            String pos = sp.getString("sp_address_bar_position", "TOP");
+            boolean isBottom = "BOTTOM".equalsIgnoreCase(pos);
+
             springTranslateY(composeAddressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
 
             View targetNavView = (bottomNavContainer != null && bottomNavContainer.getVisibility() == VISIBLE) ? bottomNavContainer : bottomNav;
@@ -3735,17 +3755,28 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 springTranslateY(targetNavView, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_NO_BOUNCY);
             }
 
-            if (contentFrame != null) {
-                springTranslateY(contentFrame, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-            }
-            if (progressBarCompose != null) {
-                springTranslateY(progressBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-            }
-            if (progressBar != null) {
-                springTranslateY(progressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
-            }
-            if (refreshBarCompose != null) {
-                springTranslateY(refreshBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+            if (isBottom) {
+                // Restore bottom reserved padding seamlessly
+                float barHeight = composeAddressBar.getHeight() > 0 ? composeAddressBar.getHeight() : HelperUnit.convertDpToPixel(56f, context);
+                float navHeight = (targetNavView != null && targetNavView.getHeight() > 0)
+                        ? targetNavView.getHeight()
+                        : HelperUnit.convertDpToPixel(64f, context);
+                int gap = (int) HelperUnit.convertDpToPixel(2f, context);
+                int restoredBottomInset = (int) (barHeight + navHeight + gap);
+                animateContentBottomPadding(restoredBottomInset);
+            } else {
+                if (contentFrame != null) {
+                    springTranslateY(contentFrame, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                }
+                if (progressBarCompose != null) {
+                    springTranslateY(progressBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                }
+                if (progressBar != null) {
+                    springTranslateY(progressBar, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                }
+                if (refreshBarCompose != null) {
+                    springTranslateY(refreshBarCompose, 0f, SpringForce.STIFFNESS_MEDIUM, SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY);
+                }
             }
 
             if (fab_bubble != null) {
@@ -3754,6 +3785,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 fab_bubble.postDelayed(() -> { if (!isAddressBarCollapsed) fab_bubble.setVisibility(GONE); }, 350);
             }
         }
+    }
+
+    private void animateContentBottomPadding(int targetPadding) {
+        View mainContent = findViewById(R.id.main_content);
+        if (mainContent == null) return;
+        if (contentPaddingAnimator != null) {
+            contentPaddingAnimator.cancel();
+        }
+        int startPadding = mainContent.getPaddingBottom();
+        if (startPadding == targetPadding) return;
+        contentPaddingAnimator = android.animation.ValueAnimator.ofInt(startPadding, targetPadding);
+        contentPaddingAnimator.setDuration(240L);
+        contentPaddingAnimator.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
+        contentPaddingAnimator.addUpdateListener(anim -> {
+            int current = (int) anim.getAnimatedValue();
+            mainContent.setPadding(mainContent.getPaddingLeft(), mainContent.getPaddingTop(), mainContent.getPaddingRight(), current);
+        });
+        contentPaddingAnimator.start();
     }
 
     public void springTranslateY(View view, float endValue, float stiffness, float dampingRatio) {

@@ -29,6 +29,7 @@ interface SettingsRepository {
     val bgShapeRotationMin: Flow<Int>
     val highRefreshRate: Flow<Boolean>
     val customFontName: Flow<String>
+    val launchRippleEnabled: Flow<Boolean>
 
     // Search & Homepage
     val searchEngineIndex: Flow<String>
@@ -111,6 +112,7 @@ interface SettingsRepository {
     suspend fun setBgShapeRotationMin(minutes: Int)
     suspend fun setHighRefreshRate(enabled: Boolean)
     suspend fun setCustomFontName(name: String)
+    suspend fun setLaunchRippleEnabled(enabled: Boolean)
 
     suspend fun setSearchEngineIndex(index: String)
     suspend fun setHomepageType(type: String)

@@ -72,6 +72,9 @@ class AppearanceSettingsViewModel @Inject constructor(
     val customFontName: StateFlow<String> = settingsRepository.customFontName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "No font file selected")
 
+    val launchRippleEnabled: StateFlow<Boolean> = settingsRepository.launchRippleEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     fun setAppFont(font: AppFont) = viewModelScope.launch {
         settingsRepository.setAppFont(font)
     }
@@ -138,5 +141,9 @@ class AppearanceSettingsViewModel @Inject constructor(
 
     fun setCustomFontName(name: String) = viewModelScope.launch {
         settingsRepository.setCustomFontName(name)
+    }
+
+    fun setLaunchRippleEnabled(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setLaunchRippleEnabled(enabled)
     }
 }
