@@ -978,4 +978,17 @@ public class HelperUnit {
             }
         }
     }
+
+    public static int getStatusBarHeight(Context context) {
+        if (context == null) return 0;
+        int result = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        if (result <= 0) {
+            result = (int) convertDpToPixel(24f, context);
+        }
+        return result;
+    }
 }
