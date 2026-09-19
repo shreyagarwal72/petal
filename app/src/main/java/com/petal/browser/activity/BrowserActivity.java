@@ -3,6 +3,7 @@ package com.petal.browser.activity;
 import static android.content.ContentValues.TAG;
 import static android.os.Build.VERSION.SDK_INT;
 import static android.view.View.GONE;
+import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
@@ -717,7 +718,11 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
             if (bottomNavContainer != null) {
                 bottomNavContainer.setPadding(0, 0, 0, 0);
-                bottomNavContainer.setVisibility(isKeyboardVisible ? View.GONE : View.VISIBLE);
+                if (isKeyboardVisible) {
+                    bottomNavContainer.setVisibility(View.GONE);
+                } else {
+                    applyBottomBarVisibilityForSurface();
+                }
             }
             return insets;
         });
@@ -934,7 +939,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
         if (bottomNavContainer != null) {
             bottomNavContainer.setTranslationY(0f);
-            bottomNavContainer.setVisibility(View.VISIBLE);
+            applyBottomBarVisibilityForSurface();
         }
     }
 
@@ -1466,8 +1471,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
             } else {
                 if (composeAddressBar != null) composeAddressBar.setVisibility(VISIBLE);
-                if (bottomNavContainer != null) bottomNavContainer.setVisibility(VISIBLE);
-                if (bottomNavCompose != null) bottomNavCompose.setVisibility(VISIBLE);
+                applyBottomBarVisibilityForSurface();
                 if (refreshBarCompose != null) refreshBarCompose.setVisibility(VISIBLE);
                 if (mainProgressBar != null) mainProgressBar.setVisibility(VISIBLE);
                 String activeUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
@@ -1725,20 +1729,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
         View bottomNavCompose = findViewById(R.id.bottom_nav_compose);
-        boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
-        if (bottomNavContainer != null) {
-            bottomNavContainer.setTranslationY(0f);
-            bottomNavContainer.setVisibility(inPip ? GONE : VISIBLE);
-        }
-        if (bottomNavCompose != null) {
-            bottomNavCompose.setTranslationY(0f);
-            bottomNavCompose.setVisibility(inPip ? GONE : VISIBLE);
-        }
+        if (bottomNavContainer != null) bottomNavContainer.setTranslationY(0f);
+        if (bottomNavCompose != null) bottomNavCompose.setTranslationY(0f);
 
         String url = overrideUrl != null ? overrideUrl : (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getAlbumUrl() : (currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "")));
         // Home is a native Compose surface backed by an about:blank Gecko/WebView
         // document, so the controller URL alone cannot reliably describe what is visible.
         isPetalHomeSurfaceShowing = isHomePage(url);
+        // Now that we know whether this is home or a website, set the bar accordingly.
+        applyBottomBarVisibilityForSurface();
         boolean isIncognitoTab = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
                 ? ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isIncognito()
                 : (ninjaWebView != null && ninjaWebView.isIncognito());
@@ -2142,12 +2141,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             View bottomNavContainer = findViewById(R.id.bottom_nav_container);
             if (bottomNavContainer != null) {
                 bottomNavContainer.setTranslationY(0f);
-                bottomNavContainer.setVisibility(VISIBLE);
             }
             androidx.compose.ui.platform.ComposeView bottomNavCompose = findViewById(R.id.bottom_nav_compose);
             if (bottomNavCompose != null) {
                 bottomNavCompose.setTranslationY(0f);
-                bottomNavCompose.setVisibility(VISIBLE);
+            }
+            // Visibility depends on the surface: hidden on home, visible on websites.
+            applyBottomBarVisibilityForSurface();
+            if (bottomNavCompose != null) {
                 String currentUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
                 boolean isHome = isPetalHomeSurfaceShowing || isHomePage(currentUrl);
                 boolean isIncognito = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView)
@@ -2253,6 +2254,40 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
         } catch (Exception ignored) {}
         applyAddressBarPosition();
+    }
+
+    /**
+     * Single source of truth for the persistent bottom bar's visibility, based on
+     * which surface is currently on screen:
+     *  - Overlay pages (Settings, History, Bookmarks, ...): GONE. The bar is removed
+     *    completely and reserves no space.
+     *  - Petal home page: hidden VISUALLY only (INVISIBLE, not GONE). It is not drawn
+     *    and cannot be touched, but it still keeps its measured size, so nothing that
+     *    depends on its layout (scaling, translation, scroll-hide logic) shifts.
+     *  - Websites: fully visible, exactly as before.
+     */
+    private void applyBottomBarVisibilityForSurface() {
+        View container = findViewById(R.id.bottom_nav_container);
+        View compose = findViewById(R.id.bottom_nav_compose);
+        if (container == null) return;
+
+        boolean inPip = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N && isInPictureInPictureMode();
+        boolean pwa = getIntent() != null && getIntent().getBooleanExtra("pwa_mode", false);
+        if (inPip || pwa || isOverlayScreenShowing) {
+            container.setVisibility(GONE);
+            if (compose != null) compose.setVisibility(GONE);
+            return;
+        }
+
+        boolean isHome = isPetalHomeSurfaceShowing
+                || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
+        if (isHome) {
+            container.setVisibility(INVISIBLE);
+            if (compose != null) compose.setVisibility(INVISIBLE);
+        } else {
+            container.setVisibility(VISIBLE);
+            if (compose != null) compose.setVisibility(VISIBLE);
+        }
     }
 
     public void applyAddressBarPosition() {
@@ -2362,10 +2397,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
             isHome = isPetalHomeSurfaceShowing || (currentAlbumController != null && isHomePage(currentAlbumController.getUrl()));
             int resolvedStatusBarGap = statusBarTopInset > 0 ? statusBarTopInset : HelperUnit.getStatusBarHeight(this);
-            int topInset = isHome ? 0 : (!isBottom ? addressHeight + gap : resolvedStatusBarGap);
-            int bottomInset = isHome ? 0 : (isBottom
+            // Bottom bar / bottom address bar padding is reserved ONLY for websites.
+            // Overlay pages (Settings, History, ...) and the home page get no reserved
+            // space: overlays because the bar is fully removed there, and home because
+            // the bar is only hidden visually and must not shrink the home surface.
+            boolean reserveBarSpace = !isHome && !isOverlayScreenShowing;
+            int topInset = reserveBarSpace ? (!isBottom ? addressHeight + gap : resolvedStatusBarGap) : 0;
+            int bottomInset = reserveBarSpace ? (isBottom
                     ? addressHeight + bottomNavHeight + gap
-                    : bottomNavHeight);
+                    : bottomNavHeight) : 0;
             mainContent.setPadding(0, topInset, 0, bottomInset);
 
 
