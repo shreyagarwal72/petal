@@ -191,6 +191,16 @@ object PetalFetchDownloadBridge {
                 request.addHeader(safeKey, safeValue)
             }
             fetchInstance(context).enqueue(request, { updated ->
+                // Start the foreground service + live progress notification, exactly like
+                // BrowserUnit.download() does for normal downloads. Without this, media-sniffer
+                // downloads showed in the list but had no notification and no foreground service,
+                // so Android could kill them once the app went to the background.
+                val trackedName = target.name
+                PetalLiveAlertManager.trackDownload(
+                    context.applicationContext,
+                    updated.id.toLong(),
+                    trackedName
+                )
                 onEnqueued?.invoke(updated.id.toLong())
             }, {
                 onFailed?.invoke()

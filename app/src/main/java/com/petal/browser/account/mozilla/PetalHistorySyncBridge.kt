@@ -3,6 +3,7 @@ package com.petal.browser.account.mozilla
 import android.content.Context
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
+import com.petal.browser.unit.RecordUnit
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -150,7 +151,7 @@ class PetalHistorySyncBridge {
                     existingUrlMap[normUrl] = record
                 } else if (visitTime > existingRecord.time) {
                     // Update to more recent visit time
-                    action.deleteHistory(existingRecord)
+                    action.deleteURL(existingRecord.url, RecordUnit.TABLE_HISTORY)
                     val updatedRecord = Record().apply {
                         title = item.title.ifBlank { existingRecord.title ?: item.url }
                         url = item.url

@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  * Chrome Android-inspired Material 3 Expressive Bookmarks Page for Petal Browser.
  * Features live search/filter, individual bookmark deletion, bookmark creation,
- * share actions, HTML Bookmark import/export, and 60fps smooth animations.
+ * share actions, and 60fps smooth animations.
  */
 
 package com.petal.browser.compose.bookmarks
@@ -11,8 +11,6 @@ package com.petal.browser.compose.bookmarks
 import android.content.Context
 import android.net.Uri
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -47,7 +45,6 @@ import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import com.petal.browser.database.Record
 import com.petal.browser.database.RecordAction
-import com.petal.browser.unit.BookmarkHtmlImporterExporter
 import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
@@ -156,28 +153,6 @@ fun PetalBookmarksScreen(
 
     var overflowMenuExpanded by remember { mutableStateOf(false) }
 
-    // Bookmark Export & Import SAF Activity Launchers (JSON only)
-    val exportJsonLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
-    ) { targetUri ->
-        if (targetUri != null) {
-            BookmarkHtmlImporterExporter.exportToUri(context, targetUri)
-        }
-    }
-
-    var showImportPicker by remember { mutableStateOf(false) }
-    val systemImportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { sourceUri ->
-        if (sourceUri != null) {
-            BookmarkHtmlImporterExporter.importFromUri(context, sourceUri) { success, _ ->
-                if (success) {
-                    reloadBookmarks()
-                }
-            }
-        }
-    }
-
 
     val filteredBookmarks = remember(searchQuery, rawBookmarks, showReadingListOnly) {
         val list = rawBookmarks ?: emptyList()
@@ -231,46 +206,17 @@ fun PetalBookmarksScreen(
                             contentDescription = "Add Bookmark",
                             onClick = { showAddDialog = true }
                         )
-                        Box {
-                            HeaderActionIcon(
-                                icon = Icons.Rounded.MoreVert,
-                                contentDescription = "More Options",
-                                onClick = { overflowMenuExpanded = true }
-                            )
-                            DropdownMenu(
-                                expanded = overflowMenuExpanded,
-                                onDismissRequest = { overflowMenuExpanded = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Import Bookmarks (JSON)") },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Rounded.FileUpload,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    },
-                                    onClick = {
-                                        overflowMenuExpanded = false
-                                        showImportPicker = true
-                                    }
+                        if (!rawBookmarks.isNullOrEmpty()) {
+                            Box {
+                                HeaderActionIcon(
+                                    icon = Icons.Rounded.MoreVert,
+                                    contentDescription = "More Options",
+                                    onClick = { overflowMenuExpanded = true }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text("Export Bookmarks (JSON)") },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Rounded.DataObject,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    },
-                                    onClick = {
-                                        overflowMenuExpanded = false
-                                        exportJsonLauncher.launch("petal_bookmarks.json")
-                                    }
-                                )
-                                if (!rawBookmarks.isNullOrEmpty()) {
-                                    HorizontalDivider()
+                                DropdownMenu(
+                                    expanded = overflowMenuExpanded,
+                                    onDismissRequest = { overflowMenuExpanded = false }
+                                ) {
                                     DropdownMenuItem(
                                         text = {
                                             Text(
@@ -372,7 +318,7 @@ fun PetalBookmarksScreen(
                     com.petal.browser.ui.components.EmptyStateBlob(
                         illustrationType = com.petal.browser.ui.components.EmptyStateIllustrationType.BOOKMARKS,
                         title = if (searchQuery.isEmpty()) "No Bookmarks Saved Yet" else "No Matching Bookmarks",
-                        description = if (searchQuery.isEmpty()) "Tap the star icon on web pages to save them, or import bookmarks.html above" else "Try searching with a different URL or keyword"
+                        description = if (searchQuery.isEmpty()) "Tap the star icon on web pages to save them" else "Try searching with a different URL or keyword"
                     )
                 } else {
                     LazyColumn(
@@ -511,25 +457,6 @@ fun PetalBookmarksScreen(
     }
     }
 
-    if (showImportPicker) {
-        com.petal.browser.compose.file.PetalFilePickerScreen(
-            mimeTypes = arrayOf("text/html", "text/plain", "application/json", "*/*"),
-            onDismissRequest = { showImportPicker = false },
-            onFileSelected = { file ->
-                showImportPicker = false
-                val uri = android.net.Uri.fromFile(file)
-                BookmarkHtmlImporterExporter.importFromUri(context, uri) { success, _ ->
-                    if (success) {
-                        reloadBookmarks()
-                    }
-                }
-            },
-            onBrowseSystemFallback = {
-                showImportPicker = false
-                systemImportLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
-            }
-        )
-    }
 }
 
 

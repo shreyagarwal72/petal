@@ -44,7 +44,8 @@ fun PetalDownloadConfirmationDialog(
     fileSizeFormatted: String,
     isDuplicate: Boolean,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onExternalDownload: (() -> Unit)? = null
 ) {
     Surface(
         shape = RoundedCornerShape(28.dp),
@@ -127,42 +128,58 @@ fun PetalDownloadConfirmationDialog(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                var splitMenuExpanded by remember { mutableStateOf(false) }
+                val downloadLabel = if (isDuplicate) "Download Again" else "Download"
 
-                Box {
-                    ExpressiveSplitButton(
-                        label = if (isDuplicate) "Download Again" else "Download",
-                        onPrimaryClick = onConfirm,
-                        onMenuClick = { splitMenuExpanded = !splitMenuExpanded },
-                        icon = Icons.Rounded.Download,
-                        isMenuExpanded = splitMenuExpanded,
-                        variant = SplitButtonVariant.FILLED,
-                        height = 42.dp
-                    )
+                if (onExternalDownload != null) {
+                    var splitMenuExpanded by remember { mutableStateOf(false) }
 
-                    DropdownMenu(
-                        expanded = splitMenuExpanded,
-                        onDismissRequest = { splitMenuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Standard Download") },
-                            onClick = {
-                                splitMenuExpanded = false
-                                onConfirm()
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Rounded.Download, contentDescription = null)
-                            }
+                    Box {
+                        ExpressiveSplitButton(
+                            label = downloadLabel,
+                            onPrimaryClick = onConfirm,
+                            onMenuClick = { splitMenuExpanded = !splitMenuExpanded },
+                            icon = Icons.Rounded.Download,
+                            isMenuExpanded = splitMenuExpanded,
+                            variant = SplitButtonVariant.FILLED,
+                            height = 42.dp
                         )
-                        DropdownMenuItem(
-                            text = { Text("Download in Background") },
-                            onClick = {
-                                splitMenuExpanded = false
-                                onConfirm()
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Rounded.CloudDownload, contentDescription = null)
-                            }
+
+                        DropdownMenu(
+                            expanded = splitMenuExpanded,
+                            onDismissRequest = { splitMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Download with external downloader") },
+                                onClick = {
+                                    splitMenuExpanded = false
+                                    onExternalDownload()
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.OpenInNew, contentDescription = null)
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    // No external option (e.g. blob: downloads have no URL a downloader could fetch),
+                    // so a menu arrow would be a dead control - show a plain button instead.
+                    Button(
+                        onClick = onConfirm,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Download,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = downloadLabel,
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                         )
                     }
                 }
@@ -470,6 +487,23 @@ object PetalDownloadDialogBridge {
                     val appFont = com.petal.browser.ui.theme.AppFont.fromName(fontName)
                     val colorStyle = try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
 
+                    // Magnet links can't go through the plain-URL external path (it would rewrite
+                    // "magnet:" to "https://magnet:"), so the option is hidden (null) for them.
+                    val externalDownloadAction: (() -> Unit)? =
+                        if (url.startsWith("magnet:", ignoreCase = true)) {
+                            null
+                        } else {
+                            fun() {
+                                if (dialog.isShowing) dialog.dismiss()
+                                val launched = com.petal.browser.unit.ExternalDownloadManagerHelper.launchDownloadInExternalManager(
+                                    activity, url, guessedFileName, mimeType, null
+                                )
+                                if (!launched) {
+                                    com.petal.browser.view.NinjaToast.show(activity, "No external downloader found")
+                                }
+                            }
+                        }
+
                     val composeView = ComposeView(activity).apply {
                         setViewTreeLifecycleOwner(activity)
                         setViewTreeViewModelStoreOwner(activity)
@@ -495,7 +529,8 @@ object PetalDownloadDialogBridge {
                                     },
                                     onDismiss = {
                                         if (dialog.isShowing) dialog.dismiss()
-                                    }
+                                    },
+                                    onExternalDownload = externalDownloadAction
                                 )
                             }
                         }
