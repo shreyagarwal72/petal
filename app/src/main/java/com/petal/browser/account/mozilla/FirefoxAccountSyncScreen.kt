@@ -430,7 +430,7 @@ fun FirefoxAccountSyncScreen(
 
                                         Spacer(Modifier.height(16.dp))
 
-                                        // Last Sync Status & Button
+                                        // Last Sync Status
                                         val lastSync = fxaManager.getLastSyncTime()
                                         val lastSyncStr = if (lastSync > 0) {
                                             SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(lastSync))
@@ -438,12 +438,25 @@ fun FirefoxAccountSyncScreen(
                                             "Never synced"
                                         }
 
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
+                                        val isSyncing = syncState is MozSyncState.Syncing
+                                        val infiniteTransition = rememberInfiniteTransition()
+                                        val rotation by infiniteTransition.animateFloat(
+                                            initialValue = 0f,
+                                            targetValue = 360f,
+                                            animationSpec = infiniteRepeatable(
+                                                animation = tween(1000, easing = LinearEasing),
+                                                repeatMode = RepeatMode.Restart
+                                            )
+                                        )
+
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Column {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
                                                 Text(
                                                     text = "Last Synced",
                                                     style = MaterialTheme.typography.labelSmall,
@@ -460,18 +473,12 @@ fun FirefoxAccountSyncScreen(
                                                 )
                                             }
 
-                                            val isSyncing = syncState is MozSyncState.Syncing
-                                            val infiniteTransition = rememberInfiniteTransition()
-                                            val rotation by infiniteTransition.animateFloat(
-                                                initialValue = 0f,
-                                                targetValue = 360f,
-                                                animationSpec = infiniteRepeatable(
-                                                    animation = tween(1000, easing = LinearEasing),
-                                                    repeatMode = RepeatMode.Restart
-                                                )
-                                            )
+                                            Spacer(Modifier.height(14.dp))
 
-                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
                                                 OutlinedButton(
                                                     onClick = {
                                                         syncManager.syncNow(context, forceRestore = true) { success ->
@@ -484,15 +491,18 @@ fun FirefoxAccountSyncScreen(
                                                     },
                                                     enabled = !isSyncing,
                                                     shape = RoundedCornerShape(20.dp),
-                                                    modifier = Modifier.bouncyClickable()
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .height(44.dp)
+                                                        .bouncyClickable()
                                                 ) {
                                                     Icon(
                                                         Icons.Rounded.Download,
                                                         contentDescription = null,
-                                                        modifier = Modifier.size(16.dp)
+                                                        modifier = Modifier.size(18.dp)
                                                     )
-                                                    Spacer(Modifier.width(4.dp))
-                                                    Text("Restore", fontWeight = FontWeight.SemiBold)
+                                                    Spacer(Modifier.width(6.dp))
+                                                    Text("Restore", fontWeight = FontWeight.SemiBold, maxLines = 1)
                                                 }
 
                                                 Button(
@@ -511,7 +521,10 @@ fun FirefoxAccountSyncScreen(
                                                         containerColor = MaterialTheme.colorScheme.primary,
                                                         contentColor = MaterialTheme.colorScheme.onPrimary
                                                     ),
-                                                    modifier = Modifier.bouncyClickable()
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .height(44.dp)
+                                                        .bouncyClickable()
                                                 ) {
                                                     Icon(
                                                         Icons.Rounded.Sync,
@@ -521,7 +534,11 @@ fun FirefoxAccountSyncScreen(
                                                             .then(if (isSyncing) Modifier.rotate(rotation) else Modifier)
                                                     )
                                                     Spacer(Modifier.width(6.dp))
-                                                    Text(if (isSyncing) "Syncing..." else "Sync Now", fontWeight = FontWeight.Bold)
+                                                    Text(
+                                                        if (isSyncing) "Syncing..." else "Sync Now",
+                                                        fontWeight = FontWeight.Bold,
+                                                        maxLines = 1
+                                                    )
                                                 }
                                             }
                                         }

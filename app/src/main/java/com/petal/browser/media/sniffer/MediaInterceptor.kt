@@ -843,32 +843,7 @@ class MediaInterceptor {
         return deduped.sortedWith(PLAYABLE_COMPARATOR)
     }
 
-    private val PLAYABLE_COMPARATOR = compareBy<DetectedMedia>(
-        // Video before audio-only.
-        { it.type == MediaType.AUDIO },
-        // Non-protected before protected.
-        { it.protectionStatus == MediaProtectionStatus.LIKELY_PROTECTED },
-        // Higher quality number preferred.
-        { -qualityRank(it.quality) },
-        // Shorter, cleaner URLs (main content) before obvious auxiliary resources.
-        { isAuxiliaryUrl(it.url) }
-    ).thenBy { it.url }
 
-    private fun qualityRank(quality: String?): Int {
-        if (quality == null) return 0
-        val h = Regex("(\\d{3,4})p").find(quality)?.groupValues?.get(1)?.toIntOrNull()
-        if (h != null) return h
-        val kbps = Regex("(\\d+)kbps").find(quality)?.groupValues?.get(1)?.toIntOrNull()
-        return kbps ?: 0
-    }
-
-    /** Heuristic: URLs containing obvious thumbnail/auxiliary markers rank lower. */
-    private fun isAuxiliaryUrl(url: String): Boolean {
-        val lower = url.lowercase()
-        return lower.contains("thumb") || lower.contains("poster") ||
-               lower.contains("preview") || lower.contains("sprite") ||
-               lower.contains("still") || lower.contains("snapshot")
-    }
 
     // ------------------------------------------------------------------
     // Helpers
@@ -959,5 +934,34 @@ class MediaInterceptor {
                 .joinToString("&") { "$it=${uri.getQueryParameter(it)}" }
             "$scheme://$host$path?$kept"
         } catch (_: Exception) { url }
+    }
+
+    companion object {
+        private val PLAYABLE_COMPARATOR = compareBy<DetectedMedia>(
+            // Video before audio-only.
+            { it.type == MediaType.AUDIO },
+            // Non-protected before protected.
+            { it.protectionStatus == MediaProtectionStatus.LIKELY_PROTECTED },
+            // Higher quality number preferred.
+            { -qualityRank(it.quality) },
+            // Shorter, cleaner URLs (main content) before obvious auxiliary resources.
+            { isAuxiliaryUrl(it.url) }
+        ).thenBy { it.url }
+
+        private fun qualityRank(quality: String?): Int {
+            if (quality == null) return 0
+            val h = Regex("(\\d{3,4})p").find(quality)?.groupValues?.get(1)?.toIntOrNull()
+            if (h != null) return h
+            val kbps = Regex("(\\d+)kbps").find(quality)?.groupValues?.get(1)?.toIntOrNull()
+            return kbps ?: 0
+        }
+
+        /** Heuristic: URLs containing obvious thumbnail/auxiliary markers rank lower. */
+        private fun isAuxiliaryUrl(url: String): Boolean {
+            val lower = url.lowercase()
+            return lower.contains("thumb") || lower.contains("poster") ||
+                   lower.contains("preview") || lower.contains("sprite") ||
+                   lower.contains("still") || lower.contains("snapshot")
+        }
     }
 }
