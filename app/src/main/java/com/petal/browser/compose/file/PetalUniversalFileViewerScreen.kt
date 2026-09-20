@@ -222,6 +222,7 @@ fun PetalUniversalFileViewerScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
+                        .navigationBarsPadding()
                 ) {
                     when (category) {
                         FileCategory.ARCHIVE -> ArchiveViewerContent(
@@ -262,10 +263,13 @@ private fun UniversalFileViewerTopBar(
     onShare: () -> Unit,
     onOpenExternal: () -> Unit,
 ) {
+    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .statusBarsPadding(),
+            .padding(top = topClearance),
         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.95f),
         tonalElevation = 3.dp,
         shadowElevation = 2.dp,
