@@ -10,8 +10,13 @@
 package com.petal.browser.compose.file
 
 import android.app.Activity
+import android.app.Dialog
 import android.content.Context
 import android.net.Uri
+import android.graphics.Color as AndroidColor
+import android.graphics.drawable.ColorDrawable
+import android.view.Gravity
+import android.view.WindowManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import androidx.activity.ComponentActivity
@@ -23,14 +28,14 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.petal.browser.activity.BrowserActivity
 import com.petal.browser.ui.theme.*
 import java.io.File
 
 object PetalFilePickerBridge {
 
-    private var activeDialog: BottomSheetDialog? = null
+    private var activeDialog: Dialog? = null
+    private var activeComposeView: ComposeView? = null
 
     /**
      * Presents the full-featured Petal File Picker as a modal sheet or screen.
@@ -48,20 +53,27 @@ object PetalFilePickerBridge {
         onBrowseSystemFallback: (() -> Unit)? = null
     ) {
         activity.runOnUiThread {
+            // The browser file chooser is a real Petal page, not a BottomSheet.
+            // BottomSheetDialog used to intercept vertical drags and left the picker
+            // visually anchored over the website. Presenting it through the same
+            // full-screen screen host used by Settings/Downloads fixes both issues:
+            // scrolling is owned by LazyColumn and the header starts at the normal
+            // edge-to-edge/status-bar position used by other Petal pages.
             try {
                 activeDialog?.dismiss()
             } catch (_: Exception) {}
             activeDialog = null
+            activeComposeView = null
 
             var isHandled = false
-            val dialog = BottomSheetDialog(activity)
-            activeDialog = dialog
 
             val composeView = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)
                 setViewTreeSavedStateRegistryOwner(activity)
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+                setViewCompositionStrategy(
+                    ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+                )
 
                 setContent {
                     val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
@@ -97,24 +109,33 @@ object PetalFilePickerBridge {
                             allowFolderSelection = allowFolderSelection,
                             allowMultiple = allowMultiple,
                             onDismissRequest = {
-                                try {
-                                    if (dialog.isShowing) dialog.dismiss()
-                                } catch (_: Exception) {}
-                                onDismiss()
+                                if (!isHandled) {
+                                    isHandled = true
+                                    if (activity is BrowserActivity) {
+                                        activity.performBackNavigation()
+                                    } else {
+                                        try { activeDialog?.dismiss() } catch (_: Exception) {}
+                                    }
+                                    onDismiss()
+                                }
                             },
                             onFileSelected = { file ->
                                 isHandled = true
                                 onFileSelected(file)
-                                try {
-                                    dialog.dismiss()
-                                } catch (_: Exception) {}
+                                if (activity is BrowserActivity) {
+                                    activity.performBackNavigation()
+                                } else {
+                                    try { activeDialog?.dismiss() } catch (_: Exception) {}
+                                }
                             },
                             onMultipleFilesSelected = { files ->
                                 isHandled = true
                                 onMultipleFilesSelected?.invoke(files)
-                                try {
-                                    dialog.dismiss()
-                                } catch (_: Exception) {}
+                                if (activity is BrowserActivity) {
+                                    activity.performBackNavigation()
+                                } else {
+                                    try { activeDialog?.dismiss() } catch (_: Exception) {}
+                                }
                             },
                             onPreviewFile = { file ->
                                 val uri = Uri.fromFile(file)
@@ -132,9 +153,11 @@ object PetalFilePickerBridge {
                             },
                             onBrowseSystemFallback = {
                                 isHandled = true
-                                try {
-                                    dialog.dismiss()
-                                } catch (_: Exception) {}
+                                if (activity is BrowserActivity) {
+                                    activity.performBackNavigation()
+                                } else {
+                                    try { activeDialog?.dismiss() } catch (_: Exception) {}
+                                }
                                 onBrowseSystemFallback?.invoke()
                             }
                         )
@@ -142,14 +165,55 @@ object PetalFilePickerBridge {
                 }
             }
 
+            activeComposeView = composeView
+
+            val browserActivity = activity as? BrowserActivity
+            if (browserActivity != null) {
+                // Clear the old browser content before pushing the picker. This is
+                // important: the picker is a first-class full-screen Petal page,
+                // not a transparent overlay sitting above GeckoView.
+                browserActivity.captureBrowserMainPreview()
+                browserActivity.clearContentFrameKeepingTabs()
+                browserActivity.presentComposeScreen(composeView)
+                return@runOnUiThread
+            }
+
+            // Non-browser callers still get a full-screen host instead of a
+            // draggable BottomSheet. This keeps the component reusable from
+            // settings/account screens without the old sheet scroll behaviour.
+            val dialog = Dialog(activity)
+            activeDialog = dialog
             dialog.setContentView(composeView)
+            dialog.setCanceledOnTouchOutside(false)
             dialog.setOnDismissListener {
                 activeDialog = null
+                activeComposeView = null
                 if (!isHandled) {
+                    isHandled = true
                     onDismiss()
                 }
             }
+            dialog.setOnShowListener {
+                dialog.window?.let { window ->
+                    window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
+                    window.setDimAmount(0f)
+                    window.setGravity(Gravity.CENTER)
+                    window.setLayout(
+                        WindowManager.LayoutParams.MATCH_PARENT,
+                        WindowManager.LayoutParams.MATCH_PARENT
+                    )
+                }
+            }
             dialog.show()
+            dialog.window?.let { window ->
+                window.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
+                window.setDimAmount(0f)
+                window.setGravity(Gravity.CENTER)
+                window.setLayout(
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.MATCH_PARENT
+                )
+            }
         }
     }
 
