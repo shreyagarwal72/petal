@@ -20,14 +20,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -105,6 +109,15 @@ fun PetalVideoPlayerOverlay(
     val context = LocalContext.current
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager }
     val maxVolume = remember { audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15 }
+
+    // The player activity hides the system bars immediately (immersive mode), so
+    // statusBarsPadding()/navigationBarsPadding() alone collapse to 0 and the controls sit
+    // flush against the physical screen edge / camera cutout. Combine the (usually-zero) bar
+    // inset with the display cutout inset and fall back to a comfortable minimum.
+    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
+    val bottomClearance = WindowInsets.navigationBars.asPaddingValues()
+        .calculateBottomPadding().coerceAtLeast(16.dp)
 
     var areControlsVisible by remember { mutableStateOf(true) }
     var currentSpeed by remember { mutableFloatStateOf(playbackSpeed) }
@@ -379,7 +392,7 @@ fun PetalVideoPlayerOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)
-                        .statusBarsPadding(),
+                        .padding(top = topClearance),
                 ) {
                     Row(
                         modifier = Modifier
@@ -573,7 +586,7 @@ fun PetalVideoPlayerOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
+                        .padding(bottom = bottomClearance)
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     PetalSeekbarWithTimers(
