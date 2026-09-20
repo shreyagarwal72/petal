@@ -650,6 +650,13 @@ private fun ImageViewerTopBar(
 ) {
     var moreMenuExpanded by remember { mutableStateOf(false) }
 
+    // These viewers hide the system status bar immediately on launch (immersive mode), so
+    // statusBarsPadding() alone collapses to 0 and the bar sits flush against the physical top
+    // edge / camera cutout. Combine the (usually-zero) status bar inset with the display cutout
+    // inset, and fall back to a comfortable minimum so there's always real breathing room.
+    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -658,7 +665,7 @@ private fun ImageViewerTopBar(
                     colors = listOf(Color.Black.copy(alpha = 0.72f), Color.Transparent),
                 )
             )
-            .statusBarsPadding()
+            .padding(top = topClearance)
             .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         Row(
@@ -735,6 +742,8 @@ private fun ImageViewerBottomBar(
     onInfo: () -> Unit,
 ) {
     val isLocal = entry?.downloadItem != null
+    val bottomClearance = WindowInsets.navigationBars.asPaddingValues()
+        .calculateBottomPadding().coerceAtLeast(16.dp)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -743,7 +752,7 @@ private fun ImageViewerBottomBar(
                     colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f)),
                 )
             )
-            .navigationBarsPadding()
+            .padding(bottom = bottomClearance)
             .padding(horizontal = 20.dp, vertical = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
