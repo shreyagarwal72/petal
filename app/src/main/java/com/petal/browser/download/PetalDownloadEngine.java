@@ -79,15 +79,18 @@ public class PetalDownloadEngine {
         Context appContext = context.getApplicationContext();
 
         // Custom robust OkHttpClient for segmented parallel downloading
-        Dispatcher dispatcher = new Dispatcher(Executors.newFixedThreadPool(32));
-        dispatcher.setMaxRequests(64);
-        dispatcher.setMaxRequestsPerHost(16);
+        // Keep enough workers and warm connections to saturate fast networks without
+        // buffering the file in memory. Fetch2 still streams each response directly
+        // to disk, which is safer than range-splitting signed/CDN URLs.
+        Dispatcher dispatcher = new Dispatcher(Executors.newFixedThreadPool(64));
+        dispatcher.setMaxRequests(128);
+        dispatcher.setMaxRequestsPerHost(32);
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .dispatcher(dispatcher)
-                .connectionPool(new ConnectionPool(32, 5, TimeUnit.MINUTES))
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
+                .connectionPool(new ConnectionPool(64, 5, TimeUnit.MINUTES))
+                .connectTimeout(20, TimeUnit.SECONDS)
+                .readTimeout(0, TimeUnit.MILLISECONDS)
+                .writeTimeout(0, TimeUnit.MILLISECONDS)
                 .followRedirects(true)
                 .followSslRedirects(true)
                 .retryOnConnectionFailure(true)
@@ -97,8 +100,8 @@ public class PetalDownloadEngine {
         // how many concurrent byte-range chunks make up a single file (see SEQUENTIAL note
         // above) - safe to keep high without reintroducing the range-splitting size bug.
         FetchConfiguration fetchConfiguration = new FetchConfiguration.Builder(appContext)
-                .setDownloadConcurrentLimit(24)
-                .setProgressReportingInterval(100L)
+                .setDownloadConcurrentLimit(32)
+                .setProgressReportingInterval(250L)
                 .setAutoRetryMaxAttempts(10)
                 .enableAutoStart(true)
                 .enableRetryOnNetworkGain(true)
