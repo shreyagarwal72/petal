@@ -82,9 +82,15 @@ object SafeDownloadValues {
      * URL path, query params, and MIME type fallback (Petal algorithm).
      */
     @JvmStatic
-    fun fileName(url: String, contentDisposition: String?, mimeType: String?): String {
+    fun fileName(
+        url: String,
+        contentDisposition: String?,
+        mimeType: String?,
+        preferredFileName: String? = null
+    ): String {
         val safeMime = mimeType(mimeType)
-        val candidate = contentDispositionFileName(contentDisposition)
+        val candidate = preferredFileName?.takeIf { it.isNotBlank() }
+            ?: contentDispositionFileName(contentDisposition)
             ?: urlQueryFileName(url)
             ?: urlFileName(url)
             ?: "download"

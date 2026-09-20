@@ -201,8 +201,15 @@ object PetalFetchDownloadBridge {
             onFailed?.invoke()
             return
         }
-        val safeName = SafeDownloadValues.fileName(url, fileName, mimeType)
-            .ifBlank { fileName.ifBlank { "download" } }
+        // fileName is already the selected/server-provided name. Passing it as
+        // Content-Disposition makes the resolver treat it as a URL fallback and
+        // loses names for signed/dynamic CDN URLs.
+        val safeName = SafeDownloadValues.fileName(
+            url = url,
+            contentDisposition = null,
+            mimeType = mimeType,
+            preferredFileName = fileName
+        ).ifBlank { "download" }
         val downloadsDir = File(
             android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
             safeName
