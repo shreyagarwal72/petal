@@ -89,9 +89,10 @@ object PetalGeckoRuntime {
                     .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
                     .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
+                    // Cookie-banner auto-reject was removed from GeckoView in v154 (the underlying
+                    // Gecko feature no longer exists, no replacement), so it is not configured here.
+                    // Banner hiding is handled by the app's own CSS/cosmetic rules instead.
                     .build()
-                    // The Builder has no cookie-banner method; it is set on the built Settings.
-                    .setCookieBannerMode(ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_REJECT)
             )
             .javaScriptEnabled(sp.getBoolean("profileStandard_javascript", true))
             .consoleOutput(false)
