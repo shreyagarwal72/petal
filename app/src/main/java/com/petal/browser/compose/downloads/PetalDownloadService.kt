@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
+import java.io.File
 
 class PetalDownloadService : Service() {
 
@@ -131,7 +132,8 @@ class PetalDownloadService : Service() {
                 return@getDownloads
             }
             active.forEach {
-                PetalLiveAlertManager.trackDownload(applicationContext, it.id.toLong(), it.fileName, startService = false)
+                val name = File(it.file).name.ifBlank { it.url }
+                PetalLiveAlertManager.trackDownload(applicationContext, it.id.toLong(), name, startService = false)
             }
             updatePersistentNotification()
         }
