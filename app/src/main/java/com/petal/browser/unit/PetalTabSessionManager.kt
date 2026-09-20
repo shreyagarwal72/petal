@@ -251,17 +251,27 @@ object PetalTabSessionManager {
                 val isForeground = (i == activeIndex)
 
                 if (isForeground) {
+                    val tabId = record.persistentTabId.ifBlank { "tab_restored_${System.currentTimeMillis()}_$i" }
+                    val sessionPair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                        context = activity,
+                        tabId = tabId,
+                        url = record.url.ifBlank { "about:blank" },
+                        title = record.title.ifBlank { activity.getString(R.string.app_name) },
+                        isIncognito = false,
+                        select = true
+                    )
+
                     val geckoView = BrowserWebViewController.createAndConfigureGeckoView(
                         activity = activity,
                         title = record.title.ifBlank { activity.getString(R.string.app_name) },
                         url = record.url,
                         foreground = true,
-                        isIncognito = false
+                        isIncognito = false,
+                        adoptedSession = null,
+                        engineSession = sessionPair.second
                     )
 
-                    if (record.persistentTabId.isNotBlank()) {
-                        geckoView.setTabId(record.persistentTabId)
-                    }
+                    geckoView.setTabId(tabId)
                     geckoView.setBrowserController(activity)
 
                     if (record.title.isNotBlank()) {
@@ -346,13 +356,26 @@ object PetalTabSessionManager {
             url
         }
 
+        val tabId = "tab_silently_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().substring(0, 8)}"
+        val sessionPair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+            context = activity,
+            tabId = tabId,
+            url = safeUrl,
+            title = safeTitle,
+            isIncognito = isIncognito,
+            select = !keepOverviewOpen
+        )
+
         val geckoView = BrowserWebViewController.createAndConfigureGeckoView(
             activity = activity,
             title = safeTitle,
             url = safeUrl,
             foreground = !keepOverviewOpen,
-            isIncognito = isIncognito
+            isIncognito = isIncognito,
+            adoptedSession = null,
+            engineSession = sessionPair.second
         )
+        geckoView.setTabId(tabId)
         geckoView.setBrowserController(activity)
         geckoView.setAlbumTitle(safeTitle, safeUrl)
         if (!groupId.isNullOrBlank()) {

@@ -19,6 +19,9 @@ import androidx.browser.customtabs.CustomTabsSessionToken
 class PetalCustomTabsService : CustomTabsService() {
 
     override fun warmup(flags: Long): Boolean {
+        try {
+            com.petal.browser.engine.gecko.PetalEngineStore.getEngine(applicationContext)
+        } catch (_: Throwable) {}
         return true
     }
 

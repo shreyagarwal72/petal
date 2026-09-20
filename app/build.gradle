@@ -196,10 +196,17 @@ dependencies {
     implementation 'io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1'
     implementation 'io.github.junkfood02.youtubedl-android:aria2c:0.18.1'
 
-    // Mozilla GeckoView (Release channel, latest stable release).
-    // Keep this pinned to an exact release so dependency resolution never
-    // silently downgrades the browser engine or substitutes a nightly build.
+    // Mozilla GeckoView & Android Components (Release channel 155.0.1)
     implementation 'org.mozilla.geckoview:geckoview:155.0.20260903215306'
+    implementation('org.mozilla.components:browser-engine-gecko:155.0.1') {
+        exclude group: 'org.mozilla.geckoview', module: 'geckoview-omni'
+    }
+    implementation 'org.mozilla.components:concept-engine:155.0.1'
+    implementation 'org.mozilla.components:browser-state:155.0.1'
+    implementation 'org.mozilla.components:browser-session-storage:155.0.1'
+    implementation 'org.mozilla.components:lib-state:155.0.1'
+    implementation 'org.mozilla.components:support-base:155.0.1'
+    implementation 'org.mozilla.components:support-utils:155.0.1'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.51.1'

@@ -87,7 +87,17 @@ class PetalCustomTabActivity : ComponentActivity() {
                     ) {
                         AndroidView(
                             factory = { ctx ->
-                                PetalGeckoView(ctx).also { gv ->
+                                val tabId = "tab_custom_${System.currentTimeMillis()}"
+                                val sessionPair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                                    context = ctx,
+                                    tabId = tabId,
+                                    url = targetUrl.ifBlank { "about:blank" },
+                                    title = "",
+                                    isIncognito = false,
+                                    select = true
+                                )
+                                PetalGeckoView(ctx, engineSession = sessionPair.second).also { gv ->
+                                    gv.setTabId(tabId)
                                     gv.layoutParams = FrameLayout.LayoutParams(
                                         ViewGroup.LayoutParams.MATCH_PARENT,
                                         ViewGroup.LayoutParams.MATCH_PARENT

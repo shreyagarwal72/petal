@@ -53,7 +53,8 @@ class PetalGeckoView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
     adoptedSession: GeckoSession? = null,
-    initialIncognito: Boolean = false
+    initialIncognito: Boolean = false,
+    val engineSession: mozilla.components.concept.engine.EngineSession? = null
 ) : FrameLayout(context, attrs, defStyleAttr), AlbumController, NestedScrollingChild3 {
 
     companion object {
@@ -91,11 +92,18 @@ class PetalGeckoView @JvmOverloads constructor(
     // The session mode is immutable after GeckoSession construction. Creating a normal
     // session and switching to private mode later is too late and can leak normal-profile
     // state into an Incognito tab, especially during cold startup.
-    var session: GeckoSession = adoptedSession ?: GeckoSession(
-        GeckoSessionSettings.Builder()
-            .usePrivateMode(initialIncognito)
-            .build()
-    )
+    // If an engineSession (GeckoEngineSession) is provided, adopt its underlying GeckoSession.
+    var session: GeckoSession = adoptedSession ?: run {
+        if (engineSession is mozilla.components.browser.engine.gecko.GeckoEngineSession) {
+            engineSession.geckoSession
+        } else {
+            GeckoSession(
+                GeckoSessionSettings.Builder()
+                    .usePrivateMode(initialIncognito)
+                    .build()
+            )
+        }
+    }
 
     private val sp: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private var isIncognito: Boolean = initialIncognito
@@ -236,6 +244,9 @@ class PetalGeckoView @JvmOverloads constructor(
         session.navigationDelegate = object : GeckoSession.NavigationDelegate {
             override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
                 canGoBackVal = canGoBack
+                if (engineSession != null) {
+                    com.petal.browser.engine.gecko.PetalEngineStore.updateNavigationState(context, tabId, canGoBackVal, canGoForwardVal)
+                }
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread { act.updateBackCallbackState() }
@@ -244,6 +255,9 @@ class PetalGeckoView @JvmOverloads constructor(
 
             override fun onCanGoForward(session: GeckoSession, canGoForward: Boolean) {
                 canGoForwardVal = canGoForward
+                if (engineSession != null) {
+                    com.petal.browser.engine.gecko.PetalEngineStore.updateNavigationState(context, tabId, canGoBackVal, canGoForwardVal)
+                }
             }
 
             // onPageStart only fires with the URL that was originally requested. If the
@@ -263,6 +277,9 @@ class PetalGeckoView @JvmOverloads constructor(
                 currentUrl = url
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
                 album.setAlbumTitle(currentTitle, url)
+                if (engineSession != null) {
+                    com.petal.browser.engine.gecko.PetalEngineStore.updateUrlAndTitle(context, tabId, url, currentTitle)
+                }
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
                     act.runOnUiThread {
@@ -378,6 +395,9 @@ class PetalGeckoView @JvmOverloads constructor(
                 title?.let {
                     currentTitle = it
                     album.setAlbumTitle(it, currentUrl)
+                    if (engineSession != null) {
+                        com.petal.browser.engine.gecko.PetalEngineStore.updateUrlAndTitle(context, tabId, currentUrl, it)
+                    }
                     val act = getHostActivity()
                     if (act is com.petal.browser.activity.BrowserActivity) {
                         act.runOnUiThread {
@@ -1138,7 +1158,11 @@ class PetalGeckoView @JvmOverloads constructor(
         showLoadingSkeleton(targetUrl)
         currentUrl = targetUrl
         album.setAlbumTitle(targetUrl, targetUrl)
-        session.loadUri(targetUrl)
+        if (engineSession != null) {
+            engineSession.loadUrl(targetUrl)
+        } else {
+            session.loadUri(targetUrl)
+        }
     }
 
     fun loadDataWithBaseURL(baseUrl: String?, data: String, mimeType: String?, encoding: String?, historyUrl: String?) {
@@ -1244,13 +1268,13 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun goBack() {
         if (canGoBackVal) {
-            session.goBack()
+            if (engineSession != null) engineSession.goBack() else session.goBack()
         }
     }
 
     fun goForward() {
         if (canGoForwardVal) {
-            session.goForward()
+            if (engineSession != null) engineSession.goForward() else session.goForward()
         }
     }
 
@@ -1260,12 +1284,12 @@ class PetalGeckoView @JvmOverloads constructor(
         if (currentUrl.isNotBlank() && !BrowserUnit.isHomePage(currentUrl) && !currentUrl.equals("about:blank", ignoreCase = true)) {
             showLoadingSkeleton(currentUrl)
         }
-        session.reload()
+        if (engineSession != null) engineSession.reload() else session.reload()
     }
 
     fun stopLoading() {
         isStopped = true
-        session.stop()
+        if (engineSession != null) engineSession.stopLoading() else session.stop()
         updateProgress(BrowserUnit.LOADING_STOPPED)
     }
 
@@ -1586,6 +1610,7 @@ class PetalGeckoView @JvmOverloads constructor(
         // and during Activity destruction.
         try { geckoView.releaseSession() } catch (_: Throwable) {}
         try { if (session.isOpen) session.close() } catch (_: Throwable) {}
+        try { engineSession?.close() } catch (_: Throwable) {}
         removeAllViews()
     }
 

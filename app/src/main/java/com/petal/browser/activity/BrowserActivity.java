@@ -1678,12 +1678,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             String savedTitle = placeholder.getTitle();
             String savedUrl = placeholder.getUrl();
             String targetUrl = overrideUrl != null ? overrideUrl : savedUrl;
+            String effectiveId = (placeholder.getTabId() != null && !placeholder.getTabId().isEmpty())
+                    ? placeholder.getTabId()
+                    : "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode());
+
+            kotlin.Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> sessionPair =
+                com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                    this,
+                    effectiveId,
+                    targetUrl != null ? targetUrl : "about:blank",
+                    savedTitle != null ? savedTitle : getString(R.string.app_name),
+                    placeholder.isIncognito(),
+                    true
+                );
+
             com.petal.browser.view.PetalGeckoView materialized =
                     com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
-                            this, savedTitle, savedUrl, true, placeholder.isIncognito());
-            if (placeholder.getTabId() != null && !placeholder.getTabId().isEmpty()) {
-                materialized.setTabId(placeholder.getTabId());
-            }
+                            this, savedTitle, savedUrl, true, placeholder.isIncognito(), null, sessionPair.getSecond());
+            materialized.setTabId(effectiveId);
             materialized.setBrowserController(this);
             if (savedTitle != null && !savedTitle.isEmpty()) {
                 materialized.setAlbumTitle(savedTitle, savedUrl);
@@ -1714,6 +1726,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             currentAlbumController.deactivate();
         }
         currentAlbumController = controller;
+        if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
+            com.petal.browser.engine.gecko.PetalEngineStore.selectTab(this, ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getTabId());
+        }
         if (currentAlbumController instanceof NinjaWebView) {
             ninjaWebView = (NinjaWebView) currentAlbumController;
         }
@@ -2693,6 +2708,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } catch (Exception ignored) {}
 
             BrowserContainer.remove(controller);
+            if (controller instanceof com.petal.browser.view.PetalGeckoView) {
+                com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, ((com.petal.browser.view.PetalGeckoView) controller).getTabId());
+            }
             if (controller instanceof NinjaWebView) {
                 com.petal.browser.unit.TabThumbnailCache.remove(((NinjaWebView) controller).getTabId());
             }
@@ -5973,9 +5991,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @SuppressLint("ClickableViewAccessibility")
     public void setWebView(String title, final String url, final boolean foreground, final boolean isIncognito, final boolean isPopup) {
+        String effectiveTitle = title != null ? title : getString(R.string.app_name);
+        String initialUrl = url != null ? url : "about:blank";
+        String generatedTabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode());
+
+        // Create the session and TabSessionState inside Mozilla Android Components BrowserStore
+        kotlin.Pair<mozilla.components.browser.state.state.TabSessionState, mozilla.components.concept.engine.EngineSession> sessionPair =
+            com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                this,
+                generatedTabId,
+                initialUrl,
+                effectiveTitle,
+                isIncognito,
+                foreground
+            );
+
         com.petal.browser.view.PetalGeckoView geckoView = com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
-            this, title, url, foreground, isIncognito
+            this, effectiveTitle, url, foreground, isIncognito, null, sessionPair.getSecond()
         );
+        geckoView.setTabId(generatedTabId);
 
         if (foreground) {
             geckoView.setBrowserController(this);
