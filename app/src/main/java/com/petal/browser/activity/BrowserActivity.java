@@ -1042,7 +1042,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         if (mainView != null) {
             WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(mainView);
             if (insets != null) {
-                isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+                // The IME-visible bit from WindowInsetsCompat can transiently misreport true
+                // during a predictive-back gesture, since Android runs its own inset-animation
+                // transition for the swipe at the same time and getRootWindowInsets() can return
+                // a stale pre-gesture snapshot. A genuinely open keyboard always has the IME
+                // actively serving an input connection, so cross-check that too - this is what
+                // let a swipe-back silently no-op (only calling the harmless-looking
+                // hideSoftKeyboard) on pages where the on-screen back button, called outside any
+                // gesture/inset transition, navigated correctly every time. isAcceptingText()
+                // reflects the real IME service state rather than a cached insets snapshot, and
+                // (unlike checking for a focused EditText) it still recognizes a focused HTML
+                // input inside NinjaWebView/PetalGeckoView, so typing-then-back still just closes
+                // the keyboard there as before.
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                boolean imeActuallyServing = imm != null && imm.isAcceptingText();
+                isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime()) && imeActuallyServing;
             }
         }
         if (isKeyboardVisible) {
