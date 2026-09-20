@@ -176,6 +176,10 @@ dependencies {
     implementation 'com.github.tonyofrancis.Fetch:fetch2okhttp:3.4.1'
     // Pure-Java barcode/QR decoding for the FOSS Snap Photo scanner.
     implementation 'com.google.zxing:core:3.5.3'
+    // FOSS camera preview and frame analysis for Petal Scanner.
+    implementation 'androidx.camera:camera-camera2:1.4.2'
+    implementation 'androidx.camera:camera-lifecycle:1.4.2'
+    implementation 'androidx.camera:camera-view:1.4.2'
 
     // Google Sign-In via Credential Manager (real OAuth, consent-screen based —
     // replaces the old WebView-cookie account sync)

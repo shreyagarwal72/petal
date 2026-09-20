@@ -57,6 +57,7 @@ fun PetalLensBottomSheet(
     var hasPermission by remember { mutableStateOf(PetalMediaPickerManager.hasMediaPermissions(context)) }
     var isLoading by remember { mutableStateOf(false) }
     var showSnapProviderChooser by rememberSaveable { mutableStateOf(false) }
+    var showPetalScanner by rememberSaveable { mutableStateOf(false) }
 
     fun refreshGallery() {
         if (PetalMediaPickerManager.hasMediaPermissions(context)) {
@@ -155,6 +156,10 @@ fun PetalLensBottomSheet(
             showSnapProviderChooser = true
             return
         }
+        if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.PETAL_SCANNER) {
+            showPetalScanner = true
+            return
+        }
         val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         if (hasCameraPermission) launchCameraInternal() else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
     }
@@ -194,6 +199,24 @@ fun PetalLensBottomSheet(
                 }
             }
         )
+    }
+
+    if (showPetalScanner) {
+        Dialog(onDismissRequest = { showPetalScanner = false }) {
+            PetalQrScannerScreen(
+                onResult = { value ->
+                    showPetalScanner = false
+                    if (value.startsWith("http://") || value.startsWith("https://")) {
+                        com.petal.browser.unit.BrowserUnit.intentURL(context, Uri.parse(value))
+                    } else {
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Scanned barcode", value))
+                        Toast.makeText(context, "Barcode copied", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onDismiss = { showPetalScanner = false }
+            )
+        }
     }
 
     Surface(
