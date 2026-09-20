@@ -191,6 +191,12 @@ fun PetalPdfViewerScreen(
     var showInfoSheet by remember { mutableStateOf(false) }
     var showJumpDialog by remember { mutableStateOf(false) }
 
+    // Real system bar insets, so the floating top/bottom bars never cover the first/last
+    // page regardless of status bar height, camera cutouts, or 3-button vs. gesture nav.
+    val statusBarInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding()
+    val navBarInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     // Zoom & Pan state
     val scaleAnim = remember { Animatable(1f) }
     val offsetXAnim = remember { Animatable(0f) }
@@ -411,7 +417,12 @@ fun PetalPdfViewerScreen(
                                             translationX = offsetXAnim.value
                                             translationY = offsetYAnim.value
                                         },
-                                    contentPadding = PaddingValues(top = 76.dp, bottom = 96.dp, start = 12.dp, end = 12.dp),
+                                    contentPadding = PaddingValues(
+                                        top = statusBarInset + 64.dp,
+                                        bottom = navBarInset + 88.dp,
+                                        start = 12.dp,
+                                        end = 12.dp
+                                    ),
                                     verticalArrangement = Arrangement.spacedBy(14.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
@@ -623,6 +634,8 @@ private fun PdfViewerTopBar(
     onInfo: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    val topClearance = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+        .asPaddingValues().calculateTopPadding().coerceAtLeast(16.dp)
 
     Box(
         modifier = Modifier
@@ -636,7 +649,7 @@ private fun PdfViewerTopBar(
                     )
                 )
             )
-            .statusBarsPadding()
+            .padding(top = topClearance)
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Row(
@@ -731,10 +744,12 @@ private fun PdfViewerBottomBar(
     onShowThumbnails: () -> Unit,
     onJumpPage: () -> Unit
 ) {
+    val bottomClearance = WindowInsets.navigationBars.asPaddingValues()
+        .calculateBottomPadding().coerceAtLeast(16.dp)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
+            .padding(bottom = bottomClearance)
             .padding(horizontal = 24.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {
