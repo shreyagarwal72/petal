@@ -100,6 +100,10 @@ android {
     packagingOptions {
         jniLibs {
             useLegacyPackaging true
+            pickFirsts += ['**/libxul.so', '**/libc++_shared.so', '**/libmozglue.so']
+        }
+        resources {
+            pickFirsts += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE*', 'META-INF/NOTICE*']
         }
     }
 
