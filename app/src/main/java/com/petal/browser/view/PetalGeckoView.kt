@@ -209,6 +209,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 currentScrollX = 0
                 com.petal.browser.media.sniffer.PetalMediaSniffer.clear()
                 currentUrl = url
+                applyGeckoBlockingPolicy(url)
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
                 album.setAlbumTitle(currentTitle, url)
                 updateProgress(10)
@@ -1135,9 +1136,23 @@ class PetalGeckoView @JvmOverloads constructor(
         // only for anyone who had it set from an older build.
         val desktopEnabled = sp.getBoolean("${profile}_desktop", sp.getBoolean("sp_desktop_site", false))
         applyDesktopMode(desktopEnabled)
-        session.settings.useTrackingProtection = true
+        applyGeckoBlockingPolicy(currentUrl)
         val enableJs = sp.getBoolean("sp_javascript", true)
         session.settings.allowJavascript = enableJs
+    }
+
+    /**
+     * Uses Gecko's native content-blocking pipeline for Gecko tabs. The legacy
+     * PetalAdBlockEngine remains the WebView fallback, but must not duplicate or
+     * inject rules into Gecko pages. Site whitelisting is applied at the session
+     * boundary so the native tracker blocker is disabled for that origin only.
+     */
+    private fun applyGeckoBlockingPolicy(url: String?) {
+        val enabled = com.petal.browser.browser.PetalAdBlockEngine.isAdBlockEnabled(context)
+        val host = try { android.net.Uri.parse(url ?: "").host } catch (_: Throwable) { null }
+        val whitelisted = !host.isNullOrBlank() &&
+            com.petal.browser.browser.PetalAdBlockEngine.isDomainWhitelisted(host)
+        session.settings.useTrackingProtection = enabled && !whitelisted
     }
 
     fun setDesktopMode(enabled: Boolean) {
