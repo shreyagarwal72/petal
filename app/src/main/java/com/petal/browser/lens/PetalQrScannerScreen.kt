@@ -11,6 +11,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -29,6 +30,7 @@ import com.google.zxing.DecodeHintType
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
+import com.petal.browser.ui.components.expressivePress
 import java.util.concurrent.Executors
 
 @Composable
@@ -45,6 +47,8 @@ fun PetalQrScannerScreen(
         hasPermission = it
     }
     var torchEnabled by remember { mutableStateOf(false) }
+    val closeInteraction = remember { MutableInteractionSource() }
+    val flashInteraction = remember { MutableInteractionSource() }
     var cameraControl by remember { mutableStateOf<androidx.camera.core.CameraControl?>(null) }
     val executor = remember { Executors.newSingleThreadExecutor() }
 
@@ -103,17 +107,28 @@ fun PetalQrScannerScreen(
             modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(20.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, "Close", tint = Color.White) }
-            IconButton(onClick = {
+            FilledTonalIconButton(onClick = onDismiss, interactionSource = closeInteraction, modifier = Modifier.expressivePress(closeInteraction)) {
+                Icon(Icons.Rounded.Close, "Close")
+            }
+            FilledTonalIconButton(onClick = {
                 torchEnabled = !torchEnabled
                 cameraControl?.enableTorch(torchEnabled)
-            }) { Icon(Icons.Rounded.FlashOn, "Flash", tint = if (torchEnabled) Color.Yellow else Color.White) }
+            }, interactionSource = flashInteraction, modifier = Modifier.expressivePress(flashInteraction)) {
+                Icon(Icons.Rounded.FlashOn, "Flash", tint = if (torchEnabled) Color.Yellow else MaterialTheme.colorScheme.onSecondaryContainer)
+            }
         }
-        Text(
-            "Scan a QR code or barcode",
-            color = Color.White,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp)
-        )
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
+            tonalElevation = 4.dp,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 28.dp)
+        ) {
+            Text(
+                "Scan a QR code or barcode",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 22.dp, vertical = 13.dp)
+            )
+        }
     }
 }
