@@ -1357,6 +1357,36 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Exports the current page directly to a PDF file via GeckoSession.
+     */
+    fun printToPdf(outputStream: java.io.OutputStream, callback: ((Boolean) -> Unit)? = null) {
+        try {
+            session.printToPdf(outputStream).accept(
+                { callback?.invoke(true) },
+                { callback?.invoke(false) }
+            )
+        } catch (t: Throwable) {
+            android.util.Log.e(TAG, "Failed to print to PDF: ${t.message}")
+            callback?.invoke(false)
+        }
+    }
+
+    /**
+     * Saves the current page as a single-file Web Archive.
+     */
+    fun saveAsWebArchive(outputStream: java.io.OutputStream, callback: ((Boolean) -> Unit)? = null) {
+        try {
+            session.saveAsWebArchive(outputStream).accept(
+                { callback?.invoke(true) },
+                { callback?.invoke(false) }
+            )
+        } catch (t: Throwable) {
+            android.util.Log.e(TAG, "Failed to save web archive: ${t.message}")
+            callback?.invoke(false)
+        }
+    }
+
     fun clearHistory() {
         canGoBackVal = false
         canGoForwardVal = false

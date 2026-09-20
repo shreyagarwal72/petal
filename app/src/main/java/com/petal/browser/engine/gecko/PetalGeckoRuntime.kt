@@ -84,9 +84,10 @@ object PetalGeckoRuntime {
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
                     .antiTracking(ContentBlocking.AntiTracking.DEFAULT)
-                    .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS)
+                    .cookieBehavior(ContentBlocking.CookieBehavior.REJECT_TRACKERS_AND_PARTITION_FOREIGN)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
                     .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
+                    .cookieBanners(ContentBlocking.CookieBannersMode.REJECT)
                     .build()
             )
             .javaScriptEnabled(sp.getBoolean("profileStandard_javascript", true))

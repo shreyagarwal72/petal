@@ -218,6 +218,11 @@ dependencies {
     implementation 'org.mozilla.components:feature-sitepermissions:155.0.1'
     implementation 'org.mozilla.components:feature-prompts:155.0.1'
     implementation 'org.mozilla.components:feature-pwa:155.0.1'
+    implementation 'org.mozilla.components:feature-downloads:155.0.1'
+    implementation 'org.mozilla.components:feature-search:155.0.1'
+    implementation 'org.mozilla.components:feature-webcompat:155.0.1'
+    implementation 'org.mozilla.components:feature-customtabs:155.0.1'
+    implementation 'org.mozilla.components:feature-media:155.0.1'
 
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.51.1'
