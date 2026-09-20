@@ -1328,6 +1328,35 @@ class PetalGeckoView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Toggles Firefox Reader Mode for the active page if available.
+     */
+    fun toggleReaderMode(active: Boolean) {
+        try {
+            com.petal.browser.engine.gecko.PetalEngineStore.toggleReaderMode(context, tabId, active)
+            if (active) {
+                session.loadUri("about:reader?url=${android.net.Uri.encode(currentUrl)}")
+            } else if (currentUrl.startsWith("about:reader?url=")) {
+                val origUrl = android.net.Uri.decode(currentUrl.substringAfter("about:reader?url="))
+                loadUrl(origUrl)
+            }
+        } catch (t: Throwable) {
+            android.util.Log.w(TAG, "Failed to toggle reader mode: ${t.message}")
+        }
+    }
+
+    /**
+     * Updates Enhanced Tracking Protection policy level dynamically.
+     */
+    fun setTrackingProtectionLevel(level: org.mozilla.geckoview.ContentBlocking.EtpLevel) {
+        try {
+            val runtime = com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(context)
+            runtime.settings.contentBlocking.enhancedTrackingProtectionLevel = level
+        } catch (t: Throwable) {
+            android.util.Log.w(TAG, "Failed to update ETP level: ${t.message}")
+        }
+    }
+
     fun clearHistory() {
         canGoBackVal = false
         canGoForwardVal = false
