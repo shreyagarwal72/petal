@@ -187,4 +187,26 @@ object PetalEngineStore {
             mozilla.components.browser.state.action.ContentAction.UpdateTitleAction(tabId, title)
         )
     }
+
+    /**
+     * Updates progress in [BrowserStore].
+     */
+    @JvmStatic
+    fun updateProgress(context: Context, tabId: String, progress: Int) {
+        val st = getStore(context)
+        st.dispatch(
+            mozilla.components.browser.state.action.ContentAction.UpdateProgressAction(tabId, progress)
+        )
+    }
+
+    /**
+     * Updates loading state in [BrowserStore].
+     */
+    @JvmStatic
+    fun updateLoadingState(context: Context, tabId: String, loading: Boolean) {
+        val st = getStore(context)
+        st.dispatch(
+            mozilla.components.browser.state.action.ContentAction.UpdateLoadingStateAction(tabId, loading)
+        )
+    }
 }

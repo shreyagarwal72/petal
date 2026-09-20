@@ -183,6 +183,10 @@ class PetalGeckoView @JvmOverloads constructor(
                 com.petal.browser.media.sniffer.PetalMediaSniffer.setActivePage(tabId, url)
                 album.setAlbumTitle(currentTitle, url)
                 updateProgress(10)
+                if (engineSession != null) {
+                    com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, true)
+                    com.petal.browser.engine.gecko.PetalEngineStore.updateProgress(context, tabId, 10)
+                }
 
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
@@ -202,6 +206,10 @@ class PetalGeckoView @JvmOverloads constructor(
                 isStopped = true
                 updateProgress(BrowserUnit.LOADING_STOPPED)
                 updatePreviewCache()
+                if (engineSession != null) {
+                    com.petal.browser.engine.gecko.PetalEngineStore.updateLoadingState(context, tabId, false)
+                    com.petal.browser.engine.gecko.PetalEngineStore.updateProgress(context, tabId, 100)
+                }
 
                 val act = getHostActivity()
                 if (act is com.petal.browser.activity.BrowserActivity) {
@@ -220,6 +228,9 @@ class PetalGeckoView @JvmOverloads constructor(
             override fun onProgressChange(session: GeckoSession, progress: Int) {
                 currentProgress = progress
                 updateProgress(progress)
+                if (engineSession != null) {
+                    com.petal.browser.engine.gecko.PetalEngineStore.updateProgress(context, tabId, progress)
+                }
                 if (progress >= 30) {
                     hideLoadingSkeleton()
                 }
