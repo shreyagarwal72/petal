@@ -325,7 +325,7 @@ object PetalBiometricOverlayBridge {
             if (appCompat is ComponentActivity) {
                 setViewTreeOnBackPressedDispatcherOwner(appCompat)
             }
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
                 val context = LocalContext.current
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }

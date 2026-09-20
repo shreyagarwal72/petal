@@ -45,7 +45,7 @@ object PetalAppLockBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewTreeOnBackPressedDispatcherOwner(activity)
             }
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
                 val snapshotBitmap = remember { PetalContentSnapshot.current?.asImageBitmap() }
 
@@ -156,7 +156,7 @@ object PetalAppLockBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewTreeOnBackPressedDispatcherOwner(activity)
             }
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
                 val snapshotBitmap = remember { PetalContentSnapshot.current?.asImageBitmap() }
 
