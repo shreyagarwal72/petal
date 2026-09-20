@@ -197,15 +197,15 @@ fun PetalPdfViewerScreen(
     val offsetYAnim = remember { Animatable(0f) }
 
     // Auto-hide controls timer
-    var hideJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
-    fun scheduleHideControls() {
-        hideJob?.cancel()
-        hideJob = coroutineScope.launch {
+    val hideJob = remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val scheduleHideControls: () -> Unit = {
+        hideJob.value?.cancel()
+        hideJob.value = coroutineScope.launch {
             delay(4000)
             if (isActive) controlsVisible = false
         }
     }
-    fun toggleControls() {
+    val toggleControls: () -> Unit = {
         controlsVisible = !controlsVisible
         if (controlsVisible) scheduleHideControls()
     }
