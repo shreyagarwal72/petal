@@ -212,7 +212,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * App Lock, via PetalAppLockBridge) owns the current back gesture. Unlike
      * isOverlayScreenShowing, this overlay lives outside contentFrame, so it is tracked
      * separately and must NOT be wired into performBackNavigation's isOverlayScreenShowing
-     * branch (that branch calls contentFrame.removeAllViews()/showAlbum(), which would be
+     * branch (that branch calls removeOverlayViews()/showAlbum(), which would be
      * wrong here). It exists solely to stop the Activity-level predictive back animator from
      * running underneath the Compose-level one.
      */
@@ -640,7 +640,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 } else if (ninjaWebView != null) {
                     ninjaWebView.resetGestureExclusionRects();
                 }
-                predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing && contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView) && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView);
+                predictiveBackStartedOnOverlay = isOverlayScreenShowing && !isDecorOverlayShowing && hasNonTabTopContent();
                 if (predictiveBackStartedOnOverlay) {
                     predictiveBackSwipeEdge = backEvent.getSwipeEdge();
                     // Compose owns the overlay animation; do not also transform the Activity root.
@@ -659,8 +659,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 predictiveBackStartedOnOverlay = false;
 
                 // Check if an actual overlay screen is still showing in contentFrame
-                View topContent = (contentFrame != null && contentFrame.getChildCount() > 0) ? contentFrame.getChildAt(0) : null;
-                boolean isBrowserView = (topContent instanceof NinjaWebView) || (topContent instanceof com.petal.browser.view.PetalGeckoView);
+                // Tab surfaces are retained (hidden, not detached), so the child at index 0 may be
+                // a hidden tab; the topmost *visible* child is what the user is actually seeing.
+                View topContent = getTopContentChild();
+                boolean isBrowserView = isTabSurface(topContent);
                 boolean isHomeComposeView = (topContent instanceof androidx.compose.ui.platform.ComposeView) && isPetalHomeSurfaceShowing;
                 boolean hasOverlayView = isOverlayScreenShowing || (topContent != null && !isBrowserView && !isHomeComposeView);
 
@@ -686,6 +688,24 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         getOnBackPressedDispatcher().addCallback(this, browserBackCallback);
         setContentView(R.layout.activity_main);
         contentFrame = findViewById(R.id.main_content);
+        // Root cause of "back gesture does nothing on every website":
+        // every Compose overlay (omnibox, settings, history, tab switcher, ...) is mounted in
+        // contentFrame with ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed and a
+        // PetalPredictiveBackSurface / BackHandler inside. That strategy keeps the composition
+        // alive after the view is removed, so the overlay's OnBackPressedCallback stays
+        // registered on the Activity dispatcher with HIGHER priority than browserBackCallback
+        // and silently swallows every later back gesture (its onBack just re-shows the current
+        // page, which looks like nothing happened). Dispose the composition the moment the
+        // overlay leaves contentFrame so its back callback is unregistered.
+        contentFrame.setOnHierarchyChangeListener(new ViewGroup.OnHierarchyChangeListener() {
+            @Override
+            public void onChildViewAdded(View parent, View child) { }
+
+            @Override
+            public void onChildViewRemoved(View parent, View child) {
+                disposeRemovedComposeOverlay(child);
+            }
+        });
         // Never allow browser content to reserve the system back edges.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             getWindow().getDecorView().post(() -> {
@@ -1023,12 +1043,37 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     private long albumSurfaceGeneration = 0L;
 
     /**
+     * Disposes the composition of a ComposeView that was just removed from contentFrame.
+     * Posted so it never runs re-entrantly inside the Compose callback that triggered the
+     * removal, and skipped if the same view was re-attached in the meantime (a re-attached
+     * ComposeView would simply rebuild its composition on the next measure anyway).
+     * Retained tab surfaces (GeckoView/NinjaWebView) are not ComposeViews and are unaffected.
+     */
+    private void disposeRemovedComposeOverlay(View child) {
+        if (!(child instanceof androidx.compose.ui.platform.ComposeView)) return;
+        final androidx.compose.ui.platform.ComposeView composeView = (androidx.compose.ui.platform.ComposeView) child;
+        Runnable dispose = () -> {
+            if (composeView.getParent() != null) return;
+            try {
+                composeView.disposeComposition();
+            } catch (Throwable t) {
+                Log.w(TAG, "Failed to dispose removed Compose overlay", t);
+            }
+        };
+        if (contentFrame != null) {
+            contentFrame.post(dispose);
+        } else {
+            new Handler(android.os.Looper.getMainLooper()).post(dispose);
+        }
+    }
+
+    /**
      * The actual back-navigation decision logic. Shared between the legacy KEYCODE_BACK
      * path (3-button nav / hardware back) and the OnBackPressedCallback path (gesture
      * nav / predictive back) below, so both routes behave identically.
      */
     public void performBackNavigation() {
-        if (isOverlayScreenShowing && contentFrame != null && contentFrame.getChildCount() > 0 && (contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView || contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView)) {
+        if (isOverlayScreenShowing && isTabSurface(getTopContentChild())) {
             isOverlayScreenShowing = false;
             pendingOverlayBackAction = null;
         }
@@ -1085,7 +1130,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         if (isOverlayScreenShowing) {
             isOverlayScreenShowing = false;
-            contentFrame.removeAllViews();
+            removeOverlayViews();
             Runnable backAction = pendingOverlayBackAction;
             pendingOverlayBackAction = null;
             if (backAction != null) {
@@ -1093,7 +1138,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else {
                 showAlbum(currentAlbumController);
             }
-            if (contentFrame != null && contentFrame.getChildCount() == 0) {
+            if (contentFrame != null && getTopContentChild() == null) {
                 showAlbum(currentAlbumController);
             }
             updatePersistentBottomNav();
@@ -1275,7 +1320,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     public void updateBackCallbackState() {
         if (browserBackCallback == null) return;
-        boolean hasOverlay = isOverlayScreenShowing || (contentFrame != null && contentFrame.getChildCount() > 0 && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof NinjaWebView) && !(contentFrame.getChildAt(contentFrame.getChildCount() - 1) instanceof com.petal.browser.view.PetalGeckoView));
+        boolean hasOverlay = isOverlayScreenShowing || hasNonTabTopContent();
         boolean hasDialog = (dialogOverview != null && dialogOverview.isShowing()) || (searchOnSiteLayout != null && searchOnSiteLayout.getVisibility() == VISIBLE) || (customView != null) || (fullscreenHolder != null) || (videoView != null);
         boolean hasWebBack = (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView && ((com.petal.browser.view.PetalGeckoView) currentAlbumController).hasBackHistory()) || (ninjaWebView != null && ninjaWebView.canGoBack());
         String curUrl = currentAlbumController != null ? currentAlbumController.getUrl() : (ninjaWebView != null ? ninjaWebView.getUrl() : "");
@@ -1533,8 +1578,9 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             boolean isHome = isHomePage(url);
             boolean alreadyAttached = currentAlbumController == webView
                     && contentFrame != null
-                    && contentFrame.getChildCount() == 1
-                    && contentFrame.getChildAt(0) == webView;
+                    && webView.getParent() == contentFrame
+                    && webView.getVisibility() == VISIBLE
+                    && getTopContentChild() == webView;
 
             if (alreadyAttached && !isHome) {
                 updateAddressBar();
@@ -1552,9 +1598,120 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         });
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Retained tab surfaces
+    //
+    // Every tab's browser surface (PetalGeckoView / NinjaWebView album view) is added to
+    // contentFrame exactly once, the first time that tab is shown, and then stays attached
+    // for the life of the tab. Switching tabs toggles View.VISIBLE / View.GONE and
+    // suspends/resumes the outgoing/incoming GeckoSession via setActive(false/true) (done
+    // by AlbumController.deactivate()/activate()). The view is never detached from the
+    // window on a switch, so GeckoView.onAttachedToWindow()/Display.acquire() only runs on
+    // the first attach (which is still guarded by attachAlbumViewSafely's insets retry).
+    //
+    // Everything else in contentFrame (Compose Home, incognito Home, Settings/History/...
+    // overlays) is transient and is added/removed as before.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Album views that have been mounted in contentFrame as retained tab surfaces. */
+    private final java.util.Set<View> retainedTabSurfaces =
+            java.util.Collections.newSetFromMap(new java.util.WeakHashMap<View, Boolean>());
+
+    /** True if {@code v} is a browser surface that must be hidden, never detached, on a tab switch. */
+    private boolean isTabSurface(View v) {
+        return v != null
+                && (v instanceof NinjaWebView
+                || v instanceof com.petal.browser.view.PetalGeckoView
+                || retainedTabSurfaces.contains(v));
+    }
+
+    /** The topmost child of contentFrame that is not View.GONE, or null if nothing is visible. */
+    private View getTopContentChild() {
+        if (contentFrame == null) return null;
+        for (int i = contentFrame.getChildCount() - 1; i >= 0; i--) {
+            View child = contentFrame.getChildAt(i);
+            if (child.getVisibility() != GONE) return child;
+        }
+        return null;
+    }
+
+    /** True when the topmost visible child of contentFrame is an overlay/Home view, not a tab surface. */
+    private boolean hasNonTabTopContent() {
+        View top = getTopContentChild();
+        return top != null && !isTabSurface(top);
+    }
+
+    /** Hides (View.GONE) every retained tab surface except {@code keep}. Never detaches anything. */
+    private void hideTabSurfacesExcept(View keep) {
+        if (contentFrame == null) return;
+        for (int i = 0; i < contentFrame.getChildCount(); i++) {
+            View child = contentFrame.getChildAt(i);
+            if (child != keep && isTabSurface(child) && child.getVisibility() != GONE) {
+                child.setVisibility(GONE);
+            }
+        }
+    }
+
     /**
-     * Attaches an album's view (GeckoView/NinjaWebView container) to {@code targetFrame},
-     * defending against the GeckoView "attach before WindowInsets are dispatched" NPE
+     * Removes every non-tab child (Compose Home, incognito Home, Settings/History/... overlays)
+     * from contentFrame. Tab surfaces are left exactly as they are, so a visible tab is not
+     * disturbed and a hidden one is not detached.
+     */
+    private void removeOverlayViews() {
+        if (contentFrame == null) return;
+        for (int i = contentFrame.getChildCount() - 1; i >= 0; i--) {
+            View child = contentFrame.getChildAt(i);
+            if (!isTabSurface(child)) contentFrame.removeViewAt(i);
+        }
+    }
+
+    /**
+     * Replacement for {@code contentFrame.removeAllViews()} at sites that mount a native
+     * screen (Home, Settings, Downloads, tab switcher, ...): removes transient views and
+     * hides every tab surface, but keeps the tab surfaces attached so showing the tab again
+     * is a visibility flip rather than a fresh attach.
+     */
+    private void clearContentFrameKeepingTabs() {
+        removeOverlayViews();
+        hideTabSurfacesExcept(null);
+    }
+
+    /**
+     * Permanently unmounts a closed tab's surface. Must run before the tab's destroy() so a
+     * dead surface does not linger in contentFrame as a hidden child.
+     */
+    private void detachTabSurface(AlbumController controller) {
+        if (controller == null) return;
+        View v = controller.getAlbumView();
+        if (v == null) return;
+        retainedTabSurfaces.remove(v);
+        if (contentFrame != null && v.getParent() == contentFrame) {
+            contentFrame.removeView(v);
+        }
+    }
+
+    /**
+     * If a freshly shown tab surface still measures 0px high after layout (mainContent padding
+     * computed from a not-yet-measured bottom nav), re-apply the address bar position so the
+     * heights are recomputed from the now-measured views.
+     */
+    private void scheduleSurfaceHeightCheck(final android.view.ViewGroup targetFrame,
+                                            final View av,
+                                            final AlbumController targetController) {
+        targetFrame.post(() -> {
+            if (currentAlbumController == targetController && targetFrame == contentFrame) {
+                if (av.getHeight() == 0 && av.getVisibility() == android.view.View.VISIBLE) {
+                    android.util.Log.w("BrowserActivity",
+                            "attachAlbumViewSafely: child height=0 after layout — re-applying position");
+                    applyAddressBarPosition();
+                }
+            }
+        });
+    }
+
+    /**
+     * Mounts an album's view (GeckoView/NinjaWebView container) in {@code targetFrame} the
+     * first time the tab is shown, defending against the GeckoView "attach before WindowInsets are dispatched" NPE
      * (see the caller for the full explanation) that otherwise leaves the frame with zero
      * children — i.e. a blank web page or blank home surface.
      *
@@ -1562,6 +1719,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * wraps every actual addView() call in a try/catch so that if GeckoView throws anyway
      * (insets race, transient native state) we retry on the next frame instead of aborting
      * and leaving the user staring at an empty container.
+     *
+     * This is the cold path only. If {@code av} is already a child of {@code targetFrame}
+     * (every tab after its first display) nothing is attached or detached here: the view is
+     * simply made visible. Other tabs' surfaces are hidden, not removed.
      */
     private static final int MAX_ATTACH_ATTEMPTS = 10; // 10 × 32ms = 320ms max (was 5)
 
@@ -1601,7 +1762,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 ((android.view.ViewGroup) av.getParent()).removeView(av);
             }
             if (av.getParent() != targetFrame) {
-                targetFrame.removeAllViews();
+                // First display of this tab: hide (don't detach) the other tabs' surfaces and
+                // drop any transient Home/overlay views, then add this surface once.
+                hideTabSurfacesExcept(av);
+                removeOverlayViews();
                 // Guard: if LayoutParams were somehow lost (e.g. after removeView on some
                 // OEM implementations), ensure MATCH_PARENT before addView so the content
                 // surface fills the available frame instead of measuring to 0.
@@ -1612,6 +1776,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT));
                 }
                 targetFrame.addView(av);
+                retainedTabSurfaces.add(av);
             }
             targetFrame.setVisibility(android.view.View.VISIBLE);
             targetFrame.setAlpha(1f);
@@ -1623,15 +1788,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // bottomNavHeight before layout settled), re-apply address bar position which
             // will re-compute heights from the now-measured views and call requestLayout()
             // again — correcting the content area to fill the available space.
-            targetFrame.post(() -> {
-                if (currentAlbumController == targetController && targetFrame == contentFrame) {
-                    if (av.getHeight() == 0 && av.getVisibility() == android.view.View.VISIBLE) {
-                        android.util.Log.w("BrowserActivity",
-                                "attachAlbumViewSafely: child height=0 after layout — re-applying position");
-                        applyAddressBarPosition();
-                    }
-                }
-            });
+            scheduleSurfaceHeightCheck(targetFrame, av, targetController);
         } catch (Exception e) {
             android.util.Log.w("BrowserActivity", "attachAlbumViewSafely: addView failed, retrying (attempt " + attempt + ")", e);
             if (attempt < MAX_ATTACH_ATTEMPTS) {
@@ -1654,8 +1811,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                                 if (av.getParent() != null && av.getParent() != targetFrame)
                                     ((android.view.ViewGroup) av.getParent()).removeView(av);
                                 if (av.getParent() != targetFrame) {
-                                    targetFrame.removeAllViews();
+                                    hideTabSurfacesExcept(av);
+                                    removeOverlayViews();
                                     targetFrame.addView(av);
+                                    retainedTabSurfaces.add(av);
                                 }
                                 targetFrame.setVisibility(android.view.View.VISIBLE);
                                 targetFrame.setAlpha(1f);
@@ -1742,7 +1901,12 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         final AlbumController resolvedController = controller;
 
         View av = controller.getAlbumView();
-        if (currentAlbumController != null) {
+        // Suspend the outgoing tab (GeckoSession.setActive(false) via deactivate()) while its
+        // surface is still visible; it is hidden (View.GONE), not detached, further below.
+        // Re-showing the tab that is already current (overlay dismissal, onTabUrlStarted)
+        // must not cycle its session inactive->active: that pauses and resumes compositing
+        // for no reason and is itself a source of visible flicker.
+        if (currentAlbumController != null && currentAlbumController != controller) {
             if (currentAlbumController instanceof NinjaWebView) {
                 ((NinjaWebView) currentAlbumController).updatePreviewCache();
             }
@@ -1760,12 +1924,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         // pull-to-refresh and other transitions may temporarily transform this container.
         // Leaving one of those transforms behind makes the next Home/browser surface look
         // like a completely blank page even though the child is present.
+        // Only transient views (Home/overlays) are removed below; retained tab surfaces stay
+        // attached and are switched by visibility in the branch that follows.
         contentFrame.setAlpha(1f);
         contentFrame.setScaleX(1f);
         contentFrame.setScaleY(1f);
         contentFrame.setTranslationX(0f);
         contentFrame.setTranslationY(0f);
-        contentFrame.removeAllViews();
+        removeOverlayViews();
         isOverlayScreenShowing = false;
 
         View bottomNavContainer = findViewById(R.id.bottom_nav_container);
@@ -1799,7 +1965,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 },
                 () -> closeAllIncognitoTabs()
             );
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             isOverlayScreenShowing = false;
             incognitoHome.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1932,7 +2098,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 public void onOpenDownloads() {
                     try {
                         captureBrowserMainPreview();
-                        contentFrame.removeAllViews();
+                        clearContentFrameKeepingTabs();
                         hideRefreshAndProgressOverlays();
                         View downloadView = PetalDownloadBridge.createDownloadView(BrowserActivity.this, () -> {
                             showAlbum(currentAlbumController);
@@ -1959,7 +2125,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     showAccountSyncScreen();
                 }
             });
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             isOverlayScreenShowing = false;
             contentFrame.setVisibility(VISIBLE);
             contentFrame.setAlpha(1f);
@@ -1981,8 +2147,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // attached. Only repair the Home view if it is still the active surface.
                 if (surfaceGeneration == albumSurfaceGeneration
                         && currentAlbumController == resolvedController
-                        && contentFrame.getChildCount() == 1
-                        && contentFrame.getChildAt(0) == composeView) {
+                        && getTopContentChild() == composeView) {
                     composeView.setVisibility(VISIBLE);
                     composeView.setAlpha(1f);
                     composeView.bringToFront();
@@ -2004,26 +2169,42 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             hideRefreshAndProgressOverlays();
             updatePersistentBottomNav();
         } else {
-            if (av.getParent() != null) {
-                ((android.view.ViewGroup) av.getParent()).removeView(av);
+            // Swap tab surfaces by visibility, never by detaching: the outgoing tab's surface
+            // goes View.GONE (its session was already setActive(false)), the incoming tab's
+            // surface goes View.VISIBLE. This is the same code path for PetalGeckoView and
+            // NinjaWebView tabs.
+            hideTabSurfacesExcept(av);
+            if (av.getParent() == contentFrame) {
+                // Warm path: this tab's surface is already mounted. No removeView/addView, no
+                // GeckoView.onAttachedToWindow(), no insets wait - just show it.
+                av.setVisibility(VISIBLE);
+                scheduleSurfaceHeightCheck(contentFrame, av, controller);
+                // activate() ran while the view was still GONE, so requestFocus() inside it
+                // could not take focus; hand focus to the now-visible surface.
+                av.requestFocus();
+            } else {
+                // Cold path (first time this tab is shown, including first launch): mount once.
+                if (av.getParent() != null) {
+                    // Stray parent other than contentFrame; a view can only have one.
+                    ((android.view.ViewGroup) av.getParent()).removeView(av);
+                }
+                av.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                ));
+                // GeckoView.onAttachedToWindow() synchronously calls Display.acquire() ->
+                // onGlobalLayout(), which unconditionally calls
+                // getRootWindowInsets().getInsets(...). If the window hasn't dispatched its
+                // WindowInsets yet (happens right after activity/window creation, and on some
+                // OEM skins like ColorOS/Realme after a fast home->tab transition),
+                // getRootWindowInsets() returns null and GeckoView crashes with a fatal NPE
+                // before the page ever renders — the app falls back to a blank/home screen.
+                // Wait for the decor view to have root insets before attaching, retrying across
+                // a few frames (some OEM skins dispatch insets late), and always attach inside a
+                // try/catch: if GeckoView still throws, retry rather than leaving contentFrame
+                // permanently empty (which is exactly what produced the blank page/home screen).
+                attachAlbumViewSafely(contentFrame, av, controller, 0);
             }
-            contentFrame.removeAllViews();
-            av.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT
-            ));
-            // GeckoView.onAttachedToWindow() synchronously calls Display.acquire() ->
-            // onGlobalLayout(), which unconditionally calls
-            // getRootWindowInsets().getInsets(...). If the window hasn't dispatched its
-            // WindowInsets yet (happens right after activity/window creation, and on some
-            // OEM skins like ColorOS/Realme after a fast home->tab transition),
-            // getRootWindowInsets() returns null and GeckoView crashes with a fatal NPE
-            // before the page ever renders — the app falls back to a blank/home screen.
-            // Wait for the decor view to have root insets before attaching, retrying across
-            // a few frames (some OEM skins dispatch insets late), and always attach inside a
-            // try/catch: if GeckoView still throws, retry rather than leaving contentFrame
-            // permanently empty (which is exactly what produced the blank page/home screen).
-            attachAlbumViewSafely(contentFrame, av, controller, 0);
             // Keep the live browser surface stable. GeckoView/WebView owns its compositor;
             // alpha/scale animations during attach/resume can produce a persistent blank
             // surface. App-level animations are applied to native overlays instead.
@@ -2638,6 +2819,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 }
                 //if not the current TAB is being closed return to current TAB
                 tab_container.removeView(controller.getAlbumView());
+                // Retained surface: unmount it from contentFrame before the tab is destroyed.
+                detachTabSurface(controller);
                 int index = BrowserContainer.indexOf(controller);
 
                 try {
@@ -2696,6 +2879,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             if (tab_container != null && controller.getAlbumView() != null) {
                 tab_container.removeView(controller.getAlbumView());
             }
+            // Retained surface: unmount it from contentFrame before the tab is destroyed.
+            detachTabSurface(controller);
             if (controller instanceof NinjaWebView) {
                 ((NinjaWebView) controller).destroy();
             } else if (controller instanceof com.petal.browser.view.PetalGeckoView) {
@@ -4234,7 +4419,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
@@ -4263,6 +4448,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                             if (tab_container != null && album.getAlbumView() != null) {
                                 tab_container.removeView(album.getAlbumView());
                             }
+                            detachTabSurface(album);
                             if (album instanceof NinjaWebView) {
                                 ((NinjaWebView) album).destroy();
                             }
@@ -4371,7 +4557,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             }
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
@@ -4432,7 +4618,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
@@ -4457,7 +4643,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
@@ -4498,7 +4684,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
@@ -4542,7 +4728,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
@@ -4561,7 +4747,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     // Gecko tab sit behind the Extensions screen, so "Extension settings"
                     // appears to do nothing.
                     isOverlayScreenShowing = false;
-                    contentFrame.removeAllViews();
+                    removeOverlayViews();
                     showAlbum(currentAlbumController);
                     updatePersistentBottomNav();
                     updateOmniBox();
@@ -4583,7 +4769,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
             pendingOverlayBackAction = onBackAction;
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
@@ -4601,7 +4787,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     // Clean up contentFrame and overlay state, then run the pending
                     // action (re-open About Developer) or fall back to showing home.
                     isOverlayScreenShowing = false;
-                    contentFrame.removeAllViews();
+                    removeOverlayViews();
                     Runnable action = pendingOverlayBackAction;
                     pendingOverlayBackAction = null;
                     if (action != null) {
@@ -4688,7 +4874,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             com.petal.browser.compose.reader.PetalReaderBridge.extractArticle(currentAlbumController, article -> {
                 if (article != null && article.getContentText() != null && !article.getContentText().trim().isEmpty()) {
                     isOverlayScreenShowing = true;
-                    contentFrame.removeAllViews();
+                    clearContentFrameKeepingTabs();
                     if (appBar != null) appBar.setVisibility(GONE);
                     LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
                     if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
@@ -4724,7 +4910,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
@@ -6229,7 +6415,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         try {
             captureBrowserMainPreview();
             isOverlayScreenShowing = true;
-            contentFrame.removeAllViews();
+            clearContentFrameKeepingTabs();
             if (appBar != null) appBar.setVisibility(GONE);
             LinearLayout appBar_buttons = findViewById(R.id.appBar_buttons);
             if (appBar_buttons != null) appBar_buttons.setVisibility(GONE);
