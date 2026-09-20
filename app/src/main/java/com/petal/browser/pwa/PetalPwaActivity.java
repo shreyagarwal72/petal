@@ -17,6 +17,7 @@ import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -47,7 +48,11 @@ public class PetalPwaActivity extends AppCompatActivity {
     public static final String EXTRA_DISPLAY = "pwa_display";
     public static final String EXTRA_OFFLINE_ARCHIVE = "offline_archive_path";
 
+    private View pwaRoot;
     private FrameLayout contentFrame;
+    private View progressBarComposeView;
+    private View fabBubbleView;
+    private int fabBaseMarginPx = 0;
     private PetalGeckoView geckoView;
     private String pwaUrl = "about:blank";
     private String pwaTitle = "Web App";
@@ -60,10 +65,17 @@ public class PetalPwaActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pwa);
 
+        pwaRoot = findViewById(R.id.pwa_root);
         contentFrame = findViewById(R.id.pwa_content_frame);
+        progressBarComposeView = findViewById(R.id.pwa_progress_bar_compose);
+        fabBubbleView = findViewById(R.id.pwa_fab_bubble);
+        if (fabBubbleView != null && fabBubbleView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+            fabBaseMarginPx = ((ViewGroup.MarginLayoutParams) fabBubbleView.getLayoutParams()).bottomMargin;
+        }
         handleIntent(getIntent());
 
         applyWindowConfiguration();
+        setupWindowInsets();
         setupGeckoView();
         setupBackNavigation();
         setupFabMenu();
@@ -74,6 +86,10 @@ public class PetalPwaActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleIntent(intent);
+        applyWindowConfiguration();
+        if (pwaRoot != null) {
+            ViewCompat.requestApplyInsets(pwaRoot);
+        }
         if (geckoView != null && pwaUrl != null && !pwaUrl.isEmpty() && !"about:blank".equalsIgnoreCase(pwaUrl)) {
             geckoView.loadUrl(pwaUrl);
         }
@@ -127,25 +143,73 @@ public class PetalPwaActivity extends AppCompatActivity {
             WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
                     .setAppearanceLightNavigationBars(!lightStatusIcons);
 
-            if ("fullscreen".equalsIgnoreCase(displayMode)) {
-                WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    WindowInsetsController controller = getWindow().getInsetsController();
-                    if (controller != null) {
+            // Take manual control of insets in every display mode (not just fullscreen) so we
+            // can pad the web content / progress bar / FAB ourselves below. This also matters
+            // because apps targeting Android 15+ get edge-to-edge enforced automatically, which
+            // would otherwise draw the WebView content and controls straight under the bars.
+            WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+            boolean isFullscreen = "fullscreen".equalsIgnoreCase(displayMode);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                WindowInsetsController controller = getWindow().getInsetsController();
+                if (controller != null) {
+                    if (isFullscreen) {
                         controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
                         controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                    } else {
+                        controller.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
                     }
-                } else {
-                    getWindow().getDecorView().setSystemUiVisibility(
-                            View.SYSTEM_UI_FLAG_FULLSCREEN
-                                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    );
                 }
+            } else if (isFullscreen) {
+                getWindow().getDecorView().setSystemUiVisibility(
+                        View.SYSTEM_UI_FLAG_FULLSCREEN
+                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                );
+            } else {
+                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
             }
         } catch (Exception e) {
             // Fallback gracefully
         }
+    }
+
+    /**
+     * Standalone / minimal-ui PWAs keep the status and nav bars visible (tinted with the app's
+     * theme color), so the web content, the loading indicator and the FAB bubble all need to be
+     * padded/margined by the current system bar insets to avoid sitting underneath them.
+     * Fullscreen-mode PWAs intentionally draw edge-to-edge, so no padding is applied there.
+     */
+    private void setupWindowInsets() {
+        if (pwaRoot == null) return;
+
+        ViewCompat.setOnApplyWindowInsetsListener(pwaRoot, (v, windowInsets) -> {
+            Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            boolean isFullscreen = "fullscreen".equalsIgnoreCase(displayMode);
+
+            int topInset = isFullscreen ? 0 : systemBars.top;
+            int bottomInset = isFullscreen ? 0 : systemBars.bottom;
+
+            if (contentFrame != null) {
+                contentFrame.setPadding(
+                        contentFrame.getPaddingLeft(), topInset,
+                        contentFrame.getPaddingRight(), bottomInset);
+            }
+            if (progressBarComposeView != null) {
+                progressBarComposeView.setPadding(
+                        progressBarComposeView.getPaddingLeft(), topInset,
+                        progressBarComposeView.getPaddingRight(), progressBarComposeView.getPaddingBottom());
+            }
+            if (fabBubbleView != null && fabBubbleView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams fabParams =
+                        (ViewGroup.MarginLayoutParams) fabBubbleView.getLayoutParams();
+                fabParams.bottomMargin = fabBaseMarginPx + bottomInset;
+                fabBubbleView.setLayoutParams(fabParams);
+            }
+
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(pwaRoot);
     }
 
     private void setupGeckoView() {
