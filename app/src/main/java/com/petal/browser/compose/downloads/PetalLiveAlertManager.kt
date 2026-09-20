@@ -76,6 +76,11 @@ object PetalLiveAlertManager {
                         PetalDownloadService.stopIfNoActiveDownloads(context)
                     }
 
+                    // Keep the foreground service notification alive independently of the UI task.
+                    if (activeItems.isNotEmpty()) {
+                        PetalDownloadService.updatePersistentNotification(context)
+                    }
+
                     val now = System.currentTimeMillis()
                     items.forEach { item ->
                         when (item.status) {

@@ -135,6 +135,55 @@ object PetalFetchDownloadBridge {
      * instead of the legacy Java download engine API so every media download is
      * represented by the same Fetch2-backed Petal Download Manager state/UI.
      */
+    /**
+     * Enqueues a download originating from GeckoEngine/GeckoView.
+     *
+     * The Gecko engine is the source of truth for the response metadata. We keep that
+     * metadata (especially Content-Disposition/Content-Type) instead of routing the event
+     * through BrowserUnit, which was the old WebView/raw-download path. The actual bytes are
+     * still handled by the single Fetch2 engine so the existing pause/resume/retry UI remains
+     * consistent.
+     */
+    @JvmStatic
+    fun enqueueGeckoDownload(
+        context: Context,
+        url: String,
+        fileName: String,
+        mimeType: String? = null,
+        responseHeaders: Map<String, String> = emptyMap(),
+        onEnqueued: ((Long) -> Unit)? = null,
+        onFailed: (() -> Unit)? = null
+    ) {
+        val safeHeaders = responseHeaders.filter { (name, value) ->
+            name.isNotBlank() && value.isNotBlank() &&
+                !name.equals("Content-Length", true) &&
+                !name.equals("Content-Encoding", true) &&
+                !name.equals("Transfer-Encoding", true) &&
+                !name.equals("Connection", true) &&
+                !name.equals("Keep-Alive", true) &&
+                !name.equals("Proxy-Authenticate", true) &&
+                !name.equals("Proxy-Authorization", true) &&
+                !name.equals("TE", true) &&
+                !name.equals("Trailer", true) &&
+                !name.equals("Upgrade", true) &&
+                !name.equals("Content-Disposition", true) &&
+                !name.equals("Content-Type", true) &&
+                '\r' !in name && '\n' !in name &&
+                '\r' !in value && '\n' !in value
+        }
+        enqueueMediaDownload(
+            context = context,
+            url = url,
+            fileName = fileName,
+            mimeType = mimeType,
+            userAgent = null,
+            cookie = null,
+            headers = safeHeaders,
+            onEnqueued = onEnqueued,
+            onFailed = onFailed
+        )
+    }
+
     @JvmStatic
     fun enqueueMediaDownload(
         context: Context,
