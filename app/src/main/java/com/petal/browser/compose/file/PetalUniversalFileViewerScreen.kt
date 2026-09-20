@@ -51,9 +51,6 @@ import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.compose.pdf.PetalPdfViewerScreen
 import com.petal.browser.haptics.PetalHapticEngine
-import com.petal.browser.predictive.PetalContentSnapshot
-import com.petal.browser.predictive.PetalPredictiveBackSurface
-import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -83,23 +80,12 @@ object PetalFileViewerBridge {
         displayName: String? = null,
         onBackPress: () -> Unit,
     ): ComposeView {
-        val rootView = activity.findViewById<android.view.View>(android.R.id.content)
-            ?: activity.window.decorView
-        PetalContentSnapshot.capture(rootView)
-
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val snapshotBitmap = remember {
-                    PetalContentSnapshot.current?.asImageBitmap()
-                }
-                DisposableEffect(Unit) {
-                    onDispose { PetalContentSnapshot.clear() }
-                }
-
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -194,30 +180,27 @@ fun PetalUniversalFileViewerScreen(
     var editableText by remember { mutableStateOf("") }
     var onSaveRequested by remember { mutableStateOf<(() -> Unit)?>(null) }
 
-    PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onBackPress,
-    ) {
-        PetalScreenWrapper {
-            Scaffold(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                topBar = {
-                    UniversalFileViewerTopBar(
-                        title = displayName,
-                        extension = extension,
-                        category = category,
-                        isEditing = isEditing,
-                        isWordWrap = isWordWrap,
-                        onToggleEdit = { isEditing = !isEditing },
-                        onToggleWrap = { isWordWrap = !isWordWrap },
-                        onSave = { onSaveRequested?.invoke() },
-                        onBack = onBackPress,
-                        onShare = { shareFile(context, fileUri, displayName) },
-                        onOpenExternal = { openExternal(context, fileUri) },
-                    )
-                }
-            ) { innerPadding ->
+    androidx.activity.compose.BackHandler(onBack = onBackPress)
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            UniversalFileViewerTopBar(
+                title = displayName,
+                extension = extension,
+                category = category,
+                isEditing = isEditing,
+                isWordWrap = isWordWrap,
+                onToggleEdit = { isEditing = !isEditing },
+                onToggleWrap = { isWordWrap = !isWordWrap },
+                onSave = { onSaveRequested?.invoke() },
+                onBack = onBackPress,
+                onShare = { shareFile(context, fileUri, displayName) },
+                onOpenExternal = { openExternal(context, fileUri) },
+            )
+        }
+    ) { innerPadding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -245,8 +228,6 @@ fun PetalUniversalFileViewerScreen(
                     }
                 }
             }
-        }
-    }
 }
 
 @Composable
@@ -1069,19 +1050,17 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(80.dp)
+        com.petal.browser.ui.components.PetalShapeIconBadge(
+            shape = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie9Sided.toShape(),
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            size = 80.dp,
+            iconSize = 40.dp,
         ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Rounded.InsertDriveFile,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(40.dp)
-                )
-            }
+            Icon(
+                imageVector = Icons.Rounded.InsertDriveFile,
+                contentDescription = null,
+            )
         }
         Spacer(Modifier.height(16.dp))
         Text(
@@ -1127,12 +1106,18 @@ private fun ErrorDisplayBox(error: String) {
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.ErrorOutline,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(48.dp)
-                )
+                com.petal.browser.ui.components.PetalShapeIconBadge(
+                    shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
+                    contentColor = MaterialTheme.colorScheme.error,
+                    size = 72.dp,
+                    iconSize = 36.dp,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ErrorOutline,
+                        contentDescription = null,
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = "Cannot View File",

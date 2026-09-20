@@ -41,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import com.petal.browser.ui.components.entrance
+import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
@@ -562,15 +563,12 @@ fun PetalDownloadManagerScreen(
                                 isSelectionMode = isSelectionMode,
                                 showFullDate = (sortOption != DownloadSortOption.DATE_DESC && sortOption != DownloadSortOption.DATE_ASC),
                                 modifier = Modifier
-                                    .entrance(index = index)
+                                    .entrance(index = index, playKey = item.id)
                                     .animateItem(
-                                    fadeInSpec = tween(220),
-                                    fadeOutSpec = tween(180),
-                                    placementSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessMediumLow
-                                    )
-                                ),
+                                        fadeInSpec = PetalSpring.fadeIn(),
+                                        fadeOutSpec = PetalSpring.fadeOut(),
+                                        placementSpec = PetalSpring.spatial()
+                                    ),
                                 onToggleSelect = { toggleSelection(item.id) },
                                 onLongClick = {
                                     if (!isSelectionMode) {

@@ -13,7 +13,6 @@
  *   • Native Android PrintManager integration for instant direct printing / PDF export
  *   • Share sheet, document info sheet (page count, dimensions, file size, path)
  *   • Supports content:// and file:// URIs seamlessly
- *   • PetalPredictiveBackSurface and PetalScreenWrapper integration
  *
  * MIT License — Copyright (c) 2026 Petal Browser
  */
@@ -67,7 +66,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -86,9 +84,6 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.predictive.PetalContentSnapshot
-import com.petal.browser.predictive.PetalPredictiveBackSurface
-import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.theme.*
 import com.petal.browser.view.NinjaToast
 import kotlinx.coroutines.Dispatchers
@@ -115,23 +110,12 @@ object PetalPdfViewerBridge {
         displayName: String? = null,
         onBackPress: () -> Unit,
     ): ComposeView {
-        val rootView = activity.findViewById<android.view.View>(android.R.id.content)
-            ?: activity.window.decorView
-        PetalContentSnapshot.capture(rootView)
-
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val snapshotBitmap = remember {
-                    PetalContentSnapshot.current?.asImageBitmap()
-                }
-                DisposableEffect(Unit) {
-                    onDispose { PetalContentSnapshot.clear() }
-                }
-
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
@@ -152,7 +136,6 @@ object PetalPdfViewerBridge {
                     paletteId = paletteId,
                 ) {
                     PetalPdfViewerScreen(
-                        backgroundSnapshot = snapshotBitmap,
                         pdfUri = pdfUri,
                         displayName = displayName ?: pdfUri.lastPathSegment ?: "Document.pdf",
                         onBackPress = onBackPress,
@@ -168,7 +151,6 @@ object PetalPdfViewerBridge {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalPdfViewerScreen(
-    backgroundSnapshot: ImageBitmap? = null,
     pdfUri: Uri,
     displayName: String,
     onBackPress: () -> Unit = {},
@@ -272,21 +254,18 @@ fun PetalPdfViewerScreen(
         }
     }
 
-    PetalPredictiveBackSurface(
-        enabled = true,
-        onBack = onBackPress,
-    ) {
-        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Scaffold(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                snackbarHost = {
-                    com.petal.browser.ui.components.PetalThemedSnackbarHost(
-                        hostState = snackbarHostState,
-                        modifier = Modifier.navigationBarsPadding()
-                    )
-                }
-            ) { innerPadding ->
+    androidx.activity.compose.BackHandler(onBack = onBackPress)
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = {
+            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.navigationBarsPadding()
+            )
+        }
+    ) { innerPadding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -324,12 +303,18 @@ fun PetalPdfViewerScreen(
                                         modifier = Modifier.padding(24.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.ErrorOutline,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(48.dp)
-                                        )
+                                        com.petal.browser.ui.components.PetalShapeIconBadge(
+                                            shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
+                                            contentColor = MaterialTheme.colorScheme.error,
+                                            size = 72.dp,
+                                            iconSize = 36.dp,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.ErrorOutline,
+                                                contentDescription = null,
+                                            )
+                                        }
                                         Spacer(Modifier.height(12.dp))
                                         Text(
                                             text = "Cannot Display PDF",
@@ -447,8 +432,12 @@ fun PetalPdfViewerScreen(
                             AnimatedVisibility(
                                 visible = controlsVisible,
                                 modifier = Modifier.align(Alignment.TopCenter),
-                                enter = fadeIn(tween(200)) + slideInVertically(tween(220)) { -it },
-                                exit = fadeOut(tween(180)) + slideOutVertically(tween(180)) { -it }
+                                enter = fadeIn(tween(180)) + slideInVertically(
+                                    spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
+                                ) { -it },
+                                exit = fadeOut(tween(150)) + slideOutVertically(
+                                    spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                                ) { -it }
                             ) {
                                 PdfViewerTopBar(
                                     title = displayName,
@@ -466,8 +455,12 @@ fun PetalPdfViewerScreen(
                             AnimatedVisibility(
                                 visible = controlsVisible,
                                 modifier = Modifier.align(Alignment.BottomCenter),
-                                enter = fadeIn(tween(200)) + slideInVertically(tween(220)) { it },
-                                exit = fadeOut(tween(180)) + slideOutVertically(tween(180)) { it }
+                                enter = fadeIn(tween(180)) + slideInVertically(
+                                    spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
+                                ) { it },
+                                exit = fadeOut(tween(150)) + slideOutVertically(
+                                    spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                                ) { it }
                             ) {
                                 PdfViewerBottomBar(
                                     currentPage = currentVisiblePage.value + 1,
@@ -520,16 +513,14 @@ fun PetalPdfViewerScreen(
                 )
             }
 
-            // ── Document Info Bottom Sheet ──
-            if (showInfoSheet) {
-                PdfInfoBottomSheet(
-                    uri = pdfUri,
-                    displayName = displayName,
-                    pageCount = pageCount,
-                    onDismiss = { showInfoSheet = false }
-                )
-            }
-        }
+    // ── Document Info Bottom Sheet ──
+    if (showInfoSheet) {
+        PdfInfoBottomSheet(
+            uri = pdfUri,
+            displayName = displayName,
+            pageCount = pageCount,
+            onDismiss = { showInfoSheet = false }
+        )
     }
 }
 

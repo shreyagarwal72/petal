@@ -1671,7 +1671,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * hides every tab surface, but keeps the tab surfaces attached so showing the tab again
      * is a visibility flip rather than a fresh attach.
      */
-    private void clearContentFrameKeepingTabs() {
+    public void clearContentFrameKeepingTabs() {
         removeOverlayViews();
         hideTabSurfacesExcept(null);
     }

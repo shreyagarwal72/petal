@@ -483,7 +483,7 @@ private fun BookmarkCardItem(
             .fillMaxWidth()
             .bouncyClickable(scaleDown = 0.97f, onClick = onClick)
             .let { with(itemScope) { it.animateItem() } }
-            .entrance(index = animationIndex)
+            .entrance(index = animationIndex, playKey = "${record.url}_${record.time}")
     ) {
         Row(
             modifier = Modifier

@@ -15,7 +15,6 @@
  *  - Rotate 90° CW (visual only)
  *  - Share, Delete (local only, with undo), Set as Wallpaper
  *  - Image Info bottom sheet (dimensions, size, path/URL, date)
- *  - PetalPredictiveBackSurface (swipe-to-dismiss)
  *  - Network images loaded with Coil (already in project) — offline BitmapFactory for local
  *
  * MIT License — Copyright (c) 2026 Petal Browser
@@ -61,7 +60,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -115,23 +113,12 @@ object PetalImageViewerBridge {
         entries: List<PetalViewerImageEntry>,
         onBackPress: () -> Unit,
     ): ComposeView {
-        val rootView = activity.findViewById<android.view.View>(android.R.id.content)
-            ?: activity.window.decorView
-        com.petal.browser.predictive.PetalContentSnapshot.capture(rootView)
-
         return ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeViewModelStoreOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                val snapshotBitmap = remember {
-                    com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap()
-                }
-                DisposableEffect(Unit) {
-                    onDispose { com.petal.browser.predictive.PetalContentSnapshot.clear() }
-                }
-
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
                 val fontName  = sp.getString("sp_app_font",    "GS_FLEX")       ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT")    ?: "TONAL_SPOT"
@@ -156,7 +143,6 @@ object PetalImageViewerBridge {
                     paletteId    = paletteId,
                 ) {
                     PetalImageViewerScreen(
-                        backgroundSnapshot = snapshotBitmap,
                         initialIndex       = initialIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0)),
                         entries            = entries,
                         onBackPress        = onBackPress,
@@ -252,7 +238,6 @@ object PetalImageViewerBridge {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetalImageViewerScreen(
-    backgroundSnapshot: ImageBitmap? = null,
     initialIndex: Int = 0,
     entries: List<PetalViewerImageEntry>,
     onBackPress: () -> Unit = {},
@@ -312,21 +297,18 @@ fun PetalImageViewerScreen(
         }
     }
 
-    com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = true,
-        onBack  = onBackPress,
-    ) {
-        com.petal.browser.predictive.PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
-            Scaffold(
-                containerColor = Color.Black,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                snackbarHost = {
-                    com.petal.browser.ui.components.PetalThemedSnackbarHost(
-                        hostState = snackbarHostState,
-                        modifier = Modifier.navigationBarsPadding()
-                    )
-                },
-            ) { innerPadding ->
+    androidx.activity.compose.BackHandler(onBack = onBackPress)
+
+    Scaffold(
+        containerColor = Color.Black,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = {
+            com.petal.browser.ui.components.PetalThemedSnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.navigationBarsPadding()
+            )
+        },
+    ) { innerPadding ->
 
                 Box(
                     modifier = Modifier
@@ -353,8 +335,12 @@ fun PetalImageViewerScreen(
                     AnimatedVisibility(
                         visible = controlsVisible,
                         modifier = Modifier.align(Alignment.TopCenter),
-                        enter = fadeIn(tween(220)) + slideInVertically(tween(220)) { -it },
-                        exit  = fadeOut(tween(180)) + slideOutVertically(tween(180)) { -it },
+                        enter = fadeIn(tween(180)) + slideInVertically(
+                            spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
+                        ) { -it },
+                        exit = fadeOut(tween(150)) + slideOutVertically(
+                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                        ) { -it },
                     ) {
                         ImageViewerTopBar(
                             currentIndex = pagerState.currentPage,
@@ -402,8 +388,12 @@ fun PetalImageViewerScreen(
                     AnimatedVisibility(
                         visible = controlsVisible,
                         modifier = Modifier.align(Alignment.BottomCenter),
-                        enter = fadeIn(tween(220)) + slideInVertically(tween(220)) { it },
-                        exit  = fadeOut(tween(180)) + slideOutVertically(tween(180)) { it },
+                        enter = fadeIn(tween(180)) + slideInVertically(
+                            spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
+                        ) { it },
+                        exit = fadeOut(tween(150)) + slideOutVertically(
+                            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+                        ) { it },
                     ) {
                         ImageViewerBottomBar(
                             entry        = currentEntry,
@@ -440,14 +430,12 @@ fun PetalImageViewerScreen(
                 }
             }
 
-            // ── Image Info Bottom Sheet ──────────────────────────
-            if (showInfoSheet && currentEntry != null) {
-                ImageInfoBottomSheet(
-                    entry     = currentEntry,
-                    onDismiss = { showInfoSheet = false },
-                )
-            }
-        }
+    // ── Image Info Bottom Sheet ──────────────────────────
+    if (showInfoSheet && currentEntry != null) {
+        ImageInfoBottomSheet(
+            entry     = currentEntry,
+            onDismiss = { showInfoSheet = false },
+        )
     }
 }
 
@@ -573,7 +561,15 @@ private fun ZoomableImagePage(
                 error = {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Rounded.BrokenImage, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
+                            com.petal.browser.ui.components.PetalShapeIconBadge(
+                                shape = com.petal.browser.ui.theme.PetalMaterialShapes.SoftBoom.toShape(),
+                                containerColor = Color.White.copy(alpha = 0.12f),
+                                contentColor = Color.White.copy(alpha = 0.7f),
+                                size = 64.dp,
+                                iconSize = 32.dp,
+                            ) {
+                                Icon(Icons.Rounded.BrokenImage, contentDescription = null)
+                            }
                             Spacer(Modifier.height(8.dp))
                             Text("Failed to load image", color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodySmall)
                         }

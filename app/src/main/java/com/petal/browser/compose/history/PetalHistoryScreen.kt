@@ -50,6 +50,7 @@ import com.petal.browser.unit.RecordUnit
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.compose.composable.ContainedLoadingIndicator
 import com.petal.browser.ui.components.entrance
+import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
@@ -330,12 +331,9 @@ fun PetalHistoryScreen(
                                         record = record,
                                         index = index,
                                         modifier = Modifier.animateItem(
-                                            fadeInSpec = tween(220),
-                                            fadeOutSpec = tween(180),
-                                            placementSpec = spring(
-                                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                stiffness = Spring.StiffnessMediumLow
-                                            )
+                                            fadeInSpec = PetalSpring.fadeIn(),
+                                            fadeOutSpec = PetalSpring.fadeOut(),
+                                            placementSpec = PetalSpring.spatial()
                                         ),
                                         onSelect = { record.url?.let(onOpenUrl) },
                                         onDelete = {
@@ -413,7 +411,7 @@ private fun HistoryCardItem(
         modifier = modifier
             .fillMaxWidth()
             .bouncyClickable(scaleDown = 0.95f, onClick = onSelect)
-            .entrance(index = index)
+            .entrance(index = index, playKey = "${record.url}_${record.time}")
     ) {
         Row(
             modifier = Modifier
