@@ -128,6 +128,15 @@ object PetalAppLogger {
         val lastHandledExitTime = sp.getLong(PREF_LAST_HANDLED_EXIT_TIME, 0L)
 
         val latestAbnormalExit = exitReasons.firstOrNull { exitInfo ->
+            // ActivityManager can return records for transient Android/ART helper
+            // processes alongside the app's processes. For example,
+            // "gpu_disable_art_image_" is not Petal and must never be surfaced as
+            // a Petal crash report.
+            val processName = exitInfo.processName.orEmpty()
+            val belongsToPetal = processName == context.packageName ||
+                    processName.startsWith(context.packageName + ":")
+            if (!belongsToPetal) return@firstOrNull false
+
             val isNormalSelfExit = exitInfo.reason == android.app.ApplicationExitInfo.REASON_SIGNALED &&
                     (exitInfo.description?.contains("exit_self", ignoreCase = true) == true ||
                      exitInfo.status == 0 ||
