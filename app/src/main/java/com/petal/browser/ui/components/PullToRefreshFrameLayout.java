@@ -229,7 +229,12 @@ public class PullToRefreshFrameLayout extends FrameLayout {
                     return false;
                 }
 
-                if (!intercepting && !canChildScrollUp() && canPull.canPull()) {
+                // A refresh gesture must begin at the viewport's top edge. Without
+                // this guard, a downward scroll that starts halfway down a page can
+                // be mistaken for pull-to-refresh before Gecko's compositor reports
+                // the updated scroll position.
+                boolean startedAtTopEdge = downY <= edgeThresholdPx;
+                if (!intercepting && startedAtTopEdge && !canChildScrollUp() && canPull.canPull()) {
                     float dx = currentX - downX;
                     float dy = currentY - downY;
                     if (dy > touchSlop && dy > Math.abs(dx)) {
