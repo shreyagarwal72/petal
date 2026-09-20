@@ -188,12 +188,15 @@ class PetalGeckoView @JvmOverloads constructor(
         }
         sessionInitializationStarted = true
 
-        val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
-        // GeckoSession.open() must only be invoked for a newly-created, unopened session.
-        // Keep the open/attach operation serialized on the main thread and make the
-        // session's private-mode choice before open() (see constructor above).
-        if (!session.isOpen) {
-            session.open(runtime)
+        // A GeckoSession owned by Android Components is opened/managed by GeckoEngine.
+        // Opening that same underlying session again here creates a split lifecycle:
+        // GeckoEngine thinks it owns the session while Petal also tries to own it.
+        // For legacy/raw tabs Petal still owns the open() call.
+        if (engineSession == null) {
+            val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
+            if (!session.isOpen) {
+                session.open(runtime)
+            }
         }
         geckoView.setSession(session)
         session.setActive(true)
@@ -1072,6 +1075,13 @@ class PetalGeckoView @JvmOverloads constructor(
      */
     @MainThread
     fun adoptPopupSession(popupSession: GeckoSession) {
+        if (engineSession != null) {
+            // The popup session belongs to GeckoEngine. Swapping it into a
+            // GeckoView that is backed by a different EngineSession would
+            // disconnect BrowserStore from the rendered session.
+            android.util.Log.w(TAG, "Ignoring raw popup-session adoption for an Android Components tab")
+            return
+        }
         // Detach the automatically-created session from GeckoView before closing it.
         // Closing an attached session while an OAuth/login popup is being adopted can
         // race Gecko's compositor teardown and crash the native content process.
@@ -1121,7 +1131,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun setDesktopMode(enabled: Boolean) {
         applyDesktopMode(enabled)
-        session.reload()
+        reloadEngine()
     }
 
     /**
@@ -1148,6 +1158,34 @@ class PetalGeckoView @JvmOverloads constructor(
     // Navigation Methods
     // ─────────────────────────────────────────────────────────────────────────
 
+    /** Routes navigation through Android Components when this tab is engine-backed.
+     * Raw GeckoSession remains the fallback for legacy tabs and APIs that have no
+     * EngineSession equivalent.
+     */
+    private fun navigateToEngine(url: String) {
+        if (engineSession != null) {
+            engineSession.loadUrl(url)
+        } else {
+            session.loadUri(url)
+        }
+    }
+
+    private fun reloadEngine() {
+        if (engineSession != null) {
+            engineSession.reload()
+        } else {
+            session.reload()
+        }
+    }
+
+    private fun stopEngineLoading() {
+        if (engineSession != null) {
+            engineSession.stopLoading()
+        } else {
+            session.stop()
+        }
+    }
+
     fun loadUrl(url: String) {
         // "Petal Home" / "Petal Start" are the tab-switcher's human-readable display
         // placeholders (see AdapterTabs/setAlbumTitle), never real navigable targets.
@@ -1156,7 +1194,7 @@ class PetalGeckoView @JvmOverloads constructor(
         // queryWrapper() silently turn it into a live search-engine query.
         if (url.trim().equals("Petal Home", ignoreCase = true) || url.trim().equals("Petal Start", ignoreCase = true)) {
             hideLoadingSkeleton()
-            session.loadUri("about:blank")
+            navigateToEngine("about:blank")
             currentUrl = "about:blank"
             currentTitle = "Petal Home"
             album.setAlbumTitle("Petal Home", "petal://home")
@@ -1183,7 +1221,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
         if (BrowserUnit.isHomePage(targetUrl) || BrowserUnit.isHomePage(url) || targetUrl.equals("about:blank", ignoreCase = true)) {
             hideLoadingSkeleton()
-            session.loadUri("about:blank")
+            navigateToEngine("about:blank")
             currentUrl = "about:blank"
             currentTitle = "Petal Home"
             album.setAlbumTitle("Petal Home", "petal://home")
@@ -1198,11 +1236,7 @@ class PetalGeckoView @JvmOverloads constructor(
         showLoadingSkeleton(targetUrl)
         currentUrl = targetUrl
         album.setAlbumTitle(targetUrl, targetUrl)
-        if (engineSession != null) {
-            engineSession.loadUrl(targetUrl)
-        } else {
-            session.loadUri(targetUrl)
-        }
+        navigateToEngine(targetUrl)
     }
 
     fun loadDataWithBaseURL(baseUrl: String?, data: String, mimeType: String?, encoding: String?, historyUrl: String?) {
@@ -1249,8 +1283,20 @@ class PetalGeckoView @JvmOverloads constructor(
                 return
             }
 
-            // A killed Gecko content process leaves its GeckoSession permanently unusable.
-            // Recreate the session and all delegates instead of reopening the dead instance.
+            // Android Components owns engine-backed session recovery. Replacing the
+            // underlying GeckoSession here would leave GeckoEngineSession pointing at
+            // the dead object and permanently desynchronize BrowserStore.
+            if (engineSession != null) {
+                try {
+                    reloadEngine()
+                    return
+                } catch (t: Throwable) {
+                    android.util.Log.e(TAG, "EngineSession crash recovery failed", t)
+                    return
+                }
+            }
+
+            // A raw GeckoSession can be recreated directly because Petal owns its lifecycle.
             try { geckoView.releaseSession() } catch (_: Throwable) {}
             try { if (session.isOpen) session.close() } catch (_: Throwable) {}
             session = GeckoSession(
@@ -1284,7 +1330,7 @@ class PetalGeckoView @JvmOverloads constructor(
                     try {
                         parent.addView(geckoView, index)
                         if (urlToRestore.isNotEmpty() && !urlToRestore.equals("about:blank", ignoreCase = true)) {
-                            session.loadUri(urlToRestore)
+                            navigateToEngine(urlToRestore)
                         }
                     } catch (e: Exception) {
                         android.util.Log.e(TAG, "Failed to re-attach GeckoView after session recovery: ${e.message}", e)
@@ -1292,7 +1338,7 @@ class PetalGeckoView @JvmOverloads constructor(
                 }
             } else {
                 if (urlToRestore.isNotEmpty() && !urlToRestore.equals("about:blank", ignoreCase = true)) {
-                    session.loadUri(urlToRestore)
+                    navigateToEngine(urlToRestore)
                 }
             }
         } catch (e: Exception) {
@@ -1324,12 +1370,12 @@ class PetalGeckoView @JvmOverloads constructor(
         if (currentUrl.isNotBlank() && !BrowserUnit.isHomePage(currentUrl) && !currentUrl.equals("about:blank", ignoreCase = true)) {
             showLoadingSkeleton(currentUrl)
         }
-        if (engineSession != null) engineSession.reload() else session.reload()
+        reloadEngine()
     }
 
     fun stopLoading() {
         isStopped = true
-        if (engineSession != null) engineSession.stopLoading() else session.stop()
+        stopEngineLoading()
         updateProgress(BrowserUnit.LOADING_STOPPED)
     }
 
@@ -1364,7 +1410,7 @@ class PetalGeckoView @JvmOverloads constructor(
         try {
             com.petal.browser.engine.gecko.PetalEngineStore.toggleReaderMode(context, tabId, active)
             if (active) {
-                session.loadUri("about:reader?url=${android.net.Uri.encode(currentUrl)}")
+                navigateToEngine("about:reader?url=${android.net.Uri.encode(currentUrl)}")
             } else if (currentUrl.startsWith("about:reader?url=")) {
                 val origUrl = android.net.Uri.decode(currentUrl.substringAfter("about:reader?url="))
                 loadUrl(origUrl)
@@ -1437,7 +1483,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun reloadWithoutInit() {
         isStopped = false
-        session.reload()
+        reloadEngine()
     }
 
     override fun canScrollVertically(direction: Int): Boolean {
@@ -1517,8 +1563,8 @@ class PetalGeckoView @JvmOverloads constructor(
         currentTitle = "Petal Home"
         album.setAlbumTitle("Petal Home", "about:blank")
         try {
-            session.stop()
-            session.loadUri("about:blank")
+            stopEngineLoading()
+            navigateToEngine("about:blank")
         } catch (_: Exception) {}
     }
 
@@ -1721,8 +1767,14 @@ class PetalGeckoView @JvmOverloads constructor(
         // race GeckoView's compositor teardown and is particularly fragile on cold start
         // and during Activity destruction.
         try { geckoView.releaseSession() } catch (_: Throwable) {}
-        try { if (session.isOpen) session.close() } catch (_: Throwable) {}
-        try { engineSession?.close() } catch (_: Throwable) {}
+        // GeckoEngineSession and its GeckoSession wrap the same native session.
+        // Closing both is a double-teardown race. Let Android Components own
+        // engine-backed sessions; only raw tabs are closed directly here.
+        if (engineSession == null) {
+            try { if (session.isOpen) session.close() } catch (_: Throwable) {}
+        } else {
+            try { engineSession.close() } catch (_: Throwable) {}
+        }
         removeAllViews()
     }
 
