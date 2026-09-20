@@ -1270,10 +1270,19 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
         boolean requireConfirmExit = sp != null && sp.getBoolean("sp_double_back_exit", false);
 
-        // Under pure Android 14 guidelines, when the user is on the root Home screen with a single tab,
-        // the back callback is disabled so the OS WindowManager handles the pure Predictive Back-to-Home
-        // animation (wallpaper reveal and app icon scale-down).
-        boolean shouldInterceptBack = hasOverlay || hasDialog || hasWebBack || isWebPageNotHome || hasMultipleTabs || requireConfirmExit;
+        // Keep the Activity back callback registered on Home and web surfaces while predictive back is
+        // enabled at the application level. This prevents Android from falling back to its default
+        // predictive exit animation on those browsing surfaces. They intentionally use normal back
+        // navigation; Compose/Petal screens own their predictive animation through
+        // PetalPredictiveBackSurface.
+        boolean shouldInterceptBack = hasOverlay
+                || hasDialog
+                || hasWebBack
+                || isWebPageNotHome
+                || hasMultipleTabs
+                || requireConfirmExit
+                || isPetalHomeSurfaceShowing
+                || isHomePage(curUrl);
         browserBackCallback.setEnabled(shouldInterceptBack);
     }
 
