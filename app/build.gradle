@@ -174,6 +174,8 @@ dependencies {
     implementation 'io.coil-kt:coil-compose:2.7.0'
     implementation 'com.github.tonyofrancis.Fetch:fetch2:3.4.1'
     implementation 'com.github.tonyofrancis.Fetch:fetch2okhttp:3.4.1'
+    // Pure-Java barcode/QR decoding for the FOSS Snap Photo scanner.
+    implementation 'com.google.zxing:core:3.5.3'
 
     // Google Sign-In via Credential Manager (real OAuth, consent-screen based —
     // replaces the old WebView-cookie account sync)

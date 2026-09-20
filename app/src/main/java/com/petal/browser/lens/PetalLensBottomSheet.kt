@@ -37,6 +37,7 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.MediaFilterType
 import com.petal.browser.media.MediaItem
 import com.petal.browser.media.PetalMediaPickerManager
+import com.petal.browser.compose.mlkit.PetalImageScannerBridge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -55,6 +56,7 @@ fun PetalLensBottomSheet(
     var mediaItems by remember { mutableStateOf<List<MediaItem>>(emptyList()) }
     var hasPermission by remember { mutableStateOf(PetalMediaPickerManager.hasMediaPermissions(context)) }
     var isLoading by remember { mutableStateOf(false) }
+    var showSnapProviderChooser by rememberSaveable { mutableStateOf(false) }
 
     fun refreshGallery() {
         if (PetalMediaPickerManager.hasMediaPermissions(context)) {
@@ -103,11 +105,9 @@ fun PetalLensBottomSheet(
     ) { success: Boolean ->
         val uri = cameraTempUriString?.let { Uri.parse(it) }
         if (success && uri != null) {
-            try {
-                PetalLensManager.launchLensForImageUri(context, uri)
-            } catch (e: Exception) {
-                PetalLensManager.launchGoogleLensApp(context)
-            }
+            if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.PETAL_SCANNER) {
+                PetalImageScannerBridge.show(context as androidx.activity.ComponentActivity, uri.toString())
+            } else PetalLensManager.launchLensForImageUri(context, uri)
             onDismissRequest()
         }
     }
@@ -150,27 +150,50 @@ fun PetalLensBottomSheet(
         }
     }
 
+    fun beginSnap() {
+        if (PetalLensManager.snapProvider(context) == PetalLensManager.SnapProvider.ASK) {
+            showSnapProviderChooser = true
+            return
+        }
+        val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        if (hasCameraPermission) launchCameraInternal() else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+
     // Auto-trigger snap camera feature if requested from widget or shortcut:
     // Tries to redirect directly to the Google Lens app first, falling back to camera capture if unavailable.
     var didTriggerAutoCamera by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(autoSnapCamera) {
         if (autoSnapCamera && !didTriggerAutoCamera) {
             didTriggerAutoCamera = true
-            if (PetalLensManager.launchGoogleLensAppOnly(context)) {
-                onDismissRequest()
-            } else {
-                val hasCameraPermission = ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.CAMERA
-                ) == PackageManager.PERMISSION_GRANTED
+            beginSnap()
+        }
+    }
 
-                if (hasCameraPermission) {
-                    launchCameraInternal()
-                } else {
-                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+    if (showSnapProviderChooser) {
+        AlertDialog(
+            onDismissRequest = { showSnapProviderChooser = false },
+            icon = { Icon(Icons.Rounded.QrCodeScanner, contentDescription = null) },
+            title = { Text("Choose Snap Photo scanner") },
+            text = { Text("Choose what should process the photo. You can change this later in Miscellaneous settings.") },
+            confirmButton = {
+                Column {
+                    TextButton(onClick = {
+                        PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
+                        showSnapProviderChooser = false
+                        beginSnap()
+                    }) { Text("Google Lens") }
+                    TextButton(onClick = {
+                        PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
+                        showSnapProviderChooser = false
+                        beginSnap()
+                    }) { Text("Petal Scanner") }
+                    TextButton(onClick = {
+                        showSnapProviderChooser = false
+                        beginSnap()
+                    }) { Text("Ask every time") }
                 }
             }
-        }
+        )
     }
 
     Surface(
@@ -255,20 +278,7 @@ fun PetalLensBottomSheet(
                 Card(
                     onClick = {
                         PetalHapticEngine.getInstance(context).playClick(context)
-                        if (PetalLensManager.launchGoogleLensAppOnly(context)) {
-                            onDismissRequest()
-                        } else {
-                            val hasCameraPermission = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.CAMERA
-                            ) == PackageManager.PERMISSION_GRANTED
-
-                            if (hasCameraPermission) {
-                                launchCameraInternal()
-                            } else {
-                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                            }
-                        }
+                        beginSnap()
                     },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(

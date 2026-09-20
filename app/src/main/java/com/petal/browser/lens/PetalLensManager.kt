@@ -17,6 +17,26 @@ import java.io.FileOutputStream
  */
 object PetalLensManager {
 
+    enum class SnapProvider { ASK, GOOGLE_LENS, PETAL_SCANNER }
+    private const val SNAP_PROVIDER_KEY = "sp_snap_photo_provider"
+
+    @JvmStatic
+    fun snapProvider(context: Context): SnapProvider = runCatching {
+        SnapProvider.valueOf(
+            context.getSharedPreferences("petal_settings", Context.MODE_PRIVATE)
+                .getString(SNAP_PROVIDER_KEY, SnapProvider.ASK.name) ?: SnapProvider.ASK.name
+        )
+    }.getOrDefault(SnapProvider.ASK)
+
+    @JvmStatic
+    fun setSnapProvider(context: Context, provider: SnapProvider) {
+        context.getSharedPreferences("petal_settings", Context.MODE_PRIVATE)
+            .edit().putString(SNAP_PROVIDER_KEY, provider.name).apply()
+    }
+
+    @JvmStatic
+    fun resetSnapProvider(context: Context) = setSnapProvider(context, SnapProvider.ASK)
+
     private const val TAG = "PetalLens"
 
     private val LENS_STANDALONE_COMPONENTS = listOf(

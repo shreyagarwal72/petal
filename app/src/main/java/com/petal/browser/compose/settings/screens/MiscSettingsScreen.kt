@@ -27,6 +27,7 @@ import com.petal.browser.compose.settings.viewmodel.MiscSettingsViewModel
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.ExternalDownloadManagerHelper
+import com.petal.browser.lens.PetalLensManager
 
 @Composable
 fun MiscSettingsScreen(
@@ -35,11 +36,13 @@ fun MiscSettingsScreen(
     targetHighlightItemId: String? = null,
     viewModel: MiscSettingsViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val autoOpenApps by viewModel.autoOpenApps.collectAsStateWithLifecycle()
     val checkUpdateOnLaunch by viewModel.checkUpdateOnLaunch.collectAsStateWithLifecycle()
     val downloadManagerMode by viewModel.downloadManagerMode.collectAsStateWithLifecycle()
     val autoPreviewDownloadedImages by viewModel.autoPreviewDownloadedImages.collectAsStateWithLifecycle()
     val liveUpdates by viewModel.liveUpdates.collectAsStateWithLifecycle()
+    var snapProvider by remember { mutableStateOf(PetalLensManager.snapProvider(context)) }
 
     MiscSettingsScreenContent(
         autoOpenApps = autoOpenApps,
@@ -47,11 +50,16 @@ fun MiscSettingsScreen(
         downloadManagerMode = downloadManagerMode,
         autoPreviewDownloadedImages = autoPreviewDownloadedImages,
         liveUpdates = liveUpdates,
+        snapProvider = snapProvider,
         onAutoOpenAppsChange = viewModel::setAutoOpenApps,
         onCheckUpdateOnLaunchChange = viewModel::setCheckUpdateOnLaunch,
         onDownloadManagerModeChange = viewModel::setDownloadManagerMode,
         onAutoPreviewDownloadedImagesChange = viewModel::setAutoPreviewDownloadedImages,
         onLiveUpdatesChange = viewModel::setLiveUpdates,
+        onSnapProviderChange = {
+            PetalLensManager.setSnapProvider(context, it)
+            snapProvider = it
+        },
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
@@ -65,11 +73,13 @@ fun MiscSettingsScreenContent(
     downloadManagerMode: String,
     autoPreviewDownloadedImages: Boolean,
     liveUpdates: Boolean,
+    snapProvider: PetalLensManager.SnapProvider,
     onAutoOpenAppsChange: (Boolean) -> Unit,
     onCheckUpdateOnLaunchChange: (Boolean) -> Unit,
     onDownloadManagerModeChange: (String) -> Unit,
     onAutoPreviewDownloadedImagesChange: (Boolean) -> Unit,
     onLiveUpdatesChange: (Boolean) -> Unit,
+    onSnapProviderChange: (PetalLensManager.SnapProvider) -> Unit,
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
@@ -394,6 +404,36 @@ fun MiscSettingsScreenContent(
 
                 // External Applications & Tools Card
                 SettingsCategoryCard(
+                    title = "Snap Photo Scanner",
+                    icon = Icons.Rounded.QrCodeScanner,
+                    cardId = "misc_snap_photo",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Text(
+                        text = "Choose which scanner receives photos from Snap Photo and all Petal widgets.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    listOf(
+                        PetalLensManager.SnapProvider.ASK to "Ask every time",
+                        PetalLensManager.SnapProvider.GOOGLE_LENS to "Google Lens",
+                        PetalLensManager.SnapProvider.PETAL_SCANNER to "Petal Scanner"
+                    ).forEach { (provider, label) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable { onSnapProviderChange(provider) },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = snapProvider == provider, onClick = { onSnapProviderChange(provider) })
+                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                    TextButton(onClick = { onSnapProviderChange(PetalLensManager.SnapProvider.ASK) }) {
+                        Text("Choose again next time")
+                    }
+                }
+
+                // External Applications & Tools Card
+                SettingsCategoryCard(
                     title = "External Applications & Links",
                     iconRes = com.petal.browser.R.drawable.download_2_filled,
                     cardId = "misc_apps",
@@ -413,4 +453,3 @@ fun MiscSettingsScreenContent(
         }
     }
 }
-

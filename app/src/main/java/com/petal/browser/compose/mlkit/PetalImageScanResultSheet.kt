@@ -42,6 +42,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.Result
+import com.google.zxing.DecodeHintType
+import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.RGBLuminanceSource
 
 object PetalImageScannerManager {
 
@@ -92,7 +98,22 @@ object PetalImageScannerManager {
         bitmap: Bitmap,
         onResult: (detectedText: String?, detectedBarcodes: List<BarcodeResult>?, error: String?) -> Unit
     ) {
-        onResult(null, null, "Image recognition is unavailable in the FOSS build.")
+        try {
+            val width = bitmap.width
+            val height = bitmap.height
+            val pixels = IntArray(width * height)
+            bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+            val source = RGBLuminanceSource(width, height, pixels)
+            val hints = mapOf(DecodeHintType.TRY_HARDER to true)
+            val result: Result = MultiFormatReader().apply { setHints(hints) }.decode(BinaryBitmap(HybridBinarizer(source)))
+            onResult(
+                result.text,
+                listOf(BarcodeResult(result.text, result.text, result.barcodeFormat.ordinal)),
+                null
+            )
+        } catch (_: Exception) {
+            onResult(null, null, null)
+        }
     }
 }
 
