@@ -624,6 +624,24 @@ object PetalExtensionManager {
             .build()
         val popupSession = GeckoSession(popupSettings)
 
+        // Firefox Android installs a prompt delegate on extension popup sessions.
+        // Password managers commonly use alert/confirm prompts during unlock or
+        // autofill setup; leaving these callbacks unhandled can make the popup
+        // appear blank or stall while uBlock still works normally.
+        popupSession.promptDelegate = object : GeckoSession.PromptDelegate {
+            override fun onAlertPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.AlertPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+                GeckoResult.fromValue(prompt.dismiss())
+
+            override fun onButtonPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.ButtonPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+                GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
+        }
+
         // Inject mobile-responsive CSS when the extension popup page finishes loading.
         // Without this, many extension popups (uBlock Origin, Bitwarden, AdGuard, etc.)
         // render at their desktop fixed width and overflow the phone screen.
@@ -776,6 +794,19 @@ object PetalExtensionManager {
             .viewportMode(org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE)
             .build()
         val popupSession = GeckoSession(popupSettings)
+        popupSession.promptDelegate = object : GeckoSession.PromptDelegate {
+            override fun onAlertPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.AlertPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+                GeckoResult.fromValue(prompt.dismiss())
+
+            override fun onButtonPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.ButtonPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
+                GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
+        }
         val runtime = PetalGeckoRuntime.getOrCreate(context.applicationContext)
         if (!popupSession.isOpen) {
             popupSession.open(runtime)
