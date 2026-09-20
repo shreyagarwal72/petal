@@ -59,6 +59,39 @@ class PetalGeckoView @JvmOverloads constructor(
 
     companion object {
         private const val TAG = "PetalGeckoView"
+
+        /**
+         * Returns the GeckoSession that backs a Mozilla GeckoEngineSession, or null if unavailable.
+         *
+         * GeckoEngineSession.geckoSession is `internal` to Mozilla's module, so Kotlin 2.4 no longer
+         * lets us reference it directly. There is no public accessor, so it is read reflectively.
+         * If Mozilla renames or removes the field this logs a warning and returns null, and the caller
+         * falls back to creating its own GeckoSession.
+         */
+        private fun extractGeckoSession(
+            engineSession: mozilla.components.concept.engine.EngineSession?
+        ): GeckoSession? {
+            if (engineSession !is mozilla.components.browser.engine.gecko.GeckoEngineSession) return null
+            return try {
+                // Kotlin compiles an `internal var` getter as `getGeckoSession$<module>`, so try both.
+                val cls = engineSession.javaClass
+                val getter = cls.methods.firstOrNull {
+                    it.parameterCount == 0 && it.name.startsWith("getGeckoSession")
+                }
+                val fromGetter = getter?.let {
+                    it.isAccessible = true
+                    it.invoke(engineSession) as? GeckoSession
+                }
+                fromGetter ?: cls.getDeclaredField("geckoSession").let {
+                    it.isAccessible = true
+                    it.get(engineSession) as? GeckoSession
+                }
+            } catch (t: Throwable) {
+                android.util.Log.w(TAG, "Could not read GeckoEngineSession.geckoSession: ${t.message}")
+                null
+            }
+        }
+
         @JvmField
         var globalBrowserController: BrowserController? = null
 
@@ -93,17 +126,13 @@ class PetalGeckoView @JvmOverloads constructor(
     // session and switching to private mode later is too late and can leak normal-profile
     // state into an Incognito tab, especially during cold startup.
     // If an engineSession (GeckoEngineSession) is provided, adopt its underlying GeckoSession.
-    var session: GeckoSession = adoptedSession ?: run {
-        if (engineSession is mozilla.components.browser.engine.gecko.GeckoEngineSession) {
-            engineSession.geckoSession
-        } else {
-            GeckoSession(
-                GeckoSessionSettings.Builder()
-                    .usePrivateMode(initialIncognito)
-                    .build()
-            )
-        }
-    }
+    var session: GeckoSession = adoptedSession
+        ?: extractGeckoSession(engineSession)
+        ?: GeckoSession(
+            GeckoSessionSettings.Builder()
+                .usePrivateMode(initialIncognito)
+                .build()
+        )
 
     private val sp: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private var isIncognito: Boolean = initialIncognito
@@ -1348,7 +1377,7 @@ class PetalGeckoView @JvmOverloads constructor(
     /**
      * Updates Enhanced Tracking Protection policy level dynamically.
      */
-    fun setTrackingProtectionLevel(level: org.mozilla.geckoview.ContentBlocking.EtpLevel) {
+    fun setTrackingProtectionLevel(level: Int) { // one of ContentBlocking.EtpLevel.NONE / DEFAULT / STRICT
         try {
             val runtime = com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(context)
             runtime.settings.contentBlocking.enhancedTrackingProtectionLevel = level
@@ -1358,12 +1387,31 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     /**
-     * Exports the current page directly to a PDF file via GeckoSession.
+     * Exports the current page to a PDF via GeckoSession.saveAsPdf(), which yields the PDF bytes
+     * as an InputStream. The bytes are copied into [outputStream], and the streams are closed.
      */
     fun printToPdf(outputStream: java.io.OutputStream, callback: ((Boolean) -> Unit)? = null) {
         try {
-            session.printToPdf(outputStream).accept(
-                { callback?.invoke(true) },
+            val result = session.saveAsPdf()
+            if (result == null) {
+                callback?.invoke(false)
+                return
+            }
+            result.accept(
+                { pdfStream ->
+                    val ok = try {
+                        if (pdfStream == null) {
+                            false
+                        } else {
+                            pdfStream.use { input -> outputStream.use { out -> input.copyTo(out) } }
+                            true
+                        }
+                    } catch (t: Throwable) {
+                        android.util.Log.e(TAG, "Failed writing PDF: ${t.message}")
+                        false
+                    }
+                    callback?.invoke(ok)
+                },
                 { callback?.invoke(false) }
             )
         } catch (t: Throwable) {
@@ -1373,18 +1421,12 @@ class PetalGeckoView @JvmOverloads constructor(
     }
 
     /**
-     * Saves the current page as a single-file Web Archive.
+     * Web Archive export is not available in GeckoView (GeckoSession has no such API; saveWebArchive
+     * exists only on Android's system WebView). Always reports failure so callers can fall back.
      */
     fun saveAsWebArchive(outputStream: java.io.OutputStream, callback: ((Boolean) -> Unit)? = null) {
-        try {
-            session.saveAsWebArchive(outputStream).accept(
-                { callback?.invoke(true) },
-                { callback?.invoke(false) }
-            )
-        } catch (t: Throwable) {
-            android.util.Log.e(TAG, "Failed to save web archive: ${t.message}")
-            callback?.invoke(false)
-        }
+        android.util.Log.w(TAG, "saveAsWebArchive is not supported by GeckoView")
+        callback?.invoke(false)
     }
 
     fun clearHistory() {
