@@ -250,7 +250,6 @@ class PetalGeckoView @JvmOverloads constructor(
                     }
                 }
 
-                recordHistoryVisit(currentUrl, currentTitle)
                 pwaManager?.detectPwaManifest()
             }
 
@@ -346,7 +345,6 @@ class PetalGeckoView @JvmOverloads constructor(
                         act.updatePersistentBottomNav()
                     }
                 }
-                recordHistoryVisit(url, currentTitle)
             }
 
             override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<AllowOrDeny>? {
@@ -429,6 +427,20 @@ class PetalGeckoView @JvmOverloads constructor(
             }
         }
 
+        // Let Gecko own visit detection. This covers redirects, reloads and SPA
+        // navigations consistently instead of inferring visits from lifecycle callbacks.
+        session.historyDelegate = object : GeckoSession.HistoryDelegate {
+            override fun onVisited(
+                session: GeckoSession,
+                url: String,
+                lastVisitedURL: String?,
+                flags: Int
+            ): GeckoResult<Boolean> {
+                recordHistoryVisit(url, currentTitle)
+                return GeckoResult.fromValue(true)
+            }
+        }
+
         // Content Delegate
         session.contentDelegate = object : GeckoSession.ContentDelegate {
             override fun onTitleChange(session: GeckoSession, title: String?) {
@@ -445,7 +457,6 @@ class PetalGeckoView @JvmOverloads constructor(
                         }
                     }
                     if (it.isNotBlank() && it != "Petal Start" && it != "Petal Home" && currentUrl.isNotBlank()) {
-                        recordHistoryVisit(currentUrl, it)
                     }
                 }
             }
