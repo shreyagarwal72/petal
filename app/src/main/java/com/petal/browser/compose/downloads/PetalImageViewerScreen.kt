@@ -345,7 +345,7 @@ fun PetalImageViewerScreen(
                         ZoomableImagePage(
                             entry       = entry,
                             rotationDeg = rotDeg,
-                            onSingleTap = ::toggleControls,
+                            onSingleTap = toggleControls,
                         )
                     }
 
