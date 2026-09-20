@@ -1663,7 +1663,11 @@ class PetalGeckoView @JvmOverloads constructor(
         }
 
         try {
-            if (!isAttachedToWindow || geckoView.parent == null || !geckoView.isAttachedToWindow) {
+            // Tab surfaces stay attached while hidden (View.GONE) after a tab switch, so
+            // "attached" no longer implies "on screen". Capturing a hidden GeckoView
+            // yields a blank frame that would overwrite the good cached thumbnail.
+            if (!isAttachedToWindow || geckoView.parent == null || !geckoView.isAttachedToWindow ||
+                !isShown || !geckoView.isShown) {
                 cachingConsumer(null)
                 return
             }
