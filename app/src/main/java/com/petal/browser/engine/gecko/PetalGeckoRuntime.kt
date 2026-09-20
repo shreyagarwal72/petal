@@ -84,11 +84,14 @@ object PetalGeckoRuntime {
             .contentBlocking(
                 ContentBlocking.Settings.Builder()
                     .antiTracking(ContentBlocking.AntiTracking.DEFAULT)
-                    .cookieBehavior(ContentBlocking.CookieBehavior.REJECT_TRACKERS_AND_PARTITION_FOREIGN)
+                    // Block tracking cookies and isolate the rest (dynamic first-party isolation).
+                    // REJECT_TRACKERS_AND_PARTITION_FOREIGN no longer exists; this is its replacement.
+                    .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS)
                     .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
                     .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
-                    .cookieBanners(ContentBlocking.CookieBannersMode.REJECT)
                     .build()
+                    // The Builder has no cookie-banner method; it is set on the built Settings.
+                    .setCookieBannerMode(ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_REJECT)
             )
             .javaScriptEnabled(sp.getBoolean("profileStandard_javascript", true))
             .consoleOutput(false)
