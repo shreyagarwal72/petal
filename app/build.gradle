@@ -208,6 +208,13 @@ dependencies {
     implementation 'org.mozilla.components:support-base:155.0.1'
     implementation 'org.mozilla.components:support-utils:155.0.1'
 
+    // Android Components Features (155.0.1)
+    implementation 'org.mozilla.components:feature-readerview:155.0.1'
+    implementation 'org.mozilla.components:feature-findinpage:155.0.1'
+    implementation 'org.mozilla.components:feature-sitepermissions:155.0.1'
+    implementation 'org.mozilla.components:feature-prompts:155.0.1'
+    implementation 'org.mozilla.components:feature-pwa:155.0.1'
+
     // Dagger Hilt Dependency Injection
     implementation 'com.google.dagger:hilt-android:2.51.1'
     kapt 'com.google.dagger:hilt-compiler:2.51.1'

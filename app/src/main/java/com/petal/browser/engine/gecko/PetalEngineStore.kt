@@ -209,4 +209,29 @@ object PetalEngineStore {
             mozilla.components.browser.state.action.ContentAction.UpdateLoadingStateAction(tabId, loading)
         )
     }
+
+    /**
+     * Toggles Reader Mode for the tab in [BrowserStore].
+     */
+    @JvmStatic
+    fun toggleReaderMode(context: Context, tabId: String, active: Boolean) {
+        val st = getStore(context)
+        st.dispatch(
+            mozilla.components.browser.state.action.ReaderAction.UpdateReaderActiveAction(tabId, active)
+        )
+    }
+
+    /**
+     * Sets Reader Mode availability for the tab in [BrowserStore].
+     */
+    @JvmStatic
+    fun setReaderModeAvailable(context: Context, tabId: String, available: Boolean) {
+        val st = getStore(context)
+        st.dispatch(
+            mozilla.components.browser.state.action.ReaderAction.UpdateReaderRecordAction(
+                tabId,
+                mozilla.components.concept.engine.content.blocking.TrackingProtectionPolicy.TrackingCategory.NONE.let { null }
+            )
+        )
+    }
 }
