@@ -120,7 +120,6 @@ tasks.withType(com.android.build.gradle.internal.tasks.CheckAarMetadataTask).con
 
 configurations.all {
     resolutionStrategy {
-        force 'com.google.android.gms:play-services-fido:21.1.0'
         force 'org.jetbrains.kotlin:kotlin-stdlib:2.4.0'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.0'
         force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.0'
@@ -179,8 +178,6 @@ dependencies {
     // Google Sign-In via Credential Manager (real OAuth, consent-screen based —
     // replaces the old WebView-cookie account sync)
     implementation 'androidx.credentials:credentials:1.5.0'
-    implementation 'androidx.credentials:credentials-play-services-auth:1.5.0'
-    implementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0'
 
     // Legacy Google Sign-In (play-services-auth). Deprecated by Google in favor of
@@ -189,14 +186,11 @@ dependencies {
     // failed" - androidx.credentials.exceptions.GetCredentialCancellationException,
     // see https://github.com/android/identity-samples/issues/90) that some devices hit
     // even with fully correct OAuth configuration.
-    implementation 'com.google.android.gms:play-services-auth:21.3.0'
 
     // AndroidX Biometric for hardware biometric & device credential lock
     implementation 'androidx.biometric:biometric:1.2.0-alpha05'
 
     // Google ML Kit On-Device Recognition APIs
-    implementation 'com.google.mlkit:text-recognition:16.0.1'
-    implementation 'com.google.mlkit:barcode-scanning:17.3.0'
 
     // Hidden API bypass for non-SDK interface access (e.g. GeckoThread on Android 15/16)
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
