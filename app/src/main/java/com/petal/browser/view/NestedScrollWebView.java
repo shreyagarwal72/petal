@@ -361,6 +361,10 @@ public class NestedScrollWebView extends WebView implements NestedScrollingChild
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            // Must run before retainParentTouchStreamOwnership/super.dispatchTouchEvent so any
+            // gesture-exclusion rects the page content set are cleared before the OS decides
+            // whether this touch belongs to the app or to a predictive back/forward edge swipe.
+            onGestureExclusionRefreshNeeded();
             retainParentTouchStreamOwnership(event);
         }
 
