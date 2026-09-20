@@ -770,23 +770,23 @@ fun PetalOmniboxPage(
                             }
                         }
 
-                        // Search Engine Quick-Switcher Chips with Brand Tint Accents (Google, DuckDuckGo, Brave, Wikipedia, GitHub, YouTube, Reddit)
+                        // Search-engine badges use only the active Material 3 theme.
+                        // Brand colors made the chips visually fight the browser palette.
                         data class EngineChipData(
                             val name: String,
                             val icon: androidx.compose.ui.graphics.vector.ImageVector,
-                            val baseUrl: String,
-                            val accentColor: Color
+                            val baseUrl: String
                         )
 
                         val engineChips = remember {
                             listOf(
-                                EngineChipData("Google", Icons.Rounded.Search, "https://www.google.com/search?q=", Color(0xFF4285F4)),
-                                EngineChipData("DuckDuckGo", Icons.Rounded.Shield, "https://duckduckgo.com/?q=", Color(0xFFDE5833)),
-                                EngineChipData("Brave", Icons.Rounded.Security, "https://search.brave.com/search?q=", Color(0xFFFF5722)),
-                                EngineChipData("Wikipedia", Icons.Rounded.MenuBook, "https://en.wikipedia.org/wiki/Special:Search?search=", Color(0xFF607D8B)),
-                                EngineChipData("GitHub", Icons.Rounded.Code, "https://github.com/search?q=", Color(0xFF8E24AA)),
-                                EngineChipData("YouTube", Icons.Rounded.PlayCircle, "https://www.youtube.com/results?search_query=", Color(0xFFFF0000)),
-                                EngineChipData("Reddit", Icons.Rounded.Forum, "https://www.reddit.com/search/?q=", Color(0xFFFF4500))
+                                EngineChipData("Google", Icons.Rounded.Search, "https://www.google.com/search?q="),
+                                EngineChipData("DuckDuckGo", Icons.Rounded.Shield, "https://duckduckgo.com/?q="),
+                                EngineChipData("Brave", Icons.Rounded.Security, "https://search.brave.com/search?q="),
+                                EngineChipData("Wikipedia", Icons.Rounded.MenuBook, "https://en.wikipedia.org/wiki/Special:Search?search="),
+                                EngineChipData("GitHub", Icons.Rounded.Code, "https://github.com/search?q="),
+                                EngineChipData("YouTube", Icons.Rounded.PlayCircle, "https://www.youtube.com/results?search_query="),
+                                EngineChipData("Reddit", Icons.Rounded.Forum, "https://www.reddit.com/search/?q=")
                             )
                         }
 
@@ -821,8 +821,8 @@ fun PetalOmniboxPage(
                                         Icon(
                                             imageVector = chip.icon,
                                             contentDescription = chip.name,
-                                            modifier = Modifier.size(16.dp),
-                                            tint = chip.accentColor
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
                                         )
                                     },
                                     label = {
@@ -831,14 +831,15 @@ fun PetalOmniboxPage(
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
                                         )
                                     },
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = RoundedCornerShape(18.dp),
                                     colors = AssistChipDefaults.assistChipColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                        labelColor = MaterialTheme.colorScheme.onSurface
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        leadingIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
                                     ),
                                     border = BorderStroke(
-                                        0.5.dp,
-                                        chip.accentColor.copy(alpha = 0.25f)
+                                        1.dp,
+                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
                                     )
                                 )
                             }
@@ -1031,10 +1032,14 @@ fun PetalOmniboxPage(
 
                                                     Spacer(Modifier.width(14.dp))
 
-                                                    StartEllipsisText(
+                                                    // Truncate at the end so the beginning of every
+                                                    // history/search suggestion remains intact.
+                                                    Text(
                                                         text = item.query,
                                                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                                         color = MaterialTheme.colorScheme.onSurface,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
                                                         modifier = Modifier.weight(1f)
                                                     )
 
@@ -1161,71 +1166,6 @@ fun PetalOmniboxPage(
                     Text("Cancel")
                 }
             }
-        )
-    }
-}
-
-/**
- * Text component that truncates from the START with an ellipsis ("...")
- * when the query string is longer than can fit in a single line, ensuring
- * that the trailing words the user is typing/seeking remain completely visible.
- */
-@Composable
-private fun StartEllipsisText(
-    text: String,
-    style: androidx.compose.ui.text.TextStyle,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    BoxWithConstraints(modifier = modifier) {
-        val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
-        val density = androidx.compose.ui.platform.LocalDensity.current
-        val availableWidthPx = with(density) { maxWidth.toPx() }
-
-        val displayText = remember(text, availableWidthPx, style) {
-            if (availableWidthPx <= 0f || text.length <= 15) {
-                text
-            } else {
-                val fullMeasure = textMeasurer.measure(
-                    text = text,
-                    style = style,
-                    maxLines = 1
-                )
-                if (fullMeasure.size.width <= availableWidthPx) {
-                    text
-                } else {
-                    // Binary search or iterative trim from start with leading ellipsis
-                    val prefix = "…"
-                    var low = 0
-                    var high = text.length - 1
-                    var bestResult = text
-
-                    while (low <= high) {
-                        val mid = (low + high) / 2
-                        val candidate = prefix + text.substring(mid)
-                        val candidateMeasure = textMeasurer.measure(
-                            text = candidate,
-                            style = style,
-                            maxLines = 1
-                        )
-                        if (candidateMeasure.size.width <= availableWidthPx) {
-                            bestResult = candidate
-                            high = mid - 1 // Try to include more text (smaller start index)
-                        } else {
-                            low = mid + 1 // Need to truncate more from start
-                        }
-                    }
-                    bestResult
-                }
-            }
-        }
-
-        Text(
-            text = displayText,
-            style = style,
-            color = color,
-            maxLines = 1,
-            softWrap = false
         )
     }
 }
