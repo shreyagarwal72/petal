@@ -262,18 +262,18 @@ fun PetalImageViewerScreen(
 
     // Controls visibility with auto-hide
     var controlsVisible by remember { mutableStateOf(true) }
-    val coroutineScope  = rememberCoroutineScope()
-    var hideJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    val hideJob = remember { androidx.compose.runtime.mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
-    fun scheduleHide() {
-        hideJob?.cancel()
-        hideJob = coroutineScope.launch {
+    val scheduleHide: () -> Unit = {
+        hideJob.value?.cancel()
+        hideJob.value = coroutineScope.launch {
             delay(3500)
             if (isActive) controlsVisible = false
         }
     }
 
-    fun toggleControls() {
+    val toggleControls: () -> Unit = {
         controlsVisible = !controlsVisible
         if (controlsVisible) scheduleHide()
     }
@@ -282,9 +282,11 @@ fun PetalImageViewerScreen(
 
     // Per-page rotation (keyed by sourceUrl)
     val rotationMap = remember { mutableStateMapOf<String, Float>() }
-    fun rotateCurrentEntry() {
-        val key = currentEntry?.sourceUrl ?: return
-        rotationMap[key] = ((rotationMap[key] ?: 0f) + 90f) % 360f
+    val rotateCurrentEntry: () -> Unit = {
+        val key = currentEntry?.sourceUrl
+        if (key != null) {
+            rotationMap[key] = ((rotationMap[key] ?: 0f) + 90f) % 360f
+        }
     }
 
     // Info sheet
@@ -294,16 +296,18 @@ fun PetalImageViewerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    fun performDeleteCurrent() {
-        val item = currentEntry?.downloadItem ?: return
-        coroutineScope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message     = "Deleted ${item.fileName}",
-                actionLabel = "Undo",
-                duration    = SnackbarDuration.Short,
-            )
-            if (result != SnackbarResult.ActionPerformed) {
-                PetalFetchDownloadBridge.deleteDownload(context, item)
+    val performDeleteCurrent: () -> Unit = {
+        val item = currentEntry?.downloadItem
+        if (item != null) {
+            coroutineScope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message     = "Deleted ${item.fileName}",
+                    actionLabel = "Undo",
+                    duration    = SnackbarDuration.Short,
+                )
+                if (result != SnackbarResult.ActionPerformed) {
+                    PetalFetchDownloadBridge.deleteDownload(context, item)
+                }
             }
         }
     }
@@ -403,8 +407,8 @@ fun PetalImageViewerScreen(
                     ) {
                         ImageViewerBottomBar(
                             entry        = currentEntry,
-                            onRotate     = ::rotateCurrentEntry,
-                            onDelete     = ::performDeleteCurrent,
+                            onRotate     = { rotateCurrentEntry() },
+                            onDelete     = { performDeleteCurrent() },
                             onWallpaper  = {
                                 val entry = currentEntry ?: return@ImageViewerBottomBar
                                 if (entry.downloadItem != null) {
