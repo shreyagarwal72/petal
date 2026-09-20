@@ -85,6 +85,16 @@ class PetalApplication : Application() {
             com.petal.browser.logger.PetalAppLogger.init(this)
             if (com.petal.browser.engine.gecko.PetalGeckoRuntime.isGeckoAvailable(this)) {
                 com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(this)
+                // Initialize Android Components session persistence alongside the
+                // shared Gecko runtime. PetalEngineStore owns the BrowserStore and
+                // AutoSave lifecycle; touching it here makes state persistence
+                // available before the first tab is materialized, while retaining
+                // the existing Petal tab/session UI as the source of truth.
+                try {
+                    com.petal.browser.engine.gecko.PetalEngineStore.getSessionStorage(this)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "BrowserStore session persistence unavailable; continuing with Petal tabs", t)
+                }
                 com.petal.browser.media.sniffer.PetalMediaGrabberInstaller.install(this)
             }
             com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(this)
