@@ -95,7 +95,7 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/AppTheme"
         android:localeConfig="@xml/locales_config"
-        android:enableOnBackInvokedCallback="false"
+        android:enableOnBackInvokedCallback="true"
         tools:ignore="GoogleAppIndexingWarning">
 
         <!-- Central Opt-Out for WebView Metrics -->
@@ -125,6 +125,7 @@
         <service
             android:name="com.petal.browser.compose.downloads.PetalDownloadService"
             android:foregroundServiceType="dataSync"
+            android:stopWithTask="false"
             android:exported="false" />
 
         <service
