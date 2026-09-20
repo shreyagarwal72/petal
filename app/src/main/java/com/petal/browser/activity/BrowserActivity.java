@@ -6303,18 +6303,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      * again — GeckoView already opened the session per its onNewSession contract.
      * Calling open() a second time would cause an assertion crash.
      */
-    public synchronized void adoptPopupGeckoSession(org.mozilla.geckoview.GeckoSession popupSession, boolean isIncognito) {
+    public synchronized void adoptPopupGeckoSession(org.mozilla.geckoview.GeckoSession popupSession,
+                                                    String targetUrl,
+                                                    boolean isIncognito) {
         try {
+            String popupUrl = targetUrl == null || targetUrl.trim().isEmpty()
+                    ? "about:blank" : targetUrl;
             com.petal.browser.view.PetalGeckoView geckoView =
                 com.petal.browser.controller.BrowserWebViewController.createAndConfigureGeckoView(
-                    this, getString(R.string.app_name), null, true, isIncognito
+                    this, getString(R.string.app_name), popupUrl, true, isIncognito
                 );
             // Replace the auto-created session with the one GeckoView opened for us.
             // adoptSession() swaps the underlying session without calling open() again.
             geckoView.adoptPopupSession(popupSession);
 
             geckoView.setBrowserController(this);
-            geckoView.setAlbumTitle(getString(R.string.app_name), "about:blank");
+            // Gecko has already started loading the requested popup URL. Keep that URL in
+            // the tab metadata without calling loadUrl again, which would race the adopted
+            // session and could replace the destination with the home page.
+            geckoView.setAlbumTitle(getString(R.string.app_name), popupUrl);
 
             if (currentAlbumController != null) {
                 geckoView.setPredecessor(currentAlbumController);

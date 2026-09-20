@@ -417,7 +417,7 @@ class PetalGeckoView @JvmOverloads constructor(
                                 }
                                 return
                             }
-                            act.adoptPopupGeckoSession(popupSession, isIncognito)
+                            act.adoptPopupGeckoSession(popupSession, uri, isIncognito)
                         } catch (t: Throwable) {
                             android.util.Log.e(TAG, "Failed to create login popup tab", t)
                             if (popupSession.isOpen) popupSession.close()
