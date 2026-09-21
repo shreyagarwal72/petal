@@ -70,7 +70,7 @@ import java.io.FileOutputStream
 import androidx.core.content.FileProvider
 import android.widget.Toast
 
-object PetalFileViewerBridge {
+object PetalStandaloneFileViewerBridge {
 
     @JvmStatic
     @JvmOverloads
@@ -116,7 +116,7 @@ object PetalFileViewerBridge {
     }
 }
 
-enum class FileCategory {
+enum class PetalFileViewerCategory {
     PDF,
     TEXT_CODE,
     ARCHIVE,
@@ -154,18 +154,18 @@ fun PetalFileViewerScreen(
 
     val category = remember(extension, isTextOrCode) {
         when {
-            extension == "pdf" -> FileCategory.PDF
-            extension in listOf("zip", "rar", "7z", "tar", "gz", "apk", "jar", "xpi") -> FileCategory.ARCHIVE
-            extension == "docx" || extension == "doc" -> FileCategory.DOCX
-            extension == "pptx" || extension == "ppt" -> FileCategory.PPTX
-            extension == "xlsx" || extension == "xls" -> FileCategory.XLSX
-            isTextOrCode -> FileCategory.TEXT_CODE
-            else -> FileCategory.GENERIC_BINARY
+            extension == "pdf" -> PetalFileViewerCategory.PDF
+            extension in listOf("zip", "rar", "7z", "tar", "gz", "apk", "jar", "xpi") -> PetalFileViewerCategory.ARCHIVE
+            extension == "docx" || extension == "doc" -> PetalFileViewerCategory.DOCX
+            extension == "pptx" || extension == "ppt" -> PetalFileViewerCategory.PPTX
+            extension == "xlsx" || extension == "xls" -> PetalFileViewerCategory.XLSX
+            isTextOrCode -> PetalFileViewerCategory.TEXT_CODE
+            else -> PetalFileViewerCategory.GENERIC_BINARY
         }
     }
 
     // Combine existing PDF viewer directly if it's a PDF
-    if (category == FileCategory.PDF) {
+    if (category == PetalFileViewerCategory.PDF) {
         PetalPdfViewerScreen(
             pdfUri = fileUri,
             displayName = displayName,
@@ -208,15 +208,15 @@ fun PetalFileViewerScreen(
                         .navigationBarsPadding()
                 ) {
                     when (category) {
-                        FileCategory.ARCHIVE -> ArchiveViewerContent(
+                        PetalFileViewerCategory.ARCHIVE -> ArchiveViewerContent(
                             fileUri = fileUri,
                             extension = extension,
                             displayName = displayName
                         )
-                        FileCategory.DOCX -> DocxViewerContent(fileUri = fileUri)
-                        FileCategory.PPTX -> PptxViewerContent(fileUri = fileUri)
-                        FileCategory.XLSX -> XlsxViewerContent(fileUri = fileUri)
-                        FileCategory.TEXT_CODE -> TextCodeViewerContent(
+                        PetalFileViewerCategory.DOCX -> DocxViewerContent(fileUri = fileUri)
+                        PetalFileViewerCategory.PPTX -> PptxViewerContent(fileUri = fileUri)
+                        PetalFileViewerCategory.XLSX -> XlsxViewerContent(fileUri = fileUri)
+                        PetalFileViewerCategory.TEXT_CODE -> TextCodeViewerContent(
                             fileUri = fileUri,
                             isEditing = isEditing,
                             isWordWrap = isWordWrap,
@@ -234,7 +234,7 @@ fun PetalFileViewerScreen(
 private fun UniversalFileViewerTopBar(
     title: String,
     extension: String,
-    category: FileCategory,
+    category: PetalFileViewerCategory,
     isEditing: Boolean,
     isWordWrap: Boolean,
     onToggleEdit: () -> Unit,
@@ -286,7 +286,7 @@ private fun UniversalFileViewerTopBar(
                 )
             }
 
-            if (category == FileCategory.TEXT_CODE) {
+            if (category == PetalFileViewerCategory.TEXT_CODE) {
                 if (isEditing) {
                     IconButton(onClick = onSave) {
                         Icon(
@@ -1154,7 +1154,7 @@ private fun ArchiveEntryRow(
                 )
             }
             Icon(
-                imageVector = if (isFolder) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.Rounded.OpenInNew,
+                imageVector = if (isFolder) Icons.Rounded.KeyboardArrowRight else Icons.Rounded.OpenInNew,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
