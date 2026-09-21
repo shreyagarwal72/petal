@@ -234,4 +234,22 @@ object PetalEngineStore {
             mozilla.components.browser.state.action.ContentAction.ClearFindResultsAction(tabId)
         )
     }
+
+    @JvmStatic
+    fun activateMediaSession(
+        context: Context,
+        tabId: String,
+        controller: mozilla.components.concept.engine.mediasession.MediaSession.Controller
+    ) {
+        getStore(context).dispatch(
+            mozilla.components.browser.state.action.MediaSessionAction.ActivatedMediaSessionAction(tabId, controller)
+        )
+    }
+
+    @JvmStatic
+    fun deactivateMediaSession(context: Context, tabId: String) {
+        getStore(context).dispatch(
+            mozilla.components.browser.state.action.MediaSessionAction.DeactivatedMediaSessionAction(tabId)
+        )
+    }
 }

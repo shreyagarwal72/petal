@@ -1033,12 +1033,16 @@ class PetalGeckoView @JvmOverloads constructor(
         session.mediaSessionDelegate = object : MediaSession.Delegate {
             override fun onActivated(session: GeckoSession, mediaSession: MediaSession) {
                 mediaBridge?.setActiveGeckoMediaSession(mediaSession)
+                com.petal.browser.engine.gecko.PetalEngineStore.activateMediaSession(
+                    context, tabId, mediaSession.controller
+                )
             }
 
             override fun onDeactivated(session: GeckoSession, mediaSession: MediaSession) {
                 if (mediaBridge?.activeGeckoMediaSession == mediaSession) {
                     mediaBridge?.setActiveGeckoMediaSession(null)
                 }
+                com.petal.browser.engine.gecko.PetalEngineStore.deactivateMediaSession(context, tabId)
             }
 
             override fun onPlay(session: GeckoSession, mediaSession: MediaSession) {
