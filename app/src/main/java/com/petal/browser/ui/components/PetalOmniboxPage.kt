@@ -496,7 +496,7 @@ fun PetalOmniboxPage(
                                             }) {
                                                 Icon(
                                                     imageVector = Icons.Rounded.CenterFocusWeak,
-                                                    contentDescription = "Google Lens Search",
+                                                    contentDescription = "Petal QR Scanner",
                                                     tint = MaterialTheme.colorScheme.primary
                                                 )
                                             }
@@ -1169,4 +1169,3 @@ fun PetalOmniboxPage(
         )
     }
 }
-

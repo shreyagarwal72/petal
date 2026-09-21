@@ -271,7 +271,7 @@ fun PetalLinkContextMenuSheet(
                                 onDismiss()
                                 handler.onDownloadImage()
                             },
-                            MenuItemSpec("Search image with Google Lens", Icons.Rounded.TravelExplore) {
+                            MenuItemSpec("Open with Petal QR Scanner", Icons.Rounded.QrCodeScanner) {
                                 onDismiss()
                                 handler.onSearchWithGoogleLens()
                             },

@@ -189,7 +189,7 @@ fun PetalLensBottomSheet(
                         PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
                         showSnapProviderChooser = false
                         beginSnap()
-                    }) { Text("Google Lens") }
+                    }) { Text("Petal QR Scanner") }
                     TextButton(onClick = {
                         PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
                         showSnapProviderChooser = false
@@ -263,7 +263,7 @@ fun PetalLensBottomSheet(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Rounded.CenterFocusWeak,
-                                contentDescription = "Google Lens",
+                                contentDescription = "Petal QR Scanner",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -271,7 +271,7 @@ fun PetalLensBottomSheet(
                     }
                     Column {
                         Text(
-                            text = "Google Lens Search",
+                            text = "Petal QR Scanner",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
