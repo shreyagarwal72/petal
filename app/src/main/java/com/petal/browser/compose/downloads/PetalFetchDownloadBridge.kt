@@ -49,6 +49,9 @@ object PetalFetchDownloadBridge {
     private val createdAtMap = LinkedHashMap<Int, Long>()
     private val speedMap = LinkedHashMap<Int, Long>()
     private val etaMap = LinkedHashMap<Int, Long>()
+    private val mozillaDownloadsMap = LinkedHashMap<String, DownloadItem>()
+    @Volatile
+    private var applicationContext: Context? = null
 
     private val _downloadItems = MutableStateFlow<List<DownloadItem>>(emptyList())
     val downloadItems: StateFlow<List<DownloadItem>> = _downloadItems.asStateFlow()
@@ -62,6 +65,7 @@ object PetalFetchDownloadBridge {
         synchronized(this) {
             if (initialized) return
             val appContext = context.applicationContext
+            applicationContext = appContext
             val fetch = fetchInstance(appContext)
 
             fetch.addListener(object : AbstractFetchListener() {
@@ -419,8 +423,10 @@ object PetalFetchDownloadBridge {
     }
 
     private fun publish() {
-        val items = synchronized(downloadsMap) { downloadsMap.values.toList() }
+        refreshMozillaDownloads()
+        val fetchItems = synchronized(downloadsMap) { downloadsMap.values.toList() }
             .map { toDownloadItem(it) }
+        val items = fetchItems + synchronized(mozillaDownloadsMap) { mozillaDownloadsMap.values.toList() }
             .sortedWith(
                 compareByDescending<DownloadItem> { item ->
                     item.status == DownloadManager.STATUS_RUNNING ||
@@ -429,6 +435,42 @@ object PetalFetchDownloadBridge {
                 }.thenByDescending { it.timestampMs }
             )
         _downloadItems.value = items
+    }
+
+    /** Mirrors Android Components' global BrowserStore download map into Petal's existing UI model. */
+    private fun refreshMozillaDownloads() {
+        val context = applicationContext ?: return
+        try {
+            val downloads = com.petal.browser.engine.gecko.PetalEngineStore
+                .getStore(context).state.downloads.values
+            synchronized(mozillaDownloadsMap) {
+                mozillaDownloadsMap.clear()
+                downloads.forEach { download ->
+                    val id = download.id.hashCode().toLong()
+                    val status = when (download.status) {
+                        mozilla.components.browser.state.state.content.DownloadState.Status.DOWNLOADING -> DownloadManager.STATUS_RUNNING
+                        mozilla.components.browser.state.state.content.DownloadState.Status.PAUSED -> DownloadManager.STATUS_PAUSED
+                        mozilla.components.browser.state.state.content.DownloadState.Status.INITIATED -> DownloadManager.STATUS_PENDING
+                        mozilla.components.browser.state.state.content.DownloadState.Status.COMPLETED -> DownloadManager.STATUS_SUCCESSFUL
+                        else -> DownloadManager.STATUS_FAILED
+                    }
+                    val total = download.contentLength ?: 0L
+                    mozillaDownloadsMap[download.id] = DownloadItem(
+                        id = id,
+                        fileName = download.fileName ?: "download",
+                        fileUrl = download.url,
+                        progress = download.progress,
+                        status = status,
+                        bytesDownloaded = download.currentBytesCopied,
+                        totalSize = total,
+                        localUri = download.filePath,
+                        timestampMs = download.createdTime
+                    )
+                }
+            }
+        } catch (_: Throwable) {
+            // BrowserStore may not be available during helper-process startup.
+        }
     }
 
     private fun toDownloadItem(d: Download): DownloadItem {
