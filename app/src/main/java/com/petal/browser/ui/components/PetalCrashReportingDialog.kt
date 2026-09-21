@@ -66,7 +66,7 @@ object PetalCrashReportingBridge {
     @JvmStatic
     fun showCrashRecoveryPromptIfNeeded(activity: ComponentActivity) {
         val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-        val reportMode = sp.getString(PetalAppLogger.PREF_CRASH_REPORT_MODE, "auto") ?: "auto"
+        val reportMode = sp.getString(PetalAppLogger.PREF_CRASH_REPORT_MODE, "off") ?: "off"
         if (reportMode == "off" || !PetalAppLogger.hasPendingCrashReport()) {
             return
         }
@@ -112,7 +112,7 @@ fun PetalCrashRecoveryHost(
 ) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    val reportMode = remember { sp.getString(PetalAppLogger.PREF_CRASH_REPORT_MODE, "auto") ?: "auto" }
+    val reportMode = remember { sp.getString(PetalAppLogger.PREF_CRASH_REPORT_MODE, "off") ?: "off" }
 
     var showCrashDialog by remember {
         mutableStateOf(reportMode != "off" && PetalAppLogger.hasPendingCrashReport())

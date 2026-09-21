@@ -489,7 +489,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
      */
     private void playSplashExitWithRipple(androidx.core.splashscreen.SplashScreenViewProvider provider) {
         final View splashView = provider.getView();
-        final View iconView = provider.getIconView();
+        // Android 16 can hand back a splash provider whose icon view has already
+        // been detached during the exit callback. Treat it as unavailable and
+        // let the ripple fall back to the window centre instead of crashing.
+        final View iconView;
+        try {
+            iconView = provider.getIconView();
+        } catch (RuntimeException ignored) {
+            iconView = null;
+        }
         final boolean fireRipple = splashRipplePending && !isFinishing() && !isDestroyed();
         splashRipplePending = false;
 

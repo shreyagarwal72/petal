@@ -63,7 +63,7 @@ fun UpdaterSettingsScreenContent(
 
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var crashReportMode by remember {
-        mutableStateOf(sp.getString(PetalAppLogger.PREF_CRASH_REPORT_MODE, "auto") ?: "auto")
+        mutableStateOf(sp.getString(PetalAppLogger.PREF_CRASH_REPORT_MODE, "off") ?: "off")
     }
     var lastCheckTimestamp by remember {
         mutableLongStateOf(sp.getLong("sp_update_last_check_timestamp", 0L))

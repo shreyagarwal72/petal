@@ -840,7 +840,14 @@ class MediaInterceptor {
         }
 
         // 4. Rank deterministically.
-        return deduped.sortedWith(PLAYABLE_COMPARATOR)
+        // Build the comparator at the call site. This avoids a rare Kotlin/R8
+        // companion-initialization race that can pass a null comparator here.
+        return deduped.sortedWith(compareBy<DetectedMedia>(
+            { it.type == MediaType.AUDIO },
+            { it.protectionStatus == MediaProtectionStatus.LIKELY_PROTECTED },
+            { -qualityRank(it.quality) },
+            { isAuxiliaryUrl(it.url) }
+        ).thenBy { it.url })
     }
 
 

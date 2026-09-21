@@ -59,6 +59,10 @@ object PetalAppLogger {
     private const val CRASH_LOG_FILENAME = "last_crash.log"
     const val PREF_CRASH_REPORT_MODE = "sp_crash_report_mode" // "auto" or "off"
 
+    private fun diagnosticsEnabled(context: Context): Boolean =
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(PREF_CRASH_REPORT_MODE, "off") == "auto"
+
     private const val PREF_LAST_CLEAN_EXIT_TIME = "sp_last_clean_exit_timestamp"
     private const val PREF_LAST_HANDLED_EXIT_TIME = "sp_last_handled_exit_timestamp"
 
@@ -89,7 +93,7 @@ object PetalAppLogger {
         }
 
         // 2. On Android 11+ (API 30+), inspect Historical Process Exit Reasons for Native Crashes (e.g. SIGSEGV in libxul/Gecko) or ANRs
-        if (lastCrashReport.isNullOrBlank() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (diagnosticsEnabled(appContext) && lastCrashReport.isNullOrBlank() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
                 inspectHistoricalExitReasons(appContext)
             } catch (e: Throwable) {
@@ -239,6 +243,7 @@ object PetalAppLogger {
     }
 
     private fun handleCrash(context: Context, thread: Thread, throwable: Throwable) {
+        if (!diagnosticsEnabled(context)) return
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
         val sw = StringWriter()
         throwable.printStackTrace(PrintWriter(sw))
@@ -284,6 +289,7 @@ object PetalAppLogger {
      */
     @JvmStatic
     fun recordProcessCrash(context: Context, tag: String, reason: String, details: String = "") {
+        if (!diagnosticsEnabled(context)) return
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
         val report = buildString {
             append("=== PETAL BROWSER PROCESS CRASH / TERMINATION ===\n")
