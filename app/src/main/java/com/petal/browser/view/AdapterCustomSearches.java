@@ -74,7 +74,7 @@ public class AdapterCustomSearches extends RecyclerView.Adapter<RedirectsViewHol
         HelperUnit.setHighLightedText(context, target, current.getTarget(), HelperUnit.domain(current.getTarget()));
 
         remove.setOnClickListener(v -> {
-            Snackbar snackbar = Snackbar.make(holder.itemView, R.string.hint_database, Snackbar.LENGTH_SHORT);
+            Snackbar snackbar = HelperUnit.makePetalSnackbar(holder.itemView, R.string.hint_database, Snackbar.LENGTH_SHORT);
             HelperUnit.makeSnackbarRound(snackbar);
             snackbar.setAction(context.getString(R.string.app_ok), (v2 -> {
                 redirects.remove(position);

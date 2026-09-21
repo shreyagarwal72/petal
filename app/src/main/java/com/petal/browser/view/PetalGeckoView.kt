@@ -1,5 +1,6 @@
 package com.petal.browser.view
 
+import com.petal.browser.view.NinjaToast;
 import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
@@ -2054,11 +2055,11 @@ class PetalGeckoView @JvmOverloads constructor(
                 // Friendly torrent/magnet handler when no dedicated torrent client is installed
                 val clipboard = act.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
                 clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("Magnet Link", url))
-                android.widget.Toast.makeText(
+                NinjaToast.show(
                     act,
                     "Magnet link copied to clipboard (install a torrent client to open directly)",
                     android.widget.Toast.LENGTH_LONG
-                ).show()
+                )
                 return true
             }
         } catch (_: Exception) {}
@@ -2068,11 +2069,11 @@ class PetalGeckoView @JvmOverloads constructor(
         // try to render it as a webpage (it will just fail and can leave a broken tab).
         // Block the load and tell the user instead.
         try {
-            android.widget.Toast.makeText(
+            NinjaToast.show(
                 act,
                 "No app found to open this link",
                 android.widget.Toast.LENGTH_SHORT
-            ).show()
+            )
         } catch (_: Exception) {}
 
         return true

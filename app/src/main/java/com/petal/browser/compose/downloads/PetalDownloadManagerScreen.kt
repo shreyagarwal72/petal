@@ -8,6 +8,7 @@
 
 package com.petal.browser.compose.downloads
 
+import com.petal.browser.view.NinjaToast;
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
@@ -1184,7 +1185,7 @@ internal fun openDownloadedFile(context: Context, item: DownloadItem) {
 private fun deleteDownloadedFile(context: Context, item: DownloadItem) {
     try {
         PetalFetchDownloadBridge.deleteDownload(context, item)
-        android.widget.Toast.makeText(context, "Deleted ${item.fileName}", android.widget.Toast.LENGTH_SHORT).show()
+        NinjaToast.show(context, "Deleted ${item.fileName}", android.widget.Toast.LENGTH_SHORT)
     } catch (e: Exception) {
         e.printStackTrace()
     }

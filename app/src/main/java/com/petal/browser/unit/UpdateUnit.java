@@ -1,5 +1,6 @@
 package com.petal.browser.unit;
 
+import com.petal.browser.view.NinjaToast;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -299,7 +300,7 @@ public class UpdateUnit {
             btnSkipVersion.setOnClickListener(v -> {
                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(activity.getApplicationContext());
                 sp.edit().putString(PREF_KEY_SKIP_VERSION, latestVersion).apply();
-                Toast.makeText(activity, "Skipped version " + latestVersion, Toast.LENGTH_SHORT).show();
+                NinjaToast.show(activity, "Skipped version " + latestVersion, Toast.LENGTH_SHORT);
                 dialog.dismiss();
             });
         }
@@ -327,7 +328,7 @@ public class UpdateUnit {
     }
 
     private static void showUpToDateToast(Activity activity, String currentVersion) {
-        Toast.makeText(activity, "Petal is up to date (" + currentVersion + ")", Toast.LENGTH_SHORT).show();
+        NinjaToast.show(activity, "Petal is up to date (" + currentVersion + ")", Toast.LENGTH_SHORT);
     }
 
     private static String getAppVersion(Activity activity) {

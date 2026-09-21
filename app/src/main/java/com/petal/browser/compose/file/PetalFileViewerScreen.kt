@@ -1,7 +1,7 @@
 /*
- * PetalUniversalFileViewerScreen.kt
+ * PetalFileViewerScreen.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Built-in native Material 3 Expressive Universal File Viewer for Petal Browser.
+ * Built-in native Material 3 Expressive Petal File Viewer for Petal Browser.
  * Supports all document and data formats:
  *   • PDF documents (combines and renders via PetalPdfViewerScreen / native PdfRenderer)
  *   • Office documents: Word (.docx), PowerPoint (.pptx), Excel (.xlsx)
@@ -14,7 +14,6 @@
 
 package com.petal.browser.compose.file
 
-import com.petal.browser.view.NinjaToast;
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -106,7 +105,7 @@ object PetalFileViewerBridge {
                     colorStyle = colorStyle,
                     paletteId = paletteId,
                 ) {
-                    PetalUniversalFileViewerScreen(
+                    PetalFileViewerScreen(
                         fileUri = fileUri,
                         displayName = displayName ?: fileUri.lastPathSegment ?: "Document",
                         onBackPress = onBackPress,
@@ -129,7 +128,7 @@ enum class FileCategory {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PetalUniversalFileViewerScreen(
+fun PetalFileViewerScreen(
     fileUri: Uri,
     displayName: String,
     onBackPress: () -> Unit,
@@ -401,17 +400,17 @@ private fun TextCodeViewerContent(
                         withContext(Dispatchers.Main) {
                             PetalHapticEngine.getInstance(context).playClick(context)
                             lines = fullContent.split("\n")
-                            NinjaToast.show(context, "File saved successfully", Toast.LENGTH_SHORT)
+                            Toast.makeText(context, "File saved successfully", Toast.LENGTH_SHORT).show()
                             onEditFinish()
                         }
                     } else {
                         withContext(Dispatchers.Main) {
-                            NinjaToast.show(context, "Could not open file for writing", Toast.LENGTH_LONG)
+                            Toast.makeText(context, "Could not open file for writing", Toast.LENGTH_LONG).show()
                         }
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        NinjaToast.show(context, "Failed to save: ${e.message}", Toast.LENGTH_LONG)
+                        Toast.makeText(context, "Failed to save: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 } finally {
                     isSaving = false
@@ -862,6 +861,17 @@ private fun DocxViewerContent(fileUri: Uri) {
     }
 }
 
+private data class ArchiveEntry(
+    val path: String,
+    val isDirectory: Boolean,
+    val size: Long = 0L,
+)
+
+private data class ArchiveBrowserState(
+    val entries: List<ArchiveEntry>,
+    val rootName: String,
+)
+
 @Composable
 private fun ArchiveViewerContent(
     fileUri: Uri,
@@ -869,130 +879,202 @@ private fun ArchiveViewerContent(
     displayName: String
 ) {
     val context = LocalContext.current
-    var entries by remember { mutableStateOf<List<String>?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var isInstallingApk by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var archiveState by remember(fileUri) { mutableStateOf<ArchiveBrowserState?>(null) }
+    var currentPath by remember(fileUri) { mutableStateOf("") }
+    var isLoading by remember(fileUri) { mutableStateOf(true) }
+    var errorMessage by remember(fileUri) { mutableStateOf<String?>(null) }
+    var selectedEntry by remember(fileUri) { mutableStateOf<ArchiveEntry?>(null) }
+    var isOpening by remember(fileUri) { mutableStateOf(false) }
+    var isInstallingApk by remember(fileUri) { mutableStateOf(false) }
 
-    LaunchedEffect(fileUri) {
+    val isZipFamily = remember(extension) {
+        extension.lowercase(Locale.US) in setOf("zip", "apk", "jar", "xpi", "crx")
+    }
+
+    LaunchedEffect(fileUri, isZipFamily) {
+        isLoading = true
+        errorMessage = null
+        if (!isZipFamily) {
+            errorMessage = "This compressed format is not supported for folder browsing yet. ZIP-based archives are supported."
+            isLoading = false
+            return@LaunchedEffect
+        }
+
         withContext(Dispatchers.IO) {
             try {
                 val stream = context.contentResolver.openInputStream(fileUri)
-                if (stream != null) {
-                    val zip = ZipInputStream(stream)
-                    val list = mutableListOf<String>()
+                    ?: throw IllegalStateException("Cannot open archive stream.")
+                val entries = mutableListOf<ArchiveEntry>()
+                ZipInputStream(stream).use { zip ->
                     var entry = zip.nextEntry
-                    while (entry != null && list.size < 2000) {
-                        list.add(entry.name + if (entry.isDirectory) " [Folder]" else "")
+                    var count = 0
+                    while (entry != null && count < 10000) {
+                        val normalized = entry.name.replace('\\', '/').trimStart('/')
+                        if (normalized.isNotEmpty()) {
+                            entries += ArchiveEntry(
+                                path = normalized,
+                                isDirectory = entry.isDirectory || normalized.endsWith('/'),
+                                size = entry.size.takeIf { it >= 0 } ?: 0L,
+                            )
+                        }
+                        count++
+                        zip.closeEntry()
                         entry = zip.nextEntry
                     }
-                    zip.close()
-                    entries = list
-                } else {
-                    errorMessage = "Cannot open archive stream."
                 }
+                val result = ArchiveBrowserState(entries.distinctBy { it.path }, displayName)
+                withContext(Dispatchers.Main) { archiveState = result }
             } catch (e: Exception) {
-                errorMessage = e.localizedMessage ?: "Failed to read archive contents."
+                withContext(Dispatchers.Main) {
+                    errorMessage = e.localizedMessage ?: "Failed to read archive contents."
+                }
             } finally {
-                isLoading = false
+                withContext(Dispatchers.Main) { isLoading = false }
             }
         }
     }
 
-    val isApk = remember(extension) { extension.equals("apk", ignoreCase = true) }
+    val state = archiveState
+    val pathSegments = currentPath.split('/').filter { it.isNotBlank() }
+
+    fun navigateUp() {
+        currentPath = currentPath.substringBeforeLast('/', "")
+        selectedEntry = null
+    }
+
+    fun openEntry(entry: ArchiveEntry) {
+        if (entry.isDirectory) {
+            currentPath = entry.path.trimEnd('/')
+            selectedEntry = null
+            return
+        }
+        selectedEntry = entry
+    }
 
     when {
         isLoading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(12.dp))
+                    Text("Opening archive…", style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
         errorMessage != null -> {
             ErrorDisplayBox(error = errorMessage ?: "")
         }
-        entries != null -> {
-            val list = entries ?: emptyList()
-            Column(modifier = Modifier.fillMaxSize()) {
-                if (isApk) {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Row(
+        state != null -> {
+            if (selectedEntry != null) {
+                ArchiveEntryPreview(
+                    archiveUri = fileUri,
+                    entry = selectedEntry!!,
+                    onBack = { selectedEntry = null },
+                )
+            } else {
+                val visibleEntries = remember(state, currentPath) {
+                    buildArchiveChildren(state.entries, currentPath)
+                }
+                Column(Modifier.fillMaxSize()) {
+                    if (pathSegments.isNotEmpty()) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = RoundedCornerShape(20.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(horizontal = 16.dp, vertical = 10.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Android,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(36.dp)
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Android Package (APK)",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    text = "Install this application directly",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
-                            Button(
-                                onClick = {
-                                    PetalHapticEngine.getInstance(context).playClick(context)
-                                    installApkPackage(context, fileUri, displayName)
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 52.dp)
+                                    .padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Rounded.InstallMobile, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Install")
+                                IconButton(onClick = { navigateUp() }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Up")
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        text = pathSegments.last(),
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "${visibleEntries.size} items",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(18.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = CircleShape,
+                                    modifier = Modifier.size(48.dp)
+                                ) {
+                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Rounded.FolderZip,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.width(14.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        "Archive contents",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        "Browse folders and files separately",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    itemsIndexed(list) { _, itemText ->
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = if (itemText.endsWith(" [Folder]")) Icons.Rounded.Folder else Icons.Rounded.InsertDriveFile,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    text = itemText.removeSuffix(" [Folder]"),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (visibleEntries.isEmpty()) {
+                            item {
+                                Box(
+                                    Modifier.fillMaxWidth().padding(top = 60.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        "This folder is empty",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        } else {
+                            itemsIndexed(visibleEntries, key = { _, item -> item.path }) { _, entry ->
+                                ArchiveEntryRow(
+                                    entry = entry,
+                                    onClick = { openEntry(entry) },
                                 )
                             }
                         }
@@ -1001,6 +1083,216 @@ private fun ArchiveViewerContent(
             }
         }
     }
+}
+
+private fun buildArchiveChildren(entries: List<ArchiveEntry>, currentPath: String): List<ArchiveEntry> {
+    val prefix = currentPath.trim('/').let { if (it.isEmpty()) "" else "$it/" }
+    val children = linkedMapOf<String, ArchiveEntry>()
+
+    entries.forEach { entry ->
+        if (!entry.path.startsWith(prefix) || entry.path == currentPath.trim('/')) return@forEach
+        val remainder = entry.path.removePrefix(prefix)
+        if (remainder.isEmpty()) return@forEach
+
+        val slash = remainder.indexOf('/')
+        if (slash < 0) {
+            children[remainder] = entry.copy(path = prefix + remainder)
+        } else {
+            val folderPath = prefix + remainder.substring(0, slash)
+            children.putIfAbsent(folderPath, ArchiveEntry(folderPath, true))
+        }
+    }
+
+    return children.values.sortedWith(compareByDescending<ArchiveEntry> { it.isDirectory }.thenBy { it.path.lowercase(Locale.US) })
+}
+
+@Composable
+private fun ArchiveEntryRow(
+    entry: ArchiveEntry,
+    onClick: () -> Unit,
+) {
+    val isFolder = entry.isDirectory
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .padding(horizontal = 14.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = if (isFolder) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = if (isFolder) Icons.Rounded.Folder else Icons.Rounded.InsertDriveFile,
+                        contentDescription = null,
+                        tint = if (isFolder) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = entry.path.substringAfterLast('/').ifEmpty { entry.path },
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = if (isFolder) "Folder" else formatArchiveSize(entry.size),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = if (isFolder) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.Rounded.OpenInNew,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun ArchiveEntryPreview(
+    archiveUri: Uri,
+    entry: ArchiveEntry,
+    onBack: () -> Unit,
+) {
+    val context = LocalContext.current
+    var isLoading by remember(entry.path) { mutableStateOf(true) }
+    var tempUri by remember(entry.path) { mutableStateOf<Uri?>(null) }
+    var error by remember(entry.path) { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(entry.path) {
+        withContext(Dispatchers.IO) {
+            try {
+                val safeName = entry.path.substringAfterLast('/').ifEmpty { "file" }
+                val output = File(context.cacheDir, "archive_preview_${System.currentTimeMillis()}_$safeName")
+                context.contentResolver.openInputStream(archiveUri)?.use { input ->
+                    ZipInputStream(input).use { zip ->
+                        var current = zip.nextEntry
+                        while (current != null) {
+                            if (current.name.replace('\\', '/').trimStart('/') == entry.path.trimStart('/')) {
+                                FileOutputStream(output).use { out -> zip.copyTo(out) }
+                                break
+                            }
+                            zip.closeEntry()
+                            current = zip.nextEntry
+                        }
+                    }
+                } ?: throw IllegalStateException("Cannot open archive stream.")
+
+                if (!output.exists() || output.length() == 0L) {
+                    throw IllegalStateException("Could not extract this file from the archive.")
+                }
+                withContext(Dispatchers.Main) {
+                    tempUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", output)
+                    isLoading = false
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    error = e.localizedMessage ?: "Could not open archive entry."
+                    isLoading = false
+                }
+            }
+        }
+    }
+
+    Column(Modifier.fillMaxSize()) {
+        Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back to archive")
+                }
+                Text(
+                    entry.path.substringAfterLast('/'),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        when {
+            isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            error != null -> ErrorDisplayBox(error ?: "")
+            tempUri != null -> {
+                val uri = tempUri!!
+                val name = entry.path.substringAfterLast('/')
+                val ext = name.substringAfterLast('.', "").lowercase(Locale.US)
+                val isText = ext in setOf("txt", "md", "json", "xml", "csv", "html", "htm", "kt", "java", "py", "js", "ts", "css", "yaml", "yml", "log", "ini", "toml", "gradle", "sql")
+                if (ext == "pdf") {
+                    PetalPdfViewerScreen(pdfUri = uri, displayName = name, onBackPress = onBack)
+                } else if (isText) {
+                    TextCodeViewerContent(
+                        fileUri = uri,
+                        isEditing = false,
+                        isWordWrap = true,
+                        onTextLoaded = {},
+                        onRegisterSaveHandler = {},
+                        onEditFinish = {}
+                    )
+                } else {
+                    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Rounded.InsertDriveFile, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.height(16.dp))
+                            Text(name, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                            Spacer(Modifier.height(8.dp))
+                            Text("This entry was extracted successfully. Open it with another app to view this format.", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(16.dp))
+                            FilledTonalButton(onClick = {
+                                context.startActivity(Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, mimeTypeForExtension(ext))
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                })
+                            }) { Text("Open with…") }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun mimeTypeForExtension(extension: String): String = when (extension.lowercase(Locale.US)) {
+    "png" -> "image/png"
+    "jpg", "jpeg" -> "image/jpeg"
+    "gif" -> "image/gif"
+    "webp" -> "image/webp"
+    "mp3" -> "audio/mpeg"
+    "mp4" -> "video/mp4"
+    "pdf" -> "application/pdf"
+    "txt" -> "text/plain"
+    "json" -> "application/json"
+    "html", "htm" -> "text/html"
+    else -> "application/octet-stream"
+}
+
+private fun formatArchiveSize(bytes: Long): String {
+    if (bytes <= 0L) return "File"
+    val units = arrayOf("B", "KB", "MB", "GB")
+    var value = bytes.toDouble()
+    var unit = 0
+    while (value >= 1024 && unit < units.lastIndex) {
+        value /= 1024.0
+        unit++
+    }
+    return if (unit == 0) "${bytes} B" else String.format(Locale.US, "%.1f %s", value, units[unit])
 }
 
 private fun installApkPackage(context: Context, fileUri: Uri, displayName: String) {
@@ -1012,7 +1304,7 @@ private fun installApkPackage(context: Context, fileUri: Uri, displayName: Strin
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(settingsIntent)
-                NinjaToast.show(context, "Please enable permission to install packages", Toast.LENGTH_LONG)
+                Toast.makeText(context, "Please enable permission to install packages", Toast.LENGTH_LONG).show()
                 return
             }
         }
@@ -1037,7 +1329,7 @@ private fun installApkPackage(context: Context, fileUri: Uri, displayName: Strin
         }
         context.startActivity(installIntent)
     } catch (e: Exception) {
-        NinjaToast.show(context, "Failed to launch installer: ${e.message}", Toast.LENGTH_LONG)
+        Toast.makeText(context, "Failed to launch installer: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 

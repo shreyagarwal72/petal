@@ -198,7 +198,7 @@ public class NinjaDownloadListener implements DownloadListener {
                                 } catch (Throwable ignored) {}
                                 webView.post(() -> {
                                     String text = webView.getContext().getString(R.string.app_done) + ". " + webView.getContext().getString(R.string.menu_download) + "?";
-                                    Snackbar snackbar = Snackbar.make(webView, text, Snackbar.LENGTH_SHORT);
+                                    Snackbar snackbar = HelperUnit.makePetalSnackbar(webView, text, Snackbar.LENGTH_SHORT);
                                     HelperUnit.makeSnackbarRound(snackbar);
                                     snackbar.setAction(context.getString(R.string.app_ok), (v -> {
                                          if (context instanceof com.petal.browser.activity.BrowserActivity) {

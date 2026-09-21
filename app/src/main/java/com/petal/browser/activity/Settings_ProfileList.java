@@ -74,7 +74,7 @@ public class Settings_ProfileList extends AppCompatActivity {
                 HelperUnit.applyBouncyTouchFeedback(deleteEntry, 0.88f);
                 deleteEntry.setOnClickListener(v1 -> {
 
-                    Snackbar snackbarDelete = Snackbar.make(v1, R.string.hint_database, Snackbar.LENGTH_SHORT);
+                    Snackbar snackbarDelete = HelperUnit.makePetalSnackbar(v1, R.string.hint_database, Snackbar.LENGTH_SHORT);
                     HelperUnit.makeSnackbarRound(snackbarDelete);
                     snackbarDelete.setAction(this.getContext().getString(R.string.app_ok), (v2 -> {
                         try {

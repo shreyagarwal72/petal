@@ -1,5 +1,6 @@
 package com.petal.browser.lens
 
+import com.petal.browser.view.NinjaToast;
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -121,7 +122,7 @@ fun PetalLensBottomSheet(
             try {
                 cameraLauncher.launch(uri)
             } catch (e: Exception) {
-                Toast.makeText(context, "Unable to launch camera app", Toast.LENGTH_SHORT).show()
+                NinjaToast.show(context, "Unable to launch camera app", Toast.LENGTH_SHORT)
                 PetalLensManager.launchGoogleLensApp(context)
                 onDismissRequest()
             }
@@ -138,7 +139,7 @@ fun PetalLensBottomSheet(
         if (isGranted) {
             refreshGallery()
         } else {
-            Toast.makeText(context, "Media permission is required to browse gallery photos", Toast.LENGTH_SHORT).show()
+            NinjaToast.show(context, "Media permission is required to browse gallery photos", Toast.LENGTH_SHORT)
         }
     }
 
@@ -148,7 +149,7 @@ fun PetalLensBottomSheet(
         if (isGranted) {
             launchCameraInternal()
         } else {
-            Toast.makeText(context, "Camera permission is required to snap a photo", Toast.LENGTH_SHORT).show()
+            NinjaToast.show(context, "Camera permission is required to snap a photo", Toast.LENGTH_SHORT)
         }
     }
 
@@ -212,7 +213,7 @@ fun PetalLensBottomSheet(
                     } else {
                         val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                         clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Scanned barcode", value))
-                        Toast.makeText(context, "Barcode copied", Toast.LENGTH_SHORT).show()
+                        NinjaToast.show(context, "Barcode copied", Toast.LENGTH_SHORT)
                     }
                 },
                 onDismiss = { showPetalScanner = false }

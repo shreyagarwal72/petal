@@ -8,6 +8,7 @@
 
 package com.petal.browser.privacy
 
+import com.petal.browser.view.NinjaToast;
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -247,7 +248,7 @@ fun SafeLockerSheet(
                                             }
                                             context.startActivity(Intent.createChooser(intent, "Open file"))
                                         } catch (e: Exception) {
-                                            android.widget.Toast.makeText(context, "Cannot open file: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                            NinjaToast.show(context, "Cannot open file: ${e.message}", android.widget.Toast.LENGTH_SHORT)
                                         }
                                     }
                                     .padding(horizontal = 14.dp, vertical = 10.dp),

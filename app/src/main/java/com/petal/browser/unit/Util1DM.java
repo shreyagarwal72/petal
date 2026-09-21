@@ -1,5 +1,6 @@
 package com.petal.browser.unit;
 
+import com.petal.browser.view.NinjaToast;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 
@@ -152,7 +154,7 @@ public class Util1DM {
     }
 
     public static void install1DM(Activity activity, String packageName, boolean update) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
         builder.setMessage(update ? MESSAGE_UPDATE_1DM : MESSAGE_INSTALL_1DM)
                 .setPositiveButton(update ? "Update" : "Install", new DialogInterface.OnClickListener() {
                     @Override
@@ -167,17 +169,19 @@ public class Util1DM {
                                     try {
                                         activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(GOOGLE_PLAY_STORE_URL + packageName + getStoreTracking(activity))));
                                     } catch (ActivityNotFoundException e2) {
-                                        Toast.makeText(activity, e2.getMessage(), Toast.LENGTH_SHORT).show();
+                                        NinjaToast.show(activity, e2.getMessage(), Toast.LENGTH_SHORT);
                                     }
                                 }
                             }
                         } catch (Throwable t) {
                             t.printStackTrace();
-                            Toast.makeText(activity, t.getMessage(), Toast.LENGTH_SHORT).show();
+                            NinjaToast.show(activity, t.getMessage(), Toast.LENGTH_SHORT);
                         }
                     }
                 });
-        builder.show();
+        AlertDialog dialog = builder.create();
+        HelperUnit.setupDialog(activity, dialog);
+        dialog.show();
     }
 
     private static <S, T> boolean isEmpty(Map<S, T> map) {

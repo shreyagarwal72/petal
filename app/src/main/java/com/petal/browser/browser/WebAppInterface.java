@@ -1,5 +1,6 @@
 package com.petal.browser.browser;
 
+import com.petal.browser.view.NinjaToast;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.Context;
@@ -49,7 +50,7 @@ public class WebAppInterface {
                     () -> kotlin.Unit.INSTANCE
             );
         } catch (IllegalArgumentException e) {
-            Toast.makeText(mContext, mContext.getString(R.string.app_error), Toast.LENGTH_SHORT).show();
+            NinjaToast.show(mContext, mContext.getString(R.string.app_error), Toast.LENGTH_SHORT);
         }
     }
 
@@ -64,7 +65,7 @@ public class WebAppInterface {
             }
             showSnackbar();
         } catch (IOException e) {
-            Toast.makeText(mContext, mContext.getString(R.string.app_error), Toast.LENGTH_SHORT).show();
+            NinjaToast.show(mContext, mContext.getString(R.string.app_error), Toast.LENGTH_SHORT);
         }
     }
 
@@ -170,7 +171,7 @@ public class WebAppInterface {
                 View rootView = activity.findViewById(android.R.id.content);
                 if (rootView != null) {
                     String text = mContext.getString(R.string.app_done) + ". " + mContext.getString(R.string.menu_download) +"?";
-                    Snackbar snackbar = Snackbar.make(rootView, text, Snackbar.LENGTH_SHORT);
+                    Snackbar snackbar = HelperUnit.makePetalSnackbar(rootView, text, Snackbar.LENGTH_SHORT);
                     snackbar.setAction(mContext.getString(R.string.app_ok), v -> {
                         if (mContext instanceof com.petal.browser.activity.BrowserActivity) {
                             ((com.petal.browser.activity.BrowserActivity) mContext).showDownloads();

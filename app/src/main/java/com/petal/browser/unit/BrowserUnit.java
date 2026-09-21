@@ -1,5 +1,6 @@
 package com.petal.browser.unit;
 
+import com.petal.browser.view.NinjaToast;
 import static android.content.ContentValues.TAG;
 
 import android.Manifest;
@@ -220,7 +221,7 @@ public class BrowserUnit {
             } catch (Exception e) {
                 // Sicherer Umgang mit Fehlermeldungen ohne StringIndexOutOfBoundsException
                 String errorMessage = e.getMessage() != null ? e.getMessage() : e.toString();
-                Toast.makeText(context, context.getString(R.string.app_error) + ": " + errorMessage, Toast.LENGTH_LONG).show();
+                NinjaToast.show(context, context.getString(R.string.app_error) + ": " + errorMessage, Toast.LENGTH_LONG);
                 Log.e(TAG, "Petal: Error Downloading File", e);
             }
         } else {

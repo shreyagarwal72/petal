@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- One popup language for legacy View-system menus across Petal. -->
+    <style name="PetalExpressivePopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/petal_popup_background</item>
+    </style>
+</resources>

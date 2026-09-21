@@ -33,11 +33,15 @@ import com.petal.browser.activity.BrowserActivity
  *
  * Petal's rendering engine is Mozilla GeckoView (see [PetalGeckoRuntime]) - the exact same
  * engine that powers Firefox for Android. GeckoView exposes [WebExtensionController], the
- * very same WebExtension/API surface Firefox itself uses, which means signed `.xpi` packages
- * published on addons.mozilla.org (AMO) - the Firefox Add-ons store - install and run in Petal
- * completely unmodified. There is no shim, no polyfill, and no separate "Petal extension
- * format": an add-on installed here is byte-for-byte the same package Firefox would install,
- * so anything AMO marks as "Available on Firefox for Android" works here too.
+ * very same WebExtension engine used by Firefox, so standard signed `.xpi` WebExtensions can
+ * be installed directly instead of being converted into a Petal-specific format. Gecko owns
+ * manifest parsing, signatures, permissions, content scripts, background pages/service workers,
+ * storage, tabs, scripting, networking, and the supported WebExtension APIs.
+ *
+ * Petal deliberately does not bypass Gecko's compatibility checks or Mozilla blocklist: an
+ * extension that depends on a desktop-only API or unsupported Gecko feature can still be rejected.
+ * This is the same boundary Firefox for Android has, while allowing Petal to install arbitrary
+ * compatible signed Firefox WebExtensions rather than maintaining a small hard-coded allowlist.
  *
  * This object is a thin, app-facing wrapper around that controller:
  *  - install/uninstall/enable/disable, backed by GeckoView's own persistent extension store
@@ -391,9 +395,21 @@ object PetalExtensionManager {
                 origins: Array<out String>,
                 dataCollectionPermissions: Array<out String>
             ): GeckoResult<AllowOrDeny>? {
-                // Runtime-requested optional permissions (permissions.request()) - allow
-                // silently for already-installed, user-approved extensions.
-                return GeckoResult.fromValue(AllowOrDeny.ALLOW)
+                // Firefox WebExtensions can request optional permissions at runtime.
+                // Route these through the same user-facing permission flow as install/update
+                // instead of silently granting them. This keeps arbitrary Firefox extensions
+                // working without weakening the permission model.
+                val result = GeckoResult<AllowOrDeny>()
+                _pendingPrompt.value = PendingPrompt(
+                    extension = extension,
+                    permissions = permissions.toList(),
+                    origins = origins.toList(),
+                    isUpdate = false
+                ) { granted ->
+                    _pendingPrompt.value = null
+                    result.complete(if (granted) AllowOrDeny.ALLOW else AllowOrDeny.DENY)
+                }
+                return result
             }
         })
 
@@ -449,7 +465,7 @@ object PetalExtensionManager {
                 "That extension isn't signed by Mozilla, so it can't be installed."
             WebExtension.InstallException.ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE,
             WebExtension.InstallException.ErrorCodes.ERROR_UNSUPPORTED_ADDON_TYPE ->
-                "This Firefox add-on type is not supported on Android. Choose an extension listed for Firefox Android."
+                "This package is not a supported WebExtension for GeckoView. Firefox desktop-only add-on types cannot run in an Android browser."
             WebExtension.InstallException.ErrorCodes.ERROR_BLOCKLISTED ->
                 "This extension has been blocklisted by Mozilla for safety reasons."
             WebExtension.InstallException.ErrorCodes.ERROR_INCOMPATIBLE ->
@@ -613,10 +629,11 @@ object PetalExtensionManager {
         }
         _pendingPopup.value = null
 
-        // GeckoView's ActionDelegate contract requires the session returned from
-        // onOpenPopup/onTogglePopup to be UNUSED/UNOPENED. Opening it here causes
-        // "Must use an unopened GeckoSession instance" on newer GeckoView builds.
-        // The popup Compose host opens the session after GeckoView accepts it.
+        // GeckoView accepts a normal GeckoSession here. Open it before returning so the
+        // extension popup can begin loading immediately; delaying open until Compose
+        // composition can leave Gecko waiting for the popup host and make the browser
+        // appear stuck on tap. GeckoSession.open() is asynchronous, so this does not
+        // block the UI thread while Gecko initializes the popup document.
         val popupSettings = org.mozilla.geckoview.GeckoSessionSettings.Builder()
             .usePrivateMode(false)
             .allowJavascript(true)
@@ -649,6 +666,16 @@ object PetalExtensionManager {
             override fun onPageStop(session: GeckoSession, success: Boolean) {
                 injectExtensionPopupResponsiveFix(session)
             }
+        }
+
+        // Open only after all popup delegates are installed. GeckoSession.open() is
+        // asynchronous, so this starts loading without blocking the browser UI.
+        val ctx = appContext ?: return null
+        try {
+            popupSession.open(PetalGeckoRuntime.getOrCreate(ctx))
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to open extension popup session", t)
+            return null
         }
 
         val popup = PendingPopup(
@@ -1044,7 +1071,7 @@ object PetalExtensionManager {
     ) {
         val installUri = normalizeInstallUri(uri)
         if (installUri == null) {
-            val message = "Use a secure .xpi download link or an addons.mozilla.org add-on page."
+            val message = "Use a secure Firefox .xpi download link, an addons.mozilla.org add-on page, or import an .xpi file."
             _lastError.value = message
             onResult(false, message)
             return
@@ -1180,24 +1207,22 @@ object PetalExtensionManager {
 
         if (!parsed.scheme.equals("https", ignoreCase = true)) return null
 
-        // Already a real, resolved package link (e.g. GeckoView's own onExternalResponse
-        // handed us the final "/firefox/downloads/file/<id>/name.xpi" URL after following
-        // AMO's redirect chain, or the user gave a direct .xpi link). Never rewrite this -
-        // it is already correct, and reconstructing a "slug" out of its path segments
-        // (previous bug: grabbed the numeric file id and built a dead /android/downloads/
-        // URL from it) just replaces a working link with a broken one.
-        if (parsed.path?.endsWith(".xpi", ignoreCase = true) == true) {
+        // A direct XPI URL can be hosted anywhere (for example an extension developer's
+        // release server or a GitHub release). Do not artificially restrict installs to AMO;
+        // Gecko validates the package, signature, compatibility and blocklist itself.
+        val path = parsed.path.orEmpty()
+        if (path.endsWith(".xpi", ignoreCase = true) ||
+            path.contains(".xpi/", ignoreCase = true) ||
+            path.contains(".xpi", ignoreCase = true)
+        ) {
             return parsed.toString()
         }
 
         val host = parsed.host?.lowercase() ?: return null
         if (host != "addons.mozilla.org" && host != "www.addons.mozilla.org") return null
 
-        // An AMO *listing* page (.../addon/<slug>/ or .../android/addon/<slug>/) - resolve
-        // it to the permanent "latest signed build" redirect. This is always the
-        // "/firefox/downloads/latest/" path: AMO has no "/android/downloads/" endpoint:
-        // Firefox and Firefox for Android share one add-on catalog, and only the listing
-        // pages (not downloads) have a separate "/android/" URL variant.
+        // AMO listing pages (Android or desktop) are resolved to AMO's permanent latest
+        // signed package URL. The package itself is still validated by GeckoView.
         val segments = parsed.pathSegments
         val addonIndex = segments.indexOf("addon")
         val slug = segments.getOrNull(addonIndex + 1)?.takeIf { it.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*")) }

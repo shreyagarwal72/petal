@@ -1,9 +1,9 @@
 /*
  * FileViewerActivity.kt
  * ─────────────────────────────────────────────────────────────────────────
- * Standalone activity for Petal Universal File Viewer.
+ * Standalone activity for Petal File Viewer.
  * Declared with android:label="@string/petal_file_viewer_name" so Android's
- * system chooser shows "Petal Universal File Viewer" explicitly when opening files.
+ * system chooser shows "Petal File Viewer" explicitly when opening files.
  *
  * MIT License — Copyright (c) 2026 Petal Browser
  */

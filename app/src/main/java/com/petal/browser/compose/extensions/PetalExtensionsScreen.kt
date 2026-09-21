@@ -552,7 +552,7 @@ private fun AddExtensionSheet(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "Installs real Firefox add-ons (.xpi) from addons.mozilla.org.",
+                "Installs compatible Firefox WebExtensions (.xpi) from AMO or a secure direct download URL.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -674,7 +674,7 @@ private fun AddExtensionSheet(
             onDismissRequest = { showMozillaCatalogPrompt = false },
             icon = { Icon(Icons.Rounded.Extension, contentDescription = null) },
             title = { Text("Find Firefox extensions") },
-            text = { Text("Browse Mozilla Android add-ons, then paste an add-on page or download link here to install it.") },
+            text = { Text("Browse Mozilla add-ons or paste a secure .xpi download link. Petal will let GeckoView validate compatibility, signatures, permissions, and the Mozilla blocklist.") },
             confirmButton = { TextButton(onClick = {
                 showMozillaCatalogPrompt = false
                 // foreground=true - otherwise this silently opens a background tab while the
@@ -961,13 +961,15 @@ fun PetalExtensionPopupScreen(
                                 isFocusable = true
                                 isFocusableInTouchMode = true
 
-                                // The ActionDelegate now returns this session while it is still
-                                // unopened. Open it exactly once here, after Gecko accepted it.
-                                if (!popup.session.isOpen) {
-                                    val runtime = PetalGeckoRuntime.getOrCreate(ctx.applicationContext)
-                                    popup.session.open(runtime)
+                                // The popup session is opened by PetalExtensionManager before
+                                // it is returned to GeckoView. Do not open it again from the
+                                // Compose factory: doing so races Gecko's popup lifecycle and
+                                // can leave the browser waiting indefinitely.
+                                try {
+                                    popup.session.setActive(true)
+                                } catch (_: Throwable) {
+                                    // The session may still be completing its asynchronous open.
                                 }
-                                popup.session.setActive(true)
 
                                 popup.session.contentDelegate = object : GeckoSession.ContentDelegate {
                                     override fun onCloseRequest(session: GeckoSession) {

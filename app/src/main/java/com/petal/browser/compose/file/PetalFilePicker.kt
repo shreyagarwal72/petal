@@ -9,7 +9,7 @@
  *   • Multi-sort: Name (A-Z / Z-A), Size (desc/asc), Date (desc/asc), and Hidden Files toggle
  *   • Live search filtering within directories
  *   • Rich thumbnails: APK application icons (cached via PackageManager), image thumbnails, split packages
- *   • File previews: One-tap integration into Petal Universal File Viewer (PDF, Code, Office, Markdown, Archives)
+ *   • File previews: One-tap integration into Petal File Viewer (PDF, Code, Office, Markdown, Archives)
  *   • Full folder selection support when requested
  *
  * MIT License — Copyright (c) 2026 Petal Browser
