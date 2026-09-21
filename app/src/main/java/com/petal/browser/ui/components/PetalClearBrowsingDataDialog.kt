@@ -150,14 +150,12 @@ fun PetalClearBrowsingDataDialog(
                     height = 44.dp
                 )
 
-                DropdownMenu(
+                PetalExpressiveDropdownMenu(
                     expanded = splitMenuExpanded,
-                    onDismissRequest = { splitMenuExpanded = false },
-                    shape = RoundedCornerShape(20.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    onDismissRequest = { splitMenuExpanded = false }
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Clear All Time", fontWeight = FontWeight.SemiBold) },
+                    PetalExpressiveMenuItem(
+                        text = "Clear All Time",
                         leadingIcon = {
                             Icon(Icons.Rounded.History, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         },
@@ -166,8 +164,8 @@ fun PetalClearBrowsingDataDialog(
                             onPerformClear(true, true, true, true, true)
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text("Clear Cache Only") },
+                    PetalExpressiveMenuItem(
+                        text = "Clear Cache Only",
                         leadingIcon = {
                             Icon(Icons.Rounded.Cached, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
@@ -176,8 +174,8 @@ fun PetalClearBrowsingDataDialog(
                             onPerformClear(true, false, false, false, false)
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text("Clear Cookies & Cache") },
+                    PetalExpressiveMenuItem(
+                        text = "Clear Cookies & Cache",
                         leadingIcon = {
                             Icon(Icons.Rounded.CleaningServices, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
