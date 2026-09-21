@@ -266,6 +266,8 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
     public boolean suppressResumeDispatch = false;
     public boolean isAppLockLocked = false;
     private boolean launchRippleTriggered = false;
+    /** True while the launch ripple is waiting to be fired from the splash-screen exit animation. */
+    private boolean splashRipplePending = false;
 
     public static boolean isExternalOrWidgetLaunch(Intent intent) {
         if (intent == null) return false;
@@ -481,9 +483,59 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         super.attachBaseContext(HelperUnit.applyLanguage(newBase));
     }
 
+    /**
+     * Custom splash exit: fires the launch ripple from the splash icon's centre while the icon scales up and the
+     * splash fades away, so the splash dissolves into the ripple instead of cutting to the app.
+     */
+    private void playSplashExitWithRipple(androidx.core.splashscreen.SplashScreenViewProvider provider) {
+        final View splashView = provider.getView();
+        final View iconView = provider.getIconView();
+        final boolean fireRipple = splashRipplePending && !isFinishing() && !isDestroyed();
+        splashRipplePending = false;
+
+        if (fireRipple) {
+            View decor = getWindow().getDecorView();
+            if (iconView != null && iconView.getWidth() > 0) {
+                int[] loc = new int[2];
+                iconView.getLocationInWindow(loc);
+                float cx = loc[0] + iconView.getWidth() / 2f;
+                float cy = loc[1] + iconView.getHeight() / 2f;
+                com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor, cx, cy);
+            } else {
+                com.petal.browser.ui.layout.LiquidRippleEffect.trigger(decor);
+            }
+        }
+
+        final long duration = fireRipple ? 450L : 200L;
+        final boolean[] removed = {false};
+        final Runnable removeOnce = () -> {
+            if (!removed[0]) {
+                removed[0] = true;
+                provider.remove();
+            }
+        };
+        if (fireRipple && iconView != null) {
+            iconView.animate()
+                    .scaleX(1.25f)
+                    .scaleY(1.25f)
+                    .setDuration(duration)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
+        }
+        splashView.animate()
+                .alpha(0f)
+                .setDuration(duration)
+                .setInterpolator(new android.view.animation.AccelerateInterpolator())
+                .withEndAction(removeOnce)
+                .start();
+        // Safety net so the splash can never get stuck if the animation is cancelled.
+        splashView.postDelayed(removeOnce, duration + 400L);
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
+        final androidx.core.splashscreen.SplashScreen splashScreen =
+                androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         context = this;
         activity = this;
@@ -501,6 +553,25 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         }
         
         sp = PreferenceManager.getDefaultSharedPreferences(context);
+
+        // Blend the splash exit with the launch ripple: on a fresh launch the splash icon scales/fades out while
+        // the liquid ripple radiates from the icon's centre. Uses the same conditions as the launch ripple further
+        // below, which is skipped once this is armed. A timed fallback covers launches where no splash is shown.
+        if (savedInstanceState == null
+                && sp.getBoolean("sp_launch_ripple_enabled", true)
+                && !sp.getBoolean("sp_app_lock_enabled", false)
+                && !isExternalOrWidgetLaunch(getIntent())) {
+            launchRippleTriggered = true;
+            splashRipplePending = true;
+            splashScreen.setOnExitAnimationListener(this::playSplashExitWithRipple);
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (splashRipplePending && !isFinishing() && !isDestroyed()) {
+                    splashRipplePending = false;
+                    com.petal.browser.ui.layout.LiquidRippleEffect.trigger(getWindow().getDecorView());
+                }
+            }, 2500L);
+        }
+
         com.petal.browser.unit.PetalSessionHistoryManager.initSession();
         com.petal.browser.extensions.PetalExtensionManager.attach(context);
         com.petal.browser.extensions.PetalBuiltInExtensionManager.installAll(context);
