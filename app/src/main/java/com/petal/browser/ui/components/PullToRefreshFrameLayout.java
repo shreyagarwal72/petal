@@ -40,6 +40,8 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     private static final float EDGE_THRESHOLD_DP = 120f;
     private static final float TRIGGER_THRESHOLD = 0.70f;
     private static final float DRAG_DAMPING = 0.55f;
+    /** Downward travel must beat horizontal travel by this factor (matches architecture docs). */
+    private static final float VERTICAL_DOMINANCE = 1.35f;
 
     private CanPull canPull = () -> true;
     private OnPullListener onPullListener;
@@ -52,8 +54,6 @@ public class PullToRefreshFrameLayout extends FrameLayout {
     private float edgeThresholdPx;
     private float downX;
     private float downY;
-    private float previousX;
-    private float previousY;
     private boolean dragging;
     private boolean intercepting;
     private boolean hadMultiTouch;
@@ -100,7 +100,10 @@ public class PullToRefreshFrameLayout extends FrameLayout {
         this.pullDistancePx = dp * getResources().getDisplayMetrics().density;
     }
 
-    /** Top edge initiation touch area threshold (in dp). Defaults to 120dp like omni-browser. */
+    /**
+     * Kept for source compatibility. The pull no longer depends on where the finger lands;
+     * the page's scroll position decides whether a pull may start.
+     */
     public void setEdgeThresholdDp(float dp) {
         this.edgeThresholdPx = dp * getResources().getDisplayMetrics().density;
     }
@@ -208,43 +211,53 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             case MotionEvent.ACTION_DOWN:
                 downX = ev.getX();
                 downY = ev.getY();
-                previousX = ev.getX();
-                previousY = ev.getY();
                 dragging = false;
                 intercepting = false;
                 hadMultiTouch = false;
-                // Reset on every new gesture sequence. GeckoView calls
-                // requestDisallowInterceptTouchEvent(true) while scrolling, which would
-                // permanently block subsequent pull-to-refresh attempts without this reset.
+                // Reset on every new gesture sequence so a stale flag from a previous
+                // touch (e.g. the legacy WebView requesting disallow-intercept) can never
+                // block the next pull.
                 disallowIntercept = false;
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                float currentX = ev.getX();
-                float currentY = ev.getY();
-                float xDistance = Math.abs(currentX - previousX);
-                float yDistance = Math.abs(currentY - previousY);
-                previousX = currentX;
-                previousY = currentY;
-
-                // Disable pull to refresh if the movement is horizontal (like Firefox / Chrome)
-                if (xDistance > yDistance && !dragging) {
-                    return false;
+                if (dragging) {
+                    // Already owned by us; keep the stream.
+                    return true;
                 }
 
-                // A refresh gesture must begin at the viewport's top edge. Without
-                // this guard, a downward scroll that starts halfway down a page can
-                // be mistaken for pull-to-refresh before Gecko's compositor reports
-                // the updated scroll position.
-                boolean startedAtTopEdge = downY <= edgeThresholdPx;
-                if (!intercepting && startedAtTopEdge && !canChildScrollUp() && canPull.canPull()) {
-                    float dx = currentX - downX;
-                    float dy = currentY - downY;
-                    if (dy > touchSlop && dy > Math.abs(dx)) {
-                        intercepting = true;
-                        dragging = true;
-                        return true;
-                    }
+                // Measure against where the finger first landed, not the previous
+                // event. Per-event deltas are dominated by thumb jitter on the first
+                // few MOVEs, which used to abort the whole gesture.
+                float dx = ev.getX() - downX;
+                float dy = ev.getY() - downY;
+
+                // Not a downward pull: leave the touch to the page.
+                if (dy <= 0f) {
+                    break;
+                }
+
+                // Still inside touch slop: undecided, keep watching.
+                if (dy <= touchSlop) {
+                    break;
+                }
+
+                // Clearly horizontal or diagonal: the page or a swipe owns it.
+                if (dy <= Math.abs(dx) * VERTICAL_DOMINANCE) {
+                    break;
+                }
+
+                // Page position is the source of truth for "at top". The old
+                // finger-position band (downY <= 120dp) was measured in this
+                // container's coordinates, which the floating address bar overlaps,
+                // so it rejected valid pulls (bottom address bar, large font scale).
+                if (!canChildScrollUp() && canPull.canPull()) {
+                    intercepting = true;
+                    dragging = true;
+                    // Claim the gesture for the rest of this sequence so ancestors
+                    // cannot take it back while Gecko is still processing it.
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                    return true;
                 }
                 break;
 
@@ -277,8 +290,6 @@ public class PullToRefreshFrameLayout extends FrameLayout {
             case MotionEvent.ACTION_DOWN:
                 downX = event.getX();
                 downY = event.getY();
-                previousX = event.getX();
-                previousY = event.getY();
                 break;
 
             case MotionEvent.ACTION_MOVE:
