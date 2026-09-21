@@ -11,11 +11,14 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FlashOn
+import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,6 +51,7 @@ fun PetalQrScannerScreen(
         hasPermission = it
     }
     var torchEnabled by remember { mutableStateOf(false) }
+    var scanLocked by remember { mutableStateOf(false) }
     val closeInteraction = remember { MutableInteractionSource() }
     val flashInteraction = remember { MutableInteractionSource() }
     var cameraControl by remember { mutableStateOf<androidx.camera.core.CameraControl?>(null) }
@@ -57,6 +61,28 @@ fun PetalQrScannerScreen(
     LaunchedEffect(Unit) { if (!hasPermission) permissionLauncher.launch(Manifest.permission.CAMERA) }
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
+        Column(Modifier.fillMaxSize().padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FilledTonalIconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, "Close") }
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("Petal Scanner", style = MaterialTheme.typography.titleLarge, color = Color.White)
+                    Text("QR & barcode scanner", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = .72f))
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            Box(
+                Modifier.align(Alignment.CenterHorizontally).size(270.dp)
+                    .border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))
+            )
+            Text(
+                "Align the code inside the frame",
+                Modifier.align(Alignment.CenterHorizontally).padding(top = 18.dp),
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(Modifier.weight(1f))
+        }
         if (hasPermission) {
             AndroidView(
                 factory = { ctx ->
@@ -77,9 +103,14 @@ fun PetalQrScannerScreen(
                                         val bytes = ByteArray(buffer.remaining()).also { buffer.get(it) }
                                         val pixels = IntArray(image.width * image.height)
                                         // CameraX Y-plane is greyscale; expand it for ZXing's luminance source.
-                                        for (i in pixels.indices) {
-                                            val y = bytes[(i.coerceAtMost(bytes.lastIndex))].toInt() and 0xff
-                                            pixels[i] = -0x1000000 or (y shl 16) or (y shl 8) or y
+                                        val rowStride = plane.rowStride.coerceAtLeast(image.width)
+                                        val pixelStride = plane.pixelStride.coerceAtLeast(1)
+                                        for (row in 0 until image.height) {
+                                            for (column in 0 until image.width) {
+                                                val offset = (row * rowStride + column * pixelStride).coerceIn(0, bytes.lastIndex)
+                                                val y = bytes[offset].toInt() and 0xff
+                                                pixels[row * image.width + column] = -0x1000000 or (y shl 16) or (y shl 8) or y
+                                            }
                                         }
                                         val source = RGBLuminanceSource(image.width, image.height, pixels)
                                         val result = runCatching {
@@ -87,7 +118,8 @@ fun PetalQrScannerScreen(
                                                 setHints(mapOf(DecodeHintType.TRY_HARDER to true))
                                             }.decode(BinaryBitmap(HybridBinarizer(source))).text
                                         }.getOrNull()
-                                        if (!result.isNullOrBlank()) {
+                                        if (!result.isNullOrBlank() && !scanLocked) {
+                                            scanLocked = true
                                             view.post { onResult(result) }
                                         }
                                     }
@@ -105,17 +137,14 @@ fun PetalQrScannerScreen(
             Text("Camera permission is required", color = Color.White, modifier = Modifier.align(Alignment.Center))
         }
         Row(
-            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(bottom = 84.dp),
+            horizontalArrangement = Arrangement.Center
         ) {
-            FilledTonalIconButton(onClick = onDismiss, interactionSource = closeInteraction, modifier = Modifier.expressivePress(closeInteraction)) {
-                Icon(Icons.Rounded.Close, "Close")
-            }
             FilledTonalIconButton(onClick = {
                 torchEnabled = !torchEnabled
                 cameraControl?.enableTorch(torchEnabled)
             }, interactionSource = flashInteraction, modifier = Modifier.expressivePress(flashInteraction)) {
-                Icon(Icons.Rounded.FlashOn, "Flash", tint = if (torchEnabled) Color.Yellow else MaterialTheme.colorScheme.onSecondaryContainer)
+                Icon(Icons.Rounded.FlashOn, "Flashlight", tint = if (torchEnabled) Color.Yellow else MaterialTheme.colorScheme.onSecondaryContainer)
             }
         }
         Surface(
