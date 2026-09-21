@@ -58,6 +58,9 @@ class PetalGeckoView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttr), AlbumController, NestedScrollingChild3 {
 
     companion object {
+        /** Max device-pixel scroll offset still considered "at top". */
+        const val PAGE_TOP_TOLERANCE_PX = 3
+
         private const val TAG = "PetalGeckoView"
 
         /**
@@ -1550,10 +1553,20 @@ class PetalGeckoView @JvmOverloads constructor(
             // than the standard View scroll APIs), so OR-ing it in previously
             // made this always true and permanently blocked pull-to-refresh's
             // canChildScrollUp() check from ever seeing "at top".
-            return currentScrollY > 0
+            return !isPageAtTop()
         }
         return geckoView.canScrollVertically(direction)
     }
+
+    /**
+     * True when the page is at (or within a couple of device pixels of) the top.
+     *
+     * Gecko reports scroll in device pixels and can leave the last reported value at
+     * 1-3px after a fling settles because of sub-pixel / DPR rounding. Treating any
+     * value > 0 as "scrolled" made pull-to-refresh permanently unavailable on pages
+     * that were visibly at the top. Negative values (overscroll) also count as top.
+     */
+    fun isPageAtTop(): Boolean = currentScrollY <= PAGE_TOP_TOLERANCE_PX
 
     fun getPageScrollY(): Int = currentScrollY
 
@@ -2184,7 +2197,7 @@ class SafeGeckoView : GeckoView {
             // Check parent PetalGeckoView's compositor scroll position if attached.
             val parent = parent
             if (parent is PetalGeckoView) {
-                return parent.getPageScrollY() > 0
+                return !parent.isPageAtTop()
             }
             return false
         }
