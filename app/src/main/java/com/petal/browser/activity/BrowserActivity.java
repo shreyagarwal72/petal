@@ -4298,7 +4298,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 // Home page is top-level Compose view; allow pull-to-refresh at the top
                 isScrolledToTop = true;
             } else if (currentAlbumController instanceof com.petal.browser.view.PetalGeckoView) {
-                isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).getPageScrollY() <= 0;
+                isScrolledToTop = ((com.petal.browser.view.PetalGeckoView) currentAlbumController).isPageAtTop();
             } else if (ninjaWebView != null) {
                 isScrolledToTop = ninjaWebView.getScrollY() <= 0;
             }
