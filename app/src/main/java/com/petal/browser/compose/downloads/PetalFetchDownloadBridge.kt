@@ -20,6 +20,7 @@ package com.petal.browser.compose.downloads
 
 import android.app.DownloadManager
 import android.content.Context
+import android.content.Intent
 import android.media.MediaScannerConnection
 import android.os.Build
 import android.webkit.MimeTypeMap
@@ -353,18 +354,21 @@ object PetalFetchDownloadBridge {
     @JvmStatic
     fun pause(context: Context, id: Long) {
         ensureInitialized(context)
+        if (sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_PAUSE)) return
         fetchInstance(context).pause(id.toInt())
     }
 
     @JvmStatic
     fun resume(context: Context, id: Long) {
         ensureInitialized(context)
+        if (sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_RESUME)) return
         fetchInstance(context).resume(id.toInt())
     }
 
     @JvmStatic
     fun retry(context: Context, id: Long) {
         ensureInitialized(context)
+        if (sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_TRY_AGAIN)) return
         fetchInstance(context).retry(id.toInt())
         val item = _downloadItems.value.firstOrNull { it.id == id }
         val fileName = item?.fileName ?: "File"
@@ -374,8 +378,25 @@ object PetalFetchDownloadBridge {
     @JvmStatic
     fun cancel(context: Context, id: Long) {
         ensureInitialized(context)
+        if (sendMozillaDownloadAction(context, id, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_CANCEL)) return
         fetchInstance(context).cancel(id.toInt())
         removeEntry(id.toInt())
+    }
+
+    private fun sendMozillaDownloadAction(context: Context, id: Long, action: String): Boolean {
+        val uuid = synchronized(mozillaDownloadsMap) {
+            mozillaDownloadsMap.keys.firstOrNull { it.hashCode().toLong() == id }
+        } ?: return false
+        return try {
+            val intent = Intent(action).apply {
+                setPackage(context.applicationContext.packageName)
+                putExtra(mozilla.components.feature.downloads.INTENT_EXTRA_DOWNLOAD_ID, uuid)
+            }
+            context.applicationContext.sendBroadcast(intent)
+            true
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     /** Cancels (if active) and permanently deletes the download + its partial/complete file. */
