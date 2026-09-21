@@ -1572,7 +1572,10 @@ class PetalGeckoView @JvmOverloads constructor(
     fun getTabView(): View = album.albumView
 
     override fun activate() {
-        requestFocus()
+        // Give IME/editor actions to GeckoView itself. Focusing the wrapper FrameLayout
+        // leaves webpage fields visually focused but can swallow the keyboard Enter key.
+        geckoView.isFocusableInTouchMode = true
+        geckoView.requestFocus()
         isForegroundTab = true
         album.activate()
         session.setActive(true)
