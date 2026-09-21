@@ -6,6 +6,7 @@ import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okio.BufferedSink
 import java.io.IOException
 
@@ -37,14 +38,18 @@ class PetalMozillaFetchClient(
         val body = request.body?.let { conceptBody ->
             object : RequestBody() {
                 override fun contentType() = request.headers?.get("Content-Type")?.toMediaTypeOrNull()
-                override fun writeTo(sink: BufferedSink) = conceptBody.useStream { it.copyTo(sink.outputStream()) }
+                override fun writeTo(sink: BufferedSink) {
+                    conceptBody.useStream { it.copyTo(sink.outputStream()) }
+                }
             }
         }
         builder.method(method, body)
 
         val call = client.newCall(builder.build())
         val response = call.execute()
-        val headers = MutableHeaders(response.headers.map { it.first to it.second })
+        val headers = MutableHeaders().also { mutable ->
+            response.headers.forEach { (name, value) -> mutable.append(name, value) }
+        }
         val responseBody = response.body
             ?: return Response(response.request.url.toString(), response.code, headers, Response.Body.empty())
 
@@ -54,11 +59,5 @@ class PetalMozillaFetchClient(
             headers = headers,
             body = Response.Body(responseBody.byteStream(), response.header("Content-Type"))
         )
-    }
-
-    private fun String.toMediaTypeOrNull() = try {
-        okhttp3.MediaType.parse(this)
-    } catch (_: Throwable) {
-        null
     }
 }
