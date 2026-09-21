@@ -272,6 +272,42 @@ class PetalGeckoView @JvmOverloads constructor(
 
         // Permission Delegate (Handles ContentPermission, WebAuthn, Device Permissions)
         session.permissionDelegate = object : GeckoSession.PermissionDelegate {
+            override fun onMediaPermissionRequest(
+                session: GeckoSession,
+                uri: String,
+                video: Array<out GeckoSession.PermissionDelegate.MediaSource>?,
+                audio: Array<out GeckoSession.PermissionDelegate.MediaSource>?,
+                callback: GeckoSession.PermissionDelegate.MediaCallback
+            ) {
+                val activity = getHostActivity()
+                if (activity == null) {
+                    callback.reject()
+                    return
+                }
+                val permissionType = if (!video.isNullOrEmpty()) {
+                    com.petal.browser.ui.components.PetalPermissionType.CAMERA
+                } else {
+                    com.petal.browser.ui.components.PetalPermissionType.MICROPHONE
+                }
+                activity.runOnUiThread {
+                    com.petal.browser.ui.components.PetalPermissionDialogBridge.showPermissionPrompt(
+                        activity,
+                        permissionType,
+                        uri,
+                        Runnable {
+                            if (!video.isNullOrEmpty()) {
+                                com.petal.browser.unit.HelperUnit.grantPermissionsCamera(activity)
+                            }
+                            if (!audio.isNullOrEmpty()) {
+                                com.petal.browser.unit.HelperUnit.grantPermissionsMic(activity)
+                            }
+                            callback.grant(video?.firstOrNull(), audio?.firstOrNull())
+                        },
+                        Runnable { callback.reject() }
+                    )
+                }
+            }
+
             override fun onContentPermissionRequest(
                 session: GeckoSession,
                 perm: GeckoSession.PermissionDelegate.ContentPermission
