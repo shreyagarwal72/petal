@@ -129,6 +129,12 @@
             android:exported="false" />
 
         <service
+            android:name="com.petal.browser.download.PetalMozillaDownloadService"
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false"
+            android:exported="false" />
+
+        <service
             android:name="com.petal.browser.media.ytdlp.PetalSocialDownloadService"
             android:foregroundServiceType="dataSync"
             android:exported="false" />
