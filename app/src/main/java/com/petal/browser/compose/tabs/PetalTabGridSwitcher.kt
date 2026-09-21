@@ -72,6 +72,9 @@ import com.petal.browser.ui.components.ExpressiveTabGroupPill
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
+import com.petal.browser.ui.components.PetalExpressiveDropdownMenu
+import com.petal.browser.ui.components.PetalExpressiveMenuItem
+import com.petal.browser.ui.components.PetalExpressiveDialog
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -405,14 +408,12 @@ fun PetalTabGridSwitcher(
                                 onClick = { isOverflowMenuExpanded = true }
                             )
 
-                            DropdownMenu(
+                            PetalExpressiveDropdownMenu(
                                 expanded = isOverflowMenuExpanded,
-                                onDismissRequest = { isOverflowMenuExpanded = false },
-                                shape = RoundedCornerShape(16.dp),
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                onDismissRequest = { isOverflowMenuExpanded = false }
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text("New Tab") },
+                                PetalExpressiveMenuItem(
+                                    text = "New Tab",
                                     leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null, tint = accentColor) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
@@ -421,8 +422,8 @@ fun PetalTabGridSwitcher(
                                         onNewTab(false)
                                     }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text("New Incognito Tab") },
+                                PetalExpressiveMenuItem(
+                                    text = "New Incognito Tab",
                                     leadingIcon = { Icon(Icons.Rounded.VisibilityOff, contentDescription = null, tint = accentColor) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
@@ -431,8 +432,8 @@ fun PetalTabGridSwitcher(
                                         onNewTab(true)
                                     }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text("Tab Manager Settings") },
+                                PetalExpressiveMenuItem(
+                                    text = "Tab Manager Settings",
                                     leadingIcon = { Icon(Icons.Rounded.Settings, contentDescription = null, tint = accentColor) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
@@ -440,8 +441,8 @@ fun PetalTabGridSwitcher(
                                     }
                                 )
                                 HorizontalDivider()
-                                DropdownMenuItem(
-                                    text = { Text("Close All Tabs") },
+                                PetalExpressiveMenuItem(
+                                    text = "Close All Tabs",
                                     leadingIcon = { Icon(Icons.Rounded.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                     onClick = {
                                         isOverflowMenuExpanded = false
@@ -1460,34 +1461,16 @@ private fun PetalTabCard(
             }
         }
 
-        DropdownMenu(
+        PetalExpressiveDropdownMenu(
             expanded = contextMenuExpanded,
-            onDismissRequest = onDismissContextMenu,
-            shape = RoundedCornerShape(20.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            onDismissRequest = onDismissContextMenu
         ) {
-            DropdownMenuItem(
-                text = { Text("Add tab to new group") },
-                leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) },
-                onClick = { onDismissContextMenu(); onCreateGroup() }
-            )
-            DropdownMenuItem(
-                text = { Text("Add to bookmarks") },
-                leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) },
-                onClick = { onDismissContextMenu(); onBookmark() }
-            )
-            DropdownMenuItem(
-                text = { Text("Share") },
-                leadingIcon = { Icon(Icons.Rounded.Share, null) },
-                onClick = { onDismissContextMenu(); onShare() }
-            )
-            DropdownMenuItem(
-                text = { Text(if (isPinned) "Unpin tab" else "Pin tab") },
-                leadingIcon = { Icon(Icons.Rounded.PushPin, null) },
-                onClick = { onDismissContextMenu(); onTogglePin() }
-            )
-            DropdownMenuItem(
-                text = { Text(if (isMuted) "Unmute Site" else "Mute Site") },
+            PetalExpressiveMenuItem(text = "Add tab to new group", leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) }, onClick = { onDismissContextMenu(); onCreateGroup() })
+            PetalExpressiveMenuItem(text = "Add to bookmarks", leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) }, onClick = { onDismissContextMenu(); onBookmark() })
+            PetalExpressiveMenuItem(text = "Share", leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { onDismissContextMenu(); onShare() })
+            PetalExpressiveMenuItem(text = if (isPinned) "Unpin tab" else "Pin tab", leadingIcon = { Icon(Icons.Rounded.PushPin, null) }, onClick = { onDismissContextMenu(); onTogglePin() })
+            PetalExpressiveMenuItem(
+                text = if (isMuted) "Unmute Site" else "Mute Site",
                 leadingIcon = { Icon(if (isMuted) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeOff, null) },
                 onClick = {
                     isMuted = !isMuted
@@ -1495,17 +1478,9 @@ private fun PetalTabCard(
                     onMute(isMuted)
                 }
             )
-            DropdownMenuItem(
-                text = { Text("Select tab") },
-                leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) },
-                onClick = { onDismissContextMenu(); onSelectForSelection() }
-            )
+            PetalExpressiveMenuItem(text = "Select tab", leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) }, onClick = { onDismissContextMenu(); onSelectForSelection() })
             HorizontalDivider()
-            DropdownMenuItem(
-                text = { Text("Close tab") },
-                leadingIcon = { Icon(Icons.Rounded.Close, null) },
-                onClick = { onDismissContextMenu(); onTabClose() }
-            )
+            PetalExpressiveMenuItem(text = "Close tab", leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
         }
     }
 }
@@ -1722,24 +1697,22 @@ private fun PetalTabListItem(
             }
         }
 
-        DropdownMenu(
+        PetalExpressiveDropdownMenu(
             expanded = contextMenuExpanded,
-            onDismissRequest = onDismissContextMenu,
-            shape = RoundedCornerShape(20.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            onDismissRequest = onDismissContextMenu
         ) {
-            DropdownMenuItem(text = { Text("Add tab to new group") }, leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) }, onClick = { onDismissContextMenu(); onCreateGroup() })
-            DropdownMenuItem(text = { Text("Add to bookmarks") }, leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) }, onClick = { onDismissContextMenu(); onBookmark() })
-            DropdownMenuItem(text = { Text("Share") }, leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { onDismissContextMenu(); onShare() })
-            DropdownMenuItem(text = { Text(if (isPinned) "Unpin tab" else "Pin tab") }, leadingIcon = { Icon(Icons.Rounded.PushPin, null) }, onClick = { onDismissContextMenu(); onTogglePin() })
-            DropdownMenuItem(
-                text = { Text(if (isMuted) "Unmute Site" else "Mute Site") },
+            PetalExpressiveMenuItem(text = "Add tab to new group", leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) }, onClick = { onDismissContextMenu(); onCreateGroup() })
+            PetalExpressiveMenuItem(text = "Add to bookmarks", leadingIcon = { Icon(Icons.Rounded.BookmarkAdd, null) }, onClick = { onDismissContextMenu(); onBookmark() })
+            PetalExpressiveMenuItem(text = "Share", leadingIcon = { Icon(Icons.Rounded.Share, null) }, onClick = { onDismissContextMenu(); onShare() })
+            PetalExpressiveMenuItem(text = if (isPinned) "Unpin tab" else "Pin tab", leadingIcon = { Icon(Icons.Rounded.PushPin, null) }, onClick = { onDismissContextMenu(); onTogglePin() })
+            PetalExpressiveMenuItem(
+                text = if (isMuted) "Unmute Site" else "Mute Site",
                 leadingIcon = { Icon(if (isMuted) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeOff, null) },
                 onClick = { isMuted = !isMuted; onDismissContextMenu(); onMute(isMuted) }
             )
-            DropdownMenuItem(text = { Text("Select tab") }, leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) }, onClick = { onDismissContextMenu(); onSelectForSelection() })
+            PetalExpressiveMenuItem(text = "Select tab", leadingIcon = { Icon(Icons.Rounded.CheckBoxOutlineBlank, null) }, onClick = { onDismissContextMenu(); onSelectForSelection() })
             HorizontalDivider()
-            DropdownMenuItem(text = { Text("Close tab") }, leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
+            PetalExpressiveMenuItem(text = "Close tab", leadingIcon = { Icon(Icons.Rounded.Close, null) }, onClick = { onDismissContextMenu(); onTabClose() })
         }
     }
 }
@@ -1900,20 +1873,14 @@ private fun PetalTabGroupInspectionDialog(
     var groupNameInput by remember { mutableStateOf(group.title) }
     val groupColor = group.parseColor()
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.75f)
+    PetalExpressiveDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.fillMaxHeight(0.75f),
+        shape = RoundedCornerShape(32.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
                 // Header with rename trigger & close
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -2015,7 +1982,6 @@ private fun PetalTabGroupInspectionDialog(
                     }
                 }
             }
-        }
     }
 }
 
