@@ -174,7 +174,10 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (!isEnabled() || disallowIntercept) {
+        // GeckoView may request disallow-intercept while its compositor is scrolling.
+        // Keep observing the top-edge downward gesture so pull-to-refresh can still
+        // take ownership once the page is at scrollY == 0.
+        if (!isEnabled()) {
             return false;
         }
 
@@ -258,7 +261,7 @@ public class PullToRefreshFrameLayout extends FrameLayout {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (!isEnabled() || disallowIntercept) {
+        if (!isEnabled()) {
             return false;
         }
 
