@@ -304,4 +304,24 @@ object PetalEngineStore {
             mozilla.components.browser.state.action.MediaSessionAction.UpdateMediaFullscreenAction(tabId, fullscreen, metadata)
         )
     }
+
+    /** Registers a completed offline archive in the official BrowserStore download history. */
+    @JvmStatic
+    fun addOfflineArchive(context: Context, url: String, filePath: String, title: String?) {
+        val file = java.io.File(filePath)
+        getStore(context).dispatch(
+            mozilla.components.browser.state.action.DownloadAction.AddDownloadAction(
+                mozilla.components.browser.state.state.content.DownloadState(
+                    url = url,
+                    fileName = file.name,
+                    contentType = "text/html",
+                    contentLength = if (file.exists()) file.length() else null,
+                    currentBytesCopied = if (file.exists()) file.length() else 0L,
+                    status = mozilla.components.browser.state.state.content.DownloadState.Status.COMPLETED,
+                    directoryPath = file.parentFile?.absolutePath ?: filePath,
+                    id = "offline-${filePath.hashCode()}"
+                )
+            )
+        )
+    }
 }
