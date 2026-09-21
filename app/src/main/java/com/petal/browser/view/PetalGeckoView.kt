@@ -1443,6 +1443,7 @@ class PetalGeckoView @JvmOverloads constructor(
 
     fun clearMatches() {
         session.finder.clear()
+        com.petal.browser.engine.gecko.PetalEngineStore.clearFindResults(context, tabId)
     }
 
     fun findAllAsync(query: String) {

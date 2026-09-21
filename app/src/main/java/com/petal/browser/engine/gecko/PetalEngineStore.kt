@@ -226,4 +226,12 @@ object PetalEngineStore {
             mozilla.components.browser.state.action.ReaderAction.UpdateReaderActiveAction(tabId, active)
         )
     }
+
+    /** Clears the official BrowserStore find-in-page result state for a tab. */
+    @JvmStatic
+    fun clearFindResults(context: Context, tabId: String) {
+        getStore(context).dispatch(
+            mozilla.components.browser.state.action.ContentAction.ClearFindResultsAction(tabId)
+        )
+    }
 }
