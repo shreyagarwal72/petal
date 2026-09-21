@@ -6329,6 +6329,10 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             // the tab metadata without calling loadUrl again, which would race the adopted
             // session and could replace the destination with the home page.
             geckoView.setAlbumTitle(getString(R.string.app_name), popupUrl);
+            // Tell the tab its real URL (no reload). Without this its URL stays
+            // "about:blank", showAlbum() treats it as the home page and resets it,
+            // cancelling the link that Gecko was loading.
+            geckoView.markAdoptedNavigation(popupUrl);
 
             if (currentAlbumController != null) {
                 geckoView.setPredecessor(currentAlbumController);
