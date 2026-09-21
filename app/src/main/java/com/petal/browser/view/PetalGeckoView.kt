@@ -1644,6 +1644,25 @@ class PetalGeckoView @JvmOverloads constructor(
         album.setAlbumTitle(title, url)
     }
 
+    /**
+     * Records the URL of a tab whose navigation was already started by Gecko itself
+     * (a link opened in a new tab / popup adopted via [adoptPopupSession]) WITHOUT
+     * issuing another load.
+     *
+     * currentUrl starts out as "about:blank". BrowserActivity.showAlbum() decides
+     * "is this the home screen?" from getAlbumUrl(), so an adopted tab that still
+     * reports about:blank was treated as home: showAlbum() called resetToHome(),
+     * which does session.stop() + loadUri("about:blank") - cancelling the link that
+     * was loading and showing the home screen instead. Setting the real URL here
+     * makes showAlbum() treat it as a website and leaves Gecko's load untouched.
+     */
+    fun markAdoptedNavigation(url: String?) {
+        val target = url?.trim().orEmpty()
+        if (target.isEmpty() || BrowserUnit.isHomePage(target)) return
+        currentUrl = target
+        album.setAlbumTitle(target, target)
+    }
+
     fun getTabId(): String = tabId
 
     fun setTabId(id: String) {
