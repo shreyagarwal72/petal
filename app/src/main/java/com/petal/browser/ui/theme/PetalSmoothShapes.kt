@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
+import androidx.graphics.shapes.Cubic
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.rectangle
@@ -90,12 +91,17 @@ class SmoothRoundedShape(
 
 private fun Size.toRect() = androidx.compose.ui.geometry.Rect(0f, 0f, width, height)
 
-internal fun RoundedPolygon.toComposePath(path: Path = Path()): Path {
+internal fun RoundedPolygon.toComposePath(path: Path = Path()): Path = cubics.toComposePath(path)
+
+/** Snapshot of this morph at [progress] as a Compose [Path] (same coordinate space as the source shapes). */
+internal fun Morph.toComposePath(progress: Float, path: Path = Path()): Path =
+    asCubics(progress).toComposePath(path)
+
+private fun List<Cubic>.toComposePath(path: Path): Path {
     path.rewind()
-    val cubics = cubics
-    if (cubics.isEmpty()) return path
-    path.moveTo(cubics.first().anchor0X, cubics.first().anchor0Y)
-    for (cubic in cubics) {
+    if (isEmpty()) return path
+    path.moveTo(first().anchor0X, first().anchor0Y)
+    for (cubic in this) {
         path.cubicTo(
             cubic.control0X, cubic.control0Y,
             cubic.control1X, cubic.control1Y,
@@ -124,7 +130,7 @@ class MorphShape(
     private val rotation: Float = 0f,
 ) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
-        val path = morph.toPath(progress, Path())
+        val path = morph.toComposePath(progress)
         val matrix = Matrix().apply {
             // Material shapes live in a unit square; scale to the component and
             // spin around its centre.
