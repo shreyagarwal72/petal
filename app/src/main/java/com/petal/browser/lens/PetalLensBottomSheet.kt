@@ -167,8 +167,9 @@ fun PetalLensBottomSheet(
             showPetalScanner = true
             return
         }
-        val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        if (hasCameraPermission) launchCameraInternal() else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        // Google Lens owns its camera experience; launch it directly instead of
+        // opening Petal's system camera and taking an intermediate photo.
+        PetalLensManager.launchGoogleLensApp(context)
     }
 
     // Auto-trigger snap camera feature if requested from widget or shortcut:
@@ -193,12 +194,12 @@ fun PetalLensBottomSheet(
                         PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.GOOGLE_LENS)
                         showSnapProviderChooser = false
                         beginSnap()
-                    }) { Text("Petal QR Scanner") }
+                    }) { Text("Google Lens") }
                     TextButton(onClick = {
                         PetalLensManager.setSnapProvider(context, PetalLensManager.SnapProvider.PETAL_SCANNER)
                         showSnapProviderChooser = false
                         beginSnap()
-                    }) { Text("Petal Scanner") }
+                    }) { Text("Petal QR Scanner") }
                     TextButton(onClick = {
                         showSnapProviderChooser = false
                         beginSnap()
@@ -565,45 +566,6 @@ fun PetalLensBottomSheet(
                             )
                         }
                     }
-                }
-            }
-
-            // Standalone Google Lens App Launcher Row
-            Surface(
-                onClick = {
-                    PetalLensManager.launchGoogleLensApp(context)
-                    onDismissRequest()
-                },
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.CenterFocusWeak,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "Launch Standalone Lens App",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    Text(
-                        text = "Open",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
                 }
             }
 
