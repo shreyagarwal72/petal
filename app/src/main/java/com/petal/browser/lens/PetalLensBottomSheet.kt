@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.media.MediaFilterType
@@ -204,7 +205,10 @@ fun PetalLensBottomSheet(
     }
 
     if (showPetalScanner) {
-        Dialog(onDismissRequest = { showPetalScanner = false }) {
+        Dialog(
+            onDismissRequest = { showPetalScanner = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+        ) {
             PetalQrScannerScreen(
                 onResult = { value ->
                     showPetalScanner = false

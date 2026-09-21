@@ -15,6 +15,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FlashOn
@@ -35,6 +39,8 @@ import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import com.petal.browser.ui.components.expressivePress
+import android.os.VibrationEffect
+import android.os.Vibrator
 import java.util.concurrent.Executors
 
 @Composable
@@ -55,6 +61,7 @@ fun PetalQrScannerScreen(
     val closeInteraction = remember { MutableInteractionSource() }
     val flashInteraction = remember { MutableInteractionSource() }
     var cameraControl by remember { mutableStateOf<androidx.camera.core.CameraControl?>(null) }
+    var detectedValue by remember { mutableStateOf<String?>(null) }
     val executor = remember { Executors.newSingleThreadExecutor() }
 
     DisposableEffect(Unit) { onDispose { executor.shutdown() } }
@@ -75,12 +82,14 @@ fun PetalQrScannerScreen(
                 Modifier.align(Alignment.CenterHorizontally).size(270.dp)
                     .border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))
             )
+            AnimatedVisibility(visible = detectedValue == null, enter = fadeIn(), exit = fadeOut()) {
             Text(
                 "Align the code inside the frame",
                 Modifier.align(Alignment.CenterHorizontally).padding(top = 18.dp),
                 color = Color.White,
                 style = MaterialTheme.typography.bodyLarge
             )
+            }
             Spacer(Modifier.weight(1f))
         }
         if (hasPermission) {
@@ -92,7 +101,7 @@ fun PetalQrScannerScreen(
                             val provider = future.get()
                             val preview = Preview.Builder().build().also { it.surfaceProvider = view.surfaceProvider }
                             val analysis = ImageAnalysis.Builder()
-                                .setTargetResolution(Size(1280, 720))
+                                .setTargetResolution(Size(1280, 960))
                                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                                 .build()
                             analysis.setAnalyzer(executor) { image ->
@@ -120,7 +129,11 @@ fun PetalQrScannerScreen(
                                         }.getOrNull()
                                         if (!result.isNullOrBlank() && !scanLocked) {
                                             scanLocked = true
-                                            view.post { onResult(result) }
+                                            view.post {
+                                                detectedValue = result
+                                                (context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? Vibrator)
+                                                    ?.vibrate(VibrationEffect.createOneShot(70, VibrationEffect.DEFAULT_AMPLITUDE))
+                                            }
                                         }
                                     }
                                 } finally { image.close() }
@@ -135,6 +148,31 @@ fun PetalQrScannerScreen(
             )
         } else {
             Text("Camera permission is required", color = Color.White, modifier = Modifier.align(Alignment.Center))
+        }
+        AnimatedVisibility(
+            visible = detectedValue != null,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center)
+        ) {
+            Surface(
+                shape = MaterialTheme.shapes.extraLarge,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 6.dp,
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Icon(Icons.Rounded.QrCodeScanner, null, tint = MaterialTheme.colorScheme.primary)
+                    Text("QR code detected", style = MaterialTheme.typography.headlineSmall)
+                    Text(detectedValue.orEmpty(), style = MaterialTheme.typography.bodyMedium, maxLines = 4)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { detectedValue = null; scanLocked = false }) { Text("Scan again") }
+                        Button(onClick = { detectedValue?.let(onResult) }) {
+                            Text(if (detectedValue?.startsWith("http://") == true || detectedValue?.startsWith("https://") == true) "Open website" else "Use result")
+                        }
+                    }
+                }
+            }
         }
         Row(
             modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(bottom = 84.dp),
