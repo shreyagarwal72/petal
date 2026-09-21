@@ -46,6 +46,9 @@ import kotlin.reflect.KClass
 
 object PetalFetchDownloadBridge {
 
+    /** Off until Mozilla's download middleware is registered in PetalEngineStore. */
+    private const val USE_MOZILLA_DOWNLOAD_PIPELINE = false
+
     private val downloadsMap = LinkedHashMap<Int, Download>()
     private val createdAtMap = LinkedHashMap<Int, Long>()
     private val speedMap = LinkedHashMap<Int, Long>()
@@ -164,37 +167,42 @@ object PetalFetchDownloadBridge {
         onEnqueued: ((Long) -> Unit)? = null,
         onFailed: (() -> Unit)? = null
     ) {
-        // Gecko browser responses now enter Mozilla's official download pipeline.
-        // Media/sniffer downloads continue through Fetch2 below so the existing
-        // media-specific behavior remains unchanged during migration.
-        if (enqueueMozillaGeckoDownload(context, url, fileName, mimeType, onEnqueued, onFailed)) {
+        // Mozilla's FetchDownloadManager pipeline is intentionally NOT used yet.
+        // It returns a download id the moment the request is created, but nothing in
+        // PetalEngineStore registers Mozilla's download middleware, so the download
+        // stays INITIATED (clock icon, 0 B) forever - and because it "succeeded", the
+        // working Fetch2 path below was never reached. Browser downloads go straight
+        // to Fetch2, the same engine the media sniffer already uses successfully.
+        // Flip USE_MOZILLA_DOWNLOAD_PIPELINE once the store middleware is wired and tested.
+        if (USE_MOZILLA_DOWNLOAD_PIPELINE &&
+            enqueueMozillaGeckoDownload(context, url, fileName, mimeType, onEnqueued, onFailed)
+        ) {
             return
         }
-        val safeHeaders = responseHeaders.filter { (name, value) ->
-            name.isNotBlank() && value.isNotBlank() &&
-                !name.equals("Content-Length", true) &&
-                !name.equals("Content-Encoding", true) &&
-                !name.equals("Transfer-Encoding", true) &&
-                !name.equals("Connection", true) &&
-                !name.equals("Keep-Alive", true) &&
-                !name.equals("Proxy-Authenticate", true) &&
-                !name.equals("Proxy-Authorization", true) &&
-                !name.equals("TE", true) &&
-                !name.equals("Trailer", true) &&
-                !name.equals("Upgrade", true) &&
-                !name.equals("Content-Disposition", true) &&
-                !name.equals("Content-Type", true) &&
-                '\r' !in name && '\n' !in name &&
-                '\r' !in value && '\n' !in value
+        // NOTE: responseHeaders are the SERVER'S REPLY headers (ETag, Accept-Ranges,
+        // Last-Modified, Content-Range, Cache-Control, ...). They were previously copied
+        // onto the outgoing REQUEST, which is wrong: validators/range headers can make a
+        // server answer 304/416 or an empty body, leaving a 0 B download stuck. They are
+        // only useful for naming (already resolved in PetalGeckoView), so they are not
+        // forwarded. Send what a download request actually needs instead.
+        val userAgent = try {
+            android.webkit.WebSettings.getDefaultUserAgent(context)
+        } catch (_: Throwable) {
+            null
+        }
+        val cookie = try {
+            android.webkit.CookieManager.getInstance().getCookie(url)
+        } catch (_: Throwable) {
+            null
         }
         enqueueMediaDownload(
             context = context,
             url = url,
             fileName = fileName,
             mimeType = mimeType,
-            userAgent = null,
-            cookie = null,
-            headers = safeHeaders,
+            userAgent = userAgent,
+            cookie = cookie,
+            headers = emptyMap(),
             onEnqueued = onEnqueued,
             onFailed = onFailed
         )
